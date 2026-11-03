@@ -206,7 +206,10 @@ export function WorkbenchWorkspace() {
         title="میزکار من"
         description="کارهای روزانه، فایل‌ها و ارتباط شما با بخش‌های نورا."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div
+            data-workbench-actions
+            className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap [&>button]:min-h-11 [&>button]:min-w-0 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:text-xs sm:[&>button]:px-4 sm:[&>button]:text-sm [&_svg]:shrink-0"
+          >
             <Button
               disabled={!home || loading}
               onClick={() => setRequestOpen(true)}
@@ -315,7 +318,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-4 xl:grid-cols-11"
+                className="grid h-auto w-full grid-cols-3 gap-1.5 rounded-2xl p-1.5 sm:grid-cols-4 sm:gap-1 sm:p-2 xl:grid-cols-11"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -323,7 +326,7 @@ export function WorkbenchWorkspace() {
                     <TabsTrigger
                       key={id}
                       value={id}
-                      className="min-h-24 whitespace-normal flex flex-col items-center justify-center gap-3 px-2 py-4 text-center text-base font-semibold [&>span]:w-full [&>span]:text-center"
+                      className="min-h-20 min-w-0 whitespace-normal flex flex-col items-center justify-center gap-2 px-1 py-2 text-center text-xs leading-5 font-semibold sm:min-h-24 sm:gap-3 sm:px-2 sm:py-4 sm:text-base [&>span]:w-full [&>span]:break-words [&>span]:text-center [&>svg]:shrink-0"
                     >
                       <Icon className="size-5" aria-hidden="true" />
                       <span>{label}</span>

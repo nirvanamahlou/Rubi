@@ -8635,6 +8635,10 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## DASHBOARD-READINESS-1103 — PC-C
 
 Read-only production audit covers316 tables/3985 columns and entire84 KPI/91 visual registry. All11 existing native source aggregates independently reconcile. Four pending receipts are not confirmed revenue collection; empty Accounting/approved-cost sources remain unavailable. Add source-aware acquisition/order and financial sales/profit trends with honest missing-series notices; full matrix and remaining work: docs/tasks/DASHBOARD-READINESS-1103.md.26 API and51 Web/translation tests pass (1 existing skip), scoped lint passed. Final CI/merge and pinned production rollout pending; no data/schema/IAM/dependency changes.
+## AMEND-FLOATING-FLIGHT-1103 — PC-A
+
+Reservations amendments can replace either catalog flight direction with a floating flight and a changed Tehran civil date. Shared flight services split without duplicating sale prices; passenger membership and anonymous historical counts remain intact. Mixed catalog outbound and floating return is permitted only for authorized amendment validation; default new-contract policy stays unchanged. Existing transactional Ticket amendment releases removed directions and reserves selected replacements, rejecting insufficient capacity before writes.20 Web,102 Sales API and15 capacity/repository tests passed across isolated runs; full local Web typecheck and scoped lint pass after explicit projection types. No schema/dependency change. PR1340; final hosted CI pending. Server SSH still rejects codex-dev with the preserved key; no rollout claimed. Local source path is being replaced by the user, so final correction commits use GitHub Git Data with fast-forward guards.
+
 ## COMPANY-BASELINE-1103 — PC-A
 
 Valid active manual access snapshots now retain authenticated legal-entity read/switch baseline, matching ordinary roles. Invalid/disabled/multiple snapshots remain fail-closed; aggregate/manage/branding/document grants unchanged.18 focused permission tests and scoped lint pass. No migration/dependency/data mutation. Server rollout not performed; existing SSH key was rejected in prior diagnostic.
@@ -8665,3 +8669,16 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 ## LEDGER-SOURCE-PARITY-1103 — PC-B — IN_PROGRESS
 Fresh read-only source observations confirm chart-first navigation without a form-mode selector. Removed unbound form preview, GL KPI/hero additions and compacted the tree; automatic authorized-book resolution prefers active main book. Reference data validates (222 accounts,26 detail types), but production data activation is not established. Scoped tests pass; broader suite timeout passed on isolated rerun. Host memory blocked remaining lint/type/build; local route responds200 after bounded source copy. Full GL comparison is ongoing; no production deployment or complete-parity claim. See tasks/LEDGER-SOURCE-PARITY-1103.md.
 
+
+
+
+## PETTY-REGISTRATIONS-1103 — PC-B — ACTIVE
+
+Owner requests four-field direct petty-cash registration with receipt upload, a registrations card/list and durable purchase-request deletion; explicitly confirms debiting the balance. Named returning request is a hardcoded sample in empty production lists. Reserve Procurement API/Web/contracts/tests and removal of request sample fallback; own English keys and notes. Sole migration owner PC-B for optional immutable manual-registration metadata and receipt FKs on ProcurementPettyEntry. Prior migration reservation released by PR1337; no competing active migration/source writer found. API and Web ship together, old ledger entries remain compatible; atomic balance decrement, exact Decimal, retry idempotency, branch/custodian permissions and Documents public boundary required. No dependency or operational deployment changes.
+
+
+Validation: 68 Procurement API tests passed, including six disposable PostgreSQL proofs for exact debit, concurrent retry/overdraft, receipt atomicity/FKs, immutable entries and scoped filters. API/Web typechecks and scoped lint pass. Web registration list and translation coverage pass; existing Documents boundaries preserved. Full production builds and final-head hosted checks gate authorized merge. Source freezes on publication and scope releases on verified merge. No production data changed.
+
+## DOCUMENTS-CLOSE-COPY-1103 — PC-B
+
+Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.

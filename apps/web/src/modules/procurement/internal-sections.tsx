@@ -54,9 +54,7 @@ import { ProcurementSupplierLogo } from './supplier-logo';
 import { persistSupplierProfile } from './supplier-persistence';
 import { RecordCard, RecordPreviewButton } from './record-details';
 import {
-  sampleRequests,
   sampleSuppliers,
-  filterSampleRequests,
   filterSampleSuppliers,
   type ProcurementListRow,
 } from './sample-requests';
@@ -299,23 +297,6 @@ export function InternalSections({
     enabled: group === 3,
     retry: false,
   });
-  const baselineList = useQuery({
-    queryKey: ['procurement', 'section-list', group, 1, '', '', '', ''],
-    queryFn: () =>
-      procurementApi.list(
-        new URLSearchParams({
-          page: '1',
-          search: '',
-          status: '',
-          queue: group === 2 ? 'approvals' : '',
-          section: sectionQuery[group] ?? '',
-          createdFrom: '',
-          createdTo: '',
-        }),
-      ),
-    enabled: group !== 3,
-    retry: false,
-  });
   const baselineSuppliers = useQuery({
     queryKey: ['procurement', 'suppliers', 1, '', '', ''],
     queryFn: () =>
@@ -323,23 +304,7 @@ export function InternalSections({
     enabled: group === 3,
     retry: false,
   });
-  const showSamples =
-    group !== 3 &&
-    page === 1 &&
-    list.isSuccess &&
-    baselineList.isSuccess &&
-    baselineList.data.items.length === 0;
-  const rows: ProcurementListRow[] = (
-    showSamples
-      ? filterSampleRequests(sampleRequests, {
-          section: group,
-          search: querySearch,
-          status,
-          createdFrom,
-          createdTo,
-        })
-      : (list.data?.items ?? [])
-  ).filter((row) => !hiddenSamples.includes(row.id));
+  const rows: ProcurementListRow[] = list.data?.items ?? [];
   const openedSample = rows.find(
     (row) => row.sample && row.id === openedSampleId,
   );

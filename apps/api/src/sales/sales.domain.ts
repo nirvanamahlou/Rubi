@@ -182,6 +182,7 @@ export function validateSalesContract(
   input: SalesContractCreateRequest,
   requireChequeTerms = false,
   categories: Readonly<Record<string, 'ADT' | 'CHD' | 'INF'>> = {},
+  allowMixedAmendmentFlights = false,
 ): void {
   if (
     !input ||
@@ -533,6 +534,7 @@ export function validateSalesContract(
   const outbound = tickets.find(({ direction }) => direction === 'OUTBOUND');
   const inbound = tickets.find(({ direction }) => direction === 'RETURN');
   if (
+    !allowMixedAmendmentFlights &&
     input.tripType === 'ROUND_TRIP' &&
     outbound?.source === 'CATALOG' &&
     inbound?.source === 'CONTRACT_ONLY'

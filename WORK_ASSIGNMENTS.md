@@ -10958,6 +10958,10 @@ Owner requests full read-only production schema/data readiness review and activa
 
 Reserve two Dashboard description English override entries only, preserving unrelated catalogue entries. Native trend composition adds existing source metrics without new producer/HTTP contracts.
 
+## AMEND-FLOATING-FLIGHT-1103 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-amend-floating-flight-1103. Reserve contract-amendment-model.ts/spec, reservation-sales-amendment.tsx/spec, Sales domain mixed-leg validation/spec and bounded sales.service.ts amendment validation calls. User requests per-direction charter-to-floating amendment, date changes, correct capacity load, develop merge and server rollout. Prior passenger-count scope merged PR1215. Preserve opposite tickets, prices, passenger membership and historical counts; inventory remains on the public transactional Ticket amendment boundary. No schema/dependency changes.20 focused Web tests,102 Sales API tests,6 capacity tests and9 repository transaction tests passed across isolated runs; local full Web typecheck and scoped lint passed after fixing explicit service types and immutable test fixtures. Required exact-head CI precedes merge. Server key rejected from original and preserved paths; rollout blocked. Source locks release with frozen candidate.
+
 ## COMPANY-BASELINE-1103 — PC-A — IN_PROGRESS
 
 Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid active manual access snapshots must retain the existing authenticated legal-entity read/switch baseline. Disabled, malformed and multiple snapshots remain fail-closed. No aggregate/manage/branding/document grants, schema, migration or dependency changes. No overlapping active source reservation found. Branch codex/pc-a-company-baseline-1103 from origin/develop. Own status documentation reserved.
@@ -10985,3 +10989,12 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 ## LEDGER-SOURCE-PARITY-1103 — PC-B — ACTIVE
 
 Branch codex/pc-b-ledger-source-parity-1103 from 41dd9b8d3. Owner requests fresh read-only Rahkaran GL comparison and exact observed fields/workflow, removing artificial form selection. Reserve accounting Web components/tests and bounded accounting reference import diagnostics, own task evidence and status notes. No migration/dependency/IAM or production data mutation. Preserve other local edits. Source account hierarchy must remain real, company/branch scoped; no invented records or bypass of authorization.
+## PETTY-REGISTRATIONS-1103 — PC-B — ACTIVE
+
+Owner requests four-field direct petty-cash registration with receipt upload, a registrations card/list and durable purchase-request deletion; explicitly confirms debiting the balance. Named returning request is a hardcoded sample in empty production lists. Reserve Procurement API/Web/contracts/tests and removal of request sample fallback; own English keys and notes. Sole migration owner PC-B for optional immutable manual-registration metadata and receipt FKs on ProcurementPettyEntry. Prior migration reservation released by PR1337; no competing active migration/source writer found. API and Web ship together, old ledger entries remain compatible; atomic balance decrement, exact Decimal, retry idempotency, branch/custodian permissions and Documents public boundary required. No dependency or operational deployment changes.
+
+Validation: 68 Procurement API tests passed, including six disposable PostgreSQL proofs for exact debit, concurrent retry/overdraft, receipt atomicity/FKs, immutable entries and scoped filters. API/Web typechecks and scoped lint pass. Web registration list and translation coverage pass; existing Documents boundaries preserved. Full production builds and final-head hosted checks gate authorized merge. Source freezes on publication and scope releases on verified merge. No production data changed.
+
+## DOCUMENTS-CLOSE-COPY-1103 — PC-B
+
+Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.

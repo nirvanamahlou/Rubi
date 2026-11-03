@@ -61,6 +61,22 @@ export class ProcurementController {
   ) {
     return procurementBoundary(() => this.service.orders(query, req.actor));
   }
+  @Get('petty-registrations')
+  @Header('Cache-Control', 'private, no-store')
+  pettyRegistrations(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() =>
+      this.service.pettyRegistrations(query, req.actor),
+    );
+  }
+  @Post('petty-registrations')
+  registerPettyCash(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    return procurementBoundary(() =>
+      this.service.registerPettyCash(body, req.actor),
+    );
+  }
   @Get('petty-fund')
   @Header('Cache-Control', 'private, no-store')
   pettyFund(
