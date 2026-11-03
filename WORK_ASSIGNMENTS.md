@@ -10950,3 +10950,5 @@ CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outc
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
