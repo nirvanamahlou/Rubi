@@ -8549,6 +8549,10 @@ Owner restricts audio to Danial Altafi. Single immutable IAM-ID plus active inte
 
 Contact list requests10 rows per page and uses the returned page size to calculate all reachable pages. Separate KPI/queue/history paging unchanged. Eight targeted transport tests and scoped lint pass. No server deployment; see docs/tasks/CALL-CENTER-TEN-CONTACTS-1102.md.
 
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — SOURCE ONLY
+
+Agency added to shared Call Center source options, used by all call popups and matching source filter. Existing English translation reused;18 model/form/i18n regressions and Web types pass. No API/schema/dependency or server change. See docs/tasks/CALL-CENTER-AGENCY-SOURCE-1102.md.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

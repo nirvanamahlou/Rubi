@@ -10821,6 +10821,12 @@ CALL-CENTER-TEN-CONTACTS-1102 scope correction: existing page count divides tota
 
 CALL-CENTER-TEN-CONTACTS-1102 — SOURCE_READY / DO NOT DEPLOY: eight transport regressions, scoped lint/format, full Web typecheck and production build pass. Contact search requests10 and page count uses server page size; separate20-row KPI/history requests unchanged. No server commands, runtime or data changes. Source reservations freeze on publication.
 
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests Agency option in contact-source dropdown of all Call Center popups. Reserve only shared Call Center model sources list and own docs; source-only, no production deployment as in preceding requests. Shared popup/filter consumers keep matching values; existing Agency English translation reused. No schema/API/dependency/permissions/layout change. Preserve live/unmerged SMS option on eventual integration; prior independent drafts not imported. No overlapping active model reservation found.
+
+CALL-CENTER-AGENCY-SOURCE-1102 — SOURCE_READY / DO NOT DEPLOY:18 existing model/form/i18n checks, scoped lint/format, full Web TypeScript and production build pass. Shared source option Agency reuses existing translation; no API/schema/runtime/data changes. Scope freezes on publication.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 COMPUTER_ID=PC-D; branch codex/pc-d-ghestiroo-dashboard-1102 from develop5be385893. Owner requests full first-page Ghestiroo reporting, real metrics/details/trends/visits/activity/comparison/readiness and live validation. Reserve Integrations Ghestiroo producer-consumer report contract, bounded shared dashboard dispatcher/helpers and IntegrationsWorkspace overview reuse, own translations/tests/docs only. Site implementation stays in ehsandni/Ghestiroo. No Nora schema, migration, dependency, IAM or other-module changes. Prior same-owner source scopes are merged/released; active peers do not overlap these files. Preserve Niyayesh behavior, branch/person access and currency-separated source facts. Detailed scope: docs/tasks/GHESTIROO-DASHBOARD-1102.md. All final-head Nora gates precede authorized develop merge; no-CI-test preference remains Ghestiroo-only.
@@ -10862,5 +10868,7 @@ Integrate current develop and preserve both translated labels and peer catalog a
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1314 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1315 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1316 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
