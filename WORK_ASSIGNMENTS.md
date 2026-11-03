@@ -1,3 +1,7 @@
+## SOURCE-SHARE-CHART-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
+
+COMPUTER_ID=PC-C; branch codex/pc-c-source-share-chart-1103 from developb8b4da7d4. Owner authorizes replacing only source-share graphic with annotated dashboard donut style. Reserve Call Center report-highlights, leaf chart geometry/CSS and regressions; own notes only. Preserve contact-based aggregation, filters and expert report. No API/schema/dependency/shared dashboard changes or production deployment. Prior same-owner report scopes merged/frozen.10 focused tests, scoped lint, full Web TypeScript and optimized Web production build passed; RTL visual preview verified. Source freezes on push.
+
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
 ## MISSED-CALL-REQUEST-ACTION-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
