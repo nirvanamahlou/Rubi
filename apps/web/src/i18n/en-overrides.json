@@ -4858,7 +4858,6 @@
   "مخاطب؛ مقادیر در راهنمای رنگی درج شده‌اند": "contacts; values are shown in the color legend",
   "بلیط شناور": "Floating ticket",
   "ظرفیت کل / فروخته‌شده": "Total capacity / sold",
-<<<<<<< HEAD
   "آخرین خرید ثبت‌شده هر خدمت در پرونده جاری؛ بدون جمع مجدد نسخه‌های قدیمی یا قرارداد باطل‌شده. تأیید و پرداخت مالی جداست.": "Latest recorded purchase for each service in current cases, excluding superseded versions and cancelled contracts. Financial approval and payment are separate.",
   "آخرین نسخه پرونده تأییدشده و تعداد مسافران دارای مدرک داخلی؛ مجوز تحویل مالی یا صدور تأمین‌کننده استنتاج نمی‌شود.": "Latest confirmed case version and passengers with internal documents. Financial release and provider issuance are not inferred.",
   "ابطال‌های جاری به تفکیک شعبه، کارشناس و ارز؛ تاریخ بر اساس ایجاد قرارداد است. مبلغ ابطال با فروش تأییدشده یا استرداد اجراشده جمع نمی‌شود.": "Current cancellations by branch, agent and currency, filtered by contract creation date. Cancellation amounts are separate from confirmed sales and executed refunds.",
@@ -4902,8 +4901,7 @@
   "وضعیت خروجی معتبر نیست.": "The export status is invalid.",
   "وضعیت ورود": "Intake status",
   "زمان صدور مدرک پیش از دریافت پرونده است؛ تطبیق زمان لازم است.": "Document issuance precedes case intake. Timestamp reconciliation is required.",
-  "تعداد فایل": "File count"
-=======
+  "تعداد فایل": "File count",
   "ارز واریزی": "Receipt currency",
   "بررسی و ارسال مجدد همان واریزی": "Check and retry the same receipt",
   "تعداد قراردادها بیش از حد پردازش است؛ با پشتیبانی هماهنگ کنید.": "Too many contracts to process. Contact support.",
@@ -4944,5 +4942,4 @@
   "روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.": "Net sales, gross profit and net profit trends; profit series require authoritative cost and accounting sources, and missing profit is not zero.",
   "لوگوی شرکت قسطی رو": "Ghestiroo company logo",
   "CRM شرکت قسطی رو": "Ghestiroo CRM"
->>>>>>> origin/develop
 }

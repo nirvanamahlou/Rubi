@@ -8672,15 +8672,12 @@ Valid active manual access snapshots now retain authenticated legal-entity read/
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
 
-<<<<<<< HEAD
 ## REPORTS-READINESS-1103 — PC-C — SOURCE ONLY / DO NOT DEPLOY
 
 Read-only production schema/count audit and candidate verification cover every catalogue identifier. Eleven additional report codes now use owning-module native projections instead of sample-table assumptions; total16 Backend codes execute and generate complete-column XLSX,15 remain in the general Web catalogue under the existing HR exclusion. Current registered-purchase sums independently reconcile by currency. Unsupported legacy sources are honestly pending; all21 remaining reports and the partial-scope requirements are listed in docs/tasks/REPORTING-READINESS-1103.md. Preserve source permissions, branch/own boundaries, cancelled-sale exclusion, Decimal, five-row preview, chosen sort, B Nazanin export and latest Dashboard/Call Center work. No schema, dependency, IAM or business-data writes and no application deployment. Final exact-head hosted gates control the owner-authorized develop merge.
 
 
 
-=======
->>>>>>> origin/develop
 ## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
 
 Owner requests incoming correspondence cards/filters/table and sender, correct breadcrumbs, B Nazanin exports and immediate incoming-file viewing without the unavailable scanner gate; push/develop merge authorized. Reserve correspondence Web, bounded Documents upload/list/delivery API and shared form/contracts/tests, navigation aliases, English catalog and own notes. Sole migration owner PC-B for additive Document.senderName/isIncomingLetter; prior Marketing reservation merged/released. API producer and Web consumer ship optional fields together. Preserve branch/domain permissions, confidentiality grants and known malware blocks. Also repair module/type content filtering used by the merged Marketing consumer. No dependency or operational deployment changes.

@@ -7190,7 +7190,6 @@
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
   "version برای ویرایش الزامی است.": "version is required for editing.",
-<<<<<<< HEAD
   "این گزارش فقط قراردادهای باطل‌شده را نمایش می‌دهد.": "This report includes cancelled contracts only.",
   "پوشش خرید خدمت مشخص نیست.": "The services covered by this purchase are not defined.",
   "تعداد رکوردهای منبع بیش از حد مجاز است؛ بازه گزارش را محدود کنید.": "The source record limit was exceeded. Narrow the reporting period.",
@@ -7202,12 +7201,10 @@
   "منبع گزارش منتشر نشده است.": "The report source has not been published.",
   "وضعیت خروجی معتبر نیست.": "The export status is invalid.",
   "زمان صدور مدرک پیش از دریافت پرونده است؛ تطبیق زمان لازم است.": "Document issuance precedes case intake. Timestamp reconciliation is required.",
-  "هتل شناور": "Floating hotel"
-=======
+  "هتل شناور": "Floating hotel",
   "لوگوی شرکت قسطی رو": "Ghestiroo company logo",
   "CRM شرکت قسطی رو": "Ghestiroo CRM",
   "فرستنده را وارد کنید.": "Enter the sender.",
   "تعداد لید بدون خرید موفق، مشتری با اولین خرید تأییدشده و سفارش ایجادشده در بازه؛ این سری‌های مستقل نرخ تبدیل یک cohort نیستند.": "Counts of unconverted leads, first-time confirmed buyers and orders created in the period; these independent series are not a cohort conversion rate.",
   "روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.": "Net sales, gross profit and net profit trends; profit series require authoritative cost and accounting sources, and missing profit is not zero."
->>>>>>> origin/develop
 }
