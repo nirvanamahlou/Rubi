@@ -19,7 +19,13 @@ export function ReportHighlights({
   branch,
   filters,
   meta,
+  onEdit,
+  editDisabled,
+  hidden,
 }: {
+  onEdit?: ((id: string) => void) | undefined;
+  editDisabled?: boolean | undefined;
+  hidden?: boolean | undefined;
   data: Report['data'];
   agents?: Operator[];
   branch?: string | undefined;
@@ -56,6 +62,9 @@ export function ReportHighlights({
           branch={branch}
           filters={filters}
           meta={meta}
+          onEdit={onEdit}
+          editDisabled={editDisabled}
+          hidden={hidden}
         />
       </article>
       <article className={styles.reportCard}>

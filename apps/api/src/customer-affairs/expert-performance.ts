@@ -9,6 +9,7 @@ export const expertMetrics = [
 ] as const;
 export type ExpertMetric = (typeof expertMetrics)[number];
 export type ExpertDetail = {
+  callId?: string;
   at: string | null;
   kind: string;
   result: string;
@@ -81,6 +82,7 @@ export function expertPerformance(
           d.uniqueContacts.push(item);
         }
         d.completion.push({
+          callId: c.id,
           ...item,
           result: c.complete ? 'COMPLETE' : 'INCOMPLETE',
         });

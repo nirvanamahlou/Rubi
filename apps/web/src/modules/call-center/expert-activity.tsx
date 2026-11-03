@@ -14,6 +14,8 @@ import {
   type ActivityDetail,
 } from './read-client';
 import { faNumber } from './model';
+import { CompletionStatus } from './completion-status';
+import statusStyles from './completion-status.module.css';
 import styles from './workspace.module.css';
 const columns: [ExpertMetric, string][] = [
   ['inboundAnswered', 'ورودی پاسخ‌داده‌شده'],
@@ -39,7 +41,13 @@ export function ExpertActivity({
   branch,
   filters,
   meta,
+  onEdit,
+  editDisabled,
+  hidden,
 }: {
+  onEdit?: ((id: string) => void) | undefined;
+  editDisabled?: boolean | undefined;
+  hidden?: boolean | undefined;
   data: Report['data'];
   branch?: string | undefined;
   filters?: SearchFilters | undefined;
@@ -173,7 +181,7 @@ export function ExpertActivity({
         می‌شود؛ جمع ردیف‌ها لزوماً کل تماس‌ها نیست. شمارهٔ نامعلوم جزو مخاطب
         یکتا نیست. «—» یعنی مخرجی برای درصد وجود ندارد.
       </p>
-      {selected && (
+      {selected && !hidden && (
         <Dialog
           open
           onOpenChange={(v) => {
@@ -217,7 +225,7 @@ export function ExpertActivity({
                         <tr>
                           <th>زمان / سررسید</th>
                           <th>نوع</th>
-                          <th>وضعیت</th>
+                          <th className={statusStyles.cell}>وضعیت</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -237,7 +245,20 @@ export function ExpertActivity({
                               {r.extension && ` · ${r.extension}`}
                               {r.shared && ' · چندکارشناسی'}
                             </td>
-                            <td>{labels[r.result] ?? r.result}</td>
+                            <td className={statusStyles.cell}>
+                              {selected.metric === 'completion' &&
+                              (r.result === 'COMPLETE' ||
+                                r.result === 'INCOMPLETE') ? (
+                                <CompletionStatus
+                                  result={r.result}
+                                  callId={r.callId}
+                                  onEdit={onEdit}
+                                  disabled={editDisabled}
+                                />
+                              ) : (
+                                (labels[r.result] ?? r.result)
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
