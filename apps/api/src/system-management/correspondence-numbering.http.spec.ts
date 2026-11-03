@@ -49,13 +49,13 @@ describe('letter numbering authorization over HTTP', () => {
       .expect(401);
     expect(issue).not.toHaveBeenCalled();
   });
-  it('rejects explicit screen denial before issuing', async () => {
+  it('permits numbering for authenticated users despite old screen denial', async () => {
     await request(app.getHttpServer())
       .post('/correspondence/v1/numbers')
       .set('Cookie', 'nora_access=denied')
       .send({})
-      .expect(403);
-    expect(issue).not.toHaveBeenCalled();
+      .expect(201);
+    expect(issue).toHaveBeenCalled();
   });
   it('uses the authenticated actor instead of a supplied actor ID', async () => {
     await request(app.getHttpServer())

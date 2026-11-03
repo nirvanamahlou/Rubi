@@ -1283,6 +1283,72 @@ export class DocumentsService {
     return { documentId: row.id, versionId: row.currentVersion.id };
   }
 
+  private incomingActor(actor: AuthenticatedActor): AuthenticatedActor {
+    return {
+      ...actor,
+      permissions: [
+        ...new Set([
+          ...actor.permissions,
+          'documents.list' as const,
+          'documents.upload' as const,
+          'documents.metadata.read' as const,
+          'documents.file.read' as const,
+          'documents.download' as const,
+        ]),
+      ],
+    };
+  }
+  async incomingOptions(actor: AuthenticatedActor) {
+    const result = await this.options(this.incomingActor(actor));
+    return {
+      data: {
+        ...result.data,
+        owners: actor.permissions.includes('documents.upload')
+          ? result.data.owners
+          : result.data.owners.filter((user) => user.id === actor.userId),
+      },
+    };
+  }
+  incomingList(query: DocumentListQueryV1, actor: AuthenticatedActor) {
+    return this.list(
+      { ...query, isIncomingLetter: true, archiveStatus: 'ACTIVE' },
+      this.incomingActor(actor),
+    );
+  }
+  incomingUpload(
+    dto: DocumentUploadDto,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    return this.upload(
+      {
+        ...dto,
+        isIncomingLetter: true,
+        ownerUserId: actor.permissions.includes('documents.upload')
+          ? dto.ownerUserId
+          : actor.userId,
+      },
+      file,
+      this.incomingActor(actor),
+      metadata,
+    );
+  }
+  async incomingFile(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    preview: boolean,
+  ) {
+    const scoped = this.incomingActor(actor);
+    const row = await this.findVisibleDetail(id, actor);
+    if (!row?.isIncomingLetter || row.archiveStatus !== 'ACTIVE')
+      throw new NotFoundException('نامه یافت نشد.');
+    return preview
+      ? this.preview(id, scoped, metadata)
+      : this.download(id, scoped, metadata);
+  }
+
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
     const sourceReference = [
       query.sourceModule,

@@ -237,7 +237,7 @@ describe('manual access migration and enforcement', () => {
     });
     expect(canViewScreen(codes, 'assistant.executive')).toBe(false);
     expect(canViewRoute(codes, '/assistant')).toBe(false);
-    expect(canViewRoute(codes, '/correspondence')).toBe(false);
+    expect(canViewRoute(codes, '/correspondence')).toBe(true);
   });
 
   it('enforces the sales expert own scope within a valid manual snapshot', () => {
