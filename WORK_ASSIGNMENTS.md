@@ -10938,6 +10938,14 @@ All 17 owner-authored PR heads are preserved as merge ancestors of this candidat
 
 COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
 
+## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-party-contract-receipts-fifo-1103 from develop9144eb57e. Owner authorizes Finance inbox party debt lookup, one received amount allocated oldest-contract-first, individual/agency payer balances, push/develop merge. Reserve new Sales public party-balance/receipt adapter (Sales owns contract reads/writes), new Finance controller/service orchestration, bounded FinanceModule registration and inbox panel insertion, additive shared DTOs and focused tests/docs. Preserve Finance accounting ownership: reuse existing financial-event public contract and settlement recalculation, no journal engine edits. Match canonical payer ID and branch, never names; currency-separated balances, atomic FIFO receipt parts, stable idempotency, optimistic preview and audit. No schema/migration/dependency/production data changes or deployment. Existing payment-label task owns only option labels, insertion does not overlap. Public producer/consumer ship together.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves one additive test path in the existing PostgreSQL financial-events CI step; new test uses only guarded ephemeral nora_ci fixtures and never operational databases. No existing test or gate removed. Final source freezes on publication and this reservation releases on verified owner-authorized merge.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves only its newly introduced English override keys and derived API catalogue synchronization; preserve all peer translations.
+
 ## CALL-WRONG-NUMBER-1103 — PC-C — ACTIVE
 
 Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.
@@ -10947,6 +10955,8 @@ CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outc
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
 
 ## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
 
