@@ -107,14 +107,16 @@ describe('legal entity context UI model', () => {
     );
     expect(legalEntityBrand('ALL').src).toBe('/brand/niyayesh.png');
   });
-  it('uses a neutral company mark until logos are supplied for new companies', () => {
+  it('uses the supplied Ghestiroo logo and keeps a placeholder for Academia', () => {
     expect(legalEntityBrand('JAHAN_ACADEMIA')).toMatchObject({
       label: 'CRM شرکت جهان آکادمی',
       src: '/brand/company-placeholder.svg',
     });
     expect(legalEntityBrand('GHESATI_RO')).toMatchObject({
       label: 'CRM شرکت قسطی رو',
-      src: '/brand/company-placeholder.svg',
+      src: '/brand/ghesati-ro.png',
+      width: 1774,
+      height: 887,
     });
   });
 });
