@@ -331,4 +331,28 @@ describe('native Sales report source and shared preview/export path', () => {
     });
     expect(execute).toHaveBeenCalledWith('SET TRANSACTION READ ONLY');
   });
+  it('applies effective cancelled status before checking prices of unrelated unpriced drafts', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      { ...one, id: 'draft', status: 'DRAFT', priceComponents: [] },
+    ]);
+    vi.mocked(client.reservationIntake.findMany).mockResolvedValue([
+      {
+        contractId: 'one',
+        workflowRevisions: [
+          { state: { supplierStatus: 'CANCELLED' }, createdAt: new Date() },
+        ],
+      },
+    ] as never);
+    const result = await readSalesReportingProjection(
+      client,
+      actor,
+      { filters: { status: 'CANCELLED' } },
+      true,
+    );
+    expect(new Set(result.map((r) => r.id))).toEqual(new Set(['one']));
+    expect(result.every((r) => r.status === 'CANCELLED')).toBe(true);
+  });
 });

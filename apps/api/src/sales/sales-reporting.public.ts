@@ -159,9 +159,15 @@ export async function readSalesReportingProjection(
     client,
     rows.map((row) => row.id),
   );
-  const currentRows = rows.filter(
-    (row) => pipeline || !cancellations.has(row.id),
-  );
+  const currentRows = rows.filter((row) => {
+    const effectiveStatus = cancellations.has(row.id)
+      ? 'CANCELLED'
+      : row.status;
+    return (
+      (pipeline || !cancellations.has(row.id)) &&
+      (!status || effectiveStatus === status)
+    );
+  });
   if (currentRows.some((row) => !row.priceComponents.length))
     throw new ConflictException(
       'قیمت برخی قراردادها کامل نیست؛ گزارش مبلغ قابل محاسبه نیست.',
