@@ -8661,6 +8661,12 @@ GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no whit
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
+
+
+## DOCUMENTS-CLOSE-COPY-1103 — PC-B
+
+Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
+
 ## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — SOURCE_READY
 
 All11 owner comments implemented in Integrations: global period KPIs with exact
