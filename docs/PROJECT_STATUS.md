@@ -8630,3 +8630,7 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## COMPANY-BASELINE-1103 — PC-A
 
 Valid active manual access snapshots now retain authenticated legal-entity read/switch baseline, matching ordinary roles. Invalid/disabled/multiple snapshots remain fail-closed; aggregate/manage/branding/document grants unchanged.18 focused permission tests and scoped lint pass. No migration/dependency/data mutation. Server rollout not performed; existing SSH key was rejected in prior diagnostic.
+
+## AGENCY-CONTRACT-NOTE-1103 — PC-B
+
+Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.

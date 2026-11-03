@@ -10950,3 +10950,7 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## COMPANY-BASELINE-1103 — PC-A — IN_PROGRESS
 
 Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid active manual access snapshots must retain the existing authenticated legal-entity read/switch baseline. Disabled, malformed and multiple snapshots remain fail-closed. No aggregate/manage/branding/document grants, schema, migration or dependency changes. No overlapping active source reservation found. Branch codex/pc-a-company-baseline-1103 from origin/develop. Own status documentation reserved.
+
+## AGENCY-CONTRACT-NOTE-1103 — PC-B
+
+Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
