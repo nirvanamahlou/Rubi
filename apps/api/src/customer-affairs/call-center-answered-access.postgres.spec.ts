@@ -64,7 +64,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       noUnit = randomUUID(),
       demo = randomUUID(),
       admin = randomUUID();
-    let ceo = randomUUID();
+    let ceo: string = randomUUID();
     const past = new Date('2026-01-01T00:00:00Z');
     let connectionId: string;
     let phoneCounter = 1000;
