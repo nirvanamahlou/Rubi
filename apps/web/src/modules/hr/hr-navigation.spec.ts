@@ -62,3 +62,12 @@ describe('legacy roster entry after separating working hours and shift definitio
     expect(limited.sources.some((s) => s.tab === 'shift')).toBe(false);
   });
 });
+
+it('opens weekly employee assignments from the main shift definition action', () => {
+  const group = hrGroups.time!.find((g) => g.id === 'shifts')!;
+  expect(group.sources[0]!.tab).toBe('shift');
+  expect(resolveHrSource(group, undefined)).toMatchObject({
+    tab: 'shift',
+    action: 'تعریف شیفت',
+  });
+});

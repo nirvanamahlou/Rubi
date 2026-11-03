@@ -371,7 +371,8 @@ function AccessibleHrSection({
               value={calendar ? 'calendar' : 'list'}
               onChange={(id) => {
                 setCalendar(id === 'calendar');
-                if (id === 'calendar') setSourceTab('shift');
+                setSourceTab('shift');
+                setPage(1);
               }}
               label="نمای شیفت"
             />
