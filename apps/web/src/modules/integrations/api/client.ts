@@ -118,6 +118,64 @@ export const ghestirooApi = {
     ),
 };
 export const integrationsApi = {
+  siteReport: (
+    branch: string,
+    from: string,
+    to: string,
+    signal: AbortSignal | undefined,
+    systemId: string,
+    connector: 'ghestiroo' | 'niyayesh',
+  ): Promise<SiteReport> =>
+    connector === 'ghestiroo'
+      ? request<SiteReport>(
+          `/ghestiroo/dashboard${branchQuery(branch)}&systemId=${encodeURIComponent(systemId)}`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ from, to }),
+            ...(signal ? { signal } : {}),
+          },
+        )
+      : integrationsApi.niyayeshReport(branch, from, to, signal, systemId),
+  siteReportDetails: (
+    branch: string,
+    systemId: string,
+    connector: 'ghestiroo' | 'niyayesh',
+    report: {
+      from: string;
+      to: string;
+      metric: string;
+      after: string | number;
+      queue?: string;
+    },
+  ): Promise<{
+    items: { externalId: string; data: Record<string, unknown> | null }[];
+    nextId: string | number;
+    hasMore: boolean;
+  }> =>
+    connector === 'ghestiroo'
+      ? request<{
+          items: { externalId: string; data: Record<string, unknown> | null }[];
+          nextId: string | number;
+          hasMore: boolean;
+          registrySystemId: string;
+        }>(
+          `/ghestiroo/dashboard${branchQuery(branch)}&systemId=${encodeURIComponent(systemId)}`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              ...report,
+              after: report.after ? String(report.after) : '',
+            }),
+          },
+        )
+      : integrationsApi.niyayeshResources(
+          branch,
+          report.metric === 'users' ? 'customer-accounts' : 'customer-orders',
+          Number(report.after),
+          undefined,
+          undefined,
+          { ...report, systemId },
+        ),
   sitePresence: (
     branchId: string,
     systemId: string,
@@ -362,12 +420,15 @@ export type SiteReport = {
     { currency: string; amount: string | null; complete: boolean }[] | null;
   trends: Record<string, { date: string; value: number }[]>;
   visits: {
+    available?: boolean;
+    coverageFrom?: string | null;
     pageViews: number;
     uniqueBrowsers: number;
     definition: string;
     daily: { date: string; views: number; visitors: number }[];
   };
   activity: {
+    id?: string;
     resource: string;
     externalId: string;
     operation: string;
@@ -376,6 +437,10 @@ export type SiteReport = {
     version: number;
   }[];
   activityAvailable: boolean;
+  definitions?: Record<string, string>;
+  queues?: { id: string; title: string; count: number }[];
+  queueDefinition?: string;
+  warnings?: string[];
 };
 
 export type SitePresenceV1 = {

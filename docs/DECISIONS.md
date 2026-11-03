@@ -742,6 +742,14 @@ Owner supplied the official sandbox Swagger and requested activation on Avina. V
 
 
 
+## RESERVATION-CANCEL-CAPACITY-1102 — 2026-11-02
+
+Owner requests cancellation from Reservations to return allocated company seats to load. Workflow CANCEL now releases Catalog allocations in the same serializable transaction as its immutable revision. REOPEN preserves the existing operational-only Sales semantics and reacquires original per-leg quantities for current Sales selections through Catalog, under deterministic offer locks with branch/status/active-hold/capacity checks. It must not increase total capacity, invent a seat allocation for floating flights, reopen a Sales-cancelled contract, accept a historical intake, or modify Finance/payment/document history. Failure rolls back both workflow and capacity. The additive Catalog public method ships with its Reservations consumer; no schema or wire change. This source change does not automatically backfill historical cancellations. The owner-reported historical cancellation was separately verified and its exact existing allocations released through the deployed public Catalog service, with latest cancellation/version/quantity checks and serializable rollback protection. No Finance, total-capacity or cancellation-history rewrite; no source deployment.
+
 ## PACKAGE-PUBLISH-BANNER-1102 — 2026-11-02
 
 Owner explicitly requests every user with access to Package Pricing management can publish, including the last editor. This supersedes the older PACKAGE-PRICING-001 maker/checker rule only for tour-draft publication: package_pricing.read gates the action, branch scope/CAS/current-source/capacity validation and publisher audit remain. No global role grants or other approval flow changes. Banner download is a browser-local rendering of published sale-only view data using existing bundled vendor libraries; it creates no Documents record or external publication. The historical deferred Documents adapter does not prohibit this explicitly requested local output.
+
+## FLOATING-HOTEL-SALES-1102 — 2026-11-02
+
+Owner requests standalone hotel floating purchase and confirms floating ticket plus hotel share Sales purchase ownership. Sales persists HOTEL metadata.purchaseSupplyType=FLOATING for the explicit hotel-only option; paired floating flights imply Sales hotel ownership without a second permanent hotel flag; shared isFloatingSalesContract recognizes only HOTEL/FLIGHT facts. Existing Sales own-contract/branch checks, agency supplier references, staged purchase retry and Finance CAS/idempotency remain. Reservations cannot write these purchases; ordinary hotel contracts remain Reservations-owned. Existing floating flight facts already imply all hotel purchases in the same contract use Sales. No migration, IAM expansion or historical metadata rewrite.

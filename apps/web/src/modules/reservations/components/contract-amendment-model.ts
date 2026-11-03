@@ -104,6 +104,7 @@ export function replaceAmendmentFlight(
     Object.entries(service?.metadata ?? {}).filter(
       ([key]) =>
         ![
+          'purchaseSupplyType',
           'contractFlightVersion',
           'flightDepartureAt',
           'flightArrivalAt',
@@ -122,6 +123,7 @@ export function replaceAmendmentFlight(
     referenceId: offer.id,
     metadata: {
       ...metadata,
+      ...(offer.supplyType ? { purchaseSupplyType: offer.supplyType } : {}),
       ...(service && !service.metadata?.direction ? {} : { direction }),
     },
     status: 'SELECTED' as const,
