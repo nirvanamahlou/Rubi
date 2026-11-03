@@ -129,3 +129,25 @@ describe('buildMasterDataXlsx', () => {
     expect(worksheet).toContain('[&quot;پاسپورت&quot;,&quot;عکس&quot;]');
   });
 });
+
+it('exports the numeric company code without changing stored business code', () => {
+  const company = {
+    ...record,
+    resource: 'organizations' as const,
+    code: 'ORG-LEGACY',
+    attributes: { accountingCode: '3000001' },
+  };
+  const files = unzipSync(
+    buildMasterDataXlsx({
+      resource: 'organizations',
+      columns: ['code', 'name'],
+      records: [company],
+      locale: 'fa-IR',
+      timezone: 'Asia/Tehran',
+    }),
+  );
+  const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+  expect(sheet).toContain('3000001');
+  expect(sheet).not.toContain('ORG-LEGACY');
+  expect(company.code).toBe('ORG-LEGACY');
+});

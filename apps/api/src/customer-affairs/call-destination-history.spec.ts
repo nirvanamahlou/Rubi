@@ -60,14 +60,25 @@ describe('legacy outbound destination display', () => {
     });
     expect(resolve).toHaveBeenCalledWith('branch', '105', at, undefined, 'pbx');
   });
-  it('preserves recorded historical identity and ignores manual records', async () => {
-    const { service, findMany } = setup();
+  it('refreshes historical display without changing its snapshot and ignores manual records', async () => {
+    const { service, resolve } = setup();
+    resolve.mockResolvedValue({
+      ...recipient,
+      label: 'مدیر فروش - Synthetic Person - 105',
+    });
     const rows = [
       { ...call, answerRecipient: recipient },
       { ...call, id: 'manual', origin: 'MANUAL' },
     ];
-    expect(await service.hydrateDestinations('branch', rows)).toEqual(rows);
-    expect(findMany).not.toHaveBeenCalled();
+    const result = await service.hydrateDestinations('branch', rows);
+    expect(result[0]?.answerRecipient).toMatchObject({
+      label: 'مدیر فروش - Synthetic Person - 105',
+      extension: '105',
+      answeredAt: at,
+      labelSource: 'CURRENT_DIRECTORY',
+    });
+    expect(rows[0]).toMatchObject({ answerRecipient: recipient });
+    expect(result[1]).toEqual(rows[1]);
   });
   it('displays a single trusted inbound ring destination without creating an answer', async () => {
     const ringAt = '2026-10-25T10:00:12Z';
@@ -219,4 +230,21 @@ it('snapshots an outbound originator at ringing time without marking the call an
   expect(
     createSession.mock.calls[0]?.[0].data.encryptedTechnical,
   ).not.toHaveProperty('lastAnswer');
+});
+
+it('retains a historical label when current HR has no matching employee', async () => {
+  const { service, resolve } = setup();
+  resolve.mockResolvedValue({ ...recipient, label: 'داخلی 105' });
+  const row = {
+    ...call,
+    answerRecipient: { ...recipient, label: 'Historical identity' },
+  };
+  expect(await service.hydrateDestinations('branch', [row])).toEqual([row]);
+});
+it('retains a historical label without an unambiguous provider session', async () => {
+  const { service, findMany, resolve } = setup();
+  findMany.mockResolvedValue([]);
+  const row = { ...call, answerRecipient: recipient };
+  expect(await service.hydrateDestinations('branch', [row])).toEqual([row]);
+  expect(resolve).not.toHaveBeenCalled();
 });

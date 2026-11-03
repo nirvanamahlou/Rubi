@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { BrokerPurchases } from '@/modules/finance/components/broker-purchases';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
@@ -709,7 +711,7 @@ export function MasterDataSuppliersWorkspace() {
               <Database className="size-4 text-primary" /> مشخصات پایه
             </h3>
             <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-              <ProfileData label="کد" value={record.code} />
+              <ProfileData label="کد" value={masterDataDisplayCode(record)} />
               <ProfileData
                 label="نام انگلیسی"
                 value={text(record, 'englishName')}
@@ -822,7 +824,7 @@ export function MasterDataSuppliersWorkspace() {
               {records.map((record) => (
                 <tr className="border-t border-border" key={record.id}>
                   <td className="p-4 font-mono" dir="ltr">
-                    {record.code}
+                    {masterDataDisplayCode(record)}
                   </td>
                   <MasterDataLogoCell record={record} />
                   <td className="p-4 font-semibold">
@@ -897,7 +899,7 @@ export function MasterDataSuppliersWorkspace() {
               {records.map((record) => (
                 <tr className="border-t border-border" key={record.id}>
                   <td className="p-4 font-mono" dir="ltr">
-                    {record.code}
+                    {masterDataDisplayCode(record)}
                   </td>
                   <MasterDataLogoCell record={record} />
                   <td className="p-4 font-semibold">
@@ -1001,7 +1003,7 @@ export function MasterDataSuppliersWorkspace() {
                                 className="font-mono text-xs text-muted-foreground"
                                 dir="ltr"
                               >
-                                {record.code}
+                                {masterDataDisplayCode(record)}
                               </span>
                               <MasterDataLogoCell
                                 asCell={false}

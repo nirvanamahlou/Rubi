@@ -285,13 +285,20 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   organizations: [
     'legalName',
     'code',
+    'accountingCode',
     'nationalId',
     'registrationNumber',
     'economicCode',
     'tourismLicenseNumber',
   ],
-  suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
-  brokers: ['name', 'englishName', 'code'],
+  suppliers: [
+    'name',
+    'code',
+    'accountingCode',
+    'englishName',
+    'externalProviderReference',
+  ],
+  brokers: ['name', 'englishName', 'code', 'accountingCode'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
   leaders: ['name', 'englishName', 'code', 'expertise', 'welcomeSignCode'],
@@ -1189,7 +1196,13 @@ export class MasterDataRepository {
           nameField,
           codeFields[resource],
           ...searchFields[resource].filter((field) =>
-            ['name', 'englishName', 'iataCode', 'icaoCode'].includes(field),
+            [
+              'name',
+              'englishName',
+              'iataCode',
+              'icaoCode',
+              'accountingCode',
+            ].includes(field),
           ),
           ...(resource === 'organizations' ? ['displayName'] : []),
         ]),
@@ -1240,7 +1253,9 @@ export class MasterDataRepository {
       query.sortBy === 'name'
         ? nameField
         : query.sortBy === 'code'
-          ? codeFields[resource]
+          ? ['organizations', 'suppliers', 'brokers'].includes(resource)
+            ? 'accountingCode'
+            : codeFields[resource]
           : query.sortBy;
     // Every reference resource except rate history has a persisted displayOrder.
     // Apply it before pagination; sorting only the loaded page loses placement.

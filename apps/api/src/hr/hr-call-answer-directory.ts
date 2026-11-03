@@ -48,6 +48,7 @@ export function privateAnswerDirectory(
           name: string;
           unit: string;
           position?: string;
+          grade?: string;
           extension: string;
         }) => ({
           name: row.name.trim(),
@@ -74,6 +75,7 @@ export function callDestinationLabel(row: {
   name: string;
   unit: string;
   position?: string;
+  grade?: string;
   extension: string;
 }) {
   const unit =
@@ -82,7 +84,7 @@ export function callDestinationLabel(row: {
       .map((part) => part.trim())
       .filter(Boolean)
       .at(-1) ?? '';
-  const position = row.position?.trim() ?? '';
+  const position = row.grade?.trim() ?? row.position?.trim() ?? '';
   const normalize = (value: string) =>
     value
       .replace(/ي/g, 'ی')
@@ -107,6 +109,7 @@ export class HrCallAnswerDirectory {
         name: true,
         unit: true,
         position: true,
+        grade: true,
         records: {
           where: {
             branchId,
@@ -122,17 +125,18 @@ export class HrCallAnswerDirectory {
     });
     let rows = employees.flatMap((employee) =>
       employee.records.flatMap((record) => {
-        const value = (record.values as string[] | null)?.[0];
-        return typeof value === 'string' && /^[0-9]{1,16}$/.test(value)
-          ? [
-              {
-                name: employee.name,
-                unit: employee.unit,
-                position: employee.position,
-                extension: value,
-              },
-            ]
-          : [];
+        return ((record.values as string[] | null) ?? []).flatMap((value) =>
+          typeof value === 'string' && /^[0-9]{1,16}$/.test(value)
+            ? [
+                {
+                  name: employee.name,
+                  unit: employee.unit,
+                  position: employee.grade,
+                  extension: value,
+                },
+              ]
+            : [],
+        );
       }),
     );
     if (
@@ -160,7 +164,12 @@ export class HrCallAnswerDirectory {
     tx?: Prisma.TransactionClient,
     connectionId?: string,
   ): Promise<CallAnswerRecipient> {
-    let rows = await (tx ?? this.db.client).hrEmployee.findMany({
+    let rows: {
+      name: string;
+      unit: string;
+      position: string;
+      grade?: string;
+    }[] = await (tx ?? this.db.client).hrEmployee.findMany({
       where: {
         branchId,
         deletedAt: null,
@@ -171,11 +180,11 @@ export class HrCallAnswerDirectory {
             section: 'employee',
             tab: 'internalContact',
             deletedAt: null,
-            values: { path: ['0'], equals: extension },
+            values: { array_contains: [extension] },
           },
         },
       },
-      select: { name: true, unit: true, position: true },
+      select: { name: true, unit: true, position: true, grade: true },
       orderBy: { personnelCode: 'asc' },
       take: 21,
     });

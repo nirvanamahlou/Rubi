@@ -79,8 +79,20 @@ const resourceTitles: Record<string, string> = {
   'exchange-rates': 'نرخ ارز',
   'support-threads': 'گفتگوی پشتیبانی',
   'travel-requests': 'درخواست سفر',
+  catalogue: 'کاتالوگ',
+  'customer-payments': 'پرداخت',
 };
 export function activityTitle(resource: string, operation: string) {
+  const sourceAction: Record<string, string> = {
+    'payment.approved': 'تأیید پرداخت',
+    'payment.rejected': 'رد پرداخت',
+    'checkout.activated': 'فعال‌سازی خرید',
+    'case.issued': 'صدور سفر',
+    'case.created': 'ایجاد پرونده',
+    'request.updated': 'پیگیری درخواست',
+  };
+  if (sourceAction[operation]) return sourceAction[operation];
+  const verb = operation.split('.').at(-1) ?? operation;
   const action =
     (
       {
@@ -90,6 +102,11 @@ export function activityTitle(resource: string, operation: string) {
         archive: 'بایگانی',
         delete: 'حذف',
       } as Record<string, string>
-    )[operation] ?? 'تغییر';
+    )[
+      verb
+        .replace(/created$/, 'create')
+        .replace(/updated$/, 'update')
+        .replace(/deleted$/, 'delete')
+    ] ?? 'تغییر';
   return `${action} ${resourceTitles[resource] ?? 'اطلاعات سایت'}`;
 }

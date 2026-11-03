@@ -32,13 +32,8 @@ export function dashboardPeriods(now: Date) {
   let season = month;
   while ((parts(season).month - 1) % 3 !== 0)
     season = shift(season, -parts(shift(season, -1)).day);
-  const quarterTo = shift(season, -1);
-  let quarterFrom = quarterTo;
-  // Three complete Persian months preceding the current season.
-  for (let i = 0; i < 3; i++) {
-    quarterFrom = shift(quarterFrom, 1 - parts(quarterFrom).day);
-    if (i < 2) quarterFrom = shift(quarterFrom, -1);
-  }
+  const quarterFrom = season;
+  const quarterTo = today;
   let year = month;
   while (parts(year).month !== 1)
     year = shift(year, -parts(shift(year, -1)).day);
@@ -129,14 +124,14 @@ export function buildDashboardCharts(
   const present = chart(
     'present',
     'حاضرین در روز (تعداد افراد)',
-    '۳۰ روز اخیر؛ هر کارمند در هر روز یک‌بار، با کارکرد مثبت',
+    '',
     p.daily,
     p.today,
   );
   const late = chart(
     'quarterLate',
     'تاخیرها در فصل اخیر',
-    'مجموع دقیقه تأخیر در روزهای فصل شمسی قبل',
+    `${['بهار', 'تابستان', 'پاییز', 'زمستان'][Math.floor((parts(p.today).month - 1) / 3)]} ${p.jalaliYear}`,
     p.quarterFrom,
     p.quarterTo,
   );
@@ -164,7 +159,7 @@ export function buildDashboardCharts(
   const leave = chart(
     'leave',
     'مرخصی دپارتمان ها در فصل اخیر',
-    'تعداد درخواست‌های تأییدشده دارای هم‌پوشانی با فصل شمسی قبل',
+    late.description,
     p.quarterFrom,
     p.quarterTo,
   );
@@ -260,7 +255,11 @@ export function buildDashboardCharts(
       0,
       d.lateMinutes == null ? number(v[4]) : number(d.lateMinutes),
     );
-    if (worked > 0) presentDays.get(day)?.add(employee.id);
+    if (
+      worked > 0 ||
+      (typeof d.firstIn === 'string' && Number.isFinite(Date.parse(d.firstIn)))
+    )
+      presentDays.get(day)?.add(employee.id);
     if (lateDays.has(day)) lateDays.set(day, lateDays.get(day)! + tardy);
     if (day >= p.week && day <= p.today)
       weeklyHours.set(employee.id, weeklyHours.get(employee.id)! + worked / 60);
@@ -286,13 +285,13 @@ export function buildDashboardCharts(
       );
     }
   }
-  present.points = [...presentDays].map(([key, values]) => ({
+  present.points = [...presentDays].reverse().map(([key, values]) => ({
     key,
     label: dateLabel(key),
     value: values.size,
     unit: 'نفر',
   }));
-  late.points = [...lateDays].map(([key, value]) => ({
+  late.points = [...lateDays].reverse().map(([key, value]) => ({
     key,
     label: dateLabel(key),
     value,

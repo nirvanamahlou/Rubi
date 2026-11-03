@@ -30,6 +30,8 @@ import type {
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
+  supplierFormUseSent?: boolean;
+  supplierHotelSourceSnapshot?: ReservationFormIntake['snapshot'];
   hotelStayKey?: string;
   supplierDocumentKind?: 'HOTEL' | 'TRANSFER' | 'OUTBOUND' | 'RETURN';
   hotelStayOrdinal?: number;

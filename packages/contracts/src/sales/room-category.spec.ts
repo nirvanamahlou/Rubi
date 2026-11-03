@@ -95,3 +95,36 @@ it('offers and validates Family for two adults with children without changing de
     expect(validSalesHotelRooms([{ ...room, childAges: [15] }], 1)).toBe(false);
   }
 });
+
+it.each([[5], [5, 8], [2, 6, 12]])(
+  'allows Double for one adult with children %j and preserves the selection',
+  (...ages) => {
+    const childAges = ages as number[];
+    const room = {
+      ordinal: 1,
+      roomTypeId: '11111111-1111-4111-8111-111111111111',
+      roomTypeNameSnapshot: 'Deluxe Room',
+      adults: 1,
+      childAges,
+      roomCategory: 'DOUBLE' as const,
+    };
+    expect(salesRoomCategories(1, childAges.length)).toEqual([
+      'SINGLE',
+      'DOUBLE',
+      'DOUBLE_EXTRA',
+    ]);
+    expect(validSalesHotelRooms([room], 1)).toBe(true);
+    expect(defaultSalesRoomCategory(room)).toBe('DOUBLE');
+    expect(defaultSalesRoomCategory({ ...room, roomCategory: undefined })).toBe(
+      'SINGLE',
+    );
+    expect(salesRoomDisplayName(room)).toBe('Deluxe Room · Double');
+    expect(salesHotelRoomSummary([room])).toMatchObject({
+      doubleRoomCount: 1,
+      singleRoomCount: 0,
+      extraBedCount: 0,
+    });
+    expect(validSalesHotelRooms([{ ...room, childAges: [] }], 1)).toBe(false);
+    expect(validSalesHotelRooms([{ ...room, childAges: [15] }], 1)).toBe(false);
+  },
+);

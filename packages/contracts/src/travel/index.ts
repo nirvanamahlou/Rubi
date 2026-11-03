@@ -336,6 +336,8 @@ export interface ReservationServicePurchaseV1 {
       totalAmount: string;
     })[];
   };
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   roomPrices?: readonly ReservationRoomPriceV1[];
   hotelStayKey?: string;
@@ -419,6 +421,8 @@ export interface ReservationServicePurchaseInputV1 {
 
 export interface ReservationPurchaseBatchInputV1 {
   supplierFormVersion?: number;
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   /** Restricts this atomic purchase to one canonical hotel stay. */
   hotelStayKey?: string;
@@ -529,6 +533,8 @@ export interface ReservationTableSummaryV1 {
   contractPartyName?: string;
   createdAt: string;
   contractVersion: number;
+  /** Successful operational/contract/party amendment, independent of Sales acknowledgement. */
+  amendedAt?: string | null | undefined;
   correctedAt: string | null;
   cancelledAt: string | null;
   departureDate: string;
@@ -676,6 +682,8 @@ export interface ReservationRoomPriceV1 {
   factor: string;
 }
 export interface VoucherSettingsV1 {
+  /** Supplier output only: primary stay groups all hotels under one registered broker. */
+  sharedHotelBroker?: boolean;
   /** Supplier-form modes; omitted retains the historical combined quotation. */
   hotelTransferSeparate?: boolean;
   hotelTransferSplit?: boolean;
@@ -690,6 +698,8 @@ export interface VoucherSettingsV1 {
     currencyCode: string;
     rooms: ReservationRoomPriceV1[];
   } | null;
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   /** Immutable room composition for this output revision; legacy revisions omit it. */
   rooms?: {

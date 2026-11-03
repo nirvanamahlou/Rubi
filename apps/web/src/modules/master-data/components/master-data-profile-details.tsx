@@ -1,3 +1,4 @@
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
 import type { MasterDataRecord } from '@nora/contracts';
 import type { ReactNode } from 'react';
 
@@ -32,7 +33,7 @@ export function MasterDataProfileIdentity({
           <div className="flex flex-wrap items-center gap-2">
             {record.code ? (
               <Badge className="font-mono" dir="ltr">
-                {record.code}
+                {masterDataDisplayCode(record)}
               </Badge>
             ) : null}
             <Badge

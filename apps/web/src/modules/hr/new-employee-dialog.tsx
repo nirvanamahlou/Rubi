@@ -39,6 +39,7 @@ export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
   extension?: string;
+  extensions?: string[];
   profileRecords?: { id: string; version: number }[];
   identityValues?: string[];
   contactValues?: string[][];
@@ -48,6 +49,7 @@ export interface NewEmployeeFormValue {
   userId?: string;
   firstName: string;
   lastName: string;
+  identificationCode?: string;
   personnelCode: string;
   employmentType: string;
   branch: string;
@@ -96,7 +98,11 @@ export function validateNewEmployeeForm(
   const firstName = value.firstName.trim();
   const lastName = value.lastName.trim();
   const personnelCode = value.personnelCode.trim();
-  if (value.extension && !/^[0-9۰-۹٠-٩]{1,20}$/.test(value.extension.trim()))
+  if (
+    (value.extensions ?? [value.extension ?? '']).some(
+      (item) => item.trim() && !/^[0-9۰-۹٠-٩]{1,20}$/.test(item.trim()),
+    )
+  )
     errors.extension = 'شماره داخلی باید فقط شامل رقم باشد.';
 
   if (value.photoFile && !value.photoValidUntil)
@@ -473,27 +479,83 @@ export function NewEmployeeForm({
               error={identityError}
             />
           ) : null}
-          <label
+          <div
             className={styles.fieldLabel}
             style={
               personnelMode && step !== 0 ? { display: 'none' } : undefined
             }
-            htmlFor="hr-employee-extension"
           >
-            شماره داخلی
-            <input
-              id="hr-employee-extension"
-              name="extension"
-              className={styles.control}
-              dir="ltr"
-              inputMode="numeric"
-              maxLength={20}
-              value={value.extension ?? ''}
-              onChange={(event) => update('extension', event.target.value)}
-              {...errorProps('extension')}
-            />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <label htmlFor="hr-employee-extension">شماره داخلی</label>
+              <button
+                type="button"
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                onClick={() =>
+                  setValue((current) => ({
+                    ...current,
+                    extensions: [
+                      ...(current.extensions ?? [current.extension ?? '']),
+                      '',
+                    ],
+                  }))
+                }
+              >
+                + افزودن
+              </button>
+            </div>
+            {(value.extensions ?? [value.extension ?? '']).map(
+              (extension, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    id={
+                      index === 0
+                        ? 'hr-employee-extension'
+                        : `hr-employee-extension-${index}`
+                    }
+                    aria-label={`شماره داخلی ${index + 1}`}
+                    name={index === 0 ? 'extension' : `extension-${index}`}
+                    className={styles.control}
+                    dir="ltr"
+                    inputMode="numeric"
+                    maxLength={20}
+                    value={extension}
+                    onChange={(event) => {
+                      const next = [
+                        ...(value.extensions ?? [value.extension ?? '']),
+                      ];
+                      next[index] = event.target.value;
+                      setValue((current) => ({ ...current, extensions: next }));
+                      if (index === 0) update('extension', event.target.value);
+                    }}
+                    {...errorProps('extension')}
+                  />
+                  {index > 0 ? (
+                    <button
+                      type="button"
+                      aria-label={`حذف شماره داخلی ${index + 1}`}
+                      onClick={() =>
+                        setValue((current) => ({
+                          ...current,
+                          extensions: (current.extensions ?? []).filter(
+                            (_, i) => i !== index,
+                          ),
+                        }))
+                      }
+                    >
+                      حذف
+                    </button>
+                  ) : null}
+                </div>
+              ),
+            )}
             <FieldError errors={errors} field="extension" />
-          </label>
+          </div>
           <label
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-code"
@@ -515,6 +577,23 @@ export function NewEmployeeForm({
               value={value.personnelCode}
             />
             <FieldError errors={errors} field="personnelCode" />
+          </label>
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-employee-identification-code"
+            style={
+              personnelMode && step !== 1 ? { display: 'none' } : undefined
+            }
+          >
+            <span>کد شناسایی</span>
+            <input
+              className={styles.control}
+              id="hr-employee-identification-code"
+              dir="ltr"
+              readOnly
+              value={value.identificationCode ?? ''}
+              placeholder="تخصیص خودکار پس از ثبت"
+            />
           </label>
           <label
             className={styles.fieldLabel}

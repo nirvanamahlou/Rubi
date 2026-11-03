@@ -166,6 +166,7 @@ export function HrTable({
   selectedIds,
   onSelectionChange,
   showOpenButton = false,
+  showSelection = true,
 }: {
   data: HrPreviewDataset;
   onOpen?: (index: number) => void;
@@ -179,6 +180,7 @@ export function HrTable({
   selectedIds?: ReadonlySet<string>;
   onSelectionChange?: (ids: ReadonlySet<string>) => void;
   showOpenButton?: boolean;
+  showSelection?: boolean;
 }) {
   const localSelection = useHrRowSelection(data.columns.join('|'));
   const selected = selectedIds ?? localSelection.selectedIds;
@@ -227,15 +229,17 @@ export function HrTable({
         <table className={ui.table}>
           <thead>
             <tr>
-              <th scope="col" className={ui.selectionCell}>
-                <input
-                  type="checkbox"
-                  aria-label="انتخاب همه رکوردهای این صفحه"
-                  checked={allSelected}
-                  disabled={busy || !visibleIds.length}
-                  onChange={(e) => toggle(visibleIds, e.target.checked)}
-                />
-              </th>
+              {showSelection ? (
+                <th scope="col" className={ui.selectionCell}>
+                  <input
+                    type="checkbox"
+                    aria-label="انتخاب همه رکوردهای این صفحه"
+                    checked={allSelected}
+                    disabled={busy || !visibleIds.length}
+                    onChange={(e) => toggle(visibleIds, e.target.checked)}
+                  />
+                </th>
+              ) : null}
               {data.columns.map((column, i) => (
                 <th scope="col" key={`${i}-${column}`}>
                   {column}
@@ -253,17 +257,19 @@ export function HrTable({
               const index = start + offset;
               return (
                 <tr key={recordKey(data, index) || index}>
-                  <td className={ui.selectionCell}>
-                    <input
-                      type="checkbox"
-                      aria-label={`انتخاب ${cellText(row[1]) || cellText(row[0])}`}
-                      checked={selected.has(recordKey(data, index))}
-                      disabled={busy}
-                      onChange={(e) =>
-                        toggle([recordKey(data, index)], e.target.checked)
-                      }
-                    />
-                  </td>
+                  {showSelection ? (
+                    <td className={ui.selectionCell}>
+                      <input
+                        type="checkbox"
+                        aria-label={`انتخاب ${cellText(row[1]) || cellText(row[0])}`}
+                        checked={selected.has(recordKey(data, index))}
+                        disabled={busy}
+                        onChange={(e) =>
+                          toggle([recordKey(data, index)], e.target.checked)
+                        }
+                      />
+                    </td>
+                  ) : null}
                   {data.columns.map((column, col) => (
                     <td
                       key={`${column}-${col}`}

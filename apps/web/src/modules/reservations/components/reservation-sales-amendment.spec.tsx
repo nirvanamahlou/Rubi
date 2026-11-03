@@ -113,4 +113,45 @@ it('keeps saved room types and categories visible in the hotel editor before mas
   expect(html).toContain('Saved Deluxe');
   expect(html).toContain('Double');
   expect(html).toContain('دسته‌بندی اتاق');
+  expect(html).toContain('Jan');
+  expect(html).not.toContain('دی ۱۴۰۵');
 });
+
+it.each(['HOTEL', 'CORRECTION'] as const)(
+  'shows additional stay date controls in the %s editor',
+  (section) => {
+    const composite = structuredClone(contract);
+    composite.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'second',
+        hotelNameSnapshot: 'SECOND HOTEL ITINERARY',
+        cityId: 'second-city',
+        checkInDate: '2027-01-04',
+        checkOutDate: '2027-01-09',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'second-type',
+            roomTypeNameSnapshot: 'SECOND SUITE',
+            adults: 1,
+            childAges: [],
+            roomCategory: 'SINGLE',
+          },
+        ],
+      },
+    ];
+    const html = renderToStaticMarkup(
+      <ReservationSalesAmendment
+        contract={composite}
+        requestId="request"
+        section={section}
+        onSaved={() => undefined}
+      />,
+    );
+    expect(html).toContain('SECOND HOTEL ITINERARY');
+    expect(html).toContain('SECOND SUITE');
+    expect(html).toContain('2027-01-04');
+    expect(html).toContain('2027-01-09');
+    expect(composite.hotelSelection!.checkInDate).toBe('2027-01-01');
+  },
+);

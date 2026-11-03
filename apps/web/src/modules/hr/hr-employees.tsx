@@ -4,7 +4,11 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { HrBootstrapDto, HrEmployeeDto } from '@nora/contracts';
+import type {
+  HrBootstrapDto,
+  HrEmployeeDto,
+  HrRecordDto,
+} from '@nora/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import {
@@ -36,11 +40,14 @@ import { hrStatusText } from './hr-presentation';
 import { hrDisplayDate } from './hr-dates';
 import { defaultPersonnelIdentity } from './personnel-identity-fields';
 import { useHrEmployeeRecords } from './hr-employee-records';
+import { employeeEmploymentDates } from './employee-employment-dates';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
   branches: readonly { id: string; name: string }[],
+  records: readonly HrRecordDto[] = [],
 ): HrPreviewDataset {
+  const dates = employeeEmploymentDates(records);
   return {
     columns: [
       'کد پرسنلی',
@@ -51,19 +58,23 @@ export function employeeDataset(
       'عنوان شغلی',
       'رده',
       'مدیر مستقیم',
-      'تاریخ شروع',
+      'تاریخ شروع به کار',
+      'تاریخ پایان قرارداد',
+      'تاریخ پایان همکاری',
       'وضعیت',
     ],
     rows: employees.map((item) => [
       item.personnelCode,
       item.name,
-      item.extension || '—',
+      item.extensions?.join('، ') || item.extension || '—',
       item.kind,
       `${item.companyName || branches.find((branch) => branch.id === item.branchId)?.name || ''} / ${item.unit}`,
       item.position,
       item.grade,
       item.manager,
       hrDisplayDate(item.startedAtValue),
+      hrDisplayDate(dates.get(item.id)?.contractEnd || '—'),
+      hrDisplayDate(dates.get(item.id)?.employmentEnd || '—'),
       hrStatusText(item.status),
     ]),
     recordIds: employees.map((item) => item.id),
@@ -118,9 +129,13 @@ export function employeeFormValue(
       : {}),
     userId: employee.userId ?? '',
     extension: employee.extension ?? '',
+    extensions: employee.extensions?.length
+      ? employee.extensions
+      : [employee.extension ?? ''],
     firstName: parts?.[0] ?? firstName ?? '',
     lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
+    identificationCode: employee.identificationCode ?? '',
     employmentType: employee.kind,
     branch:
       employee.companyName ||
@@ -371,6 +386,9 @@ export function HrEmployeeEditor({
           const input = {
             personnelCode: value.personnelCode.trim(),
             extension: value.extension?.trim() ?? '',
+            extensions: (value.extensions ?? [value.extension ?? ''])
+              .map((item) => item.trim())
+              .filter(Boolean),
             ...(value.identityValues
               ? {
                   identityValues: value.identityValues,
@@ -409,6 +427,7 @@ export function HrEmployeeEditor({
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
                 extension: input.extension,
+                extensions: input.extensions,
                 personnelCode: value.personnelCode.trim(),
                 ...(value.branch !==
                 (employee.companyName ||
@@ -552,7 +571,6 @@ export function HrEmployees({
       store
         .data!.employees.filter(
           (item) =>
-            item.status !== 'پایان همکاری' &&
             (!groupId || members.includes(item.id)) &&
             (!branch ||
               selectedCompany?.isHeadquarters ||
@@ -588,7 +606,11 @@ export function HrEmployees({
       members,
     ],
   );
-  const dataset = employeeDataset(filtered, store.data!.branches);
+  const dataset = employeeDataset(
+    filtered,
+    store.data!.branches,
+    references.data.records,
+  );
   const selection = useHrRowSelection(
     JSON.stringify([query, branch, unit, status, range, groupId, sort]),
   );
@@ -619,6 +641,7 @@ export function HrEmployees({
           </>
         }
       />
+      {references.error ? <p role="alert">{references.error}</p> : null}
       <HrPanel title="فهرست کارکنان">
         <div className={ui.filters}>
           <label>

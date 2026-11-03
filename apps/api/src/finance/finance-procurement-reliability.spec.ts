@@ -13,7 +13,11 @@ const actor = {
     'finance.receipt.approve',
   ],
 } as unknown as AuthenticatedActor;
-function fixture(status = 'CORRECTION_REQUIRED', paid = '0') {
+function fixture(
+  status = 'CORRECTION_REQUIRED',
+  paid = '0',
+  currencyCode = 'IRR',
+) {
   const create = vi.fn(async ({ data }) => ({
     ...data,
     id: 'finance-revision',
@@ -27,9 +31,17 @@ function fixture(status = 'CORRECTION_REQUIRED', paid = '0') {
     amount: '150',
     supplier: { id: 'supplier-1' },
     handoffCreatedAt: '2026-10-04T10:00:00Z',
-    currencyCode: 'IRR',
+    currencyCode,
   };
   const tx = {
+    financeSettlementAccount: {
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'account', currencyCode: 'IRR' }),
+    },
+    masterPaymentMethod: {
+      findFirst: vi.fn().mockResolvedValue({ id: 'method' }),
+    },
     $queryRaw: vi
       .fn()
       .mockResolvedValue([{ at: new Date('2026-10-18T00:00:00Z') }]),
@@ -61,9 +73,51 @@ function fixture(status = 'CORRECTION_REQUIRED', paid = '0') {
     procurement as never,
     {} as never,
   );
-  return { service, create, procurement };
+  return { service, create, procurement, tx };
 }
 describe('Procurement source version integrity', () => {
+  it('settles the original foreign invoice units while recording the actual IRR bank movement', async () => {
+    const f = fixture('APPROVED', '0', 'EUR');
+    f.tx.financeProcurementInvoiceRevision.findFirst.mockResolvedValue({
+      version: 1,
+      sourceVersion: 2,
+      status: 'APPROVED',
+      cumulativePaid: new Prisma.Decimal(0),
+      remainingAmount: new Prisma.Decimal(150),
+    } as never);
+    const result = await f.service.payProcurementInvoice(
+      'invoice-1',
+      {
+        version: 1,
+        expectedVersion: 1,
+        expectedSourceVersion: 2,
+        accountId: 'account',
+        paymentMethodId: 'method',
+        paidAmount: '60',
+        exchangeRateToIrr: '800000',
+        transferAt: '2026-10-04T10:00:00Z',
+      },
+      actor,
+    );
+    expect(result).toMatchObject({ paidAmount: '60', remainingAmount: '90' });
+    expect(f.create.mock.calls[0]![0].data).toMatchObject({
+      paidAmount: '60',
+      paymentCurrencyCode: 'EUR',
+      rialEquivalent: '48000000',
+    });
+    expect(f.tx.financeAccountingEvent.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            kind: 'SUPPLIER_PAYMENT',
+            amount: '48000000.0000',
+            currency: 'IRR',
+            settlementAccountId: 'account',
+          }),
+        ],
+      }),
+    );
+  });
   it('rejects approval of a producer version newer than the amount the user reviewed', async () => {
     const f = fixture();
     await expect(

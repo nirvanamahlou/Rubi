@@ -51,6 +51,23 @@ const rows: PackageSaleRow[] = ['a', 'b'].map((id) => ({
     },
   ],
 }));
+it('shows hotel purchase even when flight purchase is unavailable', () => {
+  const price = rows[0]!.prices[0]!;
+  const previous = price.currencyAmounts[0]!.purchase;
+  price.currencyAmounts[0]!.purchase = null;
+  try {
+    const cells = render().filter((node) => node.type === 'td');
+    expect(
+      cells.some(
+        (node) =>
+          Array.isArray(node.props.children) &&
+          node.props.children.includes(price.hotelPurchase),
+      ),
+    ).toBe(true);
+  } finally {
+    price.currencyAmounts[0]!.purchase = previous;
+  }
+});
 function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   tree = canonicalTestTree(tree);
   if (Array.isArray(tree)) return tree.flatMap(nodes);
@@ -74,6 +91,36 @@ function render() {
     }),
   );
 }
+
+it('shows the registered hotel purchase when full flight purchase and profit are still unknown', () => {
+  const tree = nodes(
+    PackageCompositionSales({
+      rows: rows.map((row) => ({
+        ...row,
+        prices: row.prices.map((p) => ({
+          ...p,
+          currencyAmounts: p.currencyAmounts.map((c) => ({
+            ...c,
+            purchase: null,
+            profit: null,
+          })),
+        })),
+      })),
+      overrides: [],
+      onChange: vi.fn(),
+      selectedRoomKeys: [],
+      onSelect: vi.fn(),
+    }),
+  );
+  expect(
+    tree.some(
+      (n) =>
+        n.type === 'td' &&
+        Array.isArray(n.props.children) &&
+        n.props.children.includes('100'),
+    ),
+  ).toBe(true);
+});
 function click(text: string) {
   const node = render().find(
     (n) => n.props.children === text && typeof n.props.onClick === 'function',
