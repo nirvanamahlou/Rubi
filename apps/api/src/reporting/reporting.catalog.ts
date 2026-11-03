@@ -55,10 +55,10 @@ const baseCatalog: readonly ReportingCatalogEntryV1[] = [
   readyPublicProjection(
     'sales_by_organization',
     'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
-    'CONTRACT_CURRENCY',
+    'CONTRACT',
     'reporting.sales.read',
     'sales.reporting.contract-currency.v1',
-    3,
+    4,
   ),
   readyPublicProjection(
     'sales_by_service_route',

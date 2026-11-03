@@ -25,6 +25,7 @@ export interface SalesByOrganizationReportResult {
     refundAmount?: string;
     settlementBalance?: string;
     pendingReservationActions?: number;
+    amountsByCurrency?: readonly { currencyCode: string; amount: string }[];
     sourceValues?: Readonly<Record<string, string | number>>;
   }[];
   total: number;
@@ -120,6 +121,7 @@ interface TravelReportResult {
   sourceProjection: string;
   columns?: readonly { key: string; label: string; kind: string }[];
   rows: readonly {
+    amountsByCurrency?: readonly { currencyCode: string; amount: string }[];
     sourceValues?: Readonly<Record<string, string | number>>;
     grainId: string;
     primaryDimension: string;
@@ -273,11 +275,14 @@ export const reportingApi = {
           branchId: row.primaryDimension,
           ownerUserId: row.secondaryDimension,
           amount: String(
-            travel.chartMeasure
+            travel.chartMeasure && !row.amountsByCurrency
               ? (row.sourceValues?.[travel.chartMeasure] ?? '0')
               : row.salesAmount,
           ),
           currencyCode: row.currencyCode,
+          ...(row.amountsByCurrency
+            ? { amountsByCurrency: row.amountsByCurrency }
+            : {}),
           contractCount: row.orderCount,
           ...(travel.dataLayout === 'SOURCE_COLUMNS'
             ? { sourceValues: row.sourceValues ?? {} }

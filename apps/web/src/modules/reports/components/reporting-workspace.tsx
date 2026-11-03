@@ -1,5 +1,6 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
+import { useReportLiveRefresh } from '../model/use-report-live-refresh';
 import resultTableStyles from './report-result-table.module.css';
 
 import {
@@ -973,9 +974,23 @@ export function ReportResultPanel({
     (!result.sourceDataAsOfUtc ||
       (result.dataLayout !== 'SOURCE_COLUMNS' && result.warnings.length)),
   );
+  const chartRows = useMemo(
+    () =>
+      (result?.rows ?? []).flatMap((row) =>
+        row.amountsByCurrency?.length
+          ? row.amountsByCurrency.map((money) => ({
+              ...row,
+              grainId: row.grainId + ':' + money.currencyCode,
+              amount: money.amount,
+              currencyCode: money.currencyCode,
+            }))
+          : [row],
+      ),
+    [result],
+  );
   const maxAmountByCurrency = useMemo(() => {
     const maximums = new Map<string, number>();
-    for (const row of result?.rows ?? []) {
+    for (const row of chartRows) {
       maximums.set(
         row.currencyCode,
         Math.max(
@@ -985,13 +1000,13 @@ export function ReportResultPanel({
       );
     }
     return maximums;
-  }, [result]);
+  }, [chartRows]);
   const pieGroups = useMemo(() => {
     const rowsByCurrency = new Map<
       string,
       NonNullable<typeof result>['rows'][number][]
     >();
-    for (const row of result?.rows ?? []) {
+    for (const row of chartRows) {
       const rows = rowsByCurrency.get(row.currencyCode) ?? [];
       rows.push(row);
       rowsByCurrency.set(row.currencyCode, rows);
@@ -1031,7 +1046,7 @@ export function ReportResultPanel({
         segments,
       };
     });
-  }, [result]);
+  }, [chartRows]);
   const availableChartTypes = reportChartTypes(report);
   const detailColumns = useMemo(() => {
     const rows = result?.rows ?? [];
@@ -1511,7 +1526,7 @@ export function ReportResultPanel({
                 className="max-h-[32rem] space-y-3 overflow-y-auto overscroll-contain pe-2"
                 tabIndex={0}
               >
-                {result.rows.map((row) => {
+                {chartRows.map((row) => {
                   const maximum =
                     maxAmountByCurrency.get(row.currencyCode) ?? 0;
                   const width = maximum
@@ -1562,7 +1577,7 @@ export function ReportResultPanel({
                 tabIndex={0}
               >
                 <div className="flex min-w-max items-end gap-4 border-b border-border px-3 pt-8">
-                  {result.rows.map((row) => {
+                  {chartRows.map((row) => {
                     const maximum =
                       maxAmountByCurrency.get(row.currencyCode) ?? 0;
                     const height = maximum
@@ -2070,6 +2085,16 @@ export function ReportingWorkspace({
     setRunError(null);
   }
 
+  const requestGeneration = useRef(0);
+  useReportLiveRefresh(
+    configurationOpen && resultPreviewVisible && connectedReportSelected,
+    JSON.stringify([selected.code, reportExportQuery, resultMode]),
+    (changed) => {
+      if (changed || !running)
+        void runReport(changed ? 1 : (result?.page ?? 1));
+    },
+  );
+
   async function runReport(
     page = 1,
     sort = resultSort,
@@ -2089,6 +2114,7 @@ export function ReportingWorkspace({
       });
       return;
     }
+    const generation = ++requestGeneration.current;
     setRunning(true);
     setRunError(null);
     setResult(null);
@@ -2121,12 +2147,14 @@ export function ReportingWorkspace({
         pageSize: reportResultPageSize(mode),
         sort,
       });
+      if (generation !== requestGeneration.current) return;
       setAvailableFilterOptions(preview.filterOptions);
       setResult(preview);
     } catch (error) {
-      setRunError(reportingRunError(error));
+      if (generation === requestGeneration.current)
+        setRunError(reportingRunError(error));
     } finally {
-      setRunning(false);
+      if (generation === requestGeneration.current) setRunning(false);
       if (recordAction) {
         setRunHistoryRevision((current) => current + 1);
         void refreshWorkspaceCounts();

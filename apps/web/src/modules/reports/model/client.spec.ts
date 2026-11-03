@@ -353,3 +353,55 @@ describe('reporting public projection client', () => {
     );
   });
 });
+
+it('keeps exact currency components for charts while the table uses one combined amount cell', async () => {
+  const payload = {
+    reportCode: 'sales_by_organization',
+    reportVersion: 4,
+    grain: 'CONTRACT',
+    sourceProjection: 'sales.reporting.contract-currency.v1',
+    dataLayout: 'SOURCE_COLUMNS',
+    chartMeasure: 'salesAmount',
+    columns: [
+      { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
+    ],
+    rows: [
+      {
+        grainId: 'group',
+        primaryDimension: 'branch',
+        secondaryDimension: 'owner',
+        currencyCode: 'IRR',
+        orderCount: 1,
+        passengerCount: 3,
+        salesAmount: '900',
+        amountsByCurrency: [
+          { currencyCode: 'IRR', amount: '900' },
+          { currencyCode: 'EUR', amount: '20.1234' },
+        ],
+        sourceValues: { salesAmount: '900 ریال - 20.1234 €' },
+      },
+    ],
+    total: 1,
+    page: 1,
+    pageSize: 5,
+    previewLimit: 100,
+    generatedAtUtc: '2026-11-03T10:00:00Z',
+    sourceDataAsOfUtc: '2026-11-03T10:00:00Z',
+    totalsByCurrency: [],
+    filterSnapshot: { filters: {}, branchIds: [] },
+    filterOptions: {},
+    warnings: [],
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
+  );
+  const result = await reportingApi.salesByOrganization();
+  expect(result.rows[0]?.amount).toBe('900');
+  expect(result.rows[0]?.amountsByCurrency).toEqual(
+    payload.rows[0]!.amountsByCurrency,
+  );
+  expect(result.rows[0]?.sourceValues?.salesAmount).toBe(
+    '900 ریال - 20.1234 €',
+  );
+});

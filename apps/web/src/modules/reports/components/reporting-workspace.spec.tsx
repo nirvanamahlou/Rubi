@@ -564,3 +564,45 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('aria-label="فیلتر گزارش‌های من"');
   });
 });
+
+it('shows one organization table row with combined currencies and separates them again in pie charts', () => {
+  const combined: SalesByOrganizationReportResult = {
+    ...reportResult,
+    dataLayout: 'SOURCE_COLUMNS',
+    columns: [
+      { key: 'orderCount', label: 'تعداد قرارداد', kind: 'NUMBER' },
+      { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
+      { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
+    ],
+    rows: [
+      {
+        ...reportResult.rows[0]!,
+        amount: '900',
+        contractCount: 1,
+        passengerCount: 3,
+        amountsByCurrency: [
+          { currencyCode: 'IRR', amount: '900' },
+          { currencyCode: 'EUR', amount: '20' },
+        ],
+        sourceValues: {
+          orderCount: 1,
+          passengerCount: 3,
+          salesAmount: '900 ریال - 20 €',
+        },
+      },
+    ],
+  };
+  const table = renderResultPanel({ started: true, result: combined });
+  expect(table).toContain('900 ریال - 20 €');
+  expect(table.match(/<tbody/g)).toHaveLength(1);
+  const pie = renderResultPanel({
+    started: true,
+    result: combined,
+    mode: 'chart',
+    chartType: 'pie',
+  });
+  expect(pie).toContain('€');
+  expect(pie).toContain('راهنمای رنگ‌های نمودار IRR');
+  expect(pie).toContain('راهنمای رنگ‌های نمودار EUR');
+  expect(pie).not.toContain('900 ریال - 20 €');
+});

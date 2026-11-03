@@ -9,6 +9,7 @@ import type {
   SalesContractStatus,
 } from '@nora/database';
 import { calculateSalesBalances } from './sales.domain';
+import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 
 export interface SalesReportingQuery {
   filters: Readonly<Record<string, string | readonly string[]>>;
@@ -111,7 +112,9 @@ export async function readSalesReportingProjection(
                 confirmedAt: { not: null },
               },
             ]),
-        ...(status ? [{ status: status as SalesContractStatus }] : []),
+        ...(status && status !== 'CANCELLED'
+          ? [{ status: status as SalesContractStatus }]
+          : []),
         {
           createdAt: {
             ...(scalar('fromUtc') ? { gte: new Date(scalar('fromUtc')!) } : {}),
@@ -152,11 +155,28 @@ export async function readSalesReportingProjection(
     throw new BadRequestException(
       'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.',
     );
-  if (rows.some((row) => !row.priceComponents.length))
+  const cancellations = await readReservationReportingCancellations(
+    client,
+    rows.map((row) => row.id),
+  );
+  const currentRows = rows.filter((row) => {
+    const effectiveStatus = cancellations.has(row.id)
+      ? 'CANCELLED'
+      : row.status;
+    return (
+      (pipeline || !cancellations.has(row.id)) &&
+      (!status || effectiveStatus === status)
+    );
+  });
+  if (currentRows.some((row) => !row.priceComponents.length))
     throw new ConflictException(
       'قیمت برخی قراردادها کامل نیست؛ گزارش مبلغ قابل محاسبه نیست.',
     );
-  return rows.flatMap((row) => {
+  return currentRows.flatMap((row) => {
+    const effectiveStatus = cancellations.has(row.id)
+      ? 'CANCELLED'
+      : row.status;
+    if (status && effectiveStatus !== status) return [];
     const balances = calculateSalesBalances(
       row.priceComponents.map((p) => ({ ...p, amount: p.amount.toString() })),
       actor.permissions.includes('sales.payments.read')
@@ -174,14 +194,18 @@ export async function readSalesReportingProjection(
         ownerUserId: row.ownerUserId,
         originId: row.originId,
         destinationId: row.destinationId,
-        status: row.status,
+        status: effectiveStatus,
         reservationStatus: row.reservationStatus,
         passengerCount: row._count.passengers,
         serviceKinds: [
           ...new Set(row.services.map((service) => service.kind)),
         ].sort(),
         occurredAt: row.createdAt,
-        dataAsOf: row.updatedAt,
+        dataAsOf:
+          cancellations.get(row.id) &&
+          cancellations.get(row.id)! > row.updatedAt
+            ? cancellations.get(row.id)!
+            : row.updatedAt,
         departureDate: row.departureDate,
         currencyCode: balance.currencyCode,
         salesAmount: balance.amount,
