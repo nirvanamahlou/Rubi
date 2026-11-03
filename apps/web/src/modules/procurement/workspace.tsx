@@ -384,6 +384,8 @@ function WorkspaceState({
       <PettyRegistrations
         bootstrap={bootstrap}
         onBack={() => navigateGroup(0)}
+        selectedBranchId={registrationBranch}
+        onBranchChange={setRegistrationBranch}
       />
     );
   if (group === 5) return <PurchaseOrdersSection bootstrap={bootstrap} />;

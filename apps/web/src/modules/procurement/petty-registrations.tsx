@@ -100,7 +100,7 @@ export function PettyRegistrationForm({
         title,
         amount,
         costCenter,
-        fee,
+        fee: fee || '0',
         description,
         occurredAt:
           date.length === 10
