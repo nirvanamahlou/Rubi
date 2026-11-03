@@ -5,6 +5,18 @@ import { strToU8, zipSync } from 'fflate';
 import { LocalDocumentStorage } from '../documents/documents.storage';
 import type { TravelReportResultV1 } from './reporting.contracts';
 
+function reportCellValue(
+  row: TravelReportResultV1['rows'][number],
+  key: string,
+) {
+  if (row.sourceValues && Object.hasOwn(row.sourceValues, key))
+    return row.sourceValues[key];
+  const value: unknown = Object.entries(row).find(
+    ([name]) => name === key,
+  )?.[1];
+  return typeof value === 'string' || typeof value === 'number' ? value : '';
+}
+
 function escapeXml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -34,7 +46,9 @@ function csv(result: TravelReportResultV1, reportName: string) {
   );
   for (const row of result.rows)
     lines.push(
-      result.columns.map((column) => csvCell(row[column.key])).join(','),
+      result.columns
+        .map((column) => csvCell(reportCellValue(row, column.key)))
+        .join(','),
     );
   return Buffer.from(`\uFEFF${lines.join('\r\n')}`, 'utf8');
 }
@@ -194,7 +208,9 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     filters.map(([, value]) => ({ value, style: 3 })),
     tableColumnNames.map((label) => ({ value: label, style: 2 })),
     ...result.rows.map((row) =>
-      result.columns.map((column) => datasetCell(column, row[column.key])),
+      result.columns.map((column) =>
+        datasetCell(column, reportCellValue(row, column.key)),
+      ),
     ),
   ];
   const columnCount = Math.max(2, filters.length, result.columns.length);

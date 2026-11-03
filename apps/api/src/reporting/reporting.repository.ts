@@ -9,6 +9,10 @@ import {
 } from './reporting-native-sales';
 import type { SalesReportingActor } from '../sales/sales-reporting.public';
 import { nativePaymentReport } from './reporting-native-payments';
+import {
+  nativeOperationalReport,
+  OPERATIONAL_REPORTS,
+} from './reporting-native-operational';
 
 export interface ReportingFactRow {
   id: string;
@@ -84,6 +88,14 @@ export class ReportingRepository {
     actor: SalesReportingActor,
     includeAllRows = false,
   ) {
+    if (Object.hasOwn(OPERATIONAL_REPORTS, code))
+      return nativeOperationalReport(
+        this.database.client,
+        code,
+        query,
+        actor,
+        includeAllRows,
+      );
     if (code === 'payments_refunds')
       return nativePaymentReport(
         this.database.client,

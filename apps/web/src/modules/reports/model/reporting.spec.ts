@@ -14,7 +14,7 @@ describe('reporting catalog', () => {
       reportCatalog
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
-    ).toHaveLength(13);
+    ).toHaveLength(15);
     expect(
       reportCatalog.find((report) => report.code === 'due_checks')
         ?.availability,
@@ -111,10 +111,7 @@ describe('reporting catalog', () => {
         (report) =>
           (report.approvedView.startsWith('reporting_') ||
             report.approvedView.startsWith('reporting.') ||
-            [
-              'sales.reporting.contract-currency.v1',
-              'sales.reporting.payment-events.v1',
-            ].includes(report.approvedView)) &&
+            /^[a-z-]+\.reporting\.[a-z.-]+\.v1$/.test(report.approvedView)) &&
           report.outputs.join(',') === 'XLSX,PDF,CSV,API',
       ),
     ).toBe(true);
@@ -123,20 +120,14 @@ describe('reporting catalog', () => {
   it('keeps feature-backed cards pending until their own producers publish a projection', () => {
     const featureBackedReports = [
       'agency_contract_risk',
-      'ticket_capacity',
       'supplier_payment_queue',
-      'reservation_delivery_readiness',
       'lead_pipeline',
       'customer_satisfaction',
       'customer_consent_coverage',
-      'document_compliance',
       'workbench_due_actions',
-      'hotel_rate_comparison',
       'future_travel_commitments',
       'customer_payment_aging',
-      'reservation_cycle_time',
       'manifest_finance_exclusions',
-      'customer_portfolio_growth',
     ];
 
     expect(

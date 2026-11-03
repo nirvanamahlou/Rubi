@@ -12,6 +12,57 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reporting public projection client', () => {
+  it('preserves all native source cells and chart measure while forwarding dynamic column sort', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          reportCode: 'ticket_capacity',
+          reportVersion: 1,
+          grain: 'INVENTORY',
+          sourceProjection: 'tickets.reporting.capacity.v1',
+          dataLayout: 'SOURCE_COLUMNS',
+          chartMeasure: 'allocated',
+          columns: [
+            { key: 'primaryDimension', label: 'پرواز', kind: 'TEXT' },
+            { key: 'remaining', label: 'ظرفیت باقی‌مانده', kind: 'NUMBER' },
+          ],
+          rows: [
+            {
+              grainId: 'o',
+              primaryDimension: 'نمونه',
+              secondaryDimension: '',
+              currencyCode: '',
+              orderCount: 0,
+              salesAmount: '0',
+              sourceValues: { allocated: 7, remaining: 3 },
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 5,
+          previewLimit: 100,
+          generatedAtUtc: '2026-11-03T00:00:00Z',
+          sourceDataAsOfUtc: '2026-11-03T00:00:00Z',
+          totalsByCurrency: [],
+          filterSnapshot: { branchIds: [], filters: {} },
+          filterOptions: {},
+          warnings: [],
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const result = await reportingApi.salesByOrganization({
+      reportCode: 'ticket_capacity',
+      sort: { column: 'remaining', direction: 'ASC' },
+    });
+    expect(result.dataLayout).toBe('SOURCE_COLUMNS');
+    expect(result.rows[0]?.amount).toBe('7');
+    expect(result.rows[0]?.sourceValues?.remaining).toBe(3);
+    expect(JSON.parse(fetch.mock.calls[0]?.[1].body).sort).toEqual({
+      column: 'remaining',
+      direction: 'ASC',
+    });
+  });
   it('preserves native labels and grain without exposing unavailable cost or issuance measures', async () => {
     const columns = [
       { key: 'primaryDimension', label: 'شعبه' },
