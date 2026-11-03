@@ -723,3 +723,25 @@ it('publishes logo-free vouchers without fetching issuer logo and preserves norm
   );
   expect(denied.status).toBe(409);
 });
+it('loads the original Ghestiroo logo for the authorized reservation PDF instead of an old company upload', async () => {
+  const companyIntake = structuredClone(intake);
+  companyIntake.workflow.branding = {
+    kind: 'OWN',
+    companyCode: 'GHESATI_RO',
+    referenceId: 'company',
+    name: 'قسطی رو',
+    logoFileId: 'old-logo',
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(Response.json({ data: companyIntake }));
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(request(), { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(200);
+  expect(
+    fetcher.mock.calls.some(([url]) =>
+      String(url).includes('/documents/old-logo'),
+    ),
+  ).toBe(false);
+  expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
+});

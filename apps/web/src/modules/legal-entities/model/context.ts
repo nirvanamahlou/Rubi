@@ -55,7 +55,14 @@ export function legalEntityBrand(
 ): LegalEntityBrand {
   if (selection === 'JAHAN_BASTAN') return jahanBastanBrand;
   if (selection === 'JAHAN_ACADEMIA') return placeholderBrand('جهان آکادمی');
-  if (selection === 'GHESATI_RO') return placeholderBrand('قسطی رو');
+  if (selection === 'GHESATI_RO')
+    return {
+      alt: 'لوگوی شرکت قسطی رو',
+      label: 'CRM شرکت قسطی رو',
+      src: '/brand/ghesati-ro.png',
+      width: 1774,
+      height: 887,
+    };
   return niyayeshSeirBrand;
 }
 

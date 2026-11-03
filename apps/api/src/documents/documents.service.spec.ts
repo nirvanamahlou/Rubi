@@ -74,6 +74,8 @@ function row(
   return {
     id: '44444444-4444-4444-8444-444444444444',
     archiveCode: 'DOC-20260901-ABC123',
+    senderName: null,
+    isIncomingLetter: false,
     title: 'قرارداد محرمانه',
     description: 'شرح محرمانه',
     documentTypeId: '55555555-5555-4555-8555-555555555555',
@@ -185,6 +187,143 @@ describe('DocumentsService security and persistence flow', () => {
       iamStepUp as unknown as IamStepUpPort,
       hrDirectory as unknown as HrDirectoryService,
     );
+  });
+
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+    'CLEAN',
+  ] as const)(
+    'delivers incoming PDF before scanner availability (%s)',
+    async (scanStatus) => {
+      const incoming = {
+        ...row({ confidentiality: 'INTERNAL', scanStatus }),
+        isIncomingLetter: true,
+        senderName: 'Sender',
+      };
+      repository.findDetail.mockResolvedValue(incoming);
+      const reader: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.download',
+        ],
+      };
+      await expect(
+        service.preview(incoming.id, reader, {}),
+      ).resolves.toMatchObject({ mimeType: 'application/pdf' });
+      await expect(
+        service.download(incoming.id, reader, {}),
+      ).resolves.toMatchObject({ mimeType: 'application/pdf' });
+      expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(['INFECTED', 'QUARANTINED'] as const)(
+    'keeps known blocked incoming files unavailable (%s)',
+    async (scanStatus) => {
+      const incoming = {
+        ...row({ confidentiality: 'INTERNAL', scanStatus }),
+        isIncomingLetter: true,
+      };
+      repository.findDetail.mockResolvedValue(incoming);
+      const reader: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.download',
+        ],
+      };
+      await expect(service.preview(incoming.id, reader, {})).rejects.toThrow();
+      await expect(service.download(incoming.id, reader, {})).rejects.toThrow();
+      expect(storage.openQuarantined).not.toHaveBeenCalled();
+    },
+  );
+
+  it('preserves file permissions and confidentiality on incoming files', async () => {
+    const incoming = {
+      ...row({ confidentiality: 'INTERNAL' }),
+      isIncomingLetter: true,
+    };
+    repository.findDetail.mockResolvedValue(incoming);
+    await expect(
+      service.preview(incoming.id, actor, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.download(incoming.id, actor, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    repository.findDetail.mockResolvedValue({
+      ...incoming,
+      confidentiality: 'CONFIDENTIAL',
+      confidentialAccessCodeHash: 'hash',
+    });
+    await expect(
+      service.download(
+        incoming.id,
+        {
+          ...actor,
+          permissions: [
+            ...actor.permissions,
+            'documents.file.read',
+            'documents.download',
+          ],
+        },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(storage.openQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('accepts module/type collection filters while retaining incoming and access scopes', async () => {
+    repository.list.mockResolvedValue({ rows: [], total: 0 });
+    await service.list(
+      {
+        sourceModule: ' marketing ',
+        sourceEntityType: ' content-asset ',
+        isIncomingLetter: true,
+      },
+      actor,
+    );
+    expect(repository.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'marketing',
+        sourceEntityType: 'content-asset',
+        isIncomingLetter: true,
+      }),
+      actor.branchIds,
+      ['GENERAL', 'SALES'],
+      actor.userId,
+      false,
+    );
+  });
+
+  it('rejects incoming uploads without a sender before storing bytes', async () => {
+    const buffer = Buffer.from('%PDF-1.7');
+    await expect(
+      service.upload(
+        {
+          title: 'Letter',
+          documentTypeId: row().documentTypeId,
+          categoryId: row().categoryId!,
+          branchId,
+          ownerUserId: actor.userId,
+          isIncomingLetter: true,
+          senderName: '   ',
+        },
+        {
+          buffer,
+          size: buffer.length,
+          mimetype: 'application/pdf',
+          originalname: 'letter.pdf',
+        },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(storage.putQuarantined).not.toHaveBeenCalled();
   });
 
   it('derives allowed domains only from exact IAM permissions', () => {
@@ -1491,6 +1630,8 @@ describe('DocumentsService security and persistence flow', () => {
     });
     const dto = {
       title: 'قرارداد واقعی',
+      senderName: '  Sender  ',
+      isIncomingLetter: true,
       documentTypeId: '55555555-5555-4555-8555-555555555555',
       categoryId: '66666666-6666-4666-8666-666666666666',
       branchId,
@@ -1540,6 +1681,8 @@ describe('DocumentsService security and persistence flow', () => {
     expect(repository.createUploaded).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'قرارداد واقعی',
+        senderName: 'Sender',
+        isIncomingLetter: true,
         detectedMimeType: 'application/pdf',
         confidentiality: 'CONFIDENTIAL',
         ipSummary: '192.0.2.x',

@@ -18,17 +18,26 @@ export const DialogClose = DialogPrimitive.Close;
 
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    showCloseButton?: boolean;
+  }
 >(
   (
-    { children, className, onInteractOutside, onPointerDownOutside, ...props },
+    {
+      children,
+      className,
+      onInteractOutside,
+      onPointerDownOutside,
+      showCloseButton = true,
+      ...props
+    },
     ref,
   ) => (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-6 shadow-2xl outline-none',
+          'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-2xl outline-none',
           className,
         )}
         ref={ref}
@@ -43,12 +52,14 @@ export const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
-        <DialogPrimitive.Close
-          className="absolute end-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={faMessages.common.close}
-        >
-          <X aria-hidden="true" className="size-4" />
-        </DialogPrimitive.Close>
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            className="absolute end-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={faMessages.common.close}
+          >
+            <X aria-hidden="true" className="size-4" />
+          </DialogPrimitive.Close>
+        )}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   ),
@@ -112,7 +123,7 @@ export const DropdownMenuContent = React.forwardRef<
   <DropdownPrimitive.Portal>
     <DropdownPrimitive.Content
       className={cn(
-        'z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-sm text-popover-foreground shadow-xl',
+        'z-50 min-w-48 max-w-[calc(100vw-2rem)] max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto rounded-xl border border-border bg-popover p-1 text-sm text-popover-foreground shadow-xl',
         className,
       )}
       ref={ref}
@@ -178,7 +189,10 @@ export const TabsList = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
-    className={cn('inline-flex rounded-xl bg-muted p-1', className)}
+    className={cn(
+      'inline-flex max-w-full overflow-x-auto rounded-xl bg-muted p-1',
+      className,
+    )}
     ref={ref}
     {...props}
   />
@@ -193,7 +207,7 @@ export const TabsTrigger = React.forwardRef<
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm',
         className,
       )}
       ref={ref}
