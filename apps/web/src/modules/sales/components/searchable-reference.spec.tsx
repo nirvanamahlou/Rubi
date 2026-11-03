@@ -1,3 +1,4 @@
+import { orderSalesCountryOptions } from '../model/country-order';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +8,51 @@ import {
 } from './searchable-reference';
 
 describe('Sales searchable country/city reference', () => {
+  it('pins Iran then Turkey while preserving other order, selections and non-country references', () => {
+    const options = [
+      {
+        id: 'az',
+        resource: 'countries' as const,
+        name: 'Azerbaijan',
+        code: 'AZ',
+      },
+      {
+        id: 'tr',
+        resource: 'countries' as const,
+        name: 'Türkiye',
+        code: 'TUR',
+      },
+      { id: 'de', resource: 'countries' as const, name: 'Germany', code: 'DE' },
+      {
+        id: 'ir',
+        resource: 'countries' as const,
+        name: 'Iran',
+        code: 'legacy-country',
+        attributes: { iso2Code: ' ir ' },
+      },
+    ];
+    const sorted = orderSalesCountryOptions(options);
+    expect(sorted.map((item) => item.id)).toEqual(['ir', 'tr', 'az', 'de']);
+    expect(options.map((item) => item.id)).toEqual(['az', 'tr', 'de', 'ir']);
+    expect(sorted[3]).toBe(options[2]);
+    const cities = options.map((item) => ({
+      ...item,
+      resource: 'cities' as const,
+    }));
+    expect(orderSalesCountryOptions(cities)).toEqual(cities);
+  });
+  it('supports legacy Persian country names with Arabic letters and no ISO code', () => {
+    const options = [
+      { id: 'de', resource: 'countries' as const, name: 'Germany', code: '' },
+      { id: 'tr', resource: 'countries' as const, name: 'تركيه', code: '' },
+      { id: 'ir', resource: 'countries' as const, name: 'ايران', code: '' },
+    ];
+    expect(orderSalesCountryOptions(options).map((item) => item.id)).toEqual([
+      'ir',
+      'tr',
+      'de',
+    ]);
+  });
   it('renders a labelled themed combobox with the selected reference', () => {
     const markup = renderToStaticMarkup(
       <SearchableReference
