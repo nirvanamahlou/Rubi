@@ -242,6 +242,13 @@ describe('Saved contract print output', () => {
     output.company.code = 'JAHAN_BASTAN';
     const html = contractPrintHtml(output, printReferences);
     expect(html).not.toContain('021-72075000');
+    expect(html).toContain('<bdi>02172075000</bdi>');
+    const header = html.split('<header>')[1]!.split('</header>')[0]!;
+    expect(header).toContain('jahan-brand');
+    expect(header).not.toContain('جهان باستان');
+    expect(header).not.toContain('JAHAN BASTAN');
+    expect(header).not.toContain(output.company.latinName ?? 'JAHANBASTAN');
+    expect(html).toContain('max-height:19mm');
     expect(html).not.toContain('support@niyayeshseir.com');
   });
   it.each([6, 42, 100, 250])(
@@ -478,7 +485,7 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
   expect(html).toContain('header .jahan-brand{background:transparent');
   expect(html).toContain(
-    'header .jahan-brand img{filter:brightness(0) invert(1)}',
+    'header .jahan-brand img{max-height:19mm;max-width:52mm;margin-bottom:0;filter:brightness(0) invert(1)}',
   );
   expect(html).toContain('<strong>جهان باستان</strong>');
   expect(html).not.toContain('header .jahan-brand{background:white');
