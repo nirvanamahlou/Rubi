@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
@@ -14,6 +14,11 @@ const mock = vi.hoisted(() => ({
   effect: 0,
   write: true,
   request: vi.fn(),
+  back: vi.fn(),
+  push: vi.fn(),
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ back: mock.back, push: mock.push }),
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
@@ -81,12 +86,73 @@ const pack = {
   archivedAt: null,
 };
 beforeEach(() => {
+  mock.back.mockReset();
+  mock.push.mockReset();
+  vi.stubGlobal('window', {
+    history: { length: 2 },
+    location: { hostname: 'example.test', origin: 'https://example.test' },
+  });
   mock.states = [];
   mock.deps = [];
   mock.effects = [];
   mock.write = true;
   mock.request.mockReset();
   mock.request.mockResolvedValue({ data: [pack], total: 1 });
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('returns to the previous page from the hub with a safe direct-visit fallback', () => {
+  let tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'بازگشت')!.props.onClick as () => void
+  )();
+  expect(mock.back).toHaveBeenCalledOnce();
+  vi.stubGlobal('window', {
+    history: { length: 1 },
+    location: { hostname: 'example.test', origin: 'https://example.test' },
+  });
+  tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'بازگشت')!.props.onClick as () => void
+  )();
+  expect(mock.push).toHaveBeenCalledWith('/reservations');
+});
+
+it('confirms page-back from an editor, preserves cancellation and blocks while saving', () => {
+  let tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props['data-section'] === 'excel')!.props
+      .onClick as () => void
+  )();
+  tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'بازگشت')!.props.onClick as () => void
+  )();
+  expect(mock.back).not.toHaveBeenCalled();
+  tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'انصراف')!.props.onClick as () => void
+  )();
+  tree = render(HotelRateHub);
+  expect(tree.some((n) => n.type === HotelRatePacksWorkspace)).toBe(true);
+  (
+    tree.find((n) => n.props.children === 'بازگشت')!.props.onClick as () => void
+  )();
+  tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'تأیید')!.props.onClick as () => void
+  )();
+  expect(mock.back).toHaveBeenCalledOnce();
+  (
+    tree.find((n) => n.type === HotelRatePacksWorkspace)!.props
+      .onBusyChange as (value: boolean) => void
+  )(true);
+  tree = render(HotelRateHub);
+  const button = tree.find((n) => n.props.children === 'بازگشت')!;
+  expect(button.props.disabled).toBe(true);
+  (button.props.onClick as () => void)();
+  expect(mock.back).toHaveBeenCalledOnce();
 });
 it('routes all four cards to their corresponding workflow', () => {
   for (const section of ['excel', 'manual', 'existing', 'archive']) {

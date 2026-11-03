@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Archive,
   ArrowLeft,
@@ -41,31 +42,58 @@ const sections = [
 type Section = (typeof sections)[number]['id'];
 
 export function HotelRateHub() {
+  const router = useRouter();
   const [section, setSection] = useState<Section | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [exitPage, setExitPage] = useState(false);
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push('/reservations');
+  };
+  const backButton = (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        if (busy) return;
+        if (section && section !== 'archive') {
+          setExitPage(true);
+          setConfirmExit(true);
+        } else goBack();
+      }}
+    >
+      بازگشت
+    </button>
+  );
   return (
     <div className={styles.root} dir="rtl">
       {section ? (
         <>
           <header className={styles.heading}>
             <h1>{sections.find((item) => item.id === section)?.title}</h1>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                if (busy) return;
-                if (section === 'archive') setSection(null);
-                else setConfirmExit(true);
-              }}
-            >
-              بازگشت به نرخ هتل
-            </button>
+            <div className={styles.actions}>
+              {backButton}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (busy) return;
+                  setExitPage(false);
+                  if (section === 'archive') setSection(null);
+                  else setConfirmExit(true);
+                }}
+              >
+                بازگشت به نرخ هتل
+              </button>
+            </div>
           </header>
           {confirmExit && (
             <div role="alert" className={styles.panel}>
               <p>
-                به صفحهٔ نرخ هتل برگردید؟ تغییرات ذخیره‌نشده از بین می‌روند.
+                {exitPage
+                  ? 'به صفحه قبل برگردید؟ تغییرات ذخیره‌نشده از بین می‌روند.'
+                  : 'به صفحهٔ نرخ هتل برگردید؟ تغییرات ذخیره‌نشده از بین می‌روند.'}
               </p>
               <button
                 type="button"
@@ -73,7 +101,8 @@ export function HotelRateHub() {
                 onClick={() => {
                   if (!busy) {
                     setConfirmExit(false);
-                    setSection(null);
+                    if (exitPage) goBack();
+                    else setSection(null);
                   }
                 }}
               >
@@ -98,6 +127,7 @@ export function HotelRateHub() {
         <>
           <header className={styles.heading}>
             <h1>قیمت خرید هتل</h1>
+            {backButton}
           </header>
           <div className={styles.grid}>
             {sections.map(({ id, title, description, icon: Icon }) => (
