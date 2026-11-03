@@ -65,6 +65,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       demo = randomUUID(),
       admin = randomUUID();
     let ceo: string = randomUUID();
+    let ownsCeo = false;
     const past = new Date('2026-01-01T00:00:00Z');
     let connectionId: string;
     let phoneCounter = 1000;
@@ -143,13 +144,14 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       )
         throw Error('Disposable nora_ci only');
       db = createDatabaseClient(url.toString());
-      // The full migration gate seeds this reserved username before this suite.
-      // Reuse its identity without changing any seeded roles or credentials.
+      // Reuse a seeded reserved account if present; otherwise this suite owns
+      // a fresh identity, isolated from earlier recording-rate fixtures.
       const seededCeo = await db.user.findUnique({
         where: { username: 'danial' },
         select: { id: true },
       });
       if (seededCeo) ceo = seededCeo.id;
+      else ownsCeo = true;
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
       vi.stubEnv('CALL_CENTER_GLOBAL_USER_IDS', `${ceo},${demo}`);
       vi.stubEnv('CALL_CENTER_RECORDING_DOWNLOAD_USER_ID', ceo);
@@ -379,6 +381,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
     }, 60000);
     afterAll(async () => {
       await app?.close();
+      if (ownsCeo)
+        await db?.user.updateMany({
+          where: { id: ceo, username: 'danial' },
+          data: { username: ceo },
+        });
       await db?.$disconnect();
       vi.unstubAllEnvs();
     });
