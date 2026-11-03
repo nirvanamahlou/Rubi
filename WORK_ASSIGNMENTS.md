@@ -10624,6 +10624,12 @@ CALL-CENTER-QUEUE-TOOLBAR-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Scoped We
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
 CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared source list adds Other to contact filter and popup form.23 existing focused tests, scoped lint, Web typecheck/build and translation sync pass. Web-only backed-up Compose/image rollback activation verified; API/Worker/data services unchanged. Source reservation releases on push; no schema/grant/dependency change. Receipt /opt/rubi/CALL-SOURCE-OTHER-RELEASE-1101.json.
 
+## CALL-CENTER-OWN-OUTBOUND-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner authorizes each employee seeing their outbound calls, including unanswered outbound calls. Reserve CallCenterAccessService, existing answered-access PostgreSQL regressions and own task/release notes. Extend permission-scoped contact ownership evidence with nonsynthetic TELEPHONY OUTBOUND session offers whose positive mappingVersion was validated by ingestion against the originating extension; exclude manual transfers (version0), inbound ring offers, synthetic/manual calls, unrelated users/branches. Preserve actual-answer evidence, UI, grants, recording policy and existing Web toolbar/Other overlays. No schema, dependency or shared contract change. Prior published scopes released.
+
+CALL-CENTER-OWN-OUTBOUND-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.34 isolated PostgreSQL regressions, scoped lint, full API typecheck/build pass. Production API-only release and native14-account/70-branch ORM/SQL acceptance verified; Web/Worker/data services unchanged. Prior actual-answer policy now explicitly includes owner-authorized validated OUTBOUND originating offers; inbound/manual/synthetic restrictions remain. No schema/dependency/grants changed. Scoped source reservation releases on push.
+
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
@@ -10721,5 +10727,7 @@ Source PR144/145 merged develop; Nora PR1318 pending final exact-head gates and 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1320 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1260 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1261 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.

@@ -8429,6 +8429,11 @@ Queue filters now share approved contact field styling, compact icon reset and r
 
 ## CALL-CENTER-SOURCE-OTHER-1101 — 2026-11-01
 Added Other to shared acquaintance sources used by contact filters and call popup.23 focused tests, Web lint/typecheck/build and translation sync pass. Web-only release active; API/Worker/database unchanged. Source PR review pending; no schema/grant/dependency change.
+
+## CALL-CENTER-OWN-OUTBOUND-1101 — 2026-11-01
+
+Own/team/global contact access now includes validated real outgoing-origin snapshots alongside actual-answer evidence. Unanswered outgoing calls remain visible to their originating employee; manual transfer, inbound ring and synthetic offers grant no new access.34 isolated PostgreSQL tests, API lint/typecheck/build and native read-only14-account/70-branch acceptance pass. API-only release active, all Web/Worker/data services preserved; no schema/grant/business-data rewrite. See tasks/CALL-CENTER-OWN-OUTBOUND-1101.md.
+
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.

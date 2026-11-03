@@ -266,6 +266,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ISSABEL_ENABLED: 'true',
         ISSABEL_CONNECTION_ID: connectionId,
         ISSABEL_EVENT_MODE: 'NATIVE_QUEUE_CAPTURE',
+        ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED: 'true',
         TELEPHONY_EVENTS_PER_MINUTE: '6000',
       });
       events = new TelephonyIntegrationService(
@@ -369,6 +370,86 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       vi.unstubAllEnvs();
     });
 
+    it('shows unanswered outbound calls to the validated originating account in ORM and SQL lists', async () => {
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, extension: '404', userId: expert },
+      });
+      const event = {
+        ...makeEvent('404', 'RINGING'),
+        direction: 'OUT' as const,
+        destination: { kind: 'KNOWN' as const, value: '+12025559001' },
+      };
+      const row = await emit(event);
+      await emit({
+        ...event,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await visible(expert, row.contactId)).toBe(true);
+      expect(await visible(peer, row.contactId)).toBe(false);
+      expect(await visible(manager, row.contactId)).toBe(true);
+      expect(await visible(other, row.contactId)).toBe(false);
+      for (const id of [ceo, demo]) {
+        const scoped = await directory.callCenterActor(actor(id));
+        expect(
+          await db.callCenterContact.findFirst({
+            where: {
+              id: row.contactId,
+              ...(await access.where(scoped, branchId)),
+            },
+          }),
+        ).not.toBeNull();
+      }
+      const result = await read.search(actor(expert), branchId, {
+        query: '+12025559001',
+        page: 1,
+        pageSize: 50,
+      } as never);
+      expect(result.meta.total).toBe(1);
+      const denied = await read.search(actor(peer), branchId, {
+        query: '+12025559001',
+        page: 1,
+        pageSize: 50,
+      } as never);
+      expect(denied.meta.total).toBe(0);
+      expect(
+        await db.callCenterAnswerResponsibility.count({
+          where: { callId: row.callId },
+        }),
+      ).toBe(0);
+      // Popup completion/transfer must not erase originating-account access.
+      await db.callCenterTelephonyOffer.updateMany({
+        where: { sessionId: row.session.id },
+        data: { active: false, deferred: true },
+      });
+      expect(await visible(expert, row.contactId)).toBe(true);
+      await db.callCenterTelephonyOffer.create({
+        data: { sessionId: row.session.id, userId: peer, mappingVersion: 0 },
+      });
+      expect(await visible(peer, row.contactId)).toBe(false);
+    });
+    it('does not infer an outbound originator from a shared extension or synthetic offer', async () => {
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, extension: '105', userId: expert },
+      });
+      const row = await emit({
+        ...makeEvent('105', 'RINGING'),
+        direction: 'OUT',
+        destination: { kind: 'KNOWN', value: '+12025559002' },
+      });
+      expect(await visible(expert, row.contactId)).toBe(false);
+      expect(await visible(peer, row.contactId)).toBe(false);
+      await db.callCenterTelephonySession.update({
+        where: { id: row.session.id },
+        data: { synthetic: true },
+      });
+      await db.callCenterTelephonyOffer.create({
+        data: { sessionId: row.session.id, userId: expert, mappingVersion: 1 },
+      });
+      expect(await visible(expert, row.contactId)).toBe(false);
+    });
     it('grants only the actual answering account; creator, ring, offer, manual owner and claim grant nothing', async () => {
       const ring = makeEvent('404', 'RINGING');
       const before = await emit(ring);
@@ -739,6 +820,12 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       const kpis = await read.kpis(actor(expert), branchId);
       expect(kpis.data.today).toBe(allowed);
+      const incomplete = await db.callCenterCall.count({
+        where: {
+          contact: await access.where(actor(expert), branchId),
+          outcome: null,
+        },
+      });
       for (const period of [undefined, 'today', 'week'] as const) {
         const result = await read.withoutOutcome(
           actor(expert),
@@ -746,7 +833,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           { page: 1, pageSize: 100 } as never,
           period,
         );
-        expect(result.meta.total).toBe(allowed);
+        expect(result.meta.total).toBe(period ? allowed : incomplete);
         for (const entry of result.data)
           expect(await visible(expert, entry.call.contactId)).toBe(true);
       }
