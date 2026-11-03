@@ -8502,6 +8502,10 @@ Explicit catalog flight replacement or applied manual flight edits now reconcile
 
 All CallForm popup entry points now default to name before phone, source before direction and outcome before recipient in RTL/DOM order. Validation, frozen identity, values and handlers unchanged.17 existing tests, scoped lint, full Web typecheck/build and referenced asset checks pass; Web-only release active with API/Worker/data services unchanged. See tasks/CALL-POPUP-FIELD-ORDER-1102.md.
 
+## STAFF-CDR-BACKFILL-1102 — 2026-11-02
+
+PC-C completed owner-authorized historical employee call recovery from 1405/08/09.144 finalized external sessions verified;26 missing calls recovered,118 preserved.82 native contact-list/access checks across14 active accounts pass; zero duplicate roots or new historical popup offers. Inactive113/202 remain disabled. Operator-only source and evidence note: docs/tasks/STAFF-CDR-BACKFILL-1102.md. No application release, schema or grant change.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C
 Owner-requested layout: Tehran date range is always visible between contact search and advanced toggle; advanced contact specifications use one five-column desktop row and stack on mobile. Existing date semantics, state handlers, clear behavior and other approved UI preserved. No API/schema/data changes or runtime deployment. Scoped lint, typecheck and production build passed using equivalent candidate files in the existing dependency-equipped checkout.
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B

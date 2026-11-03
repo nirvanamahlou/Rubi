@@ -10753,6 +10753,12 @@ Base origin/develop7ac4dd94a. Owner explicitly authorizes swapping name/phone, a
 
 CALL-POPUP-FIELD-ORDER-1102 — COMPLETE / DEPLOYED. Shared CallForm defaults name/phone, source/direction and outcome/recipient in requested RTL order across all popup entry points. Identical field blocks/remaining source verified;17 existing tests, scoped lint, full Web typecheck/build and public asset checks pass. Web-only release retains API/Worker/data IDs and env/mounts; source reservation releases on push. See docs/tasks/CALL-POPUP-FIELD-ORDER-1102.md.
 
+## STAFF-CDR-BACKFILL-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. User authorizes historical employee contact-list recovery from 1405/08/09 through current snapshot. Reserve new operator-only scripts/call-center/recover-staff-calls.cjs and focused evidence tests, own task note/status. Use verified read-only CDR/CEL, existing recovery/domain ports, historical routing proof, encrypted backup and deployment lock. Preserve saved business fields; never create historical popup, false answer, role/grant or duplicate root. No runtime source, schema, migration, dependency, HR or PBX writes.
+
+STAFF-CDR-BACKFILL-1102 — COMPLETE / SOURCE_READY_FOR_REVIEW. Verified 144 finalized external roots from Tehran 1405/08/09, preserved 118 existing calls, recovered 26 missing calls through private provider/domain ports. 82 actual scoped list checks across 14 active accounts pass; replay plans zero new roots, historical popup offers zero. Six evidence tests pass. Owner confirmed historical aliases111/115/shared201. Accounts113/202 remain inactive. Encrypted backups and shared deployment lock used; no runtime/schema/grant/HR/PBX changes. Source reservation releases on push.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes moving Tehran date range between contact search and advanced toggle and laying contact-detail filters in one desktop row. Reserve Call Center workspace.tsx and scoped CSS plus own notes. Preserve date semantics, filters, handlers and all other approved UI; no API/data/schema/dependency/runtime changes.
@@ -10820,5 +10826,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1286 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1290 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1296 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
