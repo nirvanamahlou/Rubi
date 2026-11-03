@@ -8498,6 +8498,10 @@ Hotel transfer preview now multiplies the entered combined round-trip fare by th
 
 Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.
 
+## CALL-POPUP-FIELD-ORDER-1102 — 2026-11-02
+
+All CallForm popup entry points now default to name before phone, source before direction and outcome before recipient in RTL/DOM order. Validation, frozen identity, values and handlers unchanged.17 existing tests, scoped lint, full Web typecheck/build and referenced asset checks pass; Web-only release active with API/Worker/data services unchanged. See tasks/CALL-POPUP-FIELD-ORDER-1102.md.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C
 Owner-requested layout: Tehran date range is always visible between contact search and advanced toggle; advanced contact specifications use one five-column desktop row and stack on mobile. Existing date semantics, state handlers, clear behavior and other approved UI preserved. No API/schema/data changes or runtime deployment. Scoped lint, typecheck and production build passed using equivalent candidate files in the existing dependency-equipped checkout.
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B

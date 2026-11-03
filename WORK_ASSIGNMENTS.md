@@ -10747,6 +10747,12 @@ COMPUTER_ID=PC-A; codex/pc-a-amend-flight-date-sync-1102 from origin/develop. Ow
 
 AMEND-FLIGHT-DATE-SYNC-1102: four new stale-bound cases reproduced before correction;18 focused Web and93 existing API tests pass, scoped ESLint and Web types pass. Covers outbound/return conversion, manual return crossing UTC midnight, no-op stability and preservation of actual reversed dates for strict server rejection. Source freezes on push and reservations release upon verified develop merge. Final exact-head hosted gates required; no operational deployment.
 
+## CALL-POPUP-FIELD-ORDER-1102 — PC-C — RESERVED
+
+Base origin/develop7ac4dd94a. Owner explicitly authorizes swapping name/phone, acquaintance source/direction and outcome/recipient in every shared CallForm popup. Reserve call-form.tsx and own status/release notes only; preserve validation, read-only identity, request fields, source values and approved popup behavior. No competing active writer found; prior Call Center source reservations released. Web-only checked runtime-relative publication, no API/Worker/data changes.
+
+CALL-POPUP-FIELD-ORDER-1102 — COMPLETE / DEPLOYED. Shared CallForm defaults name/phone, source/direction and outcome/recipient in requested RTL order across all popup entry points. Identical field blocks/remaining source verified;17 existing tests, scoped lint, full Web typecheck/build and public asset checks pass. Web-only release retains API/Worker/data IDs and env/mounts; source reservation releases on push. See docs/tasks/CALL-POPUP-FIELD-ORDER-1102.md.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes moving Tehran date range between contact search and advanced toggle and laying contact-detail filters in one desktop row. Reserve Call Center workspace.tsx and scoped CSS plus own notes. Preserve date semantics, filters, handlers and all other approved UI; no API/data/schema/dependency/runtime changes.
@@ -10812,5 +10818,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1281 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1286 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1290 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
