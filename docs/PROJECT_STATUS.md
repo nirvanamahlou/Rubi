@@ -8446,6 +8446,10 @@ Latest develop d0845c8fd published across API/Web/Worker with5 approved Call Cen
 
 SMS added to shared acquaintance sources for call popup and contact filter.15 existing model/form tests, scoped lint and Web typecheck/build pass. Web-only production activation verified; API/Worker/data services and existing approved source overlays preserved. No schema/grant/dependency change. See tasks/CALL-SOURCE-SMS-1101.md.
 
+## CALL-HISTORY-SUBJECT-1101 — 2026-11-01
+
+Per-call subject now displayed below expanded history summary and above note; blank subject explicitly unrecorded.17 existing tests, Web lint/typecheck/build pass. Web-only release active with prior runtime overlays and all other services preserved. See tasks/CALL-HISTORY-SUBJECT-1101.md.
+
 
 ## HR-RADAN-LIVE-1101 — PC-B
 

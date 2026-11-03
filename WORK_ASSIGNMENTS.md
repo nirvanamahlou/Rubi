@@ -10646,6 +10646,12 @@ COMPUTER_ID=PC-C. Owner authorizes SMS in popup/contact filter shared acquaintan
 
 CALL-SOURCE-SMS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.15 focused tests, lint, full Web typecheck/build pass. Shared SMS value available in both source dropdowns. Web-only locked activation preserves env/mounts and API/Worker/data service IDs; rollback Compose/image retained. No schema/grant/dependency changes. Source reservation releases on push.
 
+## CALL-HISTORY-SUBJECT-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history summary and above note. Reserve workspace.tsx and own notes only. Display actual per-call subject with explicit unrecorded fallback; preserve all unrelated UI/runtime overlays and SMS option. No API/schema/dependency/grant change; prior scopes published and released.
+
+CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
+
 ## HR-RADAN-LIVE-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-radan-live-1101. Owner authorizes real read-only Radan integration for Niyayesh Seir Sahar and local3100 activation. Reserve HR adapter/domain/controller/module/service and targeted tests, HR attendance projections, Workbench own performance and additive HR/Workbench contracts (producer HR, consumers HR UI and own Workbench; optional fields, existing clients compatible). Scope includes source-ID idempotence, native branch/personnel-code mapping, neutral-punch interpretation, configured schedules, incomplete-day handling, closed-period/correction preservation and bounded polling. No migration/schema/dependency/IAM grants or Radan writes. Runtime credentials/data remain outside Git. Existing peer reservations and default runtime next-env edit preserved.
@@ -10749,5 +10755,7 @@ Owner-authorized integration with develop7d74d786b and CI failure repair. Preser
 Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 develop PRs and merging after all final-head gates succeed. Published task scopes are reopened sequentially in isolated repair branches. Preserve peer changes and later approved behavior. No production deployment, force push, dependency or migration changes, or gate bypass.
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1267 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1269 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
