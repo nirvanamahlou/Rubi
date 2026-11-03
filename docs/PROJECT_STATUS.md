@@ -8485,3 +8485,16 @@ Employee-related record forms no longer offer inline employee creation; employee
 ## CALL-CENTER-REMOVE-REPORT-KPIS-1102 — PC-C — SOURCE ONLY
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
+
+## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent
+site dispatch, current source queues, visit coverage, trends and audit activity
+now use the dedicated source report boundary. Overview reuses the same real
+dashboard and no longer claims every site lacks credentials. Source grants,
+branch/person isolation, exact IRT amounts and historical-data limits remain
+explicit. Native operations stay in Ghestiroo; no Nora business records copied.
+No Nora schema/migration/dependency changes. Source-only anonymous visit migration
+and validation evidence: [GHESTIROO-DASHBOARD-1102](tasks/GHESTIROO-DASHBOARD-1102.md).
+Both bounded production overlays are active and source SQL reconciles all KPI,
+daily, detail and visit results. Final Nora exact-head gates precede PR1318 merge.
