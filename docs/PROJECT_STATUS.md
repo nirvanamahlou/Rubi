@@ -1,8 +1,6 @@
-## PURCHASE-INBOX-CURRENT-LOAD-1103 — PC-A — READY_FOR_CI
+## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — VALIDATING
 
-PC-A branch codex/pc-a-purchase-inbox-current-load-1103 from develop7d74d786b. Owner authorizes cleanup then separate floating purchases, current load quantities, destination and active reference-currency selection; develop merge after checks. Nine clean merged inactive worktrees without environment files/shared dependencies removed,74 generated cache/build directories cleared with absolute-path/process checks; user data and active worktrees preserved. Purchase company tab excludes contract floating table; dedicated FLOATING tab reuses existing FLIGHT read API. Additive optional currentCapacity uses Catalog public projection; unpriced requests use current total while recorded purchase/payment quantities remain immutable. Cost recording validates current capacity through the public boundary. Web adds destination/current total/sold columns, native procurement reference choices, refresh on focus/30s without remounting an editor. No schema/dependency/runtime/operational writes. Scoped tests, lint/types and affected builds plus all exact-head hosted gates precede authorized merge. Source freezes on push and releases on verified merge.
-
-Bounded producer/consumer compatibility: Procurement selection directory gains readonly cities only, with native purchase authority and unchanged no-source-grant behavior tested in the controller matrix. Reserve only that existing resource whitelist and authorization regression; no Master Data mutation or schema change.
+Purchase action now uses persisted purchase registration independently of supplier forms and full service coverage. The branch-scoped endpoint adds registered while preserving complete. Zero-valued and legacy hotel purchases count; quotes alone and cancelled contracts do not. Save refresh, stale-response and contract/revision isolation remain.26 focused API/Web tests and scoped lint pass; full types and hosted build/quality gates precede authorized develop merge. No data writes, schema/migration/dependency or deployment changes.
 
 ## FLOATING-FLIGHT-AIRPORT-1102 — PC-A — READY_FOR_CI
 
@@ -10,6 +8,12 @@ COMPUTER_ID=PC-A; branch codex/pc-a-floating-flight-airport-1102 from developaae
 
 Owner clarified that airports from the destination country must also be selectable. The complete public directory is country-scoped; default prefers the first airport of the destination city, otherwise the first airport in existing persisted priority order. Optional destination airport ID/city/country/IATA/name snapshot round trips through Sales/Reservations and ticket/contract output; new choices validate against existing public airport/city references. Unchanged legacy/historical selections stay readable, and switching back to charter clears floating airport metadata.113 focused API checks and63 Web/reference/PDF/i18n checks pass; focused restoration regression, lint/types/API-Web production builds and all final-head hosted gates precede the owner-authorized merge. No schema/migration/dependency or live operational update. Source freezes on push and releases after verified merge.
 
+
+## PURCHASE-INBOX-CURRENT-LOAD-1103 — PC-A — READY_FOR_CI
+
+PC-A branch codex/pc-a-purchase-inbox-current-load-1103 from develop7d74d786b. Owner authorizes cleanup then separate floating purchases, current load quantities, destination and active reference-currency selection; develop merge after checks. Nine clean merged inactive worktrees without environment files/shared dependencies removed,74 generated cache/build directories cleared with absolute-path/process checks; user data and active worktrees preserved. Purchase company tab excludes contract floating table; dedicated FLOATING tab reuses existing FLIGHT read API. Additive optional currentCapacity uses Catalog public projection; unpriced requests use current total while recorded purchase/payment quantities remain immutable. Cost recording validates current capacity through the public boundary. Web adds destination/current total/sold columns, native procurement reference choices, refresh on focus/30s without remounting an editor. No schema/dependency/runtime/operational writes. Scoped tests, lint/types and affected builds plus all exact-head hosted gates precede authorized merge. Source freezes on push and releases on verified merge.
+
+Bounded producer/consumer compatibility: Procurement selection directory gains readonly cities only, with native purchase authority and unchanged no-source-grant behavior tested in the controller matrix. Reserve only that existing resource whitelist and authorization regression; no Master Data mutation or schema change.
 
 ## AIRLINE-THREE-CODES-1102 — PC-B — READY_FOR_CI
 

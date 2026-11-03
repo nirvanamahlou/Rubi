@@ -1,4 +1,7 @@
-import { reservationPurchasesComplete } from './reservation-purchase-completion';
+import {
+  reservationPurchaseRegistered,
+  reservationPurchasesComplete,
+} from './reservation-purchase-completion';
 import { TravisSandboxService } from '../integrations/insurance/travis-sandbox.service';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { validateSupplierFormPrices } from './voucher-settings';
@@ -713,7 +716,12 @@ export class ReservationRequestsController {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
     const context = await this.service.purchaseContext(id, req.actor.branchIds);
-    return { data: { complete: reservationPurchasesComplete(context) } };
+    return {
+      data: {
+        complete: reservationPurchasesComplete(context),
+        registered: reservationPurchaseRegistered(context),
+      },
+    };
   }
 
   @Get(':id/purchase-context')
