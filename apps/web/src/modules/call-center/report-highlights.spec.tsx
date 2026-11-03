@@ -38,6 +38,7 @@ describe('Call Center report highlights', () => {
         data={{
           ...data,
           calls: 10,
+          contacts: 10,
           sources: [
             { label: 'سایت', count: 3 },
             { label: 'سایت', count: 2 },
