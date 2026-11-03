@@ -8728,8 +8728,6 @@ Owner requests removal of the credit-limit/financial-balance guidance sentence f
 
 Read-only production schema/count audit and candidate verification cover every catalogue identifier. Eleven additional report codes now use owning-module native projections instead of sample-table assumptions; total16 Backend codes execute and generate complete-column XLSX,15 remain in the general Web catalogue under the existing HR exclusion. Current registered-purchase sums independently reconcile by currency. Unsupported legacy sources are honestly pending; all21 remaining reports and the partial-scope requirements are listed in docs/tasks/REPORTING-READINESS-1103.md. Preserve source permissions, branch/own boundaries, cancelled-sale exclusion, Decimal, five-row preview, chosen sort, B Nazanin export and latest Dashboard/Call Center work. No schema, dependency, IAM or business-data writes and no application deployment. Final exact-head hosted gates control the owner-authorized develop merge.
 
-
-
 ## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
 
 Owner requests incoming correspondence cards/filters/table and sender, correct breadcrumbs, B Nazanin exports and immediate incoming-file viewing without the unavailable scanner gate; push/develop merge authorized. Reserve correspondence Web, bounded Documents upload/list/delivery API and shared form/contracts/tests, navigation aliases, English catalog and own notes. Sole migration owner PC-B for additive Document.senderName/isIncomingLetter; prior Marketing reservation merged/released. API producer and Web consumer ship optional fields together. Preserve branch/domain permissions, confidentiality grants and known malware blocks. Also repair module/type content filtering used by the merged Marketing consumer. No dependency or operational deployment changes.
@@ -8745,13 +8743,6 @@ GHESTIROO-DOCUMENT-LOGO-1103: separate voucher PDF renderer included after visua
 GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no white background in all three outputs.
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
-
-
-
-
-
-
-
 
 ## INTERNAL-MULTI-SEND-1103 — PC-B — IN_PROGRESS
 
@@ -8773,7 +8764,6 @@ Owner reports the new shift form is not visible on local HR time page. Reserve H
 
 Owner requests weekly named shifts with employee multi-selection, self-service shift history and schedule/device-based attendance status; push/develop merge authorized. Reserve HR API/Web/contracts, bounded Workbench shift consumer, own translations/tests and notes. Existing same-owner HR scopes are integrated in develop. Additive optional weekday column and atomic bulk assignment endpoint preserve legacy dated shifts; no schema/migration/dependency change. Preserve employee/branch authorization, closed periods, source punches and historical assignments.
 
-
 HR-WEEKLY-SHIFTS-1103 implementation: weekday-aware recurring assignments use existing employee FK records, atomic/idempotent multi-employee create, bounded validity dates, per-record versioned edit/archive and closed-period protection. Workbench exposes only the linked employee shifts even without broad HR access. Device sync processes all 32 lookback dates, including empty days, to persist present/absent/non-working statuses; unfinished shifts wait and incomplete punches retain review status. Both attendance grids include status. Existing nine-value shifts remain compatible; weekly end times are authoritative. No migration, dependency, operational data or deployment changes.
 
 HR-WEEKLY-SHIFTS-1103 validation: 56 focused Web/translation tests pass; HR suite initially 232 pass/2 expectations changed/47 opt-in skipped, corrected expectations plus all five new disposable PostgreSQL scenarios pass in a 26-test rerun. Tests cover atomic bulk rollback, replay, branch/permission scope, real device pairs, absence/rest days, overnight shifts, future shifts, self-only projection, versioned edit/delete and closed periods. Local API typecheck hit Node heap limit after contracts rebuild; clean final-head CI typechecks/build/tests remain mandatory before authorized develop merge. Source freeze/release on verified merge.
@@ -8791,6 +8781,7 @@ Owner requests a visible top-left close button in Document view and removal of t
 ## DASHBOARD-SERIES-SUMMARY-1103 — PC-C
 
 PR1335 and its merge checks passed; first source-backed Dashboard release is healthy with12 native charts and11 KPI IDs under diagnostic scope. Full metadata:316 operational tables plus restricted migration table (317/3993 columns total),209 completed migrations. Browser follow-up fixes all-series accessible descriptions and expandable tables;54 Web/translation checks pass with1 existing skip. Final CI and follow-up rollout pending; no schema/API/IAM/data/dependency changes.
+
 ## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — VALIDATING
 
 Finance inbox party account panel adds canonical customer/agency debt totals and one deposit split oldest-first across contracts, including partial settlement. Sales owns scoped balances/persistence; Finance authorizes actual-account receipt confirmation and existing accounting events. Preview revision, serializable transaction, operation replay, immutable receipts/audit and currency-separated four-decimal amounts protect the flow. Refund corrections use the existing financial path.18 focused API tests and12 Web checks pass; final types/lint/build and dedicated PostgreSQL CI regression precede owner-authorized merge. No migration, dependency, data or deployment changes. See tasks/PARTY-CONTRACT-RECEIPTS-FIFO-1103.md.
@@ -8800,3 +8791,7 @@ Finance inbox party account panel adds canonical customer/agency debt totals and
 Source-only correction of RPT001 multi-currency duplicate presentation and composed current cancellation eligibility. Live read-only audit found3 latest Reservations CANCELLED workflows whose canonical Sales rows remain SENT_TO_RESERVATIONS; this is a missing domain-state composition, not a backend result cache. Counts become distinct per branch/owner with exact separate currency amounts in one display column; browser refreshes current previews on interval/focus and never silently retains failed old output. No production records, schema, dependencies or server release changes. See REPORTING.md and DECISIONS.md; test/build/CI pending.
 
 REPORTS-CURRENCY-FRESHNESS-1103 READY_FOR_REVIEW: API37 and Web34 focused checks, scoped lint, both TypeScript checks and API/Web production builds pass. Live read-only candidate matches independent SQL for344 active contracts/1125 passengers and each separate currency; three latest Reservations cancellations are excluded. Organization table/export has one branch/owner row with precise combined currency text, chart currencies remain separate. Visible preview refresh interval15s plus focus/visibility/manual actions; failed reads clear old output. No deployment, migration, financial/history rewrite or actual business row export. Rule persisted in REPORTING.md/DECISIONS.md.
+
+## COUNTRY-PRIORITY-1103 — PC-A — READY_FOR_CI
+
+Sales country dropdowns pin Iran first and Turkey second using ISO2/ISO3 identifiers with normalized legacy-name fallback. Other countries retain their input order, as do non-country references. No selected ID or source record changes. Standalone Node checks pass for ordering, aliases, legacy names, stable input and non-country lists. Existing themed combobox regressions cover the new helper; full lint/type/test/build gates precede the owner-authorized develop merge. No API, schema, dependency, operational data or deployment changes.
