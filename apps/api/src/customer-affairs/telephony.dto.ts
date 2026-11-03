@@ -25,7 +25,7 @@ export class TelephonyActionDto extends TelephonyLeaseDto {
   @IsOptional() @IsString() @Length(1, 100) source?: string;
   @IsOptional() @IsString() @Length(1, 200) operator?: string;
   @IsOptional()
-  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])
+  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED', 'WRONG_NUMBER'])
   outcome?: string;
   @IsOptional() @IsUUID('4') ticketId?: string;
   @IsOptional() @IsUUID() targetUserId?: string;

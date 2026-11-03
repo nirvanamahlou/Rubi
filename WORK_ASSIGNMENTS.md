@@ -10728,3 +10728,7 @@ PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped 
 ## JAHAN-CONTRACT-HEADER-1103 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
+
+## CALL-WRONG-NUMBER-1103 — PC-C — ACTIVE
+
+Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.

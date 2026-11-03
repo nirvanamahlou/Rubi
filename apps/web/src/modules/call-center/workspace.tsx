@@ -66,6 +66,7 @@ const outcomes: Record<string, string> = {
   NO_ANSWER: 'بدون پاسخ',
   BUSY: 'اشغال',
   FAILED: 'ناموفق',
+  WRONG_NUMBER: 'اشتباه گرفته شده',
   UNKNOWN: 'نامشخص',
 };
 const reasonText = (e: unknown) =>

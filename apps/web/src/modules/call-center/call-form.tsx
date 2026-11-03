@@ -26,6 +26,7 @@ const outcomeLabels: Record<string, string> = {
   NO_ANSWER: 'بدون پاسخ',
   BUSY: 'اشغال',
   FAILED: 'ناموفق',
+  WRONG_NUMBER: 'اشتباه گرفته شده',
 };
 export function CallForm({
   branchId,
