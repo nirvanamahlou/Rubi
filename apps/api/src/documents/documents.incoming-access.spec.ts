@@ -83,12 +83,10 @@ describe('authenticated incoming-letter document boundary', () => {
     const s = service();
     Object.assign(s, {
       repository: {
-        findDetail: vi
-          .fn()
-          .mockResolvedValue({
-            isIncomingLetter: true,
-            archiveStatus: 'ACTIVE',
-          }),
+        findDetail: vi.fn().mockResolvedValue({
+          isIncomingLetter: true,
+          archiveStatus: 'ACTIVE',
+        }),
       },
     });
     const preview = vi
