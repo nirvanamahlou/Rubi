@@ -188,7 +188,7 @@ export function TourWorkspace({
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
       const [p, d, cities, insurance, airlines, airports] = await Promise.all([
         toursApi.packages(),
-        toursApi.departures(),
+        toursApi.departures(canManagePeriods),
         loadRefs('cities'),
         loadRefs('insurance-plans'),
         loadRefs('airlines'),
@@ -219,7 +219,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [reload]);
+  }, [reload, canManagePeriods]);
 
   useEffect(() => {
     let cancelled = false;

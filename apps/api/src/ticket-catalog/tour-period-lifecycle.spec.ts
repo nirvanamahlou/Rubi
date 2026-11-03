@@ -9,6 +9,7 @@ const actor = {
 function fixture(status = 'ACTIVE', version = 0) {
   const tx = {
     tourDeparture: {
+      findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi
         .fn()
         .mockResolvedValue({ id: 'period', status, lifecycleVersion: version }),
@@ -139,3 +140,25 @@ it.each(['PAUSED', 'DELETED'])(
     ).rejects.toThrow('این بازه برای فروش فعال نیست.');
   },
 );
+
+it('keeps Sales choices active-only even for managers and authorizes explicit management reads', async () => {
+  const { service, tx } = fixture();
+  await service.departures(actor as never);
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toBe(
+    'ACTIVE',
+  );
+  await service.departures(actor as never, true);
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toEqual({
+    not: 'DELETED',
+  });
+  await service.pricingDepartures(['branch']);
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toBe(
+    'ACTIVE',
+  );
+  await expect(
+    service.departures(
+      { ...actor, permissions: ['ticket_catalog.read'] } as never,
+      true,
+    ),
+  ).rejects.toThrow();
+});

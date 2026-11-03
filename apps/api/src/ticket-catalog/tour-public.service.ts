@@ -310,16 +310,13 @@ export class TourPublicService {
       };
     });
   }
-  async departures(actor: AuthenticatedActor) {
-    if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
+  async departures(actor: AuthenticatedActor, management = false) {
+    if (management) this.authorize(actor, true);
+    else if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: actor.branchIds },
-        status: actor.permissions.some((p) =>
-          ['ticket_catalog.manage', 'ticket_catalog.tours.manage'].includes(p),
-        )
-          ? { not: 'DELETED' }
-          : 'ACTIVE',
+        status: management ? { not: 'DELETED' } : 'ACTIVE',
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
       include: included,

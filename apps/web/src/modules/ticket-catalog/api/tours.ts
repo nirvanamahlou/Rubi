@@ -92,7 +92,10 @@ export const toursApi = {
       }),
     }),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
-  departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
+  departures: (management = false) =>
+    request<{ data: TourDepartureV1[] }>(
+      '/tours/departures' + (management ? '?management=true' : ''),
+    ),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
       '/tours/packages',
