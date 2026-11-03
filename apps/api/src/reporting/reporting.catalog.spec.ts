@@ -13,7 +13,7 @@ describe('REPORTING_CATALOG_V1', () => {
         expect.objectContaining({
           code: 'sales_by_organization',
           approvedView: 'sales.reporting.contract-currency.v1',
-          version: 3,
+          version: 4,
         }),
         expect.objectContaining({
           code: 'sales_by_service_route',

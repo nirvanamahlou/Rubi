@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { DatabaseClient } from '@nora/database';
 import { boundedSource, type ReportSourceActor } from '../common/report-source';
+import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 
 /** Minimal current contract eligibility for Reservations; no pricing or customer data. */
 export async function readSalesReportingEligibility(
@@ -30,5 +31,9 @@ export async function readSalesReportingEligibility(
       take: 10001,
     }),
   );
-  return rows.map((r) => r.id);
+  const cancellations = await readReservationReportingCancellations(
+    client,
+    rows.map((r) => r.id),
+  );
+  return rows.filter((r) => !cancellations.has(r.id)).map((r) => r.id);
 }

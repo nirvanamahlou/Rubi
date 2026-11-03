@@ -6,8 +6,12 @@ import {
 } from '../sales/sales-reporting.public';
 import { reportingIdentityLabels } from '../iam/reporting-directory.public';
 import { reportingCityLabels } from '../master-data/reporting-cities.public';
-import type { ReportQueryV1 } from './reporting.contracts';
+import type {
+  ReportQueryV1,
+  TravelReportResultV1,
+} from './reporting.contracts';
 import type { ReportingFactRow } from './reporting.repository';
+import { organizationMultiCurrencyResult } from './reporting-organization-multicurrency';
 import { buildTravelReportResult } from './reporting.projection';
 
 export const NATIVE_SALES_REPORTS = new Set([
@@ -144,7 +148,7 @@ export async function nativeSalesReport(
         }
       : {}),
   });
-  return {
+  const response: TravelReportResultV1 = {
     ...result,
     reportVersion: code === 'sales_by_organization' ? 3 : 1,
     sourceProjection: 'sales.reporting.contract-currency.v1' as const,
@@ -189,4 +193,13 @@ export async function nativeSalesReport(
       'مبالغ فروش از قیمت مصوب قرارداد خوانده می‌شوند؛ خرید، سود، وصول و صدور در این گزارش محاسبه نمی‌شوند.',
     ],
   };
+  return code === 'sales_by_organization'
+    ? organizationMultiCurrencyResult(
+        response,
+        source,
+        query,
+        includeAllRows,
+        directory,
+      )
+    : response;
 }

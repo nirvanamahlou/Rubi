@@ -7214,5 +7214,7 @@
   "CRM شرکت قسطی رو": "Ghestiroo CRM",
   "فرستنده را وارد کنید.": "Enter the sender.",
   "تعداد لید بدون خرید موفق، مشتری با اولین خرید تأییدشده و سفارش ایجادشده در بازه؛ این سری‌های مستقل نرخ تبدیل یک cohort نیستند.": "Counts of unconverted leads, first-time confirmed buyers and orders created in the period; these independent series are not a cohort conversion rate.",
-  "روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.": "Net sales, gross profit and net profit trends; profit series require authoritative cost and accounting sources, and missing profit is not zero."
+  "روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.": "Net sales, gross profit and net profit trends; profit series require authoritative cost and accounting sources, and missing profit is not zero.",
+  "کارشناس": "the expert",
+  "مبالغ قرارداد به تفکیک ارز": "Contract amounts by currency"
 }

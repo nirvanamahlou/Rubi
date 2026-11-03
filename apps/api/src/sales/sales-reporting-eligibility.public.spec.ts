@@ -14,7 +14,10 @@ describe('Sales-owned reporting eligibility', () => {
   });
   it('restricts own readers to their branch and owner, excludes drafts and cancellations without reading prices', async () => {
     const findMany = vi.fn().mockResolvedValue([{ id: 'contract' }]);
-    const client = { salesContract: { findMany } } as unknown as DatabaseClient;
+    const client = {
+      salesContract: { findMany },
+      reservationIntake: { findMany: vi.fn().mockResolvedValue([]) },
+    } as unknown as DatabaseClient;
     expect(
       await readSalesReportingEligibility(client, {
         userId: 'user',

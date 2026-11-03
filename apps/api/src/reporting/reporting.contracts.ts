@@ -133,6 +133,7 @@ export interface TravelReportResultV1 {
     kind: 'TEXT' | 'NUMBER' | 'MONEY';
   }[];
   rows: readonly (TravelReportRowV1 & {
+    amountsByCurrency?: readonly ReportingMoneyV1[];
     sourceValues?: Readonly<Record<string, string | number>>;
   })[];
   total: number;
