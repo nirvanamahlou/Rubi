@@ -1,4 +1,8 @@
 import {
+  registerPettyCash,
+  listPettyRegistrations,
+} from './procurement.registrations';
+import {
   debitPettyFund,
   savePettyFund,
   pettyFundDto,
@@ -154,6 +158,17 @@ export class ProcurementService {
     @Inject(AutomationTasksService)
     private readonly tasks: AutomationTasksService,
   ) {}
+  async registerPettyCash(body: unknown, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    return registerPettyCash(this.database, this.documents, body, actor);
+  }
+  async pettyRegistrations(
+    query: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    await this.scope(actor);
+    return listPettyRegistrations(this.database, query, actor);
+  }
   async pettyFund(branchId: string, actor: AuthenticatedActor) {
     await this.scope(actor);
     this.branch(actor, v.uuid(branchId));

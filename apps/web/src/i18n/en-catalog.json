@@ -17560,5 +17560,9 @@
   "نامه‌ای یافت نشد.": "No letters found.",
   "نامه‌های داخلی": "Internal letters",
   "نامه‌های دریافتی": "Received letters",
-  "همه نامه‌ها": "All letters"
+  "همه نامه‌ها": "All letters",
+  "ابتدا حساب تنخواه این شعبه را تنظیم کنید.": "Configure the petty cash account for this branch first.",
+  "ثبت تنخواه": "Petty cash registration",
+  "ثبت ناموفق بود": "Registration failed",
+  "ثبت‌ها": "Registrations"
 }

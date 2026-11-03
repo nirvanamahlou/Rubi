@@ -44,6 +44,10 @@ import { MasterDataDateRangeFilter } from '@/modules/master-data/components/mast
 import { cn } from '@/lib/utils';
 import { PettyFundCard } from './petty-fund-card';
 import {
+  PettyRegistrationForm,
+  PettyRegistrations,
+} from './petty-registrations';
+import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
 } from '@/components/layout/page-breadcrumbs';
@@ -57,8 +61,16 @@ const groups = [
   'سفارش‌های خرید',
   'دریافت، پذیرش و مغایرت',
   'فاکتورها و ارتباط مالی',
+  'ثبت‌ها',
 ] as const;
 const areaTone = {
+  8: {
+    icon: ReceiptText,
+    border: 'border-violet-300/70 dark:border-violet-400/25',
+    glow: 'from-violet-400/20 dark:from-violet-400/12',
+    badge:
+      'bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300',
+  },
   1: {
     icon: ClipboardList,
     border: 'border-blue-300/70 dark:border-blue-400/25',
@@ -93,6 +105,7 @@ const sectionKeys = [
   'orders',
   'receipts',
   'invoices',
+  'registrations',
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
@@ -200,6 +213,10 @@ function WorkspaceState({
   const [selectedId, setSelectedId] = useState<string | null>(initialRequestId);
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [registrationBranch, setRegistrationBranch] = useState(
+    bootstrap.defaultBranchId ?? bootstrap.branches[0]?.id ?? '',
+  );
   const can = (permission: ProcurementPermission) =>
     bootstrap.permissions.includes(permission);
   useEffect(() => {
@@ -401,6 +418,13 @@ function WorkspaceState({
         </div>
       </div>
     );
+  if (group === 8)
+    return (
+      <PettyRegistrations
+        bootstrap={bootstrap}
+        onBack={() => navigateGroup(0)}
+      />
+    );
   if (group === 5) return <PurchaseOrdersSection bootstrap={bootstrap} />;
   if (group > 0)
     return (
@@ -422,6 +446,13 @@ function WorkspaceState({
     );
   return (
     <div className="space-y-5">
+      {registering && (
+        <PettyRegistrationForm
+          branchId={registrationBranch}
+          onClose={() => setRegistering(false)}
+          onSaved={() => setRegistering(false)}
+        />
+      )}
       {selectedId ? (
         <div className="space-y-4">
           <Button variant="outline" onClick={closeRequest}>
@@ -464,9 +495,12 @@ function WorkspaceState({
                 query={{ status, search: querySearch, queue: queryQueue }}
               />
               {can('procurement.request.create') && (
-                <Button onClick={() => setCreating(true)}>
-                  درخواست خرید جدید
-                </Button>
+                <>
+                  <Button onClick={() => setCreating(true)}>
+                    درخواست خرید جدید
+                  </Button>
+                  <Button onClick={() => setRegistering(true)}>ثبت جدید</Button>
+                </>
               )}
             </div>
           </header>
@@ -536,8 +570,8 @@ function WorkspaceState({
               </Card>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {([1, 3] as const).map((index) => {
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {([1, 3, 8] as const).map((index) => {
               const tone = areaTone[index];
               const Icon = tone.icon;
               return (
@@ -574,7 +608,10 @@ function WorkspaceState({
                 </button>
               );
             })}
-            <PettyFundCard bootstrap={bootstrap} />
+            <PettyFundCard
+              bootstrap={bootstrap}
+              onBranchChange={setRegistrationBranch}
+            />
           </div>
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">

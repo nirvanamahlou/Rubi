@@ -39,7 +39,13 @@ export function pettyBalanceLabel(value: string) {
     (fraction ? '٫' + fraction : '')
   ).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!);
 }
-export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
+export function PettyFundCard({
+  bootstrap,
+  onBranchChange,
+}: {
+  bootstrap: Bootstrap;
+  onBranchChange?: (branchId: string) => void;
+}) {
   const client = useQueryClient();
   const [branchId, setBranch] = useState(
     bootstrap.defaultBranchId ?? bootstrap.branches[0]?.id ?? '',
@@ -153,6 +159,7 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
                   onChange={(event) => {
                     setOpen(false);
                     setBranch(event.target.value);
+                    onBranchChange?.(event.target.value);
                     setDraft(empty);
                   }}
                 >

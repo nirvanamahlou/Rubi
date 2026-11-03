@@ -3417,6 +3417,7 @@ model DocumentCategory {
 }
 
 model Document {
+  pettyRegistrations               ProcurementPettyEntry[]
   senderName                       String?                      @map("sender_name") @db.VarChar(200)
   isIncomingLetter                 Boolean                      @default(false) @map("is_incoming_letter")
   financeOperationalRequests       FinanceOperationalRequest[]
@@ -3511,6 +3512,7 @@ model DocumentAccessGrant {
 }
 
 model DocumentVersion {
+  pettyRegistrations ProcurementPettyEntry[]
   id                 String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId         String                     @map("document_id") @db.Uuid
   versionNumber      Int                        @map("version_number")
@@ -8288,16 +8290,22 @@ model ProcurementPettyFund {
 }
 
 model ProcurementPettyEntry {
-  requestId  String?              @db.Uuid
-  request    ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
-  id         String               @id @default(uuid()) @db.Uuid
-  fundId     String               @db.Uuid
-  requestKey String?              @unique @db.Uuid
-  amount     Decimal              @db.Decimal(24, 4)
-  actorId    String               @db.Uuid
-  createdAt  DateTime             @default(now()) @db.Timestamptz(3)
-  actor      User                 @relation(fields: [actorId], references: [id], onDelete: Restrict)
-  fund       ProcurementPettyFund @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  title             String?              @db.VarChar(240)
+  occurredAt        DateTime?            @db.Timestamptz(3)
+  receiptDocumentId String?              @db.Uuid
+  receiptVersionId  String?              @db.Uuid
+  receiptDocument   Document?            @relation(fields: [receiptDocumentId], references: [id], onDelete: Restrict)
+  receiptVersion    DocumentVersion?     @relation(fields: [receiptVersionId], references: [id], onDelete: Restrict)
+  requestId         String?              @db.Uuid
+  request           ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  id                String               @id @default(uuid()) @db.Uuid
+  fundId            String               @db.Uuid
+  requestKey        String?              @unique @db.Uuid
+  amount            Decimal              @db.Decimal(24, 4)
+  actorId           String               @db.Uuid
+  createdAt         DateTime             @default(now()) @db.Timestamptz(3)
+  actor             User                 @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  fund              ProcurementPettyFund @relation(fields: [fundId], references: [id], onDelete: Restrict)
 
   @@index([fundId, createdAt])
   @@map("procurement_petty_entries")
