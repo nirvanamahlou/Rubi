@@ -120,7 +120,10 @@ export async function GET(
       logo = '';
     } else if (
       branding.logoFileId &&
-      !(branding.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
+      !(
+        branding.kind === 'OWN' &&
+        ['JAHAN_BASTAN', 'GHESATI_RO'].includes(branding.companyCode ?? '')
+      )
     ) {
       const logoResponse = await get(
         `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
@@ -144,6 +147,7 @@ export async function GET(
               {
                 NIYAYESH_SEIR_SAHAR: 'niyayesh.png',
                 JAHAN_BASTAN: 'jahan-bastan-transparent.png',
+                GHESATI_RO: 'ghesati-ro.png',
               } as Record<string, string>
             )[branding.companyCode ?? '']
           : undefined;

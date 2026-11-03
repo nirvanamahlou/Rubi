@@ -31,7 +31,8 @@ export function useTravelLogo(
   }>();
   const fileId =
     withoutLogo ||
-    (branding?.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
+    (branding?.kind === 'OWN' &&
+      ['JAHAN_BASTAN', 'GHESATI_RO'].includes(branding.companyCode ?? ''))
       ? null
       : branding?.logoFileId;
   useEffect(() => {
@@ -66,6 +67,8 @@ export function useTravelLogo(
     return { logo: '/brand/niyayesh-seir-full.png', error: '' };
   if (branding.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
     return { logo: '/brand/jahan-bastan-transparent.png', error: '' };
+  if (branding.kind === 'OWN' && branding.companyCode === 'GHESATI_RO')
+    return { logo: '/brand/ghesati-ro.png', error: '' };
   return { logo: '', error: 'برای شرکت انتخاب‌شده لوگو ثبت نشده است.' };
 }
 
