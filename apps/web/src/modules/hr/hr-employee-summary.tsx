@@ -24,6 +24,7 @@ export function employeeSummaryFields(
   const group = references.find((r) => r.id === membership?.parentId);
   const fields: [string, string][] = [
     ['کد پرسنلی', employee.personnelCode],
+    ['کد شناسایی', employee.identificationCode ?? ''],
     ['نام و نام خانوادگی', employee.name],
     [
       'شماره داخلی',
@@ -68,7 +69,7 @@ export function HrEmployeeSummary(props: {
   userLabel?: string | undefined;
 }) {
   return (
-    <dl className={ui.properties}>
+    <dl className={`${ui.properties} ${ui.employeeProperties}`}>
       {employeeSummaryFields(
         props.employee,
         props.records,

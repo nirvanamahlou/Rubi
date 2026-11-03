@@ -1,3 +1,4 @@
+import { reservationPurchasesComplete } from './reservation-purchase-completion';
 import { TravisSandboxService } from '../integrations/insurance/travis-sandbox.service';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { validateSupplierFormPrices } from './voucher-settings';
@@ -703,6 +704,18 @@ export class ReservationRequestsController {
       ),
     };
   }
+  @Get(':id/purchase-completion')
+  @Header('Cache-Control', 'private, no-store')
+  async purchaseCompletion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const context = await this.service.purchaseContext(id, req.actor.branchIds);
+    return { data: { complete: reservationPurchasesComplete(context) } };
+  }
+
   @Get(':id/purchase-context')
   @Header('Cache-Control', 'private, no-store')
   async purchaseContext(
@@ -884,6 +897,7 @@ export class ReservationRequestsController {
     ReservationManifestService,
   ],
   exports: [
+    ReservationServicePurchaseService,
     ReservationsPublicService,
     TravelWorkflowService,
     FinanceDeliveryModule,

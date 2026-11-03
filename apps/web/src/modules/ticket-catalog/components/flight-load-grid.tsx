@@ -25,6 +25,7 @@ import {
 } from '../model/flight-load';
 import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
+import { FlightLoadContracts } from './flight-load-contracts';
 import { scheduleWeekdays } from '../model/weekday-schedule';
 import styles from './flight-load-grid.module.css';
 import type { Reference } from '../model/catalog';
@@ -74,6 +75,7 @@ export function FlightLoadGrid({
   renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
   const [storedFilter, setFilter] = useState(initial);
+  const [reportOffer, setReportOffer] = useState<TicketOfferV1>();
   const [originChosen, setOriginChosen] = useState(false);
   const [defaultOrigin, setDefaultOrigin] = useState<Reference[]>([]);
   const tehranId = tehranLoadOrigin([...references, ...defaultOrigin]);
@@ -219,6 +221,7 @@ export function FlightLoadGrid({
     (id) => !country || cityCountry(id) === country,
   );
   const change = (field: keyof FlightLoadFilter, value: string) => {
+    setReportOffer(undefined);
     if (field === 'origin') setOriginChosen(true);
     setFilter((stored) => {
       const c = { ...stored, origin: filter.origin };
@@ -327,7 +330,20 @@ export function FlightLoadGrid({
                     />
                   </td>
                   <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">—</td>
-                  <td dir="ltr">{ticketCalendarDate(offer.departureAt)}</td>
+                  <td dir="ltr">
+                    <button
+                      type="button"
+                      className={styles.dateLink}
+                      aria-label={`قراردادهای پرواز ${offer.serviceNumber} ${ticketCalendarDate(offer.departureAt)}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        selectLeg(offer.id, back);
+                        setReportOffer(offer);
+                      }}
+                    >
+                      {ticketCalendarDate(offer.departureAt)}
+                    </button>
+                  </td>
                   <td>{offer.carrierName}</td>
                   <td>{offer.serviceNumber}</td>
                   <td dir="ltr">{time(offer.departureAt)}</td>
@@ -565,6 +581,7 @@ export function FlightLoadGrid({
             checked={validDates}
             onChange={(event) => {
               setValidDates(event.target.checked);
+              setReportOffer(undefined);
               setFilter((c) => ({
                 ...c,
                 ...(event.target.checked
@@ -585,6 +602,7 @@ export function FlightLoadGrid({
           }
           onClick={() => {
             setHasSearched(true);
+            setReportOffer(undefined);
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
             setSearchedCountry(country);
@@ -609,6 +627,7 @@ export function FlightLoadGrid({
           variant="outline"
           onClick={() => {
             setCountry('');
+            setReportOffer(undefined);
             setOriginChosen(false);
             setSearchedCountry('');
             setFilter(initial());
@@ -639,6 +658,14 @@ export function FlightLoadGrid({
           {detail(outbound, false)}
           {detail(returning, true)}
         </div>
+      )}
+      {reportOffer && (
+        <FlightLoadContracts
+          key={reportOffer.id}
+          offer={reportOffer}
+          cityName={cityLabel}
+          onClose={() => setReportOffer(undefined)}
+        />
       )}
     </div>
   );

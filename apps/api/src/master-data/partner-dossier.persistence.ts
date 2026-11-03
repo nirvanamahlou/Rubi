@@ -57,6 +57,9 @@ export async function persistPartnerDossier(
     const org = await tx.masterOrganization.create({
       data: {
         code: `ORG_${randomUUID().replaceAll('-', '').slice(0, 24).toUpperCase()}`,
+        ...(typeof source.accountingCode === 'string'
+          ? { accountingCode: source.accountingCode }
+          : {}),
         legalName: name,
         displayName: name,
         personType: 'LEGAL',

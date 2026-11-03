@@ -24,6 +24,7 @@ const summarySchema = z.object({
   passengerNames: z.array(z.string().max(500)).max(1000).optional(),
   createdAt: instant,
   contractVersion: z.number().int().positive(),
+  amendedAt: instant.nullish(),
   correctedAt: instant.nullable(),
   cancelledAt: instant.nullable(),
   departureDate: z.string(),
@@ -396,6 +397,7 @@ export function decodeIntake(
           ? voucherActionAvailable(row.workflow)
           : false,
         hotelConfirmed: row.workflow?.voucherIssued === true,
+        amendedAt: row.tableSummary?.amendedAt ?? undefined,
         correctedAt: row.tableSummary?.correctedAt ?? undefined,
         salesCorrectionPending: row.salesCorrectionPending,
         ...(travelDate ? { travelDate } : {}),

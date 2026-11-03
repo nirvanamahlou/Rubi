@@ -104,7 +104,31 @@ export function buildHotelPackageCompositions(
         childAges: [...rate.childAges],
         board: rate.board,
       };
-      identities.set(packageRoomCode(identity), identity);
+      let variants = [identity];
+      if (input.calculation.infantFlight) {
+        let bands: (typeof identity.childAges)[] = [[]];
+        for (const band of identity.childAges) {
+          const boundaries = [
+            band.min,
+            ...[2, 12].filter(
+              (age) => age > band.min && age < band.maxExclusive,
+            ),
+            band.maxExclusive,
+          ];
+          const options = boundaries.slice(0, -1).map((min, index) => ({
+            min,
+            maxExclusive: boundaries[index + 1]!,
+          }));
+          if (bands.length * options.length > 4096)
+            throw Error('Too many age combinations');
+          bands = bands.flatMap((prefix) =>
+            options.map((option) => [...prefix, option]),
+          );
+        }
+        variants = bands.map((childAges) => ({ ...identity, childAges }));
+      }
+      for (const variant of variants)
+        identities.set(packageRoomCode(variant), variant);
     }
     return [...identities].flatMap(([roomCode, identity]) => {
       const quote = (ages: number[]) =>
@@ -146,8 +170,19 @@ export function buildHotelPackageCompositions(
         factor: '1',
         nights: 1,
         hotelCurrency: currency,
-        adults: identity.adults,
-        children: identity.childAges.length,
+        adults:
+          identity.adults +
+          (input.calculation.infantFlight
+            ? identity.childAges.filter((band) => band.min >= 12).length
+            : 0),
+        children: identity.childAges.filter(
+          (band) =>
+            !input.calculation.infantFlight ||
+            (band.min >= 2 && band.maxExclusive <= 12),
+        ).length,
+        infants: input.calculation.infantFlight
+          ? identity.childAges.filter((band) => band.maxExclusive <= 2).length
+          : 0,
       });
       return [
         {

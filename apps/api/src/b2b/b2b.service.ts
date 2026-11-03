@@ -217,7 +217,7 @@ export class B2bService {
   ): Promise<{ data: B2bAgencyProfileDetailsV1 }> {
     requirePermissions(actor, 'b2b.agency.read');
     const branchId = branchOf(actor, requestedBranch);
-    await this.agency(organizationId, role);
+    const organization = await this.agency(organizationId, role);
     const profile = await this.repository.findProfile(
       organizationId,
       branchId,
@@ -225,6 +225,7 @@ export class B2bService {
     );
     return {
       data: {
+        accountingCode: organization.accountingCode ?? null,
         profile: profile ? profileRecord(profile) : null,
         accountManagers: await this.accountManagers(branchId),
       },

@@ -1,7 +1,13 @@
 export interface PackageTourPriceFieldV1 {
   id: string;
   title: string;
-  kind: 'adultFlight' | 'childFlight' | 'business' | 'commission' | 'custom';
+  kind:
+    | 'adultFlight'
+    | 'childFlight'
+    | 'infantFlight'
+    | 'business'
+    | 'commission'
+    | 'custom';
   amount: string;
   currencyCode: string;
   mode: 'fixed' | 'percent';
@@ -65,6 +71,14 @@ export function tourPriceFields(
       currencyCode: value.commissionCurrencyCode ?? currency,
       mode: value.commissionMode ?? 'percent',
     },
+    {
+      id: 'infantFlight',
+      title: 'قیمت فروش پرواز نوزاد',
+      kind: 'infantFlight',
+      amount: '0',
+      currencyCode: currency,
+      mode: 'fixed',
+    },
   ];
 }
 
@@ -87,6 +101,7 @@ export function validateTourPriceFields(
       ![
         'adultFlight',
         'childFlight',
+        'infantFlight',
         'business',
         'commission',
         'custom',
