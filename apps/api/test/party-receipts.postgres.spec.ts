@@ -150,6 +150,19 @@ describe.skipIf(!enabled)('party receipts atomic PostgreSQL FIFO', () => {
       service.balance(branchId, f.payerId, { ...actor, branchIds: [] }),
     ).rejects.toThrow('مجوز');
   });
+  it('returns one committed batch to two concurrent retries of the same operation', async () => {
+    const f = await fixture();
+    const [a, b] = await Promise.all([
+      service.receive(f.command, actor),
+      service.receive(f.command, actor),
+    ]);
+    expect(a).toEqual(b);
+    expect(
+      await db.salesContractPaymentEntry.count({
+        where: { idempotencyKey: `party-receipt:${f.command.operationId}` },
+      }),
+    ).toBe(7);
+  });
   it('serializes concurrent operations so only one stale-preview command can allocate', async () => {
     const f = await fixture();
     const outcomes = await Promise.allSettled([

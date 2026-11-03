@@ -183,10 +183,15 @@ export class FinancePartyReceipts {
         typeof error === 'object' &&
         'code' in error &&
         ['P2034', 'P2002'].includes(String(error.code))
-      )
+      ) {
+        const replay = await this.db.client.$transaction((tx) =>
+          partyReceiptReplay(tx, input, fingerprint),
+        );
+        if (replay) return replay;
         throw new ConflictException(
           'دریافت هم‌زمان تغییر کرده است؛ همان عملیات را دوباره ارسال کنید.',
         );
+      }
       throw error;
     }
   }

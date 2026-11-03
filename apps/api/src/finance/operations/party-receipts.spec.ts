@@ -116,6 +116,18 @@ describe('Finance party receipt command', () => {
       expect(transaction).not.toHaveBeenCalled();
     },
   );
+  it('returns the committed same-operation receipt after a serialization loser rolls back', async () => {
+    const { service, transaction } = setup();
+    transaction.mockRejectedValueOnce({ code: 'P2034' });
+    const result = {
+      operationId: command.operationId,
+      allocations: [{ amount: '650' }],
+    };
+    mocks.replay.mockResolvedValue(result);
+    expect(await service.receive(command, actor)).toEqual(result);
+    expect(mocks.persist).not.toHaveBeenCalled();
+    expect(transaction).toHaveBeenCalledTimes(2);
+  });
   it('does not hide financial capture failure or report a successful partial receipt', async () => {
     const { service } = setup();
     mocks.persist.mockRejectedValue(new Error('event failed'));
