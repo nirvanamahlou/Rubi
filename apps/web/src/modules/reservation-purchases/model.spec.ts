@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canViewRoute,
   type ReservationIntakeV1,
+  type SalesServiceInput,
   type TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
 import {
@@ -11,6 +12,7 @@ import {
   purchaseCategory,
   purchaseHubHref,
   servicePurchase,
+  purchaseServiceLabel,
 } from './model';
 const request = {
   id: 'intake',
@@ -52,6 +54,35 @@ const request = {
   ],
 } as unknown as ReservationIntakeV1;
 describe('contract purchases share canonical reservation records', () => {
+  it('identifies floating hotel purchases from saved contract facts only', () => {
+    const hotel = {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+    } as const;
+    expect(purchaseServiceLabel(request, hotel)).toBe('خرید هتل');
+    for (const floating of [
+      { ...hotel, metadata: { purchaseSupplyType: 'FLOATING' } },
+      {
+        clientKey: 'flight',
+        kind: 'FLIGHT',
+        titleSnapshot: 'Flight',
+        metadata: { contractFlightVersion: 1 },
+      },
+    ] as SalesServiceInput[]) {
+      const saved = {
+        ...request,
+        snapshot: { ...request.snapshot, serviceSelections: [hotel, floating] },
+      };
+      expect(purchaseServiceLabel(saved, hotel)).toBe('هتل شناور');
+    }
+    expect(purchaseServiceLabel(request, { ...hotel, kind: 'FLIGHT' })).toBe(
+      'بلیط شناور',
+    );
+    expect(purchaseServiceLabel(request, { ...hotel, kind: 'TRANSFER' })).toBe(
+      'خرید ترانسفر',
+    );
+  });
   it('does not relabel bus or train offers as flights', () => {
     expect(
       contractPurchaseServices({

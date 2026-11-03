@@ -3,6 +3,20 @@ import type {
   SalesServiceInput,
   TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
+
+export function purchaseServiceLabel(
+  request: ReservationIntakeV1,
+  service: SalesServiceInput,
+) {
+  if (
+    service.kind === 'HOTEL' &&
+    isFloatingSalesContract(request.snapshot.serviceSelections)
+  )
+    return 'هتل شناور';
+  if (service.kind === 'FLIGHT') return 'بلیط شناور';
+  return purchaseCategories.find(([key]) => key === service.kind)?.[1];
+}
 
 export const purchaseCategories = [
   ['ALL', 'همه خدمات'],
