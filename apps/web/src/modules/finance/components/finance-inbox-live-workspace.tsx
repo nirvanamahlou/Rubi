@@ -1857,7 +1857,7 @@ export function FinanceInboxLiveWorkspace() {
                               )
                               .map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
-                                  {account.title} ·{' '}
+                                  {receiptAccountLabel(account)} ·{' '}
                                   {currencySymbol(account.currencyCode ?? '')}
                                 </SelectItem>
                               ))}
