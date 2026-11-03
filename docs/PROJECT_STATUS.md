@@ -4,6 +4,10 @@ Owner authorizes calendar repair, immediate daily-package viewing, device-backed
 
 Validated 94 API/database and 130 Web/i18n tests, full API/Web types, scoped lint and both production builds. Source changes require final-head hosted gates before authorized develop merge. No runtime rollout or operational account reassignment. Details: docs/tasks/WORKBENCH-FIXES-1103.md.
 
+## JAHAN-CONTRACT-HEADER-1103 — PC-A — READY
+
+Jahan Bastan contract header omits redundant issuer captions, expands the transparent logo to19mm and adds02172075000 in the footer. Other issuers and contract facts unchanged. Focused print regression and scoped lint run before owner-authorized develop merge. No deployment or data changes.
+
 ## PURCHASE-COMPLETION-1103 — PC-A — READY_FOR_CI
 
 PC-A; codex/pc-a-purchase-completion-1103 from current develop. Owner authorizes removing purchase-entry FX baseline controls and fixing purchased contracts remaining in the buying queue, then develop merge. Reserve reservation-purchase-selection SQL and its existing isolated PostgreSQL regression, Finance PurchaseFxRate entry adapter and focused rendering regression, own docs only. Read-only diagnosis found three reservation revisions for the reported contract, with all four hotel/transfer purchases on the latest revision. Select current contract intake before queue filters and reuse latest matching service purchases from same-contract, same-branch earlier intake revisions; preserve every historical intake/payment and independent Finance FX capture. No migration/dependency/production writes/deployment.
