@@ -320,7 +320,7 @@ describe('MasterDataRepository financial reference listing', () => {
       expect.objectContaining({
         where: { isActive: true, bankId, cityId },
         include: { bank: true, city: true },
-        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
       }),
     );
   });
@@ -553,3 +553,66 @@ it.each(['organizations', 'suppliers', 'brokers'] as const)(
     );
   },
 );
+
+describe('MasterDataRepository display-order pagination', () => {
+  it.each([
+    ['countries', 'masterCountry'],
+    ['hotels', 'masterHotel'],
+    ['payment-methods', 'masterPaymentMethod'],
+    ['sales-channels', 'masterSalesChannel'],
+  ] as const)(
+    'orders %s numerically before taking a page',
+    async (resource, delegate) => {
+      const findMany = vi.fn().mockResolvedValue([]);
+      const repository = new MasterDataRepository({
+        client: {
+          [delegate]: { findMany, count: vi.fn().mockResolvedValue(0) },
+        },
+      } as unknown as DatabaseService);
+      await repository.list(resource, {
+        search: '',
+        status: 'all',
+        sortBy: 'displayOrder',
+        sortDirection: 'asc',
+        page: 2,
+        pageSize: 10,
+      });
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [
+            { displayOrder: 'asc' },
+            { createdAt: 'asc' },
+            { id: 'asc' },
+          ],
+          skip: 10,
+          take: 10,
+        }),
+      );
+    },
+  );
+
+  it('keeps rate history compatible without a displayOrder column', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repository = new MasterDataRepository({
+      client: {
+        masterDraftExchangeRate: {
+          findMany,
+          count: vi.fn().mockResolvedValue(0),
+        },
+      },
+    } as unknown as DatabaseService);
+    await repository.list('exchange-rates', {
+      search: '',
+      status: 'all',
+      sortBy: 'displayOrder',
+      sortDirection: 'desc',
+      page: 1,
+      pageSize: 25,
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { updatedAt: 'desc' },
+      }),
+    );
+  });
+});

@@ -134,7 +134,8 @@ export type MasterTransferServiceMode = 'PRIVATE' | 'SHARED';
 export type MasterVisaValidityMode = 'DAYS' | 'PASSPORT_EXPIRY';
 export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
 
-export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
+export type MasterDataSortField =
+  'displayOrder' | 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
 export {
