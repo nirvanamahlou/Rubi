@@ -17615,5 +17615,17 @@
   "نسخه پروتکل": "Protocol version",
   "ویرایش کد استاندارد": "Edit standard code",
   "هشت ستونی": "Eight columns",
-  "همه کدینگ استاندارد": "All coding standards"
+  "همه کدینگ استاندارد": "All coding standards",
+  "با مقدار": "Not empty",
+  "بدون": "Does not contain",
+  "بدون فیلتر": "No filter",
+  "بدون مقدار": "Empty",
+  "پر": "Not null",
+  "تهی": "Null",
+  "شامل": "Contains",
+  "شروع با": "Starts with",
+  "عملگر فیلتر": "Filter operator",
+  "مختوم به": "Ends with",
+  "مساوی با": "Equal to",
+  "نامساوی با": "Not equal to"
 }

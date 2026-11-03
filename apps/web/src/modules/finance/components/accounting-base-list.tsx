@@ -60,6 +60,12 @@ import {
   type FilterOperator,
 } from '../accounting-list-filters';
 
+import {
+  columnOperators,
+  matchesColumn,
+  type ColumnOperator,
+} from '../accounting-column-filter';
+
 const emptyFilter = (): FilterGroup => ({
   type: 'group',
   id: 'root',
@@ -553,6 +559,9 @@ export function AccountingBaseList({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {},
   );
+  const [columnModes, setColumnModes] = useState<
+    Record<string, ColumnOperator>
+  >({});
   const [showFilters, setShowFilters] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -629,28 +638,29 @@ export function AccountingBaseList({
       type: 'group',
       id: 'combined',
       mode: 'all',
-      children: [
-        applied,
-        ...columns
-          .filter((column) => columnFilters[column.key])
-          .map((column): FilterRule => ({
-            ...newRule(),
-            id: `column-${column.key}`,
-            field: column.key,
-            operator: column.type === 'boolean' ? 'equals' : 'contains',
-            value: columnFilters[column.key]!,
-          })),
-      ],
+      children: [applied],
     },
     fields,
     search,
-  ).sort(
-    (a, b) =>
-      (sortDirection === 'asc' ? 1 : -1) *
-      (a.values[sortKey] ?? '').localeCompare(b.values[sortKey] ?? '', 'fa', {
-        numeric: true,
-      }),
-  );
+  )
+    .filter((record) =>
+      columns.every((column) =>
+        matchesColumn(
+          record,
+          column.key,
+          columnModes[column.key] ??
+            (column.type === 'boolean' ? 'equals' : 'contains'),
+          columnFilters[column.key] ?? '',
+        ),
+      ),
+    )
+    .sort(
+      (a, b) =>
+        (sortDirection === 'asc' ? 1 : -1) *
+        (a.values[sortKey] ?? '').localeCompare(b.values[sortKey] ?? '', 'fa', {
+          numeric: true,
+        }),
+    );
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const actualPage = Math.min(page, pages);
   const visible = filtered.slice(
@@ -671,17 +681,21 @@ export function AccountingBaseList({
   const definition = accountingLists.find((list) => list.kind === kind)!;
   const dirty = JSON.stringify(applied) !== JSON.stringify(draft);
   const presetRule = applied.children[0];
-  const presetValue = Object.values(columnFilters).some(Boolean)
-    ? 'custom'
-    : applied.children.length === 0
-      ? 'all'
-      : applied.mode === 'all' &&
-          applied.children.length === 1 &&
-          presetRule?.type === 'rule' &&
-          presetRule.field === 'active' &&
-          presetRule.operator === 'equals'
-        ? presetRule.value
-        : 'custom';
+  const presetValue =
+    Object.values(columnFilters).some(Boolean) ||
+    Object.values(columnModes).some((mode) =>
+      ['null', 'not-null', 'empty', 'not-empty'].includes(mode),
+    )
+      ? 'custom'
+      : applied.children.length === 0
+        ? 'all'
+        : applied.mode === 'all' &&
+            applied.children.length === 1 &&
+            presetRule?.type === 'rule' &&
+            presetRule.field === 'active' &&
+            presetRule.operator === 'equals'
+          ? presetRule.value
+          : 'custom';
   const locked = busy || reloading;
   const loadFilter = () => {
     if (!savedFilter) return;
@@ -760,6 +774,7 @@ export function AccountingBaseList({
     setApplied(emptyFilter());
     setSearch('');
     setColumnFilters({});
+    setColumnModes({});
     setSelected([]);
     setPage(1);
     setMessage('فیلترها پاک شدند.');
@@ -879,6 +894,7 @@ export function AccountingBaseList({
     setSearch('');
     setPage(1);
     setColumnFilters({});
+    setColumnModes({});
     setMessage('فهرست انتخاب شد.');
   };
   const renderListToolbar = (bottom = false) => (
@@ -1322,16 +1338,85 @@ export function AccountingBaseList({
                 {columns.map((column) => (
                   <th key={column.key} className="px-2 pb-3">
                     <div className="flex items-center gap-1 rounded-lg border border-input bg-surface px-2">
-                      <Filter
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                      <DropdownMenu>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="shrink-0 rounded p-1 hover:bg-muted"
+                                aria-label={`عملگر فیلتر ${column.label}`}
+                              >
+                                <Filter
+                                  className="size-3.5"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {
+                              columnOperators.find(
+                                ([value]) =>
+                                  value ===
+                                  (columnModes[column.key] ??
+                                    (column.type === 'boolean'
+                                      ? 'equals'
+                                      : 'contains')),
+                              )?.[1]
+                            }
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent
+                          align="start"
+                          dir="rtl"
+                          className="text-right"
+                        >
+                          {columnOperators
+                            .filter(
+                              ([value]) =>
+                                column.type !== 'boolean' ||
+                                ['none', 'equals', 'not-equals'].includes(
+                                  value,
+                                ),
+                            )
+                            .map(([value, label]) => (
+                              <DropdownMenuItem
+                                className="min-h-0 py-1 text-xs"
+                                key={value}
+                                onSelect={() => {
+                                  setColumnModes({
+                                    ...columnModes,
+                                    [column.key]: value,
+                                  });
+                                  if (value === 'none')
+                                    setColumnFilters({
+                                      ...columnFilters,
+                                      [column.key]: '',
+                                    });
+                                  setSelected([]);
+                                  setPage(1);
+                                }}
+                              >
+                                {label}
+                              </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       {column.type === 'boolean' ? (
                         <select
                           aria-label={`فیلتر ${column.label}`}
                           className="h-9 min-w-0 w-full bg-transparent text-sm font-normal"
                           value={columnFilters[column.key] ?? ''}
                           onChange={(event) => {
+                            if (columnModes[column.key] === 'none')
+                              setColumnModes({
+                                ...columnModes,
+                                [column.key]:
+                                  column.type === 'boolean'
+                                    ? 'equals'
+                                    : 'contains',
+                              });
                             setColumnFilters({
                               ...columnFilters,
                               [column.key]: event.target.value,
@@ -1356,6 +1441,14 @@ export function AccountingBaseList({
                           className="h-9 border-0 bg-transparent font-normal shadow-none"
                           value={columnFilters[column.key] ?? ''}
                           onChange={(event) => {
+                            if (columnModes[column.key] === 'none')
+                              setColumnModes({
+                                ...columnModes,
+                                [column.key]:
+                                  column.type === 'boolean'
+                                    ? 'equals'
+                                    : 'contains',
+                              });
                             setColumnFilters({
                               ...columnFilters,
                               [column.key]: event.target.value,

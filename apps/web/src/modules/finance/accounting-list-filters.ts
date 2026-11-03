@@ -38,6 +38,7 @@ export type ListField = {
 };
 export type ListRecord = {
   id: string;
+  nullFields?: string[];
   values: Record<string, string>;
   allocations: Record<string, string>[];
 };
@@ -149,6 +150,15 @@ export function listRecords(
       : snapshot.configurations.filter((row) => row.kind === kind);
   return rows.map((row) => ({
     id: row.id,
+    nullFields: [
+      ...(row.titleEn == null ? ['titleEn'] : []),
+      ...(row.description == null ? ['description'] : []),
+      ...('attributes' in row && kind === 'coding-standards'
+        ? ['protocolTitle', 'protocolVersion'].filter(
+            (key) => row.attributes[key] == null,
+          )
+        : []),
+    ],
     values: {
       code: row.code,
       title: row.title,

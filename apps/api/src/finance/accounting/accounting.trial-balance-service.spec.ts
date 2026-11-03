@@ -25,13 +25,11 @@ function setup(visible = true) {
       findFirst: vi.fn().mockResolvedValue(visible ? { id: bookId } : null),
     },
     accountingPeriod: {
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          id: periodId,
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        id: periodId,
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      }),
     },
     accountingAccount: {
       findMany: vi.fn().mockResolvedValue([
