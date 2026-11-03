@@ -645,6 +645,47 @@ describe('Sales contract domain', () => {
     );
   });
 
+  it.each([
+    '2026-10-07T20:30:00.000Z',
+    '2026-10-07T23:00:00.000Z',
+    '2026-10-08T02:30:00+03:30',
+  ])(
+    'accepts a return on the selected Tehran day despite the UTC date: %s',
+    (departureAt) => {
+      const input = structuredClone(draft);
+      input.ticketSelections![1]!.departureAt = departureAt;
+      input.ticketSelections![1]!.arrivalAt = '2026-10-08T04:00:00Z';
+      const before = structuredClone(input);
+      expect(() => validateSalesContract(input)).not.toThrow();
+      expect(input).toEqual(before);
+    },
+  );
+
+  it('rejects a return even one millisecond before the selected Tehran day', () => {
+    const input = structuredClone(draft);
+    input.ticketSelections![1]!.departureAt = '2026-10-07T20:29:59.999Z';
+    expect(() => validateSalesContract(input)).toThrow(
+      'مسیر یا زمان بلیت برگشت',
+    );
+  });
+
+  it('still rejects a return before outbound arrival even on the allowed Tehran day', () => {
+    const input = structuredClone(draft);
+    input.departureDate = '2026-10-07';
+    input.ticketSelections![0]!.departureAt = '2026-10-07T20:00:00Z';
+    input.ticketSelections![0]!.arrivalAt = '2026-10-07T23:30:00Z';
+    input.ticketSelections![1]!.departureAt = '2026-10-07T23:00:00Z';
+    expect(() => validateSalesContract(input)).toThrow(
+      'مسیر یا زمان بلیت برگشت',
+    );
+    input.ticketSelections![1]!.departureAt = '2026-10-07T23:30:00Z';
+    expect(() => validateSalesContract(input)).not.toThrow();
+    input.ticketSelections![1]!.destinationId = input.destinationId;
+    expect(() => validateSalesContract(input)).toThrow(
+      'مسیر یا زمان بلیت برگشت',
+    );
+  });
+
   it('requires secure check metadata only for check payments', () => {
     expect(() =>
       validateSalesPayment({

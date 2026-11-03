@@ -1,3 +1,4 @@
+import { isFloatingSalesContract } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 import type { MasterDataRecord } from '@nora/contracts';
 
@@ -939,4 +940,62 @@ describe('service dates replace the extra trip-start field', () => {
     expect(salesStandaloneServiceDatesValid(transfers)).toBe(true);
     expect(salesTravelDate(transfers)).toBe('2026-10-01');
   });
+});
+
+it('persists explicit floating hotel ownership and infers it from a floating ticket', () => {
+  const base = {
+    ...emptySalesForm,
+    serviceKinds: ['HOTEL' as const],
+    hotel: { ...emptySalesForm.hotel, floatingPurchase: true },
+  };
+  expect(
+    salesPayload(base).services.find((s) => s.kind === 'HOTEL')?.metadata
+      ?.purchaseSupplyType,
+  ).toBe('FLOATING');
+  expect(
+    salesPayload({
+      ...base,
+      hotel: { ...base.hotel, floatingPurchase: false },
+    }).services.find((s) => s.kind === 'HOTEL')?.metadata?.purchaseSupplyType,
+  ).toBeUndefined();
+  const paired = {
+    ...base,
+    serviceKinds: ['FLIGHT' as const, 'HOTEL' as const],
+    hotel: { ...base.hotel, floatingPurchase: false },
+    outboundOffer: {
+      id: 'offer',
+      supplyType: 'FLOATING',
+      departureAt: '2026-10-01T10:00:00Z',
+      arrivalAt: '2026-10-01T12:00:00Z',
+      carrierName: 'SYNTH',
+      serviceNumber: 'TEST',
+      originId: 'o',
+      destinationId: 'd',
+      cabinClassCode: 'ECONOMY',
+      version: 1,
+    } as never,
+  };
+  const payload = salesPayload(paired);
+  expect(isFloatingSalesContract(payload.services)).toBe(true);
+  expect(
+    payload.services.find((s) => s.kind === 'FLIGHT')?.metadata
+      ?.purchaseSupplyType,
+  ).toBe('FLOATING');
+  expect(
+    salesPayload({
+      ...paired,
+      outboundOffer: {
+        id: 'company',
+        supplyType: 'COMPANY',
+        departureAt: '2026-10-01T10:00:00Z',
+        arrivalAt: '2026-10-01T12:00:00Z',
+        carrierName: 'SYNTH',
+        serviceNumber: 'TEST',
+        originId: 'o',
+        destinationId: 'd',
+        cabinClassCode: 'ECONOMY',
+        version: 1,
+      } as never,
+    }).services.find((s) => s.kind === 'HOTEL')?.metadata?.purchaseSupplyType,
+  ).not.toBe('FLOATING');
 });

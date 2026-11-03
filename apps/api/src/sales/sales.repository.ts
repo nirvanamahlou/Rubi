@@ -1121,6 +1121,7 @@ export class SalesRepository {
     fingerprint?: string,
     reservationSnapshot?: Prisma.InputJsonValue,
     reservationRequestId?: string,
+    afterTransition?: (tx: Prisma.TransactionClient) => Promise<void>,
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
@@ -1145,6 +1146,7 @@ export class SalesRepository {
           },
         });
         if (changed.count !== 1) return false;
+        if (afterTransition) await afterTransition(tx);
         if (reservationSnapshot && idempotencyKey && fingerprint)
           await tx.salesReservationRequest.create({
             data: {

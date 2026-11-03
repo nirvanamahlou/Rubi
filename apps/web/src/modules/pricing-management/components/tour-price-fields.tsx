@@ -10,10 +10,14 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 export function TourPriceFields({
   value,
   onChange,
+  currencies = [],
+  currenciesLoading = false,
   disabled = false,
 }: {
   value: readonly PackageTourPriceFieldV1[];
   onChange: (value: PackageTourPriceFieldV1[]) => void;
+  currencies?: readonly { code?: string; name: string }[];
+  currenciesLoading?: boolean;
   disabled?: boolean;
 }) {
   function update(id: string, patch: Partial<PackageTourPriceFieldV1>) {
@@ -52,7 +56,7 @@ export function TourPriceFields({
         {value.map((field, index) => (
           <div
             key={field.id}
-            className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem] items-end gap-3 rounded-xl border border-border p-3"
+            className="grid grid-cols-[minmax(0,1fr)_8rem_2.5rem] items-end gap-3 rounded-xl border border-border p-3"
           >
             <label className="col-span-full grid gap-2 text-sm font-bold">
               نام فیلد
@@ -129,21 +133,36 @@ export function TourPriceFields({
                   <option value="fixed">مبلغ ثابت</option>
                 </NativeSearchSelect>
               ) : (
-                <Input
+                <NativeSearchSelect
                   aria-label={`ارز ${field.title || index + 1}`}
-                  dir="ltr"
-                  maxLength={3}
-                  placeholder="IRR"
-                  disabled={disabled}
+                  optionLimit={currencies.length + 1}
+                  disabled={disabled || currenciesLoading || !currencies.length}
                   value={field.currencyCode}
-                  onChange={(event) =>
-                    update(field.id, {
-                      currencyCode: event.target.value
-                        .toUpperCase()
-                        .replace(/[^A-Z]/g, ''),
-                    })
-                  }
-                />
+                  onChange={(event) => {
+                    const currencyCode = event.target.value;
+                    if (
+                      currencies.some(
+                        (currency) => currency.code === currencyCode,
+                      )
+                    )
+                      update(field.id, { currencyCode });
+                  }}
+                >
+                  {!currencies.some(
+                    (currency) => currency.code === field.currencyCode,
+                  ) && (
+                    <option value={field.currencyCode} disabled>
+                      {field.currencyCode}
+                    </option>
+                  )}
+                  {currencies
+                    .filter((currency) => currency.code)
+                    .map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.name} · {currency.code}
+                      </option>
+                    ))}
+                </NativeSearchSelect>
               )}
             </label>
             <Button

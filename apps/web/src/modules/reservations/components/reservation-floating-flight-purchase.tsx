@@ -1,4 +1,7 @@
 'use client';
+import type { ReservationServicePurchaseInputV1 } from '@nora/contracts';
+import { purchaseApiRoot } from './purchase-api-root';
+import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { useCallback, useRef, useState } from 'react';
@@ -11,11 +14,15 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export function ReservationFloatingFlightPurchase({
+  onStage,
   request,
+  purchaseRoot,
   onSaved,
   serviceClientKey,
 }: {
+  onStage?: (body: ReservationServicePurchaseInputV1) => void;
   request: ReservationIntakeV1;
+  purchaseRoot?: string | undefined;
   onSaved: () => void;
   serviceClientKey?: string | undefined;
 }) {
@@ -69,11 +76,16 @@ export function ReservationFloatingFlightPurchase({
           ? { purchaseRateToIrr: fxRates[currency.id] }
           : {}),
       });
+      if (onStage) {
+        onStage(JSON.parse(payload));
+        onSaved();
+        return;
+      }
       if (attempt.current?.payload !== payload)
         attempt.current = { payload, key: crypto.randomUUID() };
       const send = () =>
         fetch(
-          `${base}/reservations/requests/${encodeURIComponent(request.id)}/service-purchases`,
+          `${base}/${purchaseApiRoot(request.id, purchaseRoot)}/service-purchases`,
           {
             method: 'POST',
             credentials: 'include',
@@ -105,21 +117,32 @@ export function ReservationFloatingFlightPurchase({
     <section className="space-y-3 rounded-xl border p-4">
       <h4 className="font-bold">هزینه خرید بلیط — {service.titleSnapshot}</h4>
       <div className="grid gap-3 sm:grid-cols-3">
-        <FormField label="کارگزار بلیط">
+        <FormField label={purchaseRoot ? 'آژانس بلیط' : 'کارگزار بلیط'}>
           <ReservationPurchaseBrokerLookup
+            purchaseRoot={purchaseRoot}
             requestId={request.id}
-            label="کارگزار بلیط"
+            label={purchaseRoot ? 'آژانس بلیط' : 'کارگزار بلیط'}
             value={supplier}
             onChange={setSupplier}
           />
         </FormField>
         <FormField label="ارز خرید بلیط">
-          <Lookup
-            kind="currencies"
-            label="ارز خرید بلیط"
-            value={currency}
-            onChange={setCurrency}
-          />
+          {purchaseRoot ? (
+            <PurchaseCurrencyLookup
+              requestId={request.id}
+              purchaseRoot={purchaseRoot}
+              label="ارز خرید بلیط"
+              value={currency}
+              onChange={setCurrency}
+            />
+          ) : (
+            <Lookup
+              kind="currencies"
+              label="ارز خرید بلیط"
+              value={currency}
+              onChange={setCurrency}
+            />
+          )}
         </FormField>
         <FormField label="هزینه کل بلیط">
           <MoneyInput
@@ -133,6 +156,7 @@ export function ReservationFloatingFlightPurchase({
         هزینه خرید پرواز برای مسافران همین قرارداد.
       </p>
       <PurchaseFxRate
+        purchaseRoot={purchaseRoot}
         currencyCode={currency?.id ?? ''}
         value={fxRates[currency?.id ?? ''] ?? ''}
         onChange={updateFx}

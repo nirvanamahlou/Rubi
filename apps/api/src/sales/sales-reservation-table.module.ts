@@ -149,6 +149,34 @@ export class SalesReservationTableService {
         },
       },
     });
+    const amendments = rows.length
+      ? await this.database.client.salesContractAuditEvent.findMany({
+          where: {
+            contractId: { in: rows.map((row) => row.id) },
+            outcome: 'SUCCESS',
+            OR: [
+              { action: 'OPERATIONAL_FORM_AMENDMENT' },
+              {
+                action: 'sales.contract.updated',
+                afterSnapshot: { path: ['correction'], equals: 'CONTRACT' },
+              },
+              {
+                action: 'sales.contract.updated',
+                afterSnapshot: { path: ['correction'], equals: 'PARTY' },
+              },
+            ],
+          },
+          orderBy: { occurredAt: 'desc' },
+          distinct: ['contractId'],
+          select: { contractId: true, occurredAt: true },
+        })
+      : [];
+    const amendedAt = new Map(
+      amendments.map((event) => [
+        event.contractId,
+        event.occurredAt.toISOString(),
+      ]),
+    );
     const financial = actor.permissions.some((p) =>
       [
         'sales.payments.read',
@@ -253,6 +281,7 @@ export class SalesReservationTableService {
               ),
               createdAt: row.createdAt.toISOString(),
               contractVersion: row.version,
+              amendedAt: amendedAt.get(row.id) ?? null,
               correctedAt: row.auditEvents[0]?.occurredAt.toISOString() ?? null,
               cancelledAt:
                 row.status === 'CANCELLED'

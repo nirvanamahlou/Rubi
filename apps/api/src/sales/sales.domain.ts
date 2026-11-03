@@ -1,4 +1,5 @@
 import { legacyRowPriceTotals } from '@nora/contracts';
+import { ticketCalendarDate } from '@nora/contracts';
 import {
   salesBookedAgeCategory,
   salesHotelGuestAges,
@@ -687,11 +688,11 @@ export function validateSalesContract(
     inbound &&
     (inbound.originId !== input.destinationId ||
       inbound.destinationId !== input.originId ||
-      Date.parse(inbound.departureAt) <
-        Math.max(
-          outbound ? Date.parse(outbound.arrivalAt) : departure,
-          Date.parse(input.returnNotBefore ?? input.departureDate),
-        ))
+      // Contract date bounds are Tehran calendar days; flight ordering is UTC.
+      ticketCalendarDate(inbound.departureAt) <
+        (input.returnNotBefore ?? input.departureDate).slice(0, 10) ||
+      (outbound &&
+        Date.parse(inbound.departureAt) < Date.parse(outbound.arrivalAt)))
   )
     throw new SalesDomainError(
       'RETURN_TICKET_INVALID',

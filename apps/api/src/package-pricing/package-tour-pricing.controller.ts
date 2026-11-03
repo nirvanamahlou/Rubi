@@ -60,7 +60,7 @@ export class PackageTourPricingController {
   }
 
   @Post(':draftId/publish')
-  @RequirePermissions('package_pricing.publish')
+  @RequirePermissions('package_pricing.read')
   publish(
     @Param('draftId', ParseUUIDPipe) draftId: string,
     @Body() input: PackageTourPublishV1,

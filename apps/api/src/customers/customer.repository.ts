@@ -28,6 +28,7 @@ import {
 } from './customer-audit';
 
 export interface CustomerRow {
+  customerCode?: string | null;
   id: string;
   kind: CustomerKind;
   organizationId: string | null;
@@ -164,6 +165,7 @@ export function toCustomerSummary(row: CustomerRow): CustomerSummary {
   const latestConsent = row.consents?.[0];
   return {
     id: row.id,
+    customerCode: row.customerCode ?? null,
     kind: lower(row.kind) as CustomerSummary['kind'],
     organizationId: row.organizationId,
     displayName: row.displayName,

@@ -5,6 +5,7 @@ import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table'
 import { AmendmentPassengerMembership } from './amendment-passenger-membership';
 import { changeAmendmentMembership } from './amendment-membership';
 import { AmendmentHotelRooms } from './amendment-hotel-rooms';
+import { AmendmentAdditionalHotelStays } from './amendment-additional-hotel-stays';
 import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
 import { PassengerServiceEditor } from './passenger-service-editor';
 import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
@@ -324,6 +325,21 @@ export function ReservationSalesAmendment({
             )}
             {manualFlights[direction] && (
               <ContractFlightEditor
+                destinationCityId={
+                  direction === 'OUTBOUND'
+                    ? draft.destinationId
+                    : draft.originId
+                }
+                workflow="reservations"
+                destinationCountryId={String(
+                  refs.cities?.find(
+                    (city) =>
+                      city.id ===
+                      (direction === 'OUTBOUND'
+                        ? draft.destinationId
+                        : draft.originId),
+                  )?.attributes.countryId || '',
+                )}
                 value={manualFlights[direction]}
                 airlines={refs.airlines ?? []}
                 international={international}
@@ -462,6 +478,21 @@ export function ReservationSalesAmendment({
                     />
                   </label>
                 ))}
+              <div className="md:col-span-3">
+                <AmendmentAdditionalHotelStays
+                  hotel={hotel}
+                  hotels={refs.hotels ?? []}
+                  roomTypes={refs['room-types'] ?? []}
+                  currencies={(refs.currencies ?? []).map((c) => ({
+                    code: c.code ?? '',
+                    name: c.name,
+                    status: c.status,
+                  }))}
+                  onChange={(next) =>
+                    changeHotel({ additionalStays: next.additionalStays ?? [] })
+                  }
+                />
+              </div>
             </div>
           ) : (
             <p>این قرارداد هتل ندارد.</p>

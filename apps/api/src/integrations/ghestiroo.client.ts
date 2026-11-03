@@ -48,6 +48,10 @@ export async function ghestirooRequest(
   operation: string,
   after = '',
   nextApiKey?: string,
+  options?: {
+    actor?: { subject: string; branch: string; name: string };
+    payload?: unknown;
+  },
 ): Promise<Record<string, unknown>> {
   if (
     ![
@@ -58,6 +62,9 @@ export async function ghestirooRequest(
       'cases',
       'admin-grants',
       'renew',
+      'workspace',
+      'presence',
+      'dashboard',
     ].includes(operation) ||
     (after && !/^[a-f0-9]{32}$/.test(after)) ||
     (operation === 'renew' && !/^[A-Za-z0-9_-]{64}$/.test(nextApiKey ?? ''))
@@ -71,9 +78,15 @@ export async function ghestirooRequest(
       addresses.some((a) => a.family !== 4 || blocked.check(a.address, 'ipv4')))
   )
     throw Error('UNSAFE_DESTINATION');
-  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants', 'renew'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
+  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants', 'renew', 'workspace', 'presence', 'dashboard'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
   const body =
-    operation === 'renew' ? JSON.stringify({ nextApiKey }) : undefined;
+    operation === 'renew'
+      ? JSON.stringify({ nextApiKey })
+      : ['workspace', 'dashboard'].includes(operation)
+        ? JSON.stringify(options?.payload)
+        : undefined;
+  if (body && Buffer.byteLength(body) > 8 * 1024 * 1024)
+    throw Error('REQUEST_TOO_LARGE');
   return new Promise((resolve, reject) => {
     const req = (local ? httpRequest : httpsRequest)(
       {
@@ -81,13 +94,24 @@ export async function ghestirooRequest(
         family: addresses[0]!.family,
         servername: url.hostname,
         port: url.port || (local ? 80 : 443),
-        method: ['admin-grants', 'renew'].includes(operation) ? 'POST' : 'GET',
+        method: ['admin-grants', 'renew', 'workspace', 'dashboard'].includes(
+          operation,
+        )
+          ? 'POST'
+          : 'GET',
         path,
         headers: {
           Host: url.host,
           accept: 'application/json',
           authorization: `Bearer ${config.apiKey}`,
           'x-nora-connection': config.connectionId,
+          ...(options?.actor
+            ? {
+                'x-nora-subject': options.actor.subject,
+                'x-nora-branch': options.actor.branch,
+                'x-nora-name': encodeURIComponent(options.actor.name),
+              }
+            : {}),
           ...(body
             ? {
                 'content-type': 'application/json',
@@ -102,7 +126,8 @@ export async function ghestirooRequest(
         let bytes = 0;
         response.on('data', (chunk: Buffer) => {
           bytes += chunk.length;
-          if (bytes > 1024 * 1024) req.destroy(Error('RESPONSE_TOO_LARGE'));
+          if (bytes > (operation === 'workspace' ? 8 : 1) * 1024 * 1024)
+            req.destroy(Error('RESPONSE_TOO_LARGE'));
           else chunks.push(chunk);
         });
         response.on('error', () => reject(Error('CONNECTION_FAILED')));
@@ -110,8 +135,26 @@ export async function ghestirooRequest(
           if (
             response.statusCode !== 200 ||
             !response.headers['content-type']?.includes('application/json')
-          )
-            return reject(Error(`UPSTREAM_${response.statusCode}`));
+          ) {
+            let detail: string | undefined;
+            try {
+              const value = JSON.parse(Buffer.concat(chunks).toString()) as {
+                detail?: unknown;
+              };
+              if (typeof value.detail === 'string')
+                detail = value.detail
+                  .slice(0, 2000)
+                  .split(config.apiKey)
+                  .join('[redacted]');
+            } catch {
+              /* No raw upstream body escapes. */
+            }
+            return reject(
+              Object.assign(Error(`UPSTREAM_${response.statusCode}`), {
+                detail,
+              }),
+            );
+          }
           try {
             const data = JSON.parse(Buffer.concat(chunks).toString()) as Record<
               string,

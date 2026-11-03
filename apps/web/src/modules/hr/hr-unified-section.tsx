@@ -461,7 +461,9 @@ function AccessibleHrSection({
                 setPage(1);
               }}
             >
-              <option value="createdAt">تاریخ ثبت</option>
+              <option value="createdAt">
+                {attendanceView ? 'تاریخ کارکرد' : 'تاریخ ثبت'}
+              </option>
               <option value="name">اسم و فامیل</option>
               <option value="personnelCode">کد پرسنلی</option>
             </NativeSearchSelect>
