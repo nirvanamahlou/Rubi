@@ -465,6 +465,7 @@ export function contractPrintHtml(
     output.company.code === 'JAHAN_BASTAN'
       ? 'جهان باستان'
       : output.company.persianName;
+  const jahanIssuer = output.company.code === 'JAHAN_BASTAN';
   const niyayeshIssuer = output.company.code === 'NIYAYESH_SEIR_SAHAR';
   const contactIcon = (path: string) =>
     `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
@@ -493,7 +494,7 @@ export function contractPrintHtml(
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}
   header img{display:block;max-width:52mm;max-height:17mm;margin:0 auto 1mm;object-fit:contain;filter:brightness(0) invert(1)}
-  header .brand small{color:white}header .jahan-brand{background:transparent;color:white;padding:0}header .jahan-brand small{color:white}header .jahan-brand img{filter:brightness(0) invert(1)}
+  header .brand small{color:white}header .jahan-brand{background:transparent;color:white;padding:0}header .jahan-brand small{color:white}header .jahan-brand img{max-height:19mm;max-width:52mm;margin-bottom:0;filter:brightness(0) invert(1)}
   .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#eaf0f4;padding:2mm 0;margin-bottom:2mm}
   .meta>div{text-align:center;border-left:1px solid #aebccc;font-size:10pt}.meta>div:last-child{border-left:0}.meta strong{display:block;font-size:11pt;margin-top:.4mm}
   small{display:block;font-size:8pt;color:#59708b;font-weight:normal;margin-top:.5mm}
@@ -541,7 +542,7 @@ export function contractPrintHtml(
   .contract-notice p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.3;orphans:2;widows:2}
 </style></head><body><article class="document"><table class="document-pages"><tbody><tr><td class="document-content">
 
-  <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}<div>${e(issuerName)}</div><small>${e(output.company.code === 'JAHAN_BASTAN' ? 'JAHAN BASTAN' : (output.company.latinName ?? ''))}</small></div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
+  <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}${jahanIssuer ? '' : `<div>${e(issuerName)}</div><small>${e(output.company.latinName ?? '')}</small>`}</div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
@@ -567,5 +568,5 @@ ${
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
     <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس ${e(niyayeshIssuer ? 'نیایش سیر سحر' : issuerName)} اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer>${refs.publicDocumentUrl ? `<div class="footer-qr">${publicDocumentQr(refs.publicDocumentUrl) ?? ''}</div>` : contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
+  <footer>${refs.publicDocumentUrl ? `<div class="footer-qr">${publicDocumentQr(refs.publicDocumentUrl) ?? ''}</div>` : contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${jahanIssuer ? `<div class="contact-row">${phoneIcon}<bdi>02172075000</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
 }

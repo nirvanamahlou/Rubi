@@ -10910,3 +10910,7 @@ PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped 
 ## AMIN-OPEN-PR-REPAIR-1103 — INTEGRATED CANDIDATE
 
 All 17 owner-authored PR heads are preserved as merge ancestors of this candidate. Documentation append conflicts retain both entries; source integration preserves outbound access plus callbacks, SMS plus Agency, contact-based source share plus expert reporting, executive-only audio and ten-row paging. The later no-duplicate-subject history layout wins. Hosted CI failures repaired: formatting, English coverage, HR fixture constructor, request-keyed async detail state and seeded executive username collision. PR1320 carries the combined candidate for final cross-feature CI; other PR heads remain individually reviewable. No production deployment.
+
+## JAHAN-CONTRACT-HEADER-1103 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
