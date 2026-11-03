@@ -145,6 +145,12 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       vi.unstubAllEnvs();
       await service?.onModuleDestroy();
       media?.onModuleDestroy();
+      // Release only this fixture's synthetic reserved username. Its audit
+      // history remains intact and cannot leak into a later executive fixture.
+      await db?.user.updateMany({
+        where: { id: userId, username: 'danial' },
+        data: { username: userId },
+      });
       await db?.$disconnect();
     });
     const root = String(Date.now());
