@@ -8610,3 +8610,7 @@ No Nora schema/migration/dependency changes. Source-only anonymous visit migrati
 and validation evidence: [GHESTIROO-DASHBOARD-1102](tasks/GHESTIROO-DASHBOARD-1102.md).
 Both bounded production overlays are active and source SQL reconciles all KPI,
 daily, detail and visit results. Final Nora exact-head gates precede PR1318 merge.
+
+## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
+
+COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
