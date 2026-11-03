@@ -157,6 +157,26 @@ export const salesSubsections = [
 export const salesPricingSubsection = salesSubsections[1];
 
 export const navigationAliases = {
+  '/correspondence/incoming': {
+    parentHref: '/correspondence',
+    title: 'نامه‌های ورودی',
+  },
+  '/correspondence/outgoing': {
+    parentHref: '/correspondence',
+    title: 'نامه‌های خروجی',
+  },
+  '/correspondence/internal': {
+    parentHref: '/correspondence',
+    title: 'نامه‌های داخلی',
+  },
+  '/correspondence/internal/send': {
+    parentHref: '/correspondence',
+    title: 'ارسال نامه داخلی',
+  },
+  '/correspondence/internal/received': {
+    parentHref: '/correspondence',
+    title: 'نامه‌های دریافتی',
+  },
   '/sales/ticket-prices': {
     parentHref: '/sales',
     title: 'قیمت گذاری پرواز',

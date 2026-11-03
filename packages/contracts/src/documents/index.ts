@@ -77,7 +77,8 @@ export type DocumentAccessPurposeCode =
 
 export interface DocumentListQueryV1 {
   search?: string;
-  /** Exact canonical source reference. All three source fields must be supplied together. */
+  isIncomingLetter?: boolean;
+  /** Source module/type scope; optionally restrict to one canonical entity. */
   sourceModule?: string;
   sourceEntityType?: string;
   sourceEntityId?: string;
@@ -156,6 +157,8 @@ export interface DocumentRelationV1 {
 }
 
 export interface DocumentListItemV1 {
+  senderName?: string | null;
+  isIncomingLetter?: boolean;
   id: string;
   archiveCode: string;
   title: string;

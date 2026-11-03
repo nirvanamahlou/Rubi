@@ -1216,3 +1216,25 @@ select {
     }
   }
 }
+
+/* Mobile inputs remain legible without Safari focus zoom. Keep overflow inside
+   the existing table scrollers instead of clipping the application viewport. */
+@media (max-width: 639px) {
+  :is(#main-content, [role='dialog'])
+    :is(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    font-size: 16px;
+  }
+  [role='dialog'] {
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+  #main-content fieldset {
+    min-inline-size: 0;
+  }
+  #main-content :is(img, video, canvas) {
+    max-width: 100%;
+  }
+  [data-header-utility-group] {
+    gap: 0;
+  }
+}

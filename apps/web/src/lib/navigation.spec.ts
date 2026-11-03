@@ -310,3 +310,18 @@ describe('CRM navigation', () => {
     ]);
   });
 });
+
+describe('correspondence breadcrumbs', () => {
+  it.each([
+    '/correspondence/incoming',
+    '/correspondence/outgoing',
+    '/correspondence/internal',
+    '/correspondence/internal/send',
+    '/correspondence/internal/received',
+  ])('resolves %s', (path) => {
+    const crumbs = getNavigationBreadcrumbs(path);
+    expect(crumbs).toHaveLength(2);
+    expect(crumbs[0]?.href).toBe('/correspondence');
+    expect(crumbs[1]?.href).toBe(path);
+  });
+});
