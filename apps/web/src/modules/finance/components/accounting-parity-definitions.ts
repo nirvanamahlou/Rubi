@@ -8,6 +8,7 @@ import { accountingParitySource4 } from './accounting-parity-source-4';
 export type AccountingParitySupport =
   'supported' | 'dependency' | 'source-error';
 export type AccountingParityImplementation =
+  | 'coding-standard'
   | 'configuration'
   | 'ledger'
   | 'accounts'
@@ -77,6 +78,7 @@ export interface AccountingParityDefinition {
 const implementationByRoute: Readonly<
   Record<string, AccountingParityImplementation>
 > = {
+  'general-ledger/reports/legal-reports/standards': 'coding-standard',
   'general-ledger/base-information/fiscal-years': 'configuration',
   'general-ledger/base-information/ledgers': 'ledger',
   'general-ledger/base-information/voucher-types': 'configuration',
@@ -279,6 +281,42 @@ const menuOnlyCaptures: readonly AccountingParityCapture[] = [
 ];
 
 const explicitGaps: readonly AccountingParityCapture[] = [
+  {
+    route: 'general-ledger/reports/legal-reports/standards',
+    title: 'معرفی کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / معرفی کدینگ استاندارد',
+    sourcePage:
+      'Financial/CodingStandardManagement/CodingStandardPages/EditView.view',
+    evidenceStatus: 'observed-layout',
+    fields: [
+      'عنوان کدینگ استاندارد',
+      'عنوان لاتین کدینگ استاندارد',
+      'نسخه پروتکل',
+    ].map((label) => ({ label, type: 'text', disabled: false })),
+    columns: [
+      'شماره قلم',
+      'عنوان موجودیت استاندارد',
+      'عنوان لاتین موجودیت استاندارد',
+      'موجودیت سیستمی',
+      'مرجع جزئیات',
+      'عنوان فیلد',
+      'مقدار فیلد',
+      'شرح فیلد',
+    ],
+    actions: [
+      'جدید',
+      'باز کردن',
+      'ذخیره',
+      'عملیات کپی',
+      'افزودن',
+      'حذف',
+      'جستجو',
+    ],
+    blocker:
+      'درخت کدهای استاندارد در استانداردهای سنا و سناما در منبع خالی است؛ ویرایش کد و نگاشت از این فرم هنوز مشاهده نشده است.',
+    stage: 'اطلاعات اصلی و فیلدهای تکمیلی',
+  },
   {
     route: 'general-ledger/reports/legal-reports',
     title: 'گزارش‌های قانونی',

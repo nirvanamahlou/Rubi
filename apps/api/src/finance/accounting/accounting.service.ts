@@ -1,3 +1,4 @@
+import { codingStandardAttributes } from './accounting.coding-standard';
 import {
   SALES_CONTRACT_EVENT,
   hasPendingSalesContractAccounting,
@@ -159,6 +160,7 @@ const resetApprovalAttributes = (value: unknown) =>
     'warnings',
   ]);
 const kinds = [
+  'coding-standards',
   'approval-policies',
   'fiscal-years',
   'voucher-types',
@@ -1691,6 +1693,7 @@ export class AccountingService {
             'detail-types',
             'allocation-templates',
             'account-mappings',
+            'coding-standards',
           ].includes(row.kind))
       )
         v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
@@ -3214,7 +3217,21 @@ export class AccountingService {
         this.version(existing.version, expected);
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
-      const attributes = v.attributes(p.attributes);
+      let attributes = v.attributes(p.attributes);
+      if (kind === 'coding-standards') {
+        attributes = codingStandardAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+        );
+        attributes.notes = JSON.stringify(
+          setupNotes(
+            attributes.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
+        v.attributes(attributes);
+      }
       if (kind === 'detail-types' && attributes.notes !== undefined)
         attributes.notes = JSON.stringify(
           setupNotes(

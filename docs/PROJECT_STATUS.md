@@ -8682,3 +8682,8 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 ## DOCUMENTS-CLOSE-COPY-1103 — PC-B
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
+
+
+### LEDGER-SOURCE-PARITY-1103 — ادامه تطبیق، تکمیل‌نشده
+
+فرم معرفی کدینگ استاندارد با ذخیره نسخه‌دار و اعتبارسنجی اضافه شد؛ زیرمنوی قانونی و چیدمان فشرده دفتر کل اصلاح شد. کل دفتر کل هنوز تطبیق کامل ندارد. نگاشت/فرمول/صحت‌سنجی/گزارش استاندارد و فیلترهای باقی‌مانده گزارش‌ها ادامه کار هستند. PR1345 نباید پیش از تکمیل و آزمون نهایی مرج شود. جزئیات و حدود مشاهده منبع در docs/tasks/LEDGER-SOURCE-PARITY-1103.md ثبت است.

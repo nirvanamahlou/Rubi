@@ -478,6 +478,19 @@
   border-radius: 0;
   box-shadow: none;
 }
+.sourceLayout .formSurface :global([data-coding-standard-form]) {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+.sourceLayout .formSurface :global([data-coding-standard-header] > div) {
+  grid-template-columns: minmax(7rem, 1fr) minmax(0, 2fr);
+  align-items: center;
+}
+.sourceLayout .formSurface :global([data-coding-standard-header] label) {
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
 .sourceLayout
   .formSurface
   :global(input:not([type='checkbox']):not([type='radio'])),
@@ -522,4 +535,69 @@
   height: 1.75rem;
   border-radius: 0;
   box-shadow: none;
+}
+
+.sourceLayout :global([data-accounting-navigation]) {
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: none;
+}
+.sourceLayout :global([data-accounting-navigation] > div:first-child) {
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--secondary);
+}
+.sourceLayout
+  :global([data-accounting-navigation] > div:first-child p:first-child) {
+  display: none;
+}
+.sourceLayout :global([data-accounting-navigation] > div:first-child p),
+.sourceLayout :global([data-accounting-navigation] button),
+.sourceLayout :global([data-accounting-navigation] a),
+.sourceLayout :global([data-accounting-navigation] svg) {
+  color: var(--foreground);
+}
+.sourceLayout :global([data-accounting-navigation] nav) {
+  padding: 0;
+}
+.sourceLayout :global([data-accounting-navigation] nav button),
+.sourceLayout :global([data-accounting-navigation] nav a) {
+  min-height: 1.75rem;
+  border-radius: 0;
+  padding-block: 0.2rem;
+  font-size: 0.6875rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+.sourceLayout :global([data-accounting-navigation] nav section > button) {
+  background: var(--secondary);
+}
+.sourceLayout
+  :global([data-accounting-navigation] nav button > span:first-child) {
+  height: auto;
+  width: auto;
+  background: none;
+}
+.sourceLayout :global([data-accounting-navigation] nav svg) {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.sourceLayout :global([data-accounting-navigation] a[aria-current='page']) {
+  background: var(--secondary);
+  color: var(--primary);
+}
+.sourceLayout :global([data-accounting-navigation] a:hover),
+.sourceLayout :global([data-accounting-navigation] button:hover) {
+  background: var(--secondary);
+  color: var(--primary);
+}
+.sourceLayout :global([data-accounting-navigation] nav div) {
+  margin-block: 0;
+  padding-inline-start: 0.25rem;
+}
+@media (min-width: 64rem) {
+  .sourceLayout :global([data-accounting-navigation][class~='lg:w-[304px]']) {
+    width: 12.5rem;
+  }
 }

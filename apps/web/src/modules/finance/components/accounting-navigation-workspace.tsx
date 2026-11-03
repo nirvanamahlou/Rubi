@@ -408,12 +408,20 @@ function AccountingSecondaryNavigation({
                       const sectionId = `${group.id}:${section.title}`;
                       const sectionClosed = closedSections.includes(sectionId);
                       const directItems = section.items.filter(
-                        (item) => !item.href.includes('/lists/'),
+                        (item) =>
+                          !item.href.includes('/lists/') &&
+                          !item.href.includes('/legal-reports/'),
                       );
                       const listItems = section.items.filter((item) =>
                         item.href.includes('/lists/'),
                       );
                       const listClosed = closedLists.includes(sectionId);
+                      const legalItems = section.items.filter((item) =>
+                        item.href.includes('/legal-reports/'),
+                      );
+                      const legalClosed = closedLists.includes(
+                        sectionId + ':legal',
+                      );
                       const renderItem = (item: AccountingNavigationItem) => {
                         const ItemIcon = item.icon;
                         const active =
@@ -459,7 +467,39 @@ function AccountingSecondaryNavigation({
                           </button>
                           {!sectionClosed ? (
                             <div className="space-y-1 ps-1">
-                              {directItems.map(renderItem)}
+                              {directItems
+                                .filter(
+                                  (item) =>
+                                    !item.href.endsWith('/legal-reports'),
+                                )
+                                .map(renderItem)}
+                              {legalItems.length > 0 && (
+                                <div className="space-y-1">
+                                  <button
+                                    type="button"
+                                    aria-expanded={!legalClosed}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-start text-xs"
+                                    onClick={() =>
+                                      toggleList(sectionId + ':legal')
+                                    }
+                                  >
+                                    <ScrollText className="size-4" />
+                                    <span className="flex-1">
+                                      گزارش‌های قانونی
+                                    </span>
+                                    {legalClosed ? (
+                                      <ChevronDown className="size-3" />
+                                    ) : (
+                                      <ChevronUp className="size-3" />
+                                    )}
+                                  </button>
+                                  {!legalClosed && (
+                                    <div className="space-y-1 border-s ps-2">
+                                      {legalItems.map(renderItem)}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               {listItems.length ? (
                                 <div className="space-y-1">
                                   <button

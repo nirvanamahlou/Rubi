@@ -1,5 +1,6 @@
 'use client';
 
+import { AccountingCodingStandard } from './accounting-coding-standard';
 import { accountingBookId } from '../accounting-book-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, FolderOpen, FileText } from 'lucide-react';
@@ -411,6 +412,19 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
           else router.replace(`${pathname}?${params}`, { scroll: false });
           await refresh();
         }}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/reports/legal-reports/standards'
+  )
+    content = (
+      <AccountingCodingStandard
+        key={bookId}
+        book={snapshot}
+        run={run}
+        busy={busy}
+        refresh={refresh}
       />
     );
   else if (snapshot && section === 'dashboard')
