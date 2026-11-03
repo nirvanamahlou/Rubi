@@ -1,3 +1,15 @@
+## CALL-CENTER-FINAL-INTEGRATION-1103 — PC-C — SOURCE ONLY
+
+Audited published PC-C Call Center branches and tracked files in related worktrees against developc134779bf. Integrated the two outstanding source changes (source-share donut and completion edit actions) and missing offline-readiness, guarded Worker setup, VPN setup/diagnostics/retry and stale-network guard artifacts. Older initial UI/caller-name/audio/recovery/manual-selection patches are superseded by current merged implementations; they are not reapplied over later approved behavior. Old development/runtime overlays and generated next-env files remain untouched. The VPN launchers had a stale digest and now pin the reviewed bundled source bytes; hash checking is preserved. No script is installed or executed on production, no grants/migrations/dependencies changed.24 focused Web and6 producer tests plus22 offline readiness/operations checks pass; all exact-head hosted quality/full-test/build/PostgreSQL gates remain mandatory before owner-authorized develop merge.
+
+## SOURCE-SHARE-CHART-1103 — PC-C — SOURCE ONLY
+
+Source-share graphic now follows the annotated dashboard ring: navy-to-blue segments, centered unique-contact total and external count/one-decimal percentage labels with collision spacing. Existing server aggregation and filters are unchanged.10 focused chart/report/i18n checks, scoped lint and full Web TypeScript pass; visual RTL preview reviewed. Optimized production Web build also passed. No API/schema/dependency or server deployment.
+
+## COMPLETION-EDIT-BUTTONS-1103 — PC-C — SOURCE ONLY
+
+Completion drilldown now returns an additive optional callId from the already authorized report facts. Complete/incomplete status cells are centered native green/amber buttons and open the shared existing editor for that exact ID. Workspace supplies the handler only under existing call-create/manage authority; missing IDs/authority or a busy action remain disabled. Detail modal is hidden while editing and restored on cancellation; existing save refreshes reports. Other drilldown metrics retain plain status text. No API permission, schema, dependency, production data or site deployment changes.21 focused Web/read-client/i18n tests and6 producer tests pass, including exact IDs and permitted actor isolation. Scoped API/Web lint, full TypeScript and API/Web production builds pass. RTL visual preview reviewed.
+
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
 ## MISSED-CALL-REQUEST-ACTION-1103 — PC-C — SOURCE ONLY
