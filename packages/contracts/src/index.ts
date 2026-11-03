@@ -55,3 +55,5 @@ export * from './travel/hotel-stays';
 
 export { isFloatingSalesContract } from './sales/floating-contract';
 export * from './sales/flight-load';
+
+export * from './finance/party-receipts';

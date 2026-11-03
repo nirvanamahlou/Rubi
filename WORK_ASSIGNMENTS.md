@@ -10928,3 +10928,11 @@ All 17 owner-authored PR heads are preserved as merge ancestors of this candidat
 ## JAHAN-CONTRACT-HEADER-1103 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
+
+## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; codex/pc-a-party-contract-receipts-fifo-1103 from develop9144eb57e. Owner authorizes Finance inbox party debt lookup, one received amount allocated oldest-contract-first, individual/agency payer balances, push/develop merge. Reserve new Sales public party-balance/receipt adapter (Sales owns contract reads/writes), new Finance controller/service orchestration, bounded FinanceModule registration and inbox panel insertion, additive shared DTOs and focused tests/docs. Preserve Finance accounting ownership: reuse existing financial-event public contract and settlement recalculation, no journal engine edits. Match canonical payer ID and branch, never names; currency-separated balances, atomic FIFO receipt parts, stable idempotency, optimistic preview and audit. No schema/migration/dependency/production data changes or deployment. Existing payment-label task owns only option labels, insertion does not overlap. Public producer/consumer ship together.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves one additive test path in the existing PostgreSQL financial-events CI step; new test uses only guarded ephemeral nora_ci fixtures and never operational databases. No existing test or gate removed.
+
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves only its newly introduced English override keys and derived API catalogue synchronization; preserve all peer translations.

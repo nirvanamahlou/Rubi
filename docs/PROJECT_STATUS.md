@@ -1,3 +1,7 @@
+## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — VALIDATING
+
+Finance inbox party account panel adds canonical customer/agency debt totals and one deposit split oldest-first across contracts, including partial settlement. Sales owns scoped balances/persistence; Finance authorizes actual-account receipt confirmation and existing accounting events. Preview revision, serializable transaction, operation replay, immutable receipts/audit and currency-separated four-decimal amounts protect the flow. Refund corrections use the existing financial path.18 focused API tests and12 Web checks pass; final types/lint/build and dedicated PostgreSQL CI regression precede owner-authorized merge. No migration, dependency, data or deployment changes. See tasks/PARTY-CONTRACT-RECEIPTS-FIFO-1103.md.
+
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
 Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
