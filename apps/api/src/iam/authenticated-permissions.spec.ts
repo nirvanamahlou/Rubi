@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { USER_ACCESS_ADMIN_PERMISSION } from '@nora/contracts';
+import {
+  USER_ACCESS_ADMIN_PERMISSION,
+  MANUAL_ACCESS_VERSION,
+  MANUAL_ACCESS_ROLE_PREFIX,
+} from '@nora/contracts';
 
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 
@@ -157,3 +161,39 @@ it('ignores an inactive expert role when resolving active manager permissions', 
     ]),
   ).toContain('sales.contracts.read.branch');
 });
+
+describe('manual snapshot company baseline', () => {
+  it('retains read and switch for a valid restricted snapshot without administrative grants', () => {
+    const snapshot = {
+      role: {
+        ...role(true, MANUAL_ACCESS_VERSION, 'customers.read').role,
+        code: MANUAL_ACCESS_ROLE_PREFIX + 'test',
+      },
+    };
+    const codes = authenticatedPermissionCodes([snapshot]);
+    expect(codes).toContain('legal-entity.read');
+    expect(codes).toContain('legal-entity.switch');
+    expect(codes).not.toContain('legal-entity.aggregate.read');
+    expect(codes).not.toContain('legal-entity.manage');
+  });
+});
+
+it.each(['disabled', 'malformed', 'multiple'])(
+  'keeps %s manual snapshots fail-closed',
+  (kind) => {
+    const snapshot = {
+      role: {
+        ...role(
+          kind !== 'disabled',
+          ...(kind === 'malformed' ? [] : [MANUAL_ACCESS_VERSION]),
+        ).role,
+        code: MANUAL_ACCESS_ROLE_PREFIX + 'test',
+      },
+    };
+    expect(
+      authenticatedPermissionCodes(
+        kind === 'multiple' ? [snapshot, snapshot] : [snapshot],
+      ),
+    ).toEqual([]);
+  },
+);
