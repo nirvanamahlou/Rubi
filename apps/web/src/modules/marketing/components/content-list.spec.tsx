@@ -756,6 +756,31 @@ describe('durable Marketing directories', () => {
     );
     expect(state.values[7]).toBe(false);
   });
+  it('preserves view and versioned edit actions alongside audience deletion', async () => {
+    seedDirectory();
+    (
+      find(directory('AUDIENCE'), 'aria-label', 'مشاهده مخاطب ثبت شده').props
+        .onClick as () => void
+    )();
+    expect(
+      directory('AUDIENCE').some((node) => node.props.children === 'ذخیره'),
+    ).toBe(false);
+    (
+      find(directory('AUDIENCE'), 'aria-label', 'ویرایش مخاطب ثبت شده').props
+        .onClick as () => void
+    )();
+    const button = directory('AUDIENCE').find(
+      (node) => node.props.children === 'ذخیره',
+    )!;
+    await (button.props.onClick as () => Promise<void>)();
+    expect(state.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'AUDIENCE',
+        expectedVersion: asset.version,
+      }),
+      expect.objectContaining({ id: asset.id }),
+    );
+  });
   it('requires confirmation before deleting a campaign audience and sends its version', async () => {
     seedDirectory();
     (

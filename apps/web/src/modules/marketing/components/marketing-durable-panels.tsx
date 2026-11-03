@@ -1132,6 +1132,22 @@ export function MarketingDirectoryPanel({
   const [dataSource, setDataSource] = useState('customers');
   const [memberCount, setMemberCount] = useState('0');
   const [recordStatus, setRecordStatus] = useState('ACTIVE');
+  const [editor, setEditor] = useState<{
+    item: MarketingAssetViewV1;
+    readOnly: boolean;
+  } | null>(null);
+  const beginEditor = (item: MarketingAssetViewV1, readOnly: boolean) => {
+    setEditor({ item, readOnly });
+    setName(item.name);
+    setCampaignId(item.campaignId ?? 'none');
+    setAudienceType(String(item.payload.audienceType ?? 'segment'));
+    setDataSource(String(item.payload.dataSource ?? 'customers'));
+    setMemberCount(String(item.payload.memberCount ?? '0'));
+    setRecordStatus(item.status);
+    setKey(crypto.randomUUID());
+    setError('');
+    setOpen(true);
+  };
   const typeOptions = {
     segment: 'سگمنت پویا',
     corporate: 'مخاطب سازمانی',
@@ -1189,6 +1205,7 @@ export function MarketingDirectoryPanel({
           aria-label={isSource ? 'افزودن منبع ورود' : 'افزودن مخاطبان کمپین'}
           disabled={data.loading || !data.actor?.branchIds[0]}
           onClick={() => {
+            setEditor(null);
             setName('');
             setAudienceType('segment');
             setDataSource('customers');
@@ -1250,6 +1267,30 @@ export function MarketingDirectoryPanel({
                   </>
                 ) : null}
                 <td className="p-4">
+                  {!isSource ? (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        aria-label={`مشاهده ${item.name}`}
+                        title="مشاهده"
+                        disabled={busy}
+                        onClick={() => beginEditor(item, true)}
+                      >
+                        <Eye aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        aria-label={`ویرایش ${item.name}`}
+                        title="ویرایش"
+                        disabled={busy}
+                        onClick={() => beginEditor(item, false)}
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                    </>
+                  ) : null}
                   <Button
                     size="icon"
                     variant="outline"
@@ -1258,6 +1299,7 @@ export function MarketingDirectoryPanel({
                     title="حذف"
                     disabled={busy}
                     onClick={() => {
+                      setEditor(null);
                       setDeleting(item);
                       setError('');
                       setKey(crypto.randomUUID());
@@ -1297,7 +1339,7 @@ export function MarketingDirectoryPanel({
                   id={`${kind}-name`}
                   maxLength={isSource ? 80 : 200}
                   value={name}
-                  disabled={busy}
+                  disabled={busy || editor?.readOnly === true}
                   onChange={(event) => {
                     setName(event.target.value);
                     setKey(crypto.randomUUID());
@@ -1309,7 +1351,7 @@ export function MarketingDirectoryPanel({
                   <FormField id="audience-type" label="نوع مخاطب">
                     <Select
                       value={audienceType}
-                      disabled={busy}
+                      disabled={busy || editor?.readOnly === true}
                       onValueChange={(value) => {
                         setAudienceType(value);
                         setKey(crypto.randomUUID());
@@ -1330,7 +1372,7 @@ export function MarketingDirectoryPanel({
                   <FormField id="audience-data-source" label="منبع داده">
                     <Select
                       value={dataSource}
-                      disabled={busy}
+                      disabled={busy || editor?.readOnly === true}
                       onValueChange={(value) => {
                         setDataSource(value);
                         setKey(crypto.randomUUID());
@@ -1351,7 +1393,7 @@ export function MarketingDirectoryPanel({
                   <FormField id="audience-member-count" label="تعداد برآوردی">
                     <Input
                       id="audience-member-count"
-                      disabled={busy}
+                      disabled={busy || editor?.readOnly === true}
                       type="number"
                       min="0"
                       step="1"
@@ -1365,7 +1407,7 @@ export function MarketingDirectoryPanel({
                   <FormField id="audience-record-status" label="وضعیت">
                     <Select
                       value={recordStatus}
-                      disabled={busy}
+                      disabled={busy || editor?.readOnly === true}
                       onValueChange={(value) => {
                         setRecordStatus(value);
                         setKey(crypto.randomUUID());
@@ -1386,7 +1428,7 @@ export function MarketingDirectoryPanel({
                 <FormField id="audience-campaign" label="کمپین">
                   <Select
                     value={campaignId}
-                    disabled={busy}
+                    disabled={busy || editor?.readOnly === true}
                     onValueChange={(value) => {
                       setCampaignId(value);
                       setKey(crypto.randomUUID());
@@ -1424,49 +1466,58 @@ export function MarketingDirectoryPanel({
             >
               انصراف
             </Button>
-            <Button
-              disabled={busy || (!deleting && name.trim().length < 2)}
-              onClick={async () => {
-                if (busy || !data.actor?.branchIds[0]) return;
-                setBusy(true);
-                setError('');
-                try {
-                  if (deleting)
-                    await marketingApi.deleteAsset(
-                      deleting.id,
-                      deleting.version,
-                      key,
+            {!editor?.readOnly ? (
+              <Button
+                disabled={busy || (!deleting && name.trim().length < 2)}
+                onClick={async () => {
+                  if (busy || !data.actor?.branchIds[0]) return;
+                  setBusy(true);
+                  setError('');
+                  try {
+                    if (deleting)
+                      await marketingApi.deleteAsset(
+                        deleting.id,
+                        deleting.version,
+                        key,
+                      );
+                    else
+                      await marketingApi.saveAsset(
+                        {
+                          kind,
+                          ...(editor
+                            ? { expectedVersion: editor.item.version }
+                            : {}),
+                          name: name.trim(),
+                          status: isSource ? 'ACTIVE' : recordStatus,
+                          campaignId: campaignId === 'none' ? null : campaignId,
+                          payload: isSource
+                            ? {}
+                            : { audienceType, dataSource, memberCount },
+                        },
+                        {
+                          branchId: data.actor.branchIds[0],
+                          key,
+                          ...(editor ? { id: editor.item.id } : {}),
+                        },
+                      );
+                    setOpen(false);
+                    setDeleting(null);
+                    await data.load();
+                    onNotice('تغییرات ذخیره شد.');
+                  } catch (reason) {
+                    setError(
+                      reason instanceof Error
+                        ? reason.message
+                        : 'ذخیره انجام نشد.',
                     );
-                  else
-                    await marketingApi.saveAsset(
-                      {
-                        kind,
-                        name: name.trim(),
-                        status: isSource ? 'ACTIVE' : recordStatus,
-                        campaignId: campaignId === 'none' ? null : campaignId,
-                        payload: isSource
-                          ? {}
-                          : { audienceType, dataSource, memberCount },
-                      },
-                      { branchId: data.actor.branchIds[0], key },
-                    );
-                  setOpen(false);
-                  setDeleting(null);
-                  await data.load();
-                  onNotice('تغییرات ذخیره شد.');
-                } catch (reason) {
-                  setError(
-                    reason instanceof Error
-                      ? reason.message
-                      : 'ذخیره انجام نشد.',
-                  );
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {deleting ? 'حذف' : 'ذخیره'}
-            </Button>
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {deleting ? 'حذف' : 'ذخیره'}
+              </Button>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
