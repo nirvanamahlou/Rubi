@@ -8630,3 +8630,12 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
+
+## GHESTIROO-DOCUMENT-LOGO-1103 — PC-A — IN_PROGRESS
+
+PC-A; codex/pc-a-ghestiroo-document-logo-1103 from develop01140adb8. Owner supplied the original local PNG and authorizes Ghestiroo company logo in contract, reservation form and voucher headers, then develop merge. Reserve original public brand asset, legal-entity brand resolution and regression, browser travel-logo resolver, reservation PDF logo mapping and targeted regressions; own translation override/generated sync and this appended status record only. Preserve issuer-code scoping, agency logos, other companies, historical issuer snapshots and explicit no-logo output options. No image transformation, schema/migration/dependency/operational record or deployment changes. Existing related source scopes are merged; no active overlapping source reservation found.
+
+GHESTIROO-DOCUMENT-LOGO-1103 rendering extension: reserve issuer-scoped logo classes in contract-print, reservation/voucher sheets, shared reservation stylesheet and PDF HTML so the supplied pink/navy pixels remain unchanged instead of inheriting the white-logo filter. No layout or style changes for other issuers or agencies.
+GHESTIROO-DOCUMENT-LOGO-1103: separate voucher PDF renderer included after visual verification.
+GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no white background in all three outputs.
+GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.

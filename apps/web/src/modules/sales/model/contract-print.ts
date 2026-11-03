@@ -481,7 +481,7 @@ export function contractPrintHtml(
   const logo =
     refs.logoDataUrl &&
     /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(refs.logoDataUrl)
-      ? `<img alt="" src="${refs.logoDataUrl}">`
+      ? `<img${output.company.code === 'GHESATI_RO' ? ' class="ghesatiLogo"' : ''} alt="" src="${refs.logoDataUrl}">`
       : '';
   return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:"><title>قرارداد ${e(c.contractNumber)}</title><style>
   @font-face{font-family:ContractNazanin;src:local('B Nazanin'),local('BNazanin');font-weight:normal}
@@ -494,6 +494,7 @@ export function contractPrintHtml(
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}
   header img{display:block;max-width:52mm;max-height:17mm;margin:0 auto 1mm;object-fit:contain;filter:brightness(0) invert(1)}
+  header img.ghesatiLogo{filter:none;background:transparent;max-height:22mm}
   header .brand small{color:white}header .jahan-brand{background:transparent;color:white;padding:0}header .jahan-brand small{color:white}header .jahan-brand img{max-height:19mm;max-width:52mm;margin-bottom:0;filter:brightness(0) invert(1)}
   .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#eaf0f4;padding:2mm 0;margin-bottom:2mm}
   .meta>div{text-align:center;border-left:1px solid #aebccc;font-size:10pt}.meta>div:last-child{border-left:0}.meta strong{display:block;font-size:11pt;margin-top:.4mm}
