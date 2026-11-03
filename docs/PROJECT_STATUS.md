@@ -8704,6 +8704,11 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 
 
 
+
+## HR-SHIFT-ENTRY-1103 — PC-B — IN_PROGRESS
+
+Owner reports the new shift form is not visible on local HR time page. Reserve HR navigation/unified section, focused navigation regression and own translations/notes. Set weekly employee assignments as the default shift-definition source; retain legacy templates and calendars as explicit secondary choices. No API/schema/dependency change. Prior push/develop merge authorization applies to completing this correction.
+
 ## HR-WEEKLY-SHIFTS-1103 — PC-B — IN_PROGRESS
 
 Owner requests weekly named shifts with employee multi-selection, self-service shift history and schedule/device-based attendance status; push/develop merge authorized. Reserve HR API/Web/contracts, bounded Workbench shift consumer, own translations/tests and notes. Existing same-owner HR scopes are integrated in develop. Additive optional weekday column and atomic bulk assignment endpoint preserve legacy dated shifts; no schema/migration/dependency change. Preserve employee/branch authorization, closed periods, source punches and historical assignments.

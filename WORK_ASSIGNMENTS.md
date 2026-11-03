@@ -11008,6 +11008,10 @@ GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no whit
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
+## HR-SHIFT-ENTRY-1103 — PC-B — IN_PROGRESS
+
+Owner reports the new shift form is not visible on local HR time page. Reserve HR navigation/unified section, focused navigation regression and own translations/notes. Set weekly employee assignments as the default shift-definition source; retain legacy templates and calendars as explicit secondary choices. No API/schema/dependency change. Prior push/develop merge authorization applies to completing this correction.
+
 ## HR-WEEKLY-SHIFTS-1103 — PC-B — IN_PROGRESS
 
 Owner requests weekly named shifts with employee multi-selection, self-service shift history and schedule/device-based attendance status; push/develop merge authorized. Reserve HR API/Web/contracts, bounded Workbench shift consumer, own translations/tests and notes. Existing same-owner HR scopes are integrated in develop. Additive optional weekday column and atomic bulk assignment endpoint preserve legacy dated shifts; no schema/migration/dependency change. Preserve employee/branch authorization, closed periods, source punches and historical assignments.

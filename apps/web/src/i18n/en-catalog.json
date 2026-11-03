@@ -17578,5 +17578,7 @@
   "شیفت هفتگی به الگوی تقویم وابسته نیست.": "Weekly shifts cannot reference a calendar template.",
   "کارمند فعال همان شعبه انتخاب کنید.": "Select an active employee from the same branch.",
   "ویرایش شیفت": "Edit shift",
-  "کارمند در روز انتخابی شیفت فعال دارد.": "The employee already has an active shift on the selected day."
+  "کارمند در روز انتخابی شیفت فعال دارد.": "The employee already has an active shift on the selected day.",
+  "الگوهای شیفت": "Shift templates",
+  "افزودن الگوی شیفت": "Add shift template"
 }
