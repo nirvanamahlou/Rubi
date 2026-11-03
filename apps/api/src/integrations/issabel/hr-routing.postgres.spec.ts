@@ -101,12 +101,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
             ).toString('base64'),
           }),
         );
-        const access = new CallCenterAccessService(
-            database,
-            teams,
-            directory,
-            crypto,
-          ),
+        const access = new CallCenterAccessService(database, teams, directory),
           calls = new CallCenterService(database, crypto, access),
           domain = new CallCenterTelephonyService(
             database,
