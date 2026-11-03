@@ -8442,6 +8442,11 @@ PC-A: Hotel composition purchase column now uses hotelPurchase and its currency,
 
 Latest develop d0845c8fd published across API/Web/Worker with5 approved Call Center/translation runtime overlays preserved. All4 hosted gates pass;48 API/35 Web scoped tests and34 isolated PostgreSQL access checks pass; external connector contract skipped without configuration. Verified encrypted backup, canary/source hashes, health/static assets, authenticated Worker/current API namespace, AMI and recording/guard timers. Native17-account/85-branch read-only acceptance passes. No migrations or unrelated service/env/data change. See tasks/ERP-FINAL-RELEASE-1101.md.
 
+## CALL-SOURCE-SMS-1101 — 2026-11-01
+
+SMS added to shared acquaintance sources for call popup and contact filter.15 existing model/form tests, scoped lint and Web typecheck/build pass. Web-only production activation verified; API/Worker/data services and existing approved source overlays preserved. No schema/grant/dependency change. See tasks/CALL-SOURCE-SMS-1101.md.
+
+
 ## HR-RADAN-LIVE-1101 — PC-B
 
 HR-owned read-only attendance adapter, exact native-branch/personnel-code mapping, neutral-punch pairing with open-day safeguards, configured schedule metrics and own Workbench deficit implemented. Live local API imports72 matched punches and derives43 daily rows; repeat sync preserves115 total rows with0 new imports. One unmatched code retained as unresolved; no identity guessed. Source/closed-period/correction and scoped access checks retained. Production application unchanged; local3100 production Web is active with authenticated HTTP200 HR/time/employee/performance routes.42 API and9 Web focused checks and both production builds pass. See tasks/HR-RADAN-LIVE-1101.md.
