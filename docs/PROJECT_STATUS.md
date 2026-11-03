@@ -8518,3 +8518,5 @@ Both bounded production overlays are active and source SQL reconciles all KPI,
 daily, detail and visit results. Final Nora exact-head gates precede PR1318 merge.
 
 CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, history/workflow labels and API save/search allowlists. Existing string storage; no migration or deployment. Eight form regressions pass; full release checks pending.
+
+CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.

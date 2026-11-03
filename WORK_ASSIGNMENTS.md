@@ -10732,3 +10732,5 @@ COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes remova
 ## CALL-WRONG-NUMBER-1103 — PC-C — ACTIVE
 
 Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.
+
+CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outcome; CI identified missing translation. User authorizes CI repair and develop merge after every check passes. Preserve all other catalogue entries.
