@@ -82,6 +82,9 @@ describe('reservation purchases inbox boundary', () => {
     const summarySql = h.query.mock.calls[0]![0] as Prisma.Sql;
     expect(summarySql.text).not.toContain('LIMIT 26');
     expect(summarySql.text).toContain('count(DISTINCT');
+    expect(sql.text).toContain('newer."contractId" = i."contractId"');
+    expect(sql.text).toContain('newer."branchId" = i."branchId"');
+    expect(sql.text).toContain('newer."contractVersion" > i."contractVersion"');
   });
 });
 describe.skipIf(!process.env.RESERVATION_PURCHASE_QUERY_CONTAINER)(
@@ -147,7 +150,8 @@ describe.skipIf(!process.env.RESERVATION_PURCHASE_QUERY_CONTAINER)(
             ? String(value)
             : `'${String(value).replaceAll("'", "''")}'`;
       h.query.mockImplementation(async (sql: Prisma.Sql) => {
-        const fixture = `BEGIN; CREATE TEMP TABLE "ReservationIntake" ("id" uuid,"branchId" uuid,"receivedAt" timestamptz,"snapshot" jsonb); INSERT INTO "ReservationIntake" VALUES ${insert}; CREATE TEMP TABLE "ReservationServicePurchase" ("intakeId" uuid,"serviceClientKey" text,"coveredServiceClientKeys" jsonb,version int,"createdAt" timestamptz); CREATE TEMP TABLE "ReservationHotelPurchase" ("intakeId" uuid,"createdAt" timestamptz); INSERT INTO "ReservationServicePurchase" VALUES ('${mixedId}','h',NULL,1,'2026-10-01'),('${mixedId}','h',NULL,2,'2026-10-09 23:59:59+00'),('${mixedId}','t_out','["t_out","t_in"]'::jsonb,3,'2026-10-11'),('22222222-2222-4222-8222-000000000034','t_out','["t_out","t_in"]'::jsonb,0,'2026-10-01'),('22222222-2222-4222-8222-000000000034','t_out','["t_out"]'::jsonb,1,'2026-10-12'),('22222222-2222-4222-8222-000000000034','t_in','["t_in"]'::jsonb,2,'2026-10-13'); INSERT INTO "ReservationHotelPurchase" VALUES ('22222222-2222-4222-8222-000000000002','2026-10-10'); PREPARE purchase_inbox AS SELECT row_to_json(r) FROM (${sql.text}) r; EXECUTE purchase_inbox(${sql.values.map(literal).join(',')}); ROLLBACK;`;
+        const fixture = `BEGIN; CREATE TEMP TABLE "ReservationIntake" ("id" uuid,"branchId" uuid,"receivedAt" timestamptz,"snapshot" jsonb); INSERT INTO "ReservationIntake" VALUES ${insert}; ALTER TABLE "ReservationIntake" ADD COLUMN "contractId" uuid, ADD COLUMN "contractVersion" int DEFAULT 1; UPDATE "ReservationIntake" SET "contractId"=id;
+INSERT INTO "ReservationIntake" (id,"branchId","receivedAt",snapshot,"contractId","contractVersion") VALUES ('44444444-4444-4444-8444-000000000001','${branch}','2027-01-01','{"contractNumber":"LATEST","serviceSelections":[{"kind":"HOTEL","clientKey":"h"}]}','44444444-4444-4444-8444-000000000009',1),('44444444-4444-4444-8444-000000000002','${branch}','2027-01-02','{"contractNumber":"LATEST","serviceSelections":[{"kind":"HOTEL","clientKey":"h"}]}','44444444-4444-4444-8444-000000000009',2);CREATE TEMP TABLE "ReservationServicePurchase" ("intakeId" uuid,"serviceClientKey" text,"coveredServiceClientKeys" jsonb,version int,"createdAt" timestamptz); CREATE TEMP TABLE "ReservationHotelPurchase" ("intakeId" uuid,"createdAt" timestamptz); INSERT INTO "ReservationServicePurchase" VALUES ('${mixedId}','h',NULL,1,'2026-10-01'),('${mixedId}','h',NULL,2,'2026-10-09 23:59:59+00'),('${mixedId}','t_out','["t_out","t_in"]'::jsonb,3,'2026-10-11'),('22222222-2222-4222-8222-000000000034','t_out','["t_out","t_in"]'::jsonb,0,'2026-10-01'),('22222222-2222-4222-8222-000000000034','t_out','["t_out"]'::jsonb,1,'2026-10-12'),('22222222-2222-4222-8222-000000000034','t_in','["t_in"]'::jsonb,2,'2026-10-13'); INSERT INTO "ReservationHotelPurchase" VALUES ('22222222-2222-4222-8222-000000000002','2026-10-10'); INSERT INTO "ReservationServicePurchase" VALUES ('44444444-4444-4444-8444-000000000001','h',NULL,1,'2027-01-02'); PREPARE purchase_inbox AS SELECT row_to_json(r) FROM (${sql.text}) r; EXECUTE purchase_inbox(${sql.values.map(literal).join(',')}); ROLLBACK;`;
         const output = execFileSync(
           'docker',
           [
@@ -167,6 +171,17 @@ describe.skipIf(!process.env.RESERVATION_PURCHASE_QUERY_CONTAINER)(
           .map((row) => JSON.parse(row));
         return actualRows;
       });
+      await h.service.purchaseInbox([branch], {
+        contractNumber: 'LATEST',
+        status: 'UNREGISTERED',
+      });
+      expect(actualRows).toHaveLength(0);
+      await h.service.purchaseInbox([branch], {
+        contractNumber: 'LATEST',
+        status: 'REGISTERED',
+      });
+      expect(actualRows).toHaveLength(1);
+      expect(actualRows[0]!.id).toBe('44444444-4444-4444-8444-000000000002');
       const firstPage = await h.service.purchaseInbox([branch], {
         kind: 'INSURANCE',
         contractNumber: 'MATCH',

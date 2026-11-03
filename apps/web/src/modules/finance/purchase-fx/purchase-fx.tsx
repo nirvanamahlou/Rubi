@@ -2,7 +2,7 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { groupPurchaseFx } from './summary';
 import { purchaseFxPaymentPreview } from './payment-preview';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
@@ -43,51 +43,15 @@ async function fxRequest(path: string, body?: unknown, purchaseRoot?: string) {
     throw new Error(result?.message || 'ثبت نرخ ارز انجام نشد.');
   return result.data;
 }
-export function PurchaseFxRate({
-  currencyCode,
-  purchaseRoot,
-  value,
-  onChange,
-}: {
+/** Purchase entry no longer collects or suggests FX; Finance owns later capture. */
+export function PurchaseFxRate(props: {
   currencyCode: string;
   purchaseRoot?: string | undefined;
   value: string;
   onChange: (currency: string, value: string, suggested?: boolean) => void;
 }) {
-  const [error, setError] = useState('');
-  useEffect(() => {
-    if (!currencyCode || currencyCode === 'IRR' || value) return;
-    let active = true;
-    void fxRequest(
-      'purchase-fx-quote?currency=' + encodeURIComponent(currencyCode),
-      undefined,
-      purchaseRoot,
-    )
-      .then((data) => {
-        if (active && data) onChange(currencyCode, data.rateToIrr, true);
-      })
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error ? cause.message : 'نرخ ارز در دسترس نیست.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [currencyCode, value, onChange, purchaseRoot]);
-  if (!currencyCode || currencyCode === 'IRR') return null;
-  return (
-    <label className="grid gap-1 text-xs">
-      نرخ مبنای خرید · ریال برای هر {currencyCode}
-      <MoneyInput
-        aria-label="نرخ مبنای خرید"
-        value={value}
-        onValueChange={(rate) => onChange(currencyCode, rate)}
-      />
-      {error && <span role="status">{error}</span>}
-    </label>
-  );
+  void props;
+  return null;
 }
 const rial = (value: string | null) =>
   value === null ? '—' : `${formatSalesMoney(value)} ریال`;
