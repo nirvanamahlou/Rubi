@@ -277,6 +277,24 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       await expect(
         service.assertSalesSelection(salesInput, branchId),
       ).resolves.toBeUndefined();
+      await service.setDepartureStatus(
+        tour.id,
+        { isActive: false, expectedVersion: 1 },
+        actor,
+        branchId,
+      );
+      await expect(
+        service.assertSalesSelection(salesInput, branchId),
+      ).rejects.toThrow('فروش این نوبت');
+      await service.setDepartureStatus(
+        tour.id,
+        { isActive: true, expectedVersion: 2 },
+        actor,
+        branchId,
+      );
+      await expect(
+        service.assertSalesSelection(salesInput, branchId),
+      ).resolves.toBeUndefined();
       await expect(
         service.assertSalesSelection(salesInput, randomUUID()),
       ).rejects.toThrow();

@@ -50,6 +50,13 @@ function packageView(row: PackageRow): TourPackageV1 {
 }
 function offerView(row: OfferRow): TicketOfferV1 {
   return {
+    ...(row.supplyType
+      ? {
+          supplyType: row.supplyType as NonNullable<
+            TicketOfferV1['supplyType']
+          >,
+        }
+      : {}),
     returnMinDays: row.returnMinDays ?? null,
     returnMaxDays: row.returnMaxDays ?? null,
     id: row.id,
@@ -81,6 +88,8 @@ function departureView(row: DepartureRow): TourDepartureV1 {
   const outbound = offerView(row.outboundOffer);
   const returning = row.returnOffer ? offerView(row.returnOffer) : undefined;
   return {
+    isActive: row.isActive !== false,
+    salesVersion: row.salesVersion ?? 1,
     id: row.id,
     version: row.version,
     branchId: row.branchId,
@@ -92,10 +101,13 @@ function departureView(row: DepartureRow): TourDepartureV1 {
     outboundOfferId: outbound.id,
     ...(returning ? { returnOfferId: returning.id, returning } : {}),
     outbound,
-    remainingCapacity: Math.min(
-      outbound.remainingCapacity,
-      returning?.remainingCapacity ?? outbound.remainingCapacity,
-    ),
+    remainingCapacity:
+      row.isActive === false
+        ? 0
+        : Math.min(
+            outbound.remainingCapacity,
+            returning?.remainingCapacity ?? outbound.remainingCapacity,
+          ),
   };
 }
 function fingerprint(branchId: string, input: unknown) {
@@ -180,6 +192,8 @@ export class TourPublicService {
     });
     if (!row)
       throw new BadRequestException('نوبت تور در شعبه قرارداد یافت نشد.');
+    if (row.isActive === false)
+      throw new ConflictException('فروش این نوبت متوقف شده است.');
     const tour = departureView(row);
     if (
       meta.tourDepartureVersion !== tour.version ||
@@ -468,6 +482,37 @@ export class TourPublicService {
       );
     return { data: packageView(row) };
   }
+  async setDepartureStatus(
+    id: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.authorize(actor, true, branchId);
+    const input = raw as { isActive?: unknown; expectedVersion?: unknown };
+    if (
+      !branchId ||
+      !input ||
+      typeof input.isActive !== 'boolean' ||
+      !Number.isInteger(input.expectedVersion) ||
+      Number(input.expectedVersion) < 1
+    )
+      throw new BadRequestException('اطلاعات معتبر نیست.');
+    const changed = await this.database.client.tourDeparture.updateMany({
+      where: { id, branchId, salesVersion: Number(input.expectedVersion) },
+      data: { isActive: input.isActive, salesVersion: { increment: 1 } },
+    });
+    if (changed.count !== 1)
+      throw new ConflictException('نسخه تغییر کرده است.');
+    return {
+      data: {
+        id,
+        isActive: input.isActive,
+        salesVersion: Number(input.expectedVersion) + 1,
+      },
+    };
+  }
+
   async createDeparture(
     raw: unknown,
     actor: AuthenticatedActor,
