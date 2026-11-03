@@ -54,7 +54,7 @@ export const accountingLists: {
   {
     kind: 'fiscal-years',
     title: 'فهرست دوره مالی',
-    allTitle: 'همه دوره‌های مالی',
+    allTitle: 'لیست تمام سال های مالی',
   },
   { kind: 'ledgers', title: 'فهرست دفتر کل', allTitle: 'همه دفترهای کل' },
   { kind: 'voucher-types', title: 'فهرست نوع سند', allTitle: 'همه انواع سند' },

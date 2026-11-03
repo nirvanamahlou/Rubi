@@ -251,7 +251,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   const params = useSearchParams();
   return (
     <AccountingOperations
-      key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}`}
+      key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}:${params.get('recordId') ?? ''}`}
       exportView={async (format) => {
         if (viewRef.current)
           return await exportAccountingView(viewRef.current, format);
@@ -298,6 +298,27 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     id: string;
     version: number;
   } | null>(null);
+  const [loadedRecord, setLoadedRecord] = useState('');
+  const linkedRecordId = urlParams.get('recordId');
+  const linkedRecord =
+    linkedRecordId && pathname.endsWith('/base-information/fiscal-years')
+      ? snapshot?.configurations.find(
+          (record) =>
+            record.id === linkedRecordId && record.kind === 'fiscal-years',
+        )
+      : undefined;
+  if (linkedRecord && loadedRecord !== linkedRecord.id) {
+    const values: Draft = {};
+    for (const [key, value] of Object.entries({
+      ...linkedRecord,
+      ...linkedRecord.attributes,
+    }))
+      if (typeof value === 'string' || typeof value === 'boolean')
+        values[key] = value;
+    setLoadedRecord(linkedRecord.id);
+    setDraft(values);
+    setEditing({ id: linkedRecord.id, version: linkedRecord.version });
+  }
   const pending = useRef<{ signature: string; key: string } | null>(null);
   const section = pathname.replace(/^\/finance\/accounting\/?/, '');
   const refresh = async () => {

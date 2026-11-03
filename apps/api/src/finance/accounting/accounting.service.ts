@@ -1,3 +1,4 @@
+import { listFilterAttributes } from './accounting-list-filter';
 import { codingStandardAttributes } from './accounting.coding-standard';
 import {
   SALES_CONTRACT_EVENT,
@@ -161,6 +162,7 @@ const resetApprovalAttributes = (value: unknown) =>
   ]);
 const kinds = [
   'coding-standards',
+  'accounting-list-filters',
   'approval-policies',
   'fiscal-years',
   'voucher-types',
@@ -1694,6 +1696,7 @@ export class AccountingService {
             'allocation-templates',
             'account-mappings',
             'coding-standards',
+            'accounting-list-filters',
           ].includes(row.kind))
       )
         v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
@@ -3218,6 +3221,8 @@ export class AccountingService {
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
       let attributes = v.attributes(p.attributes);
+      if (kind === 'accounting-list-filters')
+        attributes = listFilterAttributes(attributes);
       if (kind === 'coding-standards') {
         attributes = codingStandardAttributes(
           attributes,
