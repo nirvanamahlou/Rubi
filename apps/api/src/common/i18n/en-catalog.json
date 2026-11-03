@@ -5080,6 +5080,8 @@
   "خدمات قرارداد تغییر کرده‌اند؛ خریدها را دوباره بررسی کنید.": "Contract services have changed; review the purchases again.",
   "خریدهای آماده ثبت:": "Prepared purchases:",
   "پاک‌کردن خریدهای آماده ثبت": "Clear prepared purchases",
+  "بلیط شناور": "Floating ticket",
+  "ظرفیت کل / فروخته‌شده": "Total capacity / sold",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",
@@ -5432,6 +5434,7 @@
   "پاسخ ارجاع": "Referral response",
   "پاسخ این رضایت‌سنجی قبلاً ثبت شده است.": "The response to this satisfaction survey has already been recorded.",
   "پاسخ فروش به درخواست مشتری": "Sales response to customer requests",
+  "پاسخ گزارش با سایت یا بازه انتخاب‌شده مطابقت ندارد.": "The report does not match the selected site or date range.",
   "پاسخ ورود معتبر نیست.": "The sign-in response is invalid.",
   "پایان اعتبار باید بعد از شروع اعتبار باشد.": "The end of the credit must be after the start of the credit.",
   "پایان اعتبار طرح باید بعد از شروع اعتبار باشد.": "The end of the validity of the plan must be after the beginning of the validity.",
@@ -7114,6 +7117,5 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing.",
-  "پاسخ گزارش با سایت یا بازه انتخاب‌شده مطابقت ندارد.": "The report does not match the selected site or date range."
+  "version برای ویرایش الزامی است.": "version is required for editing."
 }

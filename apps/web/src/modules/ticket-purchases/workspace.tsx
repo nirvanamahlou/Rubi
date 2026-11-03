@@ -1,4 +1,7 @@
 'use client';
+import { listActiveCurrencyReferences } from '@/modules/ticket-catalog/api/references';
+import type { Reference } from '@/modules/ticket-catalog/model/catalog';
+import { PurchaseDestination } from './purchase-destination';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -65,6 +68,20 @@ export function TicketPurchaseWorkspace({
     [busy, setBusy] = useState(false),
     [uncertain, setUncertain] = useState(false),
     [priceError, setPriceError] = useState('');
+  const [currencies, setCurrencies] = useState<readonly Reference[]>([]);
+  useEffect(() => {
+    let live = true;
+    listActiveCurrencyReferences('procurement')
+      .then((rows) => {
+        if (live) setCurrencies(rows);
+      })
+      .catch(() => {
+        if (live) setCurrencies([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [revision]);
   const [fxRates, setFxRates] = useState<Record<string, string>>({});
   const updateFx = useCallback(
     (code: string, rate: string, suggested = false) =>
@@ -100,6 +117,17 @@ export function TicketPurchaseWorkspace({
       live = false;
     };
   }, [revision]);
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') setRevision((v) => v + 1);
+    };
+    const timer = window.setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
   const summary = useMemo(
     () => purchaseSummary(separateTicketPurchases(items)),
     [items],
@@ -144,7 +172,13 @@ export function TicketPurchaseWorkspace({
     setUncertain(false);
   }
   async function save() {
-    if (!selected || busy || !total) return;
+    if (
+      !selected ||
+      busy ||
+      !total ||
+      !currencies.some((c) => c.code === currency)
+    )
+      return;
     setBusy(true);
     setPriceError('');
     frozen.current ??=
@@ -293,6 +327,8 @@ export function TicketPurchaseWorkspace({
                 <tr>
                   {[
                     'پرواز',
+                    'مقصد',
+                    'ظرفیت کل / فروخته‌شده',
                     'هزینه ظرفیت باقی‌مانده / زیان',
                     'تاریخ پرواز',
                     'تأمین‌کننده',
@@ -317,6 +353,18 @@ export function TicketPurchaseWorkspace({
                     className="border-t hover:bg-muted/30"
                   >
                     <td className="p-3 font-semibold">{item.request.title}</td>
+                    <td className="p-3">
+                      <PurchaseDestination
+                        id={item.currentCapacity?.destinationId}
+                      />
+                    </td>
+                    <td className="p-3">
+                      {item.currentCapacity
+                        ? item.currentCapacity.total +
+                          ' / ' +
+                          item.currentCapacity.allocated
+                        : '—'}
+                    </td>
                     <td className="p-3">
                       {item.capacityCosts.length
                         ? item.capacityCosts.map((capacityCost) => (
@@ -520,14 +568,25 @@ export function TicketPurchaseWorkspace({
               </label>
               <label className="space-y-2">
                 <span>کد ارز خرید</span>
-                <Input
+                <select
                   required
-                  maxLength={3}
-                  pattern="[A-Z]{3}"
-                  dir="ltr"
+                  className="h-11 w-full rounded-xl border bg-background px-3"
+                  disabled={!currencies.length}
                   value={currency}
-                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                />
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  <option value="">انتخاب ارز</option>
+                  {!currencies.some((c) => c.code === currency) && (
+                    <option value={currency} disabled>
+                      {currency}
+                    </option>
+                  )}
+                  {currencies.map((c) => (
+                    <option key={c.id} value={c.code}>
+                      {currencySymbol(c.code ?? '')} · {c.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <div className="rounded-xl bg-muted p-3">
                 <span>جمع خرید</span>
@@ -556,7 +615,10 @@ export function TicketPurchaseWorkspace({
               <Button
                 type="submit"
                 disabled={
-                  busy || !total || !selected?.request.supplierDisplaySnapshot
+                  busy ||
+                  !total ||
+                  !selected?.request.supplierDisplaySnapshot ||
+                  !currencies.some((c) => c.code === currency)
                 }
               >
                 {busy
