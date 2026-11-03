@@ -17588,5 +17588,10 @@
   "مبلغ کل با کارمزد": "Total amount including commission",
   "مرکز هزینه:": "Cost center:",
   "کارمزد نمی‌تواند بیشتر از مبلغ کل باشد.": "Commission cannot exceed the total amount.",
-  "فیش شارژ فقط برای افزایش موجودی قابل ثبت است.": "A recharge receipt can only be attached to a balance increase."
+  "فیش شارژ فقط برای افزایش موجودی قابل ثبت است.": "A recharge receipt can only be attached to a balance increase.",
+  "کاربران مقصد را انتخاب کنید.": "Select the recipients.",
+  "بین یک تا صد گیرنده انتخاب کنید.": "Select between one and one hundred recipients.",
+  "توضیحات بازارسال معتبر نیست.": "Forwarding description is invalid.",
+  "توضیحات بازارسال": "Forwarding description",
+  "نامه به دریافتی گیرندگان ارسال شد.": "The letter was sent to the recipients’ inboxes."
 }
