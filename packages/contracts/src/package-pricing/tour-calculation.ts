@@ -1,4 +1,6 @@
 export interface TourRoomCurrencyAmount {
+  /** New composition publications keep flight/footer charges outside hotel rows. */
+  priceBasis?: 'HOTEL_ONLY';
   currencyCode: string;
   purchase: string | null;
   sale: string;
