@@ -8710,6 +8710,9 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
 
+## DASHBOARD-SERIES-SUMMARY-1103 — PC-C
+
+PR1335 and its merge checks passed; first source-backed Dashboard release is healthy with12 native charts and11 KPI IDs under diagnostic scope. Full metadata:316 operational tables plus restricted migration table (317/3993 columns total),209 completed migrations. Browser follow-up fixes all-series accessible descriptions and expandable tables;54 Web/translation checks pass with1 existing skip. Final CI and follow-up rollout pending; no schema/API/IAM/data/dependency changes.
 ## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — VALIDATING
 
 Finance inbox party account panel adds canonical customer/agency debt totals and one deposit split oldest-first across contracts, including partial settlement. Sales owns scoped balances/persistence; Finance authorizes actual-account receipt confirmation and existing accounting events. Preview revision, serializable transaction, operation replay, immutable receipts/audit and currency-separated four-decimal amounts protect the flow. Refund corrections use the existing financial path.18 focused API tests and12 Web checks pass; final types/lint/build and dedicated PostgreSQL CI regression precede owner-authorized merge. No migration, dependency, data or deployment changes. See tasks/PARTY-CONTRACT-RECEIPTS-FIFO-1103.md.

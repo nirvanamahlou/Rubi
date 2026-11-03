@@ -11017,3 +11017,7 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 ## DOCUMENTS-CLOSE-COPY-1103 — PC-B
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
+
+## DASHBOARD-SERIES-SUMMARY-1103 — PC-C — ACTIVE
+
+Owner Dashboard readiness request and final browser reconciliation identify multi-series chart summaries/tables displaying only the first series. Reserve Dashboard workspace summary binding, new leaf table/summary helpers and focused render tests, own notes. Preserve charts, selected source currency, date formatting and all observed series without zero-filling missing cells. No API/schema/dependency/IAM or operational data changes. PR/develop merge only after full final-head CI; preserve pinned production overlays.
