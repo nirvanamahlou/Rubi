@@ -52,11 +52,13 @@ import { workflowApi, type Operator } from './workflow-client';
 import {
   WorkQueue,
   WorkflowPanel,
+  WorkflowEditor,
   requestLabels,
   taskLabels,
 } from './workflow';
 import { HostedCallForm } from './call-form-host';
 import { WithoutOutcomeDialog } from './without-outcome-dialog';
+import { canCreateCallbackRequest } from './kpi-call-actions';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
@@ -167,6 +169,9 @@ function Content({
   const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
   const [periodOpen, setPeriodOpen] = useState<'today' | 'week' | null>(null);
   const [callbacksOpen, setCallbacksOpen] = useState(false);
+  const [callbackRequest, setCallbackRequest] = useState<ContactSummary | null>(
+    null,
+  );
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
@@ -197,6 +202,7 @@ function Content({
     };
   }, [branch]);
   const revision = useRef<string | undefined>(undefined);
+  const canRegisterCallbackRequest = canCreateCallbackRequest(permissions);
   const canManage = permissions.includes(
       'customer_affairs.call_center.workflow.manage',
     ),
@@ -810,10 +816,34 @@ function Content({
           mode="missed-callbacks"
           branch={branch}
           revision={historyRevision}
-          hidden={!!draft}
+          hidden={!!draft || !!callbackRequest}
           canComplete={canCreate && canManage && !busy}
           onClose={() => setCallbacksOpen(false)}
           onComplete={complete}
+          onRequest={
+            canRegisterCallbackRequest
+              ? (contact) => {
+                  if (!canRegisterCallbackRequest || busy) return;
+                  setCallbackRequest(contact);
+                }
+              : undefined
+          }
+        />
+      )}
+      {callbackRequest && canRegisterCallbackRequest && (
+        <WorkflowEditor
+          key={callbackRequest.id}
+          editor={{ kind: 'request' }}
+          branchId={branch}
+          contactId={callbackRequest.id}
+          contactCall={{ ...callbackRequest.latest, note: '', recordings: [] }}
+          operators={agents}
+          onClose={() => setCallbackRequest(null)}
+          onSaved={() => {
+            window.dispatchEvent(new Event('call-center:workflow-changed'));
+            setCallbackRequest(null);
+            setHistoryRevision((value) => value + 1);
+          }}
         />
       )}
       {draft && (
