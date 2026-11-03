@@ -32,6 +32,6 @@ Validation: 94 targeted API tests including actual PostgreSQL/HTTP messaging
 and request lifecycle tests; 130 Workbench and i18n Web tests. Full API/Web
 typechecks, scoped lint and API production compilation pass. The disposable
 PostgreSQL database was created separately and all existing migrations applied;
-no operational database was used for tests. Web production build and final-head
-hosted CI gate publication/merge. No runtime rollout or real-device pull is
+no operational database was used for tests. Web production build also passes; final-head
+hosted CI gates merge. No runtime rollout or real-device pull is
 claimed by this source change.
