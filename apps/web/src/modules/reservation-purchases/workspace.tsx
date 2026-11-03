@@ -23,7 +23,7 @@ import type {
   SalesServiceInput,
   TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
-import { canViewRoute } from '@nora/contracts';
+import { canViewRoute, salesContractFlights } from '@nora/contracts';
 import Link from '@/components/access-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -451,18 +451,21 @@ function PurchaseHub() {
                         </td>
                         <td className="p-4">
                           <Badge>
-                            {
-                              purchaseCategories.find(
-                                ([key]) => key === service.kind,
-                              )?.[1]
-                            }
+                            {service.kind === 'FLIGHT'
+                              ? 'بلیط شناور'
+                              : purchaseCategories.find(
+                                  ([key]) => key === service.kind,
+                                )?.[1]}
                           </Badge>
                           <p className="mt-2">{service.titleSnapshot}</p>
                         </td>
                         <td className="p-4">
                           <PurchaseDestination
                             id={
-                              request.snapshot.ticketSelections?.find(
+                              salesContractFlights(
+                                request.snapshot.serviceSelections,
+                                request.snapshot.ticketSelections ?? [],
+                              ).find(
                                 (t) => t.serviceClientKey === service.clientKey,
                               )?.destinationId ??
                               request.snapshot.hotelSelection?.cityId
