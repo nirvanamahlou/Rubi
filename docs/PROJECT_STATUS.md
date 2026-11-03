@@ -8446,9 +8446,21 @@ Latest develop d0845c8fd published across API/Web/Worker with5 approved Call Cen
 
 SMS added to shared acquaintance sources for call popup and contact filter.15 existing model/form tests, scoped lint and Web typecheck/build pass. Web-only production activation verified; API/Worker/data services and existing approved source overlays preserved. No schema/grant/dependency change. See tasks/CALL-SOURCE-SMS-1101.md.
 
+
 ## CALL-HISTORY-SUBJECT-1101 — 2026-11-01
 
 Per-call subject now displayed below expanded history summary and above note; blank subject explicitly unrecorded.17 existing tests, Web lint/typecheck/build pass. Web-only release active with prior runtime overlays and all other services preserved. See tasks/CALL-HISTORY-SUBJECT-1101.md.
+
+
+CALL-HISTORY-SPACING-1101: expanded history sections spaced14px; recipient caption/value separate lines; duplicate createdAt removed.17 existing tests, lint/typecheck/build pass; Web-only release verified with other services unchanged.
+
+CALL-HISTORY-LABELS-1101: removed subject from expanded details, retained timeline heading and spacing; colon added to both recipient captions.17 existing tests, lint/typecheck/build and Web-only release verification pass.
+
+QUEUE-OPTION-STYLE-1101: queue dropdown options now retain shared combobox styling matching acquaintance-source selector; removed inherited action-button borders/margins without changing specificity or filtering. Queue tests and Web typecheck/build passed; Web-only activation verified.
+
+## MISSED-CALL-TRIAGE-1102 — 2026-11-02
+
+Missed inbound calls now use proven ring evidence: one employee owns own callback visibility; multiple/unlinked/no destinations go to the two owner-named sales managers for request assignment. Assigned staff see related contacts/requests; later successful employee conversation or recorded resolution removes pending callback. Historic labels derive from retained evidence without rewriting answer ownership. Backend popup-only creation enabled.35 isolated PostgreSQL checks and native ORM/SQL branch parity pass; backed-up API/Worker activation preserves concurrent team releases and Web. See tasks/MISSED-CALL-TRIAGE-1102.md.
 
 
 ## HR-RADAN-LIVE-1101 — PC-B

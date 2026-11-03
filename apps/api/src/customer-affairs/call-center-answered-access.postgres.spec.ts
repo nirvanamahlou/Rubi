@@ -1,3 +1,7 @@
+import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { missedCallbackContacts } from './call-center-callbacks';
+import { Prisma } from '@nora/database';
 import 'reflect-metadata';
 import { createHash, randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
@@ -1045,6 +1049,221 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ).rejects.toThrow('local legacy');
       vi.stubEnv('NODE_ENV', 'test');
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
+    });
+    it('routes retained missed calls, grants only the assigned employee and clears resolved callbacks without fabricating answers', async () => {
+      vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', manager + ',' + peer);
+      const database = { client: db } as never;
+      const policy = new CallCenterAccessService(
+        database,
+        new IamWorkbenchRequestDirectory(
+          database,
+          new HrWorkbenchRequestUnits(database),
+        ),
+        directory,
+        crypto,
+      );
+      const canSee = async (user: string, id: string) =>
+        !!(await db.callCenterContact.findFirst({
+          where: { id, ...(await policy.where(actor(user), branchId)) },
+        }));
+      const unique = makeEvent('404', 'RINGING');
+      const single = await emit(unique);
+      await emit({
+        ...unique,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(expert, single.contactId)).toBe(true);
+      expect(await canSee(peer, single.contactId)).toBe(false);
+      const aliases = makeEvent('404', 'RINGING');
+      const alias = await emit(aliases);
+      await emit({
+        ...aliases,
+        externalEventId: randomUUID(),
+        extension: '115',
+        legId: '115',
+      });
+      await emit({
+        ...aliases,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(expert, alias.contactId)).toBe(true);
+      expect(await canSee(peer, alias.contactId)).toBe(false);
+      const ivr = { ...makeEvent('404', 'RINGING'), extension: null };
+      const record = await emit(ivr);
+      await emit({
+        ...ivr,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'COMPLETED',
+      });
+      expect(await canSee(peer, record.contactId)).toBe(true);
+      expect(await canSee(manager, record.contactId)).toBe(true);
+      expect(await canSee(expert, record.contactId)).toBe(false);
+      expect(await canSee(other, record.contactId)).toBe(false);
+      const wf = new CallCenterWorkflowService(
+        database,
+        crypto,
+        directory,
+        new CallCenterTasksService(database),
+        new NotificationsService({} as never),
+        policy,
+      );
+      const input = {
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        title: 'Synthetic callback',
+        reason: 'Assign callback',
+        ownerId: expert,
+        priority: 'NORMAL',
+        status: 'IN_PROGRESS',
+      };
+      await wf.saveRequest(actor(peer), branchId, record.contactId, input);
+      expect(await canSee(expert, record.contactId)).toBe(true);
+      expect(
+        await db.customerAffairsTicket.count({
+          where: {
+            id: input.id,
+            ...(await policy.requestWhere(actor(expert), branchId)),
+          },
+        }),
+      ).toBe(1);
+      expect(
+        await db.customerAffairsTicket.count({
+          where: {
+            id: input.id,
+            ...(await policy.requestWhere(actor(other), branchId)),
+          },
+        }),
+      ).toBe(0);
+      const pending = () =>
+        db.$transaction((tx) =>
+          missedCallbackContacts(
+            tx,
+            crypto,
+            branchId,
+            Prisma.sql`TRUE`,
+            Prisma.sql`TRUE`,
+            new Date(),
+          ),
+        );
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      await expect(
+        wf.saveRequest(actor(expert), branchId, record.contactId, {
+          ...input,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          title: 'Forbidden title change',
+        }),
+      ).rejects.toThrow();
+      await wf.saveRequest(actor(peer), branchId, record.contactId, {
+        ...input,
+        commandId: randomUUID(),
+        expectedVersion: 1,
+        status: 'CLOSED',
+        reason: 'Completed follow up',
+        result: 'Callback resolved',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(false);
+      expect(
+        await db.callCenterAnswerResponsibility.count({
+          where: { callId: record.callId },
+        }),
+      ).toBe(0);
+      await wf.saveRequest(actor(peer), branchId, record.contactId, {
+        ...input,
+        commandId: randomUUID(),
+        expectedVersion: 2,
+        status: 'IN_PROGRESS',
+        reason: 'Reopen for callback',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      const follow = {
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        ownerId: expert,
+        dueAt: new Date(Date.now() + 60000).toISOString(),
+        action: 'Callback',
+        priority: 'NORMAL',
+        status: 'COMPLETED',
+        result: 'Follow up completed',
+      };
+      await wf.followUp(actor(expert), branchId, input.id, {
+        ...follow,
+        status: 'OPEN',
+        result: '',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      await wf.followUp(actor(expert), branchId, input.id, {
+        ...follow,
+        commandId: randomUUID(),
+        expectedVersion: 1,
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(false);
+      const multiple = makeEvent('404', 'RINGING');
+      const multi = await emit(multiple);
+      await emit({
+        ...multiple,
+        externalEventId: randomUUID(),
+        extension: '501',
+        legId: '501',
+        kind: 'RINGING',
+      });
+      await emit({
+        ...multiple,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(manager, multi.contactId)).toBe(true);
+      expect(await canSee(expert, multi.contactId)).toBe(false);
+      const unmapped = makeEvent('999', 'RINGING');
+      const unmappedRow = await emit(unmapped);
+      await emit({
+        ...unmapped,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      const projected = await new CallCenterService(
+        database,
+        crypto,
+        policy,
+        new HrCallAnswerDirectory(database),
+      ).getCall(unmappedRow.callId, actor(peer), branchId);
+      expect(projected.data.operator).toContain('داخلی 999');
+      expect(projected.data.operator).not.toBe('نامشخص');
+      const reply = {
+        ...makeEvent('404', 'ANSWERED'),
+        direction: 'OUT' as const,
+        destination: { kind: 'KNOWN' as const, value: unique.caller.value },
+      };
+      // Reuse exact caller identity as destination for a later successful callback.
+      await emit(reply);
+      expect(
+        (await pending()).some((c) => c.contactId === single.contactId),
+      ).toBe(false);
+      vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', '');
     });
   },
 );

@@ -1,8 +1,16 @@
 import {
+  callbackManagers,
+  missedInbound,
+  ringingExtensions,
+} from './callback-triage';
+import { CallCenterCrypto } from './call-center.crypto';
+import type { TelephonyTechnical } from './telephony-state';
+import {
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   canViewRoute,
@@ -26,7 +34,96 @@ export class CallCenterAccessService {
     private readonly accounts: IamCallCenterDirectory = new IamCallCenterDirectory(
       db,
     ),
+    @Optional()
+    @Inject(CallCenterCrypto)
+    private readonly callbackCrypto?: CallCenterCrypto,
   ) {}
+  async callbackContactIds(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!this.callbackCrypto || !callbackManagers().length)
+      return [] as string[];
+    const db = tx ?? this.db.client;
+    const manager = callbackManagers().includes(actor.userId);
+    const ids = new Set<string>();
+    let after: string | undefined;
+    for (;;) {
+      const rows = await db.callCenterTelephonySession.findMany({
+        where: {
+          synthetic: false,
+          state: 'ENDED',
+          call: {
+            origin: 'TELEPHONY',
+            direction: 'INBOUND',
+            answerResponsibilities: { none: {} },
+            contact: { branchId },
+          },
+          ...(after ? { id: { gt: after } } : {}),
+        },
+        include: { call: { select: { contactId: true } } },
+        orderBy: { id: 'asc' },
+        take: 200,
+      });
+      for (const row of rows) {
+        const t = this.callbackCrypto.decrypt<TelephonyTechnical>(
+          row.encryptedTechnical,
+          row.keyVersion,
+          `telephony:${row.id}`,
+        );
+        if (!missedInbound(t)) continue;
+        const user = await this.singleRingingUser(branchId, t, db);
+        if (user ? user === actor.userId : manager) ids.add(row.call.contactId);
+      }
+      if (rows.length < 200) break;
+      after = rows.at(-1)!.id;
+    }
+    const assigned = await db.customerAffairsTicket.findMany({
+      where: {
+        branchId,
+        category: 'CALL_CENTER_REQUEST',
+        executionOwnerUserId: actor.userId,
+        callCenterContactId: { not: null },
+      },
+      select: { callCenterContactId: true },
+    });
+    for (const row of assigned) ids.add(row.callCenterContactId!);
+    return [...ids];
+  }
+  async singleRingingUser(
+    branchId: string,
+    t: TelephonyTechnical,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const extensions = ringingExtensions(t);
+    if (!extensions.length) return null;
+    const owners = await Promise.all(
+      extensions.map((extension) =>
+        this.accounts.answeredAccounts(
+          branchId,
+          extension,
+          t.first.occurredAt,
+          tx ?? this.db.client,
+        ),
+      ),
+    );
+    const users = [...new Set(owners.flat())];
+    return owners.every((row) => row.length === 1) && users.length === 1
+      ? users[0]!
+      : null;
+  }
+  async canManageCallback(
+    actor: AuthenticatedActor,
+    branchId: string,
+    contactId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    return (
+      callbackManagers().includes(actor.userId) &&
+      (await this.callbackContactIds(actor, branchId, tx)).includes(contactId)
+    );
+  }
   scoped(actor: AuthenticatedActor) {
     return answeredCallAccess() || hasScopedCallCenterAccess(actor.permissions);
   }
@@ -76,7 +173,10 @@ export class CallCenterAccessService {
     tx?: Prisma.TransactionClient,
   ): Promise<Prisma.CallCenterContactWhereInput> {
     const users = await this.users(actor, branchId, purpose, tx);
-    return {
+    const callbacks = users
+      ? await this.callbackContactIds(actor, branchId, tx)
+      : [];
+    const where: Prisma.CallCenterContactWhereInput = {
       branchId,
       ...(users
         ? answeredCallAccess()
@@ -112,6 +212,9 @@ export class CallCenterAccessService {
           : { ownerUserId: { in: users } }
         : {}),
     };
+    return callbacks.length
+      ? { branchId, OR: [where, { id: { in: callbacks } }] }
+      : where;
   }
   async contact(
     actor: AuthenticatedActor,
@@ -137,11 +240,15 @@ export class CallCenterAccessService {
     tx?: Prisma.TransactionClient,
   ) {
     const users = await this.users(actor, branchId, purpose, tx);
-    if (answeredCallAccess())
-      return users === null
-        ? Prisma.sql`TRUE`
-        : users.length
-          ? Prisma.sql`(EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
+    const callbacks = users
+      ? await this.callbackContactIds(actor, branchId, tx)
+      : [];
+    if (answeredCallAccess()) {
+      const evidence =
+        users === null
+          ? Prisma.sql`TRUE`
+          : users.length
+            ? Prisma.sql`(EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
           JOIN customer_affairs_calls answered ON answered.id=ar."callId"
           WHERE answered.contact_id=c.id AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))
           OR EXISTS(SELECT 1 FROM customer_affairs_calls outbound
@@ -150,7 +257,11 @@ export class CallCenterAccessService {
           WHERE outbound.contact_id=c.id AND outbound.origin='TELEPHONY'
           AND outbound.direction='OUTBOUND' AND s.synthetic=false AND o."mappingVersion">0
           AND o."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
-          : Prisma.sql`FALSE`;
+            : Prisma.sql`FALSE`;
+      return callbacks.length
+        ? Prisma.sql`(${evidence} OR c.id IN (${Prisma.join(callbacks.map((id) => Prisma.sql`${id}::uuid`))}))`
+        : evidence;
+    }
     if (purpose === 'reports' && users !== null)
       return users.length
         ? Prisma.sql`(a.created_by_user_id IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}) OR EXISTS(SELECT 1 FROM call_center_telephony_sessions s WHERE s."callId"=a.id AND s."claimUserId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
@@ -168,7 +279,11 @@ export class CallCenterAccessService {
     tx: Prisma.TransactionClient,
   ) {
     const users = await this.users(actor, branchId, 'workflow', tx);
-    if (users && !users.includes(userId))
+    if (
+      users &&
+      !users.includes(userId) &&
+      !callbackManagers().includes(actor.userId)
+    )
       throw new ForbiddenException('گیرنده خارج از تیم مجاز است.');
   }
 
@@ -183,6 +298,15 @@ export class CallCenterAccessService {
       branchId,
       callCenterContact: await this.where(actor, branchId, 'workflow', tx),
       OR: [
+        ...(callbackManagers().includes(actor.userId)
+          ? [
+              {
+                callCenterContactId: {
+                  in: await this.callbackContactIds(actor, branchId, tx),
+                },
+              },
+            ]
+          : []),
         { executionOwnerUserId: { in: users } },
         { executionOwnerUserId: null, createdByUserId: { in: users } },
       ],

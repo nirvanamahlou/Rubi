@@ -18,7 +18,6 @@ import {
 } from 'react';
 import {
   Headset,
-  Plus,
   RotateCcw,
   Search,
   Eye,
@@ -285,16 +284,6 @@ function Content({
     revision.current = undefined;
     setRefresh((v) => v + 1);
   }
-  function open(phone = '', direction: CallEvent['direction'] = 'INBOUND') {
-    setCompletionPrevious(null);
-    setDraft({
-      id: crypto.randomUUID(),
-      phone,
-      direction,
-      occurredAt: new Date().toISOString(),
-      recordings: [],
-    });
-  }
   async function complete(id: string) {
     if (busy) return;
     setBusy(true);
@@ -375,14 +364,6 @@ function Content({
           </h1>
           <p>مدیریت تماس‌ها، درخواست‌ها و پیگیری‌های مشتری</p>
         </div>
-        <button
-          className={styles.primary}
-          data-cc-focus-anchor
-          disabled={!canCreate}
-          onClick={() => open()}
-        >
-          <Plus size={18} /> ثبت تماس جدید
-        </button>
       </header>
       <WorkQueue
         onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
@@ -1127,18 +1108,28 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                  {c.note || 'بدون شرح'}
-                </p>
-                <p>
-                  {c.direction === 'OUTBOUND'
-                    ? 'تماس‌گرفته‌شده از داخلی'
-                    : 'وصل شده به'}
-                  : {c.answerRecipient?.label || c.operator || 'نامشخص'}
-                </p>
-                <p>
-                  زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
-                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 14,
+                    paddingBlock: 12,
+                    lineHeight: 1.9,
+                  }}
+                >
+                  <p
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {c.note || 'بدون شرح'}
+                  </p>
+                  <p>
+                    {c.direction === 'OUTBOUND'
+                      ? 'تماس‌گرفته‌شده از داخلی:'
+                      : 'وصل شده به:'}
+                    <span style={{ display: 'block', marginTop: 6 }}>
+                      {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                    </span>
+                  </p>
+                </div>
                 <RecordingDownload
                   callId={c.id}
                   branchId={branch}

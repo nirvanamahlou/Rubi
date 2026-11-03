@@ -18,8 +18,8 @@
   margin: 8px 0;
   overflow-wrap: anywhere;
 }
-.panel button,
-.form button {
+.panel button:where(:not([role='option'])),
+.form button:where(:not([role='option'])) {
   padding: 7px 10px;
   border: 1px solid #2286db;
   border-radius: 8px;

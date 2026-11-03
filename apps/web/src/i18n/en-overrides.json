@@ -4847,5 +4847,7 @@
   "کارشناس یا فعالیت دارای انتساب معتبر در محدودهٔ دسترسی نیست.": "No expert or activity with a verified assignment exists within your authorized scope.",
   "منبع گزارش کارشناسان در دسترس نیست.": "The expert report source is unavailable.",
   "نام و داخلی‌های فهرست فعلی HR؛ انتساب تماس از مسئولیت پاسخ یا پیشنهاد ثبت‌شدهٔ تماس خروجی است. تماس چندکارشناسی برای هر فرد یک‌بار محاسبه می‌شود؛ جمع ردیف‌ها لزوماً کل تماس‌ها نیست. شمارهٔ نامعلوم جزو مخاطب یکتا نیست. «—» یعنی مخرجی برای درصد وجود ندارد.": "Names and extensions come from the current HR directory. Call assignments use answer responsibility or the recorded outbound offer. A multiple-expert call is counted once per expert, so row totals may differ from total calls. Unknown numbers are excluded from unique contacts. A dash indicates that no percentage denominator is available.",
-  "ورودی پاسخ‌داده‌شده": "Answered inbound calls"
+  "ورودی پاسخ‌داده‌شده": "Answered inbound calls",
+  "تماس‌گرفته‌شده از داخلی:": "Called from extension:",
+  "ثبت تماس فقط از تماس واقعی ایزابل امکان‌پذیر است.": "A call can only be registered from an actual Issabel call."
 }

@@ -1,3 +1,4 @@
+import { callbackManagers, missedInbound } from './callback-triage';
 import type { CallAnswerRecipient } from '../hr/hr-call-answer-directory';
 import { callSearchMetadata } from './call-center-search';
 import {
@@ -171,6 +172,7 @@ export class CallCenterService {
       },
     });
     const results = new Map<string, CallAnswerRecipient>();
+    const descriptions = new Map<string, string>();
     const labels = new Map<
       string,
       Awaited<ReturnType<HrCallAnswerDirectory['resolve']>>
@@ -195,9 +197,16 @@ export class CallCenterService {
         (destination) => destination.extension,
       );
       const unique = new Set(destinations.map((d) => d.extension));
-      const inboundDestination =
+      let inboundDestination =
         technical.lastAnswer ??
         (unique.size === 1 ? destinations[0] : undefined);
+      if (
+        callbackManagers().length &&
+        missedInbound(technical) &&
+        unique.size > 1 &&
+        (await this.access.singleRingingUser(branchId, technical, tx))
+      )
+        inboundDestination = destinations[0];
       const observed =
         technical.first.direction === 'OUT'
           ? {
@@ -205,6 +214,20 @@ export class CallCenterService {
               at: technical.first.occurredAt,
             }
           : inboundDestination;
+      if (
+        callbackManagers().length &&
+        missedInbound(technical) &&
+        !inboundDestination
+      ) {
+        descriptions.set(
+          call.id,
+          unique.size > 1
+            ? 'چند داخلی زنگ خوردند؛ پاسخ داده نشد'
+            : technical.first.kind === 'ENDED'
+              ? 'مقصد در سوابق ثبت نشده'
+              : 'پیش از اتصال به کارشناس قطع شد',
+        );
+      }
       const extension = call.answerRecipient?.extension ?? observed?.extension;
       if (!extension || !/^\d{1,16}$/.test(extension)) continue;
       // Never derive a person from an editable operator label or a different call leg.
@@ -226,7 +249,15 @@ export class CallCenterService {
         );
         labels.set(key, recipient);
       }
-      if (recipient.label === `داخلی ${extension}`) continue;
+      if (recipient.label === `داخلی ${extension}`) {
+        if (callbackManagers().length && missedInbound(technical)) {
+          descriptions.set(
+            call.id,
+            `داخلی ${extension}؛ کارشناس در سوابق شناسایی نشد`,
+          );
+        }
+        continue;
+      }
       results.set(call.id, {
         ...recipient,
         answeredAt:
@@ -241,7 +272,9 @@ export class CallCenterService {
     return calls.map((call) =>
       results.has(call.id)
         ? { ...call, answerRecipient: results.get(call.id)! }
-        : call,
+        : descriptions.has(call.id)
+          ? { ...call, operator: descriptions.get(call.id)! }
+          : call,
     );
   }
   presentNote(row: StoredNote) {
@@ -510,6 +543,10 @@ export class CallCenterService {
           );
         return prior;
       }
+      if (process.env.CALL_CENTER_POPUP_ONLY === 'true')
+        throw new ForbiddenException(
+          'ثبت تماس فقط از تماس واقعی ایزابل امکان‌پذیر است.',
+        );
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'call-center:phone:' + branchId + ':' + phoneFingerprint},0))`,
       );

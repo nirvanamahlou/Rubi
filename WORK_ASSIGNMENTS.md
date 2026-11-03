@@ -10646,11 +10646,43 @@ COMPUTER_ID=PC-C. Owner authorizes SMS in popup/contact filter shared acquaintan
 
 CALL-SOURCE-SMS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.15 focused tests, lint, full Web typecheck/build pass. Shared SMS value available in both source dropdowns. Web-only locked activation preserves env/mounts and API/Worker/data service IDs; rollback Compose/image retained. No schema/grant/dependency changes. Source reservation releases on push.
 
+
 ## CALL-HISTORY-SUBJECT-1101 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history summary and above note. Reserve workspace.tsx and own notes only. Display actual per-call subject with explicit unrecorded fallback; preserve all unrelated UI/runtime overlays and SMS option. No API/schema/dependency/grant change; prior scopes published and released.
 
 CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
+
+
+## CALL-HISTORY-SPACING-1101 — PC-C — RESERVED
+
+Owner authorizes expanded history spacing, separate recipient label/value and removal of duplicate registration timestamp. Reserve workspace.tsx and own notes only; preserve subject and current runtime overlays. No API/schema/grants.
+
+CALL-HISTORY-SPACING-1101 — COMPLETE. Web-only deployed;17 tests, lint/typecheck/build pass. Source scope released on push.
+
+## CALL-HISTORY-LABELS-1101 — PC-C — RESERVED
+
+Owner authorizes removal of subject from expanded history and colon after recipient captions. Reserve workspace.tsx/own notes only; retain spacing and heading, no API/schema/grant changes.
+
+CALL-HISTORY-LABELS-1101 — COMPLETE.17 tests, lint/typecheck/build pass; Web-only rollout verified, other services unchanged. Reservation released on push.
+
+## QUEUE-OPTION-STYLE-1101 — PC-C — RESERVED
+
+Owner requests three queue dropdown menus matching shared source selector. Reserve workflow.module.css generic button selector only. Exclude role=option from action-button decoration; preserve shared combobox styles and live toolbar overlay via runtime-relative patch. No behavioral/API/schema change.
+
+QUEUE-OPTION-STYLE-1101 — COMPLETE. Shared menu options excluded from workflow action-button decoration using zero-specificity :where exclusion to preserve other buttons. Existing queue tests, full Web typecheck/build pass; runtime-relative Web-only rollout preserves toolbar and other services.
+
+## POPUP-ONLY-CALLS-1101 — PC-C — RESERVED
+
+Owner requests removal of manual-call entry and evidence-based callback triage. Reserve workspace.tsx for manual entry removal and bounded callback domain analysis/tests later. Sales-manager account selection requested before access policy expansion; do not infer all unit managers or global grants. Preserve operational popup completion, existing contacts and approved UI overlays.
+
+POPUP-ONLY-CALLS-1101 — PHASE1_DEPLOYED / CALLBACK_PENDING. UI manual entry removed;17 tests/typecheck/build pass. Rebased onto concurrent HR release; other service IDs preserved. Native mahsa/atena accounts resolved read-only; backend manual-create restriction and callback routing/assignment/history policy still need implementation and tests. No new grants or callback behavior active.
+
+## MISSED-CALL-TRIAGE-1102 — PC-C — RESERVED
+
+PC-C; owner authorizes completion: explicit mahsa/atena callback manager identities, unique ring recipient own visibility, multiple/no destination manager triage, request assignment access and removal after successful callback/closed resolution; historical labels only from provider evidence. Reserve Call Center access/callback/service/workflow helpers/tests, owning IAM callback authorization leaf if needed, own operational rollout/docs. No schema/dependency/grant broadening; preserve current runtime own-outbound and HR overlays. No competing active owner found. Native identities must be verified before explicit deployment configuration; no guessed employee or successful-answer backfill.
+
+MISSED-CALL-TRIAGE-1102 — IMPLEMENTED / DEPLOYED. Explicit mahsa/atena triage, same-employee ring scope, assigned-request access, human-answer callback resolution, evidence-only historical projection and backend popup-only creation.35 isolated PostgreSQL regressions, API lint/typecheck/build and native14-account/70-branch authorization audit pass. No migration/dependency/general IAM grant change. See docs/tasks/MISSED-CALL-TRIAGE-1102.md. Reservation released on source push.
 
 ## HR-RADAN-LIVE-1101 — PC-B — IN_PROGRESS
 
@@ -10757,5 +10789,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1267 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1269 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1277 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
