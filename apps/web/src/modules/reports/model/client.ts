@@ -4,6 +4,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export interface SalesByOrganizationReportResult {
+  dataLayout?: 'SOURCE_COLUMNS';
   columns?: readonly { key: string; label: string; kind: string }[];
   reportCode: string;
   reportVersion: number;
@@ -24,6 +25,7 @@ export interface SalesByOrganizationReportResult {
     refundAmount?: string;
     settlementBalance?: string;
     pendingReservationActions?: number;
+    sourceValues?: Readonly<Record<string, string | number>>;
   }[];
   total: number;
   page: number;
@@ -83,19 +85,7 @@ export interface SalesByOrganizationPreviewInput {
   pageSize?: number;
   recordAction?: boolean;
   sort?: {
-    column:
-      | 'branchId'
-      | 'ownerUserId'
-      | 'currencyCode'
-      | 'amount'
-      | 'contractCount'
-      | 'passengerCount'
-      | 'ticketCount'
-      | 'purchaseAmount'
-      | 'grossProfit'
-      | 'refundAmount'
-      | 'settlementBalance'
-      | 'pendingReservationActions';
+    column: string;
     direction: 'ASC' | 'DESC';
   };
 }
@@ -121,6 +111,8 @@ export interface ReportingSavedReportRecord {
 }
 
 interface TravelReportResult {
+  dataLayout?: 'SOURCE_COLUMNS';
+  chartMeasure?: string;
   filterOptionLabels?: Readonly<Record<string, string>>;
   reportCode: string;
   reportVersion: number;
@@ -128,6 +120,7 @@ interface TravelReportResult {
   sourceProjection: string;
   columns?: readonly { key: string; label: string; kind: string }[];
   rows: readonly {
+    sourceValues?: Readonly<Record<string, string | number>>;
     grainId: string;
     primaryDimension: string;
     secondaryDimension: string;
@@ -222,22 +215,18 @@ async function request<T>(path: string, init: RequestInit, retried = false) {
   return response.json() as Promise<T>;
 }
 
+export function reportSortApiColumn(column = 'amount') {
+  const aliases: Readonly<Record<string, string>> = {
+    amount: 'salesAmount',
+    branchId: 'primaryDimension',
+    contractCount: 'orderCount',
+    ownerUserId: 'secondaryDimension',
+  };
+  return Object.hasOwn(aliases, column) ? aliases[column]! : column;
+}
+
 export const reportingApi = {
   salesByOrganization(input: SalesByOrganizationPreviewInput = {}) {
-    const genericSortAliases: Record<string, string> = {
-      amount: 'salesAmount',
-      branchId: 'primaryDimension',
-      contractCount: 'orderCount',
-      ownerUserId: 'secondaryDimension',
-      passengerCount: 'passengerCount',
-      ticketCount: 'ticketCount',
-      purchaseAmount: 'purchaseAmount',
-      grossProfit: 'grossProfit',
-      refundAmount: 'refundAmount',
-      settlementBalance: 'settlementBalance',
-      pendingReservationActions: 'pendingReservationActions',
-      currencyCode: 'currencyCode',
-    };
     const filters = {
       ...reportDateRangeUtc(input.fromDate, input.toDate),
       ...(input.currencyCode ? { currencyCode: input.currencyCode } : {}),
@@ -258,9 +247,7 @@ export const reportingApi = {
           page: input.page ?? 1,
           pageSize: input.pageSize ?? 25,
           sort: {
-            column:
-              genericSortAliases[input.sort?.column ?? 'amount'] ??
-              'salesAmount',
+            column: reportSortApiColumn(input.sort?.column),
             direction: input.sort?.direction ?? 'DESC',
           },
           timezone: 'Asia/Tehran',
@@ -274,6 +261,7 @@ export const reportingApi = {
       const hasColumn = (key: string) =>
         !travel.columns || travel.columns.some((column) => column.key === key);
       return {
+        ...(travel.dataLayout ? { dataLayout: travel.dataLayout } : {}),
         ...(travel.columns ? { columns: travel.columns } : {}),
         reportCode: travel.reportCode,
         reportVersion: travel.reportVersion,
@@ -284,9 +272,16 @@ export const reportingApi = {
           grainId: row.grainId,
           branchId: row.primaryDimension,
           ownerUserId: row.secondaryDimension,
-          amount: row.salesAmount,
+          amount: String(
+            travel.chartMeasure
+              ? (row.sourceValues?.[travel.chartMeasure] ?? '0')
+              : row.salesAmount,
+          ),
           currencyCode: row.currencyCode,
           contractCount: row.orderCount,
+          ...(travel.dataLayout === 'SOURCE_COLUMNS'
+            ? { sourceValues: row.sourceValues ?? {} }
+            : {}),
           ...(hasColumn('passengerCount')
             ? { passengerCount: row.passengerCount }
             : {}),

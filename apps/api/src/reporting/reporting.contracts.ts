@@ -17,7 +17,10 @@ export type ReportingGrain =
   | 'CAMPAIGN'
   | 'EMPLOYEE'
   | 'AGENCY'
-  | 'EXPORT_RUN';
+  | 'EXPORT_RUN'
+  | 'DOCUMENT'
+  | 'INVENTORY'
+  | 'HOTEL_RATE';
 
 export interface ReportingMoneyV1 {
   amount: string;
@@ -115,17 +118,23 @@ export interface TravelReportRowV1 {
 export interface TravelReportResultV1 {
   reportCode: string;
   reportVersion: number;
-  grain: 'ORDER_ITEM_CURRENCY' | 'CONTRACT_CURRENCY' | 'PAYMENT';
+  grain: ReportingGrain;
+  dataLayout?: 'SOURCE_COLUMNS';
+  chartMeasure?: string;
+  filterOptionLabels?: Readonly<Record<string, string>>;
   sourceProjection:
     | 'reporting.travel.facts.v1'
     | 'sales.reporting.contract-currency.v1'
-    | 'sales.reporting.payment-events.v1';
+    | 'sales.reporting.payment-events.v1'
+    | `${string}.reporting.${string}.v1`;
   columns: readonly {
-    key: keyof TravelReportRowV1;
+    key: string;
     label: string;
     kind: 'TEXT' | 'NUMBER' | 'MONEY';
   }[];
-  rows: readonly TravelReportRowV1[];
+  rows: readonly (TravelReportRowV1 & {
+    sourceValues?: Readonly<Record<string, string | number>>;
+  })[];
   total: number;
   page: number;
   pageSize: number;

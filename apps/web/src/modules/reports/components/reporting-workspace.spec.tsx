@@ -117,6 +117,38 @@ function renderResultPanel(
 }
 
 describe('ReportingWorkspace', () => {
+  it('renders every native source column with sort arrows and its original values, without legacy money columns', () => {
+    const html = renderResultPanel({
+      started: true,
+      result: {
+        ...reportResult,
+        dataLayout: 'SOURCE_COLUMNS',
+        columns: [
+          { key: 'primaryDimension', label: 'پرواز', kind: 'TEXT' },
+          { key: 'remaining', label: 'ظرفیت باقی‌مانده', kind: 'NUMBER' },
+          { key: 'departAt', label: 'زمان حرکت UTC', kind: 'TEXT' },
+        ],
+        rows: [
+          {
+            ...reportResult.rows[0]!,
+            sourceValues: {
+              primaryDimension: 'پرواز نمونه',
+              remaining: 987,
+              departAt: '2026-11-03T12:00:00Z',
+            },
+          },
+        ],
+      },
+    });
+    expect(html).toContain('ظرفیت باقی‌مانده');
+    expect(html).toContain('زمان حرکت UTC');
+    expect(html).toContain('پرواز نمونه');
+    expect(html).toContain('987');
+    expect(html).toContain('2026-11-03T12:00:00Z');
+    expect(html).not.toContain('تعداد قرارداد</button>');
+    expect(html).not.toContain('مبلغ قرارداد</button>');
+    expect(html.match(/aria-sort=/g)).toHaveLength(3);
+  });
   it('right-aligns catalog categories with monochrome icons beside their labels', () => {
     const html = renderToStaticMarkup(
       <ReportCategorySelectOption category="فروش و قراردادها" />,
@@ -192,7 +224,7 @@ describe('ReportingWorkspace', () => {
       'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
     );
     expect(html).toContain(
-      'کدام پروازها و مسیرها بیشترین صدور و ظرفیت مصرف‌شده را دارند؟',
+      'برای کدام قراردادها مدرک داخلی مسافر صادر شده است؟',
     );
     expect(html).not.toContain('اولویت اول ضروری و عملیاتی');
     expect(html).not.toContain('اولویت دوم کنترل عملکرد');

@@ -1,3 +1,4 @@
+import { operationalCatalog } from './operational-catalog';
 export type ReportAvailability = 'PENDING_CONNECTION' | 'READY';
 export type ReportPriority = 'P0' | 'P1' | 'P2';
 
@@ -98,14 +99,32 @@ function report(
   const displayCode = reportDisplayCodes[definition.code];
   if (!displayCode)
     throw new Error(`Missing display code for report: ${definition.code}`);
+  const native = Object.hasOwn(operationalCatalog, definition.code)
+    ? operationalCatalog[definition.code]
+    : undefined;
   return {
     ...definition,
     displayCode,
     // A producer must publish its approved projection before a pending card
     // can become an executable financial report.
-    availability: definition.availability ?? 'PENDING_CONNECTION',
+    availability: native
+      ? 'READY'
+      : definition.approvedView === 'reporting.travel.facts.v1'
+        ? 'PENDING_CONNECTION'
+        : (definition.availability ?? 'PENDING_CONNECTION'),
     dateBasis: definition.dateBasis ?? 'زمان مؤثر رویداد در UTC',
     outputs: definition.outputs ?? allOutputs,
+    ...(native
+      ? {
+          approvedView: native.projection,
+          title: native.title ?? definition.title,
+          description: native.description,
+          dimensions: native.dimensions,
+          measures: native.measures,
+          filters: native.filters,
+          dateBasis: 'مبنای تاریخ و محدودیت منبع در توضیح نتیجه مشخص است',
+        }
+      : {}),
   };
 }
 
