@@ -4,6 +4,8 @@ PC-A; codex/pc-a-purchase-completion-1103 from current develop. Owner authorizes
 
 Verified with a read-only PostgreSQL SELECT using three synthetic intake revisions: the superseded empty revisions produce zero unregistered rows and exactly one registered current row.20 focused API tests pass (one existing optional local-Docker case skipped);23 focused Web checks pass. An initial local translation inventory run timed out under host load; the full hosted test run passed before develop integration and all new final-head gates remain mandatory. Extend own generated API catalogue synchronization only for existing labels. Scoped lint, API/Web typechecks and both local production builds pass. Exact-head hosted gates precede merge. No operational data changes.
 
+CI integration follow-up reserves only operation-continuity.spec.tsx mock export: latest develop changed the action panel reader to usePurchaseRegistration; preserve the existing continuity assertions and update its old mock name. No runtime or API behavior change; all refreshed exact-head checks precede merge.
+
 ## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — VALIDATING
 
 Purchase action now uses persisted purchase registration independently of supplier forms and full service coverage. The branch-scoped endpoint adds registered while preserving complete. Zero-valued and legacy hotel purchases count; quotes alone and cancelled contracts do not. Save refresh, stale-response and contract/revision isolation remain.26 focused API/Web tests and scoped lint pass; full types and hosted build/quality gates precede authorized develop merge. No data writes, schema/migration/dependency or deployment changes.
