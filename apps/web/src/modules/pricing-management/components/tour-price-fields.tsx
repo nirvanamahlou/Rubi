@@ -1,6 +1,6 @@
 'use client';
 
-import type { PackageTourPriceFieldV1 } from '@nora/contracts';
+import { tourPriceFields, type PackageTourPriceFieldV1 } from '@nora/contracts';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -10,10 +10,14 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 export function TourPriceFields({
   value,
   onChange,
+  currencies = [],
+  currenciesLoading = false,
   disabled = false,
 }: {
   value: readonly PackageTourPriceFieldV1[];
   onChange: (value: PackageTourPriceFieldV1[]) => void;
+  currencies?: readonly { code?: string; name: string }[];
+  currenciesLoading?: boolean;
   disabled?: boolean;
 }) {
   function update(id: string, patch: Partial<PackageTourPriceFieldV1>) {
@@ -21,6 +25,7 @@ export function TourPriceFields({
       value.map((field) => (field.id === id ? { ...field, ...patch } : field)),
     );
   }
+  const types = tourPriceFields();
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -51,19 +56,56 @@ export function TourPriceFields({
         {value.map((field, index) => (
           <div
             key={field.id}
-            className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem] items-end gap-3 rounded-xl border border-border p-3"
+            className="grid grid-cols-[minmax(0,1fr)_8rem_2.5rem] items-end gap-3 rounded-xl border border-border p-3"
           >
             <label className="col-span-full grid gap-2 text-sm font-bold">
               نام فیلد
-              <Input
-                aria-label={`نام فیلد قیمت ${index + 1}`}
-                maxLength={120}
+              <NativeSearchSelect
+                aria-label={`نوع فیلد قیمت ${index + 1}`}
                 disabled={disabled}
-                value={field.title}
-                onChange={(event) =>
-                  update(field.id, { title: event.target.value })
-                }
-              />
+                value={field.kind}
+                onChange={(event) => {
+                  const kind = event.target
+                    .value as PackageTourPriceFieldV1['kind'];
+                  const template = types.find((row) => row.kind === kind);
+                  if (
+                    kind !== 'custom' &&
+                    value.some(
+                      (row) => row.id !== field.id && row.kind === kind,
+                    )
+                  )
+                    return;
+                  update(field.id, {
+                    kind,
+                    title: template?.title ?? field.title,
+                    mode: kind === 'commission' ? 'percent' : 'fixed',
+                  });
+                }}
+              >
+                {types.map((type) => (
+                  <option
+                    key={type.kind}
+                    value={type.kind}
+                    disabled={value.some(
+                      (row) => row.id !== field.id && row.kind === type.kind,
+                    )}
+                  >
+                    {type.title}
+                  </option>
+                ))}
+                <option value="custom">سایر خدمات</option>
+              </NativeSearchSelect>
+              {field.kind === 'custom' && (
+                <Input
+                  aria-label={`نام فیلد قیمت ${index + 1}`}
+                  maxLength={120}
+                  disabled={disabled}
+                  value={field.title}
+                  onChange={(event) =>
+                    update(field.id, { title: event.target.value })
+                  }
+                />
+              )}
             </label>
             <label className="grid gap-2 text-sm font-bold">
               {field.mode === 'percent' ? 'درصد' : 'مبلغ'}
@@ -91,21 +133,36 @@ export function TourPriceFields({
                   <option value="fixed">مبلغ ثابت</option>
                 </NativeSearchSelect>
               ) : (
-                <Input
+                <NativeSearchSelect
                   aria-label={`ارز ${field.title || index + 1}`}
-                  dir="ltr"
-                  maxLength={3}
-                  placeholder="IRR"
-                  disabled={disabled}
+                  optionLimit={currencies.length + 1}
+                  disabled={disabled || currenciesLoading || !currencies.length}
                   value={field.currencyCode}
-                  onChange={(event) =>
-                    update(field.id, {
-                      currencyCode: event.target.value
-                        .toUpperCase()
-                        .replace(/[^A-Z]/g, ''),
-                    })
-                  }
-                />
+                  onChange={(event) => {
+                    const currencyCode = event.target.value;
+                    if (
+                      currencies.some(
+                        (currency) => currency.code === currencyCode,
+                      )
+                    )
+                      update(field.id, { currencyCode });
+                  }}
+                >
+                  {!currencies.some(
+                    (currency) => currency.code === field.currencyCode,
+                  ) && (
+                    <option value={field.currencyCode} disabled>
+                      {field.currencyCode}
+                    </option>
+                  )}
+                  {currencies
+                    .filter((currency) => currency.code)
+                    .map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.name} · {currency.code}
+                      </option>
+                    ))}
+                </NativeSearchSelect>
               )}
             </label>
             <Button

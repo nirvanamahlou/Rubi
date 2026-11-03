@@ -1,6 +1,7 @@
 'use client';
 import {
   hotelRoomQuotationTotal,
+  hotelTransferChargeableCount,
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
@@ -11,6 +12,7 @@ import { ReservationCurrencySelect } from './reservation-currencies';
 export function HotelRoomQuotationEditor({
   draft,
   requestId,
+  purchaseRoot,
   update,
   currencies,
   busy,
@@ -19,6 +21,7 @@ export function HotelRoomQuotationEditor({
 }: {
   draft: VoucherSettingsV1;
   requestId: string;
+  purchaseRoot?: string | undefined;
   update: (value: VoucherSettingsV1) => void;
   currencies: readonly { code: string; name: string }[];
   busy: boolean;
@@ -58,21 +61,15 @@ export function HotelRoomQuotationEditor({
   }
   let transferTotal = '—';
   try {
-    if (transfer.amount && transfer.currencyCode)
+    if (transfer.amount && transfer.currencyCode) {
+      const count = draft.hotelTransferSplit
+        ? counts.outbound
+        : hotelTransferChargeableCount(counts, draft.hotelTransferRoundTrip);
       transferTotal =
-        (draft.hotelTransferSplit
-          ? counts.outbound
-          : counts.outbound + counts.returning) === 0
+        count === 0
           ? '0'
-          : reservationServicePurchaseTotal(
-              transfer.amount,
-              String(
-                draft.hotelTransferSplit
-                  ? counts.outbound
-                  : counts.outbound + counts.returning,
-              ),
-              1,
-            );
+          : reservationServicePurchaseTotal(transfer.amount, String(count), 1);
+    }
   } catch {
     /* Incomplete draft. */
   }
@@ -180,6 +177,29 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={busy}
+            checked={draft.hotelTransferRoundTrip ?? false}
+            onChange={(event) => {
+              const next = {
+                ...draft,
+                hotelTransferRoundTrip: event.target.checked,
+              };
+              if (event.target.checked) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+                next.hotelTransferCounts = {
+                  outbound: counts.outbound,
+                  returning: counts.outbound,
+                };
+              }
+              update(next);
+            }}
+          />
+          قیمت رفت‌وبرگشت برای هر نفر
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
             checked={draft.hotelTransferSeparate ?? false}
             onChange={(event) =>
               update({
@@ -189,12 +209,14 @@ export function HotelRoomQuotationEditor({
               })
             }
           />
-          ترانسفر از کارگزار دیگر
+          {purchaseRoot ? 'ترانسفر از آژانس دیگر' : 'ترانسفر از کارگزار دیگر'}
         </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            disabled={busy || !canSplitTransfers}
+            disabled={
+              busy || !canSplitTransfers || draft.hotelTransferRoundTrip
+            }
             checked={draft.hotelTransferSplit ?? false}
             onChange={(event) =>
               update({
@@ -212,15 +234,20 @@ export function HotelRoomQuotationEditor({
               })
             }
           />
-          کارگزار رفت و برگشت جدا
+          {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
         {(draft.hotelTransferSeparate ?? false) && (
           <ReservationPurchaseBrokerLookup
+            purchaseRoot={purchaseRoot}
             requestId={requestId}
             label={
-              draft.hotelTransferSplit
-                ? 'کارگزار ترانسفر رفت'
-                : 'کارگزار ترانسفر'
+              purchaseRoot
+                ? draft.hotelTransferSplit
+                  ? 'آژانس ترانسفر رفت'
+                  : 'آژانس ترانسفر'
+                : draft.hotelTransferSplit
+                  ? 'کارگزار ترانسفر رفت'
+                  : 'کارگزار ترانسفر'
             }
             value={
               draft.transferBrokerId
@@ -245,7 +272,11 @@ export function HotelRoomQuotationEditor({
         )}
 
         <MoneyInput
-          aria-label="Transfer P.P"
+          aria-label={
+            draft.hotelTransferRoundTrip
+              ? 'Transfer P.P رفت‌وبرگشت'
+              : 'Transfer P.P'
+          }
           value={transfer.amount}
           disabled={busy}
           onValueChange={(amount) =>
@@ -273,9 +304,16 @@ export function HotelRoomQuotationEditor({
             })
           }
         />
-        {(['outbound', 'returning'] as const).map((key) => (
+        {(draft.hotelTransferRoundTrip
+          ? (['outbound'] as const)
+          : (['outbound', 'returning'] as const)
+        ).map((key) => (
           <label key={key}>
-            {key === 'outbound' ? 'تعداد ترانسفر رفت' : 'تعداد ترانسفر برگشت'}
+            {draft.hotelTransferRoundTrip
+              ? 'تعداد نفرات ترانسفر رفت‌وبرگشت'
+              : key === 'outbound'
+                ? 'تعداد ترانسفر رفت'
+                : 'تعداد ترانسفر برگشت'}
             <Input
               type="number"
               min="0"
@@ -289,6 +327,9 @@ export function HotelRoomQuotationEditor({
                   hotelTransferCounts: {
                     ...counts,
                     [key]: Number(event.target.value),
+                    ...(draft.hotelTransferRoundTrip
+                      ? { returning: Number(event.target.value) }
+                      : {}),
                   },
                 })
               }
@@ -306,8 +347,11 @@ export function HotelRoomQuotationEditor({
               </bdi>
             </p>
             <ReservationPurchaseBrokerLookup
+              purchaseRoot={purchaseRoot}
               requestId={requestId}
-              label="کارگزار ترانسفر برگشت"
+              label={
+                purchaseRoot ? 'آژانس ترانسفر برگشت' : 'کارگزار ترانسفر برگشت'
+              }
               value={
                 draft.hotelTransferReturn?.brokerId
                   ? {

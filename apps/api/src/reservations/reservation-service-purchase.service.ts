@@ -1,8 +1,7 @@
 import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
-import {
-  customerPurchaseSettlement,
-  assertCustomerPurchaseCoverage,
-} from '../sales/customer-purchase-settlement.public';
+import { customerPurchaseSettlement } from '../sales/customer-purchase-settlement.public';
+import { MasterSalesDirectory } from '../master-data/master-sales-directory';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { PurchaseFxService } from '../finance/purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
@@ -18,6 +17,7 @@ import {
 } from '@nestjs/common';
 import {
   hotelNights,
+  hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
   reservationHotelTransferLegKeys,
@@ -326,17 +326,63 @@ export class ReservationServicePurchaseService {
     @Optional()
     @Inject(PurchaseFxService)
     private readonly purchaseFx?: PurchaseFxService,
+    @Optional()
+    @Inject(MasterSalesDirectory)
+    private readonly salesDirectory?: MasterSalesDirectory,
   ) {}
+
+  private purchaseSupplier(id: string, sales: boolean) {
+    if (sales) {
+      if (!this.salesDirectory) throw new ForbiddenException();
+      return this.salesDirectory.agencyPurchaseReference(id);
+    }
+    return this.directory.brokerReference(id);
+  }
+  /** Sales authorizes the exact contract before delegating; no IAM grant is widened. */
+  private async assertPurchaseOwner(
+    intake: { contractId: string; snapshot: unknown },
+    actor: AuthenticatedActor,
+    salesContractId?: string,
+  ) {
+    const snapshot = intake.snapshot as SalesReservationRequestV1;
+    let floating = isFloatingSalesContract(snapshot.serviceSelections);
+    if (!floating) {
+      const offers = new Set([
+        ...(snapshot.selectedTicketOfferIds ?? []),
+        ...(snapshot.ticketSelections ?? []).map((item) => item.offerId),
+        ...snapshot.serviceSelections
+          .filter((item) => item.kind === 'FLIGHT' && item.referenceId)
+          .map((item) => item.referenceId!),
+      ]);
+      for (const offerId of offers) {
+        if (
+          (await this.tickets?.documentSupply?.(offerId, actor.branchIds)) ===
+          'FLOATING'
+        ) {
+          floating = true;
+          break;
+        }
+      }
+    }
+    if (
+      salesContractId
+        ? intake.contractId !== salesContractId || !floating
+        : floating
+    )
+      throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
+  }
 
   async recordBatch(
     intakeId: string,
     input: ReservationPurchaseBatchInputV1,
     actor: AuthenticatedActor,
     key?: string,
+    salesContractId?: string,
   ) {
     if (
-      !actor.permissions.includes('reservations.read') ||
-      !actor.permissions.includes('reservations.hotel_purchase.write')
+      !salesContractId &&
+      (!actor.permissions.includes('reservations.read') ||
+        !actor.permissions.includes('reservations.hotel_purchase.write'))
     )
       throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 140)
@@ -356,6 +402,7 @@ export class ReservationServicePurchaseService {
             'purchases',
             'hotelStayKey',
             'hotelTransferCounts',
+            'hotelTransferRoundTrip',
             'supplierFormVersion',
           ].includes(field),
       )
@@ -366,6 +413,7 @@ export class ReservationServicePurchaseService {
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
+    await this.assertPurchaseOwner(intake, actor, salesContractId);
     let snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
     const formRevision =
       input.hotelStayKey !== undefined
@@ -469,6 +517,13 @@ export class ReservationServicePurchaseService {
         ],
       };
     }
+    if (
+      input.hotelTransferRoundTrip !== undefined &&
+      typeof input.hotelTransferRoundTrip !== 'boolean'
+    )
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
+    if (input.hotelTransferRoundTrip && (!stay || input.purchases.length !== 2))
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
     if (stay) {
       const counts = input.hotelTransferCounts;
       const limit = (stay.hotel.rooms ?? []).reduce(
@@ -478,6 +533,8 @@ export class ReservationServicePurchaseService {
       );
       if (
         !counts ||
+        (input.hotelTransferRoundTrip &&
+          counts.outbound !== counts.returning) ||
         Object.keys(counts).some(
           (key) => !['outbound', 'returning'].includes(key),
         ) ||
@@ -550,7 +607,7 @@ export class ReservationServicePurchaseService {
         if (!service || !['HOTEL', 'TRANSFER'].includes(service.kind))
           throw new BadRequestException('خدمت خرید متعلق به قرارداد نیست.');
         const [broker] = await Promise.all([
-          this.directory.brokerReference(row.supplierOrganizationId),
+          this.purchaseSupplier(row.supplierOrganizationId, !!salesContractId),
           this.directory.currencyReference(row.currencyCode),
         ]);
         let amount: string;
@@ -626,14 +683,15 @@ export class ReservationServicePurchaseService {
               stay &&
               service.kind === 'TRANSFER' &&
               count !==
-                Object.values(
+                hotelTransferChargeableCount(
                   reservationHotelTransferCounts(
                     snapshot,
                     stay.key,
                     row.coveredServiceClientKeys ?? [],
                     input.hotelTransferCounts!,
                   ),
-                ).reduce((sum, count) => sum + count, 0)
+                  input.hotelTransferRoundTrip,
+                )
             )
               throw new Error();
             const nights =
@@ -670,6 +728,8 @@ export class ReservationServicePurchaseService {
             passengerPrices = {
               ...(stay && service.kind === 'TRANSFER'
                 ? {
+                    hotelTransferRoundTrip:
+                      input.hotelTransferRoundTrip ?? false,
                     hotelTransferCounts: reservationHotelTransferCounts(
                       snapshot,
                       stay.key,
@@ -886,10 +946,12 @@ export class ReservationServicePurchaseService {
     input: ReservationServicePurchaseInputV1,
     actor: AuthenticatedActor,
     key?: string,
+    salesContractId?: string,
   ) {
     if (
-      !actor.permissions.includes('reservations.read') ||
-      !actor.permissions.includes('reservations.hotel_purchase.write')
+      !salesContractId &&
+      (!actor.permissions.includes('reservations.read') ||
+        !actor.permissions.includes('reservations.hotel_purchase.write'))
     )
       throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 160)
@@ -934,12 +996,15 @@ export class ReservationServicePurchaseService {
           'هزینه ظرفیت شرکت فقط یک‌بار برای کل پرواز ثبت می‌شود.',
         );
     }
+    if (['HOTEL', 'TRANSFER', 'FLIGHT'].includes(service.kind))
+      await this.assertPurchaseOwner(intake, actor, salesContractId);
+    else if (salesContractId) throw new ForbiddenException();
     if (!['HOTEL', 'TRANSFER', 'INSURANCE', 'FLIGHT'].includes(service.kind))
       throw new BadRequestException(
         'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
     const [broker] = await Promise.all([
-      this.directory.brokerReference(input.supplierOrganizationId),
+      this.purchaseSupplier(input.supplierOrganizationId, !!salesContractId),
       this.directory.currencyReference(input.currencyCode),
     ]);
     const hotelPricing =
@@ -1013,6 +1078,10 @@ export class ReservationServicePurchaseService {
                 actor.branchIds,
               )
             : null;
+        if (settlement?.cancelled)
+          throw new ConflictException(
+            'خرید بلیط برای قرارداد ابطال‌شده مجاز نیست.',
+          );
         const refundHolds = settlement
           ? await reservedCustomerRefunds(
               tx,
@@ -1020,7 +1089,6 @@ export class ReservationServicePurchaseService {
               settlement.branchId,
             )
           : new Map<string, string>();
-        if (settlement) assertCustomerPurchaseCoverage(settlement, refundHolds);
         await tx.$queryRaw(
           Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${intakeId}, 0))`,
         );
@@ -1087,7 +1155,7 @@ export class ReservationServicePurchaseService {
               entityId: row.id,
               outcome: 'SUCCESS',
               metadata: {
-                policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+                policy: 'COST_RECORD_BEFORE_SETTLEMENT_V1',
                 contractId: settlement.contractId,
                 contractVersion: settlement.version,
                 branchId: settlement.branchId,

@@ -1,4 +1,5 @@
 'use client';
+import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { SupplierPriceTable } from './supplier-price-table';
 import { reservationHotelStays } from '@nora/contracts';
 import { VoucherFormSheet } from './voucher-form-sheet';
@@ -34,7 +35,11 @@ export function useReservationFormReferences(
     references: ReservationFormReferences;
     failed: boolean;
   }>();
-  const hotels = reservationHotelStays(intake.snapshot).map(
+  const referenceSnapshot =
+    intake.workflow?.supplierFormSettings?.sharedHotelBroker === true
+      ? (intake.supplierHotelSourceSnapshot ?? intake.snapshot)
+      : intake.snapshot;
+  const hotels = reservationHotelStays(referenceSnapshot).map(
     (stay) => stay.hotel,
   );
   const flights = salesContractFlights(
@@ -303,99 +308,115 @@ export function ReservationFormSheet({
                   </div>
                 ))}
               </div>
-              {(!settings || settings.flags.hotel) && (
-                <>
-                  <Heading
-                    number="03"
-                    title="HOTEL INFORMATION"
-                    note="Accommodation"
-                  />
-                  <table
-                    className={`${styles.table} ${styles.hotelInformation}`}
-                  >
-                    <colgroup>
-                      <col
-                        style={{
-                          width: data.roomBreakdown.length ? '54%' : '34%',
-                        }}
-                      />
-                      <col style={{ width: '19%' }} />
-                      <col style={{ width: '12%' }} />
-                      <col style={{ width: '15%' }} />
-                      {!data.roomBreakdown.length && (
-                        <col style={{ width: '20%' }} />
-                      )}
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        {[
-                          'HOTEL',
-                          'CITY',
-                          'STAR',
-                          'SERVICE',
-                          ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-                        ].map((t) => (
-                          <th key={t}>{t}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td dir="auto">{data.hotel}</td>
-                        <td dir="auto">{data.destination}</td>
-                        <td>{data.stars}</td>
-                        <td dir="auto">{data.meal}</td>
-                        {!data.roomBreakdown.length && (
-                          <td dir="auto">{data.roomType}</td>
-                        )}
-                      </tr>
-                    </tbody>
-                  </table>
-                  {data.roomBreakdown.length ? (
-                    <table
-                      className={`${styles.table} ${styles.roomBreakdown}`}
-                    >
-                      <caption>ROOM QUANTITIES BY TYPE</caption>
-                      <thead>
-                        <tr>
-                          {[
-                            'ROOM',
-                            'ROOM TYPE',
-                            'ADULTS',
-                            'CHILD AGES',
-                            'GUESTS',
-                          ].map((t) => (
-                            <th key={t}>{t}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.roomBreakdown
-                          .slice(0, voucher ? 4 : undefined)
-                          .map((r) => (
-                            <tr key={r.ordinal}>
-                              <td>{r.ordinal}</td>
-                              <td dir="auto">{r.roomType}</td>
-                              <td>{r.adults}</td>
-                              <td>{r.childAges.join(', ') || '-'}</td>
-                              <td>{r.adults + r.childAges.length}</td>
+              {(!settings || settings.flags.hotel) &&
+                (voucher ? [intake] : sharedHotelSupplierScopes(intake)).map(
+                  (hotelIntake) => {
+                    const data = voucher
+                      ? voucherFormData(hotelIntake, references)
+                      : supplierFormData(hotelIntake, references);
+                    return (
+                      <div key={hotelIntake.hotelStayKey ?? 'primary'}>
+                        <Heading
+                          number="03"
+                          title="HOTEL INFORMATION"
+                          note="Accommodation"
+                        />
+                        <table
+                          className={`${styles.table} ${styles.hotelInformation}`}
+                        >
+                          <colgroup>
+                            <col
+                              style={{
+                                width: data.roomBreakdown.length
+                                  ? '54%'
+                                  : '34%',
+                              }}
+                            />
+                            <col style={{ width: '19%' }} />
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '15%' }} />
+                            {!data.roomBreakdown.length && (
+                              <col style={{ width: '20%' }} />
+                            )}
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              {[
+                                'HOTEL',
+                                'CITY',
+                                'STAR',
+                                'SERVICE',
+                                ...(!data.roomBreakdown.length
+                                  ? ['ROOM TYPE']
+                                  : []),
+                              ].map((t) => (
+                                <th key={t}>{t}</th>
+                              ))}
                             </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  ) : null}
-                  <table className={styles.table}>
-                    <tbody>
-                      <tr>
-                        <th>CHECK-IN</th>
-                        <td>{data.checkIn}</td>
-                        <th>CHECK-OUT</th>
-                        <td>{data.checkOut}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </>
-              )}
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td dir="auto">{data.hotel}</td>
+                              <td dir="auto">{data.destination}</td>
+                              <td>{data.stars}</td>
+                              <td dir="auto">{data.meal}</td>
+                              {!data.roomBreakdown.length && (
+                                <td dir="auto">{data.roomType}</td>
+                              )}
+                            </tr>
+                          </tbody>
+                        </table>
+                        {data.roomBreakdown.length ? (
+                          <table
+                            className={`${styles.table} ${styles.roomBreakdown}`}
+                          >
+                            <caption>ROOM QUANTITIES BY TYPE</caption>
+                            <thead>
+                              <tr>
+                                {[
+                                  'ROOM',
+                                  'ROOM TYPE',
+                                  'ADULTS',
+                                  'CHILD AGES',
+                                  'GUESTS',
+                                ].map((t) => (
+                                  <th key={t}>{t}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.roomBreakdown
+                                .slice(0, voucher ? 4 : undefined)
+                                .map((r) => (
+                                  <tr key={r.ordinal}>
+                                    <td>{r.ordinal}</td>
+                                    <td dir="auto">{r.roomType}</td>
+                                    <td>{r.adults}</td>
+                                    <td>{r.childAges.join(', ') || '-'}</td>
+                                    <td>{r.adults + r.childAges.length}</td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        ) : null}
+                        <table className={styles.table}>
+                          <tbody>
+                            <tr>
+                              <th>CHECK-IN</th>
+                              <td>{data.checkIn}</td>
+                              <th>CHECK-OUT</th>
+                              <td>{data.checkOut}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        {!voucher &&
+                          sharedHotelSupplierScopes(intake).length > 1 && (
+                            <SupplierPriceTable intake={hotelIntake} />
+                          )}
+                      </div>
+                    );
+                  },
+                )}
               {intake.snapshot.serviceSelections.some(
                 (s) => s.kind === 'TRANSFER',
               ) && (
@@ -556,7 +577,9 @@ export function ReservationFormSheet({
                   )}
                 </tbody>
               </table>
-              {!voucher && <SupplierPriceTable intake={intake} />}
+              {!voucher && sharedHotelSupplierScopes(intake).length < 2 && (
+                <SupplierPriceTable intake={intake} />
+              )}
               <Heading
                 number={voucher ? '06' : '07'}
                 title="NOTICE"

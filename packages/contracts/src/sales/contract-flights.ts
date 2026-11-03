@@ -1,5 +1,13 @@
 import type { SalesServiceInput, SalesTicketSelectionInput } from './index';
 
+export interface SalesFlightAirportV1 {
+  id: string;
+  cityId: string;
+  countryId: string;
+  code: string;
+  name: string;
+}
+
 /** Additive v1 service-metadata snapshot; never an inventory offer or issuance. */
 export interface SalesContractOnlyFlightV1 {
   version: 1;
@@ -11,6 +19,7 @@ export interface SalesContractOnlyFlightV1 {
   carrierNameSnapshot: string;
   serviceNumberSnapshot: string;
   cabinClassCode: string;
+  destinationAirport?: SalesFlightAirportV1;
 }
 export interface SalesFlightSnapshotV1 extends Omit<
   SalesTicketSelectionInput,
@@ -18,6 +27,7 @@ export interface SalesFlightSnapshotV1 extends Omit<
 > {
   source: 'CATALOG' | 'CONTRACT_ONLY';
   offerId?: string;
+  destinationAirport?: SalesFlightAirportV1;
 }
 export function contractFlightMetadata(
   flight: SalesContractOnlyFlightV1,
@@ -32,6 +42,11 @@ export function contractFlightMetadata(
     flightCarrierName: flight.carrierNameSnapshot,
     flightNumber: flight.serviceNumberSnapshot,
     flightCabinClass: flight.cabinClassCode,
+    ...(flight.destinationAirport
+      ? {
+          flightDestinationAirportV1: JSON.stringify(flight.destinationAirport),
+        }
+      : {}),
   };
 }
 const flightKeys = [
@@ -41,6 +56,7 @@ const flightKeys = [
   'flightCarrierName',
   'flightNumber',
   'flightCabinClass',
+  'flightDestinationAirportV1',
 ];
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -61,6 +77,34 @@ export function salesContractOnlyFlights(
   return services.flatMap((service) => {
     const m = service.metadata;
     if (!m || !flightKeys.some((key) => Object.hasOwn(m, key))) return [];
+    let destinationAirport: SalesFlightAirportV1 | undefined;
+    if (m.flightDestinationAirportV1 !== undefined) {
+      try {
+        const airport = JSON.parse(
+          String(m.flightDestinationAirportV1),
+        ) as SalesFlightAirportV1;
+        if (
+          !airport ||
+          !uuid.test(airport.id) ||
+          !uuid.test(airport.cityId) ||
+          !uuid.test(airport.countryId) ||
+          !/^[A-Z]{3}$/.test(airport.code) ||
+          !text(airport.name, 200)
+        )
+          throw new Error();
+        destinationAirport = {
+          id: airport.id,
+          cityId: airport.cityId,
+          countryId: airport.countryId,
+          code: airport.code,
+          name: airport.name,
+        };
+      } catch {
+        throw new Error(
+          'اطلاعات بلیت شناور کامل یا معتبر نیست؛ مسیر، زمان، ایرلاین و شماره پرواز را بررسی کنید.',
+        );
+      }
+    }
     if (
       service.kind !== 'FLIGHT' ||
       m.contractFlightVersion !== 1 ||
@@ -94,6 +138,7 @@ export function salesContractOnlyFlights(
         carrierNameSnapshot: m.flightCarrierName,
         serviceNumberSnapshot: m.flightNumber,
         cabinClassCode: String(m.flightCabinClass),
+        ...(destinationAirport ? { destinationAirport } : {}),
       },
     ];
   });

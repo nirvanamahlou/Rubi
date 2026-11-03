@@ -56,7 +56,7 @@ export function HrDashboard({
   const loading = report?.key !== queryKey;
   const records = loading ? [] : (report?.records ?? []);
   const error = loading ? '' : (report?.error ?? '');
-  const [now] = useState(() => new Date());
+  const now = new Date();
   useEffect(() => {
     let active = true;
     void allHrRecords({
@@ -101,12 +101,17 @@ export function HrDashboard({
       getHrResource(item.section, item.tab)?.approval &&
       /انتظار|بررسی/.test(item.status),
   );
-  const attendance = scoped.filter(
-    (item) =>
-      item.section === 'time' &&
-      item.tab === 'attendance' &&
-      read(item, 'تاریخ کارکرد') === today,
-  );
+  const daily = new Map<string, HrRecordDto>();
+  for (const item of scoped
+    .filter((item) => item.section === 'time' && item.tab === 'attendance')
+    .sort(
+      (a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt) || b.id.localeCompare(a.id),
+    )) {
+    const key = `${item.employeeId}:${read(item, 'تاریخ کارکرد')}`;
+    if (!daily.has(key)) daily.set(key, item);
+  }
+  const attendance = [...daily.values()];
   const expiring = scoped.filter(
     (item) =>
       item.section === 'contracts' &&
@@ -118,23 +123,20 @@ export function HrDashboard({
   );
   const leaves = scoped.filter(
     (item) =>
-      item.section === 'time' &&
-      item.tab === 'leave' &&
-      item.status === 'تأییدشده' &&
+      ['time', 'requests'].includes(item.section) &&
+      ['leave', 'radanLeave'].includes(item.tab) &&
+      ['تأییدشده', 'تاییدشده', 'مصوب'].includes(item.status) &&
       read(item, 'از تاریخ') <= today &&
       read(item, 'تا تاریخ') >= today,
   );
   const incomplete = employees.filter(
     (item) => !item.unit || !item.position || !item.grade,
   );
-  const overtime = scoped
-    .filter(
-      (item) =>
-        item.section === 'time' &&
-        item.tab === 'overtime' &&
-        item.status === 'تأییدشده',
-    )
-    .reduce((sum, item) => sum + Number(item.data.minutes ?? 0) / 60, 0);
+  const overtime = attendance.reduce(
+    (sum, item) =>
+      sum + Math.max(0, Number(item.data.overtimeMinutes) || 0) / 60,
+    0,
+  );
   const metrics = [
     {
       label: 'کارکنان فعال',
@@ -151,11 +153,13 @@ export function HrDashboard({
         attendance
           .filter(
             (item) =>
-              Number(
-                item.data.workedMinutes ??
-                  item.data.minutes ??
-                  Number(read(item, 'ساعت کارکرد').replace(':', '.')),
-              ) > 0,
+              read(item, 'تاریخ کارکرد') === today &&
+              (Boolean(item.data.firstIn) ||
+                Number(
+                  item.data.workedMinutes ??
+                    item.data.minutes ??
+                    Number(read(item, 'ساعت کارکرد').replace(':', '.')),
+                ) > 0),
           )
           .map((item) => item.employeeId)
           .filter(Boolean),
@@ -166,7 +170,8 @@ export function HrDashboard({
       label: 'در مرخصی',
       icon: CalendarDays,
       tone: 'violet',
-      value: leaves.length,
+      value: new Set(leaves.map((item) => item.employeeId).filter(Boolean))
+        .size,
       href: '/hr?section=time&tab=leave',
     },
     {
@@ -191,12 +196,12 @@ export function HrDashboard({
       href: '/hr?section=requests',
     },
     {
-      label: 'اضافه‌کاری مصوب',
+      label: 'اضافه‌کاری',
       icon: Clock3,
       tone: 'violet',
       value: overtime,
       unit: 'ساعت',
-      href: '/hr?section=time&tab=overtime',
+      href: '/hr?section=time&tab=attendance',
     },
     {
       label: 'تکمیل پرونده کارکنان',

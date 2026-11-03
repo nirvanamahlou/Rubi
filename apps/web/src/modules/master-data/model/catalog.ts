@@ -838,9 +838,9 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         key: 'airlineCodes',
         label: 'کد ایرلاین',
         type: 'text',
-        placeholder: 'W5 / IRM',
+        placeholder: 'W5 یا IRM یا MAHAN AIR',
         required: true,
-        hint: 'کد IATA و در صورت وجود ICAO را در یک فیلد وارد کنید.',
+        hint: 'کد IATA، ICAO یا Callsign را وارد کنید؛ قالب IATA / ICAO هم مجاز است.',
       },
       nameField,
       {

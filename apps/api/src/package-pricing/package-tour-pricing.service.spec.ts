@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import type { PackagePricingService } from './package-pricing.service';
@@ -35,7 +35,7 @@ describe('PackageTourPricingService', () => {
       version: 1,
       tourDepartureId: 'tour-1',
       batchId: 'batch-1',
-      updatedByUserId: 'another-editor',
+      updatedByUserId: 'sales-user',
       currencyCode: 'EUR',
       adultFlightSale: new Prisma.Decimal('10000000'),
       adultFlightSaleCurrencyCode: 'IRR',
@@ -152,6 +152,7 @@ describe('PackageTourPricingService', () => {
       { version: 1, expectedDraftVersion: 1, reason: 'review' },
       actor,
     );
+    expect(create.mock.calls[0]?.[0].data.publishedByUserId).toBe('sales-user');
     const double = result.roomPrices.find((row) => row.roomCode === 'double')!;
     expect(result.roomPrices).toHaveLength(1);
     expect(double.hotelPurchase).toBe('600');
@@ -183,7 +184,7 @@ describe('PackageTourPricingService', () => {
     expect(result.familyChildren).toBe(1);
     expect(result.priceFields).toEqual(priceFields);
   });
-  it('never permits publishing by the last draft editor', async () => {
+  it('validates the current source for the last draft editor too', async () => {
     const database = {
       client: {
         packagePricingTourDraft: {
@@ -197,7 +198,9 @@ describe('PackageTourPricingService', () => {
       },
     } as unknown as DatabaseService;
     const pricing = {
-      tourCostGrid: vi.fn(),
+      tourCostGrid: vi
+        .fn()
+        .mockRejectedValue(new BadRequestException('invalid current source')),
     } as unknown as PackagePricingService;
     const service = new PackageTourPricingService(database, pricing);
     await expect(
@@ -210,8 +213,8 @@ describe('PackageTourPricingService', () => {
         },
         actor,
       ),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(pricing.tourCostGrid).not.toHaveBeenCalled();
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(pricing.tourCostGrid).toHaveBeenCalled();
   });
 
   it('rejects edits to a hotel rate outside the selected purchase batch', async () => {
@@ -384,120 +387,134 @@ it.each([['outside-rate'], ['rate-1', 'rate-1']])(
     ).rejects.toBeInstanceOf(BadRequestException);
   },
 );
-it('publishes only selected per-person compositions with source metadata and keeps the saved selection immutable', async () => {
-  const draft = {
-    id: 'draft',
-    version: 1,
-    tourDepartureId: 'tour-1',
-    batchId: 'batch-1',
-    updatedByUserId: 'other',
-    currencyCode: 'EUR',
-    selectedHotelRateIds: ['rate-1'],
-    roomSaleOverrides: [
-      {
-        hotelRateId: 'rate-1',
-        roomCode: 'double',
-        currencyCode: 'EUR',
-        amount: '650',
-      },
-    ],
-    adultFlightSale: new Prisma.Decimal(100),
-    childFlightSale: new Prisma.Decimal(50),
-    businessUplift: new Prisma.Decimal(0),
-    commissionPercent: new Prisma.Decimal(0),
-    adultFlightSaleCurrencyCode: 'EUR',
-    childFlightSaleCurrencyCode: 'EUR',
-    businessUpliftCurrencyCode: 'EUR',
-    adjustments: [],
-  };
-  const fullGrid = {
-    ...grid,
-    missingFlightOfferIds: [],
-    tour: {
-      ...grid.tour,
+it.each([true, false])(
+  'publishes selected compositions independently of flight payment, paid=%s',
+  async (paid) => {
+    const draft = {
+      id: 'draft',
       version: 1,
-      outboundOfferId: 'out',
-      outbound: { cabinClassCode: 'ECONOMY' },
-    },
-    purchaseBatches: [
-      {
-        id: 'batch-1',
-        currencyCode: 'EUR',
-        checkIn: '2026-10-01',
-        checkOut: '2026-11-01',
-        method: 'STAY',
-        rows: ['rate-1', 'unchecked'].map((id) => ({
-          id,
-          basePerNight: '100',
+      tourDepartureId: 'tour-1',
+      batchId: 'batch-1',
+      updatedByUserId: 'other',
+      currencyCode: 'EUR',
+      selectedHotelRateIds: ['rate-1'],
+      roomSaleOverrides: [
+        {
+          hotelRateId: 'rate-1',
+          roomCode: 'double',
           currencyCode: 'EUR',
-          factors: { single: '1', double: '2', doubleChild: '2.5' },
-          roomRates: [],
-        })),
-      },
-    ],
-    flightPurchaseCosts: [
-      {
-        offerId: 'out',
-        costRevisionId: 'cost',
-        adultUnitCost: '60',
-        childUnitCost: '30',
-        currencyCode: 'EUR',
-      },
-    ],
-  };
-  const create = vi.fn(async ({ data }) => ({
-    ...data,
-    publishedAt: new Date(),
-    roomPrices: data.roomPrices.create,
-  }));
-  const tx = {
-    $queryRaw: vi.fn(),
-    packagePricingTourDraft: { findUnique: vi.fn().mockResolvedValue(draft) },
-    packagePricingTourPublishedVersion: {
-      findFirst: vi.fn().mockResolvedValue(null),
-      create,
-    },
-  };
-  const service = new PackageTourPricingService(
-    {
-      client: {
-        packagePricingTourDraft: {
-          findFirst: vi.fn().mockResolvedValue(draft),
+          amount: '650',
         },
-        $transaction: vi.fn(async (run) => run(tx)),
+      ],
+      adultFlightSale: new Prisma.Decimal(100),
+      childFlightSale: new Prisma.Decimal(50),
+      businessUplift: new Prisma.Decimal(0),
+      commissionPercent: new Prisma.Decimal(0),
+      adultFlightSaleCurrencyCode: 'EUR',
+      childFlightSaleCurrencyCode: 'EUR',
+      businessUpliftCurrencyCode: 'EUR',
+      adjustments: [],
+    };
+    const fullGrid = {
+      ...grid,
+      missingFlightOfferIds: paid ? [] : ['out'],
+      tour: {
+        ...grid.tour,
+        version: 1,
+        outboundOfferId: 'out',
+        outbound: { cabinClassCode: 'ECONOMY' },
       },
-    } as unknown as DatabaseService,
-    {
-      tourCostGrid: vi.fn().mockResolvedValue(fullGrid),
-    } as unknown as PackagePricingService,
-  );
-  const result = await service.publish(
-    'draft',
-    { version: 1, expectedDraftVersion: 1, reason: 'review' },
-    actor,
-  );
-  expect(result.selectedHotelRateIds).toEqual(['rate-1']);
-  expect(result.roomPrices).toHaveLength(3);
-  expect(
-    result.roomPrices.every((price) => price.hotelRateId === 'rate-1'),
-  ).toBe(true);
-  expect(
-    result.roomPrices.find((price) => price.roomCode === 'double'),
-  ).toMatchObject({
-    hotelPurchase: '500',
-    packageSale: '650.00',
-    roomTypeName: 'double',
-  });
-  expect(
-    result.roomPrices.find((price) => price.roomCode === 'doubleChild'),
-  ).toMatchObject({ hotelPurchase: '250', packageSale: '300.00' });
-  Object.assign(draft, { selectedHotelRateIds: [] });
-  await expect(
-    service.publish(
+      purchaseBatches: [
+        {
+          id: 'batch-1',
+          currencyCode: 'EUR',
+          checkIn: '2026-10-01',
+          checkOut: '2026-11-01',
+          method: 'STAY',
+          rows: ['rate-1', 'unchecked'].map((id) => ({
+            id,
+            basePerNight: '100',
+            currencyCode: 'EUR',
+            factors: { single: '1', double: '2', doubleChild: '2.5' },
+            roomRates: [],
+          })),
+        },
+      ],
+      flightPurchaseCosts: paid
+        ? [
+            {
+              offerId: 'out',
+              costRevisionId: 'cost',
+              adultUnitCost: '60',
+              childUnitCost: '30',
+              currencyCode: 'EUR',
+            },
+          ]
+        : [],
+    };
+    const create = vi.fn(async ({ data }) => ({
+      ...data,
+      publishedAt: new Date(),
+      roomPrices: data.roomPrices.create,
+    }));
+    const tx = {
+      $queryRaw: vi.fn(),
+      packagePricingTourDraft: { findUnique: vi.fn().mockResolvedValue(draft) },
+      packagePricingTourPublishedVersion: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create,
+      },
+    };
+    const service = new PackageTourPricingService(
+      {
+        client: {
+          packagePricingTourDraft: {
+            findFirst: vi.fn().mockResolvedValue(draft),
+          },
+          $transaction: vi.fn(async (run) => run(tx)),
+        },
+      } as unknown as DatabaseService,
+      {
+        tourCostGrid: vi.fn().mockResolvedValue(fullGrid),
+      } as unknown as PackagePricingService,
+    );
+    const result = await service.publish(
       'draft',
       { version: 1, expectedDraftVersion: 1, reason: 'review' },
       actor,
-    ),
-  ).rejects.toThrow('هتل‌های منتخب');
-  expect(create).toHaveBeenCalledTimes(1);
-});
+    );
+    expect(result.outboundCostRevisionId).toBe(paid ? 'cost' : null);
+    if (!paid)
+      expect(
+        result.roomPrices.every((p) =>
+          p.currencyAmounts?.every(
+            (c) => c.purchase === null && c.profit === null,
+          ),
+        ),
+      ).toBe(true);
+    expect(result.selectedHotelRateIds).toEqual(['rate-1']);
+    expect(result.roomPrices).toHaveLength(3);
+    expect(
+      result.roomPrices.every((price) => price.hotelRateId === 'rate-1'),
+    ).toBe(true);
+    expect(
+      result.roomPrices.find((price) => price.roomCode === 'double'),
+    ).toMatchObject({
+      hotelPurchase: '500',
+      packageSale: '650.00',
+      roomTypeName: 'double',
+    });
+    expect(
+      result.roomPrices.find((price) => price.roomCode === 'doubleChild'),
+    ).toMatchObject({ hotelPurchase: '250', packageSale: '300.00' });
+    Object.assign(draft, { selectedHotelRateIds: [] });
+    await expect(
+      service.publish(
+        'draft',
+        { version: 1, expectedDraftVersion: 1, reason: 'review' },
+        actor,
+      ),
+    ).rejects.toThrow('هتل‌های منتخب');
+    expect(create).toHaveBeenCalledTimes(1);
+  },
+);

@@ -1,3 +1,4 @@
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
 import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 
@@ -215,7 +216,9 @@ export async function organizationByCode(
     sortDirection: 'asc',
   });
   return response.data.find(
-    (record) => record.code.toUpperCase() === code.toUpperCase(),
+    (record) =>
+      record.code.toUpperCase() === code.toUpperCase() ||
+      masterDataDisplayCode(record) === code,
   );
 }
 

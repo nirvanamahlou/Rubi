@@ -18,6 +18,11 @@ afterEach(() => {
 describe('Finance output download integrity', () => {
   it('encodes source filters safely and omits empty parameters', () => {
     expect(
+      new URLSearchParams(exportQueryString({ category: 'PURCHASE' })).get(
+        'category',
+      ),
+    ).toBe('PURCHASE');
+    expect(
       new URLSearchParams(
         exportQueryString({ person: 'الف & ب', page: 2 }),
       ).get('person'),

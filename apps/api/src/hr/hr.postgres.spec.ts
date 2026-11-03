@@ -311,6 +311,44 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         service.createEmployee(employeeInput('Wrong branch'), key(), outsider),
       ).rejects.toThrow();
     });
+    it('round trips multiple normalized extensions and retains them on unrelated edits', async () => {
+      const target = await service.createEmployee(
+        employeeInput('Synthetic Multiple Extensions', {
+          extensions: ['۰۰۱۲', '0045', '0012'],
+        }),
+        key(),
+        admin,
+      );
+      expect(target.extension).toBe('0012');
+      expect(target.extensions).toEqual(['0012', '0045']);
+      const saved = await client.hrRecord.findFirst({
+        where: {
+          employeeId: target.id,
+          tab: 'internalContact',
+          deletedAt: null,
+        },
+      });
+      expect(saved?.values).toEqual(['0012', '0045']);
+      const edited = await service.updateEmployee(
+        target.id,
+        { version: target.version, extensions: ['0099', '0045'] },
+        admin,
+      );
+      expect(edited.extensions).toEqual(['0099', '0045']);
+      const partial = await service.updateEmployee(
+        target.id,
+        { version: edited.version, name: 'Synthetic Multiple Updated' },
+        admin,
+      );
+      expect(partial.extensions).toEqual(['0099', '0045']);
+      const cleared = await service.updateEmployee(
+        target.id,
+        { version: partial.version, extensions: [] },
+        admin,
+      );
+      expect(cleared.extensions).toEqual([]);
+      expect(cleared.extension).toBe('');
+    });
     it('persists employee extensions through create, replay, partial edit and clear with scope and CAS guards', async () => {
       const input = employeeInput('Synthetic Extension', { extension: '۰۰۱۲' });
       const commandKey = key();

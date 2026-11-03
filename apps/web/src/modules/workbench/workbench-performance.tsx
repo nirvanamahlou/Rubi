@@ -68,6 +68,12 @@ export function WorkbenchPerformance() {
       active = false;
     };
   }, [days, version]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setVersion((v) => v + 1);
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
   function reload(value = days) {
     setData(null);
     setError('');
@@ -90,14 +96,11 @@ export function WorkbenchPerformance() {
             </span>
             <div>
               <h2 className="text-2xl font-black">عملکرد من</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                حضور امروز، برنامه کاری و دستاوردهای شما
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <WorkbenchSelect
-              label="بازه آمار فروش و مشتریان"
+              label="بازه زمانی"
               value={days}
               onValueChange={reload}
               options={[
@@ -230,9 +233,6 @@ export function WorkbenchPerformance() {
                   ترددی برای امروز ثبت نشده است.
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                ترددهای روز تقویمی امروز، با اعمال اصلاحات تأییدشده منابع انسانی
-              </p>
             </Card>
             <Card className="space-y-4 p-6">
               <h3 className="flex items-center gap-2 text-lg font-bold">
@@ -281,9 +281,6 @@ export function WorkbenchPerformance() {
                   {linked ? 'هنوز برنامه شیفتی ثبت نشده است.' : hrHint}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                ۱۰ برنامه اخیر ثبت‌شده در منابع انسانی
-              </p>
             </Card>
           </div>
           {!!hr?.leaveBalances.length && (
@@ -422,8 +419,8 @@ export function PerformanceExtraCards({
       />
       <Metric
         label="کسری کار"
-        value="—"
-        hint="کسری کار تأییدشده به عملکرد متصل نشده است"
+        value={duration(month?.deficitMinutes)}
+        hint={attendanceHint}
         icon={<TimerOff />}
         tone="border-amber-500/20 bg-amber-500/10"
       />
@@ -690,7 +687,6 @@ function MonthlySales({
 function Metric({
   label,
   value,
-  hint,
   icon,
   tone,
 }: {
@@ -714,7 +710,6 @@ function Metric({
       <strong className="my-4 block break-words text-3xl font-black tabular-nums">
         {value}
       </strong>
-      <p className="text-xs leading-6 text-muted-foreground">{hint}</p>
     </div>
   );
 }

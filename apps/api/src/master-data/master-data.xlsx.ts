@@ -213,7 +213,10 @@ function recordValue(
   column: string,
   formatter: Intl.DateTimeFormat,
 ): string | number {
-  if (column === 'code') return record.code;
+  if (column === 'code')
+    return typeof record.attributes.accountingCode === 'string'
+      ? record.attributes.accountingCode
+      : record.code;
   if (column === 'name') return record.name;
   if (column === 'manufacturerModel')
     return [record.attributes.manufacturer, record.attributes.model]

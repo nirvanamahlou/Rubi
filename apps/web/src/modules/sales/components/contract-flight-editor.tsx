@@ -12,17 +12,24 @@ import {
 } from '../model/floating-flight-times';
 import { SalesThemedSelect } from './sales-themed-select';
 import type { ContractFlightDraft } from '../model/sales-form';
+import { FloatingFlightAirport } from './floating-flight-airport';
 
 export function ContractFlightEditor({
   value,
   flightDate = '',
   airlines = [],
+  destinationCityId = '',
+  destinationCountryId = '',
+  workflow = 'sales',
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
   international?: boolean;
   flightDate?: string;
   airlines?: readonly MasterDataRecord[];
+  destinationCityId?: string;
+  destinationCountryId?: string;
+  workflow?: 'sales' | 'reservations';
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
   if (!value)
@@ -150,6 +157,15 @@ export function ContractFlightEditor({
               { value: 'BUSINESS', label: 'بیزینس' },
               { value: 'FIRST', label: 'فرست کلاس' },
             ]}
+          />
+        </FormField>
+        <FormField label="فرودگاه مقصد">
+          <FloatingFlightAirport
+            cityId={destinationCityId}
+            countryId={destinationCountryId}
+            workflow={workflow}
+            value={value.destinationAirport}
+            onChange={(destinationAirport) => patch({ destinationAirport })}
           />
         </FormField>
       </div>

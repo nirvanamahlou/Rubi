@@ -75,7 +75,7 @@ export class WorkbenchPerformanceService {
     from.setUTCHours(0, 0, 0, 0);
     const period = { from: from.toISOString(), to: to.toISOString(), days };
     const [hr, sales, activity] = await Promise.all([
-      section(() => this.hr.get(actor)),
+      section(() => this.hr.get(actor, days)),
       section(() =>
         this.ownSales(actor, period.from.slice(0, 10), period.to.slice(0, 10)),
       ),

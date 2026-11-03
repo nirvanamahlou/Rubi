@@ -95,3 +95,26 @@ describe('employee business extension', () => {
     });
   });
 });
+
+it('renders all saved extensions and validates secondary numbers', () => {
+  const html = renderToStaticMarkup(
+    <NewEmployeeForm
+      initialValue={{
+        ...value,
+        extension: '0012',
+        extensions: ['0012', '0045'],
+      }}
+      existingPersonnelCodes={[]}
+      managerOptions={[]}
+      onCancel={() => {}}
+      onSubmit={() => {}}
+    />,
+  );
+  expect(html).toContain('value="0045"');
+  expect(html).toContain('+ افزودن');
+  expect(html).toContain('حذف شماره داخلی 2');
+  expect(
+    validateNewEmployeeForm({ ...value, extensions: ['0012', 'bad'] }, [])
+      .extension,
+  ).toBeDefined();
+});

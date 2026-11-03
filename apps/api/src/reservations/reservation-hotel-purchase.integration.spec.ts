@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { createDatabaseClient, type Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
@@ -260,3 +260,40 @@ describe.skipIf(!process.env.HOTEL_PRICING_TEST_DATABASE_URL)(
     });
   },
 );
+
+it('rejects a Sales-owned floating hotel before the legacy total-cost writer can run', async () => {
+  const transaction = vi.fn();
+  const service = new ReservationHotelPurchaseService({
+    client: {
+      reservationIntake: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch',
+          snapshot: {
+            hotelSelection: { serviceClientKey: 'hotel' },
+            serviceSelections: [
+              {
+                kind: 'HOTEL',
+                clientKey: 'hotel',
+                metadata: { purchaseSupplyType: 'FLOATING' },
+              },
+            ],
+          },
+        }),
+      },
+      $transaction: transaction,
+    },
+  } as never);
+  await expect(
+    service.record(
+      '11111111-1111-4111-8111-111111111112',
+      { version: 1, expectedVersion: 0, amount: '10', currencyCode: 'IRR' },
+      {
+        userId: 'reservation',
+        branchIds: ['branch'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never,
+      'legacy-floating',
+    ),
+  ).rejects.toThrow('مجوز ثبت هزینه خرید هتل وجود ندارد.');
+  expect(transaction).not.toHaveBeenCalled();
+});

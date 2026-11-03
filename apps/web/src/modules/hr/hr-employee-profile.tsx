@@ -9,6 +9,7 @@ import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import { getHrResource } from '@nora/contracts';
 import { employeeGroups, resolveHrGroup, type HrSource } from './hr-navigation';
 import { employeeProfileSources } from './employee-profile-data';
+import { employeeAttendanceDataset } from './employee-attendance-dataset';
 import { recordsDataset } from './hr-live-data';
 import type { HrStore } from './hr-store';
 import type { HrFormTarget } from './hr-record-form';
@@ -171,7 +172,9 @@ export function HrEmployeeProfile({
               ]),
             totalLabel: '',
           }
-        : recordsDataset(realSource.section, realSource.tab, selected);
+        : source.tab === 'attendance'
+          ? employeeAttendanceDataset(records)
+          : recordsDataset(realSource.section, realSource.tab, selected);
   const pending = records.filter((item) => /انتظار|بررسی/.test(item.status));
   const rowSelection = useHrRowSelection(
     JSON.stringify([employee.id, source.tab, range]),
@@ -386,6 +389,7 @@ export function HrEmployeeProfile({
         ) : (
           <HrTable
             data={data}
+            showSelection={source.tab !== 'attendance'}
             {...rowSelection}
             {...(needsHrDetail(
               realSource.section,
@@ -399,7 +403,7 @@ export function HrEmployeeProfile({
                     onSelect(selected[index]!, realSource),
                 }
               : {})}
-            {...(canManage
+            {...(canManage && source.tab !== 'attendance'
               ? {
                   onDelete: (index: number) => setRemoving(selected[index]!),
                   onEdit: (index: number) =>

@@ -221,6 +221,73 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       client.masterSupplier.delete({ where: { id: supplier.id } }),
     ).rejects.toThrow();
   });
+  it('persists foreign debt units and actual IRR cash under real account, event and replay constraints', async () => {
+    const f = await fixture('EUR');
+    const command = { ...f.command, exchangeRateToIrr: '800000' };
+    const result = await f.service.recordPayment(
+      f.request.id,
+      command,
+      f.actor,
+    );
+    expect(result.remainingAmount).toBe('60');
+    expect(
+      await f.service.recordPayment(f.request.id, command, f.actor),
+    ).toEqual(result);
+    const saved =
+      await client.financeTicketPurchasePaymentRevision.findUniqueOrThrow({
+        where: { id: command.operationId },
+        include: { cost: true, account: true },
+      });
+    expect(saved.cost.currencyCode).toBe('EUR');
+    expect(saved.account?.currencyCode).toBe('IRR');
+    expect(saved.paidAmount.toString()).toBe('40');
+    expect(saved.rialEquivalent.toString()).toBe('32000000');
+    const event = await client.financeAccountingEvent.findFirstOrThrow({
+      where: {
+        source: 'TICKET',
+        recordId: command.operationId,
+        kind: 'TICKET_PAYMENT',
+      },
+    });
+    expect(event.amount.toString()).toBe('32000000');
+    expect(event.currency).toBe('IRR');
+    expect(event.settlementAccountId).toBe(command.accountId);
+    expect(
+      await client.financeAccountingEvent.count({
+        where: {
+          source: 'TICKET',
+          recordId: command.operationId,
+          kind: 'TICKET_PAYMENT',
+        },
+      }),
+    ).toBe(1);
+    const otherCurrency = await client.financeSettlementAccount.create({
+      data: {
+        branchId: f.actor.branchIds[0]!,
+        createdByUserId: f.actor.userId,
+        title: 'Synthetic incompatible currency account',
+        kind: 'CASH',
+        currencyCode: 'USD',
+      },
+    });
+    await expect(
+      f.service.recordPayment(
+        f.request.id,
+        {
+          ...command,
+          operationId: randomUUID(),
+          expectedPaymentVersion: 1,
+          accountId: otherCurrency.id,
+        },
+        f.actor,
+      ),
+    ).rejects.toThrow();
+    expect(
+      await client.financeTicketPurchasePaymentRevision.count({
+        where: { costRevisionId: command.costRevisionId },
+      }),
+    ).toBe(1);
+  });
   it('rejects a stale concurrent installment and replays a completed settlement', async () => {
     const f = await fixture();
     const results = await Promise.allSettled([

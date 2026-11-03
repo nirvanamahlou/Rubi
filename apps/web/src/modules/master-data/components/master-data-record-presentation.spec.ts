@@ -58,9 +58,9 @@ describe('Master Data record presentation', () => {
       suppliers.indexOf('laneRecords.map((record)'),
       suppliers.indexOf('const content'),
     );
-    expect(collaboration.indexOf('{record.code}')).toBeLessThan(
-      collaboration.indexOf('record={record}'),
-    );
+    expect(
+      collaboration.indexOf('{masterDataDisplayCode(record)}'),
+    ).toBeLessThan(collaboration.indexOf('record={record}'));
     expect(collaboration).not.toContain('<MasterDataLogoImage record={record}');
 
     const finance = source('master-data-finance-workspace.tsx');

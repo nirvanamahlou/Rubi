@@ -142,6 +142,63 @@ it('preserves explicitly manual hotel dates instead of silently quoting a differ
   expect(state.packageSaleQuote).toBeUndefined();
 });
 
+it('automatically switches the published total for the selected hotel and exact adult/child composition', async () => {
+  const family = {
+    ...price,
+    publicationId: 'family',
+    roomCode: packageRoomCode({
+      roomTypeId: 'room',
+      adults: 2,
+      childAges: [{ min: 2, maxExclusive: 6 }],
+      board: 'BB',
+    }),
+    prices: [
+      { currencyCode: 'EUR', amount: '260.00' },
+      { currencyCode: 'IRR', amount: '1250' },
+    ],
+  };
+  hooks.fetch.mockResolvedValue({
+    data: [
+      price,
+      family,
+      {
+        ...family,
+        hotelId: 'other',
+        prices: [{ currencyCode: 'EUR', amount: '999' }],
+      },
+    ],
+  });
+  render();
+  await Promise.resolve();
+  render();
+  render();
+  expect(state.contractPrices).toEqual(price.prices);
+  state = {
+    ...state,
+    contractPrices: [{ currencyCode: 'EUR', amount: '180' }],
+    hotel: {
+      ...state.hotel,
+      rooms: state.hotel.rooms!.map((r) => ({ ...r, childAges: [4] })),
+    },
+  };
+  render();
+  render();
+  expect(state.packageSaleQuote?.items[0]?.publicationId).toBe('family');
+  expect(state.contractPrices).toEqual(family.prices);
+  expect(state.passengerTotalPricing).toBe(false);
+  expect(state.passengerHotelPrices).toBeUndefined();
+  state = {
+    ...state,
+    hotel: {
+      ...state.hotel,
+      rooms: state.hotel.rooms!.map((r) => ({ ...r, childAges: [8] })),
+    },
+  };
+  render();
+  render();
+  expect(state.packageSaleQuote).toBeUndefined();
+});
+
 it('does not replace outbound-day check-in with a next-day published package stay', async () => {
   state = {
     ...state,
