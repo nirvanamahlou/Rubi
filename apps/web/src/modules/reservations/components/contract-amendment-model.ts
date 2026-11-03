@@ -104,12 +104,14 @@ export function replaceAmendmentFlight(
     Object.entries(service?.metadata ?? {}).filter(
       ([key]) =>
         ![
+          'purchaseSupplyType',
           'contractFlightVersion',
           'flightDepartureAt',
           'flightArrivalAt',
           'flightCarrierName',
           'flightNumber',
           'flightCabinClass',
+          'flightDestinationAirportV1',
         ].includes(key),
     ),
   );
@@ -121,6 +123,7 @@ export function replaceAmendmentFlight(
     referenceId: offer.id,
     metadata: {
       ...metadata,
+      ...(offer.supplyType ? { purchaseSupplyType: offer.supplyType } : {}),
       ...(service && !service.metadata?.direction ? {} : { direction }),
     },
     status: 'SELECTED' as const,
@@ -163,6 +166,9 @@ export function manualAmendmentFlights(
         arrivalAt: local(f.arrivalAt),
         carrierName: f.carrierNameSnapshot,
         serviceNumber: f.serviceNumberSnapshot,
+        ...(f.destinationAirport
+          ? { destinationAirport: f.destinationAirport }
+          : {}),
         cabinClassCode:
           f.cabinClassCode as ContractFlightDraft['cabinClassCode'],
       },
@@ -203,7 +209,11 @@ export function applyManualAmendmentFlights(
               ...s,
               titleSnapshot: f.carrierName + ' ' + f.serviceNumber,
               metadata: {
-                ...s.metadata,
+                ...Object.fromEntries(
+                  Object.entries(s.metadata ?? {}).filter(
+                    ([key]) => key !== 'flightDestinationAirportV1',
+                  ),
+                ),
                 ...contractFlightMetadata({
                   version: 1,
                   direction,
@@ -216,6 +226,9 @@ export function applyManualAmendmentFlights(
                   carrierNameSnapshot: f.carrierName,
                   serviceNumberSnapshot: f.serviceNumber,
                   cabinClassCode: f.cabinClassCode,
+                  ...(f.destinationAirport
+                    ? { destinationAirport: f.destinationAirport }
+                    : {}),
                 }),
               },
             }

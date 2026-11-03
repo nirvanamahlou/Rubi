@@ -64,6 +64,7 @@ export async function ghestirooRequest(
       'renew',
       'workspace',
       'presence',
+      'dashboard',
     ].includes(operation) ||
     (after && !/^[a-f0-9]{32}$/.test(after)) ||
     (operation === 'renew' && !/^[A-Za-z0-9_-]{64}$/.test(nextApiKey ?? ''))
@@ -77,11 +78,11 @@ export async function ghestirooRequest(
       addresses.some((a) => a.family !== 4 || blocked.check(a.address, 'ipv4')))
   )
     throw Error('UNSAFE_DESTINATION');
-  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants', 'renew', 'workspace', 'presence'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
+  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants', 'renew', 'workspace', 'presence', 'dashboard'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
   const body =
     operation === 'renew'
       ? JSON.stringify({ nextApiKey })
-      : operation === 'workspace'
+      : ['workspace', 'dashboard'].includes(operation)
         ? JSON.stringify(options?.payload)
         : undefined;
   if (body && Buffer.byteLength(body) > 8 * 1024 * 1024)
@@ -93,7 +94,9 @@ export async function ghestirooRequest(
         family: addresses[0]!.family,
         servername: url.hostname,
         port: url.port || (local ? 80 : 443),
-        method: ['admin-grants', 'renew', 'workspace'].includes(operation)
+        method: ['admin-grants', 'renew', 'workspace', 'dashboard'].includes(
+          operation,
+        )
           ? 'POST'
           : 'GET',
         path,
