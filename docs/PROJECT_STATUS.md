@@ -8541,6 +8541,10 @@ Employee-related record forms no longer offer inline employee creation; employee
 ## CALL-EXPERT-PERFORMANCE-1102 — PC-C — SOURCE_READY
 Removed outbound-contact ranking. Added scoped expert call/backlog/completion table with overdue-first order, full HR extension lists and authorized paginated detail views. Historical actor evidence uses native responsibilities/outbound offers; unknown attribution is explicit. HR/Tasks public projections preserve module boundaries; no IAM/schema/data changes.198 API checks and78 Web checks, scoped lint and API/Web builds/types pass;68 existing DB-dependent tests skipped. Production read-only candidate probe confirms summaries/details without record writes. Hosted CI and publication pending. See docs/tasks/CALL-EXPERT-PERFORMANCE-1102.md.
 
+## CALL-CENTER-AUDIO-CEO-ONLY-1102 — PC-C — SOURCE ONLY
+
+Owner restricts audio to Danial Altafi. Single immutable IAM-ID plus active internal account validation, server-side list/full/Range checks and fail-closed UI capability implemented. Demo/admin/manager/employee legacy grants cannot bypass. No server deployment/configuration or grant mutation authorized or performed. Details and future activation prerequisites: docs/tasks/CALL-CENTER-AUDIO-CEO-ONLY-1102.md.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

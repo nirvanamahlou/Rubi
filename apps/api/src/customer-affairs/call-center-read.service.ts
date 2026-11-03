@@ -6,6 +6,7 @@ import {
   type ExpertMetric,
 } from './expert-performance';
 import type { TelephonyTechnical } from './telephony-state';
+import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { matchesContactColumns } from './contact-column-filters';
 import {
   missedCallbackCount,
@@ -66,6 +67,10 @@ export class CallCenterReadService {
     @Inject(CallCenterCrypto) private readonly crypto: CallCenterCrypto,
     @Inject(IamWorkbenchRequestDirectory)
     private readonly directory: IamWorkbenchRequestDirectory,
+    @Inject(IamCallCenterDirectory)
+    private readonly recordingAccounts: IamCallCenterDirectory = new IamCallCenterDirectory(
+      db,
+    ),
   ) {}
   private conditions(
     branch: string,
@@ -181,6 +186,14 @@ export class CallCenterReadService {
           q.followUp === 'TODAY' ? tehranDay(new Date()).toISOString() : null,
       }),
     );
+  }
+  async recordingAccess(actor: AuthenticatedActor) {
+    this.workflow.scope(actor, undefined);
+    return {
+      data: {
+        allowed: await this.recordingAccounts.canDownloadCallRecordings(actor),
+      },
+    };
   }
   async branches(actor: AuthenticatedActor) {
     this.workflow.scope(actor, undefined);
