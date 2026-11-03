@@ -236,6 +236,11 @@ Hotel composition rows now calculate hotel sale only; flight/business/commission
 
 Paying-account options in the Finance purchase-payment dialog now reuse the existing account formatter to show the registered title, bank and masked identifier, followed by currency. Search and selected labels use the same text. Existing branch/currency eligibility, account IDs, payment source and transaction logic are unchanged. No API/schema/migration/dependency or deployment. Existing account-label, inbox presentation/contract and payment-preview regressions plus scoped lint/Web types and final-head hosted gates precede owner-authorized develop merge.
 
+## FLOATING-HOTEL-LABEL-1103 — PC-A — READY_FOR_CI
+
+Owner authorizes floating hotel label correction in the existing PC-A purchase-hub consumer and develop merge after checks. Branch codex/pc-a-floating-hotel-purchase-label-1103 from develop60e18a750. Reserve reservation-purchases model/workspace and focused tests, own translation entry/generated catalogues and own status sections. No schema, dependency, producer API or Procurement core changes. Separately owner requests removal of exactly two named production contracts including dependencies after server-only backup, and four exact ticket purchase entries; operational identifiers and sensitive backups stay outside Git. Preserve paid/accounting history and unrelated records; inspect dependencies before mutation.
+Validation:22 focused model/workspace/i18n checks pass, including rendered floating-hotel label and preservation of ordinary hotel/transfer labels. Scoped lint and full Web typecheck pass. Final production build/hosted gates precede authorized merge; source freezes on push and releases on successful merge. Production cleanup completed after verified server-only encrypted backup: two exact contracts and approved dependent rows removed, four unpriced ticket purchase requests cancelled to remove them from active inboxes. Linked tour/offers and unrelated data preserved; login/health remain HTTP200. No source deployment or migration.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -8630,3 +8635,10 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## DASHBOARD-READINESS-1103 — PC-C
 
 Read-only production audit covers316 tables/3985 columns and entire84 KPI/91 visual registry. All11 existing native source aggregates independently reconcile. Four pending receipts are not confirmed revenue collection; empty Accounting/approved-cost sources remain unavailable. Add source-aware acquisition/order and financial sales/profit trends with honest missing-series notices; full matrix and remaining work: docs/tasks/DASHBOARD-READINESS-1103.md.26 API and51 Web/translation tests pass (1 existing skip), scoped lint passed. Final CI/merge and pinned production rollout pending; no data/schema/IAM/dependency changes.
+## COMPANY-BASELINE-1103 — PC-A
+
+Valid active manual access snapshots now retain authenticated legal-entity read/switch baseline, matching ordinary roles. Invalid/disabled/multiple snapshots remain fail-closed; aggregate/manage/branding/document grants unchanged.18 focused permission tests and scoped lint pass. No migration/dependency/data mutation. Server rollout not performed; existing SSH key was rejected in prior diagnostic.
+
+## AGENCY-CONTRACT-NOTE-1103 — PC-B
+
+Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
