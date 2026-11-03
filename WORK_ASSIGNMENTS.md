@@ -10718,7 +10718,6 @@ COMPUTER_ID=PC-A; codex/pc-a-purchase-green-without-form-1103 from develop7d74d7
 
 PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped lint pass. Covers saved zero/legacy purchases without forms, partial registration independent of completion, form quotes without purchases, cancellations, additive controller response and stale refresh isolation. All final-head hosted checks required before owner-authorized merge. No operational data or deployment. Source freezes on publication and releases on verified merge.
 
-
 ## JAHAN-CONTRACT-HEADER-1103 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
