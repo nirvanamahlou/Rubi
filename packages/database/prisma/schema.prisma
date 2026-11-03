@@ -4317,6 +4317,8 @@ model TourPackage {
 }
 
 model TourDeparture {
+  isActive         Boolean                     @default(true)
+  salesVersion     Int                         @default(1)
   hotelRatePacks   ReservationHotelRatePack[]
   hotelRateBatches ReservationHotelRateBatch[]
   pricingDrafts    PackagePricingTourDraft[]
