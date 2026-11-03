@@ -1324,13 +1324,6 @@ export function AgreementWorkflowPanel({
           {notice}
         </div>
       ) : null}
-      {view === 'credit' ? (
-        <div className="boundary-note">
-          سقف‌ها پس از تأیید و در بازه اعتبارشان معتبرند. مانده قابل‌استفاده
-          تنها با دریافت مانده مالی محاسبه می‌شود؛ اتصال مانده مالی این بخش هنوز
-          آماده نیست.
-        </div>
-      ) : null}
       {loading ? (
         <p role="status">در حال دریافت قراردادها…</p>
       ) : !error && !records.length ? (
