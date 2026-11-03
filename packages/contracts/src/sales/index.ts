@@ -307,6 +307,7 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  isFloating?: boolean;
   travelDates?: {
     outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;
     returning: { date: string; calendar: 'persian' | 'gregorian' } | null;

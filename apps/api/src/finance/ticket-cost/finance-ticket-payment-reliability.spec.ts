@@ -20,12 +20,12 @@ const command = {
   exchangeRateToIrr: '1',
   transferAt: '2026-10-04T10:00:00.000Z',
 };
-function fixture() {
+function fixture(currencyCode = 'IRR') {
   const cost = {
     id: command.costRevisionId,
     requestId: 'request-1',
     branchId: 'branch-a',
-    currencyCode: 'IRR',
+    currencyCode,
     invoiceAmount: new Prisma.Decimal(100),
   };
   const rows: Record<string, unknown>[] = [];
@@ -47,7 +47,10 @@ function fixture() {
     },
     financeTicketPurchaseCostRevision: { findFirst: vi.fn(async () => cost) },
     financeSettlementAccount: {
-      findFirst: vi.fn(async () => ({ id: command.accountId })),
+      findFirst: vi.fn(async () => ({
+        id: command.accountId,
+        currencyCode: 'IRR',
+      })),
     },
     masterPaymentMethod: {
       findFirst: vi.fn(async () => ({ id: command.paymentMethodId })),
@@ -77,9 +80,34 @@ function fixture() {
     database as never,
     procurement as never,
   );
-  return { service, create, rows, procurement, lock };
+  return { service, create, rows, procurement, lock, tx };
 }
 describe('Ticket payment replay and concurrency', () => {
+  it('keeps foreign ticket debt and emits the actual rial withdrawal from an IRR account', async () => {
+    const f = fixture('EUR');
+    const result = await f.service.recordPayment(
+      'request-1',
+      { ...command, exchangeRateToIrr: '800000' },
+      actor,
+    );
+    expect(result).toMatchObject({ remainingAmount: '60' });
+    expect((f.rows[0]!.paidAmount as Prisma.Decimal).toString()).toBe('40');
+    expect((f.rows[0]!.rialEquivalent as Prisma.Decimal).toString()).toBe(
+      '32000000',
+    );
+    expect(f.tx.financeAccountingEvent.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            kind: 'TICKET_PAYMENT',
+            amount: '32000000.0000',
+            currency: 'IRR',
+            settlementAccountId: command.accountId,
+          }),
+        ],
+      }),
+    );
+  });
   it('replays a partial payment without a second revision', async () => {
     const f = fixture();
     const first = await f.service.recordPayment('request-1', command, actor);

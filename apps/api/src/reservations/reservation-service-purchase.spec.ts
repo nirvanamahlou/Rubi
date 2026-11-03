@@ -874,7 +874,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
                   id: 'receipt',
                   amount: '1250000',
                   currencyCode: 'IRR',
-                  status: 'FINANCE_CONFIRMED',
+                  status: 'SUBMITTED',
                   refunds: [],
                   allocations: [],
                 },
@@ -903,6 +903,16 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
   const service = new ReservationServicePurchaseService(
     db as never,
     directory as never,
+    undefined,
+    undefined,
+    undefined,
+    {
+      agencyPurchaseReference: vi.fn().mockResolvedValue({
+        id: valid.supplierOrganizationId,
+        source: 'ORGANIZATION',
+        name: 'Agency',
+      }),
+    } as never,
   );
   const actor = {
     userId: 'actor',
@@ -914,7 +924,27 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       { ...valid, serviceClientKey: 'floating' },
       actor,
+      'reservation-denied',
+    ),
+  ).rejects.toThrow();
+  expect(create).not.toHaveBeenCalled();
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'floating' },
+      actor,
+      'wrong-contract',
+      'other',
+    ),
+  ).rejects.toThrow();
+  expect(create).not.toHaveBeenCalled();
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'floating' },
+      actor,
       'floating-cost-key',
+      'contract',
     ),
   ).resolves.toMatchObject({ data: { id: 'floating-cost' } });
   expect(audit).toHaveBeenCalledWith(
@@ -922,7 +952,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       data: expect.objectContaining({
         action: 'reservations.ticket_purchase.authorized',
         metadata: expect.objectContaining({
-          policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+          policy: 'COST_RECORD_BEFORE_SETTLEMENT_V1',
           contractId: 'contract',
           contractVersion: 1,
         }),
@@ -935,7 +965,8 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
         serviceKind: 'FLIGHT',
         amount: '1250000',
         currencyCode: 'IRR',
-        supplierBrokerId: valid.supplierOrganizationId,
+        supplierOrganizationId: valid.supplierOrganizationId,
+        supplierBrokerId: null,
       }),
     }),
   );
@@ -1090,4 +1121,44 @@ it('accepts a nonempty hotel guest subset but rejects duplicate and foreign gues
       { ...price, customerId: 'not-hotel' },
     ]),
   ).toThrow();
+});
+
+it('does not allow Reservations to record a Sales-owned floating hotel-only purchase', async () => {
+  const transaction = vi.fn();
+  const service = new ReservationServicePurchaseService(
+    {
+      client: {
+        reservationIntake: {
+          findUnique: vi.fn().mockResolvedValue({
+            contractId: 'contract',
+            branchId: 'branch',
+            snapshot: {
+              serviceSelections: [
+                {
+                  clientKey: 'hotel-1',
+                  kind: 'HOTEL',
+                  metadata: { purchaseSupplyType: 'FLOATING' },
+                },
+              ],
+            },
+          }),
+        },
+        $transaction: transaction,
+      },
+    } as never,
+    {} as never,
+  );
+  await expect(
+    service.record(
+      '11111111-1111-4111-8111-111111111112',
+      valid,
+      {
+        userId: 'reservation',
+        branchIds: ['branch'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never,
+      'hotel-owner',
+    ),
+  ).rejects.toThrow('مجوز ثبت خرید خدمات وجود ندارد.');
+  expect(transaction).not.toHaveBeenCalled();
 });

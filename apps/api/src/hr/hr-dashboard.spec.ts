@@ -44,22 +44,40 @@ const chart = (
     (c) => c.id === id,
   )!;
 describe('HR dashboard calendar and actual aggregates', () => {
-  it('uses Tehran day and complete previous Persian season, month and year', () => {
+  it('starts the rolling30 days with today and counts an imported open-day entry once', () => {
+    const records = [
+      row('attendance', ['', '2026-10-25'], {
+        firstIn: '2026-10-25T05:45:00Z',
+        workedMinutes: 0,
+      }),
+    ];
+    const result = chart(records, 'present');
+    expect(result.points).toHaveLength(30);
+    expect(result.points.slice(0, 2).map((p) => p.key)).toEqual([
+      '2026-10-25',
+      '2026-10-24',
+    ]);
+    expect(result.points.at(-1)?.key).toBe('2026-09-26');
+    expect(result.points[0]?.value).toBe(1);
+    expect(chart(records, 'quarterLate').description).toContain('پاییز');
+  });
+
+  it('uses Tehran day and current Persian season, month and year', () => {
     expect(dashboardPeriods(now)).toMatchObject({
       today: '2026-10-25',
       month: '2026-10-23',
       year: '2026-03-21',
       jalaliYear: 1405,
-      quarterFrom: '2026-06-22',
-      quarterTo: '2026-09-22',
+      quarterFrom: '2026-09-23',
+      quarterTo: '2026-10-25',
       week: '2026-10-19',
     });
     expect(dashboardPeriods(new Date('2026-10-24T21:00:00Z')).today).toBe(
       '2026-10-25',
     );
     expect(dashboardPeriods(new Date('2026-03-21T12:00:00Z'))).toMatchObject({
-      quarterFrom: '2025-12-22',
-      quarterTo: '2026-03-20',
+      quarterFrom: '2026-03-21',
+      quarterTo: '2026-03-21',
       year: '2026-03-21',
     });
   });
@@ -83,7 +101,7 @@ describe('HR dashboard calendar and actual aggregates', () => {
         { employeeId: 'outside' },
       ),
     ];
-    expect(chart(records, 'present').points.at(-1)?.value).toBe(1);
+    expect(chart(records, 'present').points[0]?.value).toBe(1);
     expect(chart(records, 'weeklyAttendance').points[0]?.value).toBe(2);
     expect(chart(records, 'overtime').points[0]?.value).toBe(1.5);
     expect(chart(records, 'departmentLate').points[0]?.value).toBe(7);
@@ -108,7 +126,7 @@ describe('HR dashboard calendar and actual aggregates', () => {
       ),
     ];
     expect(chart(rows, 'weeklyAttendance').points[0]?.value).toBe(3);
-    expect(chart(rows, 'present').points.at(-1)?.value).toBe(1);
+    expect(chart(rows, 'present').points[0]?.value).toBe(1);
   });
   it('uses legacy HH:mm and keeps uncomputed or malformed metrics finite', () => {
     const records = [
@@ -141,7 +159,7 @@ describe('HR dashboard calendar and actual aggregates', () => {
     );
     expect(
       chart(records, 'quarterLate').points.reduce((s, x) => s + x.value, 0),
-    ).toBe(20);
+    ).toBe(50);
     expect(chart(records, 'weeklyAttendance').points[0]?.value).toBe(3);
     expect(chart(records, 'overtime').points[0]?.value).toBe(1);
   });
@@ -248,6 +266,22 @@ describe('HR dashboard read scope and completeness', () => {
     ).mockResolvedValue(undefined);
     return { service, client };
   }
+  it('queries business dates including prior-season days needed by the rolling chart', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-23T12:00:00Z'));
+    try {
+      const { service, client } = setup();
+      await service.dashboardCharts({}, actor);
+      const attendance =
+        client.hrRecord.findMany.mock.calls[0]![0].where.AND[1].OR[0];
+      expect(attendance.AND).toEqual([
+        { values: { path: ['1'], gte: '2026-08-25' } },
+        { values: { path: ['1'], lte: '2026-09-23' } },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('intersects employee scope with record scope and never uses bootstrap limits', async () => {
     const { service, client } = setup([
       { ...employee, branch: { name: 'الف' } } as DashboardEmployee,

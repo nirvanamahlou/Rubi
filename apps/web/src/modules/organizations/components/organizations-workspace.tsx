@@ -1,4 +1,5 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
 
 import type {
   IamPermissionCode,
@@ -657,7 +658,7 @@ export function OrganizationsWorkspace() {
                     </Badge>
                   </div>
                   <p className="break-all text-sm" dir="ltr">
-                    {record.code}
+                    {masterDataDisplayCode(record)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {cooperationLabel(record.attributes.roleCodes)}
@@ -778,7 +779,7 @@ export function OrganizationsWorkspace() {
                         </span>
                       </td>
                       <td>
-                        <bdi>{record.code}</bdi>
+                        <bdi>{masterDataDisplayCode(record)}</bdi>
                       </td>
                       <td>
                         {commercial[record.id]?.manager ??

@@ -10,6 +10,7 @@ import { GhestirooStore, type GhestirooConfig } from './ghestiroo.store';
 import { GhestirooService } from './ghestiroo.service';
 import { ghestirooOrigin, ghestirooRequest } from './ghestiroo.client';
 import * as client from './ghestiroo.client';
+import { GhestirooController } from './ghestiroo.controller';
 
 const branch = randomUUID();
 const actor: AuthenticatedActor = {
@@ -80,6 +81,48 @@ describe('Encrypted connection storage', () => {
 });
 
 describe('Nora module boundary', () => {
+  it('binds workspace identity to authenticated Nora actor and accepts uploads only for preview', async () => {
+    const run = vi.fn(async () => ({ contract: bundle.contract }));
+    const iam = {
+      describeMessagingParticipants: vi.fn(async () => [
+        { displayName: 'Nora person' },
+      ]),
+      recordSelfActivity: vi.fn(),
+    };
+    const controller = new GhestirooController({ run } as never, iam as never);
+    const request = {
+      actor,
+      headers: { 'x-nora-workspace': '1', 'x-nora-subject': 'forged' },
+    } as never;
+    await controller.workspace(request, branch, {
+      payload: JSON.stringify({
+        action: 'schema',
+        kind: 'hotels',
+        subject: 'forged',
+      }),
+    });
+    expect(run.mock.calls[0]).toEqual([
+      actor,
+      branch,
+      'workspace',
+      '',
+      { action: 'schema', kind: 'hotels', subject: 'forged' },
+      'Nora person',
+    ]);
+    await expect(
+      controller.workspace(
+        request,
+        branch,
+        { payload: '{"action":"save"}' },
+        { buffer: Buffer.from('test'), originalname: 'test.xlsx' },
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      controller.workspace({ actor, headers: {} } as never, branch, {
+        payload: '{}',
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
   function service(manage = true) {
     const registry = {
       read: vi.fn(async (a: AuthenticatedActor, b: string) => {
@@ -137,15 +180,22 @@ describe('Nora module boundary', () => {
       connectionId: bundle.connectionId,
     });
     await expect(
-      api.run({ ...actor, userId: randomUUID() }, branch, 'catalog'),
+      api.run({ ...actor, permissions: [] }, branch, 'catalog'),
     ).rejects.toMatchObject({ status: 403 });
     await expect(api.run(actor, branch, 'customers')).rejects.toMatchObject({
       status: 403,
     });
     const readonly = service(false).service;
-    await expect(
-      readonly.run(actor, branch, 'admin-grants'),
-    ).rejects.toMatchObject({ status: 403 });
+    read.mockResolvedValueOnce({
+      contract: bundle.contract,
+      token: 't'.repeat(64),
+      expiresIn: 60,
+    });
+    expect(await readonly.run(actor, branch, 'admin-grants')).toMatchObject({
+      expiresIn: 60,
+    });
+    expect(read.mock.calls[0]?.[4]?.actor?.subject).toBe(actor.userId);
+    read.mockClear();
     await expect(
       readonly.save(actor, branch, {}, bundle.noraOrigin),
     ).rejects.toMatchObject({

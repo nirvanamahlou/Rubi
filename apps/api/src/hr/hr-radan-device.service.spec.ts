@@ -1,3 +1,4 @@
+import { RadanDeviceClient } from './hr-radan-device.client';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HrRadanDeviceService } from './hr-radan-device.service';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -81,4 +82,59 @@ it('reschedules at the next clock slot after failure rather than retrying every 
   await vi.advanceTimersByTimeAsync(60000);
   expect(iam.authenticateSessionReferenceV1).toHaveBeenCalledTimes(2);
   service.onModuleDestroy();
+});
+
+it('normalizes the raw provider date once and reconciles both affected days', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-02T12:00:00Z'));
+  for (const [key, value] of Object.entries({
+    HR_RADAN_BRANCH_ID: 'branch',
+    HR_RADAN_BASE_URL: 'http://localhost:2222',
+    HR_RADAN_USERNAME: 'synthetic',
+    HR_RADAN_PASSWORD: 'synthetic',
+  }))
+    vi.stubEnv(key, value);
+  vi.spyOn(RadanDeviceClient.prototype, 'login').mockResolvedValue(undefined);
+  vi.spyOn(RadanDeviceClient.prototype, 'list').mockImplementation(
+    async (path) =>
+      (path === '/V1/Users'
+        ? [{ id: 1, profile: { personnel_id: '0012' } }]
+        : [
+            {
+              id: 7,
+              user_id: 1,
+              datetime: '2026-11-01 09:20:00',
+              entry_type: 'in',
+              status: 'accepted',
+              type_id: 159,
+            },
+          ]) as never,
+  );
+  const hr = {
+    importDevicePunches: vi.fn().mockResolvedValue({
+      imported: 1,
+      unchanged: 0,
+      unmatched: 0,
+      closed: 0,
+      dates: ['2026-11-01', '2026-11-02'],
+      reconcile: [{ date: '2026-11-01', employeeId: 'e' }],
+    }),
+    processAttendance: vi.fn().mockResolvedValue({}),
+  };
+  const service = new HrRadanDeviceService(hr as never, {} as never);
+  await service.sync(actor);
+  await service.sync(actor);
+  for (const [input] of hr.importDevicePunches.mock.calls)
+    expect(input.punches[0]).toMatchObject({
+      id: '7',
+      date: '2026-11-02',
+      time: '09:20',
+    });
+  expect(hr.processAttendance).toHaveBeenCalledWith(
+    { branchId: 'branch', date: '2026-11-01' },
+    expect.any(String),
+    actor,
+    true,
+    ['e'],
+  );
 });

@@ -2,6 +2,7 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
+import { packageTourSelectionBatch } from '@nora/contracts';
 import type {
   PackageTourCostGridV1,
   PackageTourHotelPurchaseBatchV1,
@@ -20,7 +21,7 @@ import {
   Type,
 } from 'lucide-react';
 import Link from '@/i18n/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -44,7 +45,7 @@ import {
   packageBannerFailureMessages,
   type PackageBannerViewModel,
 } from '../model/package-banner';
-import { packageBannerDocumentsAdapter } from '../model/package-banner-output';
+import { downloadPackageBanner } from '../model/package-banner-download';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 
 type BannerApi = Pick<
@@ -96,7 +97,19 @@ export async function loadPackageBanner(
     publications.find((item) => item.id === selection.publicationId) ??
     publications[0] ??
     null;
-  return { tour, grid, batch, publication, templates: templates.data };
+  return {
+    tour,
+    grid,
+    batch: batch
+      ? (packageTourSelectionBatch(
+          grid,
+          batch.id,
+          Array.isArray(publication?.selectedHotelRateIds),
+        ) ?? null)
+      : null,
+    publication,
+    templates: templates.data,
+  };
 }
 
 export function safePricingReturnTo(value?: string) {
@@ -138,12 +151,12 @@ function money(amount: string, currencyCode: string) {
 
 function templateTheme(template: PackageBannerTemplateV1) {
   if (template.format === 'STORY')
-    return 'from-violet-950 via-fuchsia-900 to-rose-700';
+    return 'linear-gradient(135deg, #2e1065, #701a75, #be123c)';
   if (template.format === 'HORIZONTAL' || template.format === 'WEBSITE')
-    return 'from-slate-950 via-sky-900 to-cyan-600';
+    return 'linear-gradient(135deg, #020617, #0c4a6e, #0891b2)';
   if (template.format === 'A4')
-    return 'from-stone-950 via-amber-900 to-orange-600';
-  return 'from-indigo-950 via-blue-900 to-sky-600';
+    return 'linear-gradient(135deg, #0c0a09, #78350f, #ea580c)';
+  return 'linear-gradient(135deg, #1e1b4b, #1e3a8a, #0284c7)';
 }
 
 function BannerPreview({
@@ -170,13 +183,16 @@ function BannerPreview({
   const hotels = Array.from(new Set(model.rooms.map((room) => room.hotelName)));
   return (
     <article
+      data-package-banner-preview
       aria-label="پیش‌نمایش واقعی بنر پکیج"
       className={cn(
         'relative isolate mx-auto flex w-full max-w-3xl overflow-hidden rounded-[2rem] bg-gradient-to-br p-6 text-white shadow-2xl sm:p-10',
-        templateTheme(template),
       )}
       dir="rtl"
-      style={{ aspectRatio: `${template.width} / ${template.height}` }}
+      style={{
+        aspectRatio: `${template.width} / ${template.height}`,
+        backgroundImage: templateTheme(template),
+      }}
     >
       <div className="absolute -start-20 -top-20 -z-10 size-72 rounded-full bg-white/15 blur-3xl" />
       <div className="absolute -bottom-28 -end-20 -z-10 size-80 rounded-full bg-cyan-300/20 blur-3xl" />
@@ -288,7 +304,9 @@ export function PackageBannerWorkspace({
   const [showDate, setShowDate] = useState(true);
   const [showHotel, setShowHotel] = useState(true);
   const [showBrand, setShowBrand] = useState(true);
-  const output = packageBannerDocumentsAdapter.availability();
+  const preview = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const backHref = safePricingReturnTo(returnTo);
   const load = useCallback(async () => {
     setLoading(true);
@@ -327,6 +345,26 @@ export function PackageBannerWorkspace({
     [result],
   );
 
+  async function download(format: 'PNG' | 'PDF') {
+    const element = preview.current?.querySelector<HTMLElement>(
+      '[data-package-banner-preview]',
+    );
+    if (!element || !template || !validation?.value || exporting) return;
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadPackageBanner(element, {
+        format,
+        width: template.width,
+        height: template.height,
+        filename: 'package-' + packageId + '-v' + validation.value.priceVersion,
+      });
+    } catch {
+      setExportError('دانلود بنر انجام نشد؛ دوباره تلاش کنید.');
+    } finally {
+      setExporting(false);
+    }
+  }
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-5">
       {!embedded ? (
@@ -716,12 +754,28 @@ export function PackageBannerWorkspace({
                         <option>مشاهده جزئیات</option>
                       </NativeSearchSelect>
                     </label>
-                    <Button className="w-full" disabled type="button">
-                      {output.label}
-                    </Button>
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      {output.reason}
-                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        disabled={exporting}
+                        type="button"
+                        onClick={() => void download('PNG')}
+                      >
+                        دانلود PNG
+                      </Button>
+                      <Button
+                        disabled={exporting}
+                        variant="outline"
+                        type="button"
+                        onClick={() => void download('PDF')}
+                      >
+                        دانلود PDF
+                      </Button>
+                    </div>
+                    {exportError ? (
+                      <p role="alert" className="text-xs text-destructive">
+                        {exportError}
+                      </p>
+                    ) : null}
                   </div>
                 </details>
               </div>
@@ -737,7 +791,7 @@ export function PackageBannerWorkspace({
                   </div>
                   <Badge>RTL · HTML/CSS</Badge>
                 </div>
-                <div className="bg-muted/25 p-4 sm:p-6">
+                <div ref={preview} className="bg-muted/25 p-4 sm:p-6">
                   <BannerPreview
                     cta={cta}
                     model={validation.value}

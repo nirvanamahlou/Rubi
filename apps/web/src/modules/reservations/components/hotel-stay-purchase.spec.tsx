@@ -1,3 +1,5 @@
+import type { ReservationPurchaseBatchInputV1 } from '@nora/contracts';
+import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type * as ReactModule from 'react';
 import type { ReactElement, ReactNode } from 'react';
@@ -86,11 +88,21 @@ function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   const node = tree as ReactElement<Record<string, unknown>>;
   return [node, ...nodes(node.props.children as ReactNode)];
 }
-function render(input = request) {
+function render(
+  input = request,
+  purchaseRoot?: string,
+  onStage?: (body: ReservationPurchaseBatchInputV1) => void,
+) {
   h.index = 0;
   h.ref = 0;
   return nodes(
-    HotelStayPurchase({ request: input, stayKey: 'h', onSaved: h.saved }),
+    HotelStayPurchase({
+      request: input,
+      stayKey: 'h',
+      onSaved: h.saved,
+      purchaseRoot,
+      ...(onStage ? { onStage } : {}),
+    }),
   );
 }
 beforeEach(() => {
@@ -499,4 +511,90 @@ it('round-trip checkbox uses one population input and disables split pricing', (
   expect(renderEditor().filter((n) => n.props.type === 'number')).toHaveLength(
     1,
   );
+});
+
+it.each([
+  { roundTrip: true, split: false, outbound: 2, returning: 2, expected: '40' },
+  { roundTrip: false, split: false, outbound: 2, returning: 2, expected: '80' },
+  { roundTrip: false, split: false, outbound: 2, returning: 0, expected: '40' },
+  { roundTrip: false, split: true, outbound: 2, returning: 2, expected: '40' },
+  { roundTrip: true, split: false, outbound: 0, returning: 0, expected: '0' },
+])(
+  'displays the same chargeable transfer population as purchase registration: $roundTrip/$split/$outbound/$returning',
+  ({ roundTrip, split, outbound, returning, expected }) => {
+    const draft = defaultVoucherSettings(request, {});
+    draft.hotelTransferRoundTrip = roundTrip;
+    draft.hotelTransferSplit = split;
+    draft.hotelTransferCounts = { outbound, returning };
+    draft.supplierFormPrices = {
+      transferPp: { amount: '20', currencyCode: 'IRR' },
+    };
+    const tree = nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: 'test',
+        update: vi.fn(),
+        currencies: [],
+        busy: false,
+        nights: 6,
+      }),
+    );
+    const summary = tree.find(
+      (node) =>
+        node.type === 'p' &&
+        JSON.stringify(node.props.children).includes(
+          split ? 'جمع ترانسفر رفت:' : 'جمع ترانسفر:',
+        ),
+    )!;
+    const amount = nodes(summary.props.children as ReactNode).find(
+      (node) => node.type === 'bdi',
+    )!.props.children as ReactNode[];
+    expect(amount[0]).toBe(expected);
+  },
+);
+
+it('uses identical room purchase arithmetic from Sales payments with contract-scoped agency and currency routes', async () => {
+  const root = 'sales/contracts/contract/purchases';
+  let tree = render(request, root);
+  const broker = tree.find((n) => n.type === ReservationPurchaseBrokerLookup)!;
+  expect(broker.props.purchaseRoot).toBe(root);
+  (broker.props.onChange as (v: unknown) => void)({
+    id: 'agency',
+    name: 'Agency',
+  });
+  tree = render(request, root);
+  const editor = tree.find((n) => n.type === HotelRoomQuotationEditor)!;
+  expect(editor.props.purchaseRoot).toBe(root);
+  await (
+    tree.find(
+      (n) =>
+        n.type === Button && n.props.children === 'ثبت خرید این هتل و ترانسفر',
+    )!.props.onClick as () => Promise<void>
+  )();
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  const [url, options] = vi.mocked(fetch).mock.calls[0]!;
+  expect(url).toBe('https://api.test/api/v1/' + root + '/purchase-batches');
+  expect(JSON.parse(String(options!.body)).purchases[0]).toMatchObject({
+    amount: '540',
+    supplierOrganizationId: 'agency',
+  });
+});
+
+it('stages the exact calculated hotel batch without posting a purchase before contract creation', async () => {
+  const staged = vi.fn();
+  const tree = render(request, undefined, staged);
+  const save = tree.find(
+    (node) =>
+      node.type === Button &&
+      node.props.children === 'ثبت خرید این هتل و ترانسفر',
+  )!;
+  (save.props.onClick as () => void)();
+  await vi.waitFor(() => expect(staged).toHaveBeenCalledTimes(1));
+  expect(fetch).not.toHaveBeenCalled();
+  expect(staged.mock.calls[0]![0]).toMatchObject({
+    hotelStayKey: 'h',
+    purchases: expect.arrayContaining([
+      expect.objectContaining({ amount: '540', currencyCode: 'EUR' }),
+    ]),
+  });
 });

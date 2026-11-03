@@ -121,6 +121,10 @@ export function IntegrationWorkspaceBody({
   const loadSequence = useRef(0);
 
   const authorizedBranchIds = actor.branchIds.join(',');
+  const canReadAdapters = canViewIntegrationSection(
+    actor.permissions,
+    'connections',
+  );
   useEffect(() => {
     let active = true;
     void integrationsApi
@@ -151,7 +155,7 @@ export function IntegrationWorkspaceBody({
       try {
         const [registry, adapters] = await Promise.all([
           integrationsApi.read(branchId, signal, section),
-          canViewIntegrationSection(actor.permissions, 'connections')
+          canReadAdapters
             ? integrationsApi.adapters(signal)
             : Promise.resolve([]),
         ]);
@@ -166,7 +170,7 @@ export function IntegrationWorkspaceBody({
           setLoading(false);
       }
     },
-    [branchId, section, actor.permissions],
+    [branchId, section, canReadAdapters],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -358,15 +362,10 @@ export function IntegrationWorkspaceBody({
               ) : null}
               {section === 'overview' ? (
                 <>
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {[
                       ['برندهای در فهرست', data.counts?.brands, 'brands'],
                       ['سامانه‌های در فهرست', data.counts?.systems, 'brands'],
-                      [
-                        'سامانه‌های منتظر اتصال',
-                        data.counts?.awaitingConnection,
-                        'connections',
-                      ],
                     ].map(([label, count, target]) => (
                       <button
                         type="button"
@@ -401,8 +400,8 @@ export function IntegrationWorkspaceBody({
                     <div>
                       <h2 className="font-bold">عملیات منتظر اقدام</h2>
                       <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        مشخصات اتصال، دسترسی بیرونی و مستندات API سامانه‌ها هنوز
-                        ارائه نشده است.
+                        وضعیت واقعی اتصال و کارتابل هر سایت در گزارش همان سایت
+                        نمایش داده می‌شود.
                       </p>
                       <Button
                         variant="outline"
@@ -417,8 +416,8 @@ export function IntegrationWorkspaceBody({
                     <div>
                       <h2 className="font-bold">روند و مقایسه عملکرد</h2>
                       <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        داده موجود نیست؛ پس از اتصال منبع معتبر، روند و مقایسه
-                        هر سامانه نمایش داده می‌شود.
+                        گزارش هر سایت از منبع مستقل خودش خوانده می‌شود؛ سایت و
+                        بازه را در بخش گزارش انتخاب کنید.
                       </p>
                       <Badge className="mt-3">
                         آکادمی از فروش مستقیم سفر جداست
@@ -427,14 +426,20 @@ export function IntegrationWorkspaceBody({
                   </Card>
                 </>
               ) : null}
-              {section === 'brands' && !managingCatalogue ? (
+              {(section === 'brands' ||
+                (section === 'overview' &&
+                  allowedSections.includes('brands'))) &&
+              !managingCatalogue ? (
                 <BrandsDashboard
                   key={data.branchId}
                   data={data}
                   onOpen={setSelectedSystem}
                   onSection={changeSection}
                   allowedSections={allowedSections}
-                  onManage={() => setManagingCatalogue(true)}
+                  onManage={() => {
+                    if (section === 'overview') changeSection('brands');
+                    setManagingCatalogue(true);
+                  }}
                   {...(data.canManage ? { onCreate: () => openSite() } : {})}
                 />
               ) : null}
@@ -592,6 +597,7 @@ export function IntegrationWorkspaceBody({
               {section === 'connections' ? (
                 <>
                   <GhestirooConnection
+                    registry={data}
                     key={branchId}
                     branchId={branchId}
                     userId={actor.userId}
@@ -901,6 +907,7 @@ export function SystemDetail({
       </nav>
       {ghestiroo && ['connection', 'data', 'health'].includes(area) ? (
         <GhestirooConnection
+          registry={data}
           key={`${branchId}:${system.id}`}
           branchId={branchId}
           userId={userId}

@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { ghestirooApi, type GhestirooStatus } from '../api/client';
+import { GhestirooWorkspace } from './ghestiroo-workspace';
+import { SitePresenceSelector } from './site-presence';
+import type { IntegrationRegistryV1 } from '@nora/contracts';
 
 const labels: Record<string, string> = {
   catalog: 'کاتالوگ',
@@ -77,9 +80,11 @@ function displayValue(field: string, value: unknown) {
 export function GhestirooConnection({
   branchId,
   userId,
+  registry,
 }: {
   branchId: string;
   userId: string;
+  registry?: IntegrationRegistryV1;
 }) {
   const [status, setStatus] = useState<GhestirooStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
@@ -144,7 +149,8 @@ export function GhestirooConnection({
       <p className="text-sm text-muted-foreground">
         در پنل قسطی‌رو، از «تنظیمات و دسترسی‌ها ← اتصال به نورا» بسته اتصال
         بسازید و اینجا وارد کنید. اطلاعات سایت در همین بخش نمایش داده می‌شوند.
-        مدیریت سایت با نقش کارمند انتخاب‌شده انجام می‌شود.
+        مسئول عملیات، کاربر واردشدهٔ نوراست؛ دسترسی سایت برای کاربران مجاز این
+        بخش به‌صورت پیش‌فرض کامل است.
       </p>
       {error ? (
         <Alert title="عملیات انجام نشد" description={error} tone="error" />
@@ -254,7 +260,7 @@ export function GhestirooConnection({
                     {labels[name] ?? name}
                   </Button>
                 ))}
-              {status.canManage && status.scopes?.includes('admin') ? (
+              {status.scopes?.includes('admin') ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -346,6 +352,14 @@ export function GhestirooConnection({
           ) : null}
         </div>
       ) : null}
+      {status?.configured && status.scopes?.includes('catalog') ? (
+        <>
+          {registry ? (
+            <SitePresenceSelector branchId={branchId} registry={registry} />
+          ) : null}
+          <GhestirooWorkspace key={branchId} branchId={branchId} />
+        </>
+      ) : null}
     </Card>
   );
 }
@@ -354,10 +368,8 @@ export function GhestirooSetupForm({
   status,
   busy,
   bundle,
-  users,
   userId,
   onBundleChange,
-  onUsersChange,
   onSubmit,
 }: {
   status: GhestirooStatus;
@@ -400,18 +412,10 @@ export function GhestirooSetupForm({
           disabled={busy}
         />
       </label>
-      <label className="grid gap-2">
-        شناسه کاربران مجاز نورا (هر شناسه در یک خط)
-        <textarea
-          className="rounded-xl border border-border bg-surface p-3"
-          rows={2}
-          dir="ltr"
-          value={users}
-          onChange={(event) => onUsersChange(event.target.value)}
-          required
-          disabled={busy}
-        />
-      </label>
+      <p>
+        حساب و دسترسی هر فرد از نورا مشخص می‌شود؛ کاربران مجاز این بخش به‌صورت
+        پیش‌فرض دسترسی کامل قسطی‌رو دارند.
+      </p>
       <p className="text-sm text-muted-foreground">
         شناسه حساب شما: <bdi>{userId}</bdi>. کاربران باید مجوز مشاهده اتصال و
         دسترسی همین شعبه را نیز داشته باشند.
