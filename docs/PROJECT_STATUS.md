@@ -8753,6 +8753,13 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 
 
 
+
+## CORRESPONDENCE-ALL-USERS-1103 — PC-B — IN_PROGRESS
+
+Owner explicitly grants all authenticated CRM users every Correspondence section and requests push/develop merge. Reserve bounded shared Correspondence screen policy, its API guards/tests, and incoming-only Documents bridge/client consumer. Preserve authentication, existing internal-letter participant rules, document branch/domain/confidentiality/access guards and all non-correspondence denials. No schema/migration/dependency or user-role mutation. Incoming bridge grants only base file capabilities for forced incoming-letter operations, uploads remain self-owned; no general archive permission expansion. Peer Accounting edits untouched.
+
+CORRESPONDENCE-ALL-USERS-1103 implementation/validation: authenticated Correspondence visibility overrides manual/legacy screen denial only for this module. Incoming-only list/options/upload/file routes permit ordinary staff without widening generic archive grants; staff uploads remain self-owned and existing upload managers retain owner selection. Existing branch/domain/sensitive/confidential policy and internal participant scope remain enforced. Eighteen focused API checks and26 Web policy/Correspondence checks pass;252 contract checks pass. Additional owner-policy check and final clean CI/build/type gates precede merge. No role/permission/database mutation or migration. Source frozen on publication; scope released on verified merge.
+
 ## INTERNAL-MULTI-SEND-1103 — PC-B — IN_PROGRESS
 
 Owner requests multiple internal-letter recipients, persisted forwarding description and removal of the user-search field; push/develop merge authorized. Reserve bounded Correspondence System Management API, Web/contracts/tests and sole additive migration ownership for delivery description plus recipient-scoped batch replay uniqueness. Preserve IAM public directory, participant access, atomic recipient validation and existing single-recipient compatibility. Concurrent Accounting edits remain untouched. No dependency changes.

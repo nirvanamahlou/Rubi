@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui';
 import { DocumentUploadDialog } from '@/modules/documents/components/document-upload-dialog';
-import { documentsApi } from '@/modules/documents/api/client';
+import { incomingLettersApi as documentsApi } from '@/modules/documents/api/client';
 
 const initialFilters = {
   search: '',

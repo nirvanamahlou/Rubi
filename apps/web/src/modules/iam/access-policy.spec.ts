@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MANUAL_ACCESS_VERSION,
   canViewRoute,
   canViewScreen,
   canUseMasterDataResource,
@@ -227,11 +228,24 @@ describe('additive user-access restrictions', () => {
     expect(canViewRoute(usersOnly, '/system?module=general')).toBe(true);
   });
 
-  it('keeps correspondence authenticated-only and supports an explicit route deny', () => {
+  it('opens every correspondence route for all authenticated permission profiles', () => {
     expect(canViewRoute([], '/correspondence')).toBe(true);
     expect(
       canViewRoute([denyPermission('correspondence.home')], '/correspondence'),
-    ).toBe(false);
+    ).toBe(true);
+    for (const permissions of [
+      [],
+      ['ui.profile'],
+      [MANUAL_ACCESS_VERSION, denyPermission('correspondence.home')],
+    ]) {
+      for (const route of [
+        '/correspondence/incoming',
+        '/correspondence/outgoing',
+        '/correspondence/internal/send',
+        '/correspondence/internal/received',
+      ])
+        expect(canViewRoute(permissions, route)).toBe(true);
+    }
   });
 });
 

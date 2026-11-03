@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 
-import { ValidationPipe } from '@nestjs/common';
+import { ForbiddenException, ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -35,6 +35,8 @@ const actor: AuthenticatedActor = {
 describe('Documents HTTP boundary', () => {
   let app: INestApplication;
   const service = {
+    incomingList: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
+    incomingOptions: vi.fn().mockResolvedValue({ data: {} }),
     list: vi.fn().mockResolvedValue({
       data: [],
       meta: { page: 1, pageSize: 25, total: 0, totalPages: 1 },
@@ -104,6 +106,24 @@ describe('Documents HTTP boundary', () => {
     vi.clearAllMocks();
   });
 
+  it('allows authenticated staff on incoming routes while retaining general archive grants', async () => {
+    iam.authenticate.mockResolvedValueOnce({ ...actor, permissions: [] });
+    await request(app.getHttpServer())
+      .get('/api/v1/documents/incoming')
+      .set('Cookie', 'nora_access=staff')
+      .expect(200);
+    expect(service.incomingList).toHaveBeenCalled();
+    iam.assertPermissions.mockImplementationOnce((_actor, required) => {
+      if (required.length) throw new ForbiddenException();
+    });
+    await request(app.getHttpServer())
+      .get('/api/v1/documents')
+      .set('Cookie', 'nora_access=staff')
+      .expect(403);
+    await request(app.getHttpServer())
+      .get('/api/v1/documents/incoming')
+      .expect(401);
+  });
   it('validates and forwards server-side list filters with actor scope', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/documents')
