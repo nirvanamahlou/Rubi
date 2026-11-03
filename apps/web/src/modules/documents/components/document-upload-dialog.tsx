@@ -181,15 +181,7 @@ export function DocumentUploadDialog({
         <div className="sticky top-0 z-20 border-b border-border bg-surface px-6 py-5 pe-14">
           <DialogTitle>بارگذاری سند</DialogTitle>
           <DialogDescription>
-            {incomingLetter ? (
-              'ثبت نامه ورودی'
-            ) : (
-              <>
-                کد آرشیو به‌صورت خودکار ساخته می‌شود. فایل ابتدا در فضای خصوصی
-                قرار می‌گیرد و فقط پس از تأیید اسکن امنیتی قابل دریافت خواهد
-                بود.
-              </>
-            )}
+            {incomingLetter ? 'ثبت نامه ورودی' : 'بارگذاری سند'}
           </DialogDescription>
         </div>
         <form
@@ -288,15 +280,7 @@ export function DocumentUploadDialog({
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField
-                id="document-confidentiality"
-                label="محرمانگی"
-                description={
-                  incomingLetter
-                    ? ''
-                    : 'در صورت خالی‌بودن، سیاست نوع سند اعمال می‌شود.'
-                }
-              >
+              <FormField id="document-confidentiality" label="محرمانگی">
                 <Select
                   onValueChange={(value) => update('confidentiality', value)}
                   value={values.confidentiality}
