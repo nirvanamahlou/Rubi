@@ -360,7 +360,7 @@ export function MarketingPromotionsPanel({
           ) : null}
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid items-end gap-3 md:grid-cols-4">
         <Input
           aria-label="جست‌وجو"
           placeholder="جست‌وجو"

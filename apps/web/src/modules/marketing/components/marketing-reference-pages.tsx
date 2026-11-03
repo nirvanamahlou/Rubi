@@ -102,6 +102,7 @@ import {
   DurableMessagesPanel,
   DurableSegmentsPanel,
   DurableSourceChart,
+  MarketingDirectoryPanel,
 } from './marketing-durable-panels';
 
 type DetailSection = MarketingPreviewItem['section'];
@@ -375,7 +376,7 @@ export function PreviewTable({
       title={title}
     >
       {searchable ? (
-        <FilterBar className="m-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_12rem_12rem_12rem_auto]">
+        <FilterBar className="m-4 grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_12rem_12rem_12rem_auto]">
           <FormField id={`${section}-${tab}-search`} label="جست‌وجو">
             <div className="relative">
               <Search
@@ -727,54 +728,14 @@ export function MarketingDashboardReference({
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
 }) {
-  const [startDate, setStartDate] = useState('2026-08-03');
-  const [endDate, setEndDate] = useState('2026-09-03');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [site, setSite] = useState('all');
   const [channel, setChannel] = useState('all');
-  const topCampaigns: readonly PreviewRow[] = [
-    {
-      id: 'preview-dashboard-europe',
-      cells: [
-        'جشنواره تابستان اروپا',
-        'پیامک، ایمیل',
-        '۲.۱ میلیارد',
-        '۱٬۴۸۲',
-        '۸.۶ میلیارد',
-        '۴.۱×',
-        'فعال',
-      ],
-      statusIndex: 6,
-    },
-    {
-      id: 'preview-dashboard-istanbul',
-      cells: [
-        'پرواز استانبول شهریور',
-        'پوش، سایت',
-        '۱.۴ میلیارد',
-        '۹۶۸',
-        '۴.۹ میلیارد',
-        '۳.۵×',
-        'فعال',
-      ],
-      statusIndex: 6,
-    },
-    {
-      id: 'preview-dashboard-dubai',
-      cells: [
-        'هتل‌های دبی پاییز',
-        'شبکه اجتماعی',
-        '۹۸۰ میلیون',
-        '۷۴۱',
-        '۲.۸ میلیارد',
-        '۲.۹×',
-        'درحال اجرا',
-      ],
-      statusIndex: 6,
-    },
-  ];
+  const topCampaigns: readonly PreviewRow[] = [];
   return (
     <section className="grid gap-5 text-right" dir="rtl">
-      <FilterBar className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_12rem_12rem_auto]">
+      <FilterBar className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_12rem_12rem_auto]">
         <FormField id="dashboard-reference-start" label="از تاریخ">
           <DatePicker
             id="dashboard-reference-start"
@@ -827,51 +788,51 @@ export function MarketingDashboardReference({
         metrics={[
           {
             label: 'کمپین فعال',
-            value: '۱۲',
+            value: '—',
             icon: Megaphone,
-            detail: '+۲ این ماه',
+            detail: '',
           },
           {
             label: 'بودجه مصرف‌شده',
-            value: '۸.۴ میلیارد',
+            value: '—',
             icon: CircleDollarSign,
-            detail: '۶۸٪ بودجه',
+            detail: '',
             tone: 'amber',
           },
           {
             label: 'سرنخ جدید',
-            value: '۳٬۸۴۲',
+            value: '—',
             icon: UsersRound,
-            detail: '+۱۸٪',
+            detail: '',
             tone: 'violet',
           },
           {
             label: 'مشتری جدید',
-            value: '۹۱۴',
+            value: '—',
             icon: UserRound,
-            detail: '+۱۲٪',
+            detail: '',
             tone: 'emerald',
           },
           {
             label: 'فروش منتسب',
-            value: '۲۶.۸ میلیارد',
+            value: '—',
             icon: BarChart3,
-            detail: '+۲۳٪',
+            detail: '',
             tone: 'emerald',
           },
-          { label: 'نرخ تبدیل', value: '۲۳.۸٪', icon: Target, detail: '+۳.۱٪' },
+          { label: 'نرخ تبدیل', value: '—', icon: Target, detail: '' },
           {
             label: 'CAC',
-            value: '۱.۹ میلیون',
+            value: '—',
             icon: CircleDollarSign,
-            detail: '-۸٪ بهتر',
+            detail: '',
             tone: 'amber',
           },
           {
             label: 'ROAS',
-            value: '۳.۱۹×',
+            value: '—',
             icon: Gauge,
-            detail: 'هدف ۳×',
+            detail: '',
             tone: 'violet',
           },
         ]}
@@ -917,53 +878,17 @@ export function MarketingDashboardReference({
                 className="fill-none stroke-border [stroke-width:1]"
                 d="M20 30H680M20 80H680M20 130H680M20 180H680"
               />
-              <path
-                d="M20 172 C90 158 110 120 170 135 S260 78 320 104 S410 55 470 82 S570 42 680 48 L680 180 L20 180 Z"
-                fill="url(#marketing-leads-area)"
-              />
-              <path
-                className="fill-none stroke-blue-500 [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:4]"
-                data-series="leads"
-                d="M20 172 C90 158 110 120 170 135 S260 78 320 104 S410 55 470 82 S570 42 680 48"
-              />
-              <path
-                className="fill-none stroke-emerald-500 [stroke-dasharray:8_7] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:4]"
-                data-series="attributed-sales"
-                d="M20 190 C90 184 110 166 170 174 S260 130 320 148 S410 104 470 116 S570 76 680 91"
-              />
-              {[
-                [20, 172, 'blue'],
-                [170, 135, 'blue'],
-                [320, 104, 'blue'],
-                [470, 82, 'blue'],
-                [680, 48, 'blue'],
-                [20, 190, 'emerald'],
-                [170, 174, 'emerald'],
-                [320, 148, 'emerald'],
-                [470, 116, 'emerald'],
-                [680, 91, 'emerald'],
-              ].map(([cx, cy, tone]) => (
-                <circle
-                  className={
-                    tone === 'blue' ? 'fill-blue-500' : 'fill-emerald-500'
-                  }
-                  cx={cx}
-                  cy={cy}
-                  key={`${tone}-${cx}`}
-                  r="4.5"
-                />
-              ))}
             </svg>
           </div>
         </Panel>
         <Panel title="قیف تبدیل">
           <div className="grid justify-items-center gap-2 p-5 text-center text-sm font-bold">
             {[
-              ['۳۸٬۴۲۰ بازدید', 'w-full'],
-              ['۸٬۶۱۰ مخاطب', 'w-5/6'],
-              ['۳٬۸۴۲ سرنخ', 'w-2/3'],
-              ['۱٬۴۲۸ سفارش', 'w-1/2'],
-              ['۹۱۴ فروش', 'w-1/3'],
+              ['بازدید —', 'w-full'],
+              ['مخاطب —', 'w-5/6'],
+              ['سرنخ —', 'w-2/3'],
+              ['سفارش —', 'w-1/2'],
+              ['فروش —', 'w-1/3'],
             ].map(([label, width], index) => (
               <div
                 className={cn(
@@ -1000,43 +925,11 @@ export function MarketingDashboardReference({
             section="campaigns"
             tab="dashboard"
             title="کمپین‌های برتر"
-            totalLabel="۳ کمپین آزمایشی"
+            totalLabel="—"
           />
         </div>
         <Panel title="هشدارهای مهم">
-          <div className="grid gap-3 p-4">
-            {[
-              ['کمپین در انتظار تأیید', '۳ کمپین بیش از ۲۴ ساعت', Megaphone],
-              [
-                'بودجه نزدیک به پایان',
-                'جشنواره تابستان اروپا',
-                CircleDollarSign,
-              ],
-              ['خطای ارسال بالا', 'ارسال پیامک گروه آژانس‌ها', MessageCircle],
-              ['سرنخ بدون پیگیری', '۱۲۸ سرنخ بیشتر از ۴۸ ساعت', UsersRound],
-            ].map(([title, description, Icon]) => {
-              const AlertIcon = Icon as LucideIcon;
-              return (
-                <button
-                  className="flex w-full items-center gap-3 rounded-xl border border-border p-3 text-start transition hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
-                  key={title as string}
-                  onClick={() => onNotice(`جزئیات هشدار «${title}» باز شد.`)}
-                  type="button"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
-                    <AlertIcon aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <strong className="block text-sm">{title as string}</strong>
-                    <small className="text-muted-foreground">
-                      {description as string}
-                    </small>
-                  </span>
-                  <span className="text-xs font-bold text-primary">بررسی</span>
-                </button>
-              );
-            })}
-          </div>
+          <div className="min-h-40 p-4 text-muted-foreground">—</div>
         </Panel>
       </div>
     </section>
@@ -5755,7 +5648,10 @@ export function MarketingReferenceSection({
         </div>
         {tabs.map(([key, , description]) => (
           <TabsContent className="mt-5" key={key} value={key}>
-            {section !== 'audiences' && section !== 'leads' ? (
+            {section !== 'audiences' &&
+            section !== 'leads' &&
+            section !== 'content' &&
+            description ? (
               <p className="mb-4 text-sm text-muted-foreground">
                 {description}
               </p>
@@ -5768,6 +5664,8 @@ export function MarketingReferenceSection({
               <DurableIntakesPanel mode="scoring" onNotice={onNotice} />
             ) : section === 'audiences' && key === 'sources' ? (
               <DurableSourceChart onNotice={onNotice} />
+            ) : section === 'audiences' && key === 'campaign-audience' ? (
+              <MarketingDirectoryPanel kind="AUDIENCE" onNotice={onNotice} />
             ) : section === 'audiences' ? (
               <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}

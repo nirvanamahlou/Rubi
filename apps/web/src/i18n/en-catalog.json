@@ -17538,5 +17538,15 @@
   "مدیر گروه": "Group administrator",
   "ویرایش گروه انجام نشد.": "Could not update the group.",
   "ویرایش گروه فقط برای مدیر گروه مجاز است.": "Only group administrators can edit the group.",
-  "ویرایش گروه": "Edit group"
+  "ویرایش گروه": "Edit group",
+  "بازدید —": "Visits —",
+  "حذف کمپین": "Delete campaign",
+  "رکوردی ثبت نشده است.": "No records have been added.",
+  "سرنخ —": "Leads —",
+  "سرنخ ذخیره شد.": "Lead saved.",
+  "سفارش —": "Orders —",
+  "فروش —": "Sales —",
+  "مخاطب —": "Audience —",
+  "منبع ورود معتبر نیست.": "Invalid entry source.",
+  "نام، نام خانوادگی، تلفن، تاریخ و منبع ورود را وارد کنید.": "Enter the first name, last name, phone, date and entry source."
 }

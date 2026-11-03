@@ -1,11 +1,17 @@
 import type { MarketingAssetViewV1, DocumentListItemV1 } from '@nora/contracts';
-import { isValidElement, type ReactNode, type ReactElement } from 'react';
+import {
+  useEffect,
+  isValidElement,
+  type ReactNode,
+  type ReactElement,
+} from 'react';
 import type * as ReactModule from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DurableContentPanel,
   DurableIntakesPanel,
   DurableSegmentsPanel,
+  MarketingDirectoryPanel,
 } from './marketing-durable-panels';
 import { AudienceToolbar } from './audience-toolbar';
 import {
@@ -30,6 +36,7 @@ const state = vi.hoisted(() => ({
   detail: vi.fn(),
   update: vi.fn(),
   archive: vi.fn(),
+  listDocuments: vi.fn(),
   push: vi.fn(),
   intakes: vi.fn(),
   createIntake: vi.fn(),
@@ -67,6 +74,7 @@ vi.mock('../api/records-client', () => ({
 }));
 vi.mock('@/modules/documents/api/client', () => ({
   documentsApi: {
+    list: state.listDocuments,
     detail: state.detail,
     update: state.update,
     archive: state.archive,
@@ -161,6 +169,9 @@ function seedIntakes() {
     ],
     '',
     '',
+    'نام',
+    'آزمایشی',
+    '2026-11-03',
     'WEBSITE',
     'none',
     'NEW',
@@ -236,12 +247,28 @@ describe('audience presentation and canonical mutations', () => {
       ) => void
     )({ target: { value: '09123456789' } });
     tree = intake();
+    for (const [id, value] of [
+      ['intake-first-name', 'نام'],
+      ['intake-last-name', 'آزمایشی'],
+    ]) {
+      (find(tree, 'id', id!).props.onChange as (event: unknown) => void)({
+        target: { value },
+      });
+    }
+    (find(tree, 'id', 'intake-date').props.onChange as (value: string) => void)(
+      '2026-11-03',
+    );
+    state.values[11] = 'WEBSITE';
+    tree = intake();
     await (
       find(tree, 'aria-label', 'ذخیره سرنخ جدید').props
         .onClick as () => Promise<void>
     )();
     expect(state.createIntake).toHaveBeenCalledWith(
       {
+        firstName: 'نام',
+        lastName: 'آزمایشی',
+        entryDate: '2026-11-02T20:30:00.000Z',
         phone: '09123456789',
         sourceCategory: 'WEBSITE',
         campaignId: null,
@@ -251,7 +278,7 @@ describe('audience presentation and canonical mutations', () => {
       },
       'branch-1',
     );
-    expect(state.values[14]).toBe(false);
+    expect(state.values[17]).toBe(false);
   });
   it('scores with original rule IDs and displayed CAS version', async () => {
     seedIntakes();
@@ -285,15 +312,15 @@ describe('audience presentation and canonical mutations', () => {
   it('keeps the intake dialog open with server errors and allows correction', async () => {
     seedIntakes();
     state.values[7] = '09123456789';
-    state.values[14] = true;
+    state.values[17] = true;
     state.createIntake.mockRejectedValueOnce(new Error('ثبت مجاز نیست'));
     await (
       find(intake(), 'aria-label', 'ذخیره سرنخ جدید').props
         .onClick as () => Promise<void>
     )();
-    expect(state.values[14]).toBe(true);
-    expect(state.values[19]).toBe('ثبت مجاز نیست');
-    expect(state.values[18]).toBe(false);
+    expect(state.values[17]).toBe(true);
+    expect(state.values[22]).toBe('ثبت مجاز نیست');
+    expect(state.values[21]).toBe(false);
   });
   it('retains segment status, additional rules and CAS on editor save', async () => {
     const segment = {
@@ -683,5 +710,123 @@ describe('real Documents library', () => {
     )({ preventDefault() {} });
     await vi.waitFor(() => expect(state.values[10]).toContain('تغییر کرده'));
     expect(state.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('durable Marketing directories', () => {
+  function directory(kind: 'SOURCE' | 'AUDIENCE') {
+    state.index = 0;
+    return nodes(MarketingDirectoryPanel({ kind, onNotice: notice }));
+  }
+  function seedDirectory() {
+    state.values = [
+      { branchIds: ['branch-1'] },
+      [],
+      [{ ...asset, kind: 'AUDIENCE', name: 'مخاطب ثبت شده' }],
+      false,
+      '',
+      '',
+      'all',
+      false,
+      '',
+      'none',
+      false,
+      '',
+      'command-key',
+      null,
+    ];
+  }
+  it('saves a named entry source through the durable API without lead-count queries', async () => {
+    seedDirectory();
+    state.values[7] = true;
+    state.values[8] = 'نمایشگاه';
+    const button = directory('SOURCE').find(
+      (node) => node.props.children === 'ذخیره',
+    )!;
+    await (button.props.onClick as () => Promise<void>)();
+    expect(state.save).toHaveBeenCalledWith(
+      {
+        kind: 'SOURCE',
+        name: 'نمایشگاه',
+        status: 'ACTIVE',
+        campaignId: null,
+        payload: {},
+      },
+      { branchId: 'branch-1', key: 'command-key' },
+    );
+    expect(state.values[7]).toBe(false);
+  });
+  it('preserves view and versioned edit actions alongside audience deletion', async () => {
+    seedDirectory();
+    (
+      find(directory('AUDIENCE'), 'aria-label', 'مشاهده مخاطب ثبت شده').props
+        .onClick as () => void
+    )();
+    expect(
+      directory('AUDIENCE').some((node) => node.props.children === 'ذخیره'),
+    ).toBe(false);
+    (
+      find(directory('AUDIENCE'), 'aria-label', 'ویرایش مخاطب ثبت شده').props
+        .onClick as () => void
+    )();
+    const button = directory('AUDIENCE').find(
+      (node) => node.props.children === 'ذخیره',
+    )!;
+    await (button.props.onClick as () => Promise<void>)();
+    expect(state.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'AUDIENCE',
+        expectedVersion: asset.version,
+      }),
+      expect.objectContaining({ id: asset.id }),
+    );
+  });
+  it('requires confirmation before deleting a campaign audience and sends its version', async () => {
+    seedDirectory();
+    (
+      find(directory('AUDIENCE'), 'aria-label', 'حذف مخاطب ثبت شده').props
+        .onClick as () => void
+    )();
+    expect(state.remove).not.toHaveBeenCalled();
+    const button = directory('AUDIENCE').find(
+      (node) => node.props.children === 'حذف',
+    )!;
+    await (button.props.onClick as () => Promise<void>)();
+    expect(state.remove).toHaveBeenCalledWith(
+      asset.id,
+      asset.version,
+      expect.any(String),
+    );
+    expect(state.values[13]).toBeNull();
+  });
+});
+
+describe('Marketing document origin isolation', () => {
+  it('requests only files uploaded from Marketing content, excluding profile origins', async () => {
+    vi.useFakeTimers();
+    state.values = [];
+    state.index = 0;
+    state.listDocuments.mockResolvedValue({
+      data: [],
+      meta: { totalPages: 0 },
+    });
+    MarketingContentLibrary({
+      revision: 0,
+      adding: false,
+      onAdd() {},
+      onNotice: notice,
+    });
+    const effect = vi.mocked(useEffect).mock.calls.at(-1)![0];
+    const cleanup = effect();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(state.listDocuments).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'marketing',
+        sourceEntityType: 'content-asset',
+        archiveStatus: 'ACTIVE',
+      }),
+    );
+    if (typeof cleanup === 'function') cleanup();
+    vi.useRealTimers();
   });
 });

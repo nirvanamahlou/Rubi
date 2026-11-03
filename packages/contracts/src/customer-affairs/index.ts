@@ -258,6 +258,9 @@ export type CustomerAffairsMarketingIntakeStatus =
   'NEW' | 'CONTACTED' | 'QUALIFIED' | 'NURTURE' | 'LOST';
 
 export interface CustomerAffairsMarketingIntakeInputV1 {
+  firstName?: string | null;
+  lastName?: string | null;
+  entryDate?: string | null;
   phone: string;
   sourceCategory: string;
   campaignId?: string | null;
@@ -267,6 +270,9 @@ export interface CustomerAffairsMarketingIntakeInputV1 {
 }
 
 export interface CustomerAffairsMarketingIntakeViewV1 {
+  firstName?: string | null;
+  lastName?: string | null;
+  entryDate?: string | null;
   contractVersion: typeof CUSTOMER_AFFAIRS_MARKETING_INTAKE_CONTRACT_VERSION;
   id: string;
   branchId: string;

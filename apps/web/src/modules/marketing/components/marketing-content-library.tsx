@@ -62,6 +62,8 @@ export function MarketingContentLibrary({
       void documentsApi
         .list({
           domain: 'BRAND',
+          sourceModule: 'marketing',
+          sourceEntityType: 'content-asset',
           archiveStatus: 'ACTIVE',
           search,
           page,
