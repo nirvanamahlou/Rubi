@@ -7839,6 +7839,7 @@ model CorrespondenceLetter {
 }
 
 model CorrespondenceDelivery {
+  description String?              @db.VarChar(2000)
   id          String               @id @default(uuid()) @db.Uuid
   letterId    String               @db.Uuid
   letter      CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
@@ -7851,7 +7852,7 @@ model CorrespondenceDelivery {
   readAt      DateTime?            @db.Timestamptz(3)
   createdAt   DateTime             @default(now()) @db.Timestamptz(3)
 
-  @@unique([senderId, requestKey])
+  @@unique([senderId, requestKey, recipientId])
   @@unique([letterId, recipientId])
   @@index([recipientId, createdAt])
   @@index([letterId, recipientId])
