@@ -9,11 +9,24 @@ window.PackagePricingBridge = {
     if (!input || !Array.isArray(input.groups) || !input.groups.length || input.groups.length > 500) throw Error('Invalid hotel table');
     const compositionMode = input.version === 2;
     const priceKeys = compositionMode ? ['double','single'] : ['double','single','child'];
+    const cards = {};
+    const fields = input.priceFields ?? [];
+    if (!Array.isArray(fields) || fields.length > 50) throw Error('Invalid footer prices');
+    const keys = { adultFlight: 'adult', childFlight: 'childFlight', infantFlight: 'infant', business: 'business', commission: 'commission' };
+    const seen = new Set();
+    for (const field of fields) {
+      if (!field || typeof field.amount !== 'string' || typeof field.currencyCode !== 'string' || !['fixed', 'percent'].includes(field.mode) || !/^(0|[1-9]\d{0,19})(\.\d{1,2})?$/.test(field.amount) || !/^[A-Z]{3}$/.test(field.currencyCode) || (field.mode !== 'percent' && field.currencyCode === 'IRR' && /\./.test(field.amount))) throw Error('Invalid footer price');
+      if (field.mode === 'percent' && (field.kind !== 'commission' || Number(field.amount) > 100)) throw Error('Invalid footer percentage');
+      const key = field.kind === 'custom' ? 'source_card_' + text(field.id,80) : Object.hasOwn(keys,field.kind) ? keys[field.kind] : '';
+      if (!key || seen.has(key)) throw Error('Invalid footer field');
+      seen.add(key);
+      cards[key] = { label: text(field.title,120), value: field.amount, unit: field.mode === 'percent' ? '٪' : ({IRR:'ریال',EUR:'€',USD:'$'}[field.currencyCode] || field.currencyCode) };
+    }
     return {
       sourceId: text(input.sourceId, 100), title: text(input.title), date: text(input.date), duration: text(input.duration),
       sheetName: 'قیمت منتشرشده پکیج', priceKeys, hasRoom: true,
       template: typeof input.template === 'string' && /^(?:antalya|kus|bodrum|istanbul-4|malaysia-(?:kuala|penang|langkawi|singapore)|thailand-(?:pattaya|phuket|bangkok-phuket))$/.test(input.template) ? input.template : '',
-      cards: {}, notes: text(input.notes || '',10000), stays: '', adjustments: '', services: text(input.services || '',2000), warnings: [],
+      cards, publishedFooterFields: true, notes: text(input.notes || '',10000), stays: '', adjustments: '', services: text(input.services || '',2000), warnings: [],
       groups: input.groups.map(group => {
         if (!Array.isArray(group.hotels) || group.hotels.length !== 1) throw Error('Invalid hotel');
         const hotel = group.hotels[0];

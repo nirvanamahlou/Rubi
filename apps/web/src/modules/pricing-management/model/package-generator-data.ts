@@ -1,4 +1,4 @@
-import { packageRoomIdentity } from '@nora/contracts';
+import { packageRoomIdentity, tourPriceFields } from '@nora/contracts';
 import type {
   PackageTourCostGridV1,
   PackageTourHotelPurchaseBatchV1,
@@ -16,6 +16,7 @@ export function packageGeneratorData(
   if (publication.roomPrices.some((p) => packageRoomIdentity(p.roomCode)))
     return compositionGeneratorData(grid, batch, publication);
   return {
+    priceFields: tourPriceFields(publication),
     sourceId: publication.id,
     title: grid.destinationName ?? grid.tour.package.name,
     date: grid.tour.startsOn + ' — ' + grid.tour.endsOn,
@@ -145,6 +146,7 @@ function compositionGeneratorData(
     throw Error('قیمت فروش معتبر و منتشرشده برای بنر وجود ندارد.');
   return {
     version: 2 as const,
+    priceFields: tourPriceFields(publication),
     template: packageDestinationTemplate(
       grid.destinationName ?? grid.tour.package.name,
     ),

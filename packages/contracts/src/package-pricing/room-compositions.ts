@@ -197,3 +197,37 @@ export function buildHotelPackageCompositions(
     });
   });
 }
+
+/** Hotel sale rows and footer prices are independent in the composition editor.
+ * Keep the generic package calculator unchanged for historical/legacy consumers.
+ */
+export function buildHotelOnlyPackageCompositions(
+  input: Parameters<typeof buildHotelPackageCompositions>[0],
+) {
+  const zero = {
+    amount: '0',
+    currencyCode: input.row.currencyCode ?? input.currencyCode,
+  };
+  return buildHotelPackageCompositions({
+    ...input,
+    calculation: {
+      ...input.calculation,
+      adultFlight: zero,
+      childFlight: zero,
+      infantFlight: zero,
+      businessUplift: zero,
+      businessCabin: false,
+      commissionPercent: '0',
+      commissionMode: 'percent',
+      commissionAmount: zero,
+      extraSaleFields: [],
+      flightCosts: [],
+    },
+  }).map((price) => ({
+    ...price,
+    currencyAmounts: price.currencyAmounts.map((part) => ({
+      ...part,
+      priceBasis: 'HOTEL_ONLY' as const,
+    })),
+  }));
+}

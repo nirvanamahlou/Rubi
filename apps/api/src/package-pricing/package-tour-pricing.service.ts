@@ -25,7 +25,7 @@ import {
   validatePackageRoomSales,
   calculateTourRoom,
   buildHotelPackageTable,
-  buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomIdentity,
   packageTourSelectionBatch,
   matchingPublishedRooms,
@@ -224,10 +224,77 @@ export class PackageTourPricingService {
       if (!batch || !publication) continue;
       for (const price of publication.roomPrices) {
         const row = batch.rows.find((r) => r.id === price.hotelRateId);
-        if (!row || !packageRoomIdentity(price.roomCode)) continue;
+        const identity = packageRoomIdentity(price.roomCode);
+        if (!row || !identity) continue;
         const amounts =
           price.currencyAmounts as unknown as TourRoomCurrencyAmount[];
         if (!Array.isArray(amounts)) continue;
+        let prices = amounts.map((p) => ({
+          currencyCode: p.currencyCode,
+          amount: p.sale,
+        }));
+        // The marker is immutable with each new row. Old combined publications
+        // have no marker and must never receive their airfare a second time.
+        if (
+          amounts.length &&
+          amounts.every((p) => p.priceBasis === 'HOTEL_ONLY')
+        ) {
+          const fields = Array.isArray(publication.priceFields)
+            ? validateTourPriceFields(publication.priceFields)
+            : tourPriceFields({
+                currencyCode: publication.currencyCode,
+                adultFlightSale: publication.adultFlightSale.toString(),
+                adultFlightSaleCurrencyCode:
+                  publication.adultFlightSaleCurrencyCode,
+                childFlightSale: publication.childFlightSale.toString(),
+                childFlightSaleCurrencyCode:
+                  publication.childFlightSaleCurrencyCode,
+                businessUplift: publication.businessUplift.toString(),
+                businessUpliftCurrencyCode:
+                  publication.businessUpliftCurrencyCode,
+              });
+          const values = tourPriceFieldValues(fields);
+          const airfare = calculateTourRoom({
+            basePerNight: '0',
+            factor: '1',
+            nights: 1,
+            hotelCurrency: publication.currencyCode,
+            adjustment: { direction: 'increase', mode: 'percent', value: '0' },
+            adults:
+              identity.adults +
+              identity.childAges.filter((a) => a.min >= 12).length,
+            children: identity.childAges.filter(
+              (a) => a.min >= 2 && a.maxExclusive <= 12,
+            ).length,
+            infants: identity.childAges.filter((a) => a.maxExclusive <= 2)
+              .length,
+            infantFlight: fields.find((f) => f.kind === 'infantFlight'),
+            adultFlight: {
+              amount: values.adultFlightSale,
+              currencyCode: values.adultFlightSaleCurrencyCode,
+            },
+            childFlight: {
+              amount: values.childFlightSale,
+              currencyCode: values.childFlightSaleCurrencyCode,
+            },
+            businessUplift: {
+              amount: values.businessUplift,
+              currencyCode: values.businessUpliftCurrencyCode,
+            },
+            businessCabin:
+              grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
+              grid.tour.returning?.cabinClassCode === 'BUSINESS',
+            commissionPercent: '0',
+          }).currencyAmounts;
+          prices = publishedSaleTotals([
+            { prices },
+            {
+              prices: airfare
+                .filter((p) => !/^0(?:\.0+)?$/.test(p.sale))
+                .map((p) => ({ currencyCode: p.currencyCode, amount: p.sale })),
+            },
+          ]);
+        }
         data.push({
           publicationId: publication.id,
           hotelId: row.hotelId,
@@ -236,10 +303,7 @@ export class PackageTourPricingService {
           roomCode: price.roomCode,
           checkIn: grid.tour.startsOn,
           checkOut: grid.tour.endsOn,
-          prices: amounts.map((p) => ({
-            currencyCode: p.currencyCode,
-            amount: p.sale,
-          })),
+          prices,
         });
       }
     }
@@ -749,7 +813,7 @@ export class PackageTourPricingService {
                 try {
                   return (
                     Array.isArray(draft.selectedRoomKeys)
-                      ? buildHotelPackageCompositions
+                      ? buildHotelOnlyPackageCompositions
                       : buildHotelPackageTable
                   )({
                     row,
@@ -832,7 +896,9 @@ export class PackageTourPricingService {
                     raw,
                     overrides,
                     (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
-                    draft.commissionPercent.toString(),
+                    Array.isArray(draft.selectedRoomKeys)
+                      ? '0'
+                      : draft.commissionPercent.toString(),
                   );
                   const single =
                     item.currencyAmounts.length === 1

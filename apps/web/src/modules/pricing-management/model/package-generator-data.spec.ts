@@ -10,6 +10,7 @@ import type {
 } from '@nora/contracts';
 
 type BridgeData = {
+  cards: Record<string, { label: string; value: string; unit: string }>;
   priceKeys: string[];
   groups: { prices: Record<string, unknown> }[];
 };
@@ -228,5 +229,94 @@ it('hands off separate selected room types and exact one/two adult prices to the
   const normalized = window.PackagePricingBridge!.normalize(data);
   expect(Array.from(normalized.priceKeys)).toEqual(['double', 'single']);
   expect(JSON.stringify(normalized)).not.toContain('secret');
-  expect(JSON.stringify(normalized)).not.toContain('child');
+  expect(JSON.stringify(normalized.groups)).not.toContain('child');
+});
+
+it('round trips published footer fields separately, without adding them to hotel prices', () => {
+  const fields = [
+    {
+      id: 'adultFlight',
+      title: 'قیمت پرواز',
+      kind: 'adultFlight' as const,
+      amount: '9007199254740993',
+      currencyCode: 'IRR',
+      mode: 'fixed' as const,
+    },
+    {
+      id: 'childFlight',
+      title: 'پرواز کودک',
+      kind: 'childFlight' as const,
+      amount: '50.25',
+      currencyCode: 'EUR',
+      mode: 'fixed' as const,
+    },
+    {
+      id: 'business',
+      title: 'افزایش بیزینس',
+      kind: 'business' as const,
+      amount: '100',
+      currencyCode: 'USD',
+      mode: 'fixed' as const,
+    },
+    {
+      id: 'commission',
+      title: 'کمیسیون',
+      kind: 'commission' as const,
+      amount: '7.5',
+      currencyCode: 'IRR',
+      mode: 'percent' as const,
+    },
+    {
+      id: 'custom',
+      title: 'خدمات ویژه',
+      kind: 'custom' as const,
+      amount: '25',
+      currencyCode: 'AED',
+      mode: 'fixed' as const,
+    },
+  ];
+  const window: { PackagePricingBridge?: Bridge } = {};
+  runInNewContext(
+    readFileSync(resolve('public/package-generator/pricing-bridge.js'), 'utf8'),
+    { window, console },
+  );
+  const data = packageGeneratorData(grid, batch, {
+    ...publication,
+    priceFields: fields,
+  });
+  const normalized = window.PackagePricingBridge!.normalize(data);
+  expect(normalized.cards.adult).toEqual({
+    label: 'قیمت پرواز',
+    value: '9007199254740993',
+    unit: 'ریال',
+  });
+  expect(normalized.cards.childFlight?.unit).toBe('€');
+  expect(normalized.cards.business?.unit).toBe('$');
+  expect(normalized.cards.commission).toEqual({
+    label: 'کمیسیون',
+    value: '7.5',
+    unit: '٪',
+  });
+  expect(normalized.cards.source_card_custom?.unit).toBe('AED');
+  expect(normalized.groups).toEqual(
+    window.PackagePricingBridge!.normalize(
+      packageGeneratorData(grid, batch, { ...publication, priceFields: [] }),
+    ).groups,
+  );
+  const withoutBusiness = window.PackagePricingBridge!.normalize({
+    ...data,
+    priceFields: fields.filter((f) => f.kind !== 'business'),
+  });
+  expect(withoutBusiness.cards.business).toBeUndefined();
+  const fixed = window.PackagePricingBridge!.normalize({
+    ...data,
+    priceFields: [{ ...fields[3], mode: 'fixed', amount: '120000' }],
+  });
+  expect(fixed.cards.commission?.unit).toBe('ریال');
+  expect(() =>
+    window.PackagePricingBridge!.normalize({
+      ...data,
+      priceFields: [{ ...fields[3], amount: '101' }],
+    }),
+  ).toThrow();
 });
