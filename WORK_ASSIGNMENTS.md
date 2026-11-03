@@ -2,6 +2,10 @@
 
 COMPUTER_ID=PC-C; branch codex/pc-c-source-share-chart-1103 from developb8b4da7d4. Owner authorizes replacing only source-share graphic with annotated dashboard donut style. Reserve Call Center report-highlights, leaf chart geometry/CSS and regressions; own notes only. Preserve contact-based aggregation, filters and expert report. No API/schema/dependency/shared dashboard changes or production deployment. Prior same-owner report scopes merged/frozen.10 focused tests, scoped lint, full Web TypeScript and optimized Web production build passed; RTL visual preview verified. Source freezes on push.
 
+## COMPLETION-EDIT-BUTTONS-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
+
+COMPUTER_ID=PC-C; branch codex/pc-c-completion-edit-buttons-1103 from develop41dd9b8d3. Owner authorizes centered colored completion-status buttons that open the existing call editor. Reserve expert-performance completion detail producer/test, Web optional detail callId consumer, expert-activity and report/workspace wiring, leaf completion-status styling/test and own notes. Additive optional callId only on authorized completion drilldown, shipped with consumer; old details without IDs remain read-only. Reuse existing edit fetch/save permission and branch guards. No schema/dependency/grant or production deployment; prior same-owner source scopes frozen.27 focused tests, scoped lint, full API/Web TypeScript and both production builds pass. RTL preview verified; source freezes on push.
+
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
 ## MISSED-CALL-REQUEST-ACTION-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY

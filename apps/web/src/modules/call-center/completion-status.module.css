@@ -1,0 +1,36 @@
+.cell {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid currentColor;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.complete {
+  color: #087964;
+  background: #ddf7ee;
+}
+.incomplete {
+  color: #925b07;
+  background: #fff1d6;
+}
+.button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.button:focus-visible {
+  outline: 2px solid var(--cc-blue, #1875e5);
+  outline-offset: 3px;
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
