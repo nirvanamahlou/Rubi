@@ -45,10 +45,14 @@ const trendVisuals: Readonly<Record<string, readonly string[]>> = {
   'finalized-sales-trend': ['net-sales'],
   'discount-trend': ['discount-amount'],
   'executive-lead-acquisition': ['new-leads'],
+  'customer-growth-overview': ['new-leads', 'new-customers', 'new-orders'],
+  'finance-profit-trend': ['net-sales', 'gross-profit', 'net-profit'],
   'executive-customer-retention': ['new-customers', 'returning-customers'],
 };
 const metricLabels: Readonly<Record<string, string>> = {
   'net-sales': 'فروش خالص',
+  'new-orders': 'سفارش جدید',
+  'net-profit': 'سود خالص',
   collected: 'وصول تأییدشده',
   refunded: 'استرداد تکمیل‌شده',
   'gross-profit': 'سود ناخالص',
