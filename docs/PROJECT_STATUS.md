@@ -8545,6 +8545,10 @@ Removed outbound-contact ranking. Added scoped expert call/backlog/completion ta
 
 Owner restricts audio to Danial Altafi. Single immutable IAM-ID plus active internal account validation, server-side list/full/Range checks and fail-closed UI capability implemented. Demo/admin/manager/employee legacy grants cannot bypass. No server deployment/configuration or grant mutation authorized or performed. Details and future activation prerequisites: docs/tasks/CALL-CENTER-AUDIO-CEO-ONLY-1102.md.
 
+## CALL-CENTER-TEN-CONTACTS-1102 — PC-C — SOURCE ONLY
+
+Contact list requests10 rows per page and uses the returned page size to calculate all reachable pages. Separate KPI/queue/history paging unchanged. Eight targeted transport tests and scoped lint pass. No server deployment; see docs/tasks/CALL-CENTER-TEN-CONTACTS-1102.md.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

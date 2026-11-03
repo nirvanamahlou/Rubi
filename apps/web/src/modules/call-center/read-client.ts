@@ -1,3 +1,4 @@
+export const CONTACT_PAGE_SIZE = 10;
 import { callCenterRequest } from './client';
 import type { CallNote } from './client';
 import type { Call } from './model';
@@ -264,7 +265,7 @@ export const readApi = {
       body: JSON.stringify({
         ...searchBody(filters),
         page,
-        pageSize: 20,
+        pageSize: CONTACT_PAGE_SIZE,
         ...(revision ? { revision } : {}),
       }),
       signal,

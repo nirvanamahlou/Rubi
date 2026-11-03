@@ -10813,6 +10813,14 @@ COMPUTER_ID=PC-C; base latest origin/develop. Owner explicitly requests only Dan
 
 CALL-CENTER-AUDIO-CEO-ONLY-1102 — SOURCE_READY / DO NOT DEPLOY:29 API and17 Web checks, scoped lint, API/Web TypeScript and full production builds pass (Web isolated same-drive checkout). Updated PostgreSQL expectations await isolated CI database gate. No SSH/server/runtime/grant mutation occurred. Scope includes narrow IAM directory, Customer Affairs recording capability endpoint and authorization port, Integrations media service, existing two PostgreSQL regression fixtures, Web recording capability/action/client tests and own notes. Source scope freezes on publication.
 
+## CALL-CENTER-TEN-CONTACTS-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests10 contact rows per page, implementation only and NO SERVER DEPLOYMENT. Reserve only readApi.search page size and existing transport regression expectation plus own docs. Existing contact table derives page count from server totalPages. Preserve filters, revision/cancellation and separate KPI/history/queue paging. No API/schema/dependency/UI layout/runtime change. Prior Call Center scopes are published and frozen.
+
+CALL-CENTER-TEN-CONTACTS-1102 scope correction: existing page count divides total by hardcoded20. Reserve the single contact-table page-count expression in workspace.tsx and shared contact-page constant so Next/Previous reach every10-row page; no other workspace code or layout changes.
+
+CALL-CENTER-TEN-CONTACTS-1102 — SOURCE_READY / DO NOT DEPLOY: eight transport regressions, scoped lint/format, full Web typecheck and production build pass. Contact search requests10 and page count uses server page size; separate20-row KPI/history requests unchanged. No server commands, runtime or data changes. Source reservations freeze on publication.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 COMPUTER_ID=PC-D; branch codex/pc-d-ghestiroo-dashboard-1102 from develop5be385893. Owner requests full first-page Ghestiroo reporting, real metrics/details/trends/visits/activity/comparison/readiness and live validation. Reserve Integrations Ghestiroo producer-consumer report contract, bounded shared dashboard dispatcher/helpers and IntegrationsWorkspace overview reuse, own translations/tests/docs only. Site implementation stays in ehsandni/Ghestiroo. No Nora schema, migration, dependency, IAM or other-module changes. Prior same-owner source scopes are merged/released; active peers do not overlap these files. Preserve Niyayesh behavior, branch/person access and currency-separated source facts. Detailed scope: docs/tasks/GHESTIROO-DASHBOARD-1102.md. All final-head Nora gates precede authorized develop merge; no-CI-test preference remains Ghestiroo-only.
@@ -10852,5 +10860,7 @@ Owner-authorized integration with develop7d74d786b and CI failure repair. Preser
 Integrate current develop and preserve both translated labels and peer catalog additions. No runtime deployment. All final-head gates required.
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1314 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1315 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
