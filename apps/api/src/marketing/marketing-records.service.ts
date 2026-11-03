@@ -41,7 +41,7 @@ const PORTS = new Set(['top', 'right', 'bottom', 'left']);
 const CHANNELS = new Set(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION']);
 const ASSET_STATUSES: Record<MarketingAssetKind, ReadonlySet<string>> = {
   SOURCE: new Set(['ACTIVE']),
-  AUDIENCE: new Set(['ACTIVE']),
+  AUDIENCE: new Set(['ACTIVE', 'DRAFT']),
   SEGMENT: new Set(['DRAFT', 'ACTIVE', 'PAUSED']),
   MESSAGE: new Set(['DRAFT', 'READY', 'ARCHIVED']),
   SCHEDULE: new Set(['DRAFT', 'SCHEDULED', 'PAUSED', 'CANCELLED']),
@@ -1176,7 +1176,28 @@ export class MarketingRecordsService {
     raw: Record<string, unknown>,
   ): Record<string, unknown> {
     const payload = payloadObject(raw);
-    if (kind === 'SOURCE' || kind === 'AUDIENCE') {
+    if (kind === 'AUDIENCE') {
+      exactKeys(
+        payload,
+        ['audienceType', 'dataSource', 'memberCount'],
+        'رکورد',
+      );
+      const audienceType = String(payload.audienceType ?? 'segment');
+      const dataSource = String(payload.dataSource ?? 'customers');
+      if (
+        !['segment', 'corporate', 'partner'].includes(audienceType) ||
+        !['customers', 'organizations', 'marketing'].includes(dataSource)
+      )
+        throw new BadRequestException('نوع رکورد مارکتینگ معتبر نیست.');
+      return {
+        audienceType,
+        dataSource,
+        memberCount: numericString(payload.memberCount ?? '0', 'تعداد', {
+          integer: true,
+        }),
+      };
+    }
+    if (kind === 'SOURCE') {
       exactKeys(payload, [], 'رکورد');
       return {};
     }

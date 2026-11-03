@@ -1128,6 +1128,20 @@ export function MarketingDirectoryPanel({
   const [error, setError] = useState('');
   const [key, setKey] = useState('');
   const [deleting, setDeleting] = useState<MarketingAssetViewV1 | null>(null);
+  const [audienceType, setAudienceType] = useState('segment');
+  const [dataSource, setDataSource] = useState('customers');
+  const [memberCount, setMemberCount] = useState('0');
+  const [recordStatus, setRecordStatus] = useState('ACTIVE');
+  const typeOptions = {
+    segment: 'سگمنت پویا',
+    corporate: 'مخاطب سازمانی',
+    partner: 'آژانس همکار',
+  };
+  const sourceOptions = {
+    customers: 'مشتریان',
+    organizations: 'مشتریان سازمانی',
+    marketing: 'سگمنت مارکتینگ',
+  };
   const isSource = kind === 'SOURCE';
   const title = isSource ? 'منابع ورود' : 'مخاطبان کمپین';
   const items = data.assets.filter(
@@ -1176,6 +1190,10 @@ export function MarketingDirectoryPanel({
           disabled={data.loading || !data.actor?.branchIds[0]}
           onClick={() => {
             setName('');
+            setAudienceType('segment');
+            setDataSource('customers');
+            setMemberCount('0');
+            setRecordStatus('ACTIVE');
             setCampaignId('none');
             setError('');
             setKey(crypto.randomUUID());
@@ -1191,6 +1209,14 @@ export function MarketingDirectoryPanel({
             <tr className="border-b">
               <th className="p-4">نام</th>
               {!isSource ? <th className="p-4">کمپین</th> : null}
+              {!isSource ? (
+                <>
+                  <th className="p-4">نوع</th>
+                  <th className="p-4">تعداد برآوردی</th>
+                  <th className="p-4">منبع داده</th>
+                  <th className="p-4">وضعیت</th>
+                </>
+              ) : null}
               <th className="p-4">عملیات</th>
             </tr>
           </thead>
@@ -1204,6 +1230,24 @@ export function MarketingDirectoryPanel({
                       (campaign) => campaign.id === item.campaignId,
                     )?.name ?? 'بدون کمپین'}
                   </td>
+                ) : null}
+                {!isSource ? (
+                  <>
+                    <td className="p-4">
+                      {typeOptions[
+                        item.payload.audienceType as keyof typeof typeOptions
+                      ] ?? '—'}
+                    </td>
+                    <td className="p-4">
+                      {String(item.payload.memberCount ?? '—')}
+                    </td>
+                    <td className="p-4">
+                      {sourceOptions[
+                        item.payload.dataSource as keyof typeof sourceOptions
+                      ] ?? '—'}
+                    </td>
+                    <td className="p-4">{audienceStatusLabels[item.status]}</td>
+                  </>
                 ) : null}
                 <td className="p-4">
                   <Button
@@ -1260,6 +1304,84 @@ export function MarketingDirectoryPanel({
                   }}
                 />
               </FormField>
+              {!isSource ? (
+                <>
+                  <FormField id="audience-type" label="نوع مخاطب">
+                    <Select
+                      value={audienceType}
+                      disabled={busy}
+                      onValueChange={(value) => {
+                        setAudienceType(value);
+                        setKey(crypto.randomUUID());
+                      }}
+                    >
+                      <SelectTrigger id="audience-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(typeOptions).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField id="audience-data-source" label="منبع داده">
+                    <Select
+                      value={dataSource}
+                      disabled={busy}
+                      onValueChange={(value) => {
+                        setDataSource(value);
+                        setKey(crypto.randomUUID());
+                      }}
+                    >
+                      <SelectTrigger id="audience-data-source">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(sourceOptions).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField id="audience-member-count" label="تعداد برآوردی">
+                    <Input
+                      id="audience-member-count"
+                      disabled={busy}
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={memberCount}
+                      onChange={(event) => {
+                        setMemberCount(event.target.value);
+                        setKey(crypto.randomUUID());
+                      }}
+                    />
+                  </FormField>
+                  <FormField id="audience-record-status" label="وضعیت">
+                    <Select
+                      value={recordStatus}
+                      disabled={busy}
+                      onValueChange={(value) => {
+                        setRecordStatus(value);
+                        setKey(crypto.randomUUID());
+                      }}
+                    >
+                      <SelectTrigger id="audience-record-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">فعال</SelectItem>
+                        <SelectItem value="DRAFT">پیش‌نویس</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </>
+              ) : null}
               {!isSource ? (
                 <FormField id="audience-campaign" label="کمپین">
                   <Select
@@ -1320,9 +1442,11 @@ export function MarketingDirectoryPanel({
                       {
                         kind,
                         name: name.trim(),
-                        status: 'ACTIVE',
+                        status: isSource ? 'ACTIVE' : recordStatus,
                         campaignId: campaignId === 'none' ? null : campaignId,
-                        payload: {},
+                        payload: isSource
+                          ? {}
+                          : { audienceType, dataSource, memberCount },
                       },
                       { branchId: data.actor.branchIds[0], key },
                     );
