@@ -136,12 +136,12 @@ window.PackageEditor=(()=>{
    }
   }
  }
- const fontNames=['Tahoma','Arial','Times New Roman','Segoe UI'];
+ const fontNames=['RubiVazirmatn','Tahoma','Arial','Times New Roman','Segoe UI'];
  function installed(name){const c=document.createElement('canvas').getContext('2d'),sample='آژانس گردشگری ABC0123';c.font='40px monospace';const a=c.measureText(sample).width;c.font=`40px "${name}", monospace`;return Math.abs(c.measureText(sample).width-a)>.1;}
  for(const name of ['Titr','B Titr','B Nazanin','B Mitra','B Yekan','Vazirmatn','IRANSans','IranNastaliq'])if(installed(name))fontNames.push(name);
  function fontOptions(){for(const id of ['globalFont','sectionFont']){
   const host=$(id),v=host.value;host.replaceChildren();host.add(new Option(id==='globalFont'?'فونت اصلی قالب':'پیروی از فونت کل طرح',''));
-  for(const name of fontNames)host.add(new Option(name,name));for(const f of customFonts)host.add(new Option(f.name+' · فایل واردشده',f.family));host.value=v;
+  for(const name of fontNames)host.add(new Option(name==='RubiVazirmatn'?'وزیرمتن':name,name));for(const f of customFonts)host.add(new Option(f.name+' · فایل واردشده',f.family));host.value=v;
  }}
  function panel(){
   const d=def();if(!d)return;const m=model(),style=m.styles[selected]||{};
@@ -235,7 +235,7 @@ window.PackageEditor=(()=>{
    for(const key of ['phone','address']){const [x,,w,h]=geometry[p.style][key],canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(image,x,LAYER_GEOMETRY[p.style].footer[1]+4,w,1,0,0,w,h);paper.set(p.style+'_'+key,canvas.toDataURL('image/png'));}
   }));refresh();
  }
- fontOptions();$('textSection').addEventListener('change',()=>{selected=$('textSection').value;if(document.getElementById('packageAlignAll'))document.getElementById('packageAlignAll').checked=false;panel();});
+ fontOptions();$('globalFont').value='RubiVazirmatn';$('textSection').addEventListener('change',()=>{selected=$('textSection').value;if(document.getElementById('packageAlignAll'))document.getElementById('packageAlignAll').checked=false;panel();});
  $('globalAlign').addEventListener('input',()=>{model().align=$('globalAlign').value;refresh();});
  $('sectionText').addEventListener('input',e=>updateText(e.target.value));$('globalFont').addEventListener('change',refresh);
  for(const [id,key] of [['sectionFont','font'],['sectionSize','size'],['sectionColor','color'],['sectionWeight','weight'],['sectionAlign','align']])$(id).addEventListener('input',()=>{
