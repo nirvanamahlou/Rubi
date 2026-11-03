@@ -325,6 +325,21 @@ export function ReservationSalesAmendment({
             )}
             {manualFlights[direction] && (
               <ContractFlightEditor
+                destinationCityId={
+                  direction === 'OUTBOUND'
+                    ? draft.destinationId
+                    : draft.originId
+                }
+                workflow="reservations"
+                destinationCountryId={String(
+                  refs.cities?.find(
+                    (city) =>
+                      city.id ===
+                      (direction === 'OUTBOUND'
+                        ? draft.destinationId
+                        : draft.originId),
+                  )?.attributes.countryId || '',
+                )}
                 value={manualFlights[direction]}
                 airlines={refs.airlines ?? []}
                 international={international}

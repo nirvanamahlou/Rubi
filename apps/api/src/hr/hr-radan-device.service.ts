@@ -143,9 +143,18 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           invalid++;
           return [];
         }
-        if (match[1]! < from || match[1]! > today) return [];
+        let date: string;
         try {
-          const stamp = localClockToUtc(match[1]!, match[2]!);
+          date = new Date(isoDate(match[1]!).getTime() + 86400000)
+            .toISOString()
+            .slice(0, 10);
+        } catch {
+          invalid++;
+          return [];
+        }
+        if (date < from || date > today) return [];
+        try {
+          const stamp = localClockToUtc(date, match[2]!);
           if (stamp.getTime() > Date.now()) {
             invalid++;
             return [];
@@ -165,7 +174,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           {
             id: String(p.id),
             personnelCode: digits(personnelCode),
-            date: match[1]!,
+            date,
             time: match[2]!,
             kind,
             accepted:
@@ -179,6 +188,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         unmatched = 0,
         closed = 0;
       const dates = new Set<string>();
+      const moved = new Map<string, Set<string>>();
       for (let i = 0; i < punches.length; i += 500) {
         const result = await this.hr.importDevicePunches(
           { branchId, source, punches: punches.slice(i, i + 500) },
@@ -190,6 +200,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         unmatched += result.unmatched;
         closed += result.closed;
         result.dates.forEach((d) => dates.add(d));
+        for (const item of result.reconcile ?? []) {
+          const ids = moved.get(item.date) ?? new Set<string>();
+          ids.add(item.employeeId);
+          moved.set(item.date, ids);
+        }
       }
       for (const date of [...dates].sort())
         await this.hr.processAttendance(
@@ -197,6 +212,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           randomUUID(),
           actor,
           true,
+          [...(moved.get(date) ?? [])],
         );
       this.latest = {
         state: 'ready',

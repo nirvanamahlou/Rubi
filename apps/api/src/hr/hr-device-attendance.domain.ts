@@ -32,6 +32,7 @@ export function attendanceScheduleMetrics(
   start: Date,
   end: Date,
   grace = 0,
+  overtimeStart: Date = end,
 ) {
   const sorted = [...events].sort((a, b) => a.at.getTime() - b.at.getTime());
   const ins = sorted.filter((e) => e.kind === 'ورود');
@@ -49,7 +50,8 @@ export function attendanceScheduleMetrics(
       );
       after += Math.max(
         0,
-        event.at.getTime() - Math.max(open.getTime(), end.getTime()),
+        event.at.getTime() -
+          Math.max(open.getTime(), end.getTime(), overtimeStart.getTime()),
       );
       open = null;
     }
@@ -79,4 +81,13 @@ export function attendanceScheduleMetrics(
             Math.floor((end.getTime() - start.getTime() - within) / 60000),
           ),
   };
+}
+
+/** The standard office schedule has a shorter Thursday; other configured schedules retain their hours. */
+export function workingHoursEnd(date: string, start: string, end: string) {
+  return new Date(`${date}T12:00:00Z`).getUTCDay() === 4 &&
+    start === '09:15' &&
+    end === '17:00'
+    ? '14:00'
+    : end;
 }

@@ -92,3 +92,39 @@ describe('package banner workspace', () => {
     expect(safePricingReturnTo('/finance')).toBe('/sales/pricing/management');
   });
 });
+
+it('loads every selected composition hotel in the authorized branch, including a different rate batch', async () => {
+  const anchor = {
+    id: 'batch-1',
+    branchId: 'branch-1',
+    rows: [{ id: 'rate-1' }],
+  };
+  const result = await loadPackageBanner(
+    'departure-1',
+    { batchId: 'batch-1' },
+    {
+      session: vi.fn().mockResolvedValue(session),
+      tours: vi.fn().mockResolvedValue({
+        data: [{ id: 'departure-1', branchId: 'branch-1' }],
+      }),
+      tourCosts: vi.fn().mockResolvedValue({
+        purchaseBatches: [
+          anchor,
+          { id: 'batch-2', branchId: 'branch-1', rows: [{ id: 'rate-2' }] },
+          {
+            id: 'foreign',
+            branchId: 'branch-other',
+            rows: [{ id: 'foreign-rate' }],
+          },
+        ],
+      }),
+      tourPublications: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'published', selectedHotelRateIds: ['rate-1', 'rate-2'] },
+        ]),
+      bannerTemplates: vi.fn().mockResolvedValue({ data: [] }),
+    } as never,
+  );
+  expect(result.batch?.rows.map((row) => row.id)).toEqual(['rate-1', 'rate-2']);
+});

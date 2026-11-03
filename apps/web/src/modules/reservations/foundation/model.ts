@@ -99,6 +99,7 @@ export interface RequestView {
   hotelRequested?: boolean | undefined;
   voucherReady?: boolean | undefined;
   hotelConfirmed?: boolean | undefined;
+  amendedAt?: string | undefined;
   correctedAt?: string | undefined;
   salesCorrectionPending?: boolean | undefined;
   createdAt: string;

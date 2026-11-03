@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -652,7 +654,7 @@ export function CooperationWizard({
                             }}
                           >
                             <span>{record.name}</span>
-                            <bdi>{record.code}</bdi>
+                            <bdi>{masterDataDisplayCode(record)}</bdi>
                             {existing?.id === record.id ? (
                               <Check size={16} />
                             ) : null}
@@ -671,7 +673,16 @@ export function CooperationWizard({
                     160,
                     mode === 'existing' && !editing,
                   )}
-                  {field('code', 'کد سازمان', 32, true)}
+                  <label className="field">
+                    <span>کد سازمان</span>
+                    <input
+                      className="input"
+                      readOnly
+                      dir="ltr"
+                      value={existing ? masterDataDisplayCode(existing) : ''}
+                      placeholder="تخصیص خودکار پس از ثبت"
+                    />
+                  </label>
                   <label className="field">
                     <span>نقش همکاری</span>
                     <NativeSearchSelect
@@ -1007,7 +1018,12 @@ export function CooperationWizard({
                     ...(editing || !agencyRegistration
                       ? [['شناسه ملی شرکت', draft.nationalId || 'ثبت نشده']]
                       : []),
-                    ['کد سازمان', draft.code || 'تخصیص خودکار پس از ثبت'],
+                    [
+                      'کد سازمان',
+                      existing
+                        ? masterDataDisplayCode(existing)
+                        : 'تخصیص خودکار پس از ثبت',
+                    ],
                     [
                       'نقش همکاری',
                       draft.role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی',

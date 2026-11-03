@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
@@ -30,7 +32,7 @@ function value(form: FormData, key: string) {
 }
 
 function optionLabel(record: MasterDataRecord) {
-  return `${record.name} (${record.code})`;
+  return `${record.name} (${masterDataDisplayCode(record)})`;
 }
 
 function formatMoney(amount: string, currencyCode: string) {

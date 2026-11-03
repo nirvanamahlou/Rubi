@@ -1,10 +1,14 @@
 'use client';
+import { purchaseApiRoot } from './purchase-api-root';
 import { useEffect, useState } from 'react';
 import { travelRequest } from './travel-workflow-form';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { currencySymbol } from '@/lib/currency-symbol';
 
-export async function loadReservationCurrencies(requestId: string) {
+export async function loadReservationCurrencies(
+  requestId: string,
+  purchaseRoot?: string,
+) {
   const currencies: { code: string; name: string }[] = [];
   let loaded = 0;
   for (let page = 1; ; page++) {
@@ -12,7 +16,7 @@ export async function loadReservationCurrencies(requestId: string) {
       data: { code: string | null; name: string }[];
       meta: { total: number };
     }>(
-      `reservations/requests/${encodeURIComponent(requestId)}/voucher-currencies?page=${page}`,
+      `${purchaseApiRoot(requestId, purchaseRoot)}/voucher-currencies?page=${page}`,
     );
     loaded += result.data.length;
     for (const record of result.data) {
@@ -23,7 +27,10 @@ export async function loadReservationCurrencies(requestId: string) {
     if (!result.data.length || loaded >= result.meta.total) return currencies;
   }
 }
-export function useReservationCurrencies(requestId: string) {
+export function useReservationCurrencies(
+  requestId: string,
+  purchaseRoot?: string,
+) {
   const [state, setState] = useState({
     currencies: [] as { code: string; name: string }[],
     loading: true,
@@ -31,7 +38,7 @@ export function useReservationCurrencies(requestId: string) {
   });
   useEffect(() => {
     let live = true;
-    void loadReservationCurrencies(requestId)
+    void loadReservationCurrencies(requestId, purchaseRoot)
       .then((currencies) => {
         if (live) setState({ currencies, loading: false, error: '' });
       })
@@ -46,7 +53,7 @@ export function useReservationCurrencies(requestId: string) {
     return () => {
       live = false;
     };
-  }, [requestId]);
+  }, [requestId, purchaseRoot]);
   return state;
 }
 export function ReservationCurrencySelect({

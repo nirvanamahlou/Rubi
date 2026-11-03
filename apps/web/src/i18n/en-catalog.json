@@ -1,4 +1,8 @@
 {
+  "W5 یا IRM یا MAHAN AIR": "W5, IRM or MAHAN AIR",
+  "کد IATA، ICAO یا Callsign را وارد کنید؛ قالب IATA / ICAO هم مجاز است.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
+
+  "کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
   "بدون لوگو": "Without logo",
   "شماره تلفن ثابت و همراه باید متفاوت باشند.": "Landline and mobile phone numbers must be different.",
   "تلفن همراه": "Mobile phone",
@@ -9907,7 +9911,7 @@
   "شناسه یا نسخه تورلیدر معتبر نیست.": "Tourleader ID or version is not valid.",
   "شناسه یکتای درخواست الزامی است.": "A unique request ID is required.",
   "شناسه، نسخه یا وضعیت بلیت معتبر نیست.": "The ticket ID, version or status is not valid.",
-  "شناوری": "buoyancy",
+  "شناوری": "Floating",
   "شناوری ورود": "Entry buoyancy",
   "شنبه": "Saturday",
   "شنگن / سراسر جهان": "Schengen / Worldwide",
@@ -17503,5 +17507,23 @@
   "Transfer P.P رفت‌وبرگشت": "Round-trip transfer P.P",
   "تعداد نفرات ترانسفر رفت‌وبرگشت": "Round-trip transfer passengers",
   "قیمت فروش پرواز نوزاد": "Infant flight sale price",
-  "نوع فیلد قیمت": "Price field type"
+  "نوع فیلد قیمت": "Price field type",
+  "خرید قرارداد شناوری": "Floating contract purchases",
+  "خرید شناوری از بخش پرداخت فروش ثبت می‌شود.": "Record floating purchases from Sales payments.",
+  "آژانس خرید هتل": "Hotel purchase agency",
+  "آژانس هتل": "Hotel agency",
+  "آژانس بلیط": "Ticket agency",
+  "آژانس ترانسفر": "Transfer agency",
+  "آژانس ترانسفر رفت": "Outbound transfer agency",
+  "آژانس ترانسفر برگشت": "Return transfer agency",
+  "ترانسفر از آژانس دیگر": "Transfer from another agency",
+  "آژانس رفت و برگشت جدا": "Different outbound and return agencies",
+  "دسترسی مدیریت قیمت در دسترس نیست.": "Price management access is unavailable.",
+  "ابتدا پیش‌نویس قیمت را ذخیره کنید.": "Save the price draft first.",
+  "تغییرات قیمت را پیش از انتشار ذخیره کنید.": "Save price changes before publishing.",
+  "هتل، ترکیب اتاق و قیمت‌های انتخاب‌شده را تکمیل کنید.": "Complete the hotel, room composition and selected prices.",
+  "دلیل انتشار نسخهٔ قیمت معتبر نیست.": "The price publication reason is invalid.",
+  "دانلود PNG": "Download PNG",
+  "دانلود بنر انجام نشد؛ دوباره تلاش کنید.": "The banner download failed. Please try again.",
+  "هتل شناوری": "Floating hotel"
 }

@@ -13,6 +13,7 @@ const organization = {
   createdAt: '2026-10-01T00:00:00.000Z',
   updatedAt: '2026-10-10T00:00:00.000Z',
   attributes: {
+    accountingCode: '3000001',
     roleCodes: 'AGENCY',
     personType: 'LEGAL',
     nationalId: '12345678901',
