@@ -8294,8 +8294,8 @@ model ProcurementPettyEntry {
   occurredAt        DateTime?            @db.Timestamptz(3)
   receiptDocumentId String?              @db.Uuid
   receiptVersionId  String?              @db.Uuid
-  receiptDocument   Document?            @relation(fields: [receiptDocumentId], references: [id], onDelete: Restrict)
-  receiptVersion    DocumentVersion?     @relation(fields: [receiptVersionId], references: [id], onDelete: Restrict)
+  receiptDocument   Document?            @relation(fields: [receiptDocumentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  receiptVersion    DocumentVersion?     @relation(fields: [receiptVersionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   requestId         String?              @db.Uuid
   request           ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
   id                String               @id @default(uuid()) @db.Uuid
