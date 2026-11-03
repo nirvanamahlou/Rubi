@@ -235,21 +235,19 @@ export function PettyFundCard({
                   />
                 </FormField>
               ))}
-              <FormField
-                id="petty-recharge-receipt"
-                label="فیش شارژ تنخواه"
-                className="sm:col-span-2"
-              >
-                <Input
-                  id="petty-recharge-receipt"
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png"
-                  onChange={(event) => {
-                    setReceiptFile(event.target.files?.[0] ?? null);
-                    setReceipt(undefined);
-                  }}
-                />
-              </FormField>
+              <div className="sm:col-span-2">
+                <FormField id="petty-recharge-receipt" label="فیش شارژ تنخواه">
+                  <Input
+                    id="petty-recharge-receipt"
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png"
+                    onChange={(event) => {
+                      setReceiptFile(event.target.files?.[0] ?? null);
+                      setReceipt(undefined);
+                    }}
+                  />
+                </FormField>
+              </div>
             </fieldset>
             {query.isError && (
               <div className="space-y-2 sm:col-span-2">

@@ -144,20 +144,17 @@ export function PettyRegistrationForm({
             disabled={busy}
             className="grid gap-5 rounded-2xl border border-primary/15 bg-primary/5 p-5 sm:grid-cols-2"
           >
-            <FormField
-              id="petty-registration-title"
-              label="عنوان"
-              required
-              className="sm:col-span-2"
-            >
-              <Input
-                id="petty-registration-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                required
-                maxLength={240}
-              />
-            </FormField>
+            <div className="sm:col-span-2">
+              <FormField id="petty-registration-title" label="عنوان" required>
+                <Input
+                  id="petty-registration-title"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  required
+                  maxLength={240}
+                />
+              </FormField>
+            </div>
             <FormField id="petty-registration-date" label="تاریخ" required>
               <DatePicker
                 id="petty-registration-date"
@@ -194,34 +191,30 @@ export function PettyRegistrationForm({
                 onValueChange={setFee}
               />
             </FormField>
-            <FormField
-              id="petty-registration-description"
-              label="شرح"
-              className="sm:col-span-2"
-            >
-              <Textarea
-                id="petty-registration-description"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                maxLength={2000}
-                rows={3}
-              />
-            </FormField>
-            <FormField
-              id="petty-registration-receipt"
-              label="فیش"
-              className="sm:col-span-2"
-            >
-              <Input
-                id="petty-registration-receipt"
-                type="file"
-                accept="application/pdf,image/jpeg,image/png"
-                onChange={(event) => {
-                  setFile(event.target.files?.[0] ?? null);
-                  setReceipt(undefined);
-                }}
-              />
-            </FormField>
+            <div className="sm:col-span-2">
+              <FormField id="petty-registration-description" label="شرح">
+                <Textarea
+                  id="petty-registration-description"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  maxLength={2000}
+                  rows={3}
+                />
+              </FormField>
+            </div>
+            <div className="sm:col-span-2">
+              <FormField id="petty-registration-receipt" label="فیش">
+                <Input
+                  id="petty-registration-receipt"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  onChange={(event) => {
+                    setFile(event.target.files?.[0] ?? null);
+                    setReceipt(undefined);
+                  }}
+                />
+              </FormField>
+            </div>
           </fieldset>
           {error && (
             <Alert tone="error" title="ثبت ناموفق بود" description={error} />
