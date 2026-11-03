@@ -38,6 +38,26 @@ import {
 } from '../accounting/financial-event.public';
 import { captureSalesContractAccounting } from '../accounting/sales-contract-accounting.public';
 
+function receiptWriteConflict(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const value = error as {
+    code?: string;
+    meta?: {
+      code?: string;
+      driverAdapterError?: { cause?: { originalCode?: string } };
+    };
+  };
+  return (
+    ['P2034', 'P2002'].includes(value.code ?? '') ||
+    (value.code === 'P2010' &&
+      ['40001', '40P01'].includes(
+        value.meta?.code ??
+          value.meta?.driverAdapterError?.cause?.originalCode ??
+          '',
+      ))
+  );
+}
+
 @Injectable()
 export class FinancePartyReceipts {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
@@ -178,12 +198,7 @@ export class FinancePartyReceipts {
         },
       );
     } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        ['P2034', 'P2002'].includes(String(error.code))
-      ) {
+      if (receiptWriteConflict(error)) {
         const replay = await this.db.client.$transaction((tx) =>
           partyReceiptReplay(tx, input, fingerprint),
         );

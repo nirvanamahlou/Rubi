@@ -135,4 +135,25 @@ describe('Finance party receipt command', () => {
       'event failed',
     );
   });
+  it.each([
+    { code: 'P2010', meta: { code: '40001' } },
+    {
+      code: 'P2010',
+      meta: { driverAdapterError: { cause: { originalCode: '40001' } } },
+    },
+  ])(
+    'recovers the committed receipt after a raw PostgreSQL conflict: %j',
+    async (failure) => {
+      const { service, transaction } = setup();
+      transaction.mockRejectedValueOnce(failure);
+      const result = {
+        operationId: command.operationId,
+        allocations: [{ amount: '650' }],
+      };
+      mocks.replay.mockResolvedValue(result);
+      expect(await service.receive(command, actor)).toEqual(result);
+      expect(mocks.persist).not.toHaveBeenCalled();
+      expect(transaction).toHaveBeenCalledTimes(2);
+    },
+  );
 });
