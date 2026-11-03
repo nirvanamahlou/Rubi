@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 const offer = (id: string, departureAt: string) =>
-  ({ id, departureAt }) as TicketOfferV1;
+  ({ id, departureAt, status: 'ACTIVE' }) as TicketOfferV1;
 
 describe('tour departure ticket range', () => {
   it('loads every management page and deduplicates offers', async () => {

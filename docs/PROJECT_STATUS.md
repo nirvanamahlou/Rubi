@@ -8716,6 +8716,10 @@ Read-only production audit covers316 tables/3985 columns and entire84 KPI/91 vis
 
 Reservations amendments can replace either catalog flight direction with a floating flight and a changed Tehran civil date. Shared flight services split without duplicating sale prices; passenger membership and anonymous historical counts remain intact. Mixed catalog outbound and floating return is permitted only for authorized amendment validation; default new-contract policy stays unchanged. Existing transactional Ticket amendment releases removed directions and reserves selected replacements, rejecting insufficient capacity before writes.20 Web,102 Sales API and15 capacity/repository tests passed across isolated runs; full local Web typecheck and scoped lint pass after explicit projection types. No schema/dependency change. PR1340; final hosted CI pending. Server SSH still rejects codex-dev with the preserved key; no rollout claimed. Local source path is being replaced by the user, so final correction commits use GitHub Git Data with fast-forward guards.
 
+## TOUR-TICKET-SELECTION-1103 — PC-A
+
+Implemented route/branch active red ticket choices with dates derived from offers; shared floating flight editor and independent FLOATING offer capacity; departure stop/resume with separate salesVersion CAS. Confirmation enforces active departure under a row lock before capacity writes.43 API targeted checks passed; final Web and hosted gates pending. Additive TourDeparture isActive/salesVersion migration only; no operational migration or deployment. Details: docs/tasks/TOUR-TICKET-SELECTION-1103.md.
+
 ## COMPANY-BASELINE-1103 — PC-A
 
 Valid active manual access snapshots now retain authenticated legal-entity read/switch baseline, matching ordinary roles. Invalid/disabled/multiple snapshots remain fail-closed; aggregate/manage/branding/document grants unchanged.18 focused permission tests and scoped lint pass. No migration/dependency/data mutation. Server rollout not performed; existing SSH key was rejected in prior diagnostic.
