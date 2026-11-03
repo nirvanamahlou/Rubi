@@ -67,7 +67,7 @@ import { packageGeneratorData } from '../model/package-generator-data';
 import { packageBannerHref } from '../model/package-banner';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
-  buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomTitle,
   packageTourSelectionBatch,
   type TourRoomCurrencyAmount,
@@ -378,7 +378,7 @@ export function TourPricingWorkspace() {
   ) => {
     if (!batch || !grid) return [];
     try {
-      const prices = buildHotelPackageCompositions({
+      const prices = buildHotelOnlyPackageCompositions({
         row,
         checkIn: grid.tour.startsOn,
         checkOut: grid.tour.endsOn,
@@ -427,8 +427,8 @@ export function TourPricingWorkspace() {
                   compositionSelectionKey(sale.hotelRateId, sale.roomCode),
                 ),
               ),
-              commissionMode,
-              commissionMode === 'percent' ? commission || '0' : '0',
+              'percent',
+              '0',
             ),
           )
         : prices;
