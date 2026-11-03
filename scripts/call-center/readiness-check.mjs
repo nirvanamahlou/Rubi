@@ -2,6 +2,7 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 export async function check(env = process.env, request = fetch) {
+  const count = (value) => Number.isSafeInteger(value) && value >= 0;
   const url = new URL(
     env.TELEPHONY_CHECK_API_URL ?? 'http://127.0.0.1:4000/api/v1',
   );
@@ -50,6 +51,8 @@ export async function check(env = process.env, request = fetch) {
         dead: data.dead,
         oldestPendingSeconds: data.oldestPendingSeconds,
         unpublishedRecordings: data.unpublishedRecordings,
+        unknownCommands: data.unknownCommands,
+        expiredRecordings: data.expiredRecordings,
         alerts: data.alerts,
       };
       result.authenticatedChecks = 'PASSED';
@@ -74,7 +77,26 @@ export async function check(env = process.env, request = fetch) {
     result.internalHealth?.state === 'NO_INTERNAL_ALERT' &&
     Array.isArray(result.internalHealth?.alerts) &&
     result.internalHealth.alerts.length === 0 &&
+    [
+      'pending',
+      'retrying',
+      'dead',
+      'unpublishedRecordings',
+      'unknownCommands',
+      'expiredRecordings',
+    ].every((key) => count(result.internalHealth[key])) &&
+    [
+      'dead',
+      'unpublishedRecordings',
+      'unknownCommands',
+      'expiredRecordings',
+    ].every((key) => result.internalHealth[key] === 0) &&
+    (result.internalHealth.pending + result.internalHealth.retrying === 0
+      ? result.internalHealth.oldestPendingSeconds === null
+      : count(result.internalHealth.oldestPendingSeconds) &&
+        result.internalHealth.oldestPendingSeconds < 60) &&
     result.provider?.state === 'CONNECTED' &&
+    count(result.provider?.pendingFrames) &&
     result.provider?.eventCoverage === 'LIVE_ONLY' &&
     result.provider?.reconciliationRequired === false;
   return result;

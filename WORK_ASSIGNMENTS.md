@@ -1,3 +1,7 @@
+## CALL-CENTER-FINAL-INTEGRATION-1103 — PC-C — IN_PROGRESS / NO DEPLOY
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-final-integration-1103 from developc134779bf. Owner authorizes audit/push/develop PR/merge after every final-head CI gate. Reserve integration of source-share chart and completion-edit buttons, missing bounded offline-readiness/Worker/VPN/network-guard source artifacts and synthetic tests, own docs and exact conflict resolution preserving peer sections. Existing older interface/domain/audio/recovery patches are superseded by later merged implementations and must not regress them. No schema/dependency/grants, execution of deployment scripts or operational rollout. Freeze source on push; reservation releases on verified merge.
+
 ## SOURCE-SHARE-CHART-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
 
 COMPUTER_ID=PC-C; branch codex/pc-c-source-share-chart-1103 from developb8b4da7d4. Owner authorizes replacing only source-share graphic with annotated dashboard donut style. Reserve Call Center report-highlights, leaf chart geometry/CSS and regressions; own notes only. Preserve contact-based aggregation, filters and expert report. No API/schema/dependency/shared dashboard changes or production deployment. Prior same-owner report scopes merged/frozen.10 focused tests, scoped lint, full Web TypeScript and optimized Web production build passed; RTL visual preview verified. Source freezes on push.
