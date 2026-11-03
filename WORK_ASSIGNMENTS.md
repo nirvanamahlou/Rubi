@@ -1,3 +1,7 @@
+## COUNTRY-PRIORITY-1103 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; isolated country-priority branch from current develop. Owner authorizes Iran first and Turkey second in new-contract country selectors and develop merge. Reserve only a new Sales country-order presentation helper, its SearchableReference consumer and bounded existing tests, own status notes. Match country ISO codes with legacy name fallback; preserve search, selection, records and all other resource orders. Master Data producer/PC-B ownership unchanged. No API/schema/dependency, stored-data or server deployment changes. Source freezes on publication; reservation releases after verified authorized merge.
+
 ## CALL-CENTER-FINAL-INTEGRATION-1103 — PC-C — IN_PROGRESS / NO DEPLOY
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-final-integration-1103 from developc134779bf. Owner authorizes audit/push/develop PR/merge after every final-head CI gate. Reserve integration of source-share chart and completion-edit buttons, missing bounded offline-readiness/Worker/VPN/network-guard source artifacts and synthetic tests, own docs and exact conflict resolution preserving peer sections. Existing older interface/domain/audio/recovery patches are superseded by later merged implementations and must not regress them. No schema/dependency/grants, execution of deployment scripts or operational rollout. Freeze source on push; reservation releases on verified merge.
