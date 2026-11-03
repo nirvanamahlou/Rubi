@@ -227,6 +227,14 @@ export class HrController {
     return this.service.importPayslips(file, body, key, req.actor);
   }
 
+  @Post('shifts/weekly') weeklyShift(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.assignWeeklyShift(body, key, req.actor);
+  }
+
   @Post('shifts/:id/calendar') calendar(
     @Param('id') id: string,
     @Body() body: unknown,

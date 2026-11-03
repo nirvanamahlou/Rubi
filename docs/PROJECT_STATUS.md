@@ -8669,6 +8669,15 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 
 
 
+## HR-WEEKLY-SHIFTS-1103 — PC-B — IN_PROGRESS
+
+Owner requests weekly named shifts with employee multi-selection, self-service shift history and schedule/device-based attendance status; push/develop merge authorized. Reserve HR API/Web/contracts, bounded Workbench shift consumer, own translations/tests and notes. Existing same-owner HR scopes are integrated in develop. Additive optional weekday column and atomic bulk assignment endpoint preserve legacy dated shifts; no schema/migration/dependency change. Preserve employee/branch authorization, closed periods, source punches and historical assignments.
+
+
+HR-WEEKLY-SHIFTS-1103 implementation: weekday-aware recurring assignments use existing employee FK records, atomic/idempotent multi-employee create, bounded validity dates, per-record versioned edit/archive and closed-period protection. Workbench exposes only the linked employee shifts even without broad HR access. Device sync processes all 32 lookback dates, including empty days, to persist present/absent/non-working statuses; unfinished shifts wait and incomplete punches retain review status. Both attendance grids include status. Existing nine-value shifts remain compatible; weekly end times are authoritative. No migration, dependency, operational data or deployment changes.
+
+HR-WEEKLY-SHIFTS-1103 validation: 56 focused Web/translation tests pass; HR suite initially 232 pass/2 expectations changed/47 opt-in skipped, corrected expectations plus all five new disposable PostgreSQL scenarios pass in a 26-test rerun. Tests cover atomic bulk rollback, replay, branch/permission scope, real device pairs, absence/rest days, overnight shifts, future shifts, self-only projection, versioned edit/delete and closed periods. Local API typecheck hit Node heap limit after contracts rebuild; clean final-head CI typechecks/build/tests remain mandatory before authorized develop merge. Source freeze/release on verified merge.
+
 ## PETTY-REGISTRATIONS-1103 — PC-B — ACTIVE
 
 Owner requests four-field direct petty-cash registration with receipt upload, a registrations card/list and durable purchase-request deletion; explicitly confirms debiting the balance. Named returning request is a hardcoded sample in empty production lists. Reserve Procurement API/Web/contracts/tests and removal of request sample fallback; own English keys and notes. Sole migration owner PC-B for optional immutable manual-registration metadata and receipt FKs on ProcurementPettyEntry. Prior migration reservation released by PR1337; no competing active migration/source writer found. API and Web ship together, old ledger entries remain compatible; atomic balance decrement, exact Decimal, retry idempotency, branch/custodian permissions and Documents public boundary required. No dependency or operational deployment changes.

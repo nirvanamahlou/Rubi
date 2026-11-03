@@ -48,7 +48,13 @@ describe('HR self performance public projection', () => {
     expect(f.hr.leaveBalances).not.toHaveBeenCalled();
     expect(f.client.hrRecord.count).not.toHaveBeenCalled();
     for (const [query] of f.client.hrRecord.findMany.mock.calls) {
-      expect(['attendance', 'checkins']).toContain(query.where.tab);
+      if (query.where.tab)
+        expect(['attendance', 'checkins']).toContain(query.where.tab);
+      else
+        expect(query.where.OR).toContainEqual({
+          section: 'time',
+          tab: 'shift',
+        });
       expect(query.where.employee).toEqual({ userId: 'self', deletedAt: null });
     }
   });
