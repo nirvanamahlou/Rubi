@@ -13,6 +13,9 @@ type Registration = Prisma.ProcurementPettyEntryGetPayload<{
 }>;
 function dto(row: Registration): ProcurementPettyRegistrationV1 {
   return {
+    costCenter: row.costCenter ?? '',
+    fee: row.fee?.toString() ?? '0',
+    description: row.description ?? '',
     id: row.id,
     title: row.title!,
     occurredAt: row.occurredAt!.toISOString(),
@@ -36,12 +39,24 @@ export async function registerPettyCash(
     'occurredAt',
     'amount',
     'receipt',
+    'costCenter',
+    'fee',
+    'description',
   ]);
   const id = v.uuid(input.id),
     branchId = v.uuid(input.branchId, 'branchId');
   const title = v.text(input.title, 'title', 240),
     occurredAt = v.date(input.occurredAt, 'occurredAt');
   const amount = v.text(input.amount, 'amount', 26);
+  const costCenter = v.text(input.costCenter, 'costCenter', 160, true);
+  const description = v.text(input.description, 'description', 2000, true);
+  const fee = v.text(input.fee ?? '0', 'fee', 26);
+  requireRule(
+    decimal(fee) <= decimal(amount),
+    'VALIDATION_ERROR',
+    'کارمزد نمی‌تواند بیشتر از مبلغ کل باشد.',
+    'fee',
+  );
   requireRule(
     decimal(amount) > 0n,
     'VALIDATION_ERROR',
@@ -53,30 +68,12 @@ export async function registerPettyCash(
     'FORBIDDEN',
     'شعبه مجاز نیست.',
   );
-  let receiptDocumentId: string | null = null,
-    receiptVersionId: string | null = null;
-  if (input.receipt) {
-    const receipt = v.object(input.receipt, ['id', 'versionId']);
-    receiptDocumentId = v.uuid(receipt.id);
-    receiptVersionId = v.uuid(receipt.versionId);
-    requireRule(
-      actor.permissions.includes('documents.metadata.read') &&
-        actor.permissions.includes('documents.procurement.read'),
-      'FORBIDDEN',
-      'مجوز مدارک خرید وجود ندارد.',
-    );
-    const { data } = await documents.detail(receiptDocumentId, actor, {});
-    const version = data.versions.find((item) => item.id === receiptVersionId);
-    requireRule(
-      data.branchId === branchId &&
-        data.type.domain === 'PROCUREMENT' &&
-        data.archiveStatus === 'ACTIVE' &&
-        Boolean(version) &&
-        !['INFECTED', 'QUARANTINED'].includes(version!.scanStatus),
-      'INVALID_DOCUMENT',
-      'نسخه سند برای خرید یا شعبه معتبر نیست.',
-    );
-  }
+  const { receiptDocumentId, receiptVersionId } = await validatePettyReceipt(
+    input.receipt,
+    branchId,
+    actor,
+    documents,
+  );
   return database.client.$transaction(
     async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`petty-registration:${id}`}, 0))::text`;
@@ -102,6 +99,9 @@ export async function registerPettyCash(
         requireRule(
           prior.actorId === actor.userId &&
             prior.fundId === fund!.id &&
+            (prior.costCenter ?? '') === costCenter &&
+            (prior.description ?? '') === description &&
+            (prior.fee ?? new Prisma.Decimal(0)).equals(fee) &&
             prior.title === title &&
             prior.occurredAt?.toISOString() === occurredAt &&
             prior.amount.negated().equals(amount) &&
@@ -134,6 +134,9 @@ export async function registerPettyCash(
             actorId: actor.userId,
             amount: value.negated(),
             title,
+            costCenter: costCenter || null,
+            description: description || null,
+            fee: new Prisma.Decimal(fee),
             occurredAt: new Date(occurredAt),
             receiptDocumentId,
             receiptVersionId,
@@ -204,4 +207,37 @@ export async function listPettyRegistrations(
     pageSize: 25,
     hasMore: rows.length > 25,
   };
+}
+
+export async function validatePettyReceipt(
+  input: unknown,
+  branchId: string,
+  actor: AuthenticatedActor,
+  documents: DocumentsService,
+) {
+  let receiptDocumentId: string | null = null,
+    receiptVersionId: string | null = null;
+  if (input) {
+    const receipt = v.object(input, ['id', 'versionId']);
+    receiptDocumentId = v.uuid(receipt.id);
+    receiptVersionId = v.uuid(receipt.versionId);
+    requireRule(
+      actor.permissions.includes('documents.metadata.read') &&
+        actor.permissions.includes('documents.procurement.read'),
+      'FORBIDDEN',
+      'مجوز مدارک خرید وجود ندارد.',
+    );
+    const { data } = await documents.detail(receiptDocumentId, actor, {});
+    const version = data.versions.find((item) => item.id === receiptVersionId);
+    requireRule(
+      data.branchId === branchId &&
+        data.type.domain === 'PROCUREMENT' &&
+        data.archiveStatus === 'ACTIVE' &&
+        Boolean(version) &&
+        !['INFECTED', 'QUARANTINED'].includes(version!.scanStatus),
+      'INVALID_DOCUMENT',
+      'نسخه سند برای خرید یا شعبه معتبر نیست.',
+    );
+  }
+  return { receiptDocumentId, receiptVersionId };
 }

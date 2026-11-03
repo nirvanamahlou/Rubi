@@ -1,4 +1,6 @@
 'use client';
+import { uploadPettyRechargeReceipt } from './petty-receipt';
+import type { ProcurementDocumentReferenceV1 } from '@nora/contracts';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Wallet } from 'lucide-react';
@@ -57,6 +59,9 @@ export function PettyFundCard({
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const [draft, setDraft] = useState<Fund>(empty);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receipt, setReceipt] = useState<ProcurementDocumentReferenceV1>();
+  const [receiptKey, setReceiptKey] = useState('');
   const query = useQuery({
     queryKey: ['procurement', 'petty-fund', branchId],
     queryFn: () =>
@@ -69,6 +74,9 @@ export function PettyFundCard({
   function openConfiguration() {
     setDraft(query.data ?? empty);
     setError('');
+    setReceiptFile(null);
+    setReceipt(undefined);
+    setReceiptKey(crypto.randomUUID());
     setOpen(true);
     if (query.isPending || query.isError) {
       void query.refetch().then((result) => {
@@ -128,11 +136,26 @@ export function PettyFundCard({
               if (busy || !editable) return;
               setBusy(true);
               setError('');
-              void procurementRequest<Fund>('/petty-fund', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...draft, branchId }),
-              })
+              void (async () => {
+                let proof = receipt;
+                if (receiptFile && !proof) {
+                  proof = await uploadPettyRechargeReceipt(
+                    receiptFile,
+                    branchId,
+                    receiptKey,
+                  );
+                  setReceipt(proof);
+                }
+                return procurementRequest<Fund>('/petty-fund', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...draft,
+                    branchId,
+                    ...(proof ? { receipt: proof } : {}),
+                  }),
+                });
+              })()
                 .then((saved) => {
                   setDraft(saved);
                   client.setQueryData(
@@ -212,6 +235,21 @@ export function PettyFundCard({
                   />
                 </FormField>
               ))}
+              <FormField
+                id="petty-recharge-receipt"
+                label="فیش شارژ تنخواه"
+                className="sm:col-span-2"
+              >
+                <Input
+                  id="petty-recharge-receipt"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  onChange={(event) => {
+                    setReceiptFile(event.target.files?.[0] ?? null);
+                    setReceipt(undefined);
+                  }}
+                />
+              </FormField>
             </fieldset>
             {query.isError && (
               <div className="space-y-2 sm:col-span-2">

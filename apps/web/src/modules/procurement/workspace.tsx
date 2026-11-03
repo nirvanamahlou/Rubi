@@ -27,10 +27,10 @@ import type {
   ProcurementRequestV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { Input, FormField, Textarea } from '@/components/ui/form-controls';
+import { FormField, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
-import { DraftForm, selectClass } from './draft-form';
+import { DraftForm } from './draft-form';
 import { statusLabels } from './model';
 import { InternalSections } from './internal-sections';
 import { PurchaseOrdersSection } from './orders-section';
@@ -38,9 +38,6 @@ import { DocumentLinks, recordData } from './record-details';
 import { ProcurementExportPanel } from './export-panel';
 import { formatProcurementDate } from './presentation';
 import type { ProcurementListRow } from './sample-requests';
-import { ProcurementSelect } from './procurement-select';
-import { ProcurementRecordActions } from './record-actions';
-import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
 import { PettyFundCard } from './petty-fund-card';
 import {
@@ -113,38 +110,6 @@ function sectionIndex(value: string | null): number {
 }
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'دریافت اطلاعات ناموفق بود.';
-function Pager({
-  page,
-  hasMore,
-  setPage,
-}: {
-  page: number;
-  hasMore: boolean;
-  setPage: (value: number) => void;
-}) {
-  return (
-    <nav
-      aria-label="صفحه‌بندی"
-      className="flex items-center justify-between gap-3 pt-4"
-    >
-      <Button
-        variant="outline"
-        disabled={page === 1}
-        onClick={() => setPage(page - 1)}
-      >
-        قبلی
-      </Button>
-      <span className="text-sm">صفحه {page.toLocaleString('fa-IR')}</span>
-      <Button
-        variant="outline"
-        disabled={!hasMore}
-        onClick={() => setPage(page + 1)}
-      >
-        بعدی
-      </Button>
-    </nav>
-  );
-}
 export function ProcurementWorkspace() {
   const bootstrap = useQuery({
     queryKey: ['procurement', 'bootstrap'],
@@ -204,10 +169,10 @@ function WorkspaceState({
 }) {
   const client = useQueryClient();
   const [group, setGroup] = useState(() => sectionIndex(initialSection));
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
-  const [createdFrom, setCreatedFrom] = useState('');
-  const [createdTo, setCreatedTo] = useState('');
+  const [status] = useState('');
+  const [search] = useState('');
+  const [createdFrom] = useState('');
+  const [createdTo] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(initialRequestId);
@@ -376,10 +341,6 @@ function WorkspaceState({
         queryKey: ['procurement', 'operation-options'],
       }),
     ]);
-  }
-  async function deleteListRequest(row: ProcurementListRow) {
-    const result = await procurementApi.get(row.id);
-    await removeRequest(result);
   }
   if (creating || (editing && detail.data))
     return (
@@ -614,126 +575,13 @@ function WorkspaceState({
               selectedBranchId={registrationBranch}
             />
           </div>
-          <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
-              <div className="grid w-full items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(140px,200px)_minmax(280px,330px)] lg:[&>fieldset]:col-span-1">
-                <FormField id="proc-home-search" label="شماره یا عنوان">
-                  <Input
-                    id="proc-home-search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                </FormField>
-                <FormField id="proc-home-status" label="وضعیت">
-                  <ProcurementSelect
-                    id="proc-home-status"
-                    className={selectClass}
-                    value={status}
-                    onChange={(event) => {
-                      setStatus(event.target.value);
-                      setPage(1);
-                    }}
-                  >
-                    <option value="">همه وضعیت‌ها</option>
-                    {Object.entries(statusLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </ProcurementSelect>
-                </FormField>
-                <MasterDataDateRangeFilter
-                  title="تاریخ ثبت پرونده"
-                  fromDate={createdFrom}
-                  toDate={createdTo}
-                  idPrefix="proc-home"
-                  onFromDateChange={(value) => {
-                    setCreatedFrom(value.slice(0, 10));
-                    if (createdTo && value && value > createdTo)
-                      setCreatedTo('');
-                    setPage(1);
-                  }}
-                  onToDateChange={(value) => {
-                    setCreatedTo(value.slice(0, 10));
-                    if (createdFrom && value && value < createdFrom)
-                      setCreatedFrom('');
-                    setPage(1);
-                  }}
-                  onReset={() => {
-                    setCreatedFrom('');
-                    setCreatedTo('');
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </div>
-            {list.isPending ? (
-              <Skeleton className="m-5 h-52" />
-            ) : list.isError ? (
-              <div className="p-5">
-                <Alert
-                  tone="error"
-                  title="درخواست‌ها دریافت نشدند"
-                  description={errorText(list.error)}
-                />
-              </div>
-            ) : rows.length ? (
-              <div className="divide-y divide-border">
-                {rows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
-                  >
-                    <div className="min-w-0 max-w-full flex-1">
-                      <p className="whitespace-normal break-words font-semibold">
-                        {row.draft.title || 'درخواست بدون عنوان'}
-                      </p>
-                      <p
-                        className="mt-1 text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {row.number}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{statusLabels[row.status]}</Badge>
-                      <ProcurementRecordActions
-                        label={row.draft.title || row.number}
-                        onEdit={() => {
-                          if (!row.sample) openRequest(row.id);
-                        }}
-                        onDelete={async () => {
-                          if (row.sample) {
-                            throw new Error(
-                              'رکورد نمونه در این فهرست قابل حذف نیست.',
-                            );
-                          }
-                          await deleteListRequest(row);
-                        }}
-                        deleteDisabled={
-                          row.sample ||
-                          !bootstrap.permissions.includes(
-                            'procurement.request.cancel',
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                درخواستی پیدا نشد.
-              </p>
-            )}
-            {list.data && (
-              <Pager
-                page={page}
-                hasMore={list.data.hasMore}
-                setPage={setPage}
-              />
-            )}
-          </Card>
+          <PettyRegistrations
+            bootstrap={bootstrap}
+            onBack={() => setGroup(0)}
+            embedded
+            selectedBranchId={registrationBranch}
+            onBranchChange={setRegistrationBranch}
+          />
         </>
       )}
     </div>

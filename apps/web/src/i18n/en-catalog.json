@@ -17580,5 +17580,13 @@
   "ویرایش شیفت": "Edit shift",
   "کارمند در روز انتخابی شیفت فعال دارد.": "The employee already has an active shift on the selected day.",
   "الگوهای شیفت": "Shift templates",
-  "افزودن الگوی شیفت": "Add shift template"
+  "افزودن الگوی شیفت": "Add shift template",
+  "شارژ تنخواه": "Petty cash recharge",
+  "فیش شارژ تنخواه": "Petty cash recharge receipt",
+  "کارمزد (جزء مبلغ کل)": "Commission (included in total)",
+  "کارمزد:": "Commission:",
+  "مبلغ کل با کارمزد": "Total amount including commission",
+  "مرکز هزینه:": "Cost center:",
+  "کارمزد نمی‌تواند بیشتر از مبلغ کل باشد.": "Commission cannot exceed the total amount.",
+  "فیش شارژ فقط برای افزایش موجودی قابل ثبت است.": "A recharge receipt can only be attached to a balance increase."
 }

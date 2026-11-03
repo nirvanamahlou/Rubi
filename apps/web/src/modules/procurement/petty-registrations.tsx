@@ -20,6 +20,7 @@ import {
   Alert,
   Card,
 } from '@/components/ui';
+import { Textarea } from '@/components/ui/form-controls';
 import { MoneyInput } from '@/components/ui/money-input';
 import { documentsApi } from '@/modules/documents/api/client';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
@@ -43,6 +44,9 @@ export function PettyRegistrationForm({
   const [title, setTitle] = useState(''),
     [date, setDate] = useState(''),
     [amount, setAmount] = useState('');
+  const [costCenter, setCostCenter] = useState(''),
+    [fee, setFee] = useState('0'),
+    [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null),
     [receipt, setReceipt] = useState<
       ProcurementDocumentReferenceV1 | undefined
@@ -95,6 +99,9 @@ export function PettyRegistrationForm({
         branchId,
         title,
         amount,
+        costCenter,
+        fee,
+        description,
         occurredAt:
           date.length === 10
             ? `${date}T00:00:00.000Z`
@@ -129,12 +136,20 @@ export function PettyRegistrationForm({
         if (!open && !busy) onClose();
       }}
     >
-      <DialogContent dir="rtl">
+      <DialogContent dir="rtl" className="max-w-2xl">
         <DialogTitle>ثبت جدید</DialogTitle>
         <DialogDescription>ثبت تنخواه</DialogDescription>
         <form className="mt-4 space-y-4" onSubmit={(event) => void save(event)}>
-          <fieldset disabled={busy} className="space-y-4">
-            <FormField id="petty-registration-title" label="عنوان" required>
+          <fieldset
+            disabled={busy}
+            className="grid gap-5 rounded-2xl border border-primary/15 bg-primary/5 p-5 sm:grid-cols-2"
+          >
+            <FormField
+              id="petty-registration-title"
+              label="عنوان"
+              required
+              className="sm:col-span-2"
+            >
               <Input
                 id="petty-registration-title"
                 value={title}
@@ -154,7 +169,7 @@ export function PettyRegistrationForm({
             </FormField>
             <FormField
               id="petty-registration-amount"
-              label={`مبلغ${fund.data ? ` (${fund.data.currencyCode})` : ''}`}
+              label={`مبلغ کل با کارمزد${fund.data ? ` (${fund.data.currencyCode})` : ''}`}
               required
             >
               <MoneyInput
@@ -164,7 +179,39 @@ export function PettyRegistrationForm({
                 required
               />
             </FormField>
-            <FormField id="petty-registration-receipt" label="فیش">
+            <FormField id="petty-registration-cost-center" label="مرکز هزینه">
+              <Input
+                id="petty-registration-cost-center"
+                value={costCenter}
+                onChange={(event) => setCostCenter(event.target.value)}
+                maxLength={160}
+              />
+            </FormField>
+            <FormField id="petty-registration-fee" label="کارمزد (جزء مبلغ کل)">
+              <MoneyInput
+                id="petty-registration-fee"
+                value={fee}
+                onValueChange={setFee}
+              />
+            </FormField>
+            <FormField
+              id="petty-registration-description"
+              label="شرح"
+              className="sm:col-span-2"
+            >
+              <Textarea
+                id="petty-registration-description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                maxLength={2000}
+                rows={3}
+              />
+            </FormField>
+            <FormField
+              id="petty-registration-receipt"
+              label="فیش"
+              className="sm:col-span-2"
+            >
               <Input
                 id="petty-registration-receipt"
                 type="file"
@@ -221,13 +268,20 @@ export function PettyRegistrationForm({
 export function PettyRegistrations({
   bootstrap,
   onBack,
+  embedded = false,
+  selectedBranchId,
+  onBranchChange,
 }: {
   bootstrap: Bootstrap;
   onBack: () => void;
+  embedded?: boolean;
+  selectedBranchId?: string;
+  onBranchChange?: (id: string) => void;
 }) {
-  const [branchId, setBranch] = useState(
+  const [localBranchId, setBranch] = useState(
     bootstrap.defaultBranchId ?? bootstrap.branches[0]?.id ?? '',
   );
+  const branchId = selectedBranchId ?? localBranchId;
   const [search, setSearch] = useState(''),
     [from, setFrom] = useState(''),
     [to, setTo] = useState('');
@@ -254,12 +308,15 @@ export function PettyRegistrations({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-black">ثبت‌ها</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack}>
-            بازگشت به میزکار
-          </Button>
-          {bootstrap.permissions.includes('procurement.request.create') && (
-            <Button onClick={() => setCreating(true)}>ثبت جدید</Button>
+          {!embedded && (
+            <Button variant="outline" onClick={onBack}>
+              بازگشت به میزکار
+            </Button>
           )}
+          {!embedded &&
+            bootstrap.permissions.includes('procurement.request.create') && (
+              <Button onClick={() => setCreating(true)}>ثبت جدید</Button>
+            )}
         </div>
       </header>
       <Card className="overflow-hidden border-blue-300/70">
@@ -280,6 +337,7 @@ export function PettyRegistrations({
               value={branchId}
               onChange={(event) => {
                 setBranch(event.target.value);
+                onBranchChange?.(event.target.value);
                 setPage(1);
               }}
             >
@@ -334,6 +392,19 @@ export function PettyRegistrations({
               >
                 <div>
                   <h2 className="font-semibold text-primary">{row.title}</h2>
+                  {row.costCenter && (
+                    <p className="mt-1 text-sm">مرکز هزینه: {row.costCenter}</p>
+                  )}
+                  {row.description && (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {row.description}
+                    </p>
+                  )}
+                  {row.fee && row.fee !== '0' && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      کارمزد: {pettyBalanceLabel(row.fee)} {row.currencyCode}
+                    </p>
+                  )}
                   <p className="mt-2 text-sm text-muted-foreground">
                     {formatProcurementDate(row.occurredAt)}
                   </p>

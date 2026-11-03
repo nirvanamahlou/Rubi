@@ -184,10 +184,6 @@ export function ProcurementDocumentPicker({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="font-semibold">بارگذاری فایل {uploadLabel}</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    فایل در بخش «اسناد و فایل‌ها» با مرجع همین درخواست ذخیره و
-                    به {uploadLabel} پیوست می‌شود.
-                  </p>
                 </div>
                 <input
                   ref={fileInput}
@@ -225,10 +221,6 @@ export function ProcurementDocumentPicker({
               )}
             </section>
           )}
-          <p className="text-xs text-muted-foreground">
-            نسخه سالم اسناد خرید مربوط به همین شعبه را انتخاب کنید. اصل فایل در
-            آرشیو اسناد باقی می‌ماند.
-          </p>
           <div className="flex flex-wrap gap-2">
             <Input
               className="min-w-40 flex-1"

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
+import { savePettyFund } from './procurement.petty-cash';
 import type { DocumentsService } from '../documents/documents.service';
 import {
   registerPettyCash,
@@ -261,7 +262,108 @@ describe.skipIf(process.env.PROCUREMENT_REGISTRATIONS_DATABASE_TEST !== '1')(
         });
       expect(persisted.receiptVersionId).toBe(version.id);
       expect(persisted.amount.toString()).toBe('-100.0001');
+      const manager = {
+        ...reader,
+        permissions: [...reader.permissions, 'procurement.assign' as const],
+      };
+      const updated =
+        await database.client.procurementPettyFund.findUniqueOrThrow({
+          where: { id: row.id },
+        });
+      await database.client.$transaction((tx) =>
+        savePettyFund(
+          tx,
+          {
+            branchId: row.branchId,
+            version: updated.version,
+            balance: '1200',
+            currencyCode: 'IRR',
+          },
+          manager,
+          { receiptDocumentId: doc.id, receiptVersionId: version.id },
+        ),
+      );
+      const credit =
+        await database.client.procurementPettyEntry.findFirstOrThrow({
+          where: { fundId: row.id, title: null, receiptDocumentId: doc.id },
+        });
+      expect(credit.amount.toString()).toBe('300.0001');
+      const fresh =
+        await database.client.procurementPettyFund.findUniqueOrThrow({
+          where: { id: row.id },
+        });
+      await expect(
+        database.client.$transaction((tx) =>
+          savePettyFund(
+            tx,
+            {
+              branchId: row.branchId,
+              version: fresh.version,
+              balance: '1000',
+              currencyCode: 'IRR',
+            },
+            manager,
+            { receiptDocumentId: doc.id, receiptVersionId: version.id },
+          ),
+        ),
+      ).rejects.toThrow();
+      expect(
+        (
+          await database.client.procurementPettyFund.findUniqueOrThrow({
+            where: { id: row.id },
+          })
+        ).balance.toString(),
+      ).toBe('1200');
     });
+    it('stores inclusive commission and metadata without a second debit, and rejects changed retries', async () => {
+      const { row, reader, input } = await fund();
+      const body = {
+        ...input,
+        amount: '100',
+        fee: '12.5000',
+        costCenter: 'Operations',
+        description: 'Receipt details',
+      };
+      expect(
+        await registerPettyCash(database, documents, body, reader),
+      ).toMatchObject({
+        amount: '100',
+        fee: '12.5',
+        costCenter: 'Operations',
+        description: 'Receipt details',
+      });
+      await registerPettyCash(database, documents, body, reader);
+      expect(
+        (
+          await database.client.procurementPettyFund.findUniqueOrThrow({
+            where: { id: row.id },
+          })
+        ).balance.toString(),
+      ).toBe('900');
+      for (const change of [
+        { fee: '13' },
+        { costCenter: 'Other' },
+        { description: 'Changed' },
+      ])
+        await expect(
+          registerPettyCash(
+            database,
+            documents,
+            { ...body, ...change },
+            reader,
+          ),
+        ).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
+      for (const fee of ['101', '-1'])
+        await expect(
+          registerPettyCash(
+            database,
+            documents,
+            { ...body, id: randomUUID(), fee },
+            reader,
+          ),
+        ).rejects.toThrow();
+    });
+
     it('lists persisted registrations by title/date/branch without adjustment rows', async () => {
       const { row, reader, input } = await fund();
       await registerPettyCash(database, documents, input, reader);
