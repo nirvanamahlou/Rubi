@@ -10958,6 +10958,10 @@ Owner requests full read-only production schema/data readiness review and activa
 
 Reserve two Dashboard description English override entries only, preserving unrelated catalogue entries. Native trend composition adds existing source metrics without new producer/HTTP contracts.
 
+## AMEND-FLOATING-FLIGHT-1103 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-amend-floating-flight-1103. Reserve contract-amendment-model.ts/spec, reservation-sales-amendment.tsx/spec, Sales domain mixed-leg validation/spec and bounded sales.service.ts amendment validation calls. User requests per-direction charter-to-floating amendment, date changes, correct capacity load, develop merge and server rollout. Prior passenger-count scope merged PR1215. Preserve opposite tickets, prices, passenger membership and historical counts; inventory remains on the public transactional Ticket amendment boundary. No schema/dependency changes.20 focused Web tests,102 Sales API tests,6 capacity tests and9 repository transaction tests passed across isolated runs; local full Web typecheck and scoped lint passed after fixing explicit service types and immutable test fixtures. Required exact-head CI precedes merge. Server key rejected from original and preserved paths; rollout blocked. Source locks release with frozen candidate.
+
 ## COMPANY-BASELINE-1103 — PC-A — IN_PROGRESS
 
 Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid active manual access snapshots must retain the existing authenticated legal-entity read/switch baseline. Disabled, malformed and multiple snapshots remain fail-closed. No aggregate/manage/branding/document grants, schema, migration or dependency changes. No overlapping active source reservation found. Branch codex/pc-a-company-baseline-1103 from origin/develop. Own status documentation reserved.

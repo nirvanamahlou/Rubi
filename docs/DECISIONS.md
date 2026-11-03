@@ -756,3 +756,7 @@ Owner explicitly requests every user with access to Package Pricing management c
 ## FLOATING-HOTEL-SALES-1102 — 2026-11-02
 
 Owner requests standalone hotel floating purchase and confirms floating ticket plus hotel share Sales purchase ownership. Sales persists HOTEL metadata.purchaseSupplyType=FLOATING for the explicit hotel-only option; paired floating flights imply Sales hotel ownership without a second permanent hotel flag; shared isFloatingSalesContract recognizes only HOTEL/FLIGHT facts. Existing Sales own-contract/branch checks, agency supplier references, staged purchase retry and Finance CAS/idempotency remain. Reservations cannot write these purchases; ordinary hotel contracts remain Reservations-owned. Existing floating flight facts already imply all hotel purchases in the same contract use Sales. No migration, IAM expansion or historical metadata rewrite.
+
+## AMEND-FLOATING-FLIGHT-1103
+
+The owner authorizes converting either existing catalog flight direction to floating during contract amendment. Amendment validation may retain the opposite catalog leg; ordinary new-contract pairing policy remains unchanged. Existing route/chronology/authorization/inventory amendment transaction remain mandatory.
