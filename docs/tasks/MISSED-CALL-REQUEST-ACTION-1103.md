@@ -7,4 +7,3 @@ The action is supplied only for the existing workflow and team-management permis
 Validation includes manager versus ordinary-user rendering, other KPI modes, missing-contact safety and exact selected-contact handoff, plus affected Web lint/typecheck/build and final-head hosted gates. Scope freezes on publication and reservation ends on verified develop merge.
 
 Source verification: 19 focused Web/read-client/i18n tests, scoped ESLint, full Web TypeScript and optimized production Web build pass. Hosted final-head checks remain the merge prerequisite.
-
