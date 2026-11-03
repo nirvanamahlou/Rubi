@@ -10646,13 +10646,11 @@ COMPUTER_ID=PC-C. Owner authorizes SMS in popup/contact filter shared acquaintan
 
 CALL-SOURCE-SMS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.15 focused tests, lint, full Web typecheck/build pass. Shared SMS value available in both source dropdowns. Web-only locked activation preserves env/mounts and API/Worker/data service IDs; rollback Compose/image retained. No schema/grant/dependency changes. Source reservation releases on push.
 
-
 ## CALL-HISTORY-SUBJECT-1101 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history summary and above note. Reserve workspace.tsx and own notes only. Display actual per-call subject with explicit unrecorded fallback; preserve all unrelated UI/runtime overlays and SMS option. No API/schema/dependency/grant change; prior scopes published and released.
 
 CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
-
 
 ## CALL-HISTORY-SPACING-1101 — PC-C — RESERVED
 
@@ -10715,7 +10713,6 @@ Base origin/develop534ccfd38. Owner authorizes diagnosis and correction of missi
 SHORT-SERVICE-CALLS-1102 scope extension: recovery-only identity helper and owning Integrations telephony.service leaf/tests. Existing historical mapping version unchanged before call plus unique current HR match required when unrelated HR edits make the stricter temporal HR port empty. No incoming inference or historical popup. Live runtime telephony.service compared byte-equivalent after newline normalization; no competing source owner of this leaf.
 
 SHORT-SERVICE-CALLS-1102 — COMPLETE / DEPLOYED. Capture accepts3–15 digit numbers only through configured external trunks. Four actual193 calls recovered with stable CDR/CEL historical receipts and unchanged mapping/current HR proof; employee list/SQL visibility verified,0 duplicates/offers.34 capture checks,35 focused recovery checks,49 PostgreSQL checks,2 Node evidence tests, API lint/typecheck/build pass. Peer reservation/recipient-grade releases preserved. No UI/schema/grant/dependency change. Source reservation releases on push; docs/tasks/SHORT-SERVICE-CALLS-1102.md.
-
 
 ## HR-CALL-ROUTING-1102 — PC-C — RESERVED
 
@@ -10894,3 +10891,7 @@ Owner-authorized integration with develop7d74d786b and CI failure repair. Preser
 COMPUTER_ID=PC-A; codex/pc-a-purchase-green-without-form-1103 from develop7d74d786b. Owner authorizes purchase button green for persisted purchases even without a supplier reservation form and develop merge after checks. Reserve bounded purchase-completion helper/controller response and tests; Reservations action-panel purchase registration hook/style/tests and own notes. Add a registration boolean alongside unchanged complete coverage in existing branch-scoped read endpoint; producer/consumer ship together, old clients remain compatible. A persisted zero hotel/service purchase counts; quote/form settings alone do not; cancelled contracts stay non-green. No financial semantics, purchase/issuance writes, schema/migration/dependency or deployment changes. Prior same-owner status badge scope is merged/released; no active overlapping writer found.
 
 PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped lint pass. Covers saved zero/legacy purchases without forms, partial registration independent of completion, form quotes without purchases, cancellations, additive controller response and stale refresh isolation. All final-head hosted checks required before owner-authorized merge. No operational data or deployment. Source freezes on publication and releases on verified merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 — INTEGRATED CANDIDATE
+
+All 17 owner-authored PR heads are preserved as merge ancestors of this candidate. Documentation append conflicts retain both entries; source integration preserves outbound access plus callbacks, SMS plus Agency, contact-based source share plus expert reporting, executive-only audio and ten-row paging. The later no-duplicate-subject history layout wins. Hosted CI failures repaired: formatting, English coverage, HR fixture constructor, request-keyed async detail state and seeded executive username collision. PR1320 carries the combined candidate for final cross-feature CI; other PR heads remain individually reviewable. No production deployment.
