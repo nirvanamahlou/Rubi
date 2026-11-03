@@ -286,3 +286,95 @@ it('refreshes purchase ownership when a floating catalog flight is replaced', ()
   expect(isFloatingSalesContract(replaced.services)).toBe(false);
   expect(replaced.services[0]?.metadata?.purchaseSupplyType).toBe('COMPANY');
 });
+
+it.each(['OUTBOUND', 'RETURN'] as const)(
+  'converts a shared catalog %s leg without losing the opposite ticket or sale prices',
+  (direction) => {
+    const draft = amendmentFromContract(contract);
+    const before = structuredClone(draft);
+    const next = applyManualAmendmentFlights(draft, {
+      [direction]: {
+        departureAt: '2099-01-10T12:00',
+        arrivalAt: '2099-01-10T14:00',
+        carrierName: 'Synthetic air',
+        serviceNumber: 'FLOAT',
+        cabinClassCode: 'ECONOMY',
+      },
+    });
+    expect(next.ticketSelections).toHaveLength(1);
+    expect(next.ticketSelections?.[0]?.direction).not.toBe(direction);
+    const floating = next.services.find(
+      (s) => s.metadata?.contractFlightVersion === 1,
+    )!;
+    expect(floating.metadata?.direction).toBe(direction);
+    expect(floating.referenceId).toBeUndefined();
+    expect(floating.status).toBe('NEEDS_RESERVATION_CONFIRMATION');
+    expect(next.passengers[0]?.serviceClientKeys).toContain(floating.clientKey);
+    expect(next.priceComponents).toEqual(before.priceComponents);
+    expect(draft).toEqual(before);
+    expect(isFloatingSalesContract(next.services)).toBe(true);
+    expect(
+      direction === 'RETURN' ? next.returnNotBefore : next.departureDate,
+    ).toBe('2099-01-10');
+  },
+);
+
+it('preserves anonymous historical counts when splitting a shared catalog service', () => {
+  const draft = amendmentFromContract(contract);
+  draft.passengers = [];
+  draft.passengerCategories = {};
+  draft.services[0] = {
+    ...draft.services[0]!,
+    metadata: {
+      legacyServicePartiesV2: JSON.stringify({
+        flight: { adults: 2, children: 1, infants: 0 },
+      }),
+    },
+  };
+  const next = applyManualAmendmentFlights(draft, {
+    RETURN: {
+      departureAt: '2099-01-10T12:00',
+      arrivalAt: '2099-01-10T14:00',
+      carrierName: 'Synthetic',
+      serviceNumber: 'FLOAT',
+      cabinClassCode: 'ECONOMY',
+    },
+  });
+  const counts = JSON.parse(
+    String(next.services[0]?.metadata?.legacyServicePartiesV2),
+  );
+  expect(Object.keys(counts)).toHaveLength(2);
+  expect(counts[next.services[1]!.clientKey]).toEqual(counts.flight);
+  expect(
+    next.services.filter((s) => s.metadata?.legacyServicePartiesV2),
+  ).toHaveLength(1);
+});
+it('converts a dedicated catalog service without changing its key or sale metadata', () => {
+  const draft = amendmentFromContract(contract);
+  draft.ticketSelections = draft.ticketSelections?.filter(
+    (t) => t.direction === 'OUTBOUND',
+  );
+  draft.services[0] = {
+    ...draft.services[0]!,
+    referenceId: 'old',
+    metadata: {
+      direction: 'OUTBOUND',
+      purchaseSupplyType: 'CHARTER',
+      businessOutput: true,
+    },
+  };
+  const next = applyManualAmendmentFlights(draft, {
+    OUTBOUND: {
+      departureAt: '2099-01-10T12:00',
+      arrivalAt: '2099-01-10T14:00',
+      carrierName: 'Synthetic',
+      serviceNumber: 'FLOAT',
+      cabinClassCode: 'ECONOMY',
+    },
+  });
+  expect(next.services).toHaveLength(1);
+  expect(next.services[0]?.clientKey).toBe('flight');
+  expect(next.services[0]?.metadata?.businessOutput).toBe(true);
+  expect(next.ticketSelections).toEqual([]);
+  expect(next.passengers).toEqual(draft.passengers);
+});

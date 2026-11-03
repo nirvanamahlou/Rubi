@@ -8639,3 +8639,7 @@ Valid active manual access snapshots now retain authenticated legal-entity read/
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
+
+## AMEND-FLOATING-FLIGHT-1103 — PC-A
+
+Catalog flights can be replaced by contract-only floating flights during Reservations amendment. The editor is reachable for either direction; existing opposite leg, prices and passenger membership/headcounts are preserved, shared services split without duplicating pricing. Changed search day synchronizes manual clock dates. Mixed catalog-outbound/floating-return is allowed only in authorized amendment validation; ordinary creation policy remains. Existing Ticket public amendment transaction releases removed directions and acquires replacement capacity atomically.20 Web and102 API focused tests passed; lint passed. Final CI pending. No migration/dependency changes. Server SSH rechecked and rejected the configured key, so no rollout claimed.

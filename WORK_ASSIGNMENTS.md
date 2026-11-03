@@ -10959,3 +10959,11 @@ Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid ac
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
+
+## AMEND-FLOATING-FLIGHT-1103 — PC-A — IN_PROGRESS
+
+Reserve contract-amendment-model.ts/spec, reservation-sales-amendment.tsx/spec and bounded API Sales domain pairing validation/spec. User requests charter-to-floating conversion per direction, date changes, develop merge and server rollout. Prior passenger-count scope merged PR1215; age-table frozen candidate releases locks. Preserve other leg, prices, passenger service membership, inventory transaction, permissions and CAS. No schema/dependency changes. Server key still rejected.
+
+AMEND-FLOATING-FLIGHT-1103 bounded producer extension: sales.service.ts amendment validation call passes an explicit mixed-leg option; default creation pairing restriction remains. Public domain function gains optional internal flag, no HTTP contract change. Reserve sales-contract-only-flight.spec.ts.
+
+AMEND-FLOATING-FLIGHT-1103: source candidate frozen after20 Web and102 API focused tests; scoped lint passes. Existing capacity amendment and repository transaction tests additionally verified. No schema or migration. Server auth still blocked. Required exact-head hosted checks precede requested develop merge.

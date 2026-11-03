@@ -175,6 +175,105 @@ export function manualAmendmentFlights(
     ]),
   );
 }
+/** Split a shared catalog service without duplicating its sale/pricing metadata. */
+function prepareFloatingAmendment(
+  d: SalesContractAmendmentV1,
+  direction: SalesTicketDirection,
+): SalesContractAmendmentV1 {
+  const selected = d.ticketSelections?.find((t) => t.direction === direction);
+  const service =
+    d.services.find((s) => s.clientKey === selected?.serviceClientKey) ??
+    d.services.find(
+      (s) => s.kind === 'FLIGHT' && s.metadata?.direction === direction,
+    );
+  if (service?.metadata?.contractFlightVersion === 1) return d;
+  const shared =
+    service &&
+    d.ticketSelections?.some(
+      (t) =>
+        t.direction !== direction && t.serviceClientKey === service.clientKey,
+    );
+  let key =
+    service && !shared
+      ? service.clientKey
+      : 'floating-' + direction.toLowerCase();
+  while ((!service || shared) && d.services.some((s) => s.clientKey === key))
+    key += '-new';
+  const metadata =
+    shared || !service
+      ? {}
+      : Object.fromEntries(
+          Object.entries(service.metadata ?? {}).filter(
+            ([key]) => !['purchaseSupplyType', 'direction'].includes(key),
+          ),
+        );
+  let services =
+    service && !shared
+      ? d.services.map((s) =>
+          s === service
+            ? {
+                ...s,
+                referenceId: undefined,
+                status: 'NEEDS_RESERVATION_CONFIRMATION' as const,
+                metadata: {
+                  ...metadata,
+                  direction,
+                  purchaseSupplyType: 'FLOATING',
+                },
+              }
+            : s,
+        )
+      : [
+          ...d.services,
+          {
+            clientKey: key,
+            kind: 'FLIGHT' as const,
+            titleSnapshot: 'Floating flight',
+            status: 'NEEDS_RESERVATION_CONFIRMATION' as const,
+            metadata: {
+              direction,
+              purchaseSupplyType: 'FLOATING',
+              ...(service?.metadata?.businessOutput === true
+                ? { businessOutput: true }
+                : {}),
+            },
+          },
+        ];
+  const legacy = services[0]?.metadata?.legacyServicePartiesV2;
+  if (typeof legacy === 'string' && (!service || shared)) {
+    const parties = JSON.parse(legacy);
+    if (!service || !parties[service.clientKey])
+      throw new Error('ترکیب مسافران بلیت مشخص نیست.');
+    services = services.map((s, i) =>
+      i === 0
+        ? {
+            ...s,
+            metadata: {
+              ...s.metadata,
+              legacyServicePartiesV2: JSON.stringify({
+                ...parties,
+                [key]: parties[service.clientKey],
+              }),
+            },
+          }
+        : s,
+    );
+  }
+  return {
+    ...d,
+    services,
+    ticketSelections: (d.ticketSelections ?? []).filter(
+      (t) => t.direction !== direction,
+    ),
+    passengers: d.passengers.map((p) =>
+      (!service || p.serviceClientKeys.includes(service.clientKey)) &&
+      !p.serviceClientKeys.includes(key)
+        ? { ...p, serviceClientKeys: [...p.serviceClientKeys, key] }
+        : p,
+    ),
+  };
+}
+
 export function applyManualAmendmentFlights(
   d: SalesContractAmendmentV1,
   flights: Partial<Record<SalesTicketDirection, ContractFlightDraft>>,
@@ -184,11 +283,25 @@ export function applyManualAmendmentFlights(
   for (const direction of ['OUTBOUND', 'RETURN'] as const) {
     const f = flights[direction];
     if (!f) continue;
+    if (
+      !f.carrierName.trim() ||
+      !f.serviceNumber.trim() ||
+      !Number.isFinite(Date.parse(f.departureAt)) ||
+      !Number.isFinite(Date.parse(f.arrivalAt))
+    )
+      throw new Error(
+        'اطلاعات بلیت شناور کامل نیست؛ تاریخ، ساعت، ایرلاین و شماره پرواز را وارد کنید.',
+      );
+    result = prepareFloatingAmendment(result, direction);
     const service = result.services.find(
       (s) =>
         s.kind === 'FLIGHT' &&
         s.metadata?.direction === direction &&
-        s.metadata?.contractFlightVersion === 1,
+        (s.metadata?.contractFlightVersion === 1 ||
+          (s.metadata?.purchaseSupplyType === 'FLOATING' &&
+            !result.ticketSelections?.some(
+              (t) => t.serviceClientKey === s.clientKey,
+            ))),
     );
     if (!service) continue;
     changed = true;
