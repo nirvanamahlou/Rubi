@@ -1360,6 +1360,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  accountingCode              String?                      @unique @db.VarChar(7)
   partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
   b2bOrganizationUsers        B2bOrganizationUser[]
@@ -1694,6 +1695,7 @@ model B2bAuditEvent {
 }
 
 model MasterSupplier {
+  accountingCode                     String?                                @unique @db.VarChar(7)
   payingOperationalPayments          FinanceOperationalRevision[]
   payingTicketPayments               FinanceTicketPurchasePaymentRevision[]
   payingInvoicePayments              FinanceProcurementInvoiceRevision[]
@@ -1940,7 +1942,7 @@ model MasterAirline {
   isUnderReview       Boolean                  @default(false)
   id                  String                   @id @default(uuid()) @db.Uuid
   organizationId      String?                  @unique @db.Uuid
-  code                String                   @unique @db.Char(2)
+  code                String                   @unique @db.VarChar(64)
   icaoCode            String?                  @unique @db.Char(3)
   name                String                   @db.VarChar(160)
   englishName         String?                  @db.VarChar(160)
@@ -2564,6 +2566,7 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  accountingCode                   String?                      @unique @db.VarChar(7)
   hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
   id                               String                       @id @default(uuid()) @db.Uuid
@@ -2983,6 +2986,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  customerCode               String?                      @unique @db.VarChar(7)
   insurancePolicies          ReservationInsurancePolicy[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
@@ -3612,6 +3616,7 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
+  identificationCode     String?                     @unique @map("identification_code") @db.VarChar(7)
   jobTitleId             String?                     @map("job_title_id") @db.Uuid
   jobTitle               HrRecord?                   @relation("HrEmployeeJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
   financePayrollRequests FinanceOperationalRequest[]
@@ -4714,6 +4719,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  accountingCode             String?                                @unique @db.VarChar(7)
   deletedAt                  DateTime?                              @db.Timestamptz(3)
   salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
   workflowRefunds            AccountingWorkflow[]
@@ -5570,7 +5576,7 @@ model PackagePricingTourPublishedVersion {
   tourVersion                 Int
   sourceFingerprint           String                                 @db.VarChar(64)
   reason                      String                                 @db.VarChar(500)
-  outboundCostRevisionId      String                                 @db.Uuid
+  outboundCostRevisionId      String?                                @db.Uuid
   returnCostRevisionId        String?                                @db.Uuid
   adultFlightSale             Decimal                                @db.Decimal(24, 4)
   adultFlightSaleCurrencyCode String                                 @default("IRR") @db.VarChar(3)
@@ -5586,7 +5592,7 @@ model PackagePricingTourPublishedVersion {
   publishedByUserId           String                                 @db.Uuid
   publishedAt                 DateTime                               @default(now()) @db.Timestamptz(3)
   draft                       PackagePricingTourDraft                @relation(fields: [draftId], references: [id], onDelete: Restrict)
-  outboundCost                FinanceTicketPurchaseCostRevision      @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
+  outboundCost                FinanceTicketPurchaseCostRevision?     @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
   returnCost                  FinanceTicketPurchaseCostRevision?     @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
   publisher                   User                                   @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
   roomPrices                  PackagePricingTourPublishedRoomPrice[]

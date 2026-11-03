@@ -1,5 +1,6 @@
 /** Finance-owned company accounts; all identifiers in ordinary lists are masked. */
 export interface CompanyBankAccountV1 {
+  accountingCode?: string | null;
   id: string;
   bankId: string;
   branchId: string;

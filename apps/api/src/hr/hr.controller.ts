@@ -1,3 +1,5 @@
+import { Optional, ServiceUnavailableException } from '@nestjs/common';
+import { HrRadanDeviceService } from './hr-radan-device.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import {
@@ -26,7 +28,22 @@ import { HrService } from './hr.service';
 @UseGuards(AuthGuard)
 @Controller('hr')
 export class HrController {
-  constructor(@Inject(HrService) private readonly service: HrService) {}
+  constructor(
+    @Inject(HrService) private readonly service: HrService,
+    @Optional()
+    @Inject(HrRadanDeviceService)
+    private readonly device?: HrRadanDeviceService,
+  ) {}
+  @Get('attendance/device/status') deviceStatus(
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.device) throw new ServiceUnavailableException();
+    return this.device.status(req.actor);
+  }
+  @Post('attendance/device/sync') deviceSync(@Req() req: AuthenticatedRequest) {
+    if (!this.device) throw new ServiceUnavailableException();
+    return this.device.sync(req.actor);
+  }
   @Get('reports/attendance-data')
   @Header('Cache-Control', 'private, no-store')
   attendanceReportData(

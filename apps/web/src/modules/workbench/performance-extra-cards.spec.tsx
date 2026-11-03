@@ -28,7 +28,21 @@ describe('personal performance extra cards', () => {
     const html = renderToStaticMarkup(<PerformanceExtraCards hr={hr} />);
     expect(html).toContain('۰ ساعت و ۰ دقیقه');
     expect(html).toContain('۲ ساعت و ۵ دقیقه');
-    expect(html).toContain('مهر ۱۴۰۵');
+    expect(html).not.toContain('مهر ۱۴۰۵');
+    expect(html).not.toContain('به عملکرد متصل نشده');
     expect(html.match(/>—</g)).toHaveLength(4);
   });
+});
+
+it('renders measured own work deficit', () => {
+  const hr = {
+    monthlyAttendance: {
+      period: 'آبان',
+      lateMinutes: 5,
+      overtimeMinutes: 30,
+      deficitMinutes: 75,
+    },
+  } as WorkbenchHrPerformanceV1;
+  const html = renderToStaticMarkup(<PerformanceExtraCards hr={hr} />);
+  expect(html).toContain('۱ ساعت و ۱۵ دقیقه');
 });

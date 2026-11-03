@@ -188,3 +188,101 @@ it('retains exact room and transfer quotations through save, send and a later dr
       .baseAmount,
   ).toBe('120');
 });
+
+it('sends a common broker group atomically with independent prices and one revision', () => {
+  const keys = ['h', 'extra'];
+  const broker = '11111111-1111-4111-8111-111111111111';
+  let state = initialTravelWorkflow();
+  for (const [index, key] of keys.entries()) {
+    const draft = settings(broker);
+    draft.sharedHotelBroker = index === 0;
+    draft.hotelRoomPrices!.rooms[0]!.baseAmount = index ? '245' : '120';
+    state = transitionTravelWorkflow(
+      state,
+      {
+        action: 'SUPPLIER_FORM_SETTINGS',
+        hotelStayKey: key,
+        expectedVersion: state.version,
+        note: '',
+        voucherSettings: draft,
+      },
+      ['p'],
+      [],
+      false,
+      keys,
+    );
+  }
+  const before = structuredClone(state);
+  const sent = transitionTravelWorkflow(
+    state,
+    {
+      action: 'REQUEST_SUPPLIER',
+      hotelStayKey: 'h',
+      expectedVersion: state.version,
+      note: '',
+    },
+    ['p'],
+    [],
+    false,
+    keys,
+  );
+  expect(sent.version).toBe(state.version + 1);
+  for (const key of keys)
+    expect(sent.hotelSupplierForms![key]).toMatchObject({
+      status: 'REQUESTED',
+      sentVersion: sent.version,
+    });
+  expect(
+    sent.hotelSupplierForms!.h!.sentSettings!.hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('120');
+  expect(
+    sent.hotelSupplierForms!.extra!.sentSettings!.hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('245');
+  expect(state).toEqual(before);
+  sent.hotelSupplierForms!.extra!.settings!.hotelRoomPrices!.rooms[0]!.baseAmount =
+    '999';
+  expect(
+    sent.hotelSupplierForms!.extra!.sentSettings!.hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('245');
+});
+it('rejects incomplete or different-broker groups without partially sending any stay', () => {
+  for (const other of [
+    undefined,
+    settings('22222222-2222-4222-8222-222222222222'),
+  ]) {
+    const primary = {
+      ...settings('11111111-1111-4111-8111-111111111111'),
+      sharedHotelBroker: true,
+    };
+    const state = {
+      ...initialTravelWorkflow(),
+      supplierFormSettings: primary,
+      hotelSupplierForms: {
+        h: { settings: primary, status: 'NEW' as const },
+        ...(other
+          ? { extra: { settings: other, status: 'NEW' as const } }
+          : {}),
+      },
+    };
+    const before = structuredClone(state);
+    expect(() =>
+      transitionTravelWorkflow(
+        state,
+        {
+          action: 'REQUEST_SUPPLIER',
+          hotelStayKey: 'h',
+          expectedVersion: 0,
+          note: '',
+        },
+        ['p'],
+        [],
+        false,
+        ['h', 'extra'],
+      ),
+    ).toThrow('کارگزار مشترک');
+    expect(state).toEqual(before);
+  }
+});

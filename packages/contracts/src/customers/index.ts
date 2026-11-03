@@ -116,6 +116,7 @@ export interface CustomerCompanion {
 }
 
 export interface CustomerSummary {
+  customerCode?: string | null;
   id: string;
   kind: CustomerKind;
   organizationId: string | null;

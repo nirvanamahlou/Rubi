@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { ghestirooApi, type GhestirooStatus } from '../api/client';
+import { GhestirooWorkspace } from './ghestiroo-workspace';
+import { SitePresenceSelector } from './site-presence';
+import type { IntegrationRegistryV1 } from '@nora/contracts';
 
 const labels: Record<string, string> = {
   catalog: 'کاتالوگ',
@@ -77,11 +80,14 @@ function displayValue(field: string, value: unknown) {
 export function GhestirooConnection({
   branchId,
   userId,
+  registry,
 }: {
   branchId: string;
   userId: string;
+  registry?: IntegrationRegistryV1;
 }) {
   const [status, setStatus] = useState<GhestirooStatus | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
   const [bundle, setBundle] = useState('');
   const [users, setUsers] = useState(userId);
   const [busy, setBusy] = useState(false);
@@ -90,22 +96,36 @@ export function GhestirooConnection({
   const [resource, setResource] = useState('');
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    void ghestirooApi
-      .status(branchId, controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted) {
+  const loadStatus = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        const value = await ghestirooApi.status(branchId, signal);
+        if (!signal?.aborted) {
           setStatus(value);
           setUsers(value.allowedUserIds?.join('\n') ?? userId);
         }
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted)
-          setError(e instanceof Error ? e.message : 'خواندن اتصال انجام نشد.');
-      });
-    return () => controller.abort();
-  }, [branchId, userId]);
+      } catch (cause) {
+        if (!signal?.aborted)
+          setError(
+            cause instanceof Error ? cause.message : 'خواندن اتصال انجام نشد.',
+          );
+      } finally {
+        if (!signal?.aborted) setLoadingStatus(false);
+      }
+    },
+    [branchId, userId],
+  );
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(
+      () => void loadStatus(controller.signal),
+      0,
+    );
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [loadStatus]);
   async function perform(action: () => Promise<void>) {
     setBusy(true);
     setError('');
@@ -129,13 +149,28 @@ export function GhestirooConnection({
       <p className="text-sm text-muted-foreground">
         در پنل قسطی‌رو، از «تنظیمات و دسترسی‌ها ← اتصال به نورا» بسته اتصال
         بسازید و اینجا وارد کنید. اطلاعات سایت در همین بخش نمایش داده می‌شوند.
-        مدیریت سایت با نقش کارمند انتخاب‌شده انجام می‌شود.
+        مسئول عملیات، کاربر واردشدهٔ نوراست؛ دسترسی سایت برای کاربران مجاز این
+        بخش به‌صورت پیش‌فرض کامل است.
       </p>
       {error ? (
         <Alert title="عملیات انجام نشد" description={error} tone="error" />
       ) : null}
       {!status ? (
-        <p role="status">در حال خواندن تنظیمات اتصال…</p>
+        loadingStatus ? (
+          <p role="status">در حال خواندن تنظیمات اتصال…</p>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setError('');
+              setLoadingStatus(true);
+              void loadStatus();
+            }}
+          >
+            تلاش دوباره برای خواندن اتصال
+          </Button>
+        )
       ) : (
         <>
           {!status.storageReady ? (
@@ -154,64 +189,47 @@ export function GhestirooConnection({
           ) : (
             <p>هنوز اتصالی ثبت نشده است.</p>
           )}
-          {status.canManage ? (
-            <form
-              className="grid gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void perform(async () => {
-                  const value = await ghestirooApi.save(
-                    branchId,
-                    bundle,
-                    users.split(/[\s,]+/).filter(Boolean),
-                    status.version,
-                  );
-                  setStatus(value);
-                  setBundle('');
-                  setVerified('');
-                  setRows([]);
-                  setCursor(null);
-                  setResource('');
-                });
-              }}
-            >
-              <label className="grid gap-2">
-                بسته اتصال تولیدشده در قسطی‌رو
-                <textarea
-                  aria-label="بسته اتصال قسطی‌رو"
-                  className="rounded-xl border border-border bg-surface p-3"
-                  rows={7}
-                  dir="ltr"
-                  value={bundle}
-                  onChange={(e) => setBundle(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  required
-                  maxLength={8000}
-                  disabled={busy || !status.storageReady}
-                />
-              </label>
-              <label className="grid gap-2">
-                شناسه کاربران مجاز نورا (هر شناسه در یک خط)
-                <textarea
-                  className="rounded-xl border border-border bg-surface p-3"
-                  rows={2}
-                  dir="ltr"
-                  value={users}
-                  onChange={(e) => setUsers(e.target.value)}
-                  required
-                  disabled={busy || !status.storageReady}
-                />
-              </label>
-              <p className="text-sm text-muted-foreground">
-                شناسه حساب شما: <bdi>{userId}</bdi>. کاربران باید مجوز مشاهده
-                اتصال و دسترسی همین شعبه را نیز داشته باشند.
-              </p>
-              <Button type="submit" disabled={busy || !status.storageReady}>
-                ذخیره امن اتصال
-              </Button>
-            </form>
+          {status.autoRenewal ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {status.renewalState === 'expired'
+                ? 'اعتبار اتصال گذشته است؛ بازیابی خودکار بررسی می‌شود. اگر اتصال لغو شده یا مدت طولانی قطع بوده است، بسته تازه لازم است.'
+                : status.renewalState === 'retrying'
+                  ? 'تمدید امن موقتاً انجام نشد؛ تلاش خودکار دوباره انجام می‌شود.'
+                  : 'تمدید خودکار و امن فعال است؛ نیازی به ساخت دوره‌ای بسته جدید نیست.'}
+              {status.lastRenewedAt ? (
+                <>
+                  {' '}
+                  {'آخرین تمدید: '}
+                  {new Date(status.lastRenewedAt).toLocaleDateString('fa-IR')}
+                </>
+              ) : null}
+            </p>
           ) : null}
+          <GhestirooSetupForm
+            status={status}
+            busy={busy}
+            bundle={bundle}
+            users={users}
+            userId={userId}
+            onBundleChange={setBundle}
+            onUsersChange={setUsers}
+            onSubmit={() =>
+              void perform(async () => {
+                const value = await ghestirooApi.save(
+                  branchId,
+                  bundle,
+                  users.split(/[\s,]+/).filter(Boolean),
+                  status.version,
+                );
+                setStatus(value);
+                setBundle('');
+                setVerified('');
+                setRows([]);
+                setCursor(null);
+                setResource('');
+              })
+            }
+          />
           {status.configured ? (
             <div className="flex flex-wrap gap-2">
               <Button
@@ -242,7 +260,7 @@ export function GhestirooConnection({
                     {labels[name] ?? name}
                   </Button>
                 ))}
-              {status.canManage && status.scopes?.includes('admin') ? (
+              {status.scopes?.includes('admin') ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -334,6 +352,84 @@ export function GhestirooConnection({
           ) : null}
         </div>
       ) : null}
+      {status?.configured && status.scopes?.includes('catalog') ? (
+        <>
+          {registry ? (
+            <SitePresenceSelector branchId={branchId} registry={registry} />
+          ) : null}
+          <GhestirooWorkspace key={branchId} branchId={branchId} />
+        </>
+      ) : null}
     </Card>
+  );
+}
+
+export function GhestirooSetupForm({
+  status,
+  busy,
+  bundle,
+  userId,
+  onBundleChange,
+  onSubmit,
+}: {
+  status: GhestirooStatus;
+  busy: boolean;
+  bundle: string;
+  users: string;
+  userId: string;
+  onBundleChange: (value: string) => void;
+  onUsersChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  if (!status.canManage)
+    return (
+      <Alert
+        title="دسترسی تنظیم اتصال ندارید"
+        description="این حساب فقط امکان مشاهده اتصال را دارد. برای ثبت بسته، حساب باید مجوز مدیریت تنظیمات یکپارچه‌سازی در همین شعبه را داشته باشد."
+      />
+    );
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!busy && status.storageReady) onSubmit();
+      }}
+    >
+      <label className="grid gap-2">
+        بسته اتصال تولیدشده در قسطی‌رو
+        <textarea
+          aria-label="بسته اتصال قسطی‌رو"
+          className="rounded-xl border border-border bg-surface p-3"
+          rows={7}
+          dir="ltr"
+          value={bundle}
+          onChange={(event) => onBundleChange(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          required
+          maxLength={8000}
+          disabled={busy}
+        />
+      </label>
+      <p>
+        حساب و دسترسی هر فرد از نورا مشخص می‌شود؛ کاربران مجاز این بخش به‌صورت
+        پیش‌فرض دسترسی کامل قسطی‌رو دارند.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        شناسه حساب شما: <bdi>{userId}</bdi>. کاربران باید مجوز مشاهده اتصال و
+        دسترسی همین شعبه را نیز داشته باشند.
+      </p>
+      {!status.storageReady ? (
+        <p className="text-sm text-muted-foreground">
+          می‌توانید بسته را اینجا وارد کنید؛ ذخیره پس از آماده‌شدن نگهداری امن
+          سرور فعال می‌شود. پیش از ذخیره، اطلاعات فقط در همین صفحه باقی
+          می‌مانند.
+        </p>
+      ) : null}
+      <Button type="submit" disabled={busy || !status.storageReady}>
+        ذخیره امن اتصال
+      </Button>
+    </form>
   );
 }

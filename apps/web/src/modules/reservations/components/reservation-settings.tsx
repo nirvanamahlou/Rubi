@@ -180,17 +180,21 @@ export function ReservationSettingsForm({
   showDocument = false,
   section = 'ALL',
   partyName,
+  sharedHotelBroker,
+  commonBroker,
 }: {
   intake: ReservationFormIntake;
   refs: ReservationFormReferences;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
   onPreview?: (settings: VoucherSettingsV1) => void;
-  showDocument?: boolean;
+  showDocument?: boolean | undefined;
   section?: ReservationSettingsSection;
   partyName?: string;
+  sharedHotelBroker?: boolean | undefined;
+  commonBroker?: { id: string; name: string } | undefined;
 }) {
-  const [draft, setDraft] = useState(() => {
+  const [storedDraft, setDraft] = useState(() => {
     const source = structuredClone(intake);
     delete source.workflow.voucherSettings;
     if (source.workflow.supplierFormSettings)
@@ -200,6 +204,16 @@ export function ReservationSettingsForm({
       settings.text.contractPartyName = partyName;
     return settings;
   });
+  const draft = {
+    ...storedDraft,
+    ...(sharedHotelBroker !== undefined ? { sharedHotelBroker } : {}),
+    ...(commonBroker
+      ? {
+          brokerId: commonBroker.id,
+          text: { ...storedDraft.text, broker: commonBroker.name },
+        }
+      : {}),
+  };
   const currencyDirectory = useReservationCurrencies(intake.id);
   const [directory, setDirectory] = useState<{
     key: string;
@@ -377,6 +391,7 @@ export function ReservationSettingsForm({
           note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
+            ...(sharedHotelBroker !== undefined ? { sharedHotelBroker } : {}),
             hotelTransferReturn: draft.hotelTransferSplit
               ? draft.hotelTransferReturn
               : undefined,
@@ -492,6 +507,7 @@ export function ReservationSettingsForm({
               searchText: option.searchText,
             }))}
             selectedLabel={draft.text[referenceKey] || undefined}
+            disabled={referenceKey === 'broker' && Boolean(commonBroker)}
             label={voucherTextLabels[key]}
             placeholder={`انتخاب ${voucherTextLabels[key]}`}
             loading={
@@ -1305,12 +1321,23 @@ export function ReservationSettings(props: {
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
   onPreview?: (settings: VoucherSettingsV1) => void;
-  showDocument?: boolean;
+  showDocument?: boolean | undefined;
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
   const stays = reservationHotelStays(props.intake.snapshot);
   const [selectedKey, setSelectedKey] = useState(stays[0]?.key ?? '');
+  const primarySaved =
+    props.intake.workflow.hotelSupplierForms?.[stays[0]?.key ?? '']?.settings ??
+    props.intake.workflow.supplierFormSettings;
+  const [shared, setShared] = useState(
+    primarySaved?.sharedHotelBroker === true,
+  );
+  const [commonBroker, setCommonBroker] = useState({
+    id: primarySaved?.brokerId ?? '',
+    name: primarySaved?.text.broker ?? '',
+  });
+
   const key = stays.some((stay) => stay.key === selectedKey)
     ? selectedKey
     : stays[0]?.key;
@@ -1318,6 +1345,24 @@ export function ReservationSettings(props: {
   return (
     <div className="grid gap-4">
       {stays.length > 1 && (
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={shared}
+            onChange={(event) => {
+              setShared(event.target.checked);
+              props.onDirty();
+            }}
+          />
+          کارگزار مشترک برای همه هتل‌ها
+        </label>
+      )}
+      {shared && (
+        <p>
+          قیمت هر هتل را جدا ذخیره کنید؛ سپس از هتل اول یک فرم مشترک صادر کنید.
+        </p>
+      )}
+      {stays.length > 1 && !shared && (
         <nav className="flex flex-wrap gap-2">
           {stays.map((stay) => (
             <Button
@@ -1332,10 +1377,29 @@ export function ReservationSettings(props: {
       )}
       {stays.length ? (
         stays.map((stay) => (
-          <div key={stay.key} hidden={stay.key !== key}>
+          <div key={stay.key} hidden={!shared && stay.key !== key}>
+            {shared && <h3>{stay.hotel.hotelNameSnapshot}</h3>}
             <HotelReservationSettings
               {...props}
               intake={hotelFormScope(props.intake, stay.key)}
+              sharedHotelBroker={stay.ordinal === 1 ? shared : undefined}
+              commonBroker={
+                shared && stay.ordinal !== 1 && commonBroker.id
+                  ? commonBroker
+                  : undefined
+              }
+              showDocument={
+                shared && stay.ordinal !== 1 ? false : props.showDocument
+              }
+              onPreview={(settings) => {
+                if (stay.ordinal === 1) {
+                  setCommonBroker({
+                    id: settings.brokerId ?? '',
+                    name: settings.text.broker,
+                  });
+                  props.onPreview?.({ ...settings, sharedHotelBroker: shared });
+                }
+              }}
             />
           </div>
         ))
@@ -1346,7 +1410,10 @@ export function ReservationSettings(props: {
   );
 }
 function HotelReservationSettings(
-  props: Parameters<typeof ReservationSettings>[0],
+  props: Parameters<typeof ReservationSettings>[0] & {
+    sharedHotelBroker?: boolean | undefined;
+    commonBroker?: { id: string; name: string } | undefined;
+  },
 ) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (

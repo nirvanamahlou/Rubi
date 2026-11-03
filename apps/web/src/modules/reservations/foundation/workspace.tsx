@@ -192,6 +192,8 @@ export function ReservationOperationsWorkspace({
   const effectiveQuery = reservationWindowQuery(query, now);
   const result = queryRows(visibleRows, effectiveQuery);
   const metrics = dashboard(result.filteredRows, now);
+  if (selectedId === null && result.filteredRows[0])
+    setSelectedId(result.filteredRows[0].id);
   const selected =
     result.filteredRows.find((r) => r.id === selectedId) ??
     result.filteredRows[0];
@@ -743,8 +745,9 @@ export function ReservationOperationsWorkspace({
                         <tr
                           key={row.id}
                           data-corrected={
-                            Boolean(row.correctedAt) &&
-                            row.salesCorrectionPending !== false
+                            Boolean(row.amendedAt) ||
+                            (Boolean(row.correctedAt) &&
+                              row.salesCorrectionPending !== false)
                           }
                           data-tone={statusTones[row.status]}
                           data-selected={selected?.id === row.id}
@@ -787,8 +790,9 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
-                                  {row.correctedAt &&
-                                  row.salesCorrectionPending !== false ? (
+                                  {row.amendedAt ||
+                                  (row.correctedAt &&
+                                    row.salesCorrectionPending !== false) ? (
                                     <small className={styles.correctedLabel}>
                                       اصلاح‌شده
                                     </small>
@@ -901,7 +905,11 @@ export function ReservationOperationsWorkspace({
         </div>
         {section === 'inbox' && (
           <ContractActionPanel
-            key={selected?.id ?? 'unselected'}
+            key={JSON.stringify([
+              effectiveState === 'SUCCESS',
+              [...access.branchIds].sort(),
+              [...access.permissions].sort(),
+            ])}
             request={selected}
           />
         )}

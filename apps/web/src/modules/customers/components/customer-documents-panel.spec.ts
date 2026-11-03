@@ -31,9 +31,8 @@ describe('Customer 360 documents integration boundary', () => {
     expect(source).toContain("form.set('branchId', customer.ownerBranchId)");
   });
 
-  it('keeps production identity policy behind DEC-OPEN-006 while files are operational', () => {
-    expect(source).toContain('DEC-OPEN-006');
-    expect(source).toContain('شماره پاسپورت');
+  it('preserves private file handling without implementation notices', () => {
+    expect(source).not.toContain('مرز حفاظت اطلاعات هویتی');
     expect(source).toContain('فایل خصوصی و غیرقابل دریافت باقی می‌ماند');
     expect(source).not.toContain('passportNumberEncrypted');
   });

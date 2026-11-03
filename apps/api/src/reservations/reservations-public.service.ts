@@ -149,6 +149,12 @@ function present(
         typeof purchase.passengerPrices === 'object' &&
         'hotelTransferCounts' in purchase.passengerPrices
           ? {
+              hotelTransferRoundTrip:
+                (
+                  purchase.passengerPrices as {
+                    hotelTransferRoundTrip?: boolean;
+                  }
+                ).hotelTransferRoundTrip ?? false,
               hotelTransferCounts: purchase.passengerPrices
                 .hotelTransferCounts as unknown as {
                 outbound: number;
@@ -343,6 +349,42 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  private async withPurchaseHistory(
+    row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
+  ) {
+    // Intake snapshots remain immutable. Reuse original purchase IDs/payment
+    // evidence, newest contract version first; never manufacture another payable.
+    const history = await this.database.client.reservationIntake.findMany({
+      where: {
+        contractId: row.contractId,
+        branchId: row.branchId,
+        contractVersion: { lt: row.contractVersion },
+        OR: [
+          { servicePurchases: { some: {} } },
+          { hotelPurchases: { some: {} } },
+        ],
+      },
+      include: intakeInclude,
+      orderBy: [
+        { contractVersion: 'desc' },
+        { receivedAt: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+    const hotelPurchases = new Map<
+      string,
+      (typeof row.hotelPurchases)[number]
+    >();
+    for (const purchase of [row, ...history].flatMap((i) => i.hotelPurchases)) {
+      if (!hotelPurchases.has(purchase.currencyCode))
+        hotelPurchases.set(purchase.currencyCode, purchase);
+    }
+    return {
+      ...row,
+      hotelPurchases: [...hotelPurchases.values()],
+      servicePurchases: [row, ...history].flatMap((i) => i.servicePurchases),
+    };
+  }
   /** Public branch-scoped latest execution costs for the owning Sales contract. */
   async contractPurchaseContext(contractId: string, branchId: string) {
     const row = await this.database.client.reservationIntake.findFirst({
@@ -354,7 +396,7 @@ export class ReservationsPublicService {
         { id: 'asc' },
       ],
     });
-    return row ? present(row) : null;
+    return row ? present(await this.withPurchaseHistory(row)) : null;
   }
 
   async purchaseContext(id: string, branchIds: readonly string[]) {
@@ -363,7 +405,7 @@ export class ReservationsPublicService {
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
-    const result = present(row);
+    const result = present(await this.withPurchaseHistory(row));
     if (this.tickets?.currentSelections)
       result.snapshot = {
         ...result.snapshot,
@@ -581,6 +623,25 @@ export class ReservationsPublicService {
         (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
       )[0] ?? null
     );
+  }
+
+  /** Finance owns payment decisions; purchase evidence must not disappear with
+   * a newer operational intake or the first page of the Reservations workspace. */
+  async listForFinance(branchIds: readonly string[]) {
+    const rows = await this.database.client.reservationIntake.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        servicePurchases: { some: {} },
+      },
+      include: intakeInclude,
+      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException(
+        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+      );
+    return rows.map(present);
   }
 
   async list(

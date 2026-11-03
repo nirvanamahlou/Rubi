@@ -216,9 +216,6 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toMatch(/\.statusHistory\(customer\.id\)/);
     expect(source).toMatch(/\.activity\(customer\.id\)/);
     expect(source).toMatch(/\.audit\(customer\.id\)/);
-    expect(source).toContain(
-      'هیچ query مستقیم یا داده ساختگی استفاده نشده است',
-    );
     expect(source).toContain('اجرای Merge');
     expect(source).toMatch(/<Button\s+disabled\s+size="sm"/);
   });
@@ -265,7 +262,7 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it('provides an enter-friendly create flow with adjustable companion passengers', () => {
-    expect(source).toContain('ثبت مشتری و مسافران همراه');
+    expect(source).toContain('ثبت همه');
     expect(source).toContain('handleEnterNavigation');
     expect(source).toContain('resizeCompanions');
     expect(source).toContain("roles: ['passenger']");
@@ -361,7 +358,7 @@ describe('Customer Operations workspace boundaries', () => {
     expect(source).toContain('metrics.totalPassengers');
     expect(source).toContain('metrics.newCustomersLastThreeMonths');
     expect(source).toContain('metrics.returningCustomerRate');
-    expect(source).toContain('در انتظار قرارداد عمومی خرید از Sales');
+    expect(source).toContain('metrics.returningCustomerRate === null');
   });
 
   it('uses the shared blue Persian/Gregorian calendar for list and create dates', () => {
@@ -484,15 +481,15 @@ describe('Customer Operations workspace boundaries', () => {
       'پرداخت‌ها',
       'چک‌ها',
       'تیکت‌های پشتیبانی',
-      'Timeline کامل فعالیت‌ها',
+      'مشاهده Timeline',
     ])
       expect(source).toContain(section);
     expect(source).toContain('در انتظار اتصال امن');
     expect(source).toContain('<CustomerDocumentsPanel customer={customer} />');
     expect(source).not.toContain('در انتظار زیرساخت مدارک');
-    expect(customerDocumentsPanelSource).toContain('شماره پاسپورت');
-    expect(customerDocumentsPanelSource).toContain('کشور صادرکننده');
     expect(customerDocumentsPanelSource).toContain('افزودن مدرک');
-    expect(customerDocumentsPanelSource).toContain('DEC-OPEN-006');
+    expect(customerDocumentsPanelSource).not.toContain(
+      'مرز حفاظت اطلاعات هویتی',
+    );
   });
 });
