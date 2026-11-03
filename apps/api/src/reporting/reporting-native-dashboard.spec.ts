@@ -890,10 +890,10 @@ describe('additional native dashboard trends', () => {
     );
     expect(chart.notice).toContain('سود ناخالص');
     expect(chart.notice).toContain('سود خالص');
-    expect(result.unavailableMetrics['gross-profit']).toBe(
+    expect(result.unavailableMetrics?.['gross-profit']).toBe(
       'APPROVED_MATCHED_COST_REQUIRED',
     );
-    expect(result.unavailableMetrics['net-profit']).toBe(
+    expect(result.unavailableMetrics?.['net-profit']).toBe(
       'POSTED_ACCOUNTING_SOURCE_REQUIRED',
     );
   });

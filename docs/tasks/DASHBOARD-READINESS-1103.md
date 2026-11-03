@@ -210,3 +210,7 @@ READY means current broad diagnostic scope; it is not universal user authorizati
 | Visual | employee-average-sale-by-agent | میانگین مبلغ فروش | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | sales.reporting.organization.v2, reporting_employee_commercial_activity_facts_v1 |
 | Visual | employee-contracts-by-agent | قراردادهای ثبت‌شده و نهایی | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | sales.reporting.organization.v2, reporting_employee_commercial_activity_facts_v1 |
 | Visual | employee-cancellations-by-agent | لغوها به تفکیک کارشناس و علت | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_employee_commercial_activity_facts_v1 |
+
+## Verification update
+
+All90 Reporting API tests and51 Dashboard/translation Web tests pass (1 existing Web skip); scoped lint passes. In-memory candidate using the real production public modules exposes12 chart IDs while preserving the11 KPI IDs; no business-data write. Hosted CI found optional unavailableMetrics access in two new test assertions; corrected to optional access without altering runtime behavior. Final-head CI and production publication remain pending.
