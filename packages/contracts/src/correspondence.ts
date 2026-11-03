@@ -28,6 +28,7 @@ export interface InternalLetterRecord {
   letter: InternalLetterContent;
   delivery: {
     id: string;
+    description?: string | null;
     sender: CorrespondenceUser;
     recipient: CorrespondenceUser;
     status: InternalLetterStatus;
