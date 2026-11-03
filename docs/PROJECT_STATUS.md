@@ -8661,3 +8661,16 @@ GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no whit
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
+## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — SOURCE_READY
+
+All11 owner comments implemented in Integrations: global period KPIs with exact
+currency-separated sums and explicit partial coverage, four compact visit cards,
+independent site selection for trends and a small live-tracking launcher/dialog.
+Dialog supports site switch, refresh and close without mounting background
+presence polling while closed. Removed selected-site KPI heading/captions,
+definitions, readiness/queue panel, ERP flow, activity and duplicate comparison;
+matching redundant Overview summary removed too. Per-site management and detail
+paging retained.61 Integrations/English checks and scoped lint pass; types/full
+build, live acceptance and final-head CI gate publication. No API, IAM, schema,
+dependency, Ghestiroo source or operational-data changes.
+

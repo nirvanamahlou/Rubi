@@ -4,6 +4,63 @@
   gap: 1.25rem;
   min-width: 0;
 }
+.compact {
+  padding: 12px;
+  gap: 10px;
+}
+.compact .header {
+  gap: 6px;
+}
+.compact .title {
+  gap: 8px;
+}
+.compact .title h3 {
+  font-size: 13px;
+}
+.compact .siteIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.compact .siteIcon svg {
+  width: 16px;
+  height: 16px;
+}
+.compact .metrics {
+  gap: 8px;
+}
+.compact .metric {
+  padding: 9px;
+  gap: 0;
+}
+.compact .metricIcon {
+  display: none;
+}
+.compact .metric span,
+.compact .metric small {
+  font-size: 10px;
+}
+.compact .metric strong {
+  font-size: 20px;
+  margin-top: 6px;
+}
+.compact .empty {
+  font-size: 11px;
+  padding: 0;
+  line-height: 1.8;
+}
+.compactDetails > summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 11px;
+}
+.compactDetails[open] > summary {
+  margin-bottom: 10px;
+}
+.compact .daily {
+  margin-top: 10px;
+  padding-top: 10px;
+}
 .header {
   display: flex;
   align-items: center;
