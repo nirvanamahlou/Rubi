@@ -10958,6 +10958,10 @@ Owner requests full read-only production schema/data readiness review and activa
 
 Reserve two Dashboard description English override entries only, preserving unrelated catalogue entries. Native trend composition adds existing source metrics without new producer/HTTP contracts.
 
+## AMEND-FLOATING-FLIGHT-1103 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-amend-floating-flight-1103. Reserve contract-amendment-model.ts/spec, reservation-sales-amendment.tsx/spec, Sales domain mixed-leg validation/spec and bounded sales.service.ts amendment validation calls. User requests per-direction charter-to-floating amendment, date changes, correct capacity load, develop merge and server rollout. Prior passenger-count scope merged PR1215. Preserve opposite tickets, prices, passenger membership and historical counts; inventory remains on the public transactional Ticket amendment boundary. No schema/dependency changes.20 focused Web tests,102 Sales API tests,6 capacity tests and9 repository transaction tests passed across isolated runs; local full Web typecheck and scoped lint passed after fixing explicit service types and immutable test fixtures. Required exact-head CI precedes merge. Server key rejected from original and preserved paths; rollout blocked. Source locks release with frozen candidate.
+
 ## COMPANY-BASELINE-1103 — PC-A — IN_PROGRESS
 
 Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid active manual access snapshots must retain the existing authenticated legal-entity read/switch baseline. Disabled, malformed and multiple snapshots remain fail-closed. No aggregate/manage/branding/document grants, schema, migration or dependency changes. No overlapping active source reservation found. Branch codex/pc-a-company-baseline-1103 from origin/develop. Own status documentation reserved.
@@ -10966,13 +10970,11 @@ Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid ac
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
 
-## AMEND-FLOATING-FLIGHT-1103 — PC-A — IN_PROGRESS
+## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
 
-Reserve contract-amendment-model.ts/spec, reservation-sales-amendment.tsx/spec and bounded API Sales domain pairing validation/spec. User requests charter-to-floating conversion per direction, date changes, develop merge and server rollout. Prior passenger-count scope merged PR1215; age-table frozen candidate releases locks. Preserve other leg, prices, passenger service membership, inventory transaction, permissions and CAS. No schema/dependency changes. Server key still rejected.
+Owner requests incoming correspondence cards/filters/table and sender, correct breadcrumbs, B Nazanin exports and immediate incoming-file viewing without the unavailable scanner gate; push/develop merge authorized. Reserve correspondence Web, bounded Documents upload/list/delivery API and shared form/contracts/tests, navigation aliases, English catalog and own notes. Sole migration owner PC-B for additive Document.senderName/isIncomingLetter; prior Marketing reservation merged/released. API producer and Web consumer ship optional fields together. Preserve branch/domain permissions, confidentiality grants and known malware blocks. Also repair module/type content filtering used by the merged Marketing consumer. No dependency or operational deployment changes.
 
-AMEND-FLOATING-FLIGHT-1103 bounded producer extension: sales.service.ts amendment validation call passes an explicit mixed-leg option; default creation pairing restriction remains. Public domain function gains optional internal flag, no HTTP contract change. Reserve sales-contract-only-flight.spec.ts.
-
-AMEND-FLOATING-FLIGHT-1103: source candidate frozen after20 Web and102 API focused tests; scoped lint passes. Existing capacity amendment and repository transaction tests additionally verified. No schema or migration. Server auth still blocked. Required exact-head hosted checks precede requested develop merge.
+CORRESPONDENCE-INBOX-1103 validation: targeted Documents suite passed (226 tests initially; sender rejection and collection-scope regression added and passing), 69 correspondence/Documents/navigation Web checks plus font-export and English coverage checks passed. Additive migration rehearsed successfully on disposable PostgreSQL, then container stopped. Scoped lint, API typecheck/build and Web production build including TypeScript passed. Final-head hosted gates required before authorized merge. Files retain private storage, branch/domain authorization and explicit confidentiality grants; only incoming-file pending-scan gating changes. Source freezes on publication; reservations release on verified merge.
 
 ## GHESTIROO-DOCUMENT-LOGO-1103 — PC-A — IN_PROGRESS
 
@@ -10983,3 +10985,7 @@ GHESTIROO-DOCUMENT-LOGO-1103: reserve voucher-pdf-html.ts issuer image class as 
 GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no white background in all three outputs.
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
+
+## DOCUMENTS-CLOSE-COPY-1103 — PC-B
+
+Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
