@@ -1,3 +1,7 @@
+import {
+  FinancePartyReceipts,
+  FinancePartyReceiptsController,
+} from './operations/party-receipts';
 import { FinanceReceiptAllocationController } from './receipt-allocation.controller';
 import { FinanceReceiptAllocationService } from './operations/receipt-allocation.service';
 import { FinancialEventDispatcher } from './accounting/financial-event-dispatcher';
@@ -47,6 +51,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     AccountingCompletionModule,
   ],
   controllers: [
+    FinancePartyReceiptsController,
     FinanceReceiptAllocationController,
     AccountingTaxController,
     AccountingController,
@@ -56,6 +61,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinanceRequestsController,
   ],
   providers: [
+    FinancePartyReceipts,
     FinanceReceiptAllocationService,
     FinancialEventDispatcher,
     AccountingTaxService,

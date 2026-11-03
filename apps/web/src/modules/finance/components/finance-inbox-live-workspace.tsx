@@ -1,3 +1,4 @@
+import { PartyReceipts } from './party-receipts';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
   initialReceiptAccount,
@@ -989,6 +990,7 @@ export function FinanceInboxLiveWorkspace() {
       </details>
 
       <Card className={`${styles.filters} p-5`}>
+        <PartyReceipts onChanged={() => setRevision((value) => value + 1)} />
         <FinanceRequestCreate
           onCreated={() => setRevision((value) => value + 1)}
         />
