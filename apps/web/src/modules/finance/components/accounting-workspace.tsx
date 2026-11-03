@@ -1,4 +1,6 @@
 'use client';
+
+import { accountingBookId } from '../accounting-book-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, FolderOpen, FileText } from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
@@ -275,11 +277,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const urlParams = useSearchParams(),
     router = useRouter();
   const requestedBookId = urlParams.get('bookId');
-  const bookId =
-    selectedBookId ||
-    books.find((b) => b.id === requestedBookId)?.id ||
-    books[0]?.id ||
-    '';
+  const bookId = accountingBookId(books, selectedBookId || requestedBookId);
   const snapshotQuery = useQuery({
     queryKey: ['accounting', 'snapshot', bookId],
     queryFn: () => accountingApi.snapshot(bookId),

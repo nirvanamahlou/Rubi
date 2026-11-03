@@ -6,7 +6,6 @@ import {
   Folder,
   FileText,
   Search,
-  Network,
 } from 'lucide-react';
 import type { AccountingAccountV1 } from '@nora/contracts';
 import { normalizeFilterText } from '../accounting-list-filters';
@@ -102,13 +101,6 @@ export function AccountingChartTree({
   };
   return (
     <aside dir="rtl" className={styles.tree} aria-label="ساختار حساب">
-      <div className={styles.heading}>
-        <Network className="size-5" aria-hidden="true" />
-        <strong>ساختار حساب</strong>
-        <span className={styles.count}>
-          {accounts.length.toLocaleString('fa-IR')}
-        </span>
-      </div>
       <label className="flex items-center justify-between gap-2">
         مرتب سازی
         <select

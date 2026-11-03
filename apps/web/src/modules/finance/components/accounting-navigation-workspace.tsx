@@ -544,7 +544,13 @@ function AccountingNavigationWorkspaceContent() {
       className={cn('space-y-5 p-1 sm:p-2', styles.workspace)}
       data-accounting-workspace
     >
-      <header className={styles.hero}>
+      <header
+        className={
+          pathname.startsWith('/finance/accounting/general-ledger')
+            ? 'sr-only'
+            : styles.hero
+        }
+      >
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className="relative flex flex-col gap-6 px-6 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="flex items-center gap-4">
@@ -592,9 +598,10 @@ function AccountingNavigationWorkspaceContent() {
             )}
           >
             <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
-              {pathname !== '/finance/accounting/dashboard' && (
-                <AccountingPageKpis pathname={pathname} />
-              )}
+              {pathname !== '/finance/accounting/dashboard' &&
+                !pathname.startsWith('/finance/accounting/general-ledger') && (
+                  <AccountingPageKpis pathname={pathname} />
+                )}
               <AccountingWorkspace key={pathname} pathname={pathname} />
             </Suspense>
           </div>
