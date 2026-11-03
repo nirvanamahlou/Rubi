@@ -5,6 +5,19 @@ import {
   type TravelWorkflowStateV1,
 } from '@nora/contracts';
 
+/** Persisted registration, independent of supplier forms or full service coverage. */
+export function reservationPurchaseRegistered(
+  request: Pick<ReservationIntakeV1, 'hotelPurchases' | 'servicePurchases'> & {
+    workflow?: unknown;
+  },
+) {
+  const state = request.workflow as TravelWorkflowStateV1 | null | undefined;
+  return (
+    state?.supplierStatus !== 'CANCELLED' &&
+    Boolean(request.hotelPurchases?.length || request.servicePurchases?.length)
+  );
+}
+
 /** Registration coverage only; no financial amounts, approval or payment inference. */
 export function reservationPurchasesComplete(
   request: ReservationIntakeV1 & { workflow?: unknown },
