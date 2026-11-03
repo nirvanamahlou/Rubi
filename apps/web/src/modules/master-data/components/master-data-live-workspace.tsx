@@ -105,7 +105,9 @@ function GenericMasterDataWorkspace({
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
-  const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
+  const [sortBy, setSortBy] = useState<'displayOrder' | 'code' | 'updatedAt'>(
+    'displayOrder',
+  );
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
@@ -178,7 +180,7 @@ function GenericMasterDataWorkspace({
     setResource(next);
     setSearch('');
     setStatus('active');
-    setSortBy('name');
+    setSortBy('displayOrder');
     setPage(1);
     setSelected(undefined);
     setNotice(null);
@@ -510,7 +512,7 @@ function GenericMasterDataWorkspace({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name">عنوان</SelectItem>
+                  <SelectItem value="displayOrder">ترتیب نمایش</SelectItem>
                   <SelectItem value="code">کد سیستمی</SelectItem>
                   <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
                 </SelectContent>
@@ -521,7 +523,7 @@ function GenericMasterDataWorkspace({
                 setSearch('');
                 resetDateRange();
                 setStatus('active');
-                setSortBy('name');
+                setSortBy('displayOrder');
                 setPage(1);
               }}
               onRefresh={() => void load()}

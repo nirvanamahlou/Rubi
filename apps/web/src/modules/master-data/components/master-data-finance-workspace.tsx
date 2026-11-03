@@ -332,7 +332,7 @@ export function MasterDataFinanceWorkspace() {
           ...dateFilters,
           search,
           status,
-          sortBy: resource === 'payment-methods' ? 'updatedAt' : 'name',
+          sortBy: 'displayOrder',
           sortDirection: 'asc' as const,
           page,
           pageSize: 25,
