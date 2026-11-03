@@ -30,6 +30,7 @@ export function transitionTravelWorkflow(
   flightKeys: readonly string[] = [],
   allowAggregateSupplierForm = false,
   hotelKeys: readonly string[] = [],
+  allowSharedGroup = true,
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -59,6 +60,45 @@ export function transitionTravelWorkflow(
     ].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
+  const primarySettings =
+    current.hotelSupplierForms?.[hotelKeys[0] ?? '']?.settings ??
+    current.supplierFormSettings;
+  if (
+    allowSharedGroup &&
+    command.action === 'REQUEST_SUPPLIER' &&
+    command.hotelStayKey === hotelKeys[0] &&
+    hotelKeys.length > 1 &&
+    primarySettings?.sharedHotelBroker === true
+  ) {
+    const brokerId = primarySettings.brokerId;
+    if (
+      !brokerId ||
+      hotelKeys.some(
+        (key, index) =>
+          (
+            current.hotelSupplierForms?.[key]?.settings ??
+            (index === 0 ? current.supplierFormSettings : undefined)
+          )?.brokerId !== brokerId,
+      )
+    )
+      throw Error('ابتدا فرم همه هتل‌ها را با کارگزار مشترک ذخیره کنید.');
+    let grouped = current;
+    for (const key of hotelKeys)
+      grouped = transitionTravelWorkflow(
+        grouped,
+        { ...command, hotelStayKey: key, expectedVersion: grouped.version },
+        passengerIds,
+        flightKeys,
+        allowAggregateSupplierForm,
+        hotelKeys,
+        false,
+      );
+    grouped.version = current.version + 1;
+    grouped.sentSupplierFormVersion = grouped.version;
+    for (const key of hotelKeys)
+      grouped.hotelSupplierForms![key]!.sentVersion = grouped.version;
+    return grouped;
+  }
   if (command.hotelStayKey !== undefined) {
     const key = command.hotelStayKey;
     if (

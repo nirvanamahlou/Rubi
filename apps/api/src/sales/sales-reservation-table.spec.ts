@@ -57,7 +57,12 @@ function setup() {
     findMany,
     tickets,
     service: new SalesReservationTableService(
-      { client: { salesContract: { findMany } } } as never,
+      {
+        client: {
+          salesContract: { findMany },
+          salesContractAuditEvent: { findMany: vi.fn().mockResolvedValue([]) },
+        },
+      } as never,
       tickets as never,
     ),
   };
@@ -262,4 +267,46 @@ it('matches unchanged room products even when old stored counts differ from thei
   expect(await service.hotelGuestAges(snapshot as never, actor)).toEqual([35]);
   hotel.rooms[0]!.childAges = [8];
   expect(await service.hotelGuestAges(snapshot as never, actor)).toBeNull();
+});
+
+it('projects successful operational, contract and party amendments independently of passenger acknowledgement', async () => {
+  const s = setup();
+  const findMany = vi
+    .fn()
+    .mockResolvedValue([
+      { contractId: 'c', occurredAt: new Date('2026-11-02T10:00:00Z') },
+    ]);
+  const service = new SalesReservationTableService(
+    {
+      client: {
+        salesContract: { findMany: s.findMany },
+        salesContractAuditEvent: { findMany },
+      },
+    } as never,
+    s.tickets as never,
+  );
+  const result = await service.read(['c'], {
+    permissions: ['reservations.read'],
+    branchIds: ['b'],
+  } as never);
+  expect(result.get('c')?.amendedAt).toBe('2026-11-02T10:00:00.000Z');
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: {
+        contractId: { in: ['c'] },
+        outcome: 'SUCCESS',
+        OR: [
+          { action: 'OPERATIONAL_FORM_AMENDMENT' },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'CONTRACT' },
+          },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'PARTY' },
+          },
+        ],
+      },
+    }),
+  );
 });

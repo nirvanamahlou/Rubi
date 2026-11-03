@@ -51,6 +51,7 @@ describe('consumer-scoped reference selection', () => {
     expect(findMany.mock.calls[0]![0].where.OR).toEqual([
       { legalName: { contains: 'private-id-probe', mode: 'insensitive' } },
       { code: { contains: 'private-id-probe', mode: 'insensitive' } },
+      { accountingCode: { contains: 'private-id-probe', mode: 'insensitive' } },
       { displayName: { contains: 'private-id-probe', mode: 'insensitive' } },
     ]);
   });

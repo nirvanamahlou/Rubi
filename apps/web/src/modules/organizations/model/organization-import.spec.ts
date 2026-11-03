@@ -3,6 +3,7 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   importOrganizations,
+  organizationByCode,
   previewOrganizations,
   syntheticOrganizations,
   validateOrganizationRows,
@@ -328,3 +329,19 @@ describe('organization import boundaries', () => {
     expect(create).not.toHaveBeenCalled();
   });
 });
+
+it.each(['3000001', 'ORG-LEGACY'])(
+  'resolves either displayed or historical code %s to the same company',
+  async (code) => {
+    const record = {
+      id: 'org-1',
+      code: 'ORG-LEGACY',
+      attributes: { accountingCode: '3000001' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [record],
+      meta: { total: 1, page: 1, pageSize: 100 },
+    });
+    expect((await organizationByCode(code))?.id).toBe('org-1');
+  },
+);

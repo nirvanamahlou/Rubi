@@ -175,3 +175,18 @@ export function reservationHotelTransferCounts(
     returning: covered.includes(returnKey) ? counts.returning : 0,
   };
 }
+
+/** Round-trip fares charge each passenger once; both leg populations must match. */
+export function hotelTransferChargeableCount(
+  counts: { outbound: number; returning: number },
+  roundTrip = false,
+) {
+  if (
+    [counts.outbound, counts.returning].some(
+      (n) => !Number.isSafeInteger(n) || n < 0,
+    ) ||
+    (roundTrip && counts.outbound !== counts.returning)
+  )
+    throw Error('Invalid transfer counts');
+  return roundTrip ? counts.outbound : counts.outbound + counts.returning;
+}

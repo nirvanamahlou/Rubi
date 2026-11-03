@@ -78,13 +78,15 @@ it('lists distinct employees on shared extensions using only the requested activ
     {
       name: 'Person A',
       unit: 'Company / Sales',
-      position: 'Expert',
+      position: 'Different job',
+      grade: 'Expert',
       records: [{ values: ['203'] }],
     },
     {
       name: 'Person B',
       unit: 'Company / Visa',
-      position: 'Manager',
+      position: 'Different job',
+      grade: 'Manager',
       records: [{ values: ['203'] }],
     },
   ]);
@@ -141,7 +143,8 @@ it('offers every extension registered for one employee', async () => {
     {
       name: 'Synthetic',
       unit: 'Sales',
-      position: 'Expert',
+      position: 'Different job',
+      grade: 'Expert',
       records: [{ values: ['0012', '0045'] }],
     },
   ]);
@@ -151,4 +154,48 @@ it('offers every extension registered for one employee', async () => {
   expect(
     (await directory.options('branch-a')).map((item) => item.extension),
   ).toEqual(['0012', '0045']);
+});
+
+it.each([
+  ['کارشناس', 'فروش', 'شیدا اویسی', '110'],
+  ['مدیر', 'رزرواسیون', 'رویا بهزادنیا', '400'],
+  ['مدیر', 'منابع انسانی', 'نیما نادری', '369'],
+  ['کارشناس ارشد', 'ویزا', 'دانیال آشوری', '203'],
+])('uses grade instead of job title: %s %s', (grade, unit, name, extension) => {
+  expect(
+    callDestinationLabel({
+      grade,
+      position: 'عنوان شغلی متفاوت',
+      unit: `شرکت / ${unit}`,
+      name,
+      extension,
+    }),
+  ).toBe(`${grade} ${unit} - ${name} - ${extension}`);
+});
+
+it('reads grade for both choices and resolved recipients', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      name: 'Synthetic',
+      unit: 'Company / Sales',
+      position: 'Different job',
+      grade: 'Senior',
+      records: [{ values: ['001', '002'] }],
+    },
+  ]);
+  const directory = new HrCallAnswerDirectory({
+    client: { hrEmployee: { findMany } },
+  } as unknown as DatabaseService);
+  expect(await directory.options('branch-a')).toEqual([
+    { label: 'Senior Sales - Synthetic - 001', extension: '001' },
+    { label: 'Senior Sales - Synthetic - 002', extension: '002' },
+  ]);
+  expect(
+    (await directory.resolve('branch-a', '002', '2026-11-02T07:00:00Z')).label,
+  ).toBe('Senior Sales - Synthetic - 002');
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      select: expect.objectContaining({ grade: true }),
+    }),
+  );
 });

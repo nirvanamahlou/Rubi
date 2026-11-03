@@ -65,6 +65,7 @@ export function validateInboxQuery(
   actor: AuthenticatedActor,
 ) {
   for (const key of [
+    'category',
     'search',
     'source',
     'status',
@@ -85,6 +86,7 @@ export function validateInboxQuery(
   if (query.branchId && !actor.branchIds.includes(query.branchId))
     throw new ForbiddenException('شعبه خارج از دسترسی است.');
   if (
+    (query.category && !['PURCHASE', 'RECEIPT'].includes(query.category)) ||
     (query.sortBy &&
       !['createdAt', 'dueAt', 'amount'].includes(query.sortBy)) ||
     (query.sortDirection && !['asc', 'desc'].includes(query.sortDirection)) ||
@@ -159,6 +161,11 @@ export function filterFinanceInbox(
             : item.status === query.status);
       return (
         status &&
+        (!query.category ||
+          (query.category === 'RECEIPT'
+            ? item.kind === 'RECEIPT_VERIFICATION'
+            : item.kind === 'PAYMENT_REQUEST' &&
+              ['RESERVATIONS', 'PURCHASES'].includes(item.source))) &&
         (!query.source || item.source === query.source) &&
         (!query.branchId || item.branchReference === query.branchId) &&
         (!query.currencyCode ||

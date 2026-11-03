@@ -434,3 +434,29 @@ it('requires both declared transfer brokers before sending and freezes their quo
   current.supplierFormSettings.hotelTransferReturn!.amount = '99';
   expect(sent.sentSupplierFormSettings!.hotelTransferReturn!.amount).toBe('15');
 });
+
+it('persists round-trip basis, rejecting split pricing and unmatched leg populations', () => {
+  const value = {
+    ...settings(),
+    hotelTransferRoundTrip: true,
+    hotelTransferCounts: { outbound: 2, returning: 2 },
+  };
+  expect(validateVoucherSettings(value, ['p']).hotelTransferRoundTrip).toBe(
+    true,
+  );
+  expect(() =>
+    validateVoucherSettings(
+      { ...value, hotelTransferSplit: true, hotelTransferSeparate: true },
+      ['p'],
+    ),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings(
+      { ...value, hotelTransferCounts: { outbound: 2, returning: 1 } },
+      ['p'],
+    ),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings({ ...value, hotelTransferRoundTrip: 'yes' }, ['p']),
+  ).toThrow();
+});

@@ -19,6 +19,47 @@ const item = {
   dueAt: '2026-10-05T20:29:59.999Z',
 } as FinanceInboxItemV1;
 describe('Exact Finance inbox filters', () => {
+  it('distinguishes purchases across sending units from receipt verification before pagination/export', () => {
+    const reservation = {
+      ...item,
+      id: 'reservation',
+      kind: 'PAYMENT_REQUEST',
+      source: 'RESERVATIONS',
+    } as FinanceInboxItemV1;
+    const purchase = {
+      ...reservation,
+      id: 'purchase',
+      source: 'PURCHASES',
+    } as FinanceInboxItemV1;
+    const receipt = {
+      ...item,
+      id: 'receipt',
+      kind: 'RECEIPT_VERIFICATION',
+      source: 'SALES',
+    } as FinanceInboxItemV1;
+    expect(
+      filterFinanceInbox([reservation, purchase, receipt, item], {
+        category: 'PURCHASE',
+      }).map((r) => r.id),
+    ).toEqual(['purchase', 'reservation']);
+    expect(
+      filterFinanceInbox([reservation, purchase, receipt, item], {
+        category: 'RECEIPT',
+      }).map((r) => r.id),
+    ).toEqual(['receipt']);
+    expect(
+      filterFinanceInbox([reservation, purchase, receipt], {
+        category: 'PURCHASE',
+        source: 'RESERVATIONS',
+      }).map((r) => r.id),
+    ).toEqual(['reservation']);
+    expect(() =>
+      validateInboxQuery({ category: 'UNKNOWN' as never }, actor),
+    ).toThrow();
+    expect(() =>
+      validateInboxQuery({ category: ['PURCHASE'] as never }, actor),
+    ).toThrow();
+  });
   it('keeps approved payroll open for payment but closes completed HR referrals', () => {
     expect(filterFinanceInbox([item], { status: 'OPEN' })).toHaveLength(1);
     expect(

@@ -1,4 +1,10 @@
 'use client';
+import { NewContractPurchases } from './new-contract-purchases';
+import {
+  purchaseDraftFingerprint,
+  submitStagedPurchases,
+  type StagedPurchase,
+} from '../model/new-contract-purchases';
 import { ContractHotelPicker } from './contract-hotel-picker';
 import serviceStyles from './contract-service-cards.module.css';
 import { withAutomaticReturn } from '../model/automatic-return';
@@ -92,6 +98,7 @@ import {
   validateSalesChequePayments,
 } from '@nora/contracts';
 import { SalesChequeCalculator } from './sales-cheque-calculator';
+import { AgencyCommission } from './agency-commission';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
@@ -272,10 +279,10 @@ export function SalesContractForm() {
     return syncHotelChildSelections(
       withRoomDrivenGuests({
         ...draftState,
-        passengerTotalPricing: draftState.serviceKinds.some(
-          (k) => k === 'FLIGHT' || k === 'HOTEL',
-        ),
-        automaticComponentPricing: true,
+        passengerTotalPricing:
+          !draftState.packageSaleAvailable &&
+          draftState.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL'),
+        automaticComponentPricing: !draftState.packageSaleAvailable,
         priceEntryMode: 'CONTRACT_TOTAL',
         servicePricing: draftState.servicePricing ?? {},
         catalogSalePricing:
@@ -797,6 +804,7 @@ export function SalesContractForm() {
       if (
         !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
+        !state.packageSaleQuote &&
         !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
       )
@@ -893,6 +901,36 @@ export function SalesContractForm() {
     if (step === 1) return !finalStepError;
     return true;
   })();
+  const pendingPurchases = useRef<Record<string, StagedPurchase>>({});
+  const purchaseAttempts = useRef<
+    Record<string, { key: string; purchase: StagedPurchase }>
+  >({});
+  const purchaseFingerprint = useRef('');
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  async function flushPurchases(id: string) {
+    setPurchaseBusy(true);
+    setPurchaseError('');
+    try {
+      await submitStagedPurchases(
+        pendingPurchases.current,
+        purchaseAttempts.current,
+        async () => (await salesApi.purchaseContext(id)).data,
+        async (purchase, key) => {
+          await salesApi.recordInitialPurchase(id, purchase, key);
+        },
+        browserRandomUuid,
+      );
+    } catch (error) {
+      setPurchaseError(
+        error instanceof Error ? error.message : 'ثبت خرید انجام نشد.',
+      );
+    } finally {
+      setPurchaseBusy(false);
+      setPurchaseCount(Object.keys(pendingPurchases.current).length);
+    }
+  }
   const submit = async () => {
     if (step !== salesSteps.length - 1 || busy) return;
     setBusy(true);
@@ -908,6 +946,13 @@ export function SalesContractForm() {
           : payload.priceComponents,
         state.priceEntryMode === 'PASSENGER_TOTAL',
       );
+      if (
+        Object.keys(pendingPurchases.current).length &&
+        purchaseFingerprint.current !== purchaseDraftFingerprint(payload)
+      )
+        throw Error(
+          'خدمات قرارداد تغییر کرده‌اند؛ خریدها را دوباره بررسی کنید.',
+        );
       const fingerprint = JSON.stringify(payload);
       validateSalesChequePayments(
         payload.priceComponents,
@@ -930,6 +975,7 @@ export function SalesContractForm() {
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
       setSavedContract(response.data);
+      await flushPurchases(response.data.id);
       if (options) {
         let ids: string[];
         try {
@@ -1013,6 +1059,12 @@ export function SalesContractForm() {
             <h3 className="font-bold">بلیط رفت</h3>
             <ContractFlightEditor
               flightDate={flightRange.from}
+              destinationCityId={state.destinationId}
+              destinationCountryId={String(
+                references.cities.find(
+                  (city) => city.id === state.destinationId,
+                )?.attributes.countryId || '',
+              )}
               international={salesInternationalTravel(state)}
               airlines={references.airlines}
               value={state.contractFlights?.OUTBOUND}
@@ -1122,6 +1174,11 @@ export function SalesContractForm() {
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
                 flightDate={selectedReturnDay}
+                destinationCityId={state.originId}
+                destinationCountryId={String(
+                  references.cities.find((city) => city.id === state.originId)
+                    ?.attributes.countryId || '',
+                )}
                 international={salesInternationalTravel(state)}
                 airlines={references.airlines}
                 value={state.contractFlights?.RETURN}
@@ -1226,6 +1283,14 @@ export function SalesContractForm() {
       ) : null}
     </section>
   );
+  let purchaseInput: ReturnType<typeof salesPayload> | undefined;
+  if (step === 1) {
+    try {
+      purchaseInput = salesPayload(pricedState);
+    } catch {
+      /* Price fields may still be incomplete. */
+    }
+  }
   if (savedNumber)
     return (
       <Card className="mx-auto max-w-2xl p-8 text-center">
@@ -1241,6 +1306,21 @@ export function SalesContractForm() {
         <Button className="mt-6" onClick={() => router.push('/sales')}>
           بازگشت به فروش
         </Button>
+        {purchaseError && (
+          <Alert
+            tone="warning"
+            title="ثبت خرید انجام نشد."
+            description={purchaseError}
+          />
+        )}
+        {purchaseCount > 0 && (
+          <Button
+            disabled={purchaseBusy}
+            onClick={() => void flushPurchases(savedId)}
+          >
+            ثبت خرید
+          </Button>
+        )}
         {receiptError && (
           <Alert
             tone="warning"
@@ -2583,13 +2663,55 @@ export function SalesContractForm() {
                   onChange={(contractPrices) => patchState({ contractPrices })}
                 />
               )}
-              {!state.legacyContract && (
+              {!state.legacyContract && !state.packageSaleAvailable && (
                 <PassengerServicePrices
                   state={state}
                   currencies={references.currencies}
                   onChange={patchState}
                 />
               )}
+              {purchaseInput && (
+                <NewContractPurchases
+                  key={purchaseDraftFingerprint(purchaseInput)}
+                  input={purchaseInput}
+                  onStage={(id, purchase) => {
+                    const fingerprint = purchaseDraftFingerprint(
+                      purchaseInput!,
+                    );
+                    if (purchaseFingerprint.current !== fingerprint) {
+                      pendingPurchases.current = {};
+                      purchaseAttempts.current = {};
+                    }
+                    purchaseFingerprint.current = fingerprint;
+                    pendingPurchases.current[id] = purchase;
+                    setPurchaseCount(
+                      Object.keys(pendingPurchases.current).length,
+                    );
+                  }}
+                />
+              )}
+              {purchaseCount > 0 && (
+                <p role="status">خریدهای آماده ثبت: {purchaseCount}</p>
+              )}
+              {purchaseCount > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    pendingPurchases.current = {};
+                    purchaseAttempts.current = {};
+                    setPurchaseCount(0);
+                  }}
+                >
+                  پاک‌کردن خریدهای آماده ثبت
+                </Button>
+              )}
+              <AgencyCommission
+                state={state}
+                onChange={(agencyCommission) =>
+                  patchState({ agencyCommission })
+                }
+              />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}

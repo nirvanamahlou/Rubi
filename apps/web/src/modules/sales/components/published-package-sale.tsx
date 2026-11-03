@@ -124,33 +124,29 @@ export function PublishedPackageSale({
       if (JSON.stringify(current.packageSaleQuote) === signature)
         return current;
       if (!snapshot) return { ...current, packageSaleQuote: undefined };
-      const followed =
-        !current.contractPrices?.length ||
-        JSON.stringify(current.contractPrices) ===
-          JSON.stringify(current.packageSaleQuote?.prices);
-      return {
+      const next: SalesFormState = {
         ...current,
         packageSaleQuote: snapshot,
         automaticComponentPricing: false,
+        passengerTotalPricing: false,
         hotel: {
           ...current.hotel,
           rooms: (current.hotel.rooms ?? []).map((room, index) => {
             const suggested = snapshot.items[index]?.prices.find(
               (p) => p.currencyCode !== 'IRR',
             );
-            const before = current.packageSaleQuote?.items[index]?.prices?.find(
-              (p) => p.currencyCode === room.agreedPrice?.currencyCode,
-            );
-            return suggested &&
-              (!room.agreedPrice || room.agreedPrice.amount === before?.amount)
-              ? { ...room, agreedPrice: suggested }
-              : room;
+            return suggested ? { ...room, agreedPrice: suggested } : room;
           }),
         },
-        ...(followed ? { contractPrices: snapshot.prices } : {}),
+        contractPrices: snapshot.prices,
       };
+      delete next.passengerHotelPrices;
+      delete next.passengerFlightPrices;
+      delete next.passengerPrices;
+      delete next.passengerDeductions;
+      return next;
     });
-    // Snapshot contains every quote input; negotiated values are deliberately independent.
+    // Snapshot contains every quote input; selection changes reset the manual discount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, onChange]);
   if (!tourId) return null;

@@ -239,3 +239,47 @@ describe('package banner view model', () => {
     );
   });
 });
+
+it('supports published room compositions and omits unselected hotels without requiring legacy factors', () => {
+  const priced = {
+    ...publication,
+    selectedHotelRateIds: ['rate-1'],
+    roomPrices: [
+      {
+        ...publication.roomPrices[0]!,
+        roomCode: JSON.stringify([2, 'standard', 2, [[2, 6]], 'UALL']),
+        roomTypeName: 'Standard',
+        currencyAmounts: [
+          {
+            currencyCode: 'EUR',
+            sale: '1200',
+            purchase: 'private',
+            commission: 'private',
+            profit: 'private',
+          },
+        ],
+      },
+    ],
+  } as PackageTourPublicationV1;
+  const result = buildPackageBannerViewModel({
+    tour,
+    batch: {
+      ...batch,
+      rows: batch.rows.map((row) => ({ ...row, factors: {} })),
+    },
+    publication: priced,
+  });
+  expect(result.failures).toEqual([]);
+  expect(result.value?.rooms[0]?.roomName).toContain('Standard');
+  expect(result.value?.displayPrices).toEqual([
+    { amount: '1200', currencyCode: 'EUR' },
+  ]);
+  expect(JSON.stringify(result.value)).not.toContain('private');
+  expect(
+    buildPackageBannerViewModel({
+      tour,
+      batch,
+      publication: { ...priced, selectedHotelRateIds: [] },
+    }).value,
+  ).toBeNull();
+});
