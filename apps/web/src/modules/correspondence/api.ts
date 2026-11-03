@@ -56,13 +56,15 @@ export const internalLetters = {
   send: (
     letter: InternalLetterContent,
     dateISO: string,
-    recipientId: string,
+    recipientId: string | string[],
     requestKey: string,
   ) =>
     internalRequest<{ id: string }>('', 'POST', {
       letter,
       dateISO,
-      recipientId,
+      ...(Array.isArray(recipientId)
+        ? { recipientIds: recipientId }
+        : { recipientId }),
       requestKey,
     }),
   edit: (id: string, version: number, letter: InternalLetterContent) =>
@@ -73,15 +75,19 @@ export const internalLetters = {
   forward: (
     id: string,
     version: number,
-    recipientId: string,
+    recipientId: string | string[],
     status: InternalLetterStatus,
     requestKey: string,
+    description = '',
   ) =>
     internalRequest<{ id: string }>(`/${id}/forward`, 'POST', {
       version,
-      recipientId,
+      ...(Array.isArray(recipientId)
+        ? { recipientIds: recipientId }
+        : { recipientId }),
       status,
       requestKey,
+      description,
     }),
   read: (id: string) => internalRequest<{ id: string }>(`/${id}/read`, 'POST'),
   remove: (id: string, version: number) =>

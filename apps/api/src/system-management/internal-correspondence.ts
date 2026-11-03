@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import {
   BadRequestException,
   Body,
@@ -44,12 +45,30 @@ export function correspondenceUuid(value: unknown): string {
     )
   )
     throw new BadRequestException('شناسه نامه یا کاربر معتبر نیست.');
-  return value;
+  return value.toLowerCase();
 }
 function object(input: unknown): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     throw new BadRequestException('اطلاعات نامه معتبر نیست.');
   return input as Record<string, unknown>;
+}
+export function correspondenceRecipients(
+  input: Record<string, unknown>,
+): string[] {
+  const values =
+    input.recipientIds ?? (input.recipientId ? [input.recipientId] : []);
+  if (!Array.isArray(values) || !values.length || values.length > 100)
+    throw new BadRequestException('بین یک تا صد گیرنده انتخاب کنید.');
+  return [...new Set(values.map(correspondenceUuid))].sort();
+}
+function forwardingDescription(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  if (typeof value !== 'string' || value.length > 2000 || value.includes('\0'))
+    throw new BadRequestException('توضیحات بازارسال معتبر نیست.');
+  return value.trim();
+}
+function sameRecipients(rows: { recipientId: string }[], targets: string[]) {
+  return isDeepStrictEqual(rows.map((r) => r.recipientId).sort(), targets);
 }
 export function internalLetterContent(input: unknown): InternalLetterContent {
   const source = object(input);
@@ -257,6 +276,7 @@ export class InternalCorrespondenceService {
       include: {
         author: { select: identity },
         deliveries: {
+          where: { OR: [{ recipientId: actor }, { senderId: actor }] },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           take: 1,
           include: {
@@ -273,7 +293,7 @@ export class InternalCorrespondenceService {
   async send(actor: string, body: unknown) {
     const input = object(body),
       letter = internalLetterContent(input.letter),
-      target = correspondenceUuid(input.recipientId),
+      targets = correspondenceRecipients(input),
       key = correspondenceUuid(input.requestKey);
     const dateISO = input.dateISO;
     if (
@@ -283,73 +303,82 @@ export class InternalCorrespondenceService {
       new Date(`${dateISO}T12:00:00Z`).toISOString().slice(0, 10) !== dateISO
     )
       throw new BadRequestException('تاریخ نامه معتبر نیست.');
-    return this.database.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${actor + key},0))`,
-      );
-      await tx.$queryRaw(
-        Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'internal-letter-number:' + letter.number},0))`,
-      );
-      const replay = await tx.correspondenceDelivery.findUnique({
-        where: { senderId_requestKey: { senderId: actor, requestKey: key } },
-      });
-      if (replay) {
-        const original = await tx.correspondenceLetter.findUnique({
-          where: { id: replay.letterId },
-        });
-        if (replay.recipientId !== target || original?.number !== letter.number)
-          throw new ConflictException('شناسه ارسال تکراری است.');
-        return { id: replay.letterId };
-      }
-      await this.directory.resolve(target, tx);
-      const number = await tx.systemIssuedNumber.findFirst({
-        where: {
-          issuedValue: letter.number,
-          actorUserId: actor,
-          scheme: {
-            code: `CORRESPONDENCE_OUTGOING_${companyIds[letter.company]}`,
-          },
-        },
-      });
-      if (!number)
-        throw new BadRequestException(
-          'شماره نامه برای این کاربر صادر نشده است.',
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${actor + key},0))`,
         );
-      const expectedDate = correspondenceDateParts(
-        new Date(`${dateISO}T12:00:00+03:30`),
-      ).join('/');
-      const normalizedDate = letter.date.replace(/[۰-۹]/g, (digit) =>
-        String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)),
-      );
-      if (
-        number.issuedValue.split('/').slice(1, 4).join('/') !== expectedDate ||
-        normalizedDate !== expectedDate
-      )
-        throw new BadRequestException('تاریخ و شماره نامه مطابقت ندارند.');
-      const existing = await tx.correspondenceLetter.findUnique({
-        where: { number: letter.number },
-      });
-      if (existing)
-        throw new ConflictException('این نامه قبلاً ارسال شده است.');
-      const row = await tx.correspondenceLetter.create({
-        data: {
-          authorId: actor,
-          number: letter.number,
-          dateISO,
-          content: letter as unknown as Prisma.InputJsonObject,
-          deliveries: {
-            create: {
-              senderId: actor,
-              recipientId: target,
-              status: 'SENT',
-              requestKey: key,
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'internal-letter-number:' + letter.number},0))`,
+        );
+        const replays = await tx.correspondenceDelivery.findMany({
+          where: { senderId: actor, requestKey: key },
+        });
+        if (replays.length) {
+          const replay = replays[0]!;
+          const original = await tx.correspondenceLetter.findUnique({
+            where: { id: replay.letterId },
+          });
+          if (
+            !sameRecipients(replays, targets) ||
+            original?.dateISO !== dateISO ||
+            !isDeepStrictEqual(original?.content, letter)
+          )
+            throw new ConflictException('شناسه ارسال تکراری است.');
+          return { id: replay.letterId };
+        }
+        for (const target of targets) await this.directory.resolve(target, tx);
+        const number = await tx.systemIssuedNumber.findFirst({
+          where: {
+            issuedValue: letter.number,
+            actorUserId: actor,
+            scheme: {
+              code: `CORRESPONDENCE_OUTGOING_${companyIds[letter.company]}`,
             },
           },
-        },
-      });
-      await this.audit(tx, actor, row.id, 'send', { recipientId: target });
-      return { id: row.id };
-    });
+        });
+        if (!number)
+          throw new BadRequestException(
+            'شماره نامه برای این کاربر صادر نشده است.',
+          );
+        const expectedDate = correspondenceDateParts(
+          new Date(`${dateISO}T12:00:00+03:30`),
+        ).join('/');
+        const normalizedDate = letter.date.replace(/[۰-۹]/g, (digit) =>
+          String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)),
+        );
+        if (
+          number.issuedValue.split('/').slice(1, 4).join('/') !==
+            expectedDate ||
+          normalizedDate !== expectedDate
+        )
+          throw new BadRequestException('تاریخ و شماره نامه مطابقت ندارند.');
+        const existing = await tx.correspondenceLetter.findUnique({
+          where: { number: letter.number },
+        });
+        if (existing)
+          throw new ConflictException('این نامه قبلاً ارسال شده است.');
+        const row = await tx.correspondenceLetter.create({
+          data: {
+            authorId: actor,
+            number: letter.number,
+            dateISO,
+            content: letter as unknown as Prisma.InputJsonObject,
+            deliveries: {
+              create: targets.map((target) => ({
+                senderId: actor,
+                recipientId: target,
+                status: 'SENT',
+                requestKey: key,
+              })),
+            },
+          },
+        });
+        await this.audit(tx, actor, row.id, 'send', { recipientIds: targets });
+        return { id: row.id };
+      },
+      { timeout: 30000 },
+    );
   }
   private async lock(
     tx: Prisma.TransactionClient,
@@ -395,64 +424,79 @@ export class InternalCorrespondenceService {
   }
   async forward(actor: string, id: string, body: unknown) {
     const input = object(body),
-      target = correspondenceUuid(input.recipientId),
+      targets = correspondenceRecipients(input),
       key = correspondenceUuid(input.requestKey);
+    const description = forwardingDescription(input.description);
     if (
       !['APPROVED', 'REJECTED', 'NEEDS_CORRECTION'].includes(
         String(input.status),
       )
     )
       throw new BadRequestException('وضعیت نامه معتبر نیست.');
-    return this.database.client.$transaction(async (tx) => {
-      // Lock before replay lookup so parallel retries cannot both create a delivery.
-      await tx.$queryRaw(
-        Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${actor + key},0))`,
-      );
-      const replay = await tx.correspondenceDelivery.findUnique({
-        where: { senderId_requestKey: { senderId: actor, requestKey: key } },
-      });
-      if (replay) {
-        if (
-          replay.letterId !== id ||
-          replay.recipientId !== target ||
-          replay.status !== input.status
-        )
-          throw new ConflictException('شناسه ارسال تکراری است.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        // Lock before replay lookup so parallel retries cannot both create a delivery.
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${actor + key},0))`,
+        );
+        const replays = await tx.correspondenceDelivery.findMany({
+          where: { senderId: actor, requestKey: key },
+        });
+        if (replays.length) {
+          const replay = replays[0]!;
+          if (
+            replay.letterId !== id ||
+            !sameRecipients(replays, targets) ||
+            replays.some(
+              (row) =>
+                row.letterId !== id ||
+                row.status !== input.status ||
+                (row.description ?? '') !== description,
+            )
+          )
+            throw new ConflictException('شناسه ارسال تکراری است.');
+          return { id };
+        }
+        await this.lock(tx, actor, id, input.version);
+        for (const target of targets) await this.directory.resolve(target, tx);
+        await tx.correspondenceDelivery.updateMany({
+          where: { letterId: id, recipientId: actor },
+          data: { status: input.status as string },
+        });
+        for (const target of targets)
+          await tx.correspondenceDelivery.upsert({
+            where: {
+              letterId_recipientId: { letterId: id, recipientId: target },
+            },
+            create: {
+              letterId: id,
+              senderId: actor,
+              recipientId: target,
+              status: input.status as string,
+              requestKey: key,
+              description: description || null,
+            },
+            update: {
+              senderId: actor,
+              status: input.status as string,
+              requestKey: key,
+              readAt: null,
+              description: description || null,
+              createdAt: new Date(),
+            },
+          });
+        await tx.correspondenceLetter.update({
+          where: { id },
+          data: { version: { increment: 1 } },
+        });
+        await this.audit(tx, actor, id, 'forward', {
+          recipientIds: targets,
+          status: input.status as string,
+        });
         return { id };
-      }
-      await this.lock(tx, actor, id, input.version);
-      await this.directory.resolve(target, tx);
-      await tx.correspondenceDelivery.updateMany({
-        where: { letterId: id, recipientId: actor },
-        data: { status: input.status as string },
-      });
-      await tx.correspondenceDelivery.upsert({
-        where: { letterId_recipientId: { letterId: id, recipientId: target } },
-        create: {
-          letterId: id,
-          senderId: actor,
-          recipientId: target,
-          status: input.status as string,
-          requestKey: key,
-        },
-        update: {
-          senderId: actor,
-          status: input.status as string,
-          requestKey: key,
-          readAt: null,
-          createdAt: new Date(),
-        },
-      });
-      await tx.correspondenceLetter.update({
-        where: { id },
-        data: { version: { increment: 1 } },
-      });
-      await this.audit(tx, actor, id, 'forward', {
-        recipientId: target,
-        status: input.status as string,
-      });
-      return { id };
-    });
+      },
+      { timeout: 30000 },
+    );
   }
   async read(actor: string, id: string) {
     await this.detail(actor, id);
