@@ -6,6 +6,7 @@ import type { ContractFlightDraft } from '@/modules/sales/model/sales-form';
 import { salesFlightToday } from '@/modules/sales/model/sales-flight-range';
 import type {
   SalesContractDetail,
+  SalesServiceInput,
   SalesContractAmendmentV1,
   TicketOfferV1,
   SalesTicketDirection,
@@ -207,13 +208,13 @@ function prepareFloatingAmendment(
             ([key]) => !['purchaseSupplyType', 'direction'].includes(key),
           ),
         );
-  let services =
+  let services: SalesServiceInput[] =
     service && !shared
       ? d.services.map((s) =>
           s === service
             ? {
                 ...s,
-                referenceId: undefined,
+                referenceId: null,
                 status: 'NEEDS_RESERVATION_CONFIRMATION' as const,
                 metadata: {
                   ...metadata,

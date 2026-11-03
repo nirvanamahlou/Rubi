@@ -307,7 +307,7 @@ it.each(['OUTBOUND', 'RETURN'] as const)(
       (s) => s.metadata?.contractFlightVersion === 1,
     )!;
     expect(floating.metadata?.direction).toBe(direction);
-    expect(floating.referenceId).toBeUndefined();
+    expect(floating.referenceId).toBeFalsy();
     expect(floating.status).toBe('NEEDS_RESERVATION_CONFIRMATION');
     expect(next.passengers[0]?.serviceClientKeys).toContain(floating.clientKey);
     expect(next.priceComponents).toEqual(before.priceComponents);
@@ -323,14 +323,14 @@ it('preserves anonymous historical counts when splitting a shared catalog servic
   const draft = amendmentFromContract(contract);
   draft.passengers = [];
   draft.passengerCategories = {};
-  draft.services[0] = {
+  draft.services = [{
     ...draft.services[0]!,
     metadata: {
       legacyServicePartiesV2: JSON.stringify({
         flight: { adults: 2, children: 1, infants: 0 },
       }),
     },
-  };
+  }, ...draft.services.slice(1)];
   const next = applyManualAmendmentFlights(draft, {
     RETURN: {
       departureAt: '2099-01-10T12:00',
@@ -351,10 +351,10 @@ it('preserves anonymous historical counts when splitting a shared catalog servic
 });
 it('converts a dedicated catalog service without changing its key or sale metadata', () => {
   const draft = amendmentFromContract(contract);
-  draft.ticketSelections = draft.ticketSelections?.filter(
+  draft.ticketSelections = (draft.ticketSelections ?? []).filter(
     (t) => t.direction === 'OUTBOUND',
   );
-  draft.services[0] = {
+  draft.services = [{
     ...draft.services[0]!,
     referenceId: 'old',
     metadata: {
@@ -362,7 +362,7 @@ it('converts a dedicated catalog service without changing its key or sale metada
       purchaseSupplyType: 'CHARTER',
       businessOutput: true,
     },
-  };
+  }, ...draft.services.slice(1)];
   const next = applyManualAmendmentFlights(draft, {
     OUTBOUND: {
       departureAt: '2099-01-10T12:00',
