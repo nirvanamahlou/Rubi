@@ -8706,6 +8706,13 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 
 
 
+
+## INTERNAL-MULTI-SEND-1103 — PC-B — IN_PROGRESS
+
+Owner requests multiple internal-letter recipients, persisted forwarding description and removal of the user-search field; push/develop merge authorized. Reserve bounded Correspondence System Management API, Web/contracts/tests and sole additive migration ownership for delivery description plus recipient-scoped batch replay uniqueness. Preserve IAM public directory, participant access, atomic recipient validation and existing single-recipient compatibility. Concurrent Accounting edits remain untouched. No dependency changes.
+
+INTERNAL-MULTI-SEND-1103 validation: 13 API checks pass, including five isolated PostgreSQL proofs for legacy compatibility, multi-recipient atomic send/forward, parallel replay, changed recipient/description rejection, inactive-user rollback, participant access and persisted description. Ten Correspondence Web tests and scoped API/Web ESLint pass. Description is optional, capped at2000 characters, visible on relevant delivery; recipient sets are canonical/deduplicated/bounded100. No user-search field remains. Additive delivery description and recipient-scoped request-key uniqueness preserve single-recipient clients. Final clean build/type/test gates precede authorized merge; runtime migration only after backup. Peer Accounting edits excluded; scope freezes on publication and releases on merge.
+
 ## PETTY-FORMS-1103 — PC-B — IN_PROGRESS
 
 Owner requests registration cost center/fee/description, recharge receipt and purchase-form redesign/copy removal; push/develop merge authorized. Reserve Procurement API/Web/contracts/tests, own translations and notes. PC-B reserves sole additive schema/migration ownership for immutable ledger metadata after active-scope check; no dependency lock. User confirms entered amount includes fee: debit exactly the entered amount; fee is a nonnegative component no greater than amount, default zero, included in replay equality. Cost center is an optional bounded text snapshot, description optional bounded text; preserve exact Decimal, version/idempotency, branch/custodian controls and Documents public receipt authorization. Dirty concurrent Accounting source edits and generated Next environment remain outside scope. No operational database/test data changes.

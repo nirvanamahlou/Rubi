@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 import {
   internalLetterContent,
+  correspondenceRecipients,
   correspondenceUuid,
   InternalCorrespondenceController,
 } from './internal-correspondence';
@@ -57,4 +58,15 @@ describe('internal letter validation', () => {
       ),
     ).toEqual(['correspondence.home']);
   });
+});
+
+it('validates and normalizes bounded recipient sets and accepts legacy single recipients', () => {
+  const a = 'a148ec40-a32e-4c98-8d1b-8cbbf4df5e4d';
+  const b = 'b148ec40-a32e-4c98-8d1b-8cbbf4df5e4d';
+  expect(
+    correspondenceRecipients({ recipientIds: [b.toUpperCase(), b, a, a] }),
+  ).toEqual([a, b]);
+  expect(correspondenceRecipients({ recipientId: a })).toEqual([a]);
+  for (const recipientIds of [[], [a, 'bad'], Array(101).fill(a), 'bad'])
+    expect(() => correspondenceRecipients({ recipientIds })).toThrow();
 });

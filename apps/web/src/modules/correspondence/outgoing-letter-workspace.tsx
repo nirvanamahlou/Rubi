@@ -545,7 +545,7 @@ export function OutgoingLetterWorkspace({
               sendKey.current,
             );
             setSent(true);
-            setNotice('نامه به دریافتی کاربر مقصد ارسال شد.');
+            setNotice('نامه به دریافتی گیرندگان ارسال شد.');
           }}
         />
       )}
