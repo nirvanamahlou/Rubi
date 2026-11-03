@@ -328,14 +328,19 @@ export class DocumentsRepository {
           }
         : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
-      ...(query.sourceModule && query.sourceEntityType && query.sourceEntityId
+      ...(query.isIncomingLetter !== undefined
+        ? { isIncomingLetter: query.isIncomingLetter }
+        : {}),
+      ...(query.sourceModule && query.sourceEntityType
         ? {
             relations: {
               some: {
                 relationType: 'PRIMARY_CASE',
                 sourceModule: query.sourceModule,
                 sourceEntityType: query.sourceEntityType,
-                sourceEntityId: query.sourceEntityId,
+                ...(query.sourceEntityId
+                  ? { sourceEntityId: query.sourceEntityId }
+                  : {}),
               },
             },
           }
@@ -374,6 +379,9 @@ export class DocumentsRepository {
               {
                 OR: [
                   { title: { contains: query.search, mode: 'insensitive' } },
+                  {
+                    senderName: { contains: query.search, mode: 'insensitive' },
+                  },
                   {
                     archiveCode: {
                       contains: query.search,
@@ -1077,6 +1085,8 @@ export class DocumentsRepository {
   }
 
   async createUploaded(input: {
+    senderName?: string | null;
+    isIncomingLetter?: boolean;
     skipAntivirusForMasterDataLogo?: boolean;
     documentId: string;
     versionId: string;
@@ -1112,6 +1122,8 @@ export class DocumentsRepository {
       await transaction.document.create({
         data: {
           id: input.documentId,
+          senderName: input.senderName ?? null,
+          isIncomingLetter: input.isIncomingLetter ?? false,
           title: input.title,
           description: input.description,
           documentTypeId: input.documentTypeId,

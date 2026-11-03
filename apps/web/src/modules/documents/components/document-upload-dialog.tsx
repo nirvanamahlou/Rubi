@@ -49,6 +49,7 @@ export function DocumentUploadDialog({
   options,
   submitting,
   personalUpload = false,
+  incomingLetter = false,
 }: {
   branches: readonly BranchReference[];
   error: string;
@@ -58,6 +59,7 @@ export function DocumentUploadDialog({
   options: Options | null;
   submitting: boolean;
   personalUpload?: boolean;
+  incomingLetter?: boolean;
 }) {
   const [values, setValues] = useState<DocumentUploadValues>(() =>
     options
@@ -117,6 +119,10 @@ export function DocumentUploadDialog({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (incomingLetter && !values.senderName?.trim()) {
+      setValidationError('فرستنده را وارد کنید.');
+      return;
+    }
     const invalid = validateDocumentUpload(
       values,
       Boolean(file),
@@ -129,6 +135,7 @@ export function DocumentUploadDialog({
     }
     const form = new FormData();
     form.set('file', file!);
+    if (incomingLetter) form.set('isIncomingLetter', 'true');
     for (const [name, value] of Object.entries(values)) {
       if (name === 'employeeId') continue;
       if (value) form.set(name, String(value));
@@ -174,8 +181,15 @@ export function DocumentUploadDialog({
         <div className="sticky top-0 z-20 border-b border-border bg-surface px-6 py-5 pe-14">
           <DialogTitle>بارگذاری سند</DialogTitle>
           <DialogDescription>
-            کد آرشیو به‌صورت خودکار ساخته می‌شود. فایل ابتدا در فضای خصوصی قرار
-            می‌گیرد و فقط پس از تأیید اسکن امنیتی قابل دریافت خواهد بود.
+            {incomingLetter ? (
+              'ثبت نامه ورودی'
+            ) : (
+              <>
+                کد آرشیو به‌صورت خودکار ساخته می‌شود. فایل ابتدا در فضای خصوصی
+                قرار می‌گیرد و فقط پس از تأیید اسکن امنیتی قابل دریافت خواهد
+                بود.
+              </>
+            )}
           </DialogDescription>
         </div>
         <form
@@ -277,7 +291,11 @@ export function DocumentUploadDialog({
               <FormField
                 id="document-confidentiality"
                 label="محرمانگی"
-                description="در صورت خالی‌بودن، سیاست نوع سند اعمال می‌شود."
+                description={
+                  incomingLetter
+                    ? ''
+                    : 'در صورت خالی‌بودن، سیاست نوع سند اعمال می‌شود.'
+                }
               >
                 <Select
                   onValueChange={(value) => update('confidentiality', value)}
@@ -300,9 +318,11 @@ export function DocumentUploadDialog({
               {!personalUpload ? (
                 <FormField
                   description={
-                    confidentialCodeRequired
-                      ? 'برای دیدن اطلاعات و بازکردن یا دریافت این سند لازم است. بعداً قابل بازیابی نیست؛ آن را امن نگه دارید.'
-                      : 'اگر محرمانگی سند روی محرمانه باشد، این کد برای مشاهده و دریافت فایل لازم می‌شود.'
+                    incomingLetter
+                      ? ''
+                      : confidentialCodeRequired
+                        ? 'برای دیدن اطلاعات و بازکردن یا دریافت این سند لازم است. بعداً قابل بازیابی نیست؛ آن را امن نگه دارید.'
+                        : 'اگر محرمانگی سند روی محرمانه باشد، این کد برای مشاهده و دریافت فایل لازم می‌شود.'
                   }
                   id="document-confidential-access-code"
                   label="کد محرمانگی"
@@ -337,6 +357,17 @@ export function DocumentUploadDialog({
                 />
               </FormField>
             </div>
+            {incomingLetter && (
+              <FormField id="document-sender" label="فرستنده" required>
+                <Input
+                  id="document-sender"
+                  required
+                  maxLength={200}
+                  value={values.senderName ?? ''}
+                  onChange={(event) => update('senderName', event.target.value)}
+                />
+              </FormField>
+            )}
             <FormField id="document-description" label="توضیحات">
               <Textarea
                 id="document-description"
@@ -353,14 +384,20 @@ export function DocumentUploadDialog({
                 ۳. ارتباط با پرونده
               </h3>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {personalUpload
-                ? 'انتخاب پرونده اختیاری است. سند بدون پرونده در فایل‌های شما ذخیره می‌شود.'
-                : 'در صورت نیاز، پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب مستقیم کارمند از منابع انسانی هم ممکن است.'}
-            </p>
+            {!incomingLetter && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {personalUpload
+                  ? 'انتخاب پرونده اختیاری است. سند بدون پرونده در فایل‌های شما ذخیره می‌شود.'
+                  : 'در صورت نیاز، پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب مستقیم کارمند از منابع انسانی هم ممکن است.'}
+              </p>
+            )}
             <div className="mt-4">
               <FormField
-                description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
+                description={
+                  incomingLetter
+                    ? ''
+                    : 'فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند.'
+                }
                 id="source-relation"
                 label="پرونده مربوطه"
               >
@@ -481,22 +518,24 @@ export function DocumentUploadDialog({
                 </span>
               </span>
             </label>
-            <Alert
-              className="mt-4"
-              description={
-                options?.uploadPolicy.antivirusAvailable
-                  ? 'موتور امنیتی فعال است؛ فایل پس از بارگذاری فوراً اسکن می‌شود و فقط نتیجه پاک اجازه دریافت می‌گیرد.'
-                  : 'موتور امنیتی در این محیط فعال نیست؛ فایل خصوصی می‌ماند و تا انجام بررسی امنیتی قابل دریافت نخواهد بود.'
-              }
-              title={
-                options?.uploadPolicy.antivirusAvailable
-                  ? 'اسکن امنیتی فعال'
-                  : 'حفاظت تا زمان بررسی امنیتی'
-              }
-              tone={
-                options?.uploadPolicy.antivirusAvailable ? 'info' : 'warning'
-              }
-            />
+            {!incomingLetter && (
+              <Alert
+                className="mt-4"
+                description={
+                  options?.uploadPolicy.antivirusAvailable
+                    ? 'موتور امنیتی فعال است؛ فایل پس از بارگذاری فوراً اسکن می‌شود و فقط نتیجه پاک اجازه دریافت می‌گیرد.'
+                    : 'موتور امنیتی در این محیط فعال نیست؛ فایل خصوصی می‌ماند و تا انجام بررسی امنیتی قابل دریافت نخواهد بود.'
+                }
+                title={
+                  options?.uploadPolicy.antivirusAvailable
+                    ? 'اسکن امنیتی فعال'
+                    : 'حفاظت تا زمان بررسی امنیتی'
+                }
+                tone={
+                  options?.uploadPolicy.antivirusAvailable ? 'info' : 'warning'
+                }
+              />
+            )}
           </section>
 
           {validationError || error ? (
