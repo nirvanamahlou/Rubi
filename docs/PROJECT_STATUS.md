@@ -8643,6 +8643,24 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+All11 owner comments are active in Integrations: aggregate period KPIs with exact
+currency-separated amounts and source coverage, four compact visit cards,
+independent trend selection and a tracking launcher/dialog with site switch,
+refresh and close. Removed the selected-site heading/captions, definition block,
+readiness/queues, ERP flow, activity and duplicate comparison from Brands and the
+redundant Overview summary. Native management and per-source detail paging remain.
+61 related tests, scoped lint/formatting, local types and full server Web build
+pass. Live owner-session acceptance verifies today/30-day values, unchanged KPI
+totals when selecting another trend site, source-detail switching, modal refresh,
+close/unmount and four visit cards in one desktop row without horizontal overflow.
+Bounded activation preserves1847 other Web source files, current Dashboard
+overlay, API/Worker and other containers, environment and mounts. Temporary build
+memory was removed; no permanent server, schema or business-data changes.
+Final-head CI precedes PR1344 develop merge. Evidence and limits:
+[INTEGRATION-DASHBOARD-LAYOUT-1103](tasks/INTEGRATION-DASHBOARD-LAYOUT-1103.md).
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

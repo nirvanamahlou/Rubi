@@ -396,34 +396,6 @@ export function IntegrationWorkspaceBody({
                       </button>
                     ))}
                   </div>
-                  <Card className="grid gap-4 p-5 sm:grid-cols-2">
-                    <div>
-                      <h2 className="font-bold">عملیات منتظر اقدام</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        وضعیت واقعی اتصال و کارتابل هر سایت در گزارش همان سایت
-                        نمایش داده می‌شود.
-                      </p>
-                      <Button
-                        variant="outline"
-                        className="mt-3"
-                        type="button"
-                        disabled={!allowedSections.includes('connections')}
-                        onClick={() => changeSection('connections')}
-                      >
-                        بررسی اتصال‌ها
-                      </Button>
-                    </div>
-                    <div>
-                      <h2 className="font-bold">روند و مقایسه عملکرد</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        گزارش هر سایت از منبع مستقل خودش خوانده می‌شود؛ سایت و
-                        بازه را در بخش گزارش انتخاب کنید.
-                      </p>
-                      <Badge className="mt-3">
-                        آکادمی از فروش مستقیم سفر جداست
-                      </Badge>
-                    </div>
-                  </Card>
                 </>
               ) : null}
               {(section === 'brands' ||

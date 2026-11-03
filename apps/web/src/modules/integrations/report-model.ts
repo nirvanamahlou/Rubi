@@ -62,6 +62,89 @@ export function scopedSiteReport(
     ? report
     : null;
 }
+
+/** Sum source facts, never identities or inferred missing-source zeroes. */
+export function aggregateSiteMetric(
+  systemIds: readonly string[],
+  results: Readonly<Record<string, SiteReportResult>>,
+  from: string,
+  to: string,
+  metric: MetricKey,
+) {
+  const ids = [...new Set(systemIds)];
+  let count = 0n;
+  const currencies = new Map<string, string>();
+  const included: string[] = [];
+  for (const id of ids) {
+    const report = scopedSiteReport(results[id], id, from, to);
+    const fact = report?.metrics[metric];
+    if (
+      !report ||
+      fact?.state !== 'AVAILABLE' ||
+      fact.value === null ||
+      !Number.isSafeInteger(fact.value) ||
+      fact.value < 0
+    )
+      continue;
+    if (metric === 'sales') {
+      const amounts = report.salesByCurrency;
+      if (
+        !amounts ||
+        (!amounts.length && fact.value !== 0) ||
+        amounts.some(
+          (row) =>
+            !row.complete ||
+            !row.amount ||
+            !/^-?\d+(?:\.\d+)?$/.test(row.amount) ||
+            !/^[A-Z]{3,8}$/.test(row.currency),
+        )
+      )
+        continue;
+      for (const row of amounts)
+        currencies.set(
+          row.currency,
+          addExactDecimal(currencies.get(row.currency) ?? '0', row.amount!),
+        );
+    }
+    count += BigInt(fact.value);
+    included.push(id);
+  }
+  return {
+    text: !included.length
+      ? 'داده موجود نیست'
+      : metric !== 'sales'
+        ? count.toLocaleString('fa-IR')
+        : currencies.size
+          ? [...currencies]
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([currency, amount]) => `${decimalText(amount)} ${currency}`)
+              .join(' / ')
+          : '۰ · بدون فروش',
+    covered: included.length,
+    total: ids.length,
+    complete: ids.length > 0 && included.length === ids.length,
+    included,
+  };
+}
+
+function addExactDecimal(left: string, right: string) {
+  const parts = (value: string) => {
+    const negative = value.startsWith('-');
+    const [whole, fraction = ''] = value.replace(/^-/, '').split('.');
+    return { whole: whole!, fraction, negative };
+  };
+  const a = parts(left),
+    b = parts(right),
+    scale = Math.max(a.fraction.length, b.fraction.length);
+  const integer = (part: ReturnType<typeof parts>) =>
+    BigInt(part.whole + part.fraction.padEnd(scale, '0')) *
+    (part.negative ? -1n : 1n);
+  const sum = integer(a) + integer(b);
+  const digits = (sum < 0n ? -sum : sum).toString().padStart(scale + 1, '0');
+  const whole = scale ? digits.slice(0, -scale) : digits;
+  const fraction = scale ? digits.slice(-scale).replace(/0+$/, '') : '';
+  return `${sum < 0n ? '-' : ''}${whole}${fraction ? '.' + fraction : ''}`;
+}
 const resourceTitles: Record<string, string> = {
   'customer-orders': 'سفارش',
   'customer-accounts': 'حساب مشتری',

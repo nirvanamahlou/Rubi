@@ -24,13 +24,11 @@ import {
   Globe2,
   Info,
   Landmark,
-  Network,
   Plane,
   Settings2,
   ShoppingCart,
   UsersRound,
   Wallet,
-  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -41,7 +39,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import { Badge, Card } from '@/components/ui/surfaces';
+import { Card } from '@/components/ui/surfaces';
 import {
   catalogueSystems,
   domainLabels,
@@ -65,11 +63,12 @@ import {
   reportMetricText,
   reportCount,
   scopedSiteReport,
+  aggregateSiteMetric,
   type SiteReportResult,
 } from '../report-model';
-import { SitePresence } from './site-presence';
+import { SiteTrackingDialog } from './site-tracking-dialog';
 import { isGhestirooSystem } from '../system-connector';
-import { SiteTrend, SiteVisits, SiteActivity } from './site-report';
+import { SiteTrend, SiteVisits } from './site-report';
 
 const palettes = ['sand', 'blue', 'violet', 'teal'] as const;
 const symbols = [Landmark, Plane, Wallet, Globe2];
@@ -146,7 +145,8 @@ export function BrandsDashboard({
   const [period, setPeriod] = useState<PeriodKey>('month');
   const [range, setRange] = useState(() => periodRange('month'));
   const [metric, setMetric] = useState<MetricKey | null>(null);
-  const [trend, setTrend] = useState('sales');
+  const [trend, setTrend] = useState('orders');
+  const [trendSite, setTrendSite] = useState('');
   const trigger = useRef<HTMLButtonElement | null>(null);
   const systems = useMemo(
     () => catalogueSystems(data, undefined, true),
@@ -178,11 +178,11 @@ export function BrandsDashboard({
     range.from,
     range.to,
   );
-  const reportError =
-    results[activeId]?.state === 'error' ||
-    results[activeId]?.state === 'forbidden'
-      ? results[activeId]?.message
-      : '';
+  const trendId = systems.some((system) => system.id === trendSite)
+    ? trendSite
+    : (systems.find((system) => results[system.id]?.report)?.id ??
+      systems[0]?.id ??
+      '');
   function siteReport(id: string) {
     return scopedSiteReport(results[id], id, range.from, range.to);
   }
@@ -202,13 +202,11 @@ export function BrandsDashboard({
     { externalId: string; data: Record<string, unknown> | null }[]
   >([]);
   const [cursor, setCursor] = useState<string | number>(0);
-  const [selectedQueue, setSelectedQueue] = useState('');
   const [hasMore, setHasMore] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detailBusy, setDetailBusy] = useState(false);
   const detailGeneration = useRef(0);
   function value(system: IntegrationSystemConfigV1, key: MetricKey) {
-    if (key === 'sales' && system.businessDomain !== 'TRAVEL') return 'نامرتبط';
     const report = siteReport(system.id);
     return report ? reportMetricText(report, key) : metricState(system, key);
   }
@@ -294,7 +292,12 @@ export function BrandsDashboard({
   ]);
   const loadDetails = useCallback(
     async (key: MetricKey, after: string | number = 0) => {
-      if (!connected) return;
+      if (
+        !connected ||
+        connected.metrics[key]?.state !== 'AVAILABLE' ||
+        connected.metrics[key]?.value === null
+      )
+        return;
       const generation = ++detailGeneration.current;
       setDetailBusy(true);
       setDetailError('');
@@ -309,7 +312,6 @@ export function BrandsDashboard({
             from: range.from,
             to: range.to,
             after,
-            ...(selectedQueue ? { queue: selectedQueue } : {}),
           },
         );
         if (generation !== detailGeneration.current) return;
@@ -332,7 +334,6 @@ export function BrandsDashboard({
       activeConnector,
       range.from,
       range.to,
-      selectedQueue,
       setRows,
       setHasMore,
       setCursor,
@@ -402,59 +403,16 @@ export function BrandsDashboard({
           ) : null}
         </div>
       ) : null}
-      {reportError ? (
-        <Alert
-          tone="error"
-          title="گزارش سایت در دسترس نیست"
-          description={reportError}
-        />
-      ) : null}
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
-        <label className="grid min-w-56 gap-2 text-sm font-semibold">
-          گزارش سایت
-          <NativeSearchSelect
-            aria-label="سایت گزارش"
-            value={activeId}
-            onChange={(event) => {
-              detailGeneration.current++;
-              setSelectedSite(event.target.value);
-              setSelectedQueue('');
-              setMetric(null);
-              setRows([]);
-              setHasMore(false);
-              setDetailBusy(false);
-            }}
-          >
-            {systems.map((system) => (
-              <option key={system.id} value={system.id}>
-                {system.name}
-              </option>
-            ))}
-          </NativeSearchSelect>
-        </label>
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge>
-            {loading
-              ? 'دریافت گزارش…'
-              : connected
-                ? connected.environment === 'LOCAL'
-                  ? 'متصل · نسخه محلی'
-                  : 'متصل'
-                : results[activeId]?.state === 'forbidden'
-                  ? 'بدون دسترسی'
-                  : results[activeId]?.state === 'error'
-                    ? 'خطای اتصال'
-                    : 'آماده اتصال'}
-          </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={loading}
-            onClick={() => setRevision((v) => v + 1)}
-          >
-            به‌روزرسانی
-          </Button>
-        </div>
+      <div className={styles.dashboardTools}>
+        <span className={styles.caption}>{label}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={loading || !rangeValid}
+          onClick={() => setRevision((v) => v + 1)}
+        >
+          به‌روزرسانی گزارش‌ها
+        </Button>
       </div>
       <Card className={styles.systemPanel}>
         <PanelTitle
@@ -565,307 +523,111 @@ export function BrandsDashboard({
           </button>
         </div>
       </Card>
-      <h3 className="text-sm font-semibold">
-        آمار {activeSite?.name ?? 'سایت انتخاب‌شده'}
-      </h3>
-      <div className={styles.kpiGrid}>
+      <div className={styles.kpiGrid} aria-label="آمار مجموع سایت‌ها">
         {metrics.map((key) => {
           const Icon = metricIcons[key];
+          const summary = aggregateSiteMetric(
+            systems.map((system) => system.id),
+            results,
+            range.from,
+            range.to,
+            key,
+          );
           return (
             <button
               key={key}
-              disabled={!rangeValid}
+              disabled={!rangeValid || loading}
               className={`${styles.kpi} ${styles[key]}`}
+              aria-label={metricDetails[key]}
               onClick={(event) => {
                 trigger.current = event.currentTarget;
                 setMetric(key);
-                setSelectedQueue('');
                 setRows([]);
                 setDetailError('');
                 setHasMore(false);
               }}
-              aria-label={metricDetails[key]}
             >
               <div>
                 <h3>{metricTitles[key]}</h3>
-                <strong>
-                  {connected
-                    ? activeSite?.businessDomain !== 'TRAVEL' && key === 'sales'
-                      ? 'نامرتبط'
-                      : reportMetricText(connected, key)
-                    : loading
-                      ? 'در حال دریافت…'
-                      : 'داده موجود نیست'}
-                </strong>
+                <strong>{loading ? 'در حال دریافت…' : summary.text}</strong>
+                {!loading && summary.covered > 0 && !summary.complete ? (
+                  <small className={styles.coverage}>
+                    گزارش {reportCount(summary.covered)} از{' '}
+                    {reportCount(summary.total)} سایت
+                  </small>
+                ) : null}
                 <span>
-                  مشاهده جزئیات سایت
+                  مشاهده جزئیات
                   <ChevronLeft className="size-3" />
                 </span>
               </div>
               <span className={styles.kpiIcon}>
-                <Icon />
+                <Icon aria-hidden="true" />
               </span>
             </button>
           );
         })}
       </div>
-      <p className={styles.info}>
-        <Info />
-        آمار و جزئیات مربوط به {activeSite?.name ?? 'سایت انتخاب‌شده'} در بازهٔ
-        انتخابی است.
-      </p>
-      {connected?.definitions ? (
-        <div
-          className="grid gap-1 rounded-xl border border-border p-3 text-xs text-muted-foreground"
-          aria-label="تعریف شاخص‌های سایت"
-        >
-          {metrics.map((key) => (
-            <p key={key}>
-              {metricTitles[key]}: {connected.definitions?.[key]}
-            </p>
-          ))}
-        </div>
-      ) : null}
-      {connected?.warnings?.map((warning) => (
-        <Alert
-          key={warning}
-          title="محدودیت داده تاریخی"
-          description={warning}
-        />
-      ))}
-      {activeId ? (
-        <SitePresence
-          key={`${data.branchId}:${activeId}`}
-          branchId={data.branchId}
-          siteId={activeId}
-          siteName={activeSite?.name ?? 'سایت'}
-          connector={
-            activeSite && isGhestirooSystem(activeSite, data)
-              ? 'ghestiroo'
-              : 'niyayesh'
-          }
-        />
-      ) : null}
-      <SiteVisits
-        report={connected}
-        label={label}
-        siteName={activeSite?.name ?? 'سایت انتخاب‌شده'}
-        loading={loading}
-        state={results[activeId]?.state}
+      <SiteTrackingDialog
+        key={`${data.branchId}:${siteIds}`}
+        registry={data}
+        systems={systems}
       />
-      <div className={styles.middleGrid}>
-        <Card className={styles.panel}>
-          <PanelTitle
-            icon={<Zap />}
-            action={
-              <button
-                className={styles.textButton}
-                disabled={
-                  allowedSections && !allowedSections.includes('connections')
-                }
-                onClick={() => onSection('connections')}
-              >
-                بررسی آماده‌سازی
-              </button>
-            }
-          >
-            عملیات نیازمند اقدام
-          </PanelTitle>
-          <div className={styles.actionRow}>
-            <span className={`${styles.symbol} ${styles.sand}`}>
-              <Clock3 />
-            </span>
-            <div>
-              <h3>تکمیل اتصال سامانه‌ها</h3>
-              <p>مستندات API و دسترسی معتبر مورد نیاز است</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="مشاهده اتصال‌های منتظر آماده‌سازی"
-              disabled={
-                allowedSections && !allowedSections.includes('connections')
-              }
-              onClick={() => onSection('connections')}
-            >
-              {loading || !rangeValid
-                ? '—'
-                : systems
-                    .filter(
-                      (system) => results[system.id]?.state === 'unconfigured',
-                    )
-                    .length.toLocaleString('fa-IR')}
-              <ChevronLeft className="size-4" />
-            </Button>
-          </div>
-          <div className={styles.operationEmpty}>
-            <h3>کارتابل عملیات کسب‌وکار</h3>
-            <p>
-              تأیید مالی، رزرو و پیگیری پرونده‌ها پس از اتصال منبع مجاز، با
-              ارجاع به واحد مسئول نمایش داده می‌شوند.
-            </p>
-            {connected?.queues ? (
-              <div className="grid gap-2" aria-label="کارتابل فعلی قسطی‌رو">
-                <p className={styles.caption}>{connected.queueDefinition}</p>
-                {connected.queues.map((queue) => (
-                  <Button
-                    key={queue.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={(event) => {
-                      trigger.current = event.currentTarget;
-                      setSelectedQueue(queue.id);
-                      setMetric('pending');
-                      setRows([]);
-                      setHasMore(false);
-                    }}
-                  >
-                    {queue.title}: {reportCount(queue.count)}
-                  </Button>
-                ))}
-              </div>
-            ) : connected ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setMetric('pending');
-                  setSelectedQueue('');
-                  setRows([]);
-                  setHasMore(false);
-                }}
-              >
-                مشاهده {reportMetricText(connected, 'pending')} سفارش در انتظار
-                خرید
-              </Button>
-            ) : (
-              <Badge>داده موجود نیست</Badge>
-            )}
-          </div>
-        </Card>
-        <Card className={styles.panel}>
-          <PanelTitle
-            icon={<ChartNoAxesCombined />}
-            action={
-              <NativeSearchSelect
-                aria-label="شاخص روند"
-                value={trend}
-                onChange={(event) => setTrend(event.target.value)}
-              >
-                <option value="sales">تعداد سفارش‌ها</option>
-                <option value="users">کاربران جدید</option>
-              </NativeSearchSelect>
-            }
-          >
-            روند {activeSite?.name}
-          </PanelTitle>
-          <p className={styles.caption}>{label}</p>
-          <SiteTrend
-            report={connected}
-            metric={trend === 'users' ? 'users' : 'orders'}
-          />
-        </Card>
-      </div>
-      <div className={styles.bottomGrid}>
-        <Card className={styles.panel}>
-          <PanelTitle icon={<Network />}>جریان یکپارچه در ERP</PanelTitle>
-          <p className={styles.caption}>
-            {activeConnector === 'ghestiroo' && connected
-              ? 'رسیدگی و صدور در پنل قسطی‌رو انجام می‌شود؛ اطلاعات به واحدهای فروش و مالی نورا کپی نمی‌شود.'
-              : 'مسیر مسئولیت؛ اجرای خودکار هنوز متصل نیست'}
-          </p>
-          <div className={styles.flows}>
-            {systems.map((system, index) => (
-              <button key={system.id} onClick={() => onOpen(system.id)}>
-                <SystemSymbol system={system} index={index} />
-                <span>{system.name}</span>
-                <ArrowLeft />
-                <small>
-                  {system.businessDomain === 'TRAVEL'
-                    ? 'فروش و رزرواسیون'
-                    : system.businessDomain === 'EDUCATION'
-                      ? 'آموزش و مشاوره'
-                      : 'واحد مسئول'}
-                </small>
-              </button>
-            ))}
-          </div>
-          {!systems.length ? (
-            <p className={styles.caption}>ابتدا سامانه‌ای ثبت کنید.</p>
-          ) : null}
-          <button
-            className={styles.textButton}
-            disabled={allowedSections && !allowedSections.includes('mapping')}
-            onClick={() => onSection('mapping')}
-          >
-            مشاهده نگاشت و گردش داده
-            <ChevronLeft className="size-3" />
-          </button>
-        </Card>
-        <Card className={styles.panel}>
-          <PanelTitle icon={<Clock3 />}>
-            فعالیت‌های {activeSite?.name}
-          </PanelTitle>
-          <SiteActivity
-            report={connected}
-            siteName={activeSite?.name ?? ''}
+      <section
+        className={styles.visitsGrid}
+        aria-label="بازدید سایت‌ها در بازه انتخابی"
+      >
+        {systems.map((system) => (
+          <SiteVisits
+            key={system.id}
+            compact
+            report={siteReport(system.id)}
+            label={label}
+            siteName={system.name}
             loading={loading}
+            state={results[system.id]?.state}
           />
-          <button
-            className={styles.textButton}
-            disabled={!activeId}
-            onClick={() => onOpen(activeId)}
-          >
-            مدیریت این سایت
-            <ChevronLeft className="size-3" />
-          </button>
-        </Card>
-        <Card className={styles.panel}>
-          <PanelTitle icon={<BarChart3 />}>مقایسه عملکرد سامانه‌ها</PanelTitle>
-          <div className={styles.tableWrap}>
-            <table>
-              <thead>
-                <tr>
-                  <th>سامانه</th>
-                  <th>کاربران</th>
-                  <th>فروش سفر</th>
-                  <th>وضعیت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {systems.map((system) => (
-                  <tr key={system.id}>
-                    <th>
-                      <button
-                        className={styles.nameButton}
-                        onClick={() => onOpen(system.id)}
-                      >
-                        {system.name}
-                      </button>
-                    </th>
-                    <td>
-                      {siteReport(system.id)
-                        ? reportCount(
-                            siteReport(system.id)?.totals['customer-accounts'],
-                          )
-                        : '—'}
-                    </td>
-                    <td>{value(system, 'sales')}</td>
-                    <td>
-                      <span className={styles.ready}>
-                        {connectionLabel(system.id, 'گزارش متصل')}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className={styles.caption}>
-            مبالغ فقط با ارز مشخص و منبع معتبر قابل مقایسه‌اند.
+        ))}
+      </section>
+      <Card className={styles.panel}>
+        <PanelTitle icon={<ChartNoAxesCombined />}>روند سایت‌ها</PanelTitle>
+        <div className={styles.trendControls}>
+          <label className={styles.sitePicker}>
+            سایت
+            <NativeSearchSelect
+              aria-label="سایت نمودار روند"
+              value={trendId}
+              disabled={!systems.length}
+              onChange={(event) => setTrendSite(event.target.value)}
+            >
+              {systems.map((system) => (
+                <option key={system.id} value={system.id}>
+                  {system.name}
+                </option>
+              ))}
+            </NativeSearchSelect>
+          </label>
+          <label className={styles.sitePicker}>
+            شاخص
+            <NativeSearchSelect
+              aria-label="شاخص روند"
+              value={trend}
+              onChange={(event) => setTrend(event.target.value)}
+            >
+              <option value="orders">تعداد سفارش‌ها</option>
+              <option value="users">کاربران جدید</option>
+            </NativeSearchSelect>
+          </label>
+          <span className={styles.caption}>{label}</span>
+        </div>
+        {loading ? (
+          <p role="status" className={styles.caption}>
+            در حال دریافت…
           </p>
-        </Card>
-      </div>
+        ) : (
+          <SiteTrend report={siteReport(trendId)} metric={trend} />
+        )}
+      </Card>
       <Dialog
         open={metric !== null}
         onOpenChange={(open) => {
@@ -882,113 +644,111 @@ export function BrandsDashboard({
         >
           {metric ? (
             <>
-              <div className={styles.modalTitle}>
-                <span className={`${styles.symbol} ${styles.blue}`}>
-                  {(() => {
-                    const Icon = metricIcons[metric];
-                    return <Icon />;
-                  })()}
-                </span>
-                <DialogTitle>
-                  {selectedQueue
-                    ? connected?.queues?.find(
-                        (queue) => queue.id === selectedQueue,
-                      )?.title
-                    : metricDetails[metric]}
-                </DialogTitle>
-              </div>
+              <DialogTitle className="text-lg font-semibold">
+                {metricDetails[metric]}
+              </DialogTitle>
               <DialogDescription>
-                {selectedQueue ? (
-                  'وضعیت فعلی'
-                ) : (
-                  <>
-                    مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
-                    {activeSite?.name} نمایش داده می‌شود.
-                  </>
-                )}
+                مجموع سایت‌ها در بازهٔ انتخابی و سهم هر سایت
               </DialogDescription>
               <div className={styles.rangeBadge}>
                 <CalendarDays className="size-4" />
-                {selectedQueue ? 'وضعیت فعلی' : label}
+                {label}
               </div>
-              {selectedQueue ? (
-                <p>{connected?.queueDefinition}</p>
-              ) : connected?.definitions?.[metric] ? (
-                <p>{connected.definitions[metric]}</p>
-              ) : null}
-              {!selectedQueue ? (
-                <div className={styles.tableWrap}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>سامانه</th>
+              <div className={styles.tableWrap}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>سامانه</th>
+                      <th>{metricTitles[metric]}</th>
+                      {metric === 'sales' ? <th>سفارش‌ها</th> : null}
+                      <th>وضعیت گزارش</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {systems.map((system, index) => (
+                      <tr key={system.id}>
                         <th>
-                          {metric === 'pending'
-                            ? 'مسئول رسیدگی'
-                            : 'حوزه فعالیت'}
+                          <span className={styles.tableSystem}>
+                            <SystemSymbol system={system} index={index} />
+                            {system.name}
+                          </span>
                         </th>
-                        <th>{metricTitles[metric]}</th>
-                        {metric === 'sales' ? <th>سفارش‌ها</th> : null}
-                        <th>وضعیت گزارش</th>
+                        <td>{value(system, metric)}</td>
+                        {metric === 'sales' ? (
+                          <td>
+                            {siteReport(system.id)
+                              ? reportCount(
+                                  siteReport(system.id)?.metrics.orders?.value,
+                                )
+                              : 'داده موجود نیست'}
+                          </td>
+                        ) : null}
+                        <td>{connectionLabel(system.id)}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {systems.map((system, index) => (
-                        <tr key={system.id}>
-                          <th>
-                            <span className={styles.tableSystem}>
-                              <SystemSymbol system={system} index={index} />
-                              {system.name}
-                            </span>
-                          </th>
-                          <td>
-                            {metric === 'pending'
-                              ? 'پنل سایت'
-                              : `${domainLabels[system.businessDomain]} · ${system.kind}`}
-                          </td>
-                          <td>{value(system, metric)}</td>
-                          {metric === 'sales' ? (
-                            <td>
-                              {siteReport(system.id)
-                                ? reportCount(
-                                    siteReport(system.id)?.metrics.sales?.value,
-                                  )
-                                : 'داده موجود نیست'}
-                            </td>
-                          ) : null}
-                          <td>
-                            {metricState(system, metric) === 'نامرتبط'
-                              ? 'نامرتبط'
-                              : connectionLabel(system.id)}
-                          </td>
-                        </tr>
-                      ))}
-                      {!systems.length ? (
-                        <tr>
-                          <td colSpan={metric === 'sales' ? 5 : 4}>
-                            سامانه‌ای در فهرست نیست.
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                    <tfoot>
+                    ))}
+                    {!systems.length ? (
                       <tr>
-                        <th colSpan={2}>
-                          {activeSite?.name}: {metricTitles[metric]}
-                        </th>
-                        <td colSpan={metric === 'sales' ? 3 : 2}>
-                          {connected
-                            ? reportMetricText(connected, metric)
-                            : 'داده موجود نیست'}{' '}
-                          · سایت انتخاب‌شده
+                        <td colSpan={metric === 'sales' ? 4 : 3}>
+                          سامانه‌ای در فهرست نیست.
                         </td>
                       </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                    ) : null}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>مجموع سایت‌ها</th>
+                      <td colSpan={metric === 'sales' ? 3 : 2}>
+                        {
+                          aggregateSiteMetric(
+                            systems.map((system) => system.id),
+                            results,
+                            range.from,
+                            range.to,
+                            metric,
+                          ).text
+                        }
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <label className={styles.sitePicker}>
+                جزئیات رکوردهای سایت
+                <NativeSearchSelect
+                  aria-label="سایت جزئیات شاخص"
+                  value={activeId}
+                  disabled={!systems.length}
+                  onChange={(event) => {
+                    detailGeneration.current++;
+                    setSelectedSite(event.target.value);
+                    setRows([]);
+                    setHasMore(false);
+                    setDetailError('');
+                    setDetailBusy(false);
+                  }}
+                >
+                  {systems.map((system) => (
+                    <option key={system.id} value={system.id}>
+                      {system.name}
+                    </option>
+                  ))}
+                </NativeSearchSelect>
+              </label>
+              {connected?.definitions?.[metric] ? (
+                <p className={styles.caption}>
+                  {connected.definitions[metric]}
+                </p>
               ) : null}
+              {connected?.warnings?.map((warning) => (
+                <Alert
+                  key={warning}
+                  title="محدودیت داده تاریخی"
+                  description={warning}
+                />
+              ))}
               {connected &&
-              (selectedQueue || connected.metrics[metric]?.value !== null) ? (
+              connected.metrics[metric]?.state === 'AVAILABLE' &&
+              connected.metrics[metric]?.value !== null ? (
                 <div className="grid gap-3">
                   <Button
                     disabled={detailBusy}
@@ -1025,14 +785,17 @@ export function BrandsDashboard({
                     </Button>
                   ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <p role="status" className={styles.caption}>
+                  {results[activeId]?.message ??
+                    'گزارش این شاخص برای سایت انتخاب‌شده در دسترس نیست.'}
+                </p>
+              )}
               <p className={styles.modalNote}>
                 <Info />
                 {metric === 'sales'
-                  ? 'جهان آکادمی و سایر سامانه‌های غیرسفر در فروش مستقیم سفر لحاظ نمی‌شوند. جمع ارزهای متفاوت بدون مبنای تبدیل انجام نمی‌شود.'
-                  : metric === 'pending'
-                    ? 'آماده‌سازی اتصال با کارتابل کسب‌وکار متفاوت است. تأیید نهایی هر عملیات با ماژول مسئول است.'
-                    : 'سامانه‌ها فقط داده منتسب به خود را ارائه می‌کنند؛ هویت مشتری و حساب کاربر توسط ماژول مسئول مدیریت می‌شود.'}
+                  ? 'مبلغ هر ارز جداگانه جمع می‌شود؛ سایت‌های بدون گزارش یا مبلغ معتبر در جمع لحاظ نمی‌شوند.'
+                  : 'جمع رکوردهای هر سایت در بازهٔ انتخابی است؛ سایت‌های بدون گزارش یا مجوز در جمع لحاظ نمی‌شوند.'}
               </p>
               <div className={styles.modalFooter}>
                 <Button
