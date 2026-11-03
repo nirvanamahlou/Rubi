@@ -815,3 +815,86 @@ describe('producer-owned native dashboard readers', () => {
     });
   });
 });
+
+describe('additional native dashboard trends', () => {
+  it('keeps acquisition counts distinct and withholds forbidden sources rather than zero filling them', async () => {
+    const { native } = setup(
+      {
+        source: 'sales',
+        state: 'ready',
+        metrics: {
+          'new-orders': {
+            kind: 'count',
+            aggregation: 'created orders',
+            observations: [{ at: new Date('2026-10-15'), value: '1' }],
+          },
+        },
+      },
+      customerResult,
+      absent(),
+    );
+    const result = await native.load(
+      { visualIds: 'customer-growth-overview' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    const chart = result.visuals['customer-growth-overview']!;
+    expect(chart.series?.map((s) => s.label)).toEqual([
+      'مشتری با اولین خرید تأییدشده',
+      'سفارش جدید',
+    ]);
+    expect(
+      chart.series?.map((s) => s.values.reduce((a, b) => a + b, 0)),
+    ).toEqual([2, 1]);
+    expect(chart.notice).toContain('لید جدید');
+    expect(chart.notice).toContain('صفر فرض نشده‌اند');
+  });
+  it('shows only proven financial series in separate currencies and never fabricates profit', async () => {
+    const { native } = setup(
+      {
+        source: 'sales',
+        state: 'ready',
+        metrics: {
+          'net-sales': {
+            kind: 'money',
+            aggregation: 'net sales',
+            observations: [
+              { at: new Date('2026-10-15'), value: '10', currencyCode: 'USD' },
+              { at: new Date('2026-10-15'), value: '20', currencyCode: 'EUR' },
+            ],
+          },
+        },
+      },
+      absent(),
+      absent(),
+    );
+    const result = await native.load(
+      { visualIds: 'finance-profit-trend' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    const chart = result.visuals['finance-profit-trend']!;
+    expect(
+      chart.currencySeries?.map((s) => [
+        s.currencyCode,
+        s.values.reduce((a, b) => a + b, 0),
+      ]),
+    ).toEqual([
+      ['EUR', 20],
+      ['USD', 10],
+    ]);
+    expect(chart.currencySeries?.every((s) => s.series?.length === 1)).toBe(
+      true,
+    );
+    expect(chart.notice).toContain('سود ناخالص');
+    expect(chart.notice).toContain('سود خالص');
+    expect(result.unavailableMetrics['gross-profit']).toBe(
+      'APPROVED_MATCHED_COST_REQUIRED',
+    );
+    expect(result.unavailableMetrics['net-profit']).toBe(
+      'POSTED_ACCOUNTING_SOURCE_REQUIRED',
+    );
+  });
+});

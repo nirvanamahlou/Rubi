@@ -1876,7 +1876,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'finance-profit-trend',
         'روند درآمد و سود',
-        'روند درآمد ثبت‌شده، سود ناخالص و سود خالص در دوره‌های هم‌طول؛ سود خالص فقط برای دوره دارای ثبت کامل هزینه نمایش داده می‌شود.',
+        'روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.',
         'line',
         [serviceItem, journalBalance],
         'reports.dashboard.finance.read',
@@ -1961,7 +1961,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'customer-growth-overview',
         'روند جذب تا سفارش',
-        'حجم لید، سفارش و نرخ تبدیل در cohortهای هم‌دوره و قابل مقایسه.',
+        'تعداد لید بدون خرید موفق، مشتری با اولین خرید تأییدشده و سفارش ایجادشده در بازه؛ این سری‌های مستقل نرخ تبدیل یک cohort نیستند.',
         'line',
         [leadPipeline, travelFacts],
         'reports.dashboard.customer-growth.read',
