@@ -32,6 +32,21 @@ function setup() {
   return { receive };
 }
 describe('native outbound phone calls', () => {
+  it('finishes an anchored call after HR removes its extension without admitting a new call', async () => {
+    const { receive } = setup();
+    await receive();
+    expect(
+      await receive(
+        { event: 'DialEnd', dialstatus: 'ANSWER', dialstring: '' },
+        [],
+      ),
+    ).toMatchObject({ kind: 'ANSWERED', extension: '101' });
+    expect(
+      await receive({ event: 'Hangup', dialstring: '' }, []),
+    ).toMatchObject({ kind: 'ENDED', terminalForCall: true });
+    expect(await receive({}, [])).toBeNull();
+    expect(await setup().receive({ event: 'Hangup' }, [])).toBeNull();
+  });
   it.each(['193', '118', '110', '1234', '12345', '123456'])(
     'captures external service number %s through the configured trunk',
     async (number) => {

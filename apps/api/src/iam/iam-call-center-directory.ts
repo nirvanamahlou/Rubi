@@ -12,6 +12,7 @@ import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
+import { hrCallRoutes, hrCallRoutingEnabled } from './hr-call-routing';
 import {
   answeredCallAccess,
   globalCallCenterIds,
@@ -21,6 +22,9 @@ import {
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
 export class IamCallCenterDirectory {
+  async employeeCallRoutes(branchId: string, tx?: Prisma.TransactionClient) {
+    return hrCallRoutes(this.database, branchId, tx);
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(HrUserUnitDirectory)
@@ -66,6 +70,15 @@ export class IamCallCenterDirectory {
     at: string,
     tx: Prisma.TransactionClient,
   ) {
+    if (
+      hrCallRoutingEnabled() &&
+      Math.abs(Date.now() - Date.parse(at)) <= 60000
+    )
+      return (
+        (await this.employeeCallRoutes(branchId, tx)).find(
+          (r) => r.extension === extension,
+        )?.userIds ?? []
+      );
     const ids = await this.personnel.callCenterAnswerAccounts(
       branchId,
       extension,
@@ -275,8 +288,12 @@ export class IamCallCenterDirectory {
     });
   }
   async list(branchId: string, tx?: Prisma.TransactionClient) {
+    const linked = new Set(
+      (await this.employeeCallRoutes(branchId, tx)).flatMap((r) => r.userIds),
+    );
     return (await this.rows(branchId, tx))
       .filter((user) => {
+        if (hrCallRoutingEnabled() && linked.has(user.id)) return true;
         const permissions = authenticatedPermissionCodes(user.roles);
         return (
           (!hasScopedCallCenterAccess(permissions) ||

@@ -30,6 +30,7 @@ import { AmiContinuity } from './continuity';
 import { queueWrapupPolicy } from './queue-snapshot';
 import { fallback } from './sticky-sales';
 import { StickyPreviewBudget } from './sticky-preview';
+import { hrCallRoutingEnabled } from '../../iam/hr-call-routing';
 
 @Injectable()
 export class IssabelService implements OnModuleInit, OnModuleDestroy {
@@ -368,11 +369,22 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   private async incoming(message: AmiMessage, receivedAt = new Date()) {
     const connection = await this.connection();
     if (this.options?.nativeCapture) {
+      const companyExtensions =
+        this.options.companyCapture && hrCallRoutingEnabled()
+          ? [
+              ...new Set([
+                ...this.options.companyExtensions,
+                ...(
+                  await this.directory.employeeCallRoutes(connection.branchId)
+                ).map((r) => r.extension),
+              ]),
+            ]
+          : this.options.companyExtensions;
       const outbound = await normalizeNativeOutbound(
         connection.id,
         message,
         this.options.companyCapture
-          ? this.options.companyExtensions
+          ? companyExtensions
           : this.options.outboundExtensions,
         this.options.outboundPeers,
         (id) => this.events.acceptedEvent(connection.id, id),
@@ -387,7 +399,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           connection.id,
           message,
           this.options.inboundPeers,
-          this.options.companyExtensions,
+          companyExtensions,
           (id) => this.events.acceptedEvent(connection.id, id),
           receivedAt,
         );

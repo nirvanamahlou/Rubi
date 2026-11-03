@@ -10716,6 +10716,15 @@ SHORT-SERVICE-CALLS-1102 scope extension: recovery-only identity helper and owni
 
 SHORT-SERVICE-CALLS-1102 — COMPLETE / DEPLOYED. Capture accepts3–15 digit numbers only through configured external trunks. Four actual193 calls recovered with stable CDR/CEL historical receipts and unchanged mapping/current HR proof; employee list/SQL visibility verified,0 duplicates/offers.34 capture checks,35 focused recovery checks,49 PostgreSQL checks,2 Node evidence tests, API lint/typecheck/build pass. Peer reservation/recipient-grade releases preserved. No UI/schema/grant/dependency change. Source reservation releases on push; docs/tasks/SHORT-SERVICE-CALLS-1102.md.
 
+
+## HR-CALL-ROUTING-1102 — PC-C — RESERVED
+
+Base short-service task0b78f7ddb; owner authorizes automatic employee-account/internal-extension lifecycle and explicitly all linked accounts for shared extensions. Reserve HR-owned new roster read port (no hr.service edits), IAM directory and authenticated actor/login capability leaf, Integrations Issabel dynamic capture and private multi-recipient envelope, Call Center provider projection/pending-offer revocation and focused tests. Dynamic userId FK is authoritative; username/display strings never guessed. No schema/dependency/persisted IAM grants/PBX writes/UI changes. Own-only derived capabilities gated by active linked HR/account/branch state; preserve explicit denies and historic call facts. Private producer/consumer envelope adds optional HR recipients; old receipts retain current path. Existing claim/CAS editor boundary preserved. No active competing writer of these exact leaves found.
+
+HR-CALL-ROUTING-1102 — COMPLETE / DEPLOYED. Active employee/account/internal lifecycle now derives own-only connection and current HR alias routing without persisted roles or manual mapping. Shared extensions notify all related valid accounts as owner requested; stale offers revoked after edits/unlink/delete; historical evidence retained.62 isolated PostgreSQL checks, API lint/typecheck/build and native16-account/18-extension acceptance pass;14 sessions and AMI healthy. Shared-lock backed-up activation preserves peer releases/Web and Worker transport. No schema/dependency/PBX/UI changes. See docs/tasks/HR-CALL-ROUTING-1102.md; source reservation released on push.
+
+HR-CALL-ROUTING-1102 final scope: native-outbound.ts and regression retain answer/end evidence for an already anchored call when its HR extension is removed mid-call; new/orphan calls still denied.17 native checks and repeated native roster/session/AMI audit pass on final backed-up release. Prior short-service scope stays intact.
+
 ## CALL-HISTORY-TITLE-1102 — PC-C — IN_PROGRESS
 
 Owner requests current grade/unit labels for historical calls. Reserve CallCenterService destination read enrichment and focused history tests. Read-only labels from HR public directory on provider-proven extensions; preserve recorded times, scope and original encrypted snapshots. No migration or ownership/data rewrite.
@@ -10801,5 +10810,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1277 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1281 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1286 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
