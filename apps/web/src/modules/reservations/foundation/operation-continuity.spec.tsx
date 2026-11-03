@@ -20,7 +20,7 @@ vi.mock('./queue-names', () => ({
   useQueueNames: (rows: unknown[]) => ({ rows, ready: true }),
 }));
 vi.mock('./use-purchase-completion', () => ({
-  usePurchaseCompletion: () => false,
+  usePurchaseRegistration: () => false,
 }));
 import { ContractActionPanel, ContractActionContent } from './action-panel';
 import { ReservationOperationsWorkspace } from './workspace';
