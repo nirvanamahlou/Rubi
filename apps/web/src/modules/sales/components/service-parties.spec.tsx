@@ -293,3 +293,42 @@ it('assigns a declared infant to a legacy room without losing the child link', (
   ]);
   expect(legacy.hotelChildAssignments['1']).toEqual(['child:0']);
 });
+
+it('shows the standalone floating hotel checkbox and auto-checks it for a floating flight', () => {
+  const render = (value: SalesFormState) =>
+    renderToStaticMarkup(
+      <ServiceParties
+        state={value}
+        patch={() => {}}
+        hotels={[]}
+        roomTypes={[]}
+        rates={[]}
+      />,
+    );
+  const hotel = {
+    ...emptySalesForm,
+    serviceKinds: ['HOTEL' as const],
+    hotel: { ...emptySalesForm.hotel, floatingPurchase: true },
+  };
+  expect(render(hotel)).toContain('هتل شناوری');
+  expect(render(hotel)).toMatch(/type="checkbox"[^>]*checked=""/);
+  const floating = {
+    ...hotel,
+    serviceKinds: ['FLIGHT' as const, 'HOTEL' as const],
+    outboundOffer: {
+      id: 'offer',
+      supplyType: 'FLOATING',
+      departureAt: '2026-10-01T10:00:00Z',
+      arrivalAt: '2026-10-01T12:00:00Z',
+      carrierName: 'SYNTH',
+      serviceNumber: 'TEST',
+      originId: 'o',
+      destinationId: 'd',
+      cabinClassCode: 'ECONOMY',
+      version: 1,
+    } as never,
+  };
+  expect(render(floating)).toMatch(
+    /type="checkbox"[^>]*disabled=""[^>]*checked=""/,
+  );
+});

@@ -56,6 +56,9 @@ export function reservationTickets(
             ticket.offerId,
           ),
           contractOnly: ticket.source === 'CONTRACT_ONLY',
+          ...(ticket.destinationAirport
+            ? { destinationAirport: ticket.destinationAirport }
+            : {}),
           originId: ticket.originId,
           destinationId: ticket.destinationId,
           departureAt: ticket.departureAt,

@@ -220,121 +220,161 @@ export class TravelWorkflowService {
         };
       } else throw new BadRequestException('سربرگ معتبر انتخاب کنید.');
     }
-    return this.database.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
-      );
-      const revision = await tx.reservationWorkflowRevision.findFirst({
-        where: { intakeId: id },
-        orderBy: { version: 'desc' },
-      });
-      const state = revision
-        ? (revision.state as unknown as TravelWorkflowStateV1)
-        : initialTravelWorkflow();
-      if (state.version !== command?.expectedVersion)
-        throw new ConflictException(
-          'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id}, 0))`,
         );
-      if (command.action === 'TABLE_STATUS')
-        await this.amendments.assertActive(
-          tx,
-          intake.contractId,
-          actor.branchIds,
-        );
-      let next: TravelWorkflowStateV1;
-      try {
-        next = transitionTravelWorkflow(
-          currentOutput ? intake.workflow : state,
-          command,
-          intake.snapshot.passengerIds,
-          command.action === 'TICKET_FLIGHT_NUMBERS'
-            ? salesContractFlights(
-                intake.snapshot.serviceSelections,
-                intake.snapshot.ticketSelections ?? [],
-              ).map((f) =>
-                reservationFlightOutputKey(f.serviceClientKey, f.offerId),
-              )
-            : [],
-          command.action === 'SUPPLIER_FORM_SETTINGS' &&
-            intake.snapshot.passengerIds.length === 0 &&
-            (intake.snapshot.serviceSelections.some(
-              (service) => service.metadata?.legacyContractV1 === true,
-            ) ||
-              readLegacyServiceParties(intake.snapshot.serviceSelections) !==
-                null),
-          reservationHotelStays(intake.snapshot).map((stay) => stay.key),
-        );
-      } catch (error) {
-        throw new BadRequestException(
-          error instanceof Error ? error.message : 'عملیات نامعتبر',
-        );
-      }
-      if (branding)
-        next.branding = {
-          ...branding,
-          ...(command.branding?.ticketWithoutLogo === true ||
-          (command.branding?.ticketWithoutLogo === undefined &&
-            state.branding?.ticketWithoutLogo === true)
-            ? { ticketWithoutLogo: true }
-            : {}),
-          ...(command.branding?.voucherWithoutLogo === true ||
-          (command.branding?.voucherWithoutLogo === undefined &&
-            state.branding?.voucherWithoutLogo === true)
-            ? { voucherWithoutLogo: true }
-            : {}),
-        };
-      if (
-        ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(
-          command.action,
-        ) &&
-        !next.branding
-      )
-        throw new BadRequestException('ابتدا سربرگ خروجی را ثبت کنید.');
-      next.updatedAt = new Date().toISOString();
-      next.updatedByUserId = actor.userId;
-      if (
-        command.action === 'TABLE_STATUS' &&
-        command.tableFlag &&
-        next.tableFlags?.[command.tableFlag]
-      ) {
-        next.tableFlags[command.tableFlag]!.updatedAt = next.updatedAt;
-        next.tableFlags[command.tableFlag]!.updatedByUserId = actor.userId;
-      }
-      await tx.reservationWorkflowRevision.create({
-        data: {
-          intakeId: id,
-          version: next.version,
-          state: next as unknown as Prisma.InputJsonValue,
-          actorUserId: actor.userId,
-        },
-      });
-      if (
-        intake.salesOwnerUserId &&
-        ((next.voucherIssued && !state.voucherIssued) ||
-          ['CANCEL', 'REOPEN'].includes(command.action))
-      )
-        await this.notifications.createWithinTransaction(tx, {
-          recipientUserIds: [intake.salesOwnerUserId],
-          actorUserId: actor.userId,
-          sourceModule: 'reservations',
-          eventType:
-            command.action === 'CANCEL'
-              ? 'CANCEL'
-              : command.action === 'REOPEN'
-                ? 'REOPEN'
-                : 'ISSUE_VOUCHER',
-          title:
-            command.action === 'CANCEL'
-              ? 'ابطال درخواست رزرواسیون'
-              : command.action === 'REOPEN'
-                ? 'لغو ابطال درخواست رزرواسیون'
-                : 'واچر صادر شد',
-          message: `قرارداد ${intake.snapshot.contractNumber}؛ ${next.note}`,
-          entityType: 'sales_contract',
-          entityId: intake.contractId,
-          href: '/sales',
+        const revision = await tx.reservationWorkflowRevision.findFirst({
+          where: { intakeId: id },
+          orderBy: { version: 'desc' },
         });
-      return next;
-    });
+        const state = revision
+          ? (revision.state as unknown as TravelWorkflowStateV1)
+          : initialTravelWorkflow();
+        if (state.version !== command?.expectedVersion)
+          throw new ConflictException(
+            'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+        if (command.action === 'TABLE_STATUS')
+          await this.amendments.assertActive(
+            tx,
+            intake.contractId,
+            actor.branchIds,
+          );
+        let next: TravelWorkflowStateV1;
+        try {
+          next = transitionTravelWorkflow(
+            currentOutput ? intake.workflow : state,
+            command,
+            intake.snapshot.passengerIds,
+            command.action === 'TICKET_FLIGHT_NUMBERS'
+              ? salesContractFlights(
+                  intake.snapshot.serviceSelections,
+                  intake.snapshot.ticketSelections ?? [],
+                ).map((f) =>
+                  reservationFlightOutputKey(f.serviceClientKey, f.offerId),
+                )
+              : [],
+            command.action === 'SUPPLIER_FORM_SETTINGS' &&
+              intake.snapshot.passengerIds.length === 0 &&
+              (intake.snapshot.serviceSelections.some(
+                (service) => service.metadata?.legacyContractV1 === true,
+              ) ||
+                readLegacyServiceParties(intake.snapshot.serviceSelections) !==
+                  null),
+            reservationHotelStays(intake.snapshot).map((stay) => stay.key),
+          );
+        } catch (error) {
+          throw new BadRequestException(
+            error instanceof Error ? error.message : 'عملیات نامعتبر',
+          );
+        }
+        if (command.action === 'CANCEL' || command.action === 'REOPEN') {
+          if (!this.tickets)
+            throw new ConflictException(
+              'بلیط انتخاب‌شده تغییر کرده یا قابل رزرو نیست.',
+            );
+          const latest = await tx.reservationIntake.findFirst({
+            where: { contractId: intake.contractId, branchId: intake.branchId },
+            orderBy: { contractVersion: 'desc' },
+            select: { id: true },
+          });
+          if (latest?.id !== id)
+            throw new ConflictException(
+              'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+            );
+          await this.amendments.assertActive(
+            tx,
+            intake.contractId,
+            actor.branchIds,
+          );
+          if (command.action === 'CANCEL')
+            await this.tickets.releaseContract(intake.contractId, tx);
+          else {
+            const snapshot = await this.amendments.currentExecution(
+              tx,
+              intake.snapshot,
+              actor.branchIds,
+            );
+            await this.tickets.restoreContract(
+              tx,
+              intake.contractId,
+              intake.branchId,
+              snapshot.ticketSelections ?? [],
+            );
+          }
+        }
+        if (branding)
+          next.branding = {
+            ...branding,
+            ...(command.branding?.ticketWithoutLogo === true ||
+            (command.branding?.ticketWithoutLogo === undefined &&
+              state.branding?.ticketWithoutLogo === true)
+              ? { ticketWithoutLogo: true }
+              : {}),
+            ...(command.branding?.voucherWithoutLogo === true ||
+            (command.branding?.voucherWithoutLogo === undefined &&
+              state.branding?.voucherWithoutLogo === true)
+              ? { voucherWithoutLogo: true }
+              : {}),
+          };
+        if (
+          ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(
+            command.action,
+          ) &&
+          !next.branding
+        )
+          throw new BadRequestException('ابتدا سربرگ خروجی را ثبت کنید.');
+        next.updatedAt = new Date().toISOString();
+        next.updatedByUserId = actor.userId;
+        if (
+          command.action === 'TABLE_STATUS' &&
+          command.tableFlag &&
+          next.tableFlags?.[command.tableFlag]
+        ) {
+          next.tableFlags[command.tableFlag]!.updatedAt = next.updatedAt;
+          next.tableFlags[command.tableFlag]!.updatedByUserId = actor.userId;
+        }
+        await tx.reservationWorkflowRevision.create({
+          data: {
+            intakeId: id,
+            version: next.version,
+            state: next as unknown as Prisma.InputJsonValue,
+            actorUserId: actor.userId,
+          },
+        });
+        if (
+          intake.salesOwnerUserId &&
+          ((next.voucherIssued && !state.voucherIssued) ||
+            ['CANCEL', 'REOPEN'].includes(command.action))
+        )
+          await this.notifications.createWithinTransaction(tx, {
+            recipientUserIds: [intake.salesOwnerUserId],
+            actorUserId: actor.userId,
+            sourceModule: 'reservations',
+            eventType:
+              command.action === 'CANCEL'
+                ? 'CANCEL'
+                : command.action === 'REOPEN'
+                  ? 'REOPEN'
+                  : 'ISSUE_VOUCHER',
+            title:
+              command.action === 'CANCEL'
+                ? 'ابطال درخواست رزرواسیون'
+                : command.action === 'REOPEN'
+                  ? 'لغو ابطال درخواست رزرواسیون'
+                  : 'واچر صادر شد',
+            message: `قرارداد ${intake.snapshot.contractNumber}؛ ${next.note}`,
+            entityType: 'sales_contract',
+            entityId: intake.contractId,
+            href: '/sales',
+          });
+        return next;
+      },
+      command.action === 'CANCEL' || command.action === 'REOPEN'
+        ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        : undefined,
+    );
   }
 }
