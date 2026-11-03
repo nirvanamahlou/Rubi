@@ -42,7 +42,7 @@ export async function loadPurchaseInbox(
   if (!base) throw new Error('نشانی سرور پیکربندی نشده است.');
   const get = () =>
     localizedFetch(
-      `${base}/reservations/requests/purchases?${new URLSearchParams({ kind, page: String(page), contractNumber, ...filters })}`,
+      `${base}/reservations/requests/purchases?${new URLSearchParams({ kind: kind === 'FLOATING' ? 'FLIGHT' : kind, page: String(page), contractNumber, ...filters })}`,
       { credentials: 'include', cache: 'no-store', signal },
     );
   let response = await get();

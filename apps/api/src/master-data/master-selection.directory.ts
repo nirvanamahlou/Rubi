@@ -66,7 +66,13 @@ const resources: Record<string, readonly MasterDataResource[]> = {
   organizations: [...geography, 'currencies', 'organizations'],
   accounting: ['currencies', 'sales-channels'],
   marketing: ['organizations'],
-  procurement: ['suppliers', 'brokers', 'currencies', 'organizations'],
+  procurement: [
+    'suppliers',
+    'brokers',
+    'currencies',
+    'organizations',
+    'cities',
+  ],
   'ticket-catalog': [
     ...geography,
     'airports',

@@ -4838,5 +4838,7 @@
   "مدیر گروه": "Group administrator",
   "ویرایش گروه انجام نشد.": "Could not update the group.",
   "ویرایش گروه فقط برای مدیر گروه مجاز است.": "Only group administrators can edit the group.",
-  "ویرایش گروه": "Edit group"
+  "ویرایش گروه": "Edit group",
+  "بلیط شناور": "Floating ticket",
+  "ظرفیت کل / فروخته‌شده": "Total capacity / sold"
 }
