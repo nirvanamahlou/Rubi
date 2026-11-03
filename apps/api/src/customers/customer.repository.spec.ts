@@ -486,3 +486,14 @@ describe('Sales agency customer resolution', () => {
     }
   });
 });
+
+it('returns the generated customer code without changing identity or revealing national ID', () => {
+  const detail = toCustomerDetail(
+    { ...row, customerCode: '4000001' } as never,
+    false,
+  );
+  expect(detail.id).toBe(row.id);
+  expect(detail.customerCode).toBe('4000001');
+  expect(detail.maskedNationalId).toBe(row.nationalIdMasked);
+  expect(detail.nationalId).toBeNull();
+});

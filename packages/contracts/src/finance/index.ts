@@ -737,6 +737,7 @@ export interface FinanceHistoryV1 {
 }
 
 export interface FinanceInboxQueryV1 {
+  category?: 'PURCHASE' | 'RECEIPT' | undefined;
   sortBy?: 'createdAt' | 'dueAt' | 'amount';
   sortDirection?: 'asc' | 'desc';
   search?: string;

@@ -1,6 +1,7 @@
 import {
   readLegacyServiceParties,
   hotelNights,
+  hotelTransferChargeableCount,
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
@@ -70,9 +71,10 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
   if (intake.supplierDocumentKind && intake.supplierDocumentKind !== 'HOTEL') {
     const settings = intake.workflow.supplierFormSettings;
     const price = settings?.supplierFormPrices?.transferPp;
-    const count =
-      (settings?.hotelTransferCounts?.outbound ?? 0) +
-      (settings?.hotelTransferCounts?.returning ?? 0);
+    const count = hotelTransferChargeableCount(
+      settings?.hotelTransferCounts ?? { outbound: 0, returning: 0 },
+      settings?.hotelTransferRoundTrip,
+    );
     let total = '-';
     try {
       if (price) {
@@ -85,7 +87,11 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
       /* Incomplete quotation. */
     }
     return {
-      headers: ['Transfer P.P', 'QUANTITY', 'TRANSFER TOTAL'],
+      headers: [
+        settings?.hotelTransferRoundTrip ? 'ROUND TRIP P.P' : 'Transfer P.P',
+        'QUANTITY',
+        'TRANSFER TOTAL',
+      ],
       values: [
         price ? price.amount + ' ' + price.currencyCode : '-',
         String(count),
@@ -144,7 +150,10 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
       outbound: counts.outbound ?? 0,
       returning: counts.returning ?? 0,
     };
-    const count = transferCounts.outbound + transferCounts.returning;
+    const count = hotelTransferChargeableCount(
+      transferCounts,
+      settings.hotelTransferRoundTrip,
+    );
     let total = '-';
     try {
       if (trf)
@@ -157,7 +166,7 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
     }
     if (intake.supplierDocumentKind !== 'HOTEL')
       rows.push([
-        'TRANSFER',
+        settings.hotelTransferRoundTrip ? 'TRANSFER ROUND TRIP' : 'TRANSFER',
         'OUTBOUND: ' +
           transferCounts.outbound +
           ' / RETURN: ' +

@@ -188,6 +188,7 @@ export interface B2bRecordDeleteRequestV1 {
 }
 
 export interface B2bAgencyProfileDetailsV1 {
+  accountingCode?: string | null;
   profile: B2bAgencyProfileV1 | null;
   accountManagers: readonly { id: string; displayName: string }[];
 }

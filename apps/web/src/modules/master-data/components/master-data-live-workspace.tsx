@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { referenceDisplayName } from '@/i18n/reference-name';
@@ -582,7 +584,7 @@ function GenericMasterDataWorkspace({
                   {records.map((record) => (
                     <tr className="border-t border-border" key={record.id}>
                       <td className="p-4 font-mono text-xs" dir="ltr">
-                        {record.code}
+                        {masterDataDisplayCode(record)}
                       </td>
                       <MasterDataLogoCell record={record} />
                       <td className="p-4 font-semibold">

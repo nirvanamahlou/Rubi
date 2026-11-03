@@ -59,6 +59,50 @@ function fixture(amount = '100', currencyCode = 'IRR') {
 }
 
 describe('Finance supplier payment', () => {
+  it('pays a foreign debt from a rial bank account and captures the actual IRR cash event', async () => {
+    const { service, tx } = fixture('100', 'EUR');
+    const result = await service.updateSupplierPayment(
+      'intake-1',
+      'purchase-1',
+      {
+        expectedVersion: 0,
+        status: 'PAID',
+        accountId: 'account-1',
+        paymentMethodId: 'method-1',
+        paidAmount: '40',
+        exchangeRateToIrr: '800000',
+        transferAt: '2026-09-13T12:00:00.000Z',
+        reason: '',
+      },
+      'finance-user',
+      ['branch-a'],
+    );
+    expect(result).toMatchObject({
+      accountId: 'account-1',
+      paidAmount: '40',
+      remainingAmount: '60',
+      rialEquivalent: '32000000',
+    });
+    expect(
+      tx.financeSupplierPaymentRevision.create.mock.calls[0]![0].data.paidAmount.toString(),
+    ).toBe('40');
+    expect(tx.financeAccountingEvent.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            kind: 'RESERVATION_PAYMENT',
+            amount: '32000000.0000',
+            currency: 'IRR',
+            settlementAccountId: 'account-1',
+          }),
+        ],
+      }),
+    );
+    expect(
+      tx.financeSettlementAccount.findFirst.mock.calls[0]![0].where
+        .currencyCode,
+    ).toEqual({ in: ['EUR', 'IRR'] });
+  });
   it('records a non-IRR installment against its paying supplier without an account', async () => {
     const { service, tx } = fixture('100', 'TRY');
     const payingSupplierId = '50000000-0000-4000-8000-000000000001';

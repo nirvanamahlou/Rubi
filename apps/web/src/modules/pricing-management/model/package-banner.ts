@@ -1,3 +1,4 @@
+import { packageRoomIdentity, packageRoomTitle } from '@nora/contracts';
 import type {
   LoginResponse,
   PackageTourHotelPurchaseBatchV1,
@@ -172,7 +173,23 @@ export function buildPackageBannerViewModel(input: {
       (candidate) => candidate.id === publishedRoom.hotelRateId,
     );
     if (!row) return [];
-    const room = roomFactor(row, publishedRoom.roomCode);
+    if (
+      publication.selectedHotelRateIds &&
+      !publication.selectedHotelRateIds.includes(row.id)
+    )
+      return [];
+    const composition = packageRoomIdentity(publishedRoom.roomCode);
+    const room = composition
+      ? {
+          factor: '1',
+          title: [
+            publishedRoom.roomTypeName,
+            packageRoomTitle(publishedRoom.roomCode),
+          ]
+            .filter(Boolean)
+            .join(' · '),
+        }
+      : roomFactor(row, publishedRoom.roomCode);
     const prices = salePrices(publishedRoom);
     if (!positive(room.factor) || prices.length === 0) return [];
     return [

@@ -1,4 +1,6 @@
 'use client';
+import { useState } from 'react';
+import { usePurchaseCompletion } from './use-purchase-completion';
 import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
@@ -66,7 +68,15 @@ export function ContractActionContent({
     );
   if (action === 'سودآوری رزرواسیون هتل' && request.contractId)
     return <ReservationHotelCosts key={request.id} id={request.id} />;
-  if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
+  if (action === 'خرید')
+    return (
+      <ReservationPurchaseDialog
+        id={request.id}
+        onSaved={() =>
+          window.dispatchEvent(new Event('reservation-workflow-changed'))
+        }
+      />
+    );
   if (action === 'فرم رزواسیون')
     return <TravelWorkflowForm id={request.id} action="رزرواسیون" />;
   if (action === 'مشاهده')
@@ -162,6 +172,12 @@ export function ContractActionPanel({
 }: {
   request?: RequestView | undefined;
 }) {
+  const [openedRequest, setOpenedRequest] = useState<RequestView>();
+  const dialogRequest = openedRequest ?? request;
+  const purchasesComplete = usePurchaseCompletion(
+    request?.id,
+    request?.workflowVersion,
+  );
   return (
     <aside className={styles.panel} aria-label="عملیات قرارداد انتخاب‌شده">
       <div className={styles.selection} aria-live="polite">
@@ -218,7 +234,12 @@ export function ContractActionPanel({
                     </button>
                   )
                 ) : (
-                  <Dialog key={action}>
+                  <Dialog
+                    key={action}
+                    onOpenChange={(open) =>
+                      setOpenedRequest(open ? request : undefined)
+                    }
+                  >
                     <DialogTrigger asChild>
                       <button
                         type="button"
@@ -226,7 +247,23 @@ export function ContractActionPanel({
                           !request ||
                           (action === 'واچر' && !request.voucherReady)
                         }
-                        className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
+                        className={[
+                          styles.action,
+                          action === 'توضیحات' && request?.hasNotes
+                            ? styles.hasNotes
+                            : '',
+                          action === 'خرید' &&
+                          purchasesComplete &&
+                          request?.status !== 'CANCELLED'
+                            ? styles.purchaseComplete
+                            : '',
+                        ].join(' ')}
+                        data-purchases-complete={
+                          action === 'خرید'
+                            ? purchasesComplete &&
+                              request?.status !== 'CANCELLED'
+                            : undefined
+                        }
                         aria-label={
                           action === 'توضیحات' && request?.hasNotes
                             ? 'توضیحات؛ این قرارداد یادداشت دارد'
@@ -236,21 +273,22 @@ export function ContractActionPanel({
                         {action}
                       </button>
                     </DialogTrigger>
-                    {request && (
+                    {dialogRequest && (
                       <DialogContent
                         dir="rtl"
                         className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش', 'فرم رزواسیون'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                       >
                         <DialogTitle className="pe-10">{action}</DialogTitle>
                         <DialogDescription>
-                          قرارداد {request.contractNumber} ·{' '}
-                          {request.customerName !== '—'
-                            ? request.customerName
-                            : (request.passengerNames[0] ?? request.branchName)}
+                          قرارداد {dialogRequest.contractNumber} ·{' '}
+                          {dialogRequest.customerName !== '—'
+                            ? dialogRequest.customerName
+                            : (dialogRequest.passengerNames[0] ??
+                              dialogRequest.branchName)}
                         </DialogDescription>
                         <ContractActionContent
                           action={action}
-                          request={request}
+                          request={dialogRequest}
                         />
                       </DialogContent>
                     )}

@@ -66,6 +66,7 @@ export class BankAccountService {
       branchId: row.branchId,
       bankId: row.bankId!,
       title: row.title,
+      accountingCode: row.accountingCode ?? null,
       currencyCode: row.currencyCode,
       version: row.version,
       isActive: row.isActive,

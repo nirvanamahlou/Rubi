@@ -22,6 +22,8 @@ export function hotelFormScope(
       intake.workflow.sentSupplierFormSettings;
   return {
     ...intake,
+    supplierHotelSourceSnapshot:
+      intake.supplierHotelSourceSnapshot ?? intake.snapshot,
     hotelStayKey: key,
     hotelStayOrdinal:
       intake.hotelStayOrdinal ??

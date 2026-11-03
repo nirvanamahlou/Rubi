@@ -1,7 +1,16 @@
 import { groupPurchaseFx } from './summary';
 import { describe, expect, it } from 'vitest';
-import { purchaseFxPaymentPreview } from './payment-preview';
+import {
+  purchaseFxPaymentPreview,
+  purchasePaymentActualIrr,
+} from './payment-preview';
 describe('purchase FX payment preview', () => {
+  it('shows the actual IRR bank withdrawal independently of a missing purchase baseline', () => {
+    expect(purchasePaymentActualIrr('40', '800000')).toBe('32000000');
+    expect(purchasePaymentActualIrr('0.0001', '0.5')).toBe('0.0001');
+    expect(purchasePaymentActualIrr('40', '')).toBeNull();
+    expect(purchasePaymentActualIrr('40', '0')).toBeNull();
+  });
   it('compares only the entered partial foreign payment', () =>
     expect(purchaseFxPaymentPreview('100', '100', '120')).toEqual({
       baseline: '10000',

@@ -86,6 +86,30 @@ export class MasterSalesDirectory {
     return { data: this.project(data) };
   }
 
+  /** Purchase-only public agency references: no phones, balances or dossiers. */
+  async agencyPurchaseOptions(search: string, page: number) {
+    const result = await this.master.list('organizations', {
+      search,
+      page,
+      pageSize: 100,
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      organizationRole: 'AGENCY',
+    });
+    return {
+      data: result.data.map((row) => ({ id: row.id, name: row.name })),
+      meta: result.meta,
+    };
+  }
+  async agencyPurchaseReference(id: string) {
+    const { data } = await this.master.detail('organizations', id);
+    const roles = String(data.attributes.roleCodes ?? '').split(',');
+    if (data.status !== 'active' || !roles.includes('AGENCY'))
+      throw new NotFoundException();
+    return { id: data.id, name: data.name, source: 'ORGANIZATION' as const };
+  }
+
   async agencyBuyerContact(
     id: string,
     actor: AuthenticatedActor,

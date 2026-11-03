@@ -392,6 +392,32 @@ function Content({
               />
             </label>
           </div>
+          <div
+            className={styles.dateFilters}
+            role="group"
+            aria-label="محدوده و زمان"
+          >
+            <label>
+              از تاریخ (تهران)
+              <DatePicker
+                filterCalendar
+                defaultCalendarSystem="persian"
+                aria-label="از تاریخ (تهران)"
+                value={filters.from}
+                onChange={(value) => change('from', value)}
+              />
+            </label>
+            <label>
+              تا ابتدای تاریخ (تهران)
+              <DatePicker
+                filterCalendar
+                defaultCalendarSystem="persian"
+                aria-label="تا ابتدای تاریخ (تهران)"
+                value={filters.to}
+                onChange={(value) => change('to', value)}
+              />
+            </label>
+          </div>
           <button
             className={styles.clear}
             aria-expanded={advanced}
@@ -418,29 +444,6 @@ function Content({
         </div>
         <div id="cc-advanced" hidden={!advanced}>
           <div className={styles.filterGroups}>
-            <fieldset>
-              <legend>محدوده و زمان</legend>{' '}
-              <label>
-                از تاریخ (تهران)
-                <DatePicker
-                  filterCalendar
-                  defaultCalendarSystem="persian"
-                  aria-label="از تاریخ (تهران)"
-                  value={filters.from}
-                  onChange={(value) => change('from', value)}
-                />
-              </label>
-              <label>
-                تا ابتدای تاریخ (تهران)
-                <DatePicker
-                  filterCalendar
-                  defaultCalendarSystem="persian"
-                  aria-label="تا ابتدای تاریخ (تهران)"
-                  value={filters.to}
-                  onChange={(value) => change('to', value)}
-                />
-              </label>
-            </fieldset>
             <fieldset>
               <legend>مشخصات تماس</legend>{' '}
               <Select

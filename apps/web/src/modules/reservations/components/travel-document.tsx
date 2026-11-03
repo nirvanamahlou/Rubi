@@ -4,6 +4,7 @@ import {
   supplierDocumentScope,
   type SupplierDocumentKind,
 } from '../model/supplier-document-scope';
+import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { hotelFormScope } from '../model/hotel-form-scope';
 import { reservationHotelStays } from '@nora/contracts';
 import type { ReservationFormIntake } from '../model/reservation-form';
@@ -233,45 +234,70 @@ export function SupplierHotelDocuments(
 ) {
   const stays = reservationHotelStays(props.intake.snapshot);
   if (!stays.length) return <TravelDocument {...props} />;
+  const primary = hotelFormScope(props.intake, stays[0]!.key);
+  if (primary.workflow.sentSupplierFormSettings)
+    primary.workflow.supplierFormSettings =
+      primary.workflow.sentSupplierFormSettings;
+  const grouped = sharedHotelSupplierScopes(primary).length > 1;
   return (
     <div className="grid gap-4">
-      {stays.map((stay) => {
-        const intake = hotelFormScope(props.intake, stay.key);
-        if (intake.workflow.sentSupplierFormSettings)
-          intake.workflow.supplierFormSettings =
-            intake.workflow.sentSupplierFormSettings;
-        return (
-          <section key={stay.key} className="grid gap-2">
-            <h3>{stay.hotel.hotelNameSnapshot}</h3>
-            <SupplierScopedDocuments {...props} intake={intake} />
-          </section>
-        );
-      })}
+      {stays
+        .filter(
+          (stay, index) =>
+            !index ||
+            !grouped ||
+            supplierDocumentKinds(
+              props.intake.workflow.hotelSupplierForms?.[stay.key]
+                ?.sentSettings ??
+                props.intake.workflow.hotelSupplierForms?.[stay.key]?.settings,
+            ).some((kind) => kind !== 'HOTEL'),
+        )
+        .map((stay) => {
+          const intake = hotelFormScope(props.intake, stay.key);
+          if (intake.workflow.sentSupplierFormSettings)
+            intake.workflow.supplierFormSettings =
+              intake.workflow.sentSupplierFormSettings;
+          return (
+            <section key={stay.key} className="grid gap-2">
+              <h3>{stay.hotel.hotelNameSnapshot}</h3>
+              <SupplierScopedDocuments
+                {...props}
+                intake={intake}
+                omitHotel={grouped && stay.key !== stays[0]!.key}
+              />
+            </section>
+          );
+        })}
     </div>
   );
 }
 
-export function SupplierScopedDocuments(
-  props: Omit<Parameters<typeof TravelDocument>[0], 'voucher' | 'formScope'>,
-) {
+export function SupplierScopedDocuments({
+  omitHotel,
+  ...props
+}: Omit<Parameters<typeof TravelDocument>[0], 'voucher' | 'formScope'> & {
+  omitHotel?: boolean;
+}) {
   const settings =
     props.previewSettings ?? props.intake.workflow.supplierFormSettings;
   return (
     <div className="grid gap-4">
-      {supplierDocumentKinds(settings).map((kind) => (
-        <section key={kind} className="grid gap-2">
-          {kind !== 'HOTEL' && (
-            <h3>
-              {kind === 'OUTBOUND'
-                ? 'فرم ترانسفر رفت'
-                : kind === 'RETURN'
-                  ? 'فرم ترانسفر برگشت'
-                  : 'فرم جداگانه ترانسفر'}
-            </h3>
-          )}
-          <TravelDocument {...props} formScope={kind} />
-        </section>
-      ))}
+      {supplierDocumentKinds(settings)
+        .filter((kind) => !omitHotel || kind !== 'HOTEL')
+        .map((kind) => (
+          <section key={kind} className="grid gap-2">
+            {kind !== 'HOTEL' && (
+              <h3>
+                {kind === 'OUTBOUND'
+                  ? 'فرم ترانسفر رفت'
+                  : kind === 'RETURN'
+                    ? 'فرم ترانسفر برگشت'
+                    : 'فرم جداگانه ترانسفر'}
+              </h3>
+            )}
+            <TravelDocument {...props} formScope={kind} />
+          </section>
+        ))}
     </div>
   );
 }

@@ -183,3 +183,25 @@ it('requires a canonical quote for a published tour but retains legacy unpriced 
     service.assertContractSale(request, actor, 'branch'),
   ).resolves.toBeUndefined();
 });
+
+it('rejects manual published base price increases without a discount and excessive discounts', () => {
+  const { service } = fixture();
+  for (const priceComponents of [
+    [{ type: 'BASE', currencyCode: 'EUR', amount: '124', title: 'Base' }],
+    [
+      { type: 'BASE', currencyCode: 'EUR', amount: '123.45', title: 'Base' },
+      {
+        type: 'DISCOUNT',
+        currencyCode: 'EUR',
+        amount: '124',
+        title: 'Discount',
+      },
+    ],
+  ])
+    expect(() =>
+      service.validateContractAmounts(
+        { services: [], priceComponents } as never,
+        [{ currencyCode: 'EUR', amount: '123.45' }],
+      ),
+    ).toThrow();
+});

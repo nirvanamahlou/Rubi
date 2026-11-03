@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import type {
   IntegrationRegistryV1,
   IntegrationSystemConfigV1,
@@ -61,6 +68,7 @@ import {
   type SiteReportResult,
 } from '../report-model';
 import { SitePresence } from './site-presence';
+import { isGhestirooSystem } from '../system-connector';
 import { SiteTrend, SiteVisits, SiteActivity } from './site-report';
 
 const palettes = ['sand', 'blue', 'violet', 'teal'] as const;
@@ -140,7 +148,10 @@ export function BrandsDashboard({
   const [metric, setMetric] = useState<MetricKey | null>(null);
   const [trend, setTrend] = useState('sales');
   const trigger = useRef<HTMLButtonElement | null>(null);
-  const systems = catalogueSystems(data, undefined, true);
+  const systems = useMemo(
+    () => catalogueSystems(data, undefined, true),
+    [data],
+  );
   const rangeValid = validRange(range.from, range.to);
   const label = periodLabel(range.from, range.to);
   const [siteResults, setSiteResults] = useState<{
@@ -157,6 +168,10 @@ export function BrandsDashboard({
       systems[0]?.id ??
       '');
   const activeSite = systems.find((system) => system.id === activeId);
+  const activeConnector =
+    activeSite && isGhestirooSystem(activeSite, data)
+      ? 'ghestiroo'
+      : 'niyayesh';
   const connected = scopedSiteReport(
     results[activeId],
     activeId,
@@ -171,13 +186,23 @@ export function BrandsDashboard({
   function siteReport(id: string) {
     return scopedSiteReport(results[id], id, range.from, range.to);
   }
+  function connectionLabel(id: string, connectedLabel = 'متصل') {
+    if (siteReport(id)) return connectedLabel;
+    if (loading) return 'دریافت گزارش…';
+    return results[id]?.state === 'forbidden'
+      ? 'بدون دسترسی'
+      : results[id]?.state === 'error'
+        ? 'خطای اتصال'
+        : 'آماده اتصال';
+  }
 
   const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
   const [rows, setRows] = useState<
     { externalId: string; data: Record<string, unknown> | null }[]
   >([]);
-  const [cursor, setCursor] = useState(0);
+  const [cursor, setCursor] = useState<string | number>(0);
+  const [selectedQueue, setSelectedQueue] = useState('');
   const [hasMore, setHasMore] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detailBusy, setDetailBusy] = useState(false);
@@ -208,12 +233,18 @@ export function BrandsDashboard({
           .filter(Boolean)
           .map(async (id) => {
             try {
-              const report = await integrationsApi.niyayeshReport(
+              const selectedSystem = systems.find(
+                (system) => system.id === id,
+              )!;
+              const report = await integrationsApi.siteReport(
                 data.branchId,
                 range.from,
                 range.to,
                 control.signal,
                 id,
+                isGhestirooSystem(selectedSystem, data)
+                  ? 'ghestiroo'
+                  : 'niyayesh',
               );
               if (
                 report.registrySystemId !== id ||
@@ -258,35 +289,67 @@ export function BrandsDashboard({
     revision,
     siteIds,
     scope,
+    data,
+    systems,
   ]);
-  async function loadDetails(key: MetricKey, after = 0) {
-    if (!connected) return;
-    const generation = ++detailGeneration.current;
-    setDetailBusy(true);
-    setDetailError('');
-    if (!after) setRows([]);
-    try {
-      const result = await integrationsApi.niyayeshResources(
-        data.branchId,
-        key === 'users' ? 'customer-accounts' : 'customer-orders',
-        after,
-        undefined,
-        undefined,
-        { metric: key, from: range.from, to: range.to, systemId: activeId },
-      );
-      if (generation !== detailGeneration.current) return;
-      setRows((old) => [...(after ? old : []), ...result.items]);
-      setCursor(result.nextId);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      if (generation !== detailGeneration.current) return;
-      setDetailError(
-        error instanceof Error ? error.message : 'دریافت جزئیات انجام نشد.',
-      );
-    } finally {
-      if (generation === detailGeneration.current) setDetailBusy(false);
-    }
-  }
+  const loadDetails = useCallback(
+    async (key: MetricKey, after: string | number = 0) => {
+      if (!connected) return;
+      const generation = ++detailGeneration.current;
+      setDetailBusy(true);
+      setDetailError('');
+      if (!after) setRows([]);
+      try {
+        const result = await integrationsApi.siteReportDetails(
+          data.branchId,
+          activeId,
+          activeConnector,
+          {
+            metric: key,
+            from: range.from,
+            to: range.to,
+            after,
+            ...(selectedQueue ? { queue: selectedQueue } : {}),
+          },
+        );
+        if (generation !== detailGeneration.current) return;
+        setRows((old) => [...(after ? old : []), ...result.items]);
+        setCursor(result.nextId);
+        setHasMore(result.hasMore);
+      } catch (error) {
+        if (generation !== detailGeneration.current) return;
+        setDetailError(
+          error instanceof Error ? error.message : 'دریافت جزئیات انجام نشد.',
+        );
+      } finally {
+        if (generation === detailGeneration.current) setDetailBusy(false);
+      }
+    },
+    [
+      connected,
+      data.branchId,
+      activeId,
+      activeConnector,
+      range.from,
+      range.to,
+      selectedQueue,
+      setRows,
+      setHasMore,
+      setCursor,
+      setDetailBusy,
+      setDetailError,
+    ],
+  );
+  useEffect(() => {
+    const state = detailGeneration;
+    const timer = window.setTimeout(() => {
+      if (metric && connected) void loadDetails(metric);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      state.current++;
+    };
+  }, [metric, connected, loadDetails]);
 
   function selectPeriod(next: PeriodKey) {
     setPeriod(next);
@@ -355,6 +418,7 @@ export function BrandsDashboard({
             onChange={(event) => {
               detailGeneration.current++;
               setSelectedSite(event.target.value);
+              setSelectedQueue('');
               setMetric(null);
               setRows([]);
               setHasMore(false);
@@ -422,9 +486,7 @@ export function BrandsDashboard({
                   </div>
                   <span className={styles.ready}>
                     <span />
-                    {siteReport(system.id)
-                      ? 'متصل به منبع گزارش'
-                      : 'آماده اتصال'}
+                    {connectionLabel(system.id, 'متصل به منبع گزارش')}
                   </span>
                 </div>
                 <div className={styles.miniMetrics}>
@@ -517,6 +579,7 @@ export function BrandsDashboard({
               onClick={(event) => {
                 trigger.current = event.currentTarget;
                 setMetric(key);
+                setSelectedQueue('');
                 setRows([]);
                 setDetailError('');
                 setHasMore(false);
@@ -551,12 +614,36 @@ export function BrandsDashboard({
         آمار و جزئیات مربوط به {activeSite?.name ?? 'سایت انتخاب‌شده'} در بازهٔ
         انتخابی است.
       </p>
+      {connected?.definitions ? (
+        <div
+          className="grid gap-1 rounded-xl border border-border p-3 text-xs text-muted-foreground"
+          aria-label="تعریف شاخص‌های سایت"
+        >
+          {metrics.map((key) => (
+            <p key={key}>
+              {metricTitles[key]}: {connected.definitions?.[key]}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {connected?.warnings?.map((warning) => (
+        <Alert
+          key={warning}
+          title="محدودیت داده تاریخی"
+          description={warning}
+        />
+      ))}
       {activeId ? (
         <SitePresence
           key={`${data.branchId}:${activeId}`}
           branchId={data.branchId}
           siteId={activeId}
           siteName={activeSite?.name ?? 'سایت'}
+          connector={
+            activeSite && isGhestirooSystem(activeSite, data)
+              ? 'ghestiroo'
+              : 'niyayesh'
+          }
         />
       ) : null}
       <SiteVisits
@@ -601,7 +688,13 @@ export function BrandsDashboard({
               }
               onClick={() => onSection('connections')}
             >
-              {data.counts?.awaitingConnection.toLocaleString('fa-IR') ?? '—'}
+              {loading || !rangeValid
+                ? '—'
+                : systems
+                    .filter(
+                      (system) => results[system.id]?.state === 'unconfigured',
+                    )
+                    .length.toLocaleString('fa-IR')}
               <ChevronLeft className="size-4" />
             </Button>
           </div>
@@ -611,12 +704,33 @@ export function BrandsDashboard({
               تأیید مالی، رزرو و پیگیری پرونده‌ها پس از اتصال منبع مجاز، با
               ارجاع به واحد مسئول نمایش داده می‌شوند.
             </p>
-            {connected ? (
+            {connected?.queues ? (
+              <div className="grid gap-2" aria-label="کارتابل فعلی قسطی‌رو">
+                <p className={styles.caption}>{connected.queueDefinition}</p>
+                {connected.queues.map((queue) => (
+                  <Button
+                    key={queue.id}
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => {
+                      trigger.current = event.currentTarget;
+                      setSelectedQueue(queue.id);
+                      setMetric('pending');
+                      setRows([]);
+                      setHasMore(false);
+                    }}
+                  >
+                    {queue.title}: {reportCount(queue.count)}
+                  </Button>
+                ))}
+              </div>
+            ) : connected ? (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => {
                   setMetric('pending');
+                  setSelectedQueue('');
                   setRows([]);
                   setHasMore(false);
                 }}
@@ -656,7 +770,9 @@ export function BrandsDashboard({
         <Card className={styles.panel}>
           <PanelTitle icon={<Network />}>جریان یکپارچه در ERP</PanelTitle>
           <p className={styles.caption}>
-            مسیر مسئولیت؛ اجرای خودکار هنوز متصل نیست
+            {activeConnector === 'ghestiroo' && connected
+              ? 'رسیدگی و صدور در پنل قسطی‌رو انجام می‌شود؛ اطلاعات به واحدهای فروش و مالی نورا کپی نمی‌شود.'
+              : 'مسیر مسئولیت؛ اجرای خودکار هنوز متصل نیست'}
           </p>
           <div className={styles.flows}>
             {systems.map((system, index) => (
@@ -737,7 +853,7 @@ export function BrandsDashboard({
                     <td>{value(system, 'sales')}</td>
                     <td>
                       <span className={styles.ready}>
-                        {siteReport(system.id) ? 'گزارش متصل' : 'آماده اتصال'}
+                        {connectionLabel(system.id, 'گزارش متصل')}
                       </span>
                     </td>
                   </tr>
@@ -773,88 +889,106 @@ export function BrandsDashboard({
                     return <Icon />;
                   })()}
                 </span>
-                <DialogTitle>{metricDetails[metric]}</DialogTitle>
+                <DialogTitle>
+                  {selectedQueue
+                    ? connected?.queues?.find(
+                        (queue) => queue.id === selectedQueue,
+                      )?.title
+                    : metricDetails[metric]}
+                </DialogTitle>
               </div>
               <DialogDescription>
-                مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
-                {activeSite?.name} نمایش داده می‌شود.
+                {selectedQueue ? (
+                  'وضعیت فعلی'
+                ) : (
+                  <>
+                    مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
+                    {activeSite?.name} نمایش داده می‌شود.
+                  </>
+                )}
               </DialogDescription>
               <div className={styles.rangeBadge}>
                 <CalendarDays className="size-4" />
-                {label}
+                {selectedQueue ? 'وضعیت فعلی' : label}
               </div>
-              <div className={styles.tableWrap}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>سامانه</th>
-                      <th>
-                        {metric === 'pending' ? 'مسئول رسیدگی' : 'حوزه فعالیت'}
-                      </th>
-                      <th>{metricTitles[metric]}</th>
-                      {metric === 'sales' ? <th>سفارش‌ها</th> : null}
-                      <th>وضعیت گزارش</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {systems.map((system, index) => (
-                      <tr key={system.id}>
-                        <th>
-                          <span className={styles.tableSystem}>
-                            <SystemSymbol system={system} index={index} />
-                            {system.name}
-                          </span>
-                        </th>
-                        <td>
-                          {metric === 'pending'
-                            ? 'پنل سایت'
-                            : `${domainLabels[system.businessDomain]} · ${system.kind}`}
-                        </td>
-                        <td>{value(system, metric)}</td>
-                        {metric === 'sales' ? (
-                          <td>
-                            {siteReport(system.id)
-                              ? reportCount(
-                                  siteReport(system.id)?.metrics.sales?.value,
-                                )
-                              : 'داده موجود نیست'}
-                          </td>
-                        ) : null}
-                        <td>
-                          {metricState(system, metric) === 'نامرتبط'
-                            ? 'نامرتبط'
-                            : siteReport(system.id)
-                              ? 'متصل'
-                              : results[system.id]?.state === 'forbidden'
-                                ? 'بدون دسترسی'
-                                : 'آماده اتصال'}
-                        </td>
-                      </tr>
-                    ))}
-                    {!systems.length ? (
+              {selectedQueue ? (
+                <p>{connected?.queueDefinition}</p>
+              ) : connected?.definitions?.[metric] ? (
+                <p>{connected.definitions[metric]}</p>
+              ) : null}
+              {!selectedQueue ? (
+                <div className={styles.tableWrap}>
+                  <table>
+                    <thead>
                       <tr>
-                        <td colSpan={metric === 'sales' ? 5 : 4}>
-                          سامانه‌ای در فهرست نیست.
+                        <th>سامانه</th>
+                        <th>
+                          {metric === 'pending'
+                            ? 'مسئول رسیدگی'
+                            : 'حوزه فعالیت'}
+                        </th>
+                        <th>{metricTitles[metric]}</th>
+                        {metric === 'sales' ? <th>سفارش‌ها</th> : null}
+                        <th>وضعیت گزارش</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {systems.map((system, index) => (
+                        <tr key={system.id}>
+                          <th>
+                            <span className={styles.tableSystem}>
+                              <SystemSymbol system={system} index={index} />
+                              {system.name}
+                            </span>
+                          </th>
+                          <td>
+                            {metric === 'pending'
+                              ? 'پنل سایت'
+                              : `${domainLabels[system.businessDomain]} · ${system.kind}`}
+                          </td>
+                          <td>{value(system, metric)}</td>
+                          {metric === 'sales' ? (
+                            <td>
+                              {siteReport(system.id)
+                                ? reportCount(
+                                    siteReport(system.id)?.metrics.sales?.value,
+                                  )
+                                : 'داده موجود نیست'}
+                            </td>
+                          ) : null}
+                          <td>
+                            {metricState(system, metric) === 'نامرتبط'
+                              ? 'نامرتبط'
+                              : connectionLabel(system.id)}
+                          </td>
+                        </tr>
+                      ))}
+                      {!systems.length ? (
+                        <tr>
+                          <td colSpan={metric === 'sales' ? 5 : 4}>
+                            سامانه‌ای در فهرست نیست.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th colSpan={2}>
+                          {activeSite?.name}: {metricTitles[metric]}
+                        </th>
+                        <td colSpan={metric === 'sales' ? 3 : 2}>
+                          {connected
+                            ? reportMetricText(connected, metric)
+                            : 'داده موجود نیست'}{' '}
+                          · سایت انتخاب‌شده
                         </td>
                       </tr>
-                    ) : null}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th colSpan={2}>
-                        {activeSite?.name}: {metricTitles[metric]}
-                      </th>
-                      <td colSpan={metric === 'sales' ? 3 : 2}>
-                        {connected
-                          ? reportMetricText(connected, metric)
-                          : 'داده موجود نیست'}{' '}
-                        · سایت انتخاب‌شده
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-              {connected && connected.metrics[metric]?.value !== null ? (
+                    </tfoot>
+                  </table>
+                </div>
+              ) : null}
+              {connected &&
+              (selectedQueue || connected.metrics[metric]?.value !== null) ? (
                 <div className="grid gap-3">
                   <Button
                     disabled={detailBusy}
@@ -870,6 +1004,9 @@ export function BrandsDashboard({
                     />
                   ) : null}
                   {detailBusy ? <p role="status">در حال خواندن…</p> : null}
+                  {!detailBusy && !detailError && rows.length === 0 ? (
+                    <p>رکوردی برای این شاخص ثبت نشده است.</p>
+                  ) : null}
                   {rows.map((row) => (
                     <details
                       key={row.externalId}
@@ -898,6 +1035,16 @@ export function BrandsDashboard({
                     : 'سامانه‌ها فقط داده منتسب به خود را ارائه می‌کنند؛ هویت مشتری و حساب کاربر توسط ماژول مسئول مدیریت می‌شود.'}
               </p>
               <div className={styles.modalFooter}>
+                <Button
+                  variant="outline"
+                  disabled={!activeId}
+                  onClick={() => {
+                    setMetric(null);
+                    onOpen(activeId);
+                  }}
+                >
+                  مدیریت این سایت
+                </Button>
                 <Button variant="outline" onClick={() => setMetric(null)}>
                   بستن
                 </Button>

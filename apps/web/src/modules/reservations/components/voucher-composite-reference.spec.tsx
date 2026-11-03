@@ -73,3 +73,43 @@ it('loads secondary hotel/city/room references while skipping missing legacy roo
     },
   });
 });
+
+it.each([true, false])(
+  'resolves the original additional hotel references only for a grouped scoped form (%s)',
+  async (sharedHotelBroker) => {
+    const hotel = {
+      serviceClientKey: 'hotel',
+      hotelId: 'primary',
+      cityId: 'first-city',
+      roomTypeId: '',
+      additionalStays: [
+        {
+          hotelId: 'second',
+          cityId: 'second-city',
+          rooms: [{ roomTypeId: 'second-room' }],
+        },
+      ],
+    };
+    const snapshot = {
+      serviceSelections: [],
+      ticketSelections: [],
+      hotelSelection: hotel,
+    };
+    const intake = {
+      id: 'synthetic-group',
+      snapshot: {
+        ...snapshot,
+        hotelSelection: { ...hotel, additionalStays: [] },
+      },
+      supplierHotelSourceSnapshot: snapshot,
+      workflow: { supplierFormSettings: { sharedHotelBroker } },
+    } as unknown as ReservationFormIntake;
+    useReservationFormReferences(intake, true);
+    h.effects.splice(0).forEach((effect) => effect());
+    await vi.waitFor(() => expect(h.loaded).toHaveBeenCalledOnce());
+    const ids = h.detail.mock.calls.map(([, id]) => id);
+    expect(ids.includes('second')).toBe(sharedHotelBroker);
+    expect(ids.includes('second-city')).toBe(sharedHotelBroker);
+    expect(ids.includes('second-room')).toBe(sharedHotelBroker);
+  },
+);

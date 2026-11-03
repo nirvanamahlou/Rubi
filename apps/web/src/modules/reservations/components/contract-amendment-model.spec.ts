@@ -1,3 +1,7 @@
+import {
+  isFloatingSalesContract,
+  contractFlightMetadata,
+} from '@nora/contracts';
 import { applyManualAmendmentFlights } from './contract-amendment-model';
 import { describe, it, expect } from 'vitest';
 import type {
@@ -185,4 +189,100 @@ it('persists both business-output states on all flight services and preserves un
       amendmentFromContract({ ...contract, servicesDetail: [] }),
     ),
   ).toBe(false);
+});
+
+function staleFloatingDates() {
+  const leg = (direction: 'OUTBOUND' | 'RETURN', day: string) => ({
+    clientKey: direction,
+    kind: 'FLIGHT' as const,
+    titleSnapshot: direction,
+    status: 'NEEDS_RESERVATION_CONFIRMATION' as const,
+    metadata: contractFlightMetadata({
+      version: 1,
+      direction,
+      originId: direction === 'OUTBOUND' ? 'a' : 'b',
+      destinationId: direction === 'OUTBOUND' ? 'b' : 'a',
+      departureAt: day + 'T01:00:00Z',
+      arrivalAt: day + 'T03:00:00Z',
+      carrierNameSnapshot: 'Synthetic air',
+      serviceNumberSnapshot: 'OLD',
+      cabinClassCode: 'ECONOMY',
+    }),
+  });
+  return {
+    ...amendmentFromContract(contract),
+    departureDate: '2026-07-03',
+    returnNotBefore: '2026-07-01',
+    services: [leg('OUTBOUND', '2026-07-03'), leg('RETURN', '2026-07-10')],
+    ticketSelections: [],
+  } as SalesContractAmendmentV1;
+}
+it.each(['OUTBOUND', 'RETURN'] as const)(
+  'reconciles stale contract dates when replacing a floating %s flight with charter',
+  (direction) => {
+    const draft = staleFloatingDates();
+    const before = structuredClone(draft);
+    const selected = {
+      ...offer,
+      originId: direction === 'OUTBOUND' ? 'a' : 'b',
+      destinationId: direction === 'OUTBOUND' ? 'b' : 'a',
+      departureAt:
+        direction === 'OUTBOUND'
+          ? '2026-07-03T01:00:00Z'
+          : '2026-07-10T01:15:00Z',
+      arrivalAt:
+        direction === 'OUTBOUND'
+          ? '2026-07-03T03:00:00Z'
+          : '2026-07-10T04:00:00Z',
+    };
+    const next = replaceAmendmentFlight(draft, direction, selected);
+    expect(next.departureDate).toBe('2026-07-03');
+    expect(next.returnNotBefore).toBe('2026-07-10');
+    expect(next.priceComponents).toEqual(before.priceComponents);
+    expect(next.passengers).toEqual(before.passengers);
+    expect(draft).toEqual(before);
+  },
+);
+it('uses Tehran calendar dates after editing a floating return across UTC midnight', () => {
+  const draft = staleFloatingDates();
+  const next = applyManualAmendmentFlights(draft, {
+    RETURN: {
+      departureAt: '2026-07-11T02:00',
+      arrivalAt: '2026-07-11T04:00',
+      carrierName: 'Synthetic air',
+      serviceNumber: 'BACK',
+      cabinClassCode: 'ECONOMY',
+    },
+  });
+  expect(next.departureDate).toBe('2026-07-03');
+  expect(next.returnNotBefore).toBe('2026-07-11');
+  expect(next.ticketSelections).toEqual([]);
+});
+it('does not repair actual reversed flights or rewrite dates without an applied flight edit', () => {
+  const draft = staleFloatingDates();
+  expect(applyManualAmendmentFlights(draft, {})).toBe(draft);
+  const next = replaceAmendmentFlight(draft, 'RETURN', {
+    ...offer,
+    originId: 'b',
+    destinationId: 'a',
+    departureAt: '2026-07-02T01:00:00Z',
+    arrivalAt: '2026-07-02T03:00:00Z',
+  });
+  expect(next.departureDate).toBe('2026-07-03');
+  expect(next.returnNotBefore).toBe('2026-07-02');
+});
+
+it('refreshes purchase ownership when a floating catalog flight is replaced', () => {
+  const draft = amendmentFromContract(contract);
+  draft.services = draft.services.map((service) => ({
+    ...service,
+    metadata: { ...service.metadata, purchaseSupplyType: 'FLOATING' },
+  }));
+  expect(isFloatingSalesContract(draft.services)).toBe(true);
+  const replaced = replaceAmendmentFlight(draft, 'OUTBOUND', {
+    ...offer,
+    supplyType: 'COMPANY',
+  });
+  expect(isFloatingSalesContract(replaced.services)).toBe(false);
+  expect(replaced.services[0]?.metadata?.purchaseSupplyType).toBe('COMPANY');
 });

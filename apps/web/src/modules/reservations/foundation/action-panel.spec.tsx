@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
+const completion = vi.hoisted(() => ({ complete: false }));
+vi.mock('./use-purchase-completion', () => ({
+  usePurchaseCompletion: () => completion.complete,
+}));
+afterEach(() => {
+  completion.complete = false;
+});
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   contractActionGroups,
@@ -198,4 +205,22 @@ it('shows hotel comparison without exposing full contract profit', () => {
       />,
     ),
   ).toContain('در حال دریافت نرخ مرجع هتل');
+});
+
+it('marks only the purchase action green after complete registration, never cancelled contracts', () => {
+  completion.complete = true;
+  const html = renderToStaticMarkup(<ContractActionPanel request={request} />);
+  expect(html).toMatch(
+    /class="[^"]*purchaseComplete[^"]*" data-purchases-complete="true" aria-label="خرید"/,
+  );
+  expect(html.match(/data-purchases-complete="true"/g)).toHaveLength(1);
+  expect(
+    renderToStaticMarkup(
+      <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
+    ),
+  ).not.toContain('data-purchases-complete="true"');
+  completion.complete = false;
+  expect(
+    renderToStaticMarkup(<ContractActionPanel request={request} />),
+  ).not.toContain('data-purchases-complete="true"');
 });

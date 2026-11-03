@@ -1,3 +1,4 @@
+import { isFloatingSalesContract } from '@nora/contracts';
 import { contractPassengerAgeCategory } from './sales.domain';
 import {
   readLegacyServiceParties,
@@ -22,6 +23,7 @@ import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
+import { assertFloatingFlightAirports } from './floating-flight-airports';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -207,6 +209,7 @@ export function presentSalesContract(
   paymentCreatorNames: ReadonlyMap<string, string> = new Map(),
   buyerCrypto?: SalesBuyerContactCrypto,
 ): SalesContractDetail {
+  const isFloating = isFloatingSalesContract(row.services);
   const priceComponents = row.priceComponents.map((item) => ({
     type: item.type,
     title: item.title,
@@ -276,6 +279,7 @@ export function presentSalesContract(
     tripType: row.tripType,
     payerCustomerId: row.payerCustomerId,
     servicesDetail,
+    isFloating,
     passengersDetail: row.passengers.map((passenger) => ({
       id: passenger.id,
       customerId: passenger.customerId,
@@ -442,6 +446,7 @@ export function presentSalesContract(
 function summary(detail: SalesContractDetail): SalesContractSummary {
   return {
     ...salesListTravelSummary(detail),
+    isFloating: detail.isFloating === true,
     id: detail.id,
     contractNumber: detail.contractNumber,
     customerId: detail.customerId,
@@ -1212,6 +1217,7 @@ export class SalesService {
     // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
+    await assertFloatingFlightAirports(input.services, this.references);
     let validatedPublishedHotelId: string | undefined;
     if (
       this.packageQuotes &&
@@ -1405,6 +1411,11 @@ export class SalesService {
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
     domainCall(() => validateSalesContract(input, false, categories));
+    await assertFloatingFlightAirports(
+      input.services,
+      this.references,
+      presentSalesContract(row, undefined, this.buyerCrypto).servicesDetail,
+    );
     let validatedPublishedHotelId: string | undefined;
     if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
       if (!this.packageQuotes)
@@ -2008,13 +2019,17 @@ export class SalesService {
       'CANCELLED',
       (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      (tx) => this.tickets.releaseContract(id, tx),
     );
     if (!changed)
       throw new ConflictException({
         code: 'CONCURRENT_MODIFICATION',
         message: 'قرارداد هم‌زمان تغییر کرده یا قابل لغو نیست.',
       });
-    await this.tickets.releaseContract(id);
     return this.detail(id, actor);
   }
 

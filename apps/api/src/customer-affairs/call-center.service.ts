@@ -144,7 +144,7 @@ export class CallCenterService {
       ticketId: call.ticketId,
     };
   }
-  /** Read-only destination display; recorded identity snapshots always win. */
+  /** Current directory labels on proven historical destinations; never rewrite snapshots. */
   async hydrateDestinations<
     T extends {
       id: string;
@@ -160,10 +160,7 @@ export class CallCenterService {
     const missing = calls.filter(
       (call) =>
         call.origin === 'TELEPHONY' &&
-        ['OUTBOUND', 'INBOUND'].includes(call.direction) &&
-        (!call.answerRecipient ||
-          call.answerRecipient.label ===
-            `داخلی ${call.answerRecipient.extension}`),
+        ['OUTBOUND', 'INBOUND'].includes(call.direction),
     );
     if (!missing.length) return calls;
     const sessions = await (

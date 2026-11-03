@@ -448,7 +448,9 @@ export function contractPrintHtml(
       const business =
         c.servicesDetail.find((s) => s.clientKey === t.serviceClientKey)
           ?.metadata?.businessOutput === true;
-      const facts = t.offerId ? refs.flightFacts?.[t.offerId] : undefined;
+      const facts: TicketDocumentFacts | undefined = t.offerId
+        ? refs.flightFacts?.[t.offerId]
+        : { destinationAirport: t.destinationAirport };
       const endpoint = (
         airport: TicketDocumentFacts['originAirport'],
         id: string,

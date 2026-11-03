@@ -75,6 +75,7 @@ export class FinanceFollowupService implements OnModuleInit, OnModuleDestroy {
     const input = validate.object(body, ['title', 'query']);
     const title = validate.text(input.title, 'نام نمای ذخیره‌شده', 80);
     const allowed = [
+      'category',
       'search',
       'source',
       'status',

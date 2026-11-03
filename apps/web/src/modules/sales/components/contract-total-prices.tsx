@@ -1,4 +1,5 @@
 'use client';
+import { PublishedPackagePrices } from './published-package-prices';
 import { flightRoomTotals } from '@nora/contracts';
 import type { SalesMoney } from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
@@ -24,6 +25,14 @@ export function ContractTotalPrices({
   currencies: readonly SalesCurrency[];
   onChange: (prices: SalesMoney[]) => void;
 }) {
+  if (state.packageSaleAvailable)
+    return (
+      <PublishedPackagePrices
+        key={JSON.stringify(state.packageSaleQuote)}
+        state={state}
+        onChange={onChange}
+      />
+    );
   const automatic =
     state.passengerTotalPricing ||
     ((!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
