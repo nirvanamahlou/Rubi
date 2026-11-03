@@ -4,6 +4,14 @@ import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { createdDateFilter } from './customer-affairs-date-filter';
 
+// Internal Workbench requests share storage but are not customer tickets.
+const customerTicketScope = {
+  NOT: [
+    { category: 'CALL_CENTER_REQUEST' },
+    { category: { startsWith: 'WORKBENCH_' } },
+  ],
+} satisfies Prisma.CustomerAffairsTicketWhereInput;
+
 export const customerAffairsLeadInclude = {
   timeline: { orderBy: { occurredAt: 'desc' as const } },
   handoffs: { orderBy: { createdAt: 'desc' as const } },
@@ -189,7 +197,7 @@ export class CustomerAffairsRepository {
     page: number,
     pageSize: number,
   ) {
-    where = { AND: [where, { category: { not: 'CALL_CENTER_REQUEST' } }] };
+    where = { AND: [where, customerTicketScope] };
     const [data, total] = await Promise.all([
       this.database.client.customerAffairsTicket.findMany({
         where,
@@ -204,7 +212,7 @@ export class CustomerAffairsRepository {
   }
 
   exportTickets(where: Prisma.CustomerAffairsTicketWhereInput) {
-    where = { AND: [where, { category: { not: 'CALL_CENTER_REQUEST' } }] };
+    where = { AND: [where, customerTicketScope] };
     return this.database.client.customerAffairsTicket.findMany({
       where,
       select: {
@@ -306,7 +314,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
-              category: { not: 'CALL_CENTER_REQUEST' },
+              ...customerTicketScope,
               branchId: { in: branchIds },
               status: { notIn: ['CLOSED', 'CANCELLED'] },
             },
@@ -315,7 +323,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
-              category: { not: 'CALL_CENTER_REQUEST' },
+              ...customerTicketScope,
               branchId: { in: branchIds },
               status: { notIn: ['CLOSED', 'CANCELLED'] },
               nextActionAt: { lt: now },
@@ -325,7 +333,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
-              category: { not: 'CALL_CENTER_REQUEST' },
+              ...customerTicketScope,
               branchId: { in: branchIds },
               OR: [
                 { firstResponseBreachedAt: { not: null } },
@@ -343,7 +351,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsCorrectiveAction.count({
             where: {
-              ticket: { branchId: { in: branchIds } },
+              ticket: { ...customerTicketScope, branchId: { in: branchIds } },
               status: { in: ['OPEN', 'IN_PROGRESS'] },
             },
           })
@@ -381,7 +389,7 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsTicket.groupBy({
         by: ['status'],
         where: {
-          category: { not: 'CALL_CENTER_REQUEST' },
+          ...customerTicketScope,
           branchId: { in: branchIds },
           ...created,
         },
@@ -390,7 +398,7 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsTicket.groupBy({
         by: ['priority'],
         where: {
-          category: { not: 'CALL_CENTER_REQUEST' },
+          ...customerTicketScope,
           branchId: { in: branchIds },
           ...created,
         },
@@ -399,7 +407,7 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsTicket.groupBy({
         by: ['category'],
         where: {
-          category: { not: 'CALL_CENTER_REQUEST' },
+          ...customerTicketScope,
           branchId: { in: branchIds },
           ...created,
         },
@@ -408,14 +416,24 @@ export class CustomerAffairsRepository {
       this.database.client.customerAffairsSatisfaction.aggregate({
         where: {
           submittedByCustomer: true,
-          ticket: { branchId: { in: branchIds }, ...created },
+          ticket: {
+            ...customerTicketScope,
+            branchId: { in: branchIds },
+            ...created,
+          },
         },
         _avg: { score: true },
         _count: { score: true },
       }),
       this.database.client.customerAffairsCorrectiveAction.groupBy({
         by: ['status'],
-        where: { ticket: { branchId: { in: branchIds }, ...created } },
+        where: {
+          ticket: {
+            ...customerTicketScope,
+            branchId: { in: branchIds },
+            ...created,
+          },
+        },
         _count: { _all: true },
       }),
     ]);
