@@ -323,14 +323,17 @@ it('preserves anonymous historical counts when splitting a shared catalog servic
   const draft = amendmentFromContract(contract);
   draft.passengers = [];
   draft.passengerCategories = {};
-  draft.services = [{
-    ...draft.services[0]!,
-    metadata: {
-      legacyServicePartiesV2: JSON.stringify({
-        flight: { adults: 2, children: 1, infants: 0 },
-      }),
+  draft.services = [
+    {
+      ...draft.services[0]!,
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          flight: { adults: 2, children: 1, infants: 0 },
+        }),
+      },
     },
-  }, ...draft.services.slice(1)];
+    ...draft.services.slice(1),
+  ];
   const next = applyManualAmendmentFlights(draft, {
     RETURN: {
       departureAt: '2099-01-10T12:00',
@@ -354,15 +357,18 @@ it('converts a dedicated catalog service without changing its key or sale metada
   draft.ticketSelections = (draft.ticketSelections ?? []).filter(
     (t) => t.direction === 'OUTBOUND',
   );
-  draft.services = [{
-    ...draft.services[0]!,
-    referenceId: 'old',
-    metadata: {
-      direction: 'OUTBOUND',
-      purchaseSupplyType: 'CHARTER',
-      businessOutput: true,
+  draft.services = [
+    {
+      ...draft.services[0]!,
+      referenceId: 'old',
+      metadata: {
+        direction: 'OUTBOUND',
+        purchaseSupplyType: 'CHARTER',
+        businessOutput: true,
+      },
     },
-  }, ...draft.services.slice(1)];
+    ...draft.services.slice(1),
+  ];
   const next = applyManualAmendmentFlights(draft, {
     OUTBOUND: {
       departureAt: '2099-01-10T12:00',
