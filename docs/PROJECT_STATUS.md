@@ -8689,3 +8689,5 @@ Owner requests a visible top-left close button in Document view and removal of t
 فرم معرفی کدینگ استاندارد با ذخیره نسخه‌دار و اعتبارسنجی اضافه شد؛ زیرمنوی قانونی و چیدمان فشرده دفتر کل اصلاح شد. کل دفتر کل هنوز تطبیق کامل ندارد. نگاشت/فرمول/صحت‌سنجی/گزارش استاندارد و فیلترهای باقی‌مانده گزارش‌ها ادامه کار هستند. PR1345 نباید پیش از تکمیل و آزمون نهایی مرج شود. جزئیات و حدود مشاهده منبع در docs/tasks/LEDGER-SOURCE-PARITY-1103.md ثبت است.
 
 2026-11-03 PC-B LEDGER-SOURCE-PARITY-1103: fiscal-year list and persisted named filters updated on rubi3100; scoped tests pass, runtime API build/health pass. Full GL/legal/report parity remains incomplete; PR1345 stays draft. No production data changes. Details: docs/tasks/LEDGER-SOURCE-PARITY-1103.md.
+
+2026-11-03 PC-B: trial balance2/4/6/8 structures now retain gross prior turnover, selected balance filters and matching Excel.10 targeted API checks and5 route/translation checks pass; runtime API build passes. Full GL source parity is still incomplete; PR1345 remains draft.

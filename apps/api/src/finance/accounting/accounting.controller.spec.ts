@@ -119,4 +119,35 @@ describe('Accounting HTTP authentication and export permissions', () => {
     expect(sheet).toContain('نام ثبت‌شده');
     expect(sheet).not.toContain('بدهکار');
   });
+  it('exports the selected presentation and its filtered totals, not legacy net columns', async () => {
+    report.mockResolvedValueOnce({
+      rows: [],
+      debit: '0',
+      credit: '0',
+      table: {
+        structure: '6',
+        headers: ['کد حساب', 'عنوان حساب', 'گردش قبل دوره — بدهکار'],
+        rows: [
+          {
+            accountId: 'synthetic',
+            values: ['001', 'Synthetic', '9007199254740993.25'],
+          },
+        ],
+        totals: ['جمع', '', '9007199254740993.25'],
+      },
+    });
+    const file = await app
+      .get(AccountingController)
+      .exportReport('book', { structure: '6' }, {
+        actor: {},
+        headers: { 'accept-language': 'fa' },
+      } as never);
+    const sheet = strFromU8(
+      unzipSync(await buffer(file.getStream()))['xl/worksheets/sheet1.xml']!,
+    );
+    expect(sheet).toContain('گردش قبل دوره');
+    expect(sheet).toContain('9007199254740993.25');
+    expect(sheet).not.toContain('مانده اول دوره');
+    expect(report).toHaveBeenLastCalledWith('book', { structure: '6' }, {});
+  });
 });
