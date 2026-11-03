@@ -84,35 +84,33 @@ describe('party receipt FIFO', () => {
 });
 describe('Sales party public boundary', () => {
   it('looks up only exact scoped payer contracts in stable oldest-first order and includes refunds/allocations', async () => {
-    const findMany = vi
-      .fn()
-      .mockResolvedValue([
-        {
-          id: '1',
-          version: 1,
-          contractNumber: '120001',
-          createdAt: new Date('2026-01-01'),
-          customerNameSnapshot: 'agency',
-          priceComponents: [
-            {
-              type: 'BASE',
-              amount: new Prisma.Decimal(100),
-              currencyCode: 'USD',
-              title: 'total',
-            },
-          ],
-          payments: [
-            {
-              amount: new Prisma.Decimal(40),
-              currencyCode: 'USD',
-              status: 'FINANCE_CONFIRMED',
-              refunds: [{ amount: new Prisma.Decimal(10) }],
-              allocations: [],
-            },
-          ],
-          receiptAllocations: [],
-        },
-      ]);
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: '1',
+        version: 1,
+        contractNumber: '120001',
+        createdAt: new Date('2026-01-01'),
+        customerNameSnapshot: 'agency',
+        priceComponents: [
+          {
+            type: 'BASE',
+            amount: new Prisma.Decimal(100),
+            currencyCode: 'USD',
+            title: 'total',
+          },
+        ],
+        payments: [
+          {
+            amount: new Prisma.Decimal(40),
+            currencyCode: 'USD',
+            status: 'FINANCE_CONFIRMED',
+            refunds: [{ amount: new Prisma.Decimal(10) }],
+            allocations: [],
+          },
+        ],
+        receiptAllocations: [],
+      },
+    ]);
     const data = await partyContractBalance(
       { salesContract: { findMany } } as unknown as Prisma.TransactionClient,
       'branch',
@@ -138,15 +136,13 @@ describe('Sales party public boundary', () => {
     );
   });
   it('searches authorized branches without treating the search name as identity', async () => {
-    const findMany = vi
-      .fn()
-      .mockResolvedValue([
-        {
-          payerCustomerId: 'canonical',
-          branchId: 'b',
-          customerNameSnapshot: 'display',
-        },
-      ]);
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        payerCustomerId: 'canonical',
+        branchId: 'b',
+        customerNameSnapshot: 'display',
+      },
+    ]);
     expect(
       await contractParties(
         { salesContract: { findMany } } as unknown as Prisma.TransactionClient,
