@@ -240,7 +240,14 @@ function Fields({
   );
 }
 
-export function GhestirooWorkspace({ branchId }: { branchId: string }) {
+export function GhestirooWorkspace({
+  branchId,
+  embedded = false,
+}: {
+  branchId: string;
+  embedded?: boolean;
+}) {
+  const Container = embedded ? 'section' : Card;
   const [kind, setKind] = useState('hotels');
   const [view, setView] = useState<'editor' | 'imports'>('editor');
   const [items, setItems] = useState<
@@ -355,8 +362,10 @@ export function GhestirooWorkspace({ branchId }: { branchId: string }) {
     });
   }
   return (
-    <Card className="grid gap-4 p-5">
-      <h2 className="text-lg font-bold">مدیریت خدمات قسطی‌رو</h2>
+    <Container className={embedded ? 'grid gap-4' : 'grid gap-4 p-5'}>
+      {!embedded ? (
+        <h2 className="text-lg font-bold">مدیریت خدمات قسطی‌رو</h2>
+      ) : null}
       <p className="text-sm text-muted-foreground">
         تعریف و ورود اکسل مستقیماً در سایت قسطی‌رو انجام می‌شود؛ اطلاعات در فروش
         و مالی نورا کپی نمی‌شوند.
@@ -640,7 +649,7 @@ export function GhestirooWorkspace({ branchId }: { branchId: string }) {
           ) : null}
         </>
       )}
-    </Card>
+    </Container>
   );
 }
 

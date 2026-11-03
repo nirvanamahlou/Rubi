@@ -8643,6 +8643,19 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — VALIDATING
+
+Connections now has one top selector for the four listed websites and one shared
+selected-site layout: API disclosure closed by default, independent pinned live
+presence chart and native service/Excel area. System-detail entries reuse the
+same panel. Existing native operations remain; selecting another site unmounts
+old state. Strict native binding prevents the primary Niyayesh connection from
+being shown as another site's service data. Remove the standalone generic guide
+and duplicate unscoped connection cards. No API/IAM/schema/dependency/producer or
+operational-data changes.66 Integrations checks pass; full types, build, live UI
+acceptance and exact-head hosted gates precede owner-authorized develop merge.
+Details: tasks/SITE-CONNECTIONS-LAYOUT-1103.md.
+
 ## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 All11 owner comments are active in Integrations: aggregate period KPIs with exact
