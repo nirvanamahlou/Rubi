@@ -32,7 +32,7 @@ describe('dossier recording authorization', () => {
       { client: tx } as never,
       {} as never,
       { access } as never,
-      {} as never,
+      { canDownloadCallRecordings: vi.fn().mockResolvedValue(true) } as never,
     );
     return { tx, access, service };
   }

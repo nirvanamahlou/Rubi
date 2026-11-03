@@ -175,7 +175,7 @@ export class DocumentsDailyPackagesService {
       row.currentVersion?.detectedMimeType !== 'application/pdf'
     )
       throw new NotFoundException('پکیج پیدا نشد.');
-    // Standard delivery retains the CLEAN scan, archive, step-up and audit gates.
+    // Source-scoped PDF delivery permits pending scans; known blocked files stay denied.
     return this.documents.download(id, packageActor(actor), metadata, {
       sourceModule,
       sourceEntityType,

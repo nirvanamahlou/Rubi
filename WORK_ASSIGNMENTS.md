@@ -1,3 +1,9 @@
+## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
+
+Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
+
+Validated 94 API/database and 130 Web/i18n tests, full API/Web types, scoped lint and both production builds. Source changes require final-head hosted gates before authorized develop merge. No runtime rollout or operational account reassignment. Details: docs/tasks/WORKBENCH-FIXES-1103.md.
+
 ## PURCHASE-COMPLETION-1103 — PC-A — READY_FOR_CI
 
 PC-A; codex/pc-a-purchase-completion-1103 from current develop. Owner authorizes removing purchase-entry FX baseline controls and fixing purchased contracts remaining in the buying queue, then develop merge. Reserve reservation-purchase-selection SQL and its existing isolated PostgreSQL regression, Finance PurchaseFxRate entry adapter and focused rendering regression, own docs only. Read-only diagnosis found three reservation revisions for the reported contract, with all four hotel/transfer purchases on the latest revision. Select current contract intake before queue filters and reuse latest matching service purchases from same-contract, same-branch earlier intake revisions; preserve every historical intake/payment and independent Finance FX capture. No migration/dependency/production writes/deployment.
@@ -195,6 +201,14 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-hotel-names-1031 from develop1a9
 ## HOTEL-TRANSFER-COUNTS-1031 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-transfer-counts-1031 from developd4610994a. User authorizes automatic outbound/return transfer quantities from the contract in each hotel purchase form and develop merge. Reserve bounded Web hotel-stay-purchase initial draft, new pure contract-count helper/regressions, existing purchase interaction regressions and own notes. Count distinct allocated chargeable passengers per direction, retain legacy booked service counts, and scope transfer service keys to the selected hotel; never copy primary transfer quantities to an unrelated additional hotel. Preserve saved purchases including explicit zero, editable draft quantities, Decimal prices, explicit submission and authorization. No schema/API/dependency/migration or runtime/server changes. Prior hotel-room work is merged/released; exact-head full hosted gates precede merge.
+
+## PRICING-TEMPLATE-FIELDS-1103 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-pricing-template-fields-1103 from develop0ee8c1954. Owner requests hotel-only sale rows (remove flight-derived IRR inputs), footer-only commission/flight/business fields, improved default output font and develop merge. Reserve bounded Pricing Web workspace/generator-data/bridge/editor-font assets and tests, shared Package Pricing composition calculation helper and API publication consumer/tests; own status notes. Producer/consumer ship together: existing priceFields persistence retained, new composition publication rows exclude footer fields; immutable old publications unchanged. Owner additionally confirms flight adds separately to contract totals. Reserve additive currencyAmounts.priceBasis JSON marker, Pricing-owned Sales public catalogue and quote regressions; no Sales internal writer. Existing combined publications remain unmarked and never receive airfare twice. Producer and consumers release together. Reserve own DECISIONS note and the single Vazirmatn translation in English overrides and generated API/standalone catalogues. No schema/migration/dependency/operational data/deployment. Existing related scopes merged/released; no active overlapping target writer found.
+
+## PAYMENT-ACCOUNT-LABELS-1103 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-payment-account-labels-1103 from develop1ed66a85c. Owner requests readable paying-account choices in Finance purchase payments and develop merge. Reserve only finance-inbox-live-workspace.tsx paying-account label plus own status notes. Existing Finance listSettlementAccounts already provides title, bankName and maskedIdentifier; reuse receiptAccountLabel so options/search/selection include all three and currency. No API/schema/migration/dependency, bank-account producer, Accounting, permission/payment policy, transaction or deployment change. Prior related purchase-payment scope is merged/released; no active overlapping target writer found.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -10628,14 +10642,74 @@ CALL-CENTER-QUEUE-FILTERS-1101 localization: reserve one own English hint overri
 
 CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three focused API/client/layout checks, isolated full API/Web typechecks/builds and scoped lint pass. Native authorized production queue verifies registrar/team-empty and status filtering; filtered counts/page queries share permission predicates. Follow-up selector removed, three queue controls moved, contacts independent. Current409a source changes preserved by three-way integration; backup/deploy lock and AMI/Worker/recording health passed. No schema/grant/business-test-data writes. Source reservations freeze on push; own task note records receipts and local dependency-link limitations.
 
+## CALL-CENTER-QUEUE-TOOLBAR-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-queue-toolbar-1101 from develop379830423. Owner explicitly authorizes queue filter styling and placement left of existing view tabs. Reserve workflow.tsx/workflow.module.css and own release/status notes. Reuse approved contact field/clear styling, compact reset and responsive wrap; preserve queue API, authorization, popup behavior and all runtime overlays including Other source. No schema/dependency/API changes. Published prior scopes released; no overlapping local writer.
+
+CALL-CENTER-QUEUE-TOOLBAR-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Scoped Web lint, two existing queue regressions, full Web typecheck/build pass. Browser confirms desktop placement and status/reset behavior; narrow layout checked. Web-only locked activation preserves env/mounts and all other service IDs. No migration, permission, contract or dependency changes. Source scope releases on push.
+
 ## CALL-CENTER-SOURCE-OTHER-1101 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
 CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared source list adds Other to contact filter and popup form.23 existing focused tests, scoped lint, Web typecheck/build and translation sync pass. Web-only backed-up Compose/image rollback activation verified; API/Worker/data services unchanged. Source reservation releases on push; no schema/grant/dependency change. Receipt /opt/rubi/CALL-SOURCE-OTHER-RELEASE-1101.json.
 
+## CALL-CENTER-OWN-OUTBOUND-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner authorizes each employee seeing their outbound calls, including unanswered outbound calls. Reserve CallCenterAccessService, existing answered-access PostgreSQL regressions and own task/release notes. Extend permission-scoped contact ownership evidence with nonsynthetic TELEPHONY OUTBOUND session offers whose positive mappingVersion was validated by ingestion against the originating extension; exclude manual transfers (version0), inbound ring offers, synthetic/manual calls, unrelated users/branches. Preserve actual-answer evidence, UI, grants, recording policy and existing Web toolbar/Other overlays. No schema, dependency or shared contract change. Prior published scopes released.
+
+CALL-CENTER-OWN-OUTBOUND-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.34 isolated PostgreSQL regressions, scoped lint, full API typecheck/build pass. Production API-only release and native14-account/70-branch ORM/SQL acceptance verified; Web/Worker/data services unchanged. Prior actual-answer policy now explicitly includes owner-authorized validated OUTBOUND originating offers; inbound/manual/synthetic restrictions remain. No schema/dependency/grants changed. Scoped source reservation releases on push.
+
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
+
+## ERP-FINAL-RELEASE-1101 — PC-C — RESERVED
+
+Owner authorizes latest develop publication for all ERP modules. Pin d0845c8fd; four hosted gates pass. Reserve bounded release tooling/docs only; preserve live approved queue toolbar, outbound visibility, worker namespace guard, encrypted configuration/documents, PBX/grants. No new schema/dependency changes; reconcile migrations before deployment. Archive unused prior task context outside server and verify SHA before removal; never remove mounted/runtime/rollback data.
+
+ERP-FINAL-RELEASE-1101 — COMPLETE. Develop d0845c8fd plus5 declared approved runtime overlays deployed after verified encrypted backup.83 scoped API/Web tests and34 isolated PostgreSQL tests pass;1 external contract skip. Canary, source hashes, runtime health/assets, Worker namespace/auth, AMI and recording timers verified;17-account85-branch acceptance passes. No migration/grants/PBX changes. Old unused task/archive cleanup externally SHA-verified. Release reservation ends on publication.
+
+## CALL-SOURCE-SMS-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner authorizes SMS in popup/contact filter shared acquaintance sources. Reserve model.ts and own notes only. Web-only rollout preserves latest develop runtime overlays; no API/schema/dependency/grant change. Prior source scopes published and released.
+
+CALL-SOURCE-SMS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.15 focused tests, lint, full Web typecheck/build pass. Shared SMS value available in both source dropdowns. Web-only locked activation preserves env/mounts and API/Worker/data service IDs; rollback Compose/image retained. No schema/grant/dependency changes. Source reservation releases on push.
+
+## CALL-HISTORY-SUBJECT-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history summary and above note. Reserve workspace.tsx and own notes only. Display actual per-call subject with explicit unrecorded fallback; preserve all unrelated UI/runtime overlays and SMS option. No API/schema/dependency/grant change; prior scopes published and released.
+
+CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
+
+## CALL-HISTORY-SPACING-1101 — PC-C — RESERVED
+
+Owner authorizes expanded history spacing, separate recipient label/value and removal of duplicate registration timestamp. Reserve workspace.tsx and own notes only; preserve subject and current runtime overlays. No API/schema/grants.
+
+CALL-HISTORY-SPACING-1101 — COMPLETE. Web-only deployed;17 tests, lint/typecheck/build pass. Source scope released on push.
+
+## CALL-HISTORY-LABELS-1101 — PC-C — RESERVED
+
+Owner authorizes removal of subject from expanded history and colon after recipient captions. Reserve workspace.tsx/own notes only; retain spacing and heading, no API/schema/grant changes.
+
+CALL-HISTORY-LABELS-1101 — COMPLETE.17 tests, lint/typecheck/build pass; Web-only rollout verified, other services unchanged. Reservation released on push.
+
+## QUEUE-OPTION-STYLE-1101 — PC-C — RESERVED
+
+Owner requests three queue dropdown menus matching shared source selector. Reserve workflow.module.css generic button selector only. Exclude role=option from action-button decoration; preserve shared combobox styles and live toolbar overlay via runtime-relative patch. No behavioral/API/schema change.
+
+QUEUE-OPTION-STYLE-1101 — COMPLETE. Shared menu options excluded from workflow action-button decoration using zero-specificity :where exclusion to preserve other buttons. Existing queue tests, full Web typecheck/build pass; runtime-relative Web-only rollout preserves toolbar and other services.
+
+## POPUP-ONLY-CALLS-1101 — PC-C — RESERVED
+
+Owner requests removal of manual-call entry and evidence-based callback triage. Reserve workspace.tsx for manual entry removal and bounded callback domain analysis/tests later. Sales-manager account selection requested before access policy expansion; do not infer all unit managers or global grants. Preserve operational popup completion, existing contacts and approved UI overlays.
+
+POPUP-ONLY-CALLS-1101 — PHASE1_DEPLOYED / CALLBACK_PENDING. UI manual entry removed;17 tests/typecheck/build pass. Rebased onto concurrent HR release; other service IDs preserved. Native mahsa/atena accounts resolved read-only; backend manual-create restriction and callback routing/assignment/history policy still need implementation and tests. No new grants or callback behavior active.
+
+## MISSED-CALL-TRIAGE-1102 — PC-C — RESERVED
+
+PC-C; owner authorizes completion: explicit mahsa/atena callback manager identities, unique ring recipient own visibility, multiple/no destination manager triage, request assignment access and removal after successful callback/closed resolution; historical labels only from provider evidence. Reserve Call Center access/callback/service/workflow helpers/tests, owning IAM callback authorization leaf if needed, own operational rollout/docs. No schema/dependency/grant broadening; preserve current runtime own-outbound and HR overlays. No competing active owner found. Native identities must be verified before explicit deployment configuration; no guessed employee or successful-answer backfill.
+
+MISSED-CALL-TRIAGE-1102 — IMPLEMENTED / DEPLOYED. Explicit mahsa/atena triage, same-employee ring scope, assigned-request access, human-answer callback resolution, evidence-only historical projection and backend popup-only creation.35 isolated PostgreSQL regressions, API lint/typecheck/build and native14-account/70-branch authorization audit pass. No migration/dependency/general IAM grant change. See docs/tasks/MISSED-CALL-TRIAGE-1102.md. Reservation released on source push.
 
 ## HR-RADAN-LIVE-1101 — PC-B — IN_PROGRESS
 
@@ -10661,6 +10735,22 @@ COMPUTER_ID=PC-A; codex/pc-a-shared-hotel-supplier-form-1102 from develop061f265
 
 SHARED-HOTEL-SUPPLIER-FORM-1102:33 API and59 Web focused checks, scoped lint and Web/API types pass after refreshing generated declarations. Synthetic two/three-page Chrome PDFs visually verified, including independent hotel prices, repeated footer and complete notice block. Integrated latest develop and retained new round-trip transfer validation alongside the optional shared supplier flag. Source freezes on publication; reservations release upon verified merge. Final exact-head hosted gates precede owner-authorized merge; no operational deployment.
 
+## SHORT-SERVICE-CALLS-1102 — PC-C — RESERVED
+
+Base origin/develop534ccfd38. Owner authorizes diagnosis and correction of missing outbound short service numbers (193). Reserve integrations/issabel/native-outbound.ts and focused tests, provider validation/history-recovery helpers if proven necessary, own release/status notes. Explicit configured source-extension/trunk proof must remain, no inference of internal calls from digit length. No dial-origination expansion, UI, schema or dependency changes. Preserve production missed-triage and concurrent team overlays; history recovery only from actual PBX evidence with stable IDs.
+
+SHORT-SERVICE-CALLS-1102 scope extension: recovery-only identity helper and owning Integrations telephony.service leaf/tests. Existing historical mapping version unchanged before call plus unique current HR match required when unrelated HR edits make the stricter temporal HR port empty. No incoming inference or historical popup. Live runtime telephony.service compared byte-equivalent after newline normalization; no competing source owner of this leaf.
+
+SHORT-SERVICE-CALLS-1102 — COMPLETE / DEPLOYED. Capture accepts3–15 digit numbers only through configured external trunks. Four actual193 calls recovered with stable CDR/CEL historical receipts and unchanged mapping/current HR proof; employee list/SQL visibility verified,0 duplicates/offers.34 capture checks,35 focused recovery checks,49 PostgreSQL checks,2 Node evidence tests, API lint/typecheck/build pass. Peer reservation/recipient-grade releases preserved. No UI/schema/grant/dependency change. Source reservation releases on push; docs/tasks/SHORT-SERVICE-CALLS-1102.md.
+
+## HR-CALL-ROUTING-1102 — PC-C — RESERVED
+
+Base short-service task0b78f7ddb; owner authorizes automatic employee-account/internal-extension lifecycle and explicitly all linked accounts for shared extensions. Reserve HR-owned new roster read port (no hr.service edits), IAM directory and authenticated actor/login capability leaf, Integrations Issabel dynamic capture and private multi-recipient envelope, Call Center provider projection/pending-offer revocation and focused tests. Dynamic userId FK is authoritative; username/display strings never guessed. No schema/dependency/persisted IAM grants/PBX writes/UI changes. Own-only derived capabilities gated by active linked HR/account/branch state; preserve explicit denies and historic call facts. Private producer/consumer envelope adds optional HR recipients; old receipts retain current path. Existing claim/CAS editor boundary preserved. No active competing writer of these exact leaves found.
+
+HR-CALL-ROUTING-1102 — COMPLETE / DEPLOYED. Active employee/account/internal lifecycle now derives own-only connection and current HR alias routing without persisted roles or manual mapping. Shared extensions notify all related valid accounts as owner requested; stale offers revoked after edits/unlink/delete; historical evidence retained.62 isolated PostgreSQL checks, API lint/typecheck/build and native16-account/18-extension acceptance pass;14 sessions and AMI healthy. Shared-lock backed-up activation preserves peer releases/Web and Worker transport. No schema/dependency/PBX/UI changes. See docs/tasks/HR-CALL-ROUTING-1102.md; source reservation released on push.
+
+HR-CALL-ROUTING-1102 final scope: native-outbound.ts and regression retain answer/end evidence for an already anchored call when its HR extension is removed mid-call; new/orphan calls still denied.17 native checks and repeated native roster/session/AMI audit pass on final backed-up release. Prior short-service scope stays intact.
+
 ## CALL-HISTORY-TITLE-1102 — PC-C — IN_PROGRESS
 
 Owner requests current grade/unit labels for historical calls. Reserve CallCenterService destination read enrichment and focused history tests. Read-only labels from HR public directory on provider-proven extensions; preserve recorded times, scope and original encrypted snapshots. No migration or ownership/data rewrite.
@@ -10683,6 +10773,18 @@ COMPUTER_ID=PC-A; codex/pc-a-amend-flight-date-sync-1102 from origin/develop. Ow
 
 AMEND-FLIGHT-DATE-SYNC-1102: four new stale-bound cases reproduced before correction;18 focused Web and93 existing API tests pass, scoped ESLint and Web types pass. Covers outbound/return conversion, manual return crossing UTC midnight, no-op stability and preservation of actual reversed dates for strict server rejection. Source freezes on push and reservations release upon verified develop merge. Final exact-head hosted gates required; no operational deployment.
 
+## CALL-POPUP-FIELD-ORDER-1102 — PC-C — RESERVED
+
+Base origin/develop7ac4dd94a. Owner explicitly authorizes swapping name/phone, acquaintance source/direction and outcome/recipient in every shared CallForm popup. Reserve call-form.tsx and own status/release notes only; preserve validation, read-only identity, request fields, source values and approved popup behavior. No competing active writer found; prior Call Center source reservations released. Web-only checked runtime-relative publication, no API/Worker/data changes.
+
+CALL-POPUP-FIELD-ORDER-1102 — COMPLETE / DEPLOYED. Shared CallForm defaults name/phone, source/direction and outcome/recipient in requested RTL order across all popup entry points. Identical field blocks/remaining source verified;17 existing tests, scoped lint, full Web typecheck/build and public asset checks pass. Web-only release retains API/Worker/data IDs and env/mounts; source reservation releases on push. See docs/tasks/CALL-POPUP-FIELD-ORDER-1102.md.
+
+## STAFF-CDR-BACKFILL-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. User authorizes historical employee contact-list recovery from 1405/08/09 through current snapshot. Reserve new operator-only scripts/call-center/recover-staff-calls.cjs and focused evidence tests, own task note/status. Use verified read-only CDR/CEL, existing recovery/domain ports, historical routing proof, encrypted backup and deployment lock. Preserve saved business fields; never create historical popup, false answer, role/grant or duplicate root. No runtime source, schema, migration, dependency, HR or PBX writes.
+
+STAFF-CDR-BACKFILL-1102 — COMPLETE / SOURCE_READY_FOR_REVIEW. Verified 144 finalized external roots from Tehran 1405/08/09, preserved 118 existing calls, recovered 26 missing calls through private provider/domain ports. 82 actual scoped list checks across 14 active accounts pass; replay plans zero new roots, historical popup offers zero. Six evidence tests pass. Owner confirmed historical aliases111/115/shared201. Accounts113/202 remain inactive. Encrypted backups and shared deployment lock used; no runtime/schema/grant/HR/PBX changes. Source reservation releases on push.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes moving Tehran date range between contact search and advanced toggle and laying contact-detail filters in one desktop row. Reserve Call Center workspace.tsx and scoped CSS plus own notes. Preserve date semantics, filters, handlers and all other approved UI; no API/data/schema/dependency/runtime changes.
@@ -10696,6 +10798,16 @@ COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from devel
 ## HR-DASHBOARD-LIVE-1102 — PC-B — IN_PROGRESS
 
 Reserve HR dashboard domain/service bounded query, dashboard cards/charts and tests. User requests actual API data,current Persian season,newest-first30-day attendance and push/develop merge. Preserve HR scope and Radan source dates; no migration/dependencies or deployment.
+
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests correcting missing personal recent-call display for shared201 and auditing all employees. Actual authenticated actors for both targets default to Jahan Academy while Issabel data belongs to Central Office. Reserve narrow HR current employee branch port, IAM directory delegate, Call Center branches preferred metadata/read consumer, Web branch bootstrap/read-client and focused tests/own notes. Producer HR -> IAM -> Call Center read; additive optional meta.defaultBranchId preserves existing clients and grants. No branch UUID hardcodes, schema, dependencies, IAM grants, PBX or call-data rewrites. Existing targets have no active overlapping local edits; preserve production peer overlays under shared deploy lock. Approved UI layout is unchanged.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 validation extension: reserve exactly two existing Call Center English label/error entries in en-overrides and synchronized API/standalone catalogues. Production baseline coverage exposed pre-existing missing colon label and native-only registration message. Preserve all peer catalogue entries and test gates; no new Persian UI or shared-contract change.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — SOURCE_READY:11 API and23 Web checks, scoped lint, API/Web types/builds and native17-account/119-contact access verification pass. Production unchanged pending image execution smoke correction and peer deployment completion. Source scope freezes on publication.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — DEPLOYED / PR1308: post-release17 employee accounts plus Demo,119 contact checks and both201 histories complete. Preserved live peer overlays, runtime environment and mounts, DB/Redis identity; encrypted backup verified, Worker auth/AMI/recording healthy. One-layer packaging of1669 byte-verified compiled Web artifacts avoids inherited overlay mount limit; no Docker configuration changes. Reservation released; exact-head CI remains separate from native operational validation.
 
 ## HR-RADAN-DATE-SCHEDULE-1102 — PC-B — IN_PROGRESS
 
@@ -10713,17 +10825,105 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-contract-dates-1102 from develop
 
 HR-EMPLOYEE-CONTRACT-DATES-1102 reserves only three new English override keys for the requested column labels; other translation/catalog writers remain untouched.
 
+## CALL-EXPERT-PERFORMANCE-1102 — PC-C — IN_PROGRESS
+
+Owner authorizes removing outbound-contact ranking and replacing expert activity with scoped operational call/follow-up metrics and drilldowns. Reserve ReportHighlights, Call Center report read service/client, new bounded report helper/tests and own docs. Native actor/extension attribution via owner-public directories; preserve permission scopes. No schema/data/dependency changes. Public additive report contract producer Customer Affairs/Tasks, consumer Call Center Web; existing fields retained for compatibility.
+
+Owner explicitly authorizes limited HR public projection for this report. Extend new HR call-performance directory leaf, Tasks-owned call-center public facts, Customer Affairs additive activity contract and scoped detail query DTO. Producer/consumers ship together; existing report fields remain compatible. Historical attribution uses stored answer responsibilities or outbound session offers, never guesses accounts from present-day extension ownership.
+
+CALL-EXPERT-PERFORMANCE-1102 — SOURCE_READY: limited HR port authorized by owner; historic attribution uses native account evidence, not current roster guesses. Additive report/detail DTO retains existing clients.198 API/78 Web checks, scoped lint and API/Web build/type checks pass; production candidate read-only probe reconciles details.68 database-dependent checks skipped without test DB. No deployment/data/schema/IAM change. Scope freezes on publication; docs/tasks/CALL-EXPERT-PERFORMANCE-1102.md.
+
+## CALL-CENTER-AUDIO-CEO-ONLY-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; base latest origin/develop. Owner explicitly requests only Danial Altafi may download audio; implementation only, NO SERVER DEPLOYMENT or runtime/account changes. Reserve IAM Call Center actor permission normalization and single-account download policy, Customer Affairs public recording authorization, focused IAM/domain/HTTP tests, recording UI denied rendering and own docs. Use one server-configured immutable IAM account ID, deny on missing/invalid setting; never infer CEO from display name, role, shared extension or global/demo access. Preserve branch/contact authorization, audio integrity/range/retention/uploading and other UI. No schema/dependency/grants changes. Existing published scopes frozen/released.
+
+CALL-CENTER-AUDIO-CEO-ONLY-1102 — SOURCE_READY / DO NOT DEPLOY:29 API and17 Web checks, scoped lint, API/Web TypeScript and full production builds pass (Web isolated same-drive checkout). Updated PostgreSQL expectations await isolated CI database gate. No SSH/server/runtime/grant mutation occurred. Scope includes narrow IAM directory, Customer Affairs recording capability endpoint and authorization port, Integrations media service, existing two PostgreSQL regression fixtures, Web recording capability/action/client tests and own notes. Source scope freezes on publication.
+
+## CALL-CENTER-TEN-CONTACTS-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests10 contact rows per page, implementation only and NO SERVER DEPLOYMENT. Reserve only readApi.search page size and existing transport regression expectation plus own docs. Existing contact table derives page count from server totalPages. Preserve filters, revision/cancellation and separate KPI/history/queue paging. No API/schema/dependency/UI layout/runtime change. Prior Call Center scopes are published and frozen.
+
+CALL-CENTER-TEN-CONTACTS-1102 scope correction: existing page count divides total by hardcoded20. Reserve the single contact-table page-count expression in workspace.tsx and shared contact-page constant so Next/Previous reach every10-row page; no other workspace code or layout changes.
+
+CALL-CENTER-TEN-CONTACTS-1102 — SOURCE_READY / DO NOT DEPLOY: eight transport regressions, scoped lint/format, full Web typecheck and production build pass. Contact search requests10 and page count uses server page size; separate20-row KPI/history requests unchanged. No server commands, runtime or data changes. Source reservations freeze on publication.
+
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests Agency option in contact-source dropdown of all Call Center popups. Reserve only shared Call Center model sources list and own docs; source-only, no production deployment as in preceding requests. Shared popup/filter consumers keep matching values; existing Agency English translation reused. No schema/API/dependency/permissions/layout change. Preserve live/unmerged SMS option on eventual integration; prior independent drafts not imported. No overlapping active model reservation found.
+
+CALL-CENTER-AGENCY-SOURCE-1102 — SOURCE_READY / DO NOT DEPLOY:18 existing model/form/i18n checks, scoped lint/format, full Web TypeScript and production build pass. Shared source option Agency reuses existing translation; no API/schema/runtime/data changes. Scope freezes on publication.
+
+## CALL-CENTER-SOURCE-SHARE-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests source share title and one count per contact instead of per call. Reserve CallCenterReadService report source aggregation/metadata, existing report PostgreSQL regression, report-highlights rendering/tests, own English labels and generated catalog synchronization plus own docs. Producer sources counts become unique branch phone-groups, one latest matching call source per contact within authorized report filters/time range; unchanged calls/groups/other metrics. Consumer chart denominator/center/accessible text use contacts. No new API field required except additive sourceBasis metadata; no schema/migration/dependency/permissions or production changes. Preserve all published independent drafts and live overlays.
+
+CALL-CENTER-SOURCE-SHARE-1102 — SOURCE_READY / DO NOT DEPLOY:16 API report/search checks pass on fresh local PostgreSQL18 with full migrations; six Web render/i18n checks, scoped lint/format, API/Web types and full builds pass.28 repeated calls contribute one source contact; source changes/window exclusion verified. Counts and denominator use unique authorized phone-groups. No production access/data/schema/grant/runtime changes. Source reservation freezes on publication.
+
+## CALL-CENTER-REMOVE-REPORT-KPIS-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner explicitly authorizes removing only the three report-summary cards: registered calls, unique phone contacts and needs completion. Reserve bounded ReportPanel stats JSX and now-unused Phone/FileText icon imports in workspace.tsx plus own docs. Preserve report heading/range/highlights, other KPIs, backend metrics, permissions and approved UI elsewhere. Source only, no production release consistent with preceding requests. No API/schema/dependency/CSS changes; published prior workspace source scopes frozen.
+
+CALL-CENTER-REMOVE-REPORT-KPIS-1102 — SOURCE_READY / DO NOT DEPLOY: both existing report-highlights checks, scoped lint/format, full Web types and production build pass. Only ReportPanel stats wrapper and two unused icons removed; other metrics/cards/data preserved. No server commands or runtime changes. Source reservation freezes on publication.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 COMPUTER_ID=PC-D; branch codex/pc-d-ghestiroo-dashboard-1102 from develop5be385893. Owner requests full first-page Ghestiroo reporting, real metrics/details/trends/visits/activity/comparison/readiness and live validation. Reserve Integrations Ghestiroo producer-consumer report contract, bounded shared dashboard dispatcher/helpers and IntegrationsWorkspace overview reuse, own translations/tests/docs only. Site implementation stays in ehsandni/Ghestiroo. No Nora schema, migration, dependency, IAM or other-module changes. Prior same-owner source scopes are merged/released; active peers do not overlap these files. Preserve Niyayesh behavior, branch/person access and currency-separated source facts. Detailed scope: docs/tasks/GHESTIROO-DASHBOARD-1102.md. All final-head Nora gates precede authorized develop merge; no-CI-test preference remains Ghestiroo-only.
 
 Source PR144/145 merged develop; Nora PR1318 pending final exact-head gates and owner-authorized merge. Live readonly reconciliation covers four KPI totals/daily series, eight complete KPI/queue detail lists and anonymous visits. Owner-session Brands/Overview, source isolation, today/30-day periods and detail/empty states verified. Production overlays preserve1040 API/1841 Web files outside scope, environment/mounts and unrelated services. Source scope freezes on final push and reservations release on verified develop merge.
 
+## AMIN-OPEN-PR-REPAIR-1103 / PR1320 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1260 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1261 — PC-C
+
+Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 develop PRs and merging after all final-head gates succeed. Published task scopes are reopened sequentially in isolated repair branches. Preserve peer changes and later approved behavior. No production deployment, force push, dependency or migration changes, or gate bypass.
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1267 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1269 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1277 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1281 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1286 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1290 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1296 — PC-C
+
+Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1308 — PC-C
+
+Integrate current develop and preserve both translated labels and peer catalog additions. No runtime deployment. All final-head gates required.
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1314 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1315 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1316 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1317 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1319 — PC-C
+
+Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
 ## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; codex/pc-a-purchase-green-without-form-1103 from develop7d74d786b. Owner authorizes purchase button green for persisted purchases even without a supplier reservation form and develop merge after checks. Reserve bounded purchase-completion helper/controller response and tests; Reservations action-panel purchase registration hook/style/tests and own notes. Add a registration boolean alongside unchanged complete coverage in existing branch-scoped read endpoint; producer/consumer ship together, old clients remain compatible. A persisted zero hotel/service purchase counts; quote/form settings alone do not; cancelled contracts stay non-green. No financial semantics, purchase/issuance writes, schema/migration/dependency or deployment changes. Prior same-owner status badge scope is merged/released; no active overlapping writer found.
 
 PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped lint pass. Covers saved zero/legacy purchases without forms, partial registration independent of completion, form quotes without purchases, cancellations, additive controller response and stale refresh isolation. All final-head hosted checks required before owner-authorized merge. No operational data or deployment. Source freezes on publication and releases on verified merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 — INTEGRATED CANDIDATE
+
+All 17 owner-authored PR heads are preserved as merge ancestors of this candidate. Documentation append conflicts retain both entries; source integration preserves outbound access plus callbacks, SMS plus Agency, contact-based source share plus expert reporting, executive-only audio and ten-row paging. The later no-duplicate-subject history layout wins. Hosted CI failures repaired: formatting, English coverage, HR fixture constructor, request-keyed async detail state and seeded executive username collision. PR1320 carries the combined candidate for final cross-feature CI; other PR heads remain individually reviewable. No production deployment.
 
 ## JAHAN-CONTRACT-HEADER-1103 — PC-A — ACTIVE
 
@@ -10734,3 +10934,6 @@ COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes remova
 Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.
 
 CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outcome; CI identified missing translation. User authorizes CI repair and develop merge after every check passes. Preserve all other catalogue entries.
+## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
+
+COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.

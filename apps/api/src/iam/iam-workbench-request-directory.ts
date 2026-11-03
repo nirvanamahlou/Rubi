@@ -99,6 +99,15 @@ export class IamWorkbenchRequestDirectory {
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
   }
+
+  /** Current employee's authoritative branches, intersected with IAM access. */
+  async callCenterEmployeeBranches(actor: AuthenticatedActor) {
+    const allowed = await this.callCenterBranches(actor);
+    return this.units.employeeBranches(
+      actor.userId,
+      allowed.map((branch) => branch.id),
+    );
+  }
   async options(
     actor: AuthenticatedActor,
     branchId: string,

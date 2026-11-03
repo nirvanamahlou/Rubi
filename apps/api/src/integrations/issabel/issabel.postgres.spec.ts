@@ -67,6 +67,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         )
       )
         throw Error('Disposable nora_ci database required.');
+      vi.stubEnv('CALL_CENTER_RECORDING_DOWNLOAD_USER_ID', userId);
       db = createDatabaseClient(url.toString());
       await db.branch.create({
         data: { id: branchId, code: branchId, name: 'Synthetic Issabel test' },
@@ -92,7 +93,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await db.user.create({
         data: {
           id: userId,
-          username: userId,
+          username: 'danial',
           displayName: 'Synthetic Issabel operator',
           passwordHash: 'not-a-login',
           status: 'ACTIVE',
@@ -141,8 +142,15 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       media = new IssabelRecordingsService(database, config, domain, events);
     }, 30000);
     afterAll(async () => {
+      vi.unstubAllEnvs();
       await service?.onModuleDestroy();
       media?.onModuleDestroy();
+      // Release only this fixture's synthetic reserved username. Its audit
+      // history remains intact and cannot leak into a later executive fixture.
+      await db?.user.updateMany({
+        where: { id: userId, username: 'danial' },
+        data: { username: userId },
+      });
       await db?.$disconnect();
     });
     const root = String(Date.now());
@@ -395,7 +403,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ).rejects.toMatchObject({ status: 404 });
       await expect(
         media.read({ ...listener, userId: randomUUID() }, id),
-      ).rejects.toMatchObject({ status: 404 });
+      ).rejects.toMatchObject({ status: 403 });
       const partial = await media.read(listener, id, 'bytes=32760-32780');
       expect(partial.partial).toBe(true);
       expect(partial.audio.equals(audio.subarray(32760, 32781))).toBe(true);

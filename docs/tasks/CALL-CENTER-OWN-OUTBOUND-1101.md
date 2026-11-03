@@ -1,0 +1,15 @@
+# CALL-CENTER-OWN-OUTBOUND-1101
+
+Owner requests all employee-originated outgoing calls in their own contact list, in addition to incoming answered calls. PC-C; branch codex/pc-c-call-center-own-outbound-1101; base develop ef9202bf9.
+
+Root cause: ANSWERED-policy contact visibility used only call_center_answer_responsibilities. Validated outbound originating extensions already had durable positive-version routing offers, including calls without an answer, but the access predicate ignored those facts.
+
+Policy change: authorized users retain actual-answer access OR gain access to a contact containing a real TELEPHONY OUTBOUND call with a nonsynthetic session and an ingestion-validated originating-account offer (mappingVersion>0). Existing ingestion rejects shared physical extension attribution; manually transferred offers use version0. Inbound rings, mutable labels/contact ownership, claims, synthetic records and unrelated accounts do not grant new access. Closing/deferring a popup does not erase the originating-account snapshot. Existing branch, own/team/global and module permission checks apply to both ORM and SQL readers. No answer responsibility, answer time, outcome or business record is fabricated or rewritten.
+
+The owner-authorized outbound exception extends the prior actual-answer-only policy; it does not redefine an outbound dial attempt as a successful conversation. Legacy records lacking either trustworthy evidence remain unassigned. Read-only production inspection:14 outbound TELEPHONY calls,12 with validated-origin offers,8 with answer responsibilities;5 origin-only calls were omitted by previous policy and1 call lacks either evidence. No raw phone, account, credential or call payload is retained in this note.
+
+Scope: CallCenterAccessService and focused existing PostgreSQL regressions. No schema, migration, dependency, permission grant, popup UI or PBX change. Test in disposable PostgreSQL only; production rollout is API-only with current image/Compose retained for rollback and all Web/Worker/data services preserved.
+
+Validation complete:34 PostgreSQL access regressions pass (including actual mapped unanswered outgoing, unrelated peers, team manager, scoped executive/demo, version0 manual transfer, deactivated/deferred origin offer, shared internal and synthetic denial). Scoped lint, full API typecheck and build pass. Existing KPI test now correctly distinguishes without-outcome rows from today/week all-call modal rows after adding a NO_ANSWER fixture.
+
+API-only production image rubi-production:call-own-outbound-1101c activated under global deployment lock. Receipt /opt/rubi/CALL-OWN-OUTBOUND-RELEASE-1101.json confirms unchanged Web/Worker/Postgres/Redis and environment/mounts. First attempted activation rolled back on an environment-array ordering comparison; retry compared the same environment key/value mapping and passed without relaxing values. Native read-only acceptance uses IAM authenticateSessionReferenceV1 with existing valid sessions:14 authenticated accounts,70 branch checks,11 own-origin contact checks, ORM and SQL scopes equal. No operational business records modified.

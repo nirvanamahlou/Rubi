@@ -72,6 +72,25 @@ export function group(value: unknown): CreateGroupConversationInputV1 {
   };
 }
 
+export function groupUpdate(value: unknown): {
+  title: string;
+  memberIds: string[];
+} {
+  const input = record(value, ['title', 'memberIds']);
+  if (!Array.isArray(input.memberIds) || input.memberIds.length > 50)
+    throw new BadRequestException('اعضای گروه معتبر نیستند.');
+  if (
+    typeof input.title !== 'string' ||
+    input.title.trim().length < 2 ||
+    input.title.trim().length > 160
+  )
+    throw new BadRequestException('عنوان گروه باید بین ۲ تا ۱۶۰ نویسه باشد.');
+  return {
+    title: input.title.trim(),
+    memberIds: [...new Set(input.memberIds.map((id) => uuid(id, 'عضو گروه')))],
+  };
+}
+
 export function message(value: unknown): SendMessagingMessageInputV1 {
   const input = record(value, [
     'body',

@@ -32,3 +32,11 @@ export function globalCallCenterIds() {
       ),
     );
 }
+
+/** Explicit callback-triage accounts; not a global Call Center grant. */
+export function callbackManagers() {
+  return (process.env.CALL_CENTER_CALLBACK_MANAGER_IDS ?? '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter((v) => /^[0-9a-f-]{36}$/i.test(v));
+}

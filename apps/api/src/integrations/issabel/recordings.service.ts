@@ -339,6 +339,7 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     return { id, state: 'COMPLETE', sizeBytes: row.sizeBytes };
   }
   async forCall(actor: AuthenticatedActor, callId: string) {
+    await this.domain.authorizeRecordingDownload(actor);
     const context = await this.domain.callRecordingContext(actor, callId);
     if (!context) return { data: [] };
     const ids = context.references.flatMap((reference) => {
@@ -365,6 +366,7 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     range?: string,
     callId?: string,
   ) {
+    await this.domain.authorizeRecordingDownload(actor);
     if (!callId) this.domain.authorize(actor);
     if (
       !actor.permissions.includes(

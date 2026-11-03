@@ -289,6 +289,93 @@ describe.skipIf(!enabled)(
       expect(
         await client.customerAffairsTicket.count({ where: { branchId } }),
       ).toBe(1);
+      const repository = new CustomerAffairsRepository({ client } as never);
+      // Internal requests remain in both inboxes but never enter customer views.
+      const original = await client.customerAffairsTicket.findUniqueOrThrow({
+        where: { id },
+      });
+      const customerId = randomUUID();
+      for (const [ticketId, category] of [
+        [customerId, 'SERVICE'],
+        [randomUUID(), 'CALL_CENTER_REQUEST'],
+        [randomUUID(), 'WORKBENCH_HR'],
+      ] as const) {
+        await client.customerAffairsTicket.create({
+          data: {
+            ...original,
+            id: ticketId,
+            trackingNumber: ticketId.slice(0, 32),
+            category,
+            references: [],
+            nextActionAt: new Date('2020-01-01T00:00:00Z'),
+            firstResponseDueAt: new Date('2020-01-01T00:00:00Z'),
+          },
+        });
+      }
+      const customerScope = { branchId };
+      const listed = await repository.listTickets(customerScope, 1, 20);
+      expect(listed.total).toBe(1);
+      expect(listed.data.map((row) => row.id)).toEqual([customerId]);
+      expect(
+        (
+          await repository.listTickets(
+            { ...customerScope, category: 'WORKBENCH_INTERNAL' },
+            1,
+            20,
+          )
+        ).total,
+      ).toBe(0);
+      expect(
+        (await repository.exportTickets(customerScope)).map(
+          (row) => row.trackingNumber,
+        ),
+      ).toEqual([customerId.slice(0, 32)]);
+      expect(
+        (
+          await repository.dashboard([branchId], {
+            leadsRead: false,
+            ticketsRead: true,
+          })
+        ).tickets,
+      ).toEqual({ open: 1, overdue: 1, breached: 1, correctiveActions: 0 });
+      const report = await repository.report([branchId]);
+      expect(report.ticketCategories).toEqual([
+        { category: 'SERVICE', _count: { _all: 1 } },
+      ]);
+      expect(report.ticketStatuses).toHaveLength(1);
+      expect(report.ticketStatuses[0]?._count._all).toBe(1);
+      expect(report.ticketPriorities[0]?._count._all).toBe(1);
+      // Remove synthetic comparison tickets before the existing inbox assertions.
+      await client.customerAffairsTicket.deleteMany({
+        where: { branchId, id: { not: id } },
+      });
+
+      await expect(
+        repository.workbenchReferrals(senderId, [branchId]),
+      ).resolves.toEqual([]);
+      await request(http)
+        .delete(`/customer-affairs/workbench/requests/${id}`)
+        .set('x-test-actor', peerId)
+        .expect(404);
+      for (let retry = 0; retry < 2; retry++) {
+        await request(http)
+          .delete(`/customer-affairs/workbench/requests/${id}`)
+          .set('x-test-actor', senderId)
+          .expect(200);
+      }
+      expect(await repository.workbenchRequests(senderId, [branchId])).toEqual(
+        [],
+      );
+      expect(
+        (await repository.workbenchRequests(recipientId, [branchId])).map(
+          (row) => row.id,
+        ),
+      ).toContain(id);
+      expect(
+        await client.customerAffairsTimeline.count({
+          where: { ticketId: id, type: 'WORKBENCH_REMOVED' },
+        }),
+      ).toBe(1);
     }, 30000);
   },
 );

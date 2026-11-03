@@ -2,6 +2,7 @@ import { packageTourSelectionBatch } from './selection-batch';
 import { expect, it } from 'vitest';
 import {
   buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomCode,
   packageRoomIdentity,
 } from './room-compositions';
@@ -62,6 +63,45 @@ const input = {
     commissionPercent: '0',
   },
 };
+it('keeps footer prices out of hotel rows, including matching currency and fixed commission', () => {
+  const calculation = {
+    ...input.calculation,
+    adultFlight: { amount: '10000', currencyCode: 'IRR' },
+    childFlight: { amount: '5000', currencyCode: 'IRR' },
+    infantFlight: { amount: '900', currencyCode: 'IRR' },
+    businessUplift: { amount: '500', currencyCode: 'EUR' },
+    businessCabin: true,
+    commissionMode: 'fixed' as const,
+    commissionAmount: { amount: '700', currencyCode: 'IRR' },
+    extraSaleFields: [{ amount: '25', currencyCode: 'EUR' }],
+    flightCosts: [
+      { adultUnitCost: '99', childUnitCost: '50', currencyCode: 'IRR' },
+    ],
+  };
+  const before = JSON.stringify(calculation);
+  const prices = buildHotelOnlyPackageCompositions({ ...input, calculation });
+  expect(prices[0]?.currencyAmounts).toEqual([
+    {
+      currencyCode: 'EUR',
+      priceBasis: 'HOTEL_ONLY',
+      purchase: '200.00',
+      sale: '220.00',
+      commission: '0.00',
+      profit: '20.00',
+    },
+  ]);
+  expect(
+    buildHotelOnlyPackageCompositions({
+      ...input,
+      calculation: {
+        ...calculation,
+        commissionMode: 'percent',
+        commissionPercent: '10',
+      },
+    }),
+  ).toEqual(prices);
+  expect(JSON.stringify(calculation)).toBe(before);
+});
 it('keeps every exact room instead of replacing deluxe with the cheapest room', () => {
   const prices = buildHotelPackageCompositions(input);
   expect(prices).toHaveLength(2);

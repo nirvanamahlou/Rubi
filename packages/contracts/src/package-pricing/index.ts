@@ -501,6 +501,7 @@ export type { HotelPackageTablePrice } from './hotel-package-table';
 
 export {
   buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomCode,
   packageRoomIdentity,
   packageRoomTitle,

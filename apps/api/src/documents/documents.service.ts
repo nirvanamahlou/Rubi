@@ -2347,6 +2347,19 @@ export class DocumentsService {
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const packagePendingAllowed =
+      expectedSource?.sourceModule === 'WORKBENCH' &&
+      expectedSource.sourceEntityType === 'WorkbenchDailyPackage' &&
+      expectedSource.sourceEntityId === row.branchId &&
+      row.sourceModule === 'WORKBENCH' &&
+      row.sourceEntityType === 'WorkbenchDailyPackage' &&
+      row.sourceEntityId === row.branchId &&
+      row.documentType.code === 'BRAND_ASSET_TEMPLATE' &&
+      row.confidentiality === 'INTERNAL' &&
+      row.currentVersion.detectedMimeType === 'application/pdf' &&
+      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+        row.currentVersion.scanStatus,
+      );
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
@@ -2354,7 +2367,7 @@ export class DocumentsService {
         (actor.permissions.includes('documents.sensitive.download') &&
           isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
-      row.currentVersion.scanStatus === 'CLEAN';
+      (row.currentVersion.scanStatus === 'CLEAN' || packagePendingAllowed);
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
       actor,

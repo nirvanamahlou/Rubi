@@ -38,6 +38,20 @@ function fixture() {
   };
 }
 describe('HR self performance public projection', () => {
+  it('allows all staff to read only their own device attendance without granting broader HR access', async () => {
+    const f = fixture();
+    const result = await f.service.get({ ...actor, permissions: [] }, 30, true);
+    expect(result.employee?.personnelCode).toBe('100');
+    expect(result.payslipVisible).toBe(false);
+    expect(result.leaves).toEqual([]);
+    expect(result.shifts).toEqual([]);
+    expect(f.hr.leaveBalances).not.toHaveBeenCalled();
+    expect(f.client.hrRecord.count).not.toHaveBeenCalled();
+    for (const [query] of f.client.hrRecord.findMany.mock.calls) {
+      expect(['attendance', 'checkins']).toContain(query.where.tab);
+      expect(query.where.employee).toEqual({ userId: 'self', deletedAt: null });
+    }
+  });
   it.each([30, 90, 365])(
     'uses the selected %i calendar-day window including today',
     async (days) => {

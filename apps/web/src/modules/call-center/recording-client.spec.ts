@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { callRecordings, recordingBlob } from './recording-client';
+import {
+  callRecordings,
+  recordingBlob,
+  recordingAccess,
+} from './recording-client';
 const transport = vi.hoisted(() => vi.fn());
 vi.mock('@/i18n/localized-fetch', () => ({ localizedFetch: transport }));
 vi.mock('@/lib/environment', () => ({
@@ -67,5 +71,31 @@ describe('call recording downloads', () => {
     await expect(callRecordings(call, 'branch', signal)).rejects.toMatchObject({
       status: 404,
     });
+  });
+});
+
+describe('server-owned audio capability', () => {
+  it.each([true, false, 'true', null])(
+    'accepts only an explicit authorized boolean: %s',
+    async (allowed) => {
+      transport.mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { allowed } })),
+      );
+      expect(await recordingAccess('branch', signal)).toBe(allowed === true);
+      expect(transport).toHaveBeenCalledWith(
+        'http://localhost:4000/api/v1/customer-affairs/call-center/recording-access',
+        expect.objectContaining({
+          credentials: 'include',
+          cache: 'no-store',
+          signal,
+        }),
+      );
+    },
+  );
+  it('fails closed for denied requests and missing capability', async () => {
+    transport.mockResolvedValueOnce(new Response('', { status: 403 }));
+    expect(await recordingAccess('branch', signal)).toBe(false);
+    transport.mockResolvedValueOnce(new Response('{}'));
+    expect(await recordingAccess('branch', signal)).toBe(false);
   });
 });

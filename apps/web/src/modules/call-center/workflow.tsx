@@ -24,6 +24,7 @@ import {
   type FollowUp,
 } from './workflow-client';
 import styles from './workflow.module.css';
+import workspaceStyles from './workspace.module.css';
 import { CallKpiCards } from './kpis';
 import { readApi } from './read-client';
 import { DossierRequestCard } from './dossier-request-card';
@@ -689,100 +690,115 @@ export function WorkQueue({
           {data?.meta.asOf ? ` · به‌روز در ${callDate(data.meta.asOf)}` : ''}
         </p>
         <div id="cc-queue-body" hidden={collapsed}>
-          <div className={styles.queueFilters}>
-            <label>
-              تیم فعلی ثبت‌کننده
-              <NativeSearchSelect
-                aria-label="تیم فعلی ثبت‌کننده"
-                value={queueFilters.teamId}
-                onChange={(event) =>
-                  changeQueueFilter('teamId', event.target.value)
-                }
-              >
-                <option value="">همه موارد</option>
-                {queueTeams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </NativeSearchSelect>
-            </label>
-            <label>
-              کارشناس ثبت‌کننده
-              <NativeSearchSelect
-                aria-label="کارشناس ثبت‌کننده"
-                value={queueFilters.agentId}
-                onChange={(event) =>
-                  changeQueueFilter('agentId', event.target.value)
-                }
-              >
-                <option value="">همه موارد</option>
-                {queueAgents.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.displayName}
-                  </option>
-                ))}
-              </NativeSearchSelect>
-            </label>
-            <label>
-              وضعیت درخواست
-              <NativeSearchSelect
-                aria-label="وضعیت درخواست"
-                value={queueFilters.requestStatus}
-                onChange={(event) =>
-                  changeQueueFilter('requestStatus', event.target.value)
-                }
-              >
-                <option value="">همه موارد</option>
-                {Object.entries(requestStatusOptions).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSearchSelect>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                setQueueFilters({ teamId: '', agentId: '', requestStatus: '' });
-                setPage(1);
-                setLoading(true);
-              }}
+          <div className={styles.queueToolbar}>
+            <div
+              className={styles.queueViews}
+              role="group"
+              aria-label="نمای صف رسیدگی"
             >
-              پاک کردن فیلترها
-            </button>
-          </div>
-          <div
-            className={styles.queueViews}
-            role="group"
-            aria-label="نمای صف رسیدگی"
-          >
-            {(
-              [
-                ['ALL', 'همه درخواست‌ها'],
-                ['OPEN', 'درخواست‌های باز'],
-                ['CLOSED', 'درخواست‌های بسته‌شده'],
-                ['MINE', 'کارهای من'],
-              ] as const
-            ).map(([value, label]) => (
+              {(
+                [
+                  ['ALL', 'همه درخواست‌ها'],
+                  ['OPEN', 'درخواست‌های باز'],
+                  ['CLOSED', 'درخواست‌های بسته‌شده'],
+                  ['MINE', 'کارهای من'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={view === value}
+                  onClick={() => {
+                    setLoading(true);
+                    setError('');
+                    setView(value);
+                    setPage(1);
+                    setRevision((current) => current + 1);
+                  }}
+                >
+                  {label}
+                  {data?.meta.counts?.[value] !== undefined &&
+                  !loading &&
+                  !error
+                    ? ` · ${faNumber(data.meta.counts[value])}`
+                    : ''}
+                </button>
+              ))}
+            </div>
+            <div className={styles.queueFilters}>
+              <label className={workspaceStyles.filterSelect}>
+                <span>تیم فعلی ثبت‌کننده</span>
+                <NativeSearchSelect
+                  className={workspaceStyles.control}
+                  aria-label="تیم فعلی ثبت‌کننده"
+                  value={queueFilters.teamId}
+                  onChange={(event) =>
+                    changeQueueFilter('teamId', event.target.value)
+                  }
+                >
+                  <option value="">همه موارد</option>
+                  {queueTeams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </NativeSearchSelect>
+              </label>
+              <label className={workspaceStyles.filterSelect}>
+                <span>کارشناس ثبت‌کننده</span>
+                <NativeSearchSelect
+                  className={workspaceStyles.control}
+                  aria-label="کارشناس ثبت‌کننده"
+                  value={queueFilters.agentId}
+                  onChange={(event) =>
+                    changeQueueFilter('agentId', event.target.value)
+                  }
+                >
+                  <option value="">همه موارد</option>
+                  {queueAgents.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.displayName}
+                    </option>
+                  ))}
+                </NativeSearchSelect>
+              </label>
+              <label className={workspaceStyles.filterSelect}>
+                <span>وضعیت درخواست</span>
+                <NativeSearchSelect
+                  className={workspaceStyles.control}
+                  aria-label="وضعیت درخواست"
+                  value={queueFilters.requestStatus}
+                  onChange={(event) =>
+                    changeQueueFilter('requestStatus', event.target.value)
+                  }
+                >
+                  <option value="">همه موارد</option>
+                  {Object.entries(requestStatusOptions).map(
+                    ([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ),
+                  )}
+                </NativeSearchSelect>
+              </label>
               <button
-                key={value}
+                className={`${workspaceStyles.clear} ${styles.queueClear}`}
                 type="button"
-                aria-pressed={view === value}
                 onClick={() => {
-                  setLoading(true);
-                  setError('');
-                  setView(value);
+                  setQueueFilters({
+                    teamId: '',
+                    agentId: '',
+                    requestStatus: '',
+                  });
                   setPage(1);
-                  setRevision((current) => current + 1);
+                  setLoading(true);
                 }}
               >
-                {label}
-                {data?.meta.counts?.[value] !== undefined && !loading && !error
-                  ? ` · ${faNumber(data.meta.counts[value])}`
-                  : ''}
+                <RotateCcw size={14} aria-hidden="true" />
+                پاک کردن فیلترها
               </button>
-            ))}
+            </div>
           </div>
           {loading && <p role="status">در حال دریافت صف…</p>}
           {error && <p role="alert">{error}</p>}

@@ -207,7 +207,11 @@ export function WorkbenchDailyPackages() {
                     aria-hidden="true"
                   />
                   <Badge>
-                    {item.scanStatus === 'CLEAN'
+                    {[
+                      'CLEAN',
+                      'PENDING_SCAN',
+                      'AWAITING_ANTIVIRUS_ADAPTER',
+                    ].includes(item.scanStatus)
                       ? 'آماده مشاهده'
                       : ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
                             item.scanStatus,
@@ -226,7 +230,13 @@ export function WorkbenchDailyPackages() {
                 <Button
                   className="mt-auto"
                   variant="outline"
-                  disabled={item.scanStatus !== 'CLEAN' || openingId !== null}
+                  disabled={
+                    ![
+                      'CLEAN',
+                      'PENDING_SCAN',
+                      'AWAITING_ANTIVIRUS_ADAPTER',
+                    ].includes(item.scanStatus) || openingId !== null
+                  }
                   onClick={() => void openPreview(item)}
                 >
                   <Eye className="size-4" aria-hidden="true" />

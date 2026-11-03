@@ -387,9 +387,14 @@ it.each([['outside-rate'], ['rate-1', 'rate-1']])(
     ).rejects.toBeInstanceOf(BadRequestException);
   },
 );
-it.each([true, false])(
-  'publishes selected compositions independently of flight payment, paid=%s',
-  async (paid) => {
+it.each([
+  [true, false],
+  [false, false],
+  [true, true],
+  [false, true],
+])(
+  'publishes selected compositions independently of flight payment, paid=%s footerOnly=%s',
+  async (paid, footerOnly) => {
     const draft = {
       id: 'draft',
       version: 1,
@@ -398,6 +403,13 @@ it.each([true, false])(
       updatedByUserId: 'other',
       currencyCode: 'EUR',
       selectedHotelRateIds: ['rate-1'],
+      ...(footerOnly
+        ? {
+            selectedRoomKeys: ['single', 'double', 'doubleChild'].map((code) =>
+              JSON.stringify(['rate-1', code]),
+            ),
+          }
+        : {}),
       roomSaleOverrides: [
         {
           hotelRateId: 'rate-1',
@@ -484,7 +496,7 @@ it.each([true, false])(
       actor,
     );
     expect(result.outboundCostRevisionId).toBe(paid ? 'cost' : null);
-    if (!paid)
+    if (!paid && !footerOnly)
       expect(
         result.roomPrices.every((p) =>
           p.currencyAmounts?.every(
@@ -506,7 +518,19 @@ it.each([true, false])(
     });
     expect(
       result.roomPrices.find((price) => price.roomCode === 'doubleChild'),
-    ).toMatchObject({ hotelPurchase: '250', packageSale: '300.00' });
+    ).toMatchObject({
+      hotelPurchase: '250',
+      packageSale: footerOnly ? '250.00' : '300.00',
+    });
+    if (footerOnly) {
+      expect(
+        result.roomPrices.every((p) =>
+          p.currencyAmounts?.every((c) => c.commission === '0.00'),
+        ),
+      ).toBe(true);
+      expect(result.adultFlightSale).toBe('100');
+      expect(result.childFlightSale).toBe('50');
+    }
     Object.assign(draft, { selectedHotelRateIds: [] });
     await expect(
       service.publish(

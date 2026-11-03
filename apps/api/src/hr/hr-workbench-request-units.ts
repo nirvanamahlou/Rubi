@@ -9,6 +9,21 @@ export class HrWorkbenchRequestUnits {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  /** Self-only routing context. Account links, not names or login branch order. */
+  async employeeBranches(userId: string, branchIds: readonly string[]) {
+    const rows = await this.database.client.hrEmployee.findMany({
+      where: {
+        userId,
+        branchId: { in: [...branchIds] },
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { branchId: true },
+      distinct: ['branchId'],
+    });
+    return rows.map((row) => row.branchId);
+  }
+
   async list(branchId: string, tx?: Prisma.TransactionClient) {
     const rows = await (tx ?? this.database.client).hrRecord.findMany({
       where: {

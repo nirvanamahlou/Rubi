@@ -19,7 +19,7 @@ export async function normalizeNativeOutbound(
 ): Promise<TelephonyEventV1 | null> {
   if (
     !outboundEventNames.has(message.event ?? '') ||
-    !extensions.length ||
+    (message.event === 'DialBegin' && !extensions.length) ||
     !trunks.length
   )
     return null;
@@ -30,7 +30,15 @@ export async function normalizeNativeOutbound(
   const anchor = await lookup(anchorId);
   if (!anchor && message.event !== 'DialBegin') return null;
   const source = peer(message.channel);
-  if (!source || !extensions.includes(source[2]!)) return null;
+  // HR may remove/change the extension during an already observed call. Its
+  // persisted anchor still proves the source for answer/end; never admit a new
+  // DialBegin from an extension that is no longer eligible for capture.
+  if (
+    !source ||
+    (!extensions.includes(source[2]!) &&
+      (!anchor || message.event === 'DialBegin'))
+  )
+    return null;
   if (anchor && anchor.extension !== source[2]) return null;
   const destination = peer(message.destchannel);
   if (
@@ -63,7 +71,10 @@ export async function normalizeNativeOutbound(
     (!number ||
       number.length !== 2 ||
       number[0] !== destination?.[2] ||
-      !/^\+?\d{7,15}$/.test(number[1]!))
+      // A proven external trunk may dial short service numbers (e.g. 193).
+      // The configured source/trunk checks above, not digit count, separate
+      // these calls from extension-to-extension traffic.
+      !/^\+?\d{3,15}$/.test(number[1]!))
   )
     return null;
   if (

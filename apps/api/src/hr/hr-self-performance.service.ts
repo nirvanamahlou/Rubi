@@ -54,8 +54,13 @@ export class HrSelfPerformanceService {
   async get(
     actor: AuthenticatedActor,
     windowDays?: number,
+    allowOwnAttendance = false,
   ): Promise<WorkbenchHrPerformanceV1> {
+    const canReadHr = actor.permissions.some((p) =>
+      ['hr.self', 'hr.read', 'hr.manage', 'hr.team'].includes(p),
+    );
     if (
+      !allowOwnAttendance &&
       !actor.permissions.some((p) =>
         ['hr.self', 'hr.read', 'hr.manage', 'hr.team'].includes(p),
       )
@@ -78,8 +83,9 @@ export class HrSelfPerformanceService {
       },
     });
     const payslipVisible =
-      actor.permissions.includes('hr.self') ||
-      actor.permissions.includes('hr.sensitive');
+      canReadHr &&
+      (actor.permissions.includes('hr.self') ||
+        actor.permissions.includes('hr.sensitive'));
     if (!employee)
       return {
         employee: null,
@@ -168,37 +174,41 @@ export class HrSelfPerformanceService {
     };
     const [leaves, shifts, payslips, balances, approvedLeaveCount, punches] =
       await Promise.all([
-        this.database.client.hrRecord.findMany({
-          where: {
-            ...scope,
-            OR: [
-              { section: 'time', tab: 'leave' },
-              { section: 'requests', tab: 'leave' },
-            ],
-          },
-          orderBy: [
-            { effectiveAt: { sort: 'desc', nulls: 'last' } },
-            { createdAt: 'desc' },
-            { id: 'asc' },
-          ],
-          take: 10,
-        }),
-        this.database.client.hrRecord.findMany({
-          where: {
-            ...scope,
-            OR: [
-              { section: 'time', tab: 'shift' },
-              { section: 'employee', tab: 'shift' },
-              { section: 'time', tab: 'roster' },
-            ],
-          },
-          orderBy: [
-            { effectiveAt: { sort: 'desc', nulls: 'last' } },
-            { createdAt: 'desc' },
-            { id: 'asc' },
-          ],
-          take: 10,
-        }),
+        canReadHr
+          ? this.database.client.hrRecord.findMany({
+              where: {
+                ...scope,
+                OR: [
+                  { section: 'time', tab: 'leave' },
+                  { section: 'requests', tab: 'leave' },
+                ],
+              },
+              orderBy: [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ],
+              take: 10,
+            })
+          : Promise.resolve([]),
+        canReadHr
+          ? this.database.client.hrRecord.findMany({
+              where: {
+                ...scope,
+                OR: [
+                  { section: 'time', tab: 'shift' },
+                  { section: 'employee', tab: 'shift' },
+                  { section: 'time', tab: 'roster' },
+                ],
+              },
+              orderBy: [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ],
+              take: 10,
+            })
+          : Promise.resolve([]),
         payslipVisible
           ? this.database.client.hrRecord.findMany({
               where: {
@@ -215,17 +225,21 @@ export class HrSelfPerformanceService {
               take: 1,
             })
           : Promise.resolve([]),
-        this.hr.leaveBalances({ employeeId: employee.id }, actor),
-        this.database.client.hrRecord.count({
-          where: {
-            ...scope,
-            status: { in: [...APPROVED] },
-            OR: [
-              { section: 'time', tab: 'leave' },
-              { section: 'requests', tab: 'leave' },
-            ],
-          },
-        }),
+        canReadHr
+          ? this.hr.leaveBalances({ employeeId: employee.id }, actor)
+          : Promise.resolve({ items: [], year: null }),
+        canReadHr
+          ? this.database.client.hrRecord.count({
+              where: {
+                ...scope,
+                status: { in: [...APPROVED] },
+                OR: [
+                  { section: 'time', tab: 'leave' },
+                  { section: 'requests', tab: 'leave' },
+                ],
+              },
+            })
+          : Promise.resolve(0),
         this.database.client.hrRecord.findMany({
           where: {
             ...scope,

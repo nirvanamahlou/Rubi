@@ -1,3 +1,12 @@
+import { callPerformanceStaff } from '../hr/hr-call-performance-directory';
+import { callCenterExpertTasks } from '../tasks/call-center-read';
+import {
+  expertPerformance,
+  type ExpertCallFact,
+  type ExpertMetric,
+} from './expert-performance';
+import type { TelephonyTechnical } from './telephony-state';
+import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { matchesContactColumns } from './contact-column-filters';
 import {
   missedCallbackCount,
@@ -58,6 +67,10 @@ export class CallCenterReadService {
     @Inject(CallCenterCrypto) private readonly crypto: CallCenterCrypto,
     @Inject(IamWorkbenchRequestDirectory)
     private readonly directory: IamWorkbenchRequestDirectory,
+    @Inject(IamCallCenterDirectory)
+    private readonly recordingAccounts: IamCallCenterDirectory = new IamCallCenterDirectory(
+      db,
+    ),
   ) {}
   private conditions(
     branch: string,
@@ -174,9 +187,48 @@ export class CallCenterReadService {
       }),
     );
   }
+  async recordingAccess(actor: AuthenticatedActor) {
+    this.workflow.scope(actor, undefined);
+    return {
+      data: {
+        allowed: await this.recordingAccounts.canDownloadCallRecordings(actor),
+      },
+    };
+  }
   async branches(actor: AuthenticatedActor) {
     this.workflow.scope(actor, undefined);
-    return { data: await this.directory.callCenterBranches(actor) };
+    const data = await this.directory.callCenterBranches(actor);
+    const employeeBranches =
+      await this.directory.callCenterEmployeeBranches(actor);
+    const ownBranches = data.filter((branch) =>
+      employeeBranches.includes(branch.id),
+    );
+    const candidates = ownBranches.length ? ownBranches : data;
+    let defaultBranchId: string | null = candidates[0]?.id ?? null;
+    if (candidates.length > 1) {
+      const recent = await Promise.all(
+        candidates.map(async (branch) => {
+          try {
+            const scope = await this.calls.access.where(actor, branch.id);
+            const call = await this.db.client.callCenterCall.findFirst({
+              where: { contact: scope },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+              select: { occurredAt: true },
+            });
+            return {
+              id: branch.id,
+              at: call?.occurredAt.getTime() ?? -Infinity,
+            };
+          } catch (error) {
+            if (!(error instanceof ForbiddenException)) throw error;
+            return { id: branch.id, at: -Infinity };
+          }
+        }),
+      );
+      recent.sort((a, b) => b.at - a.at);
+      defaultBranchId = recent[0]?.id ?? defaultBranchId;
+    }
+    return { data, meta: { defaultBranchId } };
   }
   async teams(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
@@ -728,7 +780,12 @@ export class CallCenterReadService {
         >`SELECT count(DISTINCT a.contact_id) AS contacts,count(*) FILTER(WHERE a.needs_completion) AS incomplete,count(*) FILTER(WHERE a.search_version=0) AS unindexed FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
         const sources = await tx.$queryRaw<
           Array<{ token: string | null; count: bigint }>
-        >`SELECT a.source_token AS token,count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} GROUP BY a.source_token`;
+        >`SELECT chosen.token,count(*) AS count FROM (
+SELECT DISTINCT ON (a.contact_id) a.contact_id,a.source_token AS token
+FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
+WHERE ${predicate}
+ORDER BY a.contact_id,a.occurred_at DESC,a.id ASC
+) chosen GROUP BY chosen.token`;
         const registrations = await tx.$queryRaw<
           Array<{ actorId: string; count: bigint }>
         >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND (a.origin IS NULL OR a.origin = 'MANUAL') GROUP BY a.created_by_user_id`;
@@ -779,6 +836,101 @@ export class CallCenterReadService {
           tehranDay(now),
           users,
         );
+        const expertIds = await tx.$queryRaw<
+          { id: string }[]
+        >`SELECT a.id FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND a.origin='TELEPHONY' ORDER BY a.occurred_at,a.id LIMIT 10001`;
+        if (expertIds.length > 10000)
+          throw new BadRequestException(
+            'برای گزارش کارشناسان بازه کوتاه‌تری انتخاب کنید؛ حداکثر ۱۰۰۰۰ تماس.',
+          );
+        const expertCalls = await tx.callCenterCall.findMany({
+          where: { id: { in: expertIds.map((r) => r.id) } },
+          include: { answerResponsibilities: { select: { userId: true } } },
+          orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+        });
+        const sessions = await tx.callCenterTelephonySession.findMany({
+          where: {
+            callId: { in: expertIds.map((r) => r.id) },
+            synthetic: false,
+          },
+          include: { offers: { select: { userId: true } } },
+        });
+        const sessionByCall = new Map(sessions.map((s) => [s.callId, s]));
+        const facts: ExpertCallFact[] = expertCalls.map((call) => {
+          const session = sessionByCall.get(call.id);
+          const technical = session
+            ? this.crypto.decrypt<TelephonyTechnical>(
+                session.encryptedTechnical,
+                session.keyVersion,
+                `telephony:${session.id}`,
+              )
+            : null;
+          const valid =
+            technical &&
+            (technical.first.direction === 'OUT' ? 'OUTBOUND' : 'INBOUND') ===
+              call.direction;
+          const connected =
+            call.answerResponsibilities.length > 0 ||
+            !!(valid && technical.answered);
+          const ids =
+            call.direction === 'INBOUND'
+              ? call.answerResponsibilities.map((a) => a.userId)
+              : valid
+                ? (session?.offers.map((o) => o.userId) ?? [])
+                : [];
+          const payload = this.calls.presentSummary(call);
+          return {
+            id: call.id,
+            contactId: call.contactId,
+            knownPhone: !!payload.phone,
+            at: call.occurredAt.toISOString(),
+            direction: call.direction,
+            connected,
+            complete: !call.needsCompletion && !!call.outcome,
+            actors: [...new Set(ids)],
+            extension:
+              valid && call.direction === 'OUTBOUND'
+                ? (technical.first.extension ?? undefined)
+                : undefined,
+          };
+        });
+        const expert = expertPerformance(
+          await callPerformanceStaff(tx, branchId, users),
+          facts,
+          await callCenterExpertTasks(tx, branchId, users),
+          now.toISOString(),
+          users,
+        );
+        let activityDetail:
+          | {
+              actorId: string;
+              metric: string;
+              rows: unknown[];
+              total: number;
+              page: number;
+              pageSize: number;
+            }
+          | undefined;
+        if (q.activityActorId || q.activityMetric) {
+          if (!q.activityActorId || !q.activityMetric)
+            throw new BadRequestException('کارشناس و ستون را انتخاب کنید.');
+          const detail = expert.details.get(q.activityActorId)?.[
+            q.activityMetric as ExpertMetric
+          ];
+          if (!detail)
+            throw new ForbiddenException('کارشناس در محدوده گزارش نیست.');
+          const sorted = [...detail].sort((a, b) =>
+            (a.at ?? '9999').localeCompare(b.at ?? '9999'),
+          );
+          activityDetail = {
+            actorId: q.activityActorId,
+            metric: q.activityMetric,
+            rows: sorted.slice((q.page - 1) * q.pageSize, q.page * q.pageSize),
+            total: sorted.length,
+            page: q.page,
+            pageSize: q.pageSize,
+          };
+        }
         const labels = [
           'نامشخص',
           'اینستاگرام',
@@ -786,9 +938,17 @@ export class CallCenterReadService {
           'سایت',
           'تلگرام',
           'معرفی دوستان',
+          'SMS',
+          'آژانس',
+          'سایر',
         ];
         return {
           data: {
+            expertActivity: {
+              rows: expert.rows,
+              unattributed: expert.unattributed,
+            },
+            ...(activityDetail ? { activityDetail } : {}),
             calls: groups.reduce((n, g) => n + Number(g.count), 0),
             contacts: Number(totals[0]!.contacts),
             incomplete: Number(totals[0]!.incomplete),
@@ -833,6 +993,8 @@ export class CallCenterReadService {
             asOf: now.toISOString(),
             timezone: 'Asia/Tehran',
             callBasis: 'occurredAt',
+            sourceBasis:
+              'unique branch phone-group; latest matching call source within authorized report filters and time range; occurredAt DESC/id ASC',
             requestBasis: 'createdAt; current status',
             taskBasis:
               'open=current branch backlog; completed=completedAt; denominator=completed only',

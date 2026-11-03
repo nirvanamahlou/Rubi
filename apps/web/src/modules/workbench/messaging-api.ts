@@ -98,6 +98,21 @@ export const messagingApi = {
       `/contacts?${query.toString()}`,
     );
   },
+  remove(conversationId: string) {
+    return request<{ data: { id: string } }>(
+      `/conversations/${encodeURIComponent(conversationId)}`,
+      { method: 'DELETE' },
+    );
+  },
+  updateGroup(
+    conversationId: string,
+    input: { title: string; memberIds: string[] },
+  ) {
+    return request<MessagingConversationResponseV1>(
+      `/conversations/${encodeURIComponent(conversationId)}`,
+      { ...json(input), method: 'PATCH' },
+    );
+  },
   conversations() {
     return request<MessagingConversationsResponseV1>('/conversations');
   },
