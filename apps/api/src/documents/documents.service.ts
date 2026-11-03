@@ -342,6 +342,8 @@ function mapListItem(
     archiveCode: hasConfidentialAccessCode ? 'DOC-••••••' : row.archiveCode,
     title: revealMetadata ? row.title : 'سند محرمانه ••••••',
     description: revealMetadata ? row.description : null,
+    senderName: revealMetadata ? row.senderName : null,
+    isIncomingLetter: row.isIncomingLetter,
     type: revealMetadata
       ? row.documentType
       : {
@@ -1295,8 +1297,9 @@ export class DocumentsService {
     );
     if (
       suppliedSourceFields !== 0 &&
-      (suppliedSourceFields !== 3 ||
-        normalizedSourceReference.some((value) => !value))
+      (!normalizedSourceReference[0] ||
+        !normalizedSourceReference[1] ||
+        (query.sourceEntityId !== undefined && !normalizedSourceReference[2]))
     ) {
       throw new BadRequestException({
         code: 'DOCUMENT_SOURCE_FILTER_INCOMPLETE',
@@ -1311,7 +1314,7 @@ export class DocumentsService {
     const normalized = {
       ...query,
       ...(query.search ? { search: query.search.trim().slice(0, 120) } : {}),
-      ...(suppliedSourceFields === 3
+      ...(suppliedSourceFields >= 2
         ? {
             sourceModule: normalizedSourceReference[0]!,
             sourceEntityType: normalizedSourceReference[1]!,
@@ -1804,6 +1807,9 @@ export class DocumentsService {
     scanPolicy?: typeof masterDataLogoScanExemption,
   ): Promise<{ data: DocumentDetailV1 }> {
     if (!file) throw new BadRequestException('انتخاب فایل الزامی است.');
+    if (dto.isIncomingLetter && !dto.senderName?.trim()) {
+      throw new BadRequestException('فرستنده را وارد کنید.');
+    }
     if (!actor.branchIds.includes(dto.branchId)) {
       throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
     }
@@ -1976,6 +1982,8 @@ export class DocumentsService {
         versionId,
         storageObjectKey,
         title: dto.title.trim(),
+        senderName: dto.senderName?.trim() || null,
+        isIncomingLetter: dto.isIncomingLetter ?? false,
         description: dto.description?.trim() || null,
         documentTypeId: references.documentType.id,
         categoryId: references.category.id,
@@ -2367,7 +2375,10 @@ export class DocumentsService {
         (actor.permissions.includes('documents.sensitive.download') &&
           isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
-      (row.currentVersion.scanStatus === 'CLEAN' || packagePendingAllowed);
+      (row.currentVersion.scanStatus === 'CLEAN' ||
+        packagePendingAllowed ||
+        (row.isIncomingLetter &&
+          imagePreviewScanAllowed(row.currentVersion.scanStatus)));
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
       actor,
@@ -2396,7 +2407,14 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!allowed) {
-      if (row.currentVersion.scanStatus !== 'CLEAN') {
+      if (
+        row.currentVersion.scanStatus !== 'CLEAN' &&
+        !packagePendingAllowed &&
+        !(
+          row.isIncomingLetter &&
+          imagePreviewScanAllowed(row.currentVersion.scanStatus)
+        )
+      ) {
         throw new ConflictException(
           'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
         );
@@ -2487,9 +2505,10 @@ export class DocumentsService {
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
         isOptionalOperationReason(metadata.sensitiveReason, 500));
-    const previewable = previewableImageMimeTypes.has(
-      row.currentVersion.detectedMimeType,
-    );
+    const previewable =
+      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType) ||
+      (row.isIncomingLetter &&
+        row.currentVersion.detectedMimeType === 'application/pdf');
     const scanAllowed = imagePreviewScanAllowed(row.currentVersion.scanStatus);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&

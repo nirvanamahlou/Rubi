@@ -285,7 +285,15 @@ export function DocumentDetailDialog({
                       className="w-full"
                       disabled={
                         !document.capabilities.download ||
-                        document.currentVersion.scanStatus !== 'CLEAN' ||
+                        (document.currentVersion.scanStatus !== 'CLEAN' &&
+                          !(
+                            document.isIncomingLetter &&
+                            [
+                              'PENDING_SCAN',
+                              'AWAITING_ANTIVIRUS_ADAPTER',
+                              'SCAN_FAILED',
+                            ].includes(document.currentVersion.scanStatus)
+                          )) ||
                         ((document.confidentiality === 'CONFIDENTIAL' ||
                           document.confidentiality === 'RESTRICTED') &&
                           !isOptionalOperationReason(downloadReason, 500))

@@ -5,6 +5,7 @@ import type {
 
 export interface DocumentUploadValues {
   employeeId?: string;
+  senderName?: string;
   title: string;
   description: string;
   documentTypeId: string;

@@ -8630,3 +8630,10 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
+
+
+## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
+
+Owner requests incoming correspondence cards/filters/table and sender, correct breadcrumbs, B Nazanin exports and immediate incoming-file viewing without the unavailable scanner gate; push/develop merge authorized. Reserve correspondence Web, bounded Documents upload/list/delivery API and shared form/contracts/tests, navigation aliases, English catalog and own notes. Sole migration owner PC-B for additive Document.senderName/isIncomingLetter; prior Marketing reservation merged/released. API producer and Web consumer ship optional fields together. Preserve branch/domain permissions, confidentiality grants and known malware blocks. Also repair module/type content filtering used by the merged Marketing consumer. No dependency or operational deployment changes.
+
+CORRESPONDENCE-INBOX-1103 validation: targeted Documents suite passed (226 tests initially; sender rejection and collection-scope regression added and passing), 69 correspondence/Documents/navigation Web checks plus font-export and English coverage checks passed. Additive migration rehearsed successfully on disposable PostgreSQL, then container stopped. Scoped lint passed. API/Web production validation and final-head hosted gates required before authorized merge. Files retain private storage, branch/domain authorization and explicit confidentiality grants; only incoming-file pending-scan gating changes. Source freezes on publication; reservations release on verified merge.
