@@ -10634,6 +10634,12 @@ CALL-CENTER-OWN-OUTBOUND-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.34 isolated
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
 
+## ERP-FINAL-RELEASE-1101 — PC-C — RESERVED
+
+Owner authorizes latest develop publication for all ERP modules. Pin d0845c8fd; four hosted gates pass. Reserve bounded release tooling/docs only; preserve live approved queue toolbar, outbound visibility, worker namespace guard, encrypted configuration/documents, PBX/grants. No new schema/dependency changes; reconcile migrations before deployment. Archive unused prior task context outside server and verify SHA before removal; never remove mounted/runtime/rollback data.
+
+ERP-FINAL-RELEASE-1101 — COMPLETE. Develop d0845c8fd plus5 declared approved runtime overlays deployed after verified encrypted backup.83 scoped API/Web tests and34 isolated PostgreSQL tests pass;1 external contract skip. Canary, source hashes, runtime health/assets, Worker namespace/auth, AMI and recording timers verified;17-account85-branch acceptance passes. No migration/grants/PBX changes. Old unused task/archive cleanup externally SHA-verified. Release reservation ends on publication.
+
 ## HR-RADAN-LIVE-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-radan-live-1101. Owner authorizes real read-only Radan integration for Niyayesh Seir Sahar and local3100 activation. Reserve HR adapter/domain/controller/module/service and targeted tests, HR attendance projections, Workbench own performance and additive HR/Workbench contracts (producer HR, consumers HR UI and own Workbench; optional fields, existing clients compatible). Scope includes source-ID idempotence, native branch/personnel-code mapping, neutral-punch interpretation, configured schedules, incomplete-day handling, closed-period/correction preservation and bounded polling. No migration/schema/dependency/IAM grants or Radan writes. Runtime credentials/data remain outside Git. Existing peer reservations and default runtime next-env edit preserved.
@@ -10731,3 +10737,7 @@ Source PR144/145 merged develop; Nora PR1318 pending final exact-head gates and 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1261 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 develop PRs and merging after all final-head gates succeed. Published task scopes are reopened sequentially in isolated repair branches. Preserve peer changes and later approved behavior. No production deployment, force push, dependency or migration changes, or gate bypass.
