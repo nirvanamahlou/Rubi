@@ -10888,3 +10888,9 @@ Integrate current develop and preserve both translated labels and peer catalog a
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1319 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
+## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; codex/pc-a-purchase-green-without-form-1103 from develop7d74d786b. Owner authorizes purchase button green for persisted purchases even without a supplier reservation form and develop merge after checks. Reserve bounded purchase-completion helper/controller response and tests; Reservations action-panel purchase registration hook/style/tests and own notes. Add a registration boolean alongside unchanged complete coverage in existing branch-scoped read endpoint; producer/consumer ship together, old clients remain compatible. A persisted zero hotel/service purchase counts; quote/form settings alone do not; cancelled contracts stay non-green. No financial semantics, purchase/issuance writes, schema/migration/dependency or deployment changes. Prior same-owner status badge scope is merged/released; no active overlapping writer found.
+
+PURCHASE-GREEN-WITHOUT-FORM-1103 validation:26 focused API/Web tests and scoped lint pass. Covers saved zero/legacy purchases without forms, partial registration independent of completion, form quotes without purchases, cancellations, additive controller response and stale refresh isolation. All final-head hosted checks required before owner-authorized merge. No operational data or deployment. Source freezes on publication and releases on verified merge.

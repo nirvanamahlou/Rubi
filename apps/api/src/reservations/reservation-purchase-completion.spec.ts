@@ -1,6 +1,9 @@
 import { expect, it } from 'vitest';
 import type { ReservationIntakeV1 } from '@nora/contracts';
-import { reservationPurchasesComplete } from './reservation-purchase-completion';
+import {
+  reservationPurchaseRegistered,
+  reservationPurchasesComplete,
+} from './reservation-purchase-completion';
 const context = (
   keys: string[],
   services: object[] = [{ clientKey: 'hotel', kind: 'HOTEL' }],
@@ -12,6 +15,39 @@ const context = (
       amount: '0',
     })),
   }) as unknown as ReservationIntakeV1;
+it('marks saved zero purchases registered without any supplier form, even with other purchases outstanding', () => {
+  const request = context(
+    ['hotel'],
+    [
+      { clientKey: 'hotel', kind: 'HOTEL' },
+      { clientKey: 'insurance', kind: 'INSURANCE' },
+    ],
+  );
+  expect(reservationPurchaseRegistered(request)).toBe(true);
+  expect(reservationPurchasesComplete(request)).toBe(false);
+  expect(
+    reservationPurchaseRegistered({
+      hotelPurchases: [{ amount: '0' }] as never,
+    }),
+  ).toBe(true);
+});
+it('does not treat supplier-form quotes as purchases and excludes cancellations', () => {
+  expect(reservationPurchaseRegistered({})).toBe(false);
+  expect(
+    reservationPurchaseRegistered({
+      workflow: {
+        supplierStatus: 'SENT_TO_SUPPLIER',
+        supplierFormSettings: { proposedPurchasePrice: { amount: '100' } },
+      },
+    }),
+  ).toBe(false);
+  expect(
+    reservationPurchaseRegistered({
+      ...context(['hotel']),
+      workflow: { supplierStatus: 'CANCELLED' },
+    }),
+  ).toBe(false);
+});
 it('requires every registered service, including explicit zero purchases; quotes are insufficient', () => {
   expect(reservationPurchasesComplete(context([]))).toBe(false);
   expect(reservationPurchasesComplete(context(['hotel']))).toBe(true);

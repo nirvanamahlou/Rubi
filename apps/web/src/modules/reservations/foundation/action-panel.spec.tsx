@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-const completion = vi.hoisted(() => ({ complete: false }));
+const registration = vi.hoisted(() => ({ registered: false }));
 vi.mock('./use-purchase-completion', () => ({
-  usePurchaseCompletion: () => completion.complete,
+  usePurchaseRegistration: () => registration.registered,
 }));
 afterEach(() => {
-  completion.complete = false;
+  registration.registered = false;
 });
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -207,20 +207,20 @@ it('shows hotel comparison without exposing full contract profit', () => {
   ).toContain('در حال دریافت نرخ مرجع هتل');
 });
 
-it('marks only the purchase action green after complete registration, never cancelled contracts', () => {
-  completion.complete = true;
+it('marks registered purchases green without a form, never cancelled contracts', () => {
+  registration.registered = true;
   const html = renderToStaticMarkup(<ContractActionPanel request={request} />);
   expect(html).toMatch(
-    /class="[^"]*purchaseComplete[^"]*" data-purchases-complete="true" aria-label="خرید"/,
+    /class="[^"]*purchaseRegistered[^"]*" data-purchase-registered="true" aria-label="خرید"/,
   );
-  expect(html.match(/data-purchases-complete="true"/g)).toHaveLength(1);
+  expect(html.match(/data-purchase-registered="true"/g)).toHaveLength(1);
   expect(
     renderToStaticMarkup(
       <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
     ),
-  ).not.toContain('data-purchases-complete="true"');
-  completion.complete = false;
+  ).not.toContain('data-purchase-registered="true"');
+  registration.registered = false;
   expect(
     renderToStaticMarkup(<ContractActionPanel request={request} />),
-  ).not.toContain('data-purchases-complete="true"');
+  ).not.toContain('data-purchase-registered="true"');
 });
