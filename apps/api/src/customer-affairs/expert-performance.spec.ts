@@ -17,6 +17,27 @@ const roster = [
   { id: 'b', name: 'Beta', extensions: ['003'] },
 ];
 describe('expert report measurement', () => {
+  it('links completion rows to exact calls within the permitted actor scope', () => {
+    const r = expertPerformance(
+      roster,
+      [
+        call,
+        { ...call, id: 'c2', complete: true },
+        { ...call, id: 'other', actors: ['b'] },
+      ],
+      [],
+      at,
+      ['a'],
+    );
+    expect(r.details.get('a')?.completion).toMatchObject([
+      { callId: 'c', result: 'INCOMPLETE' },
+      { callId: 'c2', result: 'COMPLETE' },
+    ]);
+    expect(r.details.has('b')).toBe(false);
+    expect(
+      r.details.get('a')?.outboundAttempts.every((item) => !item.callId),
+    ).toBe(true);
+  });
   it('aggregates multiple extensions and distinct contacts without counting duplicate attribution twice', () => {
     const r = expertPerformance(
       roster,

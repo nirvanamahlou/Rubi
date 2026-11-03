@@ -17,6 +17,35 @@ const bootstrap: Bootstrap = {
 };
 
 describe('Purchase section date filters', () => {
+  it('keeps an empty real request list empty after revisiting, without resurrecting sample requests', () => {
+    const client = new QueryClient();
+    client.setQueryData(['procurement', 'section-list', 1, 1, '', '', '', ''], {
+      items: [],
+      page: 1,
+      hasMore: false,
+    });
+    for (let visit = 0; visit < 2; visit++) {
+      const html = renderToStaticMarkup(
+        <QueryClientProvider client={client}>
+          <InternalSections
+            group={1}
+            bootstrap={bootstrap}
+            selectedId={null}
+            detailPending={false}
+            detailError={null}
+            onRetryDetail={() => undefined}
+            onOpen={() => undefined}
+            onClose={() => undefined}
+            onCreate={() => undefined}
+            onSaved={() => undefined}
+          />
+        </QueryClientProvider>,
+      );
+      expect(html).not.toContain('تجهیزات پشتیبانی شعبه مرکزی');
+      expect(html).not.toContain('PR-1405-101');
+    }
+  });
+
   it('shows the project calendar range in all seven internal sections', () => {
     for (const group of [1, 2, 3, 4, 5, 6, 7] as const) {
       const html = renderToStaticMarkup(

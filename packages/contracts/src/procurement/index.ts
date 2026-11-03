@@ -215,3 +215,22 @@ export type ProcurementSupplierInboundEventV1 = {
   occurredAt: string;
   payload: Record<string, unknown>;
 };
+
+export interface ProcurementPettyRegistrationV1 {
+  id: string;
+  title: string;
+  occurredAt: string;
+  amount: string;
+  currencyCode: string;
+  branchId: string;
+  receiptDocumentId: string | null;
+  receiptVersionId: string | null;
+}
+export interface ProcurementPettyRegistrationInputV1 {
+  id: string;
+  branchId: string;
+  title: string;
+  occurredAt: string;
+  amount: string;
+  receipt?: ProcurementDocumentReferenceV1;
+}
