@@ -286,11 +286,13 @@ describe('marketing workspace component contract', () => {
     expect(referenceDataSource).not.toContain('تست‌های A/B');
   });
 
-  it('renders every marketing page RTL and shows two dashboard chart series', () => {
+  it('renders RTL pages and leaves dashboard series empty', () => {
     expect(workspaceSource).toContain('[&_td]:text-right [&_th]:text-right');
     expect(referencePagesSource).toContain('className="text-right" dir="rtl"');
-    expect(referencePagesSource).toContain('data-series="leads"');
-    expect(referencePagesSource).toContain('data-series="attributed-sales"');
+    expect(referencePagesSource).not.toContain('data-series="leads"');
+    expect(referencePagesSource).not.toContain(
+      'data-series="attributed-sales"',
+    );
     expect(referencePagesSource).toContain('سرنخ جدید');
     expect(referencePagesSource).toContain('فروش منتسب');
     expect(referencePagesSource).not.toContain('title="داشبورد نمایشی"');

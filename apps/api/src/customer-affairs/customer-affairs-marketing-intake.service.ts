@@ -91,6 +91,9 @@ function present(row: IntakeRow): CustomerAffairsMarketingIntakeViewV1 {
     id: row.id,
     branchId: row.branchId,
     maskedPhone: row.phoneMasked,
+    firstName: row.firstName ?? null,
+    lastName: row.lastName ?? null,
+    entryDate: row.entryDate?.toISOString() ?? null,
     sourceCategory: row.sourceCategory,
     campaignId: row.campaignId,
     status: row.status as CustomerAffairsMarketingIntakeViewV1['status'],
@@ -162,7 +165,17 @@ export class CustomerAffairsMarketingIntakeService {
       throw new ForbiddenException(
         'کارشناس فروش باید کاربر جاری باشد؛ تخصیص به کاربر دیگر به قرارداد عمومی IAM نیاز دارد.',
       );
+    const entryDate = strictDate(input.entryDate, 'تاریخ');
     const safePayload = {
+      ...(input.firstName !== undefined ||
+      input.lastName !== undefined ||
+      input.entryDate !== undefined
+        ? {
+            firstName: input.firstName?.trim() || null,
+            lastName: input.lastName?.trim() || null,
+            entryDate: entryDate?.toISOString() ?? null,
+          }
+        : {}),
       phoneFingerprint: protectedPhone.valueFingerprint,
       sourceCategory: input.sourceCategory.trim(),
       campaignId: input.campaignId ?? null,
@@ -217,6 +230,9 @@ export class CustomerAffairsMarketingIntakeService {
           phoneKeyVersion: protectedPhone.encryptionKeyVersion,
           phoneFingerprint: protectedPhone.valueFingerprint,
           phoneMasked: protectedPhone.maskedValue,
+          firstName: safePayload.firstName ?? null,
+          lastName: safePayload.lastName ?? null,
+          entryDate,
           sourceCategory: safePayload.sourceCategory,
           campaignId: safePayload.campaignId,
           status: safePayload.status,

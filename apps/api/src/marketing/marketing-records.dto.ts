@@ -21,6 +21,8 @@ import {
 const AMOUNT = /^\d{1,20}(?:\.\d{1,4})?$/;
 const CURRENCY = /^[A-Z]{3}$/;
 const ASSET_KINDS = [
+  'SOURCE',
+  'AUDIENCE',
   'SEGMENT',
   'MESSAGE',
   'SCHEDULE',

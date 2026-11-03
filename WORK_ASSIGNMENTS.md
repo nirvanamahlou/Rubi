@@ -10933,11 +10933,11 @@ All 17 owner-authored PR heads are preserved as merge ancestors of this candidat
 
 COMPUTER_ID=PC-A; codex/pc-a-jahan-contract-header-1103. Owner authorizes removal of redundant Persian/English captions below Jahan Bastan contract logo, larger logo and footer phone02172075000, push/develop merge. Reserve only contract-print.ts, focused existing print spec and own notes. Earlier same-owner branding scope is merged. No API/schema/dependency/data/deployment changes.
 
-## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — ACTIVE
+## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-party-contract-receipts-fifo-1103 from develop9144eb57e. Owner authorizes Finance inbox party debt lookup, one received amount allocated oldest-contract-first, individual/agency payer balances, push/develop merge. Reserve new Sales public party-balance/receipt adapter (Sales owns contract reads/writes), new Finance controller/service orchestration, bounded FinanceModule registration and inbox panel insertion, additive shared DTOs and focused tests/docs. Preserve Finance accounting ownership: reuse existing financial-event public contract and settlement recalculation, no journal engine edits. Match canonical payer ID and branch, never names; currency-separated balances, atomic FIFO receipt parts, stable idempotency, optimistic preview and audit. No schema/migration/dependency/production data changes or deployment. Existing payment-label task owns only option labels, insertion does not overlap. Public producer/consumer ship together.
 
-PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves one additive test path in the existing PostgreSQL financial-events CI step; new test uses only guarded ephemeral nora_ci fixtures and never operational databases. No existing test or gate removed.
+PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves one additive test path in the existing PostgreSQL financial-events CI step; new test uses only guarded ephemeral nora_ci fixtures and never operational databases. No existing test or gate removed. Final source freezes on publication and this reservation releases on verified owner-authorized merge.
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves only its newly introduced English override keys and derived API catalogue synchronization; preserve all peer translations.
 
@@ -10952,3 +10952,11 @@ CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outc
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
+
+## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
+
+Owner requests Marketing process removal, aligned filters, empty dashboard, scoped content uploads, durable campaign/audience deletion, entry sources and named/date-stamped leads; push/develop merge authorized. Reserve Marketing Web/API/contracts/tests, bounded Customer Affairs intake fields/service/DTO, additive English catalog entries and own notes. Sole schema/migration owner PC-B for nullable campaign deletedAt, intake first/last name and entry date, and SOURCE/AUDIENCE asset kind constraint extension. Prior migration reservations merged/released; no competing active source lock found. Producer API and consumer Web ship compatible optional fields together; preserve encrypted contact ownership, branch permissions, audit and optimistic concurrency. No dependency or operational deployment changes. Validation: 91 Marketing API tests including 8 disposable PostgreSQL proofs; 118 Marketing Web tests and 3 translation coverage tests pass. Additive migration and seed rehearsed on disposable PostgreSQL. Local API/Web typechecks, production builds and scoped lint passed. Final audience-field preservation has 30 API/PostgreSQL and 38 Web regression passes; complete final-head hosted checks gate merge. Locks release on verified merge.
+
+## AGENCY-CONTRACT-NOTE-1103 — PC-B
+
+Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.

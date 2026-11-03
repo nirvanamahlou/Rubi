@@ -37,13 +37,6 @@ export interface MarketingPreviewItem {
 
 export const marketingSections: readonly MarketingSectionDefinition[] = [
   {
-    key: 'process',
-    title: 'فرایند یکپارچه',
-    description: 'پیگیری مسیر استراتژی، سرنخ، CRM، فروش، سفر و تحلیل عملکرد',
-    highlights: ['استراتژی', 'CRM', 'فروش', 'خدمات سفر'],
-    tone: 'blue',
-  },
-  {
     key: 'dashboard',
     title: 'داشبورد',
     description: 'نمای یکپارچه از شاخص‌ها، روندها، قیف و هشدارهای مارکتینگ',
@@ -119,7 +112,7 @@ export const marketingSectionTabs = {
     ['links', 'UTM، لینک کوتاه و QR', 'لینک‌های رهگیری ساختگی'],
   ],
   offers: [
-    ['discounts', 'کدهای تخفیف', 'پیشنهادهای نیازمند اعتبارسنجی Sales'],
+    ['discounts', 'کدهای تخفیف', ''],
     ['specials', 'پیشنهادهای ویژه', 'بسته‌های پیشنهادی فروش'],
   ],
   journeys: [

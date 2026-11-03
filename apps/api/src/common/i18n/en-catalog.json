@@ -6839,6 +6839,7 @@
   "منبع در این لحظه پاسخ نداد یا مجوز آن موجود نیست.": "The resource did not respond at this time or its license is not available.",
   "منبع نامعتبر است.": "The source is invalid.",
   "منبع نرخ حداکثر ۱۶۰ نویسه است.": "The maximum rate source is 160 characters.",
+  "منبع ورود معتبر نیست.": "Invalid entry source.",
   "منبع یا شناسه معتبر نیست.": "Invalid resource or identifier.",
   "منبع، کانال، B2B/B2C و UTM باید همراه سرنخ تا CRM منتقل شوند.": "Source, Channel, B2B/B2C and UTM should be transferred along with the lead to CRM.",
   "منتظر تأیید": "Awaiting confirmation",
