@@ -1,3 +1,7 @@
+## JAHAN-CONTRACT-HEADER-1103 — PC-A — READY
+
+Jahan Bastan contract header omits redundant issuer captions, expands the transparent logo to19mm and adds02172075000 in the footer. Other issuers and contract facts unchanged. Focused print regression and scoped lint run before owner-authorized develop merge. No deployment or data changes.
+
 ## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — VALIDATING
 
 Purchase action now uses persisted purchase registration independently of supplier forms and full service coverage. The branch-scoped endpoint adds registered while preserving complete. Zero-valued and legacy hotel purchases count; quotes alone and cancelled contracts do not. Save refresh, stale-response and contract/revision isolation remain.26 focused API/Web tests and scoped lint pass; full types and hosted build/quality gates precede authorized develop merge. No data writes, schema/migration/dependency or deployment changes.
