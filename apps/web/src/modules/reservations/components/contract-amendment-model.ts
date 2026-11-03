@@ -240,6 +240,26 @@ function prepareFloatingAmendment(
             },
           },
         ];
+  if (shared && service) {
+    const remaining = d.ticketSelections!.find(
+      (t) =>
+        t.direction !== direction && t.serviceClientKey === service.clientKey,
+    )!;
+    services = services.map((s) =>
+      s.clientKey === service.clientKey
+        ? {
+            ...s,
+            referenceId: remaining.offerId,
+            metadata: {
+              ...s.metadata,
+              ...(s.metadata?.direction
+                ? { direction: remaining.direction }
+                : {}),
+            },
+          }
+        : s,
+    );
+  }
   const legacy = services[0]?.metadata?.legacyServicePartiesV2;
   if (typeof legacy === 'string' && (!service || shared)) {
     const parties = JSON.parse(legacy);

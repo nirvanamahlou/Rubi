@@ -384,3 +384,28 @@ it('converts a dedicated catalog service without changing its key or sale metada
   expect(next.ticketSelections).toEqual([]);
   expect(next.passengers).toEqual(draft.passengers);
 });
+
+it('points a split historical catalog service at the remaining direction', () => {
+  const draft = amendmentFromContract(contract);
+  draft.services = [
+    {
+      ...draft.services[0]!,
+      referenceId: 'old',
+      metadata: { direction: 'OUTBOUND' },
+    },
+  ];
+  const next = applyManualAmendmentFlights(draft, {
+    OUTBOUND: {
+      departureAt: '2099-01-10T12:00',
+      arrivalAt: '2099-01-10T14:00',
+      carrierName: 'Synthetic',
+      serviceNumber: 'FLOAT',
+      cabinClassCode: 'ECONOMY',
+    },
+  });
+  expect(next.services[0]?.referenceId).toBe('back');
+  expect(next.services[0]?.metadata?.direction).toBe('RETURN');
+  expect(next.ticketSelections?.[0]?.serviceClientKey).toBe(
+    next.services[0]?.clientKey,
+  );
+});
