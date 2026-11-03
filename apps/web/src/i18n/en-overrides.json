@@ -4852,5 +4852,7 @@
   "ثبت تماس فقط از تماس واقعی ایزابل امکان‌پذیر است.": "A call can only be registered from an actual Issabel call.",
   "سهم منابع آشنایی": "Referral source share",
   "کل مخاطبان": "Total contacts",
-  "مخاطب؛ مقادیر در راهنمای رنگی درج شده‌اند": "contacts; values are shown in the color legend"
+  "مخاطب؛ مقادیر در راهنمای رنگی درج شده‌اند": "contacts; values are shown in the color legend",
+  "بلیط شناور": "Floating ticket",
+  "ظرفیت کل / فروخته‌شده": "Total capacity / sold"
 }

@@ -8,6 +8,7 @@ export const purchaseCategories = [
   ['ALL', 'همه خدمات'],
   ['HOTEL', 'خرید هتل'],
   ['FLIGHT', 'خرید پرواز'],
+  ['FLOATING', 'بلیط شناور'],
   ['TRANSFER', 'خرید ترانسفر'],
   ['INSURANCE', 'خرید بیمه'],
 ] as const;

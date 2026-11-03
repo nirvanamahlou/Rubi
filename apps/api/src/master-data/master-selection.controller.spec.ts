@@ -204,6 +204,12 @@ describe('consumer-scoped reference selection', () => {
       'suppliers',
     ],
     [
+      'procurement',
+      'procurement.read.own',
+      'ui.screen.purchases.home',
+      'cities',
+    ],
+    [
       'ticket-catalog',
       'ticket_catalog.read',
       'ui.screen.ticket-catalog.home',
