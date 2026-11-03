@@ -764,3 +764,7 @@ The owner authorizes converting either existing catalog flight direction to floa
 ## REPORTS-CURRENCY-FRESHNESS-1103
 
 Sales reporting must compose the latest Reservations intake/workflow cancellation through a minimal public producer, restricted to already authorized Sales contract IDs. A reservation cancellation is not an executed financial refund and does not rewrite canonical Sales/history/payment rows. For active sales/operational eligibility it excludes that contract until the latest workflow reopens it; pipeline/cancellation reports retain it separately as effectively cancelled. Prior workflow versions never override the latest intake. Monetary values stay approved contract prices, not receipts. Organization report row grain becomes branch+owner; counts deduplicate contract IDs, monetary measures retain their original currencies without FX or mixed-currency addition. Live preview reads a fresh consistent database snapshot per request, refreshes while visible and when returning to the tab; previously generated documents remain immutable.
+
+## TOUR-PERIODS-GRID-1103
+
+Owner requests period stop/delete. Immutable TourDeparture travel facts and published history remain unchanged. Add separate lifecycle columns with immutable lifecycle revisions; default ACTIVE preserves old rows. PAUSED blocks new selection and can resume; DELETED is terminal logical retirement. Real ticket stock, contracts and publications are never deleted by these controls.

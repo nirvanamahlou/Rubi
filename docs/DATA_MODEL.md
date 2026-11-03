@@ -1033,3 +1033,7 @@ HrRecord.sharedSourceId is a nullable restrictive self-FK. A common source has o
 ### Partner accounting identification (2026-11-02)
 
 Readonly accountingCode uses shared company sequence 3000001+ for organizations/suppliers/brokers and separate BANK account sequence 5000001+. Linked roles share one identity; promotion preserves its code. Backfill sorts earliest creation time, then stable ID/kind. Database triggers prevent recoding and sequences never cycle. Nonbank accounts remain null. This is separate from business code and ledger mappings. Migration: 20261102120000_partner_accounting_codes.
+
+## TOUR-PERIODS-GRID-1103 lifecycle
+
+TourDeparture travel facts remain immutable. Add status ACTIVE/PAUSED/DELETED and lifecycleVersion solely for optimistic concurrency of availability management, plus restrictive FK TourDepartureLifecycleRevision audit rows. Existing occurrences default ACTIVE/version0. Catalog owns lifecycle writes; Sales validates availability through its existing public boundary; Pricing lists active periods while historical detail remains readable.

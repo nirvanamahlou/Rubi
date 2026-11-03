@@ -79,6 +79,18 @@ export const toursApi = {
       `/sale-price-targets/${encodeURIComponent(id)}`,
       { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
     ),
+  setDepartureStatus: (
+    item: TourDepartureV1,
+    status: 'ACTIVE' | 'PAUSED' | 'DELETED',
+  ) =>
+    request(`/tours/departures/${encodeURIComponent(item.id)}/status`, {
+      method: 'PATCH',
+      headers: { 'x-branch-id': item.branchId },
+      body: JSON.stringify({
+        status,
+        expectedVersion: item.lifecycleVersion ?? 0,
+      }),
+    }),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
   departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>

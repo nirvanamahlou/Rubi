@@ -23,6 +23,25 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('package pricing API client', () => {
+  it.each([200, 204])(
+    'treats an empty optional draft as absent (%s)',
+    async (status) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(null, { status })),
+      );
+      await expect(
+        packagePricingApi.tourDraft('tour', 'batch', activeSession),
+      ).resolves.toBeNull();
+    },
+  );
+  it('does not silently accept malformed saved drafts', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{broken')));
+    await expect(
+      packagePricingApi.tourDraft('tour', 'batch', activeSession),
+    ).rejects.toThrow();
+  });
+
   it('reads the tour and purchase grid only through pricing endpoints', async () => {
     const fetch = vi
       .fn()

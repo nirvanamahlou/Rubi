@@ -86,6 +86,8 @@ function departureView(row: DepartureRow): TourDepartureV1 {
     branchId: row.branchId,
     packageId: row.packageId,
     packageVersion: row.packageVersion,
+    status: (row.status ?? 'ACTIVE') as NonNullable<TourDepartureV1['status']>,
+    lifecycleVersion: row.lifecycleVersion ?? 0,
     package: packageView(row.package),
     startsOn: row.startsOn.toISOString().slice(0, 10),
     endsOn: row.endsOn.toISOString().slice(0, 10),
@@ -180,6 +182,8 @@ export class TourPublicService {
     });
     if (!row)
       throw new BadRequestException('نوبت تور در شعبه قرارداد یافت نشد.');
+    if (row.status && row.status !== 'ACTIVE')
+      throw new ConflictException('این بازه برای فروش فعال نیست.');
     const tour = departureView(row);
     if (
       meta.tourDepartureVersion !== tour.version ||
@@ -240,11 +244,82 @@ export class TourPublicService {
         );
     }
   }
+  async setDepartureStatus(
+    id: string,
+    raw: unknown,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    this.authorize(actor, true, branchId);
+    const input = raw as { status?: string; expectedVersion?: number } | null;
+    if (
+      !branchId ||
+      !input ||
+      Object.keys(input).some(
+        (k) => !['status', 'expectedVersion'].includes(k),
+      ) ||
+      !['ACTIVE', 'PAUSED', 'DELETED'].includes(input.status ?? '') ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion! < 0 ||
+      input.expectedVersion! > 2147483646
+    )
+      throw new BadRequestException('وضعیت و نسخه بازه معتبر نیست.');
+    return this.database.client.$transaction(async (tx) => {
+      const row = await tx.tourDeparture.findFirst({ where: { id, branchId } });
+      if (!row) throw new NotFoundException('بازه در شعبه مجاز پیدا نشد.');
+      if (
+        row.status === 'DELETED' ||
+        row.lifecycleVersion !== input.expectedVersion
+      )
+        throw new ConflictException(
+          'بازه تغییر کرده است؛ فهرست را تازه‌سازی کنید.',
+        );
+      if (row.status === input.status)
+        return {
+          data: {
+            id,
+            status: row.status,
+            lifecycleVersion: row.lifecycleVersion,
+          },
+        };
+      const changed = await tx.tourDeparture.updateMany({
+        where: {
+          id,
+          branchId,
+          lifecycleVersion: input.expectedVersion,
+          status: { not: 'DELETED' },
+        },
+        data: { status: input.status!, lifecycleVersion: { increment: 1 } },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('بازه هم‌زمان تغییر کرده است.');
+      await tx.tourDepartureLifecycleRevision.create({
+        data: {
+          departureId: id,
+          version: row.lifecycleVersion + 1,
+          status: input.status!,
+          actorUserId: actor.userId,
+        },
+      });
+      return {
+        data: {
+          id,
+          status: input.status!,
+          lifecycleVersion: row.lifecycleVersion + 1,
+        },
+      };
+    });
+  }
   async departures(actor: AuthenticatedActor) {
     if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: actor.branchIds },
+        status: actor.permissions.some((p) =>
+          ['ticket_catalog.manage', 'ticket_catalog.tours.manage'].includes(p),
+        )
+          ? { not: 'DELETED' }
+          : 'ACTIVE',
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
       include: included,
@@ -259,6 +334,7 @@ export class TourPublicService {
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: [...branchIds] },
+        status: 'ACTIVE',
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
       include: included,

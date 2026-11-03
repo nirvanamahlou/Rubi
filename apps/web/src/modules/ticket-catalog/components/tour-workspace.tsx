@@ -32,6 +32,7 @@ import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
 import { TourDetailsForm } from './tour-details-form';
 import { TourOverview } from './tour-overview';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 
 const emptyPackage: TourPackageInputV1 = {
   name: '',
@@ -105,6 +106,12 @@ export function TourWorkspace({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const permissions = useAccessPermissions();
+  const canManagePeriods = (permissions ?? []).some((permission) =>
+    ['ticket_catalog.manage', 'ticket_catalog.tours.manage'].includes(
+      permission,
+    ),
+  );
   const [packages, setPackages] = useState<TourPackageV1[]>([]);
   const [departures, setDepartures] = useState<TourDepartureV1[]>([]);
   const [branches, setBranches] = useState<BranchReference[]>([]);
@@ -442,6 +449,15 @@ export function TourWorkspace({
             })
           }
           onSelect={selectTour}
+          onPeriodStatus={
+            canManagePeriods
+              ? (item, status) =>
+                  void run(async () => {
+                    await toursApi.setDepartureStatus(item, status);
+                    setNotice('وضعیت بازه به‌روز شد.');
+                  })
+              : undefined
+          }
           onRepeat={repeatTour}
           definitionMode={mode === 'definition'}
         />

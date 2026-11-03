@@ -284,3 +284,16 @@ it('rejects manual published base price increases without a discount and excessi
       ),
     ).toThrow();
 });
+
+it.each(['PAUSED', 'DELETED'])(
+  'does not offer published prices for a %s period',
+  async (status) => {
+    const { service, findMany, tourCostGrid } = fixture();
+    const grid = await tourCostGrid();
+    tourCostGrid.mockResolvedValue({ ...grid, tour: { ...grid.tour, status } });
+    await expect(service.saleCatalog('tour', actor, 'branch')).resolves.toEqual(
+      { data: [] },
+    );
+    expect(findMany).not.toHaveBeenCalled();
+  },
+);

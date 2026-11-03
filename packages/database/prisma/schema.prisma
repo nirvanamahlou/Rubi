@@ -30,7 +30,8 @@ enum AuditOutcome {
 }
 
 model User {
-  pettyCashEntries ProcurementPettyEntry[]
+  tourDepartureLifecycleRevisions TourDepartureLifecycleRevision[]
+  pettyCashEntries                ProcurementPettyEntry[]
 
   pettyCashFunds ProcurementPettyFund[]
 
@@ -4317,25 +4318,28 @@ model TourPackage {
 }
 
 model TourDeparture {
-  hotelRatePacks   ReservationHotelRatePack[]
-  hotelRateBatches ReservationHotelRateBatch[]
-  pricingDrafts    PackagePricingTourDraft[]
-  id               String                      @id @default(uuid()) @db.Uuid
-  version          Int                         @default(1)
-  branchId         String                      @db.Uuid
-  packageId        String                      @db.Uuid
-  packageVersion   Int
-  startsOn         DateTime                    @db.Date
-  endsOn           DateTime                    @db.Date
-  outboundOfferId  String                      @db.Uuid
-  returnOfferId    String?                     @db.Uuid
-  createdByUserId  String                      @db.Uuid
-  createKey        String                      @db.VarChar(160)
-  fingerprint      String                      @db.VarChar(64)
-  createdAt        DateTime                    @default(now()) @db.Timestamptz(3)
-  package          TourPackage                 @relation(fields: [packageId], references: [id], onDelete: Restrict)
-  outboundOffer    TicketPublishedOffer        @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
-  returnOffer      TicketPublishedOffer?       @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  status             String                           @default("ACTIVE") @db.VarChar(16)
+  lifecycleVersion   Int                              @default(0)
+  lifecycleRevisions TourDepartureLifecycleRevision[]
+  hotelRatePacks     ReservationHotelRatePack[]
+  hotelRateBatches   ReservationHotelRateBatch[]
+  pricingDrafts      PackagePricingTourDraft[]
+  id                 String                           @id @default(uuid()) @db.Uuid
+  version            Int                              @default(1)
+  branchId           String                           @db.Uuid
+  packageId          String                           @db.Uuid
+  packageVersion     Int
+  startsOn           DateTime                         @db.Date
+  endsOn             DateTime                         @db.Date
+  outboundOfferId    String                           @db.Uuid
+  returnOfferId      String?                          @db.Uuid
+  createdByUserId    String                           @db.Uuid
+  createKey          String                           @db.VarChar(160)
+  fingerprint        String                           @db.VarChar(64)
+  createdAt          DateTime                         @default(now()) @db.Timestamptz(3)
+  package            TourPackage                      @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  outboundOffer      TicketPublishedOffer             @relation("TourOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer        TicketPublishedOffer?            @relation("TourReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, startsOn])
@@ -8312,4 +8316,17 @@ model ProcurementPettyEntry {
 
   @@index([fundId, createdAt])
   @@map("procurement_petty_entries")
+}
+
+model TourDepartureLifecycleRevision {
+  actor       User          @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId String        @db.Uuid
+  departure   TourDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  version     Int
+  status      String        @db.VarChar(16)
+  actorUserId String        @db.Uuid
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@unique([departureId, version])
 }

@@ -206,6 +206,7 @@ export class PackageTourPricingService {
     const grid = await this.pricing.tourCostGrid(tourId, actor);
     if (branchId && grid.tour.branchId !== branchId)
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
+    if (grid.tour.status && grid.tour.status !== 'ACTIVE') return { data: [] };
     const drafts = await this.database.client.packagePricingTourDraft.findMany({
       where: { tourDepartureId: tourId, branchId: grid.tour.branchId },
       include: {

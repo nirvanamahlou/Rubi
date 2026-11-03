@@ -22,6 +22,14 @@ export class TourController {
   constructor(
     @Inject(TourPublicService) private readonly service: TourPublicService,
   ) {}
+  @Patch('departures/:id/status') setDepartureStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.setDepartureStatus(id, body, req.actor, branch);
+  }
   @Get('packages') packages(@Req() req: AuthenticatedRequest) {
     return this.service.packages(req.actor);
   }
