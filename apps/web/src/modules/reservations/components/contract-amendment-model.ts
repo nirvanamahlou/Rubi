@@ -264,7 +264,7 @@ function prepareFloatingAmendment(
   if (typeof legacy === 'string' && (!service || shared)) {
     const parties = JSON.parse(legacy);
     if (!service || !parties[service.clientKey])
-      throw new Error('ترکیب مسافران بلیت مشخص نیست.');
+      throw new Error('ترکیب معتبر نیست.');
     services = services.map((s, i) =>
       i === 0
         ? {
@@ -311,7 +311,7 @@ export function applyManualAmendmentFlights(
       !Number.isFinite(Date.parse(f.arrivalAt))
     )
       throw new Error(
-        'اطلاعات بلیت شناور کامل نیست؛ تاریخ، ساعت، ایرلاین و شماره پرواز را وارد کنید.',
+        'اطلاعات بلیت شناور کامل یا معتبر نیست؛ مسیر، زمان، ایرلاین و شماره پرواز را بررسی کنید.',
       );
     result = prepareFloatingAmendment(result, direction);
     const service = result.services.find(
