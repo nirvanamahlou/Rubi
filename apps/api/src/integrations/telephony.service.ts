@@ -18,6 +18,8 @@ import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { validateTelephonyEvent } from './telephony.validation';
+import { recoveredOutboundAccounts } from './issabel/recovered-outbound-recipient';
+import { hrCallRoutingEnabled } from '../iam/hr-call-routing';
 import {
   recordNativeAnswer,
   selectPreviousAgent,
@@ -28,6 +30,7 @@ type Envelope = {
   event: TelephonyEventV1;
   recipient: { userId: string; version: number; teamId: string | null } | null;
   historical?: true;
+  hrRecipients?: { extension: string; userIds: string[] };
   answerRecipients?: { version: 1; userIds: string[] };
 };
 @Injectable()
@@ -448,7 +451,22 @@ export class TelephonyIntegrationService {
         provider === 'ISSABEL' &&
         this.config.get<string>('ISSABEL_EVENT_MODE') ===
           'NATIVE_QUEUE_CAPTURE';
+      const autoHr = hrCallRoutingEnabled() && realProvider && !recovery;
+      const notifications =
+        !captureOnly ||
+        this.config.get<string>('ISSABEL_USER_NOTIFICATIONS_ENABLED') ===
+          'true' ||
+        (event.direction === 'OUT' &&
+          this.config.get<string>('ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED') ===
+            'true');
+      const hrUsers =
+        autoHr && notifications && event.extension
+          ? ((await this.directory.employeeCallRoutes(c.branchId, tx)).find(
+              (r) => r.extension === event.extension,
+            )?.userIds ?? [])
+          : [];
       const mapping =
+        !autoHr &&
         !recovery &&
         event.extension &&
         (!captureOnly ||
@@ -475,18 +493,32 @@ export class TelephonyIntegrationService {
             tx,
           )
         : false;
+      let answerUsers: string[] = [];
+      if (realProvider && event.kind === 'ANSWERED' && event.extension) {
+        answerUsers = await this.directory.answeredAccounts(
+          c.branchId,
+          event.extension,
+          event.occurredAt,
+          tx,
+        );
+        if (recovery && !answerUsers.length)
+          answerUsers = await recoveredOutboundAccounts(
+            event,
+            c.branchId,
+            tx,
+            this.directory,
+          );
+      }
       const envelope: Envelope = {
         event,
+        ...(autoHr && event.extension
+          ? { hrRecipients: { extension: event.extension, userIds: hrUsers } }
+          : {}),
         ...(realProvider && event.kind === 'ANSWERED' && event.extension
           ? {
               answerRecipients: {
                 version: 1 as const,
-                userIds: await this.directory.answeredAccounts(
-                  c.branchId,
-                  event.extension,
-                  event.occurredAt,
-                  tx,
-                ),
+                userIds: answerUsers,
               },
             }
           : {}),
@@ -637,6 +669,9 @@ export class TelephonyIntegrationService {
           synthetic: row.connection.synthetic,
           receivedAt: row.receivedAt,
           recipient: envelope.historical ? null : envelope.recipient,
+          ...(!envelope.historical && envelope.hrRecipients
+            ? { hrRecipients: envelope.hrRecipients }
+            : {}),
           ...(!row.connection.synthetic &&
           envelope.answerRecipients?.version === 1
             ? {

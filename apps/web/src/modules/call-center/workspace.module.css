@@ -824,9 +824,7 @@
   color: var(--cc-blue);
   flex-shrink: 0;
 }
-.reportCard:first-child h3 svg {
-  color: #d89b17;
-}
+
 .reportCard .table {
   font-size: 12px;
 }
@@ -1006,4 +1004,25 @@
 .badge[data-direction='OUTBOUND'] {
   color: #1e40af;
   background: #dbeafe;
+}
+
+.expertCard {
+  grid-column: span 2;
+}
+@media (max-width: 1000px) {
+  .expertCard {
+    grid-column: 1 / -1;
+  }
+}
+
+.expertCard .table {
+  min-width: 760px;
+}
+.expertCard th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.expertCard td:first-child {
+  min-width: 150px;
 }

@@ -1,3 +1,5 @@
+import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
+import { callbackManagers, missedInbound } from './callback-triage';
 import { Prisma } from '@nora/database';
 import type { CallCenterCrypto } from './call-center.crypto';
 import type { TelephonyTechnical } from './telephony-state';
@@ -56,7 +58,10 @@ export async function missedCallbackContacts(
           OR: [{ origin: null }, { origin: { not: 'SYNTHETIC' } }],
           ...(cursor ? { id: { gt: cursor } } : {}),
         },
-        include: { telephonySession: true },
+        include: {
+          telephonySession: true,
+          answerResponsibilities: { select: { userId: true } },
+        },
         orderBy: { id: 'asc' },
         take: 500,
       });
@@ -71,15 +76,22 @@ export async function missedCallbackContacts(
             )
           : null;
         // Provider evidence takes precedence over an editable business outcome.
-        const answered = technical
-          ? technical.answered === true
-          : row.origin !== 'TELEPHONY' && row.outcome === 'ANSWERED';
+        const answered =
+          (callbackManagers().length && !!row.answerResponsibilities?.length) ||
+          (technical
+            ? technical.answered === true &&
+              (!callbackManagers().length ||
+                !!technical.lastAnswer ||
+                !!technical.answers?.length)
+            : row.origin !== 'TELEPHONY' && row.outcome === 'ANSWERED');
         const missed =
           row.direction === 'INBOUND' &&
           (technical
-            ? technical.state === 'ENDED' &&
-              technical.unanswered === true &&
-              !answered
+            ? callbackManagers().length
+              ? missedInbound(technical) && !answered
+              : technical.state === 'ENDED' &&
+                technical.unanswered === true &&
+                !answered
             : row.origin !== 'TELEPHONY' && row.outcome === 'NO_ANSWER');
         const fact = facts.get(row.contactId)!;
         if (answered && ['INBOUND', 'OUTBOUND'].includes(row.direction))
@@ -104,9 +116,57 @@ export async function missedCallbackContacts(
       if (rows.length < 500) break;
       cursor = rows.at(-1)!.id;
     }
+    const resolved = callbackManagers().length
+      ? await tx.customerAffairsTicket.findMany({
+          where: {
+            branchId,
+            category: 'CALL_CENTER_REQUEST',
+            callCenterContactId: { in: contacts.map((c) => c.id) },
+          },
+          select: {
+            id: true,
+            status: true,
+            callCenterContactId: true,
+            updatedAt: true,
+          },
+        })
+      : [];
+    const completed =
+      callbackManagers().length && resolved.length
+        ? await new CallCenterTasksService({ client: tx } as never).list(
+            tx,
+            branchId,
+            resolved.map((r) => r.id),
+          )
+        : [];
+    const resolutions = resolved.filter((r) => r.status === 'CLOSED');
+    for (const task of completed) {
+      if (task.status !== 'COMPLETED' || !task.completedAt) continue;
+      const payload = task.payload as {
+        encrypted?: string;
+        keyVersion?: number;
+      };
+      const request = resolved.find((r) => r.id === task.sourceReference);
+      if (!request || !payload.encrypted || !payload.keyVersion) continue;
+      const detail = crypto.decrypt<{ result?: string }>(
+        payload.encrypted,
+        payload.keyVersion,
+        `followup:${task.id}:${request.id}`,
+      );
+      if (detail.result?.trim())
+        resolutions.push({ ...request, updatedAt: task.completedAt });
+    }
     // Equal timestamps do not prove that a conversation happened after the miss.
     for (const [contactId, fact] of facts)
-      if (Number.isFinite(fact.missed) && fact.answered <= fact.missed)
+      if (
+        Number.isFinite(fact.missed) &&
+        fact.answered <= fact.missed &&
+        !resolutions.some(
+          (r) =>
+            r.callCenterContactId === contactId &&
+            r.updatedAt.getTime() >= fact.missed,
+        )
+      )
         pending.push({ contactId, callId: fact.callId, missedAt: fact.missed });
     after = contacts.at(-1)!.id;
   }

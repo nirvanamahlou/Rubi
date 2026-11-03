@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 import {
+  recordingAccess,
   callRecordings,
   recordingBlob,
   RecordingError,
@@ -10,7 +11,7 @@ import {
 } from './recording-client';
 import styles from './workspace.module.css';
 
-export function RecordingDownload({
+export function RecordingDownloadAction({
   callId,
   branchId,
   allowed,
@@ -140,4 +141,31 @@ export function RecordingDownload({
       )}
     </div>
   );
+}
+
+/** UI capability is server-derived; stale session permissions cannot expose audio. */
+export function RecordingDownload(props: {
+  callId: string;
+  branchId: string;
+  allowed: boolean;
+}) {
+  const scope = props.branchId + ':' + props.callId + ':' + props.allowed;
+  const [access, setAccess] = useState<{
+    scope: string;
+    allowed: boolean;
+  } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    void recordingAccess(props.branchId, controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setAccess({ scope, allowed: value });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAccess({ scope, allowed: false });
+      });
+    return () => controller.abort();
+  }, [props.branchId, scope]);
+  return access?.scope === scope && access.allowed ? (
+    <RecordingDownloadAction {...props} allowed />
+  ) : null;
 }

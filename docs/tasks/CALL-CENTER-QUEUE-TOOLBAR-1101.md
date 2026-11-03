@@ -1,0 +1,5 @@
+## CALL-CENTER-QUEUE-TOOLBAR-1101 — 2026-11-01
+
+Queue registrar-team, registrar and status fields reuse the approved contact filter label/control classes. A shared RTL toolbar places existing queue view tabs on the right and the three fields plus compact icon reset to the left; narrow screens wrap without forcing a desktop width. Queue predicates, permissions, paging and counts remain unchanged. Scope: workflow.tsx and workflow.module.css only; no schema, API, dependency or data changes.
+
+Validation: isolated production-image Web lint, two existing queue tests, full Web typecheck and build. Browser on production confirms side-by-side placement at1625px, CLOSED filtering returns zero matching requests and reset restores one.390px layout checked. Source Other option preserved by building on the current Web image. API, Worker, Postgres and Redis container IDs, Web env and mounts verified unchanged. Original Compose retained and previous image kept for rollback under global deploy lock. Receipt: /opt/rubi/CALL-QUEUE-TOOLBAR-RELEASE-1101.json. Source PR targets develop; no automatic merge.

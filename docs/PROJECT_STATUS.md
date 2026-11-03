@@ -8450,11 +8450,44 @@ All five contact specification filters now match the same authorized latest-call
 
 Request registrar/current-team/status controls moved from contact filters into request queue and applied server-side before counts/paging; contact follow-up selector removed. Existing branch/own/unit permissions and selected queue tabs remain intersected. Three focused checks, isolated API/Web lint/typechecks/builds and native read-only queue acceptance pass. Current production409a overlays, unchanged Worker image and recording/PBX configuration preserved after backed-up activation. No schema/grant mutation. See docs/tasks/CALL-CENTER-QUEUE-FILTERS-1101.md.
 
+## CALL-CENTER-QUEUE-TOOLBAR-1101 — 2026-11-01
+
+Queue filters now share approved contact field styling, compact icon reset and responsive placement left of existing queue view tabs. Existing filtering behavior preserved and browser checked; isolated Web checks pass. Web-only rollout retains Other source and all API/Worker/data services. See tasks/CALL-CENTER-QUEUE-TOOLBAR-1101.md.
+
 ## CALL-CENTER-SOURCE-OTHER-1101 — 2026-11-01
 Added Other to shared acquaintance sources used by contact filters and call popup.23 focused tests, Web lint/typecheck/build and translation sync pass. Web-only release active; API/Worker/database unchanged. Source PR review pending; no schema/grant/dependency change.
+
+## CALL-CENTER-OWN-OUTBOUND-1101 — 2026-11-01
+
+Own/team/global contact access now includes validated real outgoing-origin snapshots alongside actual-answer evidence. Unanswered outgoing calls remain visible to their originating employee; manual transfer, inbound ring and synthetic offers grant no new access.34 isolated PostgreSQL tests, API lint/typecheck/build and native read-only14-account/70-branch acceptance pass. API-only release active, all Web/Worker/data services preserved; no schema/grant/business-data rewrite. See tasks/CALL-CENTER-OWN-OUTBOUND-1101.md.
+
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
+
+## ERP-FINAL-RELEASE-1101 — published 2026-11-01
+
+Latest develop d0845c8fd published across API/Web/Worker with5 approved Call Center/translation runtime overlays preserved. All4 hosted gates pass;48 API/35 Web scoped tests and34 isolated PostgreSQL access checks pass; external connector contract skipped without configuration. Verified encrypted backup, canary/source hashes, health/static assets, authenticated Worker/current API namespace, AMI and recording/guard timers. Native17-account/85-branch read-only acceptance passes. No migrations or unrelated service/env/data change. See tasks/ERP-FINAL-RELEASE-1101.md.
+
+## CALL-SOURCE-SMS-1101 — 2026-11-01
+
+SMS added to shared acquaintance sources for call popup and contact filter.15 existing model/form tests, scoped lint and Web typecheck/build pass. Web-only production activation verified; API/Worker/data services and existing approved source overlays preserved. No schema/grant/dependency change. See tasks/CALL-SOURCE-SMS-1101.md.
+
+
+## CALL-HISTORY-SUBJECT-1101 — 2026-11-01
+
+Per-call subject now displayed below expanded history summary and above note; blank subject explicitly unrecorded.17 existing tests, Web lint/typecheck/build pass. Web-only release active with prior runtime overlays and all other services preserved. See tasks/CALL-HISTORY-SUBJECT-1101.md.
+
+
+CALL-HISTORY-SPACING-1101: expanded history sections spaced14px; recipient caption/value separate lines; duplicate createdAt removed.17 existing tests, lint/typecheck/build pass; Web-only release verified with other services unchanged.
+
+CALL-HISTORY-LABELS-1101: removed subject from expanded details, retained timeline heading and spacing; colon added to both recipient captions.17 existing tests, lint/typecheck/build and Web-only release verification pass.
+
+QUEUE-OPTION-STYLE-1101: queue dropdown options now retain shared combobox styling matching acquaintance-source selector; removed inherited action-button borders/margins without changing specificity or filtering. Queue tests and Web typecheck/build passed; Web-only activation verified.
+
+## MISSED-CALL-TRIAGE-1102 — 2026-11-02
+
+Missed inbound calls now use proven ring evidence: one employee owns own callback visibility; multiple/unlinked/no destinations go to the two owner-named sales managers for request assignment. Assigned staff see related contacts/requests; later successful employee conversation or recorded resolution removes pending callback. Historic labels derive from retained evidence without rewriting answer ownership. Backend popup-only creation enabled.35 isolated PostgreSQL checks and native ORM/SQL branch parity pass; backed-up API/Worker activation preserves concurrent team releases and Web. See tasks/MISSED-CALL-TRIAGE-1102.md.
 
 
 ## HR-RADAN-LIVE-1101 — PC-B
@@ -8468,6 +8501,15 @@ Owner approves the bounded PC-B HR directory reservation exception. Connected-to
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A
 
 Optional common supplier stacks hotel editors and retains independent per-stay quotations. One primary issuance validates all saved suppliers and freezes every stay in one workflow revision; no partial send. One supplier preview/PDF includes all hotel/room/date/price tables, while separate transfer outputs remain intact. Sent quotations are preserved after later draft edits. Focused Web/API tests, scoped lint/types and synthetic multi-page PDF verification precede exact-head CI and owner-authorized develop merge. No migration/dependency or operational rollout. See docs/tasks/SHARED-HOTEL-SUPPLIER-FORM-1102.md.
+
+## SHORT-SERVICE-CALLS-1102 — 2026-11-02
+
+Fixed native outbound capture rejecting short service destinations before anchor persistence. External3–15 digit numbers now accepted with existing source/trunk/root proof; internal calls remain excluded. Four actual reported-day193 calls recovered through private historical port, visible to the initiating employee; repeated recovery produces0 duplicates and0 old popups. Recovery uses unchanged pre-call provider mapping plus unique current HR agreement if temporal HR is invalidated by later edits. API lint/typecheck/build, focused checks and49 isolated PostgreSQL checks pass. Backed-up API/Worker rollout preserves current peer integrations and Web. See tasks/SHORT-SERVICE-CALLS-1102.md.
+
+
+## HR-CALL-ROUTING-1102 — 2026-11-02
+
+Authoritative active HR employee/user links and all internal aliases now drive live Call Center routing automatically. Shared extensions offer all linked eligible accounts; edits/unlink/delete invalidate stale pending offers, preserving prior answered history. IAM derives own-only capabilities for valid linked staff without stored roles/grants or other-module access.62 isolated PostgreSQL checks and API lint/typecheck/build pass. Native acceptance:16 accounts/18 extensions,1 shared extension,3 alias accounts,4 formerly unmapped accounts,14 valid sessions and AMI healthy. Backed-up API/Worker release preserves current peer overlays and Web. See tasks/HR-CALL-ROUTING-1102.md.
 
 ## CALL-HISTORY-TITLE-1102 — PC-C
 Historical TELEPHONY read enrichment now refreshes named snapshots as well as missing/generic labels via current HR grade/unit directory. Requires the original branch-scoped provider session and matching observed extension; keeps historical display if mapping is absent/ambiguous/conflicting, ignores manual operator text, preserves original payload and answeredAt.14 focused regressions and lint pass; API typecheck and production build pass. No data rewrite or migration; publication pending.
@@ -8483,6 +8525,14 @@ Hotel transfer preview now multiplies the entered combined round-trip fare by th
 
 Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.
 
+## CALL-POPUP-FIELD-ORDER-1102 — 2026-11-02
+
+All CallForm popup entry points now default to name before phone, source before direction and outcome before recipient in RTL/DOM order. Validation, frozen identity, values and handlers unchanged.17 existing tests, scoped lint, full Web typecheck/build and referenced asset checks pass; Web-only release active with API/Worker/data services unchanged. See tasks/CALL-POPUP-FIELD-ORDER-1102.md.
+
+## STAFF-CDR-BACKFILL-1102 — 2026-11-02
+
+PC-C completed owner-authorized historical employee call recovery from 1405/08/09.144 finalized external sessions verified;26 missing calls recovered,118 preserved.82 native contact-list/access checks across14 active accounts pass; zero duplicate roots or new historical popup offers. Inactive113/202 remain disabled. Operator-only source and evidence note: docs/tasks/STAFF-CDR-BACKFILL-1102.md. No application release, schema or grant change.
+
 ## CALL-FILTER-LAYOUT-1102 — PC-C
 Owner-requested layout: Tehran date range is always visible between contact search and advanced toggle; advanced contact specifications use one five-column desktop row and stack on mobile. Existing date semantics, state handlers, clear behavior and other approved UI preserved. No API/schema/data changes or runtime deployment. Scoped lint, typecheck and production build passed using equivalent candidate files in the existing dependency-equipped checkout.
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B
@@ -8492,6 +8542,12 @@ Selected30/90/365-day filter now reaches HR own attendance aggregation using Teh
 ## HR-DASHBOARD-LIVE-1102 — PC-B
 
 Dashboard uses current Tehran/Persian season through today, descending30-day attendance and real daily attendance overtime in cards. A valid first entry counts presence before checkout; latest per-employee/day prevents duplicates. Business-date query preserves rolling30 days across season boundaries. Today refreshes with native store polling; leave card counts unique staff across supported approved leave sources. No schema/dependency or source date rewrite. Focused and final-head checks precede user-authorized develop merge.
+
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C
+
+Wrong first-login branch explains missing personal contacts for shared201 accounts. Authoritative HR-scoped branch bootstrap implemented;11 API and23 Web checks, API/Web types/builds and native16-employee-plus-Demo access checks pass. Production release pending runtime layering correction and shared deployment lock. See docs/tasks/CALL-CENTER-BRANCH-CONTEXT-1102.md.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — DEPLOYED: authoritative HR branch fixes both201 personal lists. Post-release17 employees plus Demo/119 contact checks pass, including21 outgoing calls/13 contacts for each target. Verified encrypted backup and preserved peer source/configuration, database/Redis, Worker API authentication/AMI and recording timer. No migrations/grants/call-data rewrites. PR1308; receipt /opt/rubi/CALL-CENTER-BRANCH-CONTEXT-1102.json.
 
 ## HR-RADAN-DATE-SCHEDULE-1102 — PC-B
 
@@ -8508,6 +8564,30 @@ HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted
 ## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B
 
 Employee-related record forms no longer offer inline employee creation; employee selection and native Employees creation remain. Employee table renames start to employment start and adds adjacent contract end / employment end columns. Projection selects the latest noncancelled/nondeleted contract by start date and separation last working day, never exit-interview date, preserving blank open-ended contracts and export identities. Existing complete scoped reference loader avoids bootstrap truncation. Ended employees remain list/filter-visible.21 focused Web/catalog tests and scoped lint pass; local3100 columns verified. No schema/API/dependency or operational record changes. Final-head hosted gates precede authorized develop merge.
+
+## CALL-EXPERT-PERFORMANCE-1102 — PC-C — SOURCE_READY
+Removed outbound-contact ranking. Added scoped expert call/backlog/completion table with overdue-first order, full HR extension lists and authorized paginated detail views. Historical actor evidence uses native responsibilities/outbound offers; unknown attribution is explicit. HR/Tasks public projections preserve module boundaries; no IAM/schema/data changes.198 API checks and78 Web checks, scoped lint and API/Web builds/types pass;68 existing DB-dependent tests skipped. Production read-only candidate probe confirms summaries/details without record writes. Hosted CI and publication pending. See docs/tasks/CALL-EXPERT-PERFORMANCE-1102.md.
+
+## CALL-CENTER-AUDIO-CEO-ONLY-1102 — PC-C — SOURCE ONLY
+
+Owner restricts audio to Danial Altafi. Single immutable IAM-ID plus active internal account validation, server-side list/full/Range checks and fail-closed UI capability implemented. Demo/admin/manager/employee legacy grants cannot bypass. No server deployment/configuration or grant mutation authorized or performed. Details and future activation prerequisites: docs/tasks/CALL-CENTER-AUDIO-CEO-ONLY-1102.md.
+
+## CALL-CENTER-TEN-CONTACTS-1102 — PC-C — SOURCE ONLY
+
+Contact list requests10 rows per page and uses the returned page size to calculate all reachable pages. Separate KPI/queue/history paging unchanged. Eight targeted transport tests and scoped lint pass. No server deployment; see docs/tasks/CALL-CENTER-TEN-CONTACTS-1102.md.
+
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — SOURCE ONLY
+
+Agency added to shared Call Center source options, used by all call popups and matching source filter. Existing English translation reused;18 model/form/i18n regressions and Web types pass. No API/schema/dependency or server change. See docs/tasks/CALL-CENTER-AGENCY-SOURCE-1102.md.
+
+## CALL-CENTER-SOURCE-SHARE-1102 — PC-C — SOURCE ONLY
+
+Correct source share from call count to unique contact count, latest matching source within report/access/window. Chart renamed to referral source share with contact-based percentages and center. No server publication or data rewrite. See docs/tasks/CALL-CENTER-SOURCE-SHARE-1102.md.
+
+## CALL-CENTER-REMOVE-REPORT-KPIS-1102 — PC-C — SOURCE ONLY
+
+Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

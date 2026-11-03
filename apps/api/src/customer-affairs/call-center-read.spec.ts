@@ -394,7 +394,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       expect(r.data.calls).toBe(1025);
       expect(r.data.contacts).toBe(25);
       expect(r.data.groups.reduce((n, g) => n + g.count, 0)).toBe(1025);
-      expect(r.data.sources.reduce((n, g) => n + g.count, 0)).toBe(1025);
+      expect(r.data.sources.reduce((n, g) => n + g.count, 0)).toBe(25);
       expect(r.data.tasks.onTimeRate).toBeNull();
     });
     it('refuses a shifted page after a new call instead of silently skipping', async () => {
@@ -1019,6 +1019,47 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         vi.useRealTimers();
         decrypt.mockRestore();
       }
+    });
+    it('counts repeated contacts once using the latest matching source in the report window', async () => {
+      const phone = '2025550198';
+      const make = (source: string, occurredAt: string) =>
+        calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            phone,
+            source,
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'ANSWERED',
+            occurredAt,
+          },
+          actor,
+          branchId,
+        );
+      for (let i = 0; i < 28; i++)
+        await make('معرفی دوستان', '2026-10-25T10:00:00Z');
+      await make('اینستاگرام', '2026-10-26T10:00:00Z');
+      await make('گوگل', '2026-11-02T10:00:00Z');
+      const report = await read.report(actor, branchId, {
+        ...new CallCenterSearchDto(),
+        query: phone,
+        from: '2026-10-01T00:00:00Z',
+        to: '2026-11-01T00:00:00Z',
+      });
+      expect(report.data.calls).toBe(29);
+      expect(report.data.contacts).toBe(1);
+      expect(report.data.sources).toEqual([{ label: 'اینستاگرام', count: 1 }]);
+      const before = await read.report(actor, branchId, {
+        ...new CallCenterSearchDto(),
+        query: phone,
+        from: '2026-10-01T00:00:00Z',
+        to: '2026-10-26T00:00:00Z',
+      });
+      expect(before.data.calls).toBe(28);
+      expect(before.data.sources).toEqual([
+        { label: 'معرفی دوستان', count: 1 },
+      ]);
     });
   },
 );

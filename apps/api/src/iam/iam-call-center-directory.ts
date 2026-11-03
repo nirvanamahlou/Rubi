@@ -1,3 +1,4 @@
+import { callbackManagers } from './call-center-answer-policy';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,6 +12,7 @@ import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
+import { hrCallRoutes, hrCallRoutingEnabled } from './hr-call-routing';
 import {
   answeredCallAccess,
   globalCallCenterIds,
@@ -20,6 +22,9 @@ import {
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
 export class IamCallCenterDirectory {
+  async employeeCallRoutes(branchId: string, tx?: Prisma.TransactionClient) {
+    return hrCallRoutes(this.database, branchId, tx);
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(HrUserUnitDirectory)
@@ -40,7 +45,46 @@ export class IamCallCenterDirectory {
     }));
   }
 
+  /** Single pinned executive account; global/demo/role grants cannot authorize audio. */
+  async canDownloadCallRecordings(
+    actor: AuthenticatedActor,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const id = process.env.CALL_CENTER_RECORDING_DOWNLOAD_USER_ID?.trim();
+    if (
+      !id ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      ) ||
+      actor.userId !== id
+    )
+      return false;
+    return !!(await (tx ?? this.database.client).user.findFirst({
+      where: {
+        id,
+        username: 'danial',
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+      },
+      select: { id: true },
+    }));
+  }
+
   async callCenterActor(actor: AuthenticatedActor) {
+    const audio = 'customer_affairs.call_center.recordings.read' as const;
+    const permitted = await this.canDownloadCallRecordings(actor);
+    const permissions: AuthenticatedActor['permissions'][number][] =
+      actor.permissions.filter((code) => code !== audio);
+    if (
+      permitted &&
+      actor.permissions.includes('customer_affairs.call_center.read')
+    )
+      permissions.push(audio);
+    if (
+      permissions.length !== actor.permissions.length ||
+      permissions.some((code, index) => code !== actor.permissions[index])
+    )
+      actor = callCenterScopedActor(actor, { ...actor, permissions });
     if (!(await this.globalCallCenter(actor))) return actor;
     const branches = await this.database.client.branch.findMany({
       where: { isActive: true },
@@ -53,7 +97,7 @@ export class IamCallCenterDirectory {
         ...new Set([
           ...actor.permissions,
           ...CALL_CENTER_SALES_MANAGER,
-          'customer_affairs.call_center.recordings.read' as const,
+          ...(permitted ? [audio] : []),
         ]),
       ],
     });
@@ -65,6 +109,15 @@ export class IamCallCenterDirectory {
     at: string,
     tx: Prisma.TransactionClient,
   ) {
+    if (
+      hrCallRoutingEnabled() &&
+      Math.abs(Date.now() - Date.parse(at)) <= 60000
+    )
+      return (
+        (await this.employeeCallRoutes(branchId, tx)).find(
+          (r) => r.extension === extension,
+        )?.userIds ?? []
+      );
     const ids = await this.personnel.callCenterAnswerAccounts(
       branchId,
       extension,
@@ -188,6 +241,7 @@ export class IamCallCenterDirectory {
     });
     if (!account) throw new ForbiddenException();
     const global =
+      callbackManagers().includes(actor.userId) ||
       approvedGlobal ||
       (!answeredCallAccess() &&
         new Set(
@@ -273,8 +327,12 @@ export class IamCallCenterDirectory {
     });
   }
   async list(branchId: string, tx?: Prisma.TransactionClient) {
+    const linked = new Set(
+      (await this.employeeCallRoutes(branchId, tx)).flatMap((r) => r.userIds),
+    );
     return (await this.rows(branchId, tx))
       .filter((user) => {
+        if (hrCallRoutingEnabled() && linked.has(user.id)) return true;
         const permissions = authenticatedPermissionCodes(user.roles);
         return (
           (!hasScopedCallCenterAccess(permissions) ||

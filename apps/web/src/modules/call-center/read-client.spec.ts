@@ -108,7 +108,7 @@ describe('Call Center paginated read transport', () => {
       query: '۰۹۱۲۰۰۰۰۰۰۱',
       page: 2,
       revision: 'snapshot',
-      pageSize: 20,
+      pageSize: 10,
     });
   });
   it('sends Tehran midnight and removes reset empty values', () => {

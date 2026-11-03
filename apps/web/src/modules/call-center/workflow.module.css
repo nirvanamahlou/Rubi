@@ -18,8 +18,8 @@
   margin: 8px 0;
   overflow-wrap: anywhere;
 }
-.panel button,
-.form button {
+.panel button:where(:not([role='option'])),
+.form button:where(:not([role='option'])) {
   padding: 7px 10px;
   border: 1px solid #2286db;
   border-radius: 8px;
@@ -89,6 +89,7 @@
 
 /* Approved queue layout: all authorized branches, independent contact filters. */
 .queue {
+  min-width: 0;
   background: var(--surface, #fff);
   border: 1px solid var(--border, #e2e9f2);
   border-radius: 12px;
@@ -412,16 +413,43 @@
   color: #b42338;
 }
 
-.queueFilters {
+.queueToolbar {
   display: flex;
-  gap: 1rem;
+  gap: 12px;
   align-items: end;
   flex-wrap: wrap;
   margin-block: 1rem;
 }
-.queueFilters label {
+.queueToolbar .queueViews {
+  min-width: 0;
+  margin: 0;
+  flex: 0 1 auto;
+}
+.queueFilters {
   display: grid;
-  gap: 0.5rem;
-  min-width: 12rem;
-  flex: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+  flex: 1 1 480px;
+  min-width: 0;
+}
+.queueFilters .queueClear {
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-color: var(--cc-border, var(--border, #dce5ef));
+  color: var(--cc-ink, var(--foreground, #23354d));
+}
+.queueFilters .queueClear:hover {
+  border-color: #1875e5;
+  background: var(--muted, #eef5ff);
+}
+@media (max-width: 640px) {
+  .queueFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .queueFilters .queueClear {
+    justify-self: end;
+  }
 }

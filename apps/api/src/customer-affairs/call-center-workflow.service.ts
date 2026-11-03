@@ -581,12 +581,19 @@ export class CallCenterWorkflowService
         },
         data: await Promise.all(
           rows.map(async (row) => ({
-            canEditManagement: await this.directory.canManageRequest(
-              actor,
-              branchId,
-              row.executionOwnerUserId ?? row.createdByUserId,
-              tx,
-            ),
+            canEditManagement:
+              (await this.access.canManageCallback(
+                actor,
+                branchId,
+                contactId,
+                tx,
+              )) ||
+              (await this.directory.canManageRequest(
+                actor,
+                branchId,
+                row.executionOwnerUserId ?? row.createdByUserId,
+                tx,
+              )),
             id: row.id,
             version: row.version,
             customerId: actor.permissions.includes('customers.read')
@@ -723,6 +730,12 @@ export class CallCenterWorkflowService
                 !['IN_PROGRESS', 'WAITING_CUSTOMER'].includes(
                   input.status,
                 )))) &&
+          !(await this.access.canManageCallback(
+            actor,
+            branchId,
+            contactId,
+            tx,
+          )) &&
           !(await this.directory.canManageRequest(
             actor,
             branchId,

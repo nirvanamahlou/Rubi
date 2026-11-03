@@ -31,6 +31,11 @@ export class CallCenterReadController {
     @Inject(CallCenterReadService)
     private readonly service: CallCenterReadService,
   ) {}
+  @Get('recording-access')
+  @Header('Cache-Control', 'private, no-store')
+  recordingAccess(@Req() req: AuthenticatedRequest) {
+    return this.service.recordingAccess(req.actor);
+  }
   @Get('branches')
   @Header('Cache-Control', 'private, no-store')
   branches(@Req() req: AuthenticatedRequest) {

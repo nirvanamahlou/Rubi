@@ -1,5 +1,6 @@
 'use client';
 import { ScrollContinuation } from './scroll-continuation';
+import { CallCenterBranchContext } from './branch-context';
 import { RecordingDownload } from './recording-download';
 import {
   Dialog,
@@ -18,7 +19,6 @@ import {
 } from 'react';
 import {
   Headset,
-  Plus,
   RotateCcw,
   Search,
   Eye,
@@ -26,8 +26,6 @@ import {
   SlidersHorizontal,
   Users,
   BarChart3,
-  Phone,
-  FileText,
   PhoneIncoming,
   PhoneOutgoing,
 } from 'lucide-react';
@@ -43,6 +41,7 @@ import {
 import { callCenterApi, CallCenterHttpError, type CallNote } from './client';
 import {
   readApi,
+  CONTACT_PAGE_SIZE,
   emptySearch,
   type SearchFilters,
   type SearchPage,
@@ -110,12 +109,16 @@ export function CallCenterWorkspace() {
   if (!branch) return <p role="alert">شعبه مجازی در دسترس نیست.</p>;
   return (
     <>
-      <Content
-        key={`${actor.userId}:${branch}:${actor.permissions.join(',')}`}
-        branch={branch}
-        actorId={actor.userId}
-        permissions={actor.permissions}
-      />
+      <CallCenterBranchContext actor={actor}>
+        {(resolvedBranch) => (
+          <Content
+            key={`${actor.userId}:${resolvedBranch}:${actor.permissions.join(',')}`}
+            branch={resolvedBranch}
+            actorId={actor.userId}
+            permissions={actor.permissions}
+          />
+        )}
+      </CallCenterBranchContext>
     </>
   );
 }
@@ -285,16 +288,6 @@ function Content({
     revision.current = undefined;
     setRefresh((v) => v + 1);
   }
-  function open(phone = '', direction: CallEvent['direction'] = 'INBOUND') {
-    setCompletionPrevious(null);
-    setDraft({
-      id: crypto.randomUUID(),
-      phone,
-      direction,
-      occurredAt: new Date().toISOString(),
-      recordings: [],
-    });
-  }
   async function complete(id: string) {
     if (busy) return;
     setBusy(true);
@@ -365,7 +358,12 @@ function Content({
               NO: 'تکمیل‌شده',
             } as Record<string, string>
           )[value] ?? value);
-  const pageCount = Math.max(1, Math.ceil((result?.meta.total ?? 0) / 20));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(
+      (result?.meta.total ?? 0) / (result?.meta.pageSize ?? CONTACT_PAGE_SIZE),
+    ),
+  );
   return (
     <section dir="rtl" className={styles.workspace}>
       <header className={styles.header}>
@@ -375,14 +373,6 @@ function Content({
           </h1>
           <p>مدیریت تماس‌ها، درخواست‌ها و پیگیری‌های مشتری</p>
         </div>
-        <button
-          className={styles.primary}
-          data-cc-focus-anchor
-          disabled={!canCreate}
-          onClick={() => open()}
-        >
-          <Plus size={18} /> ثبت تماس جدید
-        </button>
       </header>
       <WorkQueue
         onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
@@ -715,7 +705,13 @@ function Content({
               </button>
             </nav>
           </section>
-          <ReportPanel report={report} error={reportError} agents={agents} />
+          <ReportPanel
+            report={report}
+            error={reportError}
+            agents={agents}
+            branch={branch}
+            filters={filters}
+          />
         </div>
         {selected && (
           <DossierFrame onClose={() => setSelected(null)}>
@@ -876,11 +872,15 @@ function DossierFrame({
   );
 }
 function ReportPanel({
+  branch,
+  filters,
   report,
   error,
   agents,
 }: {
   agents: Operator[];
+  branch: string;
+  filters: SearchFilters;
   report: Report | null;
   error: string;
 }) {
@@ -900,33 +900,19 @@ function ReportPanel({
         {callDate(meta.from)} تا {callDate(meta.to)} · تهران · زمان تماس، پایان
         بازه غیرشامل
       </p>
-      <div className={styles.stats}>
-        {[
-          ['تماس ثبت‌شده', r.calls],
-          ['مخاطب تلفنی یکتا', r.contacts],
-          ['نیازمند تکمیل', r.incomplete],
-        ].map(([label, value]) => (
-          <article className={styles.stat} key={label}>
-            <span className={styles.statIcon}>
-              {label === 'تماس ثبت‌شده' ? (
-                <Phone />
-              ) : label === 'مخاطب تلفنی یکتا' ? (
-                <Users />
-              ) : (
-                <FileText />
-              )}
-            </span>
-            <span>{label}</span>
-            <strong>{faNumber(Number(value))}</strong>
-          </article>
-        ))}
-      </div>
       {r.unindexed > 0 && (
         <p role="alert">
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
         </p>
       )}
-      <ReportHighlights data={r} agents={agents} />
+      <ReportHighlights
+        key={meta.asOf}
+        data={r}
+        agents={agents}
+        branch={branch}
+        filters={filters}
+        meta={meta}
+      />
 
       <p>
         مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
@@ -1110,18 +1096,28 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                  {c.note || 'بدون شرح'}
-                </p>
-                <p>
-                  {c.direction === 'OUTBOUND'
-                    ? 'تماس‌گرفته‌شده از داخلی'
-                    : 'وصل شده به'}
-                  : {c.answerRecipient?.label || c.operator || 'نامشخص'}
-                </p>
-                <p>
-                  زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
-                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 14,
+                    paddingBlock: 12,
+                    lineHeight: 1.9,
+                  }}
+                >
+                  <p
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {c.note || 'بدون شرح'}
+                  </p>
+                  <p>
+                    {c.direction === 'OUTBOUND'
+                      ? 'تماس‌گرفته‌شده از داخلی:'
+                      : 'وصل شده به:'}
+                    <span style={{ display: 'block', marginTop: 6 }}>
+                      {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                    </span>
+                  </p>
+                </div>
                 <RecordingDownload
                   callId={c.id}
                   branchId={branch}
