@@ -4,10 +4,22 @@ import {
 } from '@/lib/customer-affairs-pdf-core';
 import { companies, wrapLetterParagraph, type Letter } from './letter';
 
+let nazaninFont: Promise<FontFace> | undefined;
+
 export async function renderLetterPages(
   letter: Letter,
   body: string,
 ): Promise<HTMLCanvasElement[]> {
+  nazaninFont ??= new FontFace(
+    'CorrespondenceNazanin',
+    'url(/fonts/b-nazanin.ttf)',
+  )
+    .load()
+    .catch((error: unknown) => {
+      nazaninFont = undefined;
+      throw error;
+    });
+  document.fonts.add(await nazaninFont);
   await document.fonts.ready;
   const company = companies.find((item) => item.title === letter.company);
   if (!company) throw new Error('شرکت نامه معتبر نیست.');
@@ -18,7 +30,7 @@ export async function renderLetterPages(
   });
   const measure = document.createElement('canvas').getContext('2d');
   if (!measure) throw new Error('امکان ساخت خروجی وجود ندارد.');
-  measure.font = '28px Vazirmatn, sans-serif';
+  measure.font = '28px CorrespondenceNazanin, serif';
   const lines: string[] = [];
   for (const paragraph of body.split('\n')) {
     lines.push(
@@ -63,7 +75,7 @@ export async function renderLetterPages(
     );
     context.direction = 'rtl';
     context.textAlign = 'right';
-    context.font = '24px Vazirmatn, sans-serif';
+    context.font = '24px CorrespondenceNazanin, serif';
     context.textBaseline = 'middle';
     [letter.date, letter.number || '—', letter.attachment || 'ندارد'].forEach(
       (value, index) => {
@@ -81,7 +93,7 @@ export async function renderLetterPages(
       },
     );
     context.textBaseline = 'alphabetic';
-    context.font = 'bold 28px Vazirmatn, sans-serif';
+    context.font = 'bold 28px CorrespondenceNazanin, serif';
     context.fillStyle = '#172033';
     // Bound metadata to the letter width; the body wraps onto additional pages.
     const header = [
@@ -92,12 +104,12 @@ export async function renderLetterPages(
     header.forEach((text, index) =>
       context.fillText(text, 1140, 370 + index * 55, 1000),
     );
-    context.font = '28px Vazirmatn, sans-serif';
+    context.font = '28px CorrespondenceNazanin, serif';
     lines
       .slice(offset, offset + 21)
       .forEach((text, index) => context.fillText(text, 1140, 540 + index * 46));
     context.fillStyle = '#64748b';
-    context.font = '22px Vazirmatn, sans-serif';
+    context.font = '22px CorrespondenceNazanin, serif';
     context.fillText(`صفحه ${pages.length + 1}`, 650, 1525);
     pages.push(canvas);
   }

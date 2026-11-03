@@ -309,3 +309,30 @@ it('suppresses ticket logo lookup without changing normal voucher/supplier logo 
     '/brand/jahan-bastan-transparent.png',
   );
 });
+it.each([false, true])(
+  'uses the supplied original Ghestiroo logo for reservation/voucher=%s even with an old uploaded logo',
+  (voucher) => {
+    const companyIntake = structuredClone(intake);
+    companyIntake.workflow.branding = {
+      kind: 'OWN',
+      companyCode: 'GHESATI_RO',
+      referenceId: 'company',
+      name: 'قسطی رو',
+      logoFileId: 'old-logo',
+    };
+    companyIntake.workflow.voucherIssued = true;
+    const settings = defaultVoucherSettings(companyIntake, {});
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
+    settings.text.broker = 'BROKER';
+    companyIntake.workflow.voucherSettings = settings;
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={companyIntake} voucher={voucher} />,
+    );
+    expect(html).toContain('/brand/ghesati-ro.png');
+    expect(html).toContain('ghesatiLogo');
+
+    expect(html).not.toContain('نیایش');
+    expect(html).not.toContain('niyayehseir.com');
+  },
+);

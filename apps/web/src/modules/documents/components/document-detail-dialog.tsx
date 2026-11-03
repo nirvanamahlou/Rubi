@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Star,
   Trash2,
+  X,
 } from 'lucide-react';
 import type { DocumentAuditEventV1, DocumentDetailV1 } from '@nora/contracts';
 import { useState } from 'react';
@@ -24,6 +25,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogClose,
   DialogDescription,
   DialogTitle,
   Input,
@@ -173,8 +175,23 @@ export function DocumentDetailDialog({
       }}
       open={open}
     >
-      <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto p-0">
-        <div className="sticky top-0 z-10 border-b border-sky-200 bg-gradient-to-l from-sky-50 via-white to-blue-50 px-6 py-5 pe-14 dark:border-sky-400/20 dark:from-sky-950/70 dark:via-surface dark:to-blue-950/50">
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-[90dvh] max-w-5xl overflow-y-auto p-0"
+      >
+        <div className="sticky top-0 z-10 border-b border-sky-200 bg-gradient-to-l from-sky-50 via-white to-blue-50 px-6 py-5 pl-16 dark:border-sky-400/20 dark:from-sky-950/70 dark:via-surface dark:to-blue-950/50">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              aria-label="بستن"
+              title="بستن"
+              variant="ghost"
+              size="icon"
+              className="absolute left-4 top-4 z-20"
+            >
+              <X aria-hidden="true" className="size-5" />
+            </Button>
+          </DialogClose>
           <div className="flex items-center gap-3">
             <DialogTitle>{document?.title ?? 'جزئیات سند'}</DialogTitle>
             {document ? (
@@ -285,7 +302,15 @@ export function DocumentDetailDialog({
                       className="w-full"
                       disabled={
                         !document.capabilities.download ||
-                        document.currentVersion.scanStatus !== 'CLEAN' ||
+                        (document.currentVersion.scanStatus !== 'CLEAN' &&
+                          !(
+                            document.isIncomingLetter &&
+                            [
+                              'PENDING_SCAN',
+                              'AWAITING_ANTIVIRUS_ADAPTER',
+                              'SCAN_FAILED',
+                            ].includes(document.currentVersion.scanStatus)
+                          )) ||
                         ((document.confidentiality === 'CONFIDENTIAL' ||
                           document.confidentiality === 'RESTRICTED') &&
                           !isOptionalOperationReason(downloadReason, 500))

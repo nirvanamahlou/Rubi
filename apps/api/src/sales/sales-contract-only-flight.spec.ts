@@ -238,6 +238,49 @@ describe('Contract-only flights remain outside ticket inventory', () => {
       }),
     ).toThrow('برای بلیت رفت از سهمیه شرکت');
   });
+  it('allows the same mixed return during an explicitly validated amendment', () => {
+    expect(() =>
+      validateSalesContract(
+        {
+          ...input,
+          tripType: 'ROUND_TRIP',
+          returnNotBefore: '2026-10-02',
+          services: [
+            {
+              clientKey: 'flight-outbound',
+              kind: 'FLIGHT',
+              titleSnapshot: 'Out',
+              metadata: { direction: 'OUTBOUND' },
+            },
+            {
+              clientKey: 'flight-return',
+              kind: 'FLIGHT',
+              titleSnapshot: 'Back',
+              status: 'NEEDS_RESERVATION_CONFIRMATION',
+              metadata: contractFlightMetadata({
+                ...flight,
+                direction: 'RETURN',
+                originId: destinationId,
+                destinationId: originId,
+                departureAt: '2026-10-02T06:00:00Z',
+                arrivalAt: '2026-10-02T08:00:00Z',
+              }),
+            },
+          ],
+          ticketSelections: [
+            {
+              ...flight,
+              offerId: 'catalog',
+              serviceClientKey: 'flight-outbound',
+            },
+          ],
+        },
+        false,
+        {},
+        true,
+      ),
+    ).not.toThrow();
+  });
   it('persists the service metadata and never writes a ticket selection', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'service' }),
       ticketCreate = vi.fn();

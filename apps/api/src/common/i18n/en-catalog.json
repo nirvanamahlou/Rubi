@@ -258,6 +258,7 @@
   "عدم شمول": "Exclude",
   "مراحل بعدی در راهکاران قابل مشاهده نیست": "The subsequent stages cannot be viewed in Rahkaran",
   "صدور سند معکوس تعدیل ماهیت": "Issuance of reverse document of nature adjustment",
+  "اشتباه گرفته شده": "Wrong number dialed",
   "وزیرمتن": "Vazirmatn",
   "تاریخ شروع به کار": "Employment start date",
   "تاریخ پایان قرارداد": "Contract end date",
@@ -900,6 +901,8 @@
   "ورود امن نورا": "Secure Nora sign-in",
   "لوگوی شرکت نیایش سیر": "Niayesh Seir company logo",
   "لوگوی شرکت جهان باستان": "Jahan Bastan company logo",
+  "لوگوی شرکت قسطی رو": "Ghestiroo company logo",
+  "CRM شرکت قسطی رو": "Ghestiroo CRM",
   "سامانه یکپارچه آژانس نورا": "Nora travel agency management",
   "شرکت‌های فعال در سامانه": "Companies using Nora",
   "ورود به سامانه": "Sign in",
@@ -6312,6 +6315,7 @@
   "فرانشیز نمی‌تواند بیشتر از سقف تعهد باشد.": "The deductible cannot be more than the commitment limit.",
   "فرایند فروش": "Sales process",
   "فرایند فعال‌سازی منقضی شده است؛ دوباره شروع کنید.": "The activation process has expired; Start again.",
+  "فرستنده را وارد کنید.": "Enter the sender.",
   "فرمت فایل": "File format",
   "فرمول خرید خدمت معتبر نیست.": "The service purchase formula is not valid.",
   "فرودگاه": "Airport",
@@ -7162,5 +7166,6 @@
   "مجوز مشاهده منبع این گزارش وجود ندارد.": "You do not have permission to view this report's source.",
   "منبع گزارش منتشر نشده است.": "The report source has not been published.",
   "وضعیت خروجی معتبر نیست.": "The export status is invalid.",
-  "زمان صدور مدرک پیش از دریافت پرونده است؛ تطبیق زمان لازم است.": "Document issuance precedes case intake. Timestamp reconciliation is required."
+  "زمان صدور مدرک پیش از دریافت پرونده است؛ تطبیق زمان لازم است.": "Document issuance precedes case intake. Timestamp reconciliation is required.",
+  "هتل شناور": "Floating hotel"
 }

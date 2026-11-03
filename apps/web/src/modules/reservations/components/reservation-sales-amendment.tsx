@@ -41,6 +41,7 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '@/modules/sales/api/client';
 import { SearchableReference } from '@/modules/sales/components/searchable-reference';
 import { ContractFlightEditor } from '@/modules/sales/components/contract-flight-editor';
+import { floatingFlightTimes } from '@/modules/sales/model/floating-flight-times';
 import { exactFlightQuery } from '@/modules/sales/model/exact-flight-dates';
 import { TicketOfferPicker } from '@/modules/sales/components/ticket-offer-picker';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
@@ -208,7 +209,7 @@ export function ReservationSalesAmendment({
           !(await passengerEditor.current.savePending())
         )
           return;
-        if (unchanged) {
+        if (unchanged && manualDirty.length === 0) {
           setSaved(true);
           onSaved();
           return;
@@ -295,7 +296,22 @@ export function ReservationSalesAmendment({
                   defaultCalendarSystem={
                     international ? 'gregorian' : 'persian'
                   }
-                  onChange={setDay}
+                  onChange={(nextDay) => {
+                    setDay(nextDay);
+                    if (manualFlights[direction]) {
+                      setManualDirty((current) => [
+                        ...new Set([...current, direction]),
+                      ]);
+                      setManualFlights((current) => ({
+                        ...current,
+                        [direction]: floatingFlightTimes(
+                          nextDay,
+                          current[direction]!,
+                          {},
+                        ),
+                      }));
+                    }
+                  }}
                 />
               </label>
             </div>
@@ -323,7 +339,7 @@ export function ReservationSalesAmendment({
                 {chosen.departureAt}
               </p>
             )}
-            {manualFlights[direction] && (
+            {
               <ContractFlightEditor
                 destinationCityId={
                   direction === 'OUTBOUND'
@@ -340,6 +356,7 @@ export function ReservationSalesAmendment({
                         : draft.originId),
                   )?.attributes.countryId || '',
                 )}
+                flightDate={day}
                 value={manualFlights[direction]}
                 airlines={refs.airlines ?? []}
                 international={international}
@@ -355,7 +372,7 @@ export function ReservationSalesAmendment({
                   });
                 }}
               />
-            )}
+            }
             <SearchableReference
               label="ایرلاین"
               value={airline}

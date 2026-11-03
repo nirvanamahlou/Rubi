@@ -3417,6 +3417,8 @@ model DocumentCategory {
 }
 
 model Document {
+  senderName                       String?                      @map("sender_name") @db.VarChar(200)
+  isIncomingLetter                 Boolean                      @default(false) @map("is_incoming_letter")
   financeOperationalRequests       FinanceOperationalRequest[]
   id                               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   archiveCode                      String                       @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { TimePicker } from './time-picker';
 
 const controlClasses =
-  'w-full rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50';
+  'min-w-0 w-full rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50';
 
 export const Input = React.forwardRef<
   HTMLInputElement,

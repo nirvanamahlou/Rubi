@@ -245,7 +245,10 @@ function VoucherHotelSheet({
                         ? intake.workflow.branding.companyCode ===
                           'JAHAN_BASTAN'
                           ? styles.jahanLogo
-                          : styles.logo
+                          : intake.workflow.branding.companyCode ===
+                              'GHESATI_RO'
+                            ? styles.ghesatiLogo
+                            : styles.logo
                         : styles.agencyLogo
                     }
                     src={

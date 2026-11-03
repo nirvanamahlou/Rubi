@@ -261,6 +261,14 @@ it('renders a combined transfer purchase once with its canonical amount', () => 
   );
 });
 
+it('renders floating hotels separately from floating flights', () => {
+  const records = state.records as { data: ReservationIntakeV1[] };
+  records.data[0]!.snapshot.serviceSelections[0]!.metadata = {
+    purchaseSupplyType: 'FLOATING',
+  };
+  expect(render('fa')).toContain('هتل شناور');
+});
+
 it('separates contract floating purchases from the company flight category', () => {
   state.query = 'kind=FLIGHT';
   const company = render('fa');

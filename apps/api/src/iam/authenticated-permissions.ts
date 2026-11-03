@@ -76,11 +76,12 @@ export function authenticatedPermissionCodes(
       return [];
     return salesRolePolicy(
       [
-        ...new Set(
-          snapshots[0]!.role.permissions.map(
+        ...new Set<IamPermissionCode>([
+          ...LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
+          ...snapshots[0]!.role.permissions.map(
             ({ permission }) => permission.code as IamPermissionCode,
           ),
-        ),
+        ]),
       ].filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION),
       snapshots,
     );
