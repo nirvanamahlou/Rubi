@@ -66,7 +66,6 @@ import { AudienceToolbar } from './audience-toolbar';
 import {
   audienceMatches,
   audienceStatusLabels,
-  audienceSourceLabels,
   audienceSourceLabel,
   audienceRuleLabels,
   audienceKindLabels,
@@ -506,13 +505,16 @@ export function DurableIntakesPanel({
   mode: 'leads' | 'scoring';
   onNotice: Notice;
 }) {
-  const data = useMarketingData();
+  const data = useMarketingData(['SOURCE']);
   const [items, setItems] = useState<CustomerAffairsMarketingIntakeViewV1[]>(
     [],
   );
   const [error, setError] = useState('');
   const [phone, setPhone] = useState('');
-  const [source, setSource] = useState('WEBSITE');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [entryDate, setEntryDate] = useState('');
+  const [source, setSource] = useState('');
   const [campaignId, setCampaignId] = useState('none');
   const [status, setStatus] = useState('NEW');
   const [lastFollowUpAt, setLastFollowUpAt] = useState('');
@@ -532,8 +534,12 @@ export function DurableIntakesPanel({
       (statusFilter === 'all' || item.status === statusFilter) &&
       (sourceFilter === 'all' || item.sourceCategory === sourceFilter) &&
       audienceMatches(search, [
+        item.firstName,
+        item.lastName,
         item.maskedPhone,
-        audienceSourceLabel(item.sourceCategory),
+        item.firstName
+          ? item.sourceCategory
+          : audienceSourceLabel(item.sourceCategory),
         audienceStatusLabels[item.status],
         data.campaigns.find((campaign) => campaign.id === item.campaignId)
           ?.name,
@@ -541,10 +547,18 @@ export function DurableIntakesPanel({
   );
   const sources = [
     ...new Set([
-      ...Object.keys(audienceSourceLabels),
+      ...data.assets.map((item) => item.name),
       ...items.map((item) => item.sourceCategory),
     ]),
-  ].map((value) => [value, audienceSourceLabel(value)] as const);
+  ].map(
+    (value) =>
+      [
+        value,
+        data.assets.some((item) => item.name === value)
+          ? value
+          : audienceSourceLabel(value),
+      ] as const,
+  );
   const totalPages = Math.max(1, Math.ceil(visibleItems.length / 25));
   const currentPage = Math.min(page, totalPages);
   const renderedItems = visibleItems.slice(
@@ -610,7 +624,10 @@ export function DurableIntakesPanel({
           ? {
               onAdd: () => {
                 setPhone('');
-                setSource('WEBSITE');
+                setFirstName('');
+                setLastName('');
+                setEntryDate('');
+                setSource('');
                 setCampaignId('none');
                 setStatus('NEW');
                 setLastFollowUpAt('');
@@ -654,6 +671,29 @@ export function DurableIntakesPanel({
             <DialogTitle>افزودن سرنخ</DialogTitle>
             <DialogDescription>ثبت سرنخ و اتصال آن به کمپین</DialogDescription>
             <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
+              <FormField id="intake-first-name" label="نام" required>
+                <Input
+                  id="intake-first-name"
+                  value={firstName}
+                  maxLength={100}
+                  onChange={(event) => setFirstName(event.target.value)}
+                />
+              </FormField>
+              <FormField id="intake-last-name" label="نام خانوادگی" required>
+                <Input
+                  id="intake-last-name"
+                  value={lastName}
+                  maxLength={100}
+                  onChange={(event) => setLastName(event.target.value)}
+                />
+              </FormField>
+              <FormField id="intake-date" label="تاریخ" required>
+                <DatePicker
+                  id="intake-date"
+                  value={entryDate}
+                  onChange={setEntryDate}
+                />
+              </FormField>
               <FormField id="intake-phone" label="تلفن" required>
                 <Input
                   dir="ltr"
@@ -672,11 +712,16 @@ export function DurableIntakesPanel({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {sources.map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {data.assets
+                      .filter(
+                        (item) => item.branchId === data.actor?.branchIds[0],
+                      )
+                      .map((item) => [item.name, item.name] as const)
+                      .map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </FormField>
@@ -737,8 +782,16 @@ export function DurableIntakesPanel({
                     setFormError('دسترسی شعبه برای ثبت سرنخ موجود نیست.');
                     return;
                   }
-                  if (!phone.trim()) {
-                    setFormError('شماره تماس را وارد کنید.');
+                  if (
+                    !firstName.trim() ||
+                    !lastName.trim() ||
+                    !entryDate ||
+                    !source ||
+                    !phone.trim()
+                  ) {
+                    setFormError(
+                      'نام، نام خانوادگی، تلفن، تاریخ و منبع ورود را وارد کنید.',
+                    );
                     return;
                   }
                   setBusy(true);
@@ -746,6 +799,11 @@ export function DurableIntakesPanel({
                   try {
                     await marketingApi.createIntake(
                       {
+                        firstName: firstName.trim(),
+                        lastName: lastName.trim(),
+                        entryDate: new Date(
+                          `${entryDate}T00:00:00+03:30`,
+                        ).toISOString(),
                         phone,
                         sourceCategory: source,
                         campaignId: campaignId === 'none' ? null : campaignId,
@@ -758,9 +816,12 @@ export function DurableIntakesPanel({
                       data.actor.branchIds[0],
                     );
                     setPhone('');
+                    setFirstName('');
+                    setLastName('');
+                    setEntryDate('');
                     setEditorOpen(false);
                     await load();
-                    onNotice('سرنخ اولیه در مرز مالک امور مشتریان ذخیره شد.');
+                    onNotice('سرنخ ذخیره شد.');
                   } catch (reason) {
                     setFormError(
                       reason instanceof Error
@@ -785,7 +846,10 @@ export function DurableIntakesPanel({
                 aria-label="پاک‌کردن فرم سرنخ"
                 onClick={() => {
                   setPhone('');
-                  setSource('WEBSITE');
+                  setFirstName('');
+                  setLastName('');
+                  setEntryDate('');
+                  setSource('');
                   setCampaignId('none');
                   setStatus('NEW');
                   setLastFollowUpAt('');
@@ -858,10 +922,24 @@ export function DurableIntakesPanel({
               {renderedItems.map((item) => (
                 <tr key={item.id} className="border-t hover:bg-muted/30">
                   <td className="p-4 font-semibold">
+                    <strong className="block">
+                      {[item.firstName, item.lastName]
+                        .filter(Boolean)
+                        .join(' ')}
+                    </strong>
                     <span dir="ltr">{item.maskedPhone}</span>
+                    <small className="block">
+                      {item.entryDate
+                        ? new Date(item.entryDate).toLocaleDateString('fa-IR', {
+                            timeZone: 'Asia/Tehran',
+                          })
+                        : '—'}
+                    </small>
                   </td>
                   <td className="p-4">
-                    {audienceSourceLabel(item.sourceCategory)}
+                    {item.firstName
+                      ? item.sourceCategory
+                      : audienceSourceLabel(item.sourceCategory)}
                   </td>
                   <td className="p-4">
                     {data.campaigns.find(
@@ -973,8 +1051,16 @@ export function DurableIntakesPanel({
             <div className="grid gap-3 md:grid-cols-3">
               <strong className="md:col-span-3">جزئیات سرنخ محافظت‌شده</strong>
               {[
+                ['نام', selected.firstName ?? '—'],
+                ['نام خانوادگی', selected.lastName ?? '—'],
+                ['تاریخ', selected.entryDate ?? '—'],
                 ['تلفن', selected.maskedPhone],
-                ['منبع', audienceSourceLabel(selected.sourceCategory)],
+                [
+                  'منبع',
+                  selected.firstName
+                    ? selected.sourceCategory
+                    : audienceSourceLabel(selected.sourceCategory),
+                ],
                 ['وضعیت', audienceStatusLabels[selected.status] ?? 'نامشخص'],
                 [
                   'کمپین',
@@ -1022,94 +1108,244 @@ export function DurableIntakesPanel({
 }
 
 export function DurableSourceChart({ onNotice }: { onNotice: Notice }) {
-  const now = new Date();
-  const local = (value: Date) =>
-    `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
-  const [startsAt, setStartsAt] = useState(
-    local(new Date(now.getFullYear(), now.getMonth(), 1)),
+  return <MarketingDirectoryPanel kind="SOURCE" onNotice={onNotice} />;
+}
+
+export function MarketingDirectoryPanel({
+  kind,
+  onNotice,
+}: {
+  kind: 'SOURCE' | 'AUDIENCE';
+  onNotice: Notice;
+}) {
+  const data = useMarketingData([kind]);
+  const [search, setSearch] = useState('');
+  const [campaignFilter, setCampaignFilter] = useState('all');
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [campaignId, setCampaignId] = useState('none');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [key, setKey] = useState('');
+  const [deleting, setDeleting] = useState<MarketingAssetViewV1 | null>(null);
+  const isSource = kind === 'SOURCE';
+  const title = isSource ? 'منابع ورود' : 'مخاطبان کمپین';
+  const items = data.assets.filter(
+    (item) =>
+      audienceMatches(search, [item.name]) &&
+      (campaignFilter === 'all' || item.campaignId === campaignFilter),
   );
-  const [endsAt, setEndsAt] = useState(
-    local(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
-  );
-  const [counts, setCounts] = useState<
-    Array<{ sourceCategory: string; count: number }>
-  >([]);
-  const [loading, setLoading] = useState(false);
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const endExclusive = new Date(`${endsAt}T00:00:00`);
-      endExclusive.setDate(endExclusive.getDate() + 1);
-      const response = await marketingApi.sourceCounts(
-        new Date(`${startsAt}T00:00:00`).toISOString(),
-        endExclusive.toISOString(),
-      );
-      setCounts(response.counts);
-    } catch (reason) {
-      onNotice(
-        reason instanceof Error ? reason.message : 'دریافت نمودار انجام نشد.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [endsAt, onNotice, startsAt]);
-  useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
-  const max = Math.max(1, ...counts.map((item) => item.count));
   return (
-    <section className="grid gap-4 text-right" dir="rtl">
-      <Card className="grid gap-3 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-        <FormField id="source-start" label="از تاریخ">
-          <DatePicker
-            id="source-start"
-            value={startsAt}
-            onChange={setStartsAt}
-          />
-        </FormField>
-        <FormField id="source-end" label="تا تاریخ">
-          <DatePicker id="source-end" value={endsAt} onChange={setEndsAt} />
-        </FormField>
+    <section className="grid gap-4" dir="rtl">
+      <LoadState
+        error={data.error}
+        loading={data.loading}
+        onRetry={() => void data.load()}
+      />
+      <Card className="flex flex-wrap items-end gap-3 p-5">
+        <div className="min-w-52 flex-1">
+          <FormField id={`${kind}-search`} label="جست‌وجو">
+            <Input
+              id={`${kind}-search`}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </FormField>
+        </div>
+        {!isSource ? (
+          <FormField id="audience-campaign-filter" label="کمپین">
+            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+              <SelectTrigger id="audience-campaign-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه کمپین‌ها</SelectItem>
+                {data.campaigns.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+        ) : null}
         <Button
-          aria-label="اعمال بازه"
-          disabled={loading}
-          onClick={() => void load()}
           size="icon"
-          title="اعمال بازه"
+          title="افزودن"
+          aria-label={isSource ? 'افزودن منبع ورود' : 'افزودن مخاطبان کمپین'}
+          disabled={data.loading || !data.actor?.branchIds[0]}
+          onClick={() => {
+            setName('');
+            setCampaignId('none');
+            setError('');
+            setKey(crypto.randomUUID());
+            setOpen(true);
+          }}
         >
-          <Save aria-hidden="true" className="size-4" />
+          <Plus aria-hidden="true" className="size-4" />
         </Button>
       </Card>
-      <Card className="min-h-96 p-6">
-        <h3 className="font-black">تعداد واقعی سرنخ‌ها به تفکیک منبع</h3>
-        {counts.length ? (
-          <div className="mt-6 grid gap-4">
-            {counts.map((item) => (
-              <div
-                className="grid gap-2 sm:grid-cols-[10rem_1fr_5rem] sm:items-center"
-                key={item.sourceCategory}
-              >
-                <span>{audienceSourceLabel(item.sourceCategory)}</span>
-                <span className="h-8 overflow-hidden rounded-lg bg-muted">
-                  <span
-                    className="block h-full rounded-lg bg-primary"
-                    style={{
-                      width: `${Math.max(4, (item.count / max) * 100)}%`,
+      <Card className="overflow-x-auto">
+        <table className="w-full text-right text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-4">نام</th>
+              {!isSource ? <th className="p-4">کمپین</th> : null}
+              <th className="p-4">عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id} className="border-b">
+                <td className="p-4">{item.name}</td>
+                {!isSource ? (
+                  <td className="p-4">
+                    {data.campaigns.find(
+                      (campaign) => campaign.id === item.campaignId,
+                    )?.name ?? 'بدون کمپین'}
+                  </td>
+                ) : null}
+                <td className="p-4">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="text-destructive"
+                    aria-label={`حذف ${item.name}`}
+                    title="حذف"
+                    disabled={busy}
+                    onClick={() => {
+                      setDeleting(item);
+                      setError('');
+                      setKey(crypto.randomUUID());
                     }}
-                  />
-                </span>
-                <strong>{item.count.toLocaleString('fa-IR')}</strong>
-              </div>
+                  >
+                    <Trash2 aria-hidden="true" className="size-4" />
+                  </Button>
+                </td>
+              </tr>
             ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="در این بازه سرنخی وجود ندارد"
-            description="بازه دیگری را انتخاب کنید."
-          />
-        )}
+          </tbody>
+        </table>
+        {!data.loading && !items.length ? (
+          <p className="p-8 text-center text-muted-foreground">
+            رکوردی ثبت نشده است.
+          </p>
+        ) : null}
       </Card>
+      <Dialog
+        open={open || !!deleting}
+        onOpenChange={(value) => {
+          if (!busy && !value) {
+            setOpen(false);
+            setDeleting(null);
+          }
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>{deleting ? 'حذف رکورد' : title}</DialogTitle>
+          <DialogDescription>
+            {deleting ? deleting.name : title}
+          </DialogDescription>
+          {deleting ? null : (
+            <div className="grid gap-4">
+              <FormField id={`${kind}-name`} label="نام" required>
+                <Input
+                  id={`${kind}-name`}
+                  maxLength={isSource ? 80 : 200}
+                  value={name}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    setKey(crypto.randomUUID());
+                  }}
+                />
+              </FormField>
+              {!isSource ? (
+                <FormField id="audience-campaign" label="کمپین">
+                  <Select
+                    value={campaignId}
+                    disabled={busy}
+                    onValueChange={(value) => {
+                      setCampaignId(value);
+                      setKey(crypto.randomUUID());
+                    }}
+                  >
+                    <SelectTrigger id="audience-campaign">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون کمپین</SelectItem>
+                      {data.campaigns.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : null}
+            </div>
+          )}
+          {error ? (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                setOpen(false);
+                setDeleting(null);
+              }}
+            >
+              انصراف
+            </Button>
+            <Button
+              disabled={busy || (!deleting && name.trim().length < 2)}
+              onClick={async () => {
+                if (busy || !data.actor?.branchIds[0]) return;
+                setBusy(true);
+                setError('');
+                try {
+                  if (deleting)
+                    await marketingApi.deleteAsset(
+                      deleting.id,
+                      deleting.version,
+                      key,
+                    );
+                  else
+                    await marketingApi.saveAsset(
+                      {
+                        kind,
+                        name: name.trim(),
+                        status: 'ACTIVE',
+                        campaignId: campaignId === 'none' ? null : campaignId,
+                        payload: {},
+                      },
+                      { branchId: data.actor.branchIds[0], key },
+                    );
+                  setOpen(false);
+                  setDeleting(null);
+                  await data.load();
+                  onNotice('تغییرات ذخیره شد.');
+                } catch (reason) {
+                  setError(
+                    reason instanceof Error
+                      ? reason.message
+                      : 'ذخیره انجام نشد.',
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {deleting ? 'حذف' : 'ذخیره'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

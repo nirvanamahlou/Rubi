@@ -5657,6 +5657,7 @@ model MarketingCampaign {
   declaredAt             DateTime                         @default(now()) @map("declared_at") @db.Timestamptz(3)
   createdByUserId        String                           @map("created_by_user_id") @db.Uuid
   updatedByUserId        String                           @map("updated_by_user_id") @db.Uuid
+  deletedAt              DateTime?                        @map("deleted_at") @db.Timestamptz(3)
   version                Int                              @default(1)
   createdAt              DateTime                         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt              DateTime                         @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -5781,6 +5782,9 @@ model CustomerAffairsMarketingIntake {
   phoneKeyVersion  Int                @map("phone_key_version")
   phoneFingerprint String             @map("phone_fingerprint") @db.Char(64)
   phoneMasked      String             @map("phone_masked") @db.VarChar(40)
+  firstName        String?            @map("first_name") @db.VarChar(100)
+  lastName         String?            @map("last_name") @db.VarChar(100)
+  entryDate        DateTime?          @map("entry_date") @db.Timestamptz(3)
   sourceCategory   String             @map("source_category") @db.VarChar(80)
   campaignId       String?            @map("campaign_id") @db.Uuid
   status           String             @default("NEW") @db.VarChar(24)

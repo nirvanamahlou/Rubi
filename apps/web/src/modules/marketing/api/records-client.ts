@@ -307,6 +307,15 @@ export const marketingApi = {
         body: JSON.stringify(input),
       },
     ),
+  deleteCampaign: (id: string, expectedVersion: number, key?: string) =>
+    mutation<{ data: { id: string; version: number } }>(
+      `/marketing/campaigns/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+        headers: mutationHeaders(undefined, key),
+        body: JSON.stringify({ expectedVersion }),
+      },
+    ),
   deleteAsset: (id: string, expectedVersion: number, key?: string) =>
     mutation<{ data: MarketingAssetViewV1 }>(
       `/marketing/assets/${encodeURIComponent(id)}`,

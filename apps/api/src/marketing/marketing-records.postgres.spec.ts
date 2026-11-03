@@ -9,6 +9,7 @@ import { createDatabaseClient } from '@nora/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';
+import { CustomerAffairsMarketingIntakeService } from '../customer-affairs/customer-affairs-marketing-intake.service';
 import { MarketingRecordsService } from './marketing-records.service';
 import { CustomerService } from '../customers/customer.service';
 import { CustomerRepository } from '../customers/customer.repository';
@@ -165,6 +166,15 @@ describe.skipIf(!enabled)(
     });
 
     afterAll(async () => {
+      await client.customerAffairsMarketingIntake.deleteMany({
+        where: { branchId },
+      });
+      await client.customerAffairsCommand.deleteMany({
+        where: { actorUserId: userId },
+      });
+      await client.customerAffairsAuditEvent.deleteMany({
+        where: { branchId },
+      });
       await client.marketingAuditEvent.deleteMany({ where: { branchId } });
       await client.marketingCommand.deleteMany({ where: { branchId } });
       await client.marketingAsset.deleteMany({ where: { branchId } });
@@ -179,6 +189,154 @@ describe.skipIf(!enabled)(
       await client.user.deleteMany({ where: { id: userId } });
       await client.$disconnect();
     });
+
+    it('persists entry sources and named leads, deletes campaign audiences and campaigns with scoped replay/CAS', async () => {
+      const permitted: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'marketing.read',
+          'marketing.audience.manage',
+          'marketing.audience.read',
+          'marketing.attribution.read',
+          'customer_affairs.lead.create',
+          'customer_affairs.lead.read',
+        ],
+      };
+      const source = await service.saveAsset(
+        null,
+        {
+          kind: 'SOURCE',
+          name: `نمایشگاه-${suffix}`,
+          status: 'ACTIVE',
+          payload: {},
+        },
+        permitted,
+        branchId,
+        randomUUID(),
+      );
+      expect(
+        (await service.listAssets('SOURCE', permitted)).data.map(
+          (row) => row.id,
+        ),
+      ).toContain(source.data.id);
+      const campaign = await service.createCampaign(
+        input(`DELETE-${suffix}`),
+        permitted,
+        branchId,
+        randomUUID(),
+      );
+      const audience = await service.saveAsset(
+        null,
+        {
+          kind: 'AUDIENCE',
+          name: `مخاطب-${suffix}`,
+          status: 'ACTIVE',
+          campaignId: campaign.data.id,
+          payload: {},
+        },
+        permitted,
+        branchId,
+        randomUUID(),
+      );
+      const contactCrypto = {
+        protect: () => ({
+          encryptedValue: 'synthetic-test-only',
+          encryptionIv: 'synthetic',
+          encryptionAuthTag: 'synthetic',
+          encryptionKeyVersion: 1,
+          valueFingerprint: 'a'.repeat(64),
+          maskedValue: '*******6789',
+        }),
+      } as unknown as CustomerContactCrypto;
+      const intakes = new CustomerAffairsMarketingIntakeService(
+        database,
+        contactCrypto,
+        service,
+      );
+      const leadInput = {
+        phone: '09123456789',
+        firstName: 'نام',
+        lastName: 'آزمایشی',
+        entryDate: '2026-11-02T20:30:00.000Z',
+        sourceCategory: source.data.name,
+        campaignId: campaign.data.id,
+        status: 'NEW' as const,
+      };
+      const leadKey = randomUUID();
+      const lead = await intakes.create(
+        leadInput,
+        permitted,
+        branchId,
+        leadKey,
+      );
+      expect((await intakes.list(permitted)).data).toContainEqual(
+        expect.objectContaining({
+          id: lead.data.id,
+          firstName: 'نام',
+          lastName: 'آزمایشی',
+          entryDate: leadInput.entryDate,
+          sourceCategory: source.data.name,
+          maskedPhone: '*******6789',
+        }),
+      );
+      await expect(
+        intakes.create(
+          { ...leadInput, firstName: 'تغییر' },
+          permitted,
+          branchId,
+          leadKey,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.deleteCampaign(
+          campaign.data.id,
+          1,
+          { ...permitted, branchIds: [] },
+          randomUUID(),
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.deleteCampaign(campaign.data.id, 9, permitted, randomUUID()),
+      ).rejects.toThrow();
+      const deleteKey = randomUUID();
+      await service.deleteCampaign(campaign.data.id, 1, permitted, deleteKey);
+      await service.deleteCampaign(campaign.data.id, 1, permitted, deleteKey);
+      expect(
+        (await service.listCampaigns(permitted)).data.map((row) => row.id),
+      ).not.toContain(campaign.data.id);
+      await expect(
+        service.updateCampaign(
+          campaign.data.id,
+          { ...input('UPDATE'), expectedVersion: 2 },
+          permitted,
+          randomUUID(),
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.validateCampaignReference(
+          campaign.data.id,
+          branchId,
+          permitted,
+        ),
+      ).rejects.toThrow();
+      expect(
+        await client.customerAffairsMarketingIntake.count({
+          where: { id: lead.data.id },
+        }),
+      ).toBe(1);
+      expect(
+        await client.marketingAuditEvent.count({
+          where: { entityId: campaign.data.id, action: 'DELETE' },
+        }),
+      ).toBe(1);
+      await service.deleteAsset(audience.data.id, 1, permitted, randomUUID());
+      expect(
+        (await service.listAssets('AUDIENCE', permitted)).data.map(
+          (row) => row.id,
+        ),
+      ).not.toContain(audience.data.id);
+    }, 30000);
 
     it.each(['COUPON', 'OFFER'] as const)(
       'persists %s form payload and canonical audience across a new service/list read',

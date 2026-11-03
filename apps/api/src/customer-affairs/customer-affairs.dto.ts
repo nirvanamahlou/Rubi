@@ -98,6 +98,9 @@ export class LeadMutationDto {
 }
 
 export class MarketingIntakeDto {
+  @IsOptional() @IsString() @Length(1, 100) firstName?: string;
+  @IsOptional() @IsString() @Length(1, 100) lastName?: string;
+  @IsOptional() @IsISO8601({ strict: true }) entryDate?: string;
   @Matches(/^\+?[0-9][0-9\s-]{8,20}$/) phone!: string;
   @IsString() @Length(1, 80) sourceCategory!: string;
   @IsOptional() @IsUUID() campaignId?: string | null;

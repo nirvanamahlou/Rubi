@@ -25,6 +25,8 @@ import { CustomerService } from '../customers/customer.service';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 
 const ASSET_KINDS = new Set<MarketingAssetKind>([
+  'SOURCE',
+  'AUDIENCE',
   'SEGMENT',
   'MESSAGE',
   'SCHEDULE',
@@ -38,6 +40,8 @@ const ASSET_KINDS = new Set<MarketingAssetKind>([
 const PORTS = new Set(['top', 'right', 'bottom', 'left']);
 const CHANNELS = new Set(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION']);
 const ASSET_STATUSES: Record<MarketingAssetKind, ReadonlySet<string>> = {
+  SOURCE: new Set(['ACTIVE']),
+  AUDIENCE: new Set(['ACTIVE']),
   SEGMENT: new Set(['DRAFT', 'ACTIVE', 'PAUSED']),
   MESSAGE: new Set(['DRAFT', 'READY', 'ARCHIVED']),
   SCHEDULE: new Set(['DRAFT', 'SCHEDULED', 'PAUSED', 'CANCELLED']),
@@ -327,7 +331,7 @@ export class MarketingRecordsService {
   async listCampaigns(actor: AuthenticatedActor) {
     this.assertPermissions(actor, 'marketing.read');
     const rows = await this.database.client.marketingCampaign.findMany({
-      where: { branchId: { in: actor.branchIds } },
+      where: { deletedAt: null, branchId: { in: actor.branchIds } },
       include: { spendLines: true },
       orderBy: [{ startsAt: 'desc' }, { id: 'desc' }],
     });
@@ -337,7 +341,7 @@ export class MarketingRecordsService {
   async campaign(id: string, actor: AuthenticatedActor) {
     this.assertPermissions(actor, 'marketing.read');
     const row = await this.database.client.marketingCampaign.findFirst({
-      where: { id, branchId: { in: actor.branchIds } },
+      where: { deletedAt: null, id, branchId: { in: actor.branchIds } },
       include: { spendLines: true },
     });
     if (!row) throw notFound();
@@ -357,7 +361,7 @@ export class MarketingRecordsService {
     if (!actor.branchIds.includes(branchId))
       throw new ForbiddenException('شعبه خارج از دامنه دسترسی است.');
     const row = await this.database.client.marketingCampaign.findFirst({
-      where: { id, branchId },
+      where: { deletedAt: null, id, branchId },
       select: { id: true },
     });
     if (!row) throw notFound();
@@ -391,7 +395,7 @@ export class MarketingRecordsService {
         if (replay.requestFingerprint !== hash)
           throw conflict('IDEMPOTENCY_CONFLICT');
         const prior = await tx.marketingCampaign.findFirst({
-          where: { id: replay.resultEntityId, branchId },
+          where: { deletedAt: null, id: replay.resultEntityId, branchId },
           include: { spendLines: true },
         });
         if (!prior) throw conflict('IDEMPOTENCY_RESULT_MISSING');
@@ -457,7 +461,7 @@ export class MarketingRecordsService {
     const hash = fingerprint({ id, expectedVersion, ...normalized });
     const row = await this.database.client.$transaction(async (tx) => {
       const current = await tx.marketingCampaign.findFirst({
-        where: { id, branchId: { in: actor.branchIds } },
+        where: { deletedAt: null, id, branchId: { in: actor.branchIds } },
         include: { spendLines: true },
       });
       if (!current) throw notFound();
@@ -475,7 +479,11 @@ export class MarketingRecordsService {
         if (replay.requestFingerprint !== hash)
           throw conflict('IDEMPOTENCY_CONFLICT');
         const prior = await tx.marketingCampaign.findFirst({
-          where: { id: replay.resultEntityId, branchId: current.branchId },
+          where: {
+            deletedAt: null,
+            id: replay.resultEntityId,
+            branchId: current.branchId,
+          },
           include: { spendLines: true },
         });
         if (!prior) throw conflict('IDEMPOTENCY_RESULT_MISSING');
@@ -487,7 +495,12 @@ export class MarketingRecordsService {
         normalized.segmentId,
       );
       const changed = await tx.marketingCampaign.updateMany({
-        where: { id, branchId: current.branchId, version: expectedVersion },
+        where: {
+          deletedAt: null,
+          id,
+          branchId: current.branchId,
+          version: expectedVersion,
+        },
         data: {
           ...this.campaignData(normalized),
           declaredByUserId: actor.userId,
@@ -561,7 +574,7 @@ export class MarketingRecordsService {
     });
     const row = await this.database.client.$transaction(async (tx) => {
       const current = await tx.marketingCampaign.findFirst({
-        where: { id, branchId: { in: actor.branchIds } },
+        where: { deletedAt: null, id, branchId: { in: actor.branchIds } },
         include: { spendLines: true },
       });
       if (!current) throw notFound();
@@ -594,7 +607,12 @@ export class MarketingRecordsService {
         });
       }
       const changed = await tx.marketingCampaign.updateMany({
-        where: { id, branchId: current.branchId, version: expectedVersion },
+        where: {
+          deletedAt: null,
+          id,
+          branchId: current.branchId,
+          version: expectedVersion,
+        },
         data: {
           status: scheduledFor ? 'SCHEDULED' : 'ACTIVE',
           publicationRequestedAt: new Date(),
@@ -841,6 +859,89 @@ export class MarketingRecordsService {
     return { data: presentAsset(row) };
   }
 
+  async deleteCampaign(
+    id: string,
+    expectedVersion: number,
+    actor: AuthenticatedActor,
+    keyValue: string | undefined,
+    traceId?: string,
+  ) {
+    this.assertPermissions(
+      actor,
+      'marketing.read',
+      'marketing.campaign.update',
+    );
+    const key = requiredKey(keyValue);
+    const row = await this.database.client.$transaction(async (tx) => {
+      const current = await tx.marketingCampaign.findFirst({
+        where: { id, branchId: { in: actor.branchIds } },
+      });
+      if (!current) throw notFound();
+      const operation = 'CAMPAIGN_DELETE';
+      const hash = fingerprint({ id, expectedVersion });
+      const replay = await tx.marketingCommand.findUnique({
+        where: {
+          actorUserId_branchId_operation_idempotencyKey: {
+            actorUserId: actor.userId,
+            branchId: current.branchId,
+            operation,
+            idempotencyKey: key,
+          },
+        },
+      });
+      if (replay) {
+        if (replay.requestFingerprint !== hash)
+          throw conflict('IDEMPOTENCY_CONFLICT');
+        return tx.marketingCampaign.findUniqueOrThrow({ where: { id } });
+      }
+      const changed = await tx.marketingCampaign.updateMany({
+        where: {
+          id,
+          branchId: current.branchId,
+          version: expectedVersion,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+          updatedByUserId: actor.userId,
+          version: { increment: 1 },
+        },
+      });
+      if (changed.count !== 1) throw conflict();
+      const deleted = await tx.marketingCampaign.findUniqueOrThrow({
+        where: { id },
+      });
+      await tx.marketingCommand.create({
+        data: {
+          actorUserId: actor.userId,
+          branchId: current.branchId,
+          operation,
+          idempotencyKey: key,
+          requestFingerprint: hash,
+          entityType: 'CAMPAIGN',
+          resultEntityId: id,
+          resultVersion: deleted.version,
+          payloadSnapshot: json({ id, expectedVersion }),
+        },
+      });
+      await tx.marketingAuditEvent.create({
+        data: {
+          branchId: current.branchId,
+          actorUserId: actor.userId,
+          entityType: 'CAMPAIGN',
+          entityId: id,
+          action: 'DELETE',
+          traceId: traceId ?? null,
+          version: deleted.version,
+          beforeSnapshot: json({ id: current.id, version: current.version }),
+          afterSnapshot: json({ id: deleted.id, version: deleted.version }),
+        },
+      });
+      return deleted;
+    });
+    return { data: { id: row.id, version: row.version } };
+  }
+
   async deleteAsset(
     id: string,
     expectedVersion: number,
@@ -1050,6 +1151,13 @@ export class MarketingRecordsService {
       throw new BadRequestException(
         'ارسال زمان‌بندی‌شده به پیام، کمپین و زمان نیاز دارد.',
       );
+    if (
+      input.kind === 'SOURCE' &&
+      (input.name.trim().length > 80 ||
+        input.campaignId ||
+        input.relatedAssetId)
+    )
+      throw new BadRequestException('منبع ورود معتبر نیست.');
     if (input.kind === 'AUTOMATION') this.validateGraph(input.payload);
     return {
       ...input,
@@ -1068,6 +1176,10 @@ export class MarketingRecordsService {
     raw: Record<string, unknown>,
   ): Record<string, unknown> {
     const payload = payloadObject(raw);
+    if (kind === 'SOURCE' || kind === 'AUDIENCE') {
+      exactKeys(payload, [], 'رکورد');
+      return {};
+    }
     if (kind === 'COUPON' || kind === 'OFFER') {
       exactKeys(
         payload,
@@ -1359,7 +1471,7 @@ export class MarketingRecordsService {
     const required =
       kind === 'COUPON' || kind === 'OFFER'
         ? 'marketing.offer.manage'
-        : kind === 'SEGMENT'
+        : kind === 'SEGMENT' || kind === 'SOURCE' || kind === 'AUDIENCE'
           ? 'marketing.audience.manage'
           : kind === 'SCHEDULE'
             ? 'marketing.campaign.schedule'
@@ -1375,7 +1487,7 @@ export class MarketingRecordsService {
   ) {
     if (input.campaignId) {
       const campaign = await tx.marketingCampaign.findFirst({
-        where: { id: input.campaignId, branchId },
+        where: { deletedAt: null, id: input.campaignId, branchId },
       });
       if (!campaign)
         throw new BadRequestException('کمپین معتبر و هم‌شعبه پیدا نشد.');
