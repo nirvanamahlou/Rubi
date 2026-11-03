@@ -541,7 +541,12 @@ function AccountingNavigationWorkspaceContent() {
 
   return (
     <main
-      className={cn('space-y-5 p-1 sm:p-2', styles.workspace)}
+      className={cn(
+        'space-y-5 p-1 sm:p-2',
+        styles.workspace,
+        pathname.startsWith('/finance/accounting/general-ledger') &&
+          styles.sourceLayout,
+      )}
       data-accounting-workspace
     >
       <header

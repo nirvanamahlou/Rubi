@@ -471,3 +471,47 @@
   --input: #536e90;
   --ring: #97bdea;
 }
+
+/* General Ledger keeps the compact observed forms; other finance screens retain their layout. */
+.sourceLayout .formSurface {
+  padding: 0.5rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+.sourceLayout
+  .formSurface
+  :global(input:not([type='checkbox']):not([type='radio'])),
+.sourceLayout .formSurface :global(select),
+.sourceLayout .formSurface :global(textarea),
+.sourceLayout .formSurface :global(button[role='combobox']) {
+  min-height: 1.5rem;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 0.75rem;
+}
+.sourceLayout .formSurface :global(fieldset),
+.sourceLayout .formSurface :global(form),
+.sourceLayout .formSurface :global([data-accounting-inline-form]),
+.sourceLayout .formSurface :global([data-accounting-list]),
+.sourceLayout .formSurface :global(table) {
+  border-radius: 0;
+}
+.sourceLayout .formSurface :global([role='tab']) {
+  min-height: 1.75rem;
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+}
+.sourceLayout .formSurface :global(th) {
+  padding-block: 0.25rem;
+}
+.sourceLayout .formSurface :global([data-accounting-primary-toolbar]) {
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0;
+}
+.sourceLayout .formSurface :global([data-accounting-primary-toolbar] button) {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0;
+  box-shadow: none;
+}

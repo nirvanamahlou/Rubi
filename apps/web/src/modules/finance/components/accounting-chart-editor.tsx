@@ -307,7 +307,7 @@ export function AccountingChartEditor({
         reset={() => reset(draft?.level ?? 'GROUP', draft?.parentId)}
         close={close}
       />
-      <div className="grid min-h-[40rem] items-start gap-3 @min-[42rem]:grid-cols-[18rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid min-h-[40rem] items-start gap-3 @min-[30rem]:grid-cols-[14rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[18rem_minmax(0,1fr)]">
         <AccountingChartTree
           accounts={accounts}
           selectedId={selectedId}
