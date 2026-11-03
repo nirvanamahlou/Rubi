@@ -1410,7 +1410,9 @@ export class SalesService {
     // Draft updates do not replace payment rows: validate the actual stored schedule.
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
-    domainCall(() => validateSalesContract(input, false, categories));
+    domainCall(() =>
+      validateSalesContract(input, false, categories, Boolean(categories)),
+    );
     await assertFloatingFlightAirports(
       input.services,
       this.references,
@@ -1559,7 +1561,14 @@ export class SalesService {
                 : null,
           }
         : input;
-    domainCall(() => validateSalesContract(updateInput, false, categories));
+    domainCall(() =>
+      validateSalesContract(
+        updateInput,
+        false,
+        categories,
+        Boolean(categories),
+      ),
+    );
     const previous = categories
       ? presentSalesContract(row, undefined, this.buyerCrypto)
       : undefined;

@@ -8664,6 +8664,10 @@ Owner requests Marketing process removal, aligned filters, empty dashboard, scop
 
 Read-only production audit covers316 tables/3985 columns and entire84 KPI/91 visual registry. All11 existing native source aggregates independently reconcile. Four pending receipts are not confirmed revenue collection; empty Accounting/approved-cost sources remain unavailable. Add source-aware acquisition/order and financial sales/profit trends with honest missing-series notices; full matrix and remaining work: docs/tasks/DASHBOARD-READINESS-1103.md.26 API and51 Web/translation tests pass (1 existing skip), scoped lint passed. Final CI/merge and pinned production rollout pending; no data/schema/IAM/dependency changes.
 
+## AMEND-FLOATING-FLIGHT-1103 — PC-A
+
+Reservations amendments can replace either catalog flight direction with a floating flight and a changed Tehran civil date. Shared flight services split without duplicating sale prices; passenger membership and anonymous historical counts remain intact. Mixed catalog outbound and floating return is permitted only for authorized amendment validation; default new-contract policy stays unchanged. Existing transactional Ticket amendment releases removed directions and reserves selected replacements, rejecting insufficient capacity before writes.20 Web,102 Sales API and15 capacity/repository tests passed across isolated runs; full local Web typecheck and scoped lint pass after explicit projection types. No schema/dependency change. PR1340; final hosted CI pending. Server SSH still rejects codex-dev with the preserved key; no rollout claimed. Local source path is being replaced by the user, so final correction commits use GitHub Git Data with fast-forward guards.
+
 ## COMPANY-BASELINE-1103 — PC-A
 
 Valid active manual access snapshots now retain authenticated legal-entity read/switch baseline, matching ordinary roles. Invalid/disabled/multiple snapshots remain fail-closed; aggregate/manage/branding/document grants unchanged.18 focused permission tests and scoped lint pass. No migration/dependency/data mutation. Server rollout not performed; existing SSH key was rejected in prior diagnostic.

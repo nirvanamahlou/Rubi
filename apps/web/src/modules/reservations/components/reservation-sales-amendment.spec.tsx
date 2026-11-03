@@ -155,3 +155,35 @@ it.each(['HOTEL', 'CORRECTION'] as const)(
     expect(composite.hotelSelection!.checkInDate).toBe('2027-01-01');
   },
 );
+
+it('offers floating flight creation when the selected contract ticket is catalog inventory', () => {
+  const flightContract = {
+    ...contract,
+    servicesDetail: [
+      {
+        clientKey: 'flight',
+        kind: 'FLIGHT',
+        titleSnapshot: 'Charter',
+        status: 'SELECTED',
+      },
+    ],
+    ticketSelections: [
+      {
+        serviceClientKey: 'flight',
+        direction: 'OUTBOUND',
+        offerId: 'charter',
+        departureAt: '2027-01-01T10:00:00Z',
+        arrivalAt: '2027-01-01T12:00:00Z',
+      },
+    ],
+  } as unknown as SalesContractDetail;
+  expect(
+    renderToStaticMarkup(
+      <ReservationSalesAmendment
+        contract={flightContract}
+        section="FLIGHT"
+        onSaved={() => undefined}
+      />,
+    ),
+  ).toContain('افزودن بلیط شناور');
+});
