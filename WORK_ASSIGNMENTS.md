@@ -10613,6 +10613,12 @@ CALL-CENTER-QUEUE-FILTERS-1101 localization: reserve one own English hint overri
 
 CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three focused API/client/layout checks, isolated full API/Web typechecks/builds and scoped lint pass. Native authorized production queue verifies registrar/team-empty and status filtering; filtered counts/page queries share permission predicates. Follow-up selector removed, three queue controls moved, contacts independent. Current409a source changes preserved by three-way integration; backup/deploy lock and AMI/Worker/recording health passed. No schema/grant/business-test-data writes. Source reservations freeze on push; own task note records receipts and local dependency-link limitations.
 
+## CALL-CENTER-QUEUE-TOOLBAR-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-queue-toolbar-1101 from develop379830423. Owner explicitly authorizes queue filter styling and placement left of existing view tabs. Reserve workflow.tsx/workflow.module.css and own release/status notes. Reuse approved contact field/clear styling, compact reset and responsive wrap; preserve queue API, authorization, popup behavior and all runtime overlays including Other source. No schema/dependency/API changes. Published prior scopes released; no overlapping local writer.
+
+CALL-CENTER-QUEUE-TOOLBAR-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Scoped Web lint, two existing queue regressions, full Web typecheck/build pass. Browser confirms desktop placement and status/reset behavior; narrow layout checked. Web-only locked activation preserves env/mounts and all other service IDs. No migration, permission, contract or dependency changes. Source scope releases on push.
+
 ## CALL-CENTER-SOURCE-OTHER-1101 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
@@ -10713,5 +10719,7 @@ COMPUTER_ID=PC-D; branch codex/pc-d-ghestiroo-dashboard-1102 from develop5be3858
 Source PR144/145 merged develop; Nora PR1318 pending final exact-head gates and owner-authorized merge. Live readonly reconciliation covers four KPI totals/daily series, eight complete KPI/queue detail lists and anonymous visits. Owner-session Brands/Overview, source isolation, today/30-day periods and detail/empty states verified. Production overlays preserve1040 API/1841 Web files outside scope, environment/mounts and unrelated services. Source scope freezes on final push and reservations release on verified develop merge.
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1320 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1260 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
