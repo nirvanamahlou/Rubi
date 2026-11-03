@@ -10708,6 +10708,14 @@ COMPUTER_ID=PC-A; codex/pc-a-shared-hotel-supplier-form-1102 from develop061f265
 
 SHARED-HOTEL-SUPPLIER-FORM-1102:33 API and59 Web focused checks, scoped lint and Web/API types pass after refreshing generated declarations. Synthetic two/three-page Chrome PDFs visually verified, including independent hotel prices, repeated footer and complete notice block. Integrated latest develop and retained new round-trip transfer validation alongside the optional shared supplier flag. Source freezes on publication; reservations release upon verified merge. Final exact-head hosted gates precede owner-authorized merge; no operational deployment.
 
+## SHORT-SERVICE-CALLS-1102 — PC-C — RESERVED
+
+Base origin/develop534ccfd38. Owner authorizes diagnosis and correction of missing outbound short service numbers (193). Reserve integrations/issabel/native-outbound.ts and focused tests, provider validation/history-recovery helpers if proven necessary, own release/status notes. Explicit configured source-extension/trunk proof must remain, no inference of internal calls from digit length. No dial-origination expansion, UI, schema or dependency changes. Preserve production missed-triage and concurrent team overlays; history recovery only from actual PBX evidence with stable IDs.
+
+SHORT-SERVICE-CALLS-1102 scope extension: recovery-only identity helper and owning Integrations telephony.service leaf/tests. Existing historical mapping version unchanged before call plus unique current HR match required when unrelated HR edits make the stricter temporal HR port empty. No incoming inference or historical popup. Live runtime telephony.service compared byte-equivalent after newline normalization; no competing source owner of this leaf.
+
+SHORT-SERVICE-CALLS-1102 — COMPLETE / DEPLOYED. Capture accepts3–15 digit numbers only through configured external trunks. Four actual193 calls recovered with stable CDR/CEL historical receipts and unchanged mapping/current HR proof; employee list/SQL visibility verified,0 duplicates/offers.34 capture checks,35 focused recovery checks,49 PostgreSQL checks,2 Node evidence tests, API lint/typecheck/build pass. Peer reservation/recipient-grade releases preserved. No UI/schema/grant/dependency change. Source reservation releases on push; docs/tasks/SHORT-SERVICE-CALLS-1102.md.
+
 ## CALL-HISTORY-TITLE-1102 — PC-C — IN_PROGRESS
 
 Owner requests current grade/unit labels for historical calls. Reserve CallCenterService destination read enrichment and focused history tests. Read-only labels from HR public directory on provider-proven extensions; preserve recorded times, scope and original encrypted snapshots. No migration or ownership/data rewrite.
@@ -10791,5 +10799,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1269 — PC-C
 
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1277 — PC-C
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1281 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.

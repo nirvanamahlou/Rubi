@@ -63,7 +63,10 @@ export async function normalizeNativeOutbound(
     (!number ||
       number.length !== 2 ||
       number[0] !== destination?.[2] ||
-      !/^\+?\d{7,15}$/.test(number[1]!))
+      // A proven external trunk may dial short service numbers (e.g. 193).
+      // The configured source/trunk checks above, not digit count, separate
+      // these calls from extension-to-extension traffic.
+      !/^\+?\d{3,15}$/.test(number[1]!))
   )
     return null;
   if (
