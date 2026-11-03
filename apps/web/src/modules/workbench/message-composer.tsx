@@ -8,6 +8,7 @@ import type {
 } from '@nora/contracts';
 import {
   Forward,
+  Trash2,
   MessageCircleMore,
   MessagesSquare,
   Paperclip,
@@ -96,6 +97,79 @@ export function MessageComposer({
   const [picker, setPicker] = useState(false);
   const [emojiSearch, setEmojiSearch] = useState('');
   const [groupOpen, setGroupOpen] = useState(false);
+  const [groupDetails, setGroupDetails] = useState(false);
+  const [groupEditing, setGroupEditing] = useState(false);
+  const conversationEpoch = useRef(0);
+  const [editTitle, setEditTitle] = useState('');
+  const [addMembers, setAddMembers] = useState<string[]>([]);
+  const canEditGroup = active?.participants.some(
+    (member) => member.id === currentUserId && member.role === 'OWNER',
+  );
+  async function removeConversation(conversation: MessagingConversationV1) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await messagingApi.remove(conversation.id);
+      conversationEpoch.current++;
+      setConversations((current) =>
+        current.filter((item) => item.id !== conversation.id),
+      );
+      if (activeId === conversation.id) {
+        setActiveId(null);
+        setMessages([]);
+        setGroupDetails(false);
+      }
+      setError('');
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'حذف گفتگو انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  function removeButton(conversation: MessagingConversationV1) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={busy}
+        aria-label={
+          conversation.type === 'GROUP'
+            ? `خروج از گروه ${conversation.title}`
+            : `حذف گفتگو ${conversation.title}`
+        }
+        title={conversation.type === 'GROUP' ? 'خروج از گروه' : 'حذف گفتگو'}
+        onClick={() => void removeConversation(conversation)}
+      >
+        <Trash2 className="size-4" aria-hidden="true" />
+      </Button>
+    );
+  }
+  async function saveGroup() {
+    if (!active || busy) return;
+    setBusy(true);
+    try {
+      const result = await messagingApi.updateGroup(active.id, {
+        title: editTitle,
+        memberIds: addMembers,
+      });
+      conversationEpoch.current++;
+      setConversations((current) =>
+        current.map((item) =>
+          item.id === result.data.id ? result.data : item,
+        ),
+      );
+      setAddMembers([]);
+      setError('');
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ویرایش گروه انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   const [groupTitle, setGroupTitle] = useState('');
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [groupError, setGroupError] = useState('');
@@ -261,7 +335,9 @@ export function MessageComposer({
     const timer = window.setInterval(async () => {
       if (document.hidden) return;
       try {
+        const epoch = conversationEpoch.current;
         const conversationResponse = await messagingApi.conversations();
+        if (epoch !== conversationEpoch.current) return;
         if (!cancelled) setConversations(conversationResponse.data);
         if (activeId) {
           const messageResponse = await messagingApi.messages(activeId);
@@ -620,35 +696,40 @@ export function MessageComposer({
                 {conversations
                   .filter((conversation) => conversation.type === 'GROUP')
                   .map((conversation) => (
-                    <Button
+                    <div
                       key={conversation.id}
-                      variant={
-                        activeId === conversation.id ? 'primary' : 'ghost'
-                      }
-                      className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
-                      onClick={() => setActiveId(conversation.id)}
-                      disabled={busy}
+                      className="flex min-w-0 items-center gap-1"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
-                        <Users className="size-5" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1 overflow-hidden">
-                        <span className="block truncate font-bold">
-                          {conversation.title}
+                      <Button
+                        variant={
+                          activeId === conversation.id ? 'primary' : 'ghost'
+                        }
+                        className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
+                        onClick={() => setActiveId(conversation.id)}
+                        disabled={busy}
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
+                          <Users className="size-5" aria-hidden="true" />
                         </span>
-                        <span className="block truncate text-xs font-normal opacity-75">
-                          {conversation.participants.length.toLocaleString(
-                            'fa-IR',
-                          )}{' '}
-                          عضو
+                        <span className="min-w-0 flex-1 overflow-hidden">
+                          <span className="block truncate font-bold">
+                            {conversation.title}
+                          </span>
+                          <span className="block truncate text-xs font-normal opacity-75">
+                            {conversation.participants.length.toLocaleString(
+                              'fa-IR',
+                            )}{' '}
+                            عضو
+                          </span>
                         </span>
-                      </span>
-                      {conversation.unreadCount > 0 ? (
-                        <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
-                          {conversation.unreadCount.toLocaleString('fa-IR')}
-                        </span>
-                      ) : null}
-                    </Button>
+                        {conversation.unreadCount > 0 ? (
+                          <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
+                            {conversation.unreadCount.toLocaleString('fa-IR')}
+                          </span>
+                        ) : null}
+                      </Button>
+                      {removeButton(conversation)}
+                    </div>
                   ))}
                 {!loading &&
                   !conversations.some(
@@ -666,31 +747,39 @@ export function MessageComposer({
               aria-label="گفت‌وگوهای من"
             >
               {conversations.map((conversation) => (
-                <Button
+                <div
                   key={conversation.id}
-                  variant={activeId === conversation.id ? 'primary' : 'ghost'}
-                  className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
-                  onClick={() => setActiveId(conversation.id)}
-                  disabled={busy}
+                  className="flex min-w-0 items-center gap-1"
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
-                    <MessageCircleMore className="size-5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1 overflow-hidden">
-                    <span className="block truncate font-bold">
-                      {conversation.title}
+                  <Button
+                    variant={activeId === conversation.id ? 'primary' : 'ghost'}
+                    className="h-auto min-h-20 w-full min-w-0 justify-start overflow-hidden border border-white/70 p-3 text-start dark:border-white/10"
+                    onClick={() => setActiveId(conversation.id)}
+                    disabled={busy}
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/20">
+                      <MessageCircleMore
+                        className="size-5"
+                        aria-hidden="true"
+                      />
                     </span>
-                    <span className="block truncate text-xs font-normal opacity-75">
-                      {conversation.lastMessage?.body ??
-                        `${conversation.participants.length.toLocaleString('fa-IR')} عضو`}
+                    <span className="min-w-0 flex-1 overflow-hidden">
+                      <span className="block truncate font-bold">
+                        {conversation.title}
+                      </span>
+                      <span className="block truncate text-xs font-normal opacity-75">
+                        {conversation.lastMessage?.body ??
+                          `${conversation.participants.length.toLocaleString('fa-IR')} عضو`}
+                      </span>
                     </span>
-                  </span>
-                  {conversation.unreadCount > 0 ? (
-                    <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
-                      {conversation.unreadCount.toLocaleString('fa-IR')}
-                    </span>
-                  ) : null}
-                </Button>
+                    {conversation.unreadCount > 0 ? (
+                      <span className="ms-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
+                        {conversation.unreadCount.toLocaleString('fa-IR')}
+                      </span>
+                    ) : null}
+                  </Button>
+                  {removeButton(conversation)}
+                </div>
               ))}
               {!loading && !conversations.length && (
                 <p className="p-4 text-center text-sm text-muted-foreground">
@@ -714,7 +803,22 @@ export function MessageComposer({
               <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/85 p-4 shadow-sm">
                 <div className="min-w-0">
                   <h3 className="truncate text-lg font-black">
-                    {active.title}
+                    {active.type === 'GROUP' ? (
+                      <button
+                        type="button"
+                        className="text-start hover:underline"
+                        onClick={() => {
+                          setGroupDetails(true);
+                          setGroupEditing(false);
+                          setEditTitle(active.title);
+                          setAddMembers([]);
+                        }}
+                      >
+                        {active.title}
+                      </button>
+                    ) : (
+                      active.title
+                    )}
                   </h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">
                     {active.type === 'GROUP'
@@ -1152,6 +1256,86 @@ export function MessageComposer({
             <UserPlus className="size-4" aria-hidden="true" />
             ایجاد گروه
           </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={groupDetails && active?.type === 'GROUP'}
+        onOpenChange={setGroupDetails}
+      >
+        <DialogContent dir="rtl" className="max-w-lg">
+          <DialogTitle>{active?.title}</DialogTitle>
+          <DialogDescription>اعضای گروه</DialogDescription>
+          <ul className="max-h-48 overflow-y-auto space-y-2">
+            {active?.participants.map((member) => (
+              <li key={member.id} className="flex justify-between gap-2">
+                <span>{member.displayName}</span>
+                {member.role === 'OWNER' && <span>مدیر گروه</span>}
+              </li>
+            ))}
+          </ul>
+          {canEditGroup && (
+            <Button
+              variant="outline"
+              onClick={() => setGroupEditing((value) => !value)}
+            >
+              ویرایش گروه
+            </Button>
+          )}
+          {canEditGroup && groupEditing && (
+            <>
+              <label className="space-y-2">
+                <span>نام گروه</span>
+                <Input
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                  maxLength={160}
+                  disabled={busy}
+                />
+              </label>
+              <p>افزودن عضو</p>
+              <Input
+                aria-label="جستجوی اعضای جدید"
+                placeholder="جستجو"
+                value={contactSearch}
+                onChange={(event) => setContactSearch(event.target.value)}
+              />
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {contacts
+                  .filter(
+                    (contact) =>
+                      contact.branches.some(
+                        (branch) => branch.id === active?.branchId,
+                      ) &&
+                      !active?.participants.some(
+                        (member) => member.id === contact.id,
+                      ),
+                  )
+                  .map((contact) => (
+                    <label key={contact.id} className="flex gap-2 items-center">
+                      <Checkbox
+                        disabled={busy}
+                        checked={addMembers.includes(contact.id)}
+                        onCheckedChange={(checked) =>
+                          setAddMembers((current) =>
+                            checked
+                              ? [...new Set([...current, contact.id])]
+                              : current.filter((id) => id !== contact.id),
+                          )
+                        }
+                      />
+                      {contact.displayName}
+                    </label>
+                  ))}
+              </div>
+              {error && <Alert tone="error" title={error} />}
+              <Button
+                disabled={busy || editTitle.trim().length < 2}
+                onClick={() => void saveGroup()}
+              >
+                ذخیره تغییرات گروه
+              </Button>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       <Dialog

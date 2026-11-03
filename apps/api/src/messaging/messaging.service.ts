@@ -92,6 +92,45 @@ export class MessagingService {
     return { data: await this.mapConversation(row, actor.userId) };
   }
 
+  async remove(id: string, actor: AuthenticatedActor) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    await this.repository.removeMembership(
+      conversationId,
+      actor.userId,
+      actor.branchIds,
+    );
+    return { data: { id: conversationId } };
+  }
+
+  async updateGroup(id: string, body: unknown, actor: AuthenticatedActor) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    const conversation = await this.assertConversation(conversationId, actor);
+    if (
+      conversation.type !== 'GROUP' ||
+      !conversation.members.some(
+        (m) => m.userId === actor.userId && m.role === 'OWNER',
+      )
+    )
+      throw new ForbiddenException('ویرایش گروه فقط برای مدیر گروه مجاز است.');
+    const input = validate.groupUpdate(body);
+    const addedIds = input.memberIds.filter(
+      (id) => !conversation.members.some((m) => m.userId === id),
+    );
+    if (addedIds.length)
+      await this.iam.validateMessagingRecipients(
+        { ...actor, branchIds: [conversation.branchId] },
+        addedIds,
+      );
+    const row = await this.repository.updateGroup(
+      conversationId,
+      actor.userId,
+      actor.branchIds,
+      input.title,
+      addedIds,
+    );
+    return { data: await this.mapConversation(row, actor.userId) };
+  }
+
   async messages(
     id: string,
     query: Record<string, unknown>,
@@ -345,6 +384,7 @@ export class MessagingService {
     rows: Array<{
       id: string;
       type: 'DIRECT' | 'GROUP';
+      directPairKey?: string | null;
       title: string | null;
       branchId: string;
       createdAt: Date;
@@ -367,15 +407,20 @@ export class MessagingService {
     row: Parameters<MessagingService['mapConversations']>[0][number],
     actorUserId: string,
   ): Promise<MessagingConversationV1> {
+    const members = [...row.members];
+    if (row.type === 'DIRECT' && row.directPairKey) {
+      for (const userId of row.directPairKey.split(':').slice(-2)) {
+        if (!members.some((m) => m.userId === userId))
+          members.push({ userId, role: 'MEMBER', lastReadAt: null });
+      }
+    }
     const names = await this.descriptions(
-      row.members.map((member) => member.userId),
+      members.map((member) => member.userId),
     );
-    const participants: MessagingParticipantV1[] = row.members.map(
-      (member) => ({
-        ...(names.get(member.userId) ?? this.fallback(member.userId)),
-        role: member.role,
-      }),
-    );
+    const participants: MessagingParticipantV1[] = members.map((member) => ({
+      ...(names.get(member.userId) ?? this.fallback(member.userId)),
+      role: member.role,
+    }));
     const other = participants.find(
       (participant) => participant.id !== actorUserId,
     );

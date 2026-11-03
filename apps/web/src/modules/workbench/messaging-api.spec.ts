@@ -30,6 +30,20 @@ describe('Workbench messaging API client', () => {
     );
   });
 
+  it('removes a conversation and updates a group through authenticated endpoints', async () => {
+    await messagingApi.remove('conversation/id');
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/conversations/conversation%2Fid'),
+      expect.objectContaining({ method: 'DELETE', credentials: 'include' }),
+    );
+    const input = { title: 'Updated group', memberIds: ['member'] };
+    await messagingApi.updateGroup('group', input);
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/conversations/group'),
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify(input) }),
+    );
+  });
+
   it('posts group membership and server-side forward requests as JSON', async () => {
     await messagingApi.createGroup({
       title: 'گروه فروش',

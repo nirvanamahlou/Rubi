@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -229,8 +229,10 @@ export class CustomerAffairsRepository {
   ) {
     return this.database.client.customerAffairsReferral.findMany({
       where: {
-        category: { not: 'CALL_CENTER_REQUEST' },
-        ticket: { branchId: { in: branchIds } },
+        ticket: {
+          branchId: { in: branchIds },
+          category: { not: 'CALL_CENTER_REQUEST' },
+        },
         status: { in: ['OPEN', 'IN_PROGRESS'] },
         ...(destinationModule ? { destinationModule } : {}),
         OR: [{ assignedUserId: userId }, { assignedUserId: null }],
@@ -431,9 +433,43 @@ export class CustomerAffairsRepository {
     };
   }
 
+  async removeWorkbenchRequest(
+    id: string,
+    userId: string,
+    branchIds: string[],
+  ) {
+    return this.database.client.$transaction(async (tx) => {
+      const row = await tx.customerAffairsTicket.findFirst({
+        where: {
+          id,
+          branchId: { in: branchIds },
+          category: { startsWith: 'WORKBENCH_' },
+          OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
+        },
+        select: { id: true },
+      });
+      if (!row) throw new NotFoundException('درخواست پیدا نشد.');
+      const deliveryKey = `workbench-remove:${id}:${userId}`;
+      await tx.customerAffairsTimeline.upsert({
+        where: { deliveryKey },
+        update: {},
+        create: {
+          ticketId: id,
+          type: 'WORKBENCH_REMOVED',
+          summary: 'حذف از کارتابل شخصی',
+          actorUserId: userId,
+          deliveryKey,
+          documentVersionIds: [],
+        },
+      });
+      return { data: { id } };
+    });
+  }
+
   workbenchRequests(userId: string, branchIds: string[]) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
+        timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
         OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
         branchId: { in: branchIds },
         category: { startsWith: 'WORKBENCH_' },

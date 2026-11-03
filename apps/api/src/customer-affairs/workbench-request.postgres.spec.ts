@@ -289,6 +289,33 @@ describe.skipIf(!enabled)(
       expect(
         await client.customerAffairsTicket.count({ where: { branchId } }),
       ).toBe(1);
+      const repository = new CustomerAffairsRepository({ client } as never);
+      await expect(
+        repository.workbenchReferrals(senderId, [branchId]),
+      ).resolves.toEqual([]);
+      await request(http)
+        .delete(`/customer-affairs/workbench/requests/${id}`)
+        .set('x-test-actor', peerId)
+        .expect(404);
+      for (let retry = 0; retry < 2; retry++) {
+        await request(http)
+          .delete(`/customer-affairs/workbench/requests/${id}`)
+          .set('x-test-actor', senderId)
+          .expect(200);
+      }
+      expect(await repository.workbenchRequests(senderId, [branchId])).toEqual(
+        [],
+      );
+      expect(
+        (await repository.workbenchRequests(recipientId, [branchId])).map(
+          (row) => row.id,
+        ),
+      ).toContain(id);
+      expect(
+        await client.customerAffairsTimeline.count({
+          where: { ticketId: id, type: 'WORKBENCH_REMOVED' },
+        }),
+      ).toBe(1);
     }, 30000);
   },
 );

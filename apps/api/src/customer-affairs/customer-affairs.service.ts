@@ -2249,6 +2249,14 @@ export class CustomerAffairsService {
       ),
     };
   }
+  removeWorkbenchRequest(id: string, actor: AuthenticatedActor) {
+    return this.repository.removeWorkbenchRequest(
+      id,
+      actor.userId,
+      actor.branchIds,
+    );
+  }
+
   async workbenchRequests(
     actor: AuthenticatedActor,
   ): Promise<{ data: WorkbenchRequestItemV1[] }> {

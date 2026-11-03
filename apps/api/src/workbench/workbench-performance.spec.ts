@@ -62,7 +62,7 @@ describe('self performance aggregation', () => {
     async (days) => {
       const f = fixture();
       await f.service.get(actor, days);
-      expect(f.hr.get).toHaveBeenCalledWith(actor, Number(days));
+      expect(f.hr.get).toHaveBeenCalledWith(actor, Number(days), true);
     },
   );
 

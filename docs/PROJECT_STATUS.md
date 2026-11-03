@@ -1,3 +1,7 @@
+## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
+
+Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
+
 ## PURCHASE-GREEN-WITHOUT-FORM-1103 — PC-A — VALIDATING
 
 Purchase action now uses persisted purchase registration independently of supplier forms and full service coverage. The branch-scoped endpoint adds registered while preserving complete. Zero-valued and legacy hotel purchases count; quotes alone and cancelled contracts do not. Save refresh, stale-response and contract/revision isolation remain.26 focused API/Web tests and scoped lint pass; full types and hosted build/quality gates precede authorized develop merge. No data writes, schema/migration/dependency or deployment changes.
