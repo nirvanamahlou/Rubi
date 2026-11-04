@@ -87,6 +87,61 @@ describe.skipIf(process.env.HR_WEEKLY_SHIFTS_DATABASE_TEST !== '1')(
       };
       return { reader, input, staff };
     }
+    it('uses 14:00 on Thursday in multi-day office shifts and preserves device provenance', async () => {
+      const { reader, input, staff } = await fixture();
+      await service.assignWeeklyShift(
+        { ...input, start: '09:15', weekday: 'شنبه، پنجشنبه' },
+        randomUUID(),
+        reader,
+      );
+      await service.importDevicePunches(
+        {
+          branchId: input.branchId,
+          source: 'radan:test',
+          punches: [
+            {
+              id: randomUUID(),
+              personnelCode: staff[0]!.personnelCode,
+              date: '2026-10-29',
+              time: '09:15',
+              kind: 'ورود',
+              accepted: true,
+            },
+            {
+              id: randomUUID(),
+              personnelCode: staff[0]!.personnelCode,
+              date: '2026-10-29',
+              time: '14:00',
+              kind: 'خروج',
+              accepted: true,
+            },
+          ],
+        },
+        randomUUID(),
+        reader,
+      );
+      await service.processAttendance(
+        { branchId: input.branchId, date: '2026-10-29' },
+        randomUUID(),
+        reader,
+        true,
+      );
+      const row = await database.client.hrRecord.findFirstOrThrow({
+        where: {
+          branchId: input.branchId,
+          employeeId: staff[0]!.id,
+          tab: 'attendance',
+        },
+      });
+      expect(row.status).toBe('حاضر');
+      expect(row.data).toMatchObject({
+        earlyMinutes: 0,
+        lateMinutes: 0,
+        deficitMinutes: 0,
+        overtimeMinutes: 0,
+        registrationType: 'device',
+      });
+    });
     it('recalculates saved attendance after assignment/edit and credits approved hourly leave', async () => {
       const { reader, input, staff } = await fixture();
       await service.importDevicePunches(

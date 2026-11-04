@@ -291,6 +291,42 @@ export class HrSelfPerformanceService {
         deficitMinutes: total('deficitMinutes'),
       },
       approvedLeaveCount,
+      attendanceHistory: [
+        ...new Map(
+          monthlyRows
+            .slice()
+            .reverse()
+            .map((row) => [(row.values as string[])[1]!, row]),
+        ).entries(),
+      ]
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([date, row]) => {
+          const data = (row.data ?? {}) as Record<string, unknown>;
+          const minutes = (key: string) =>
+            typeof data[key] === 'number' &&
+            Number.isSafeInteger(data[key]) &&
+            data[key] >= 0
+              ? (data[key] as number)
+              : null;
+          const clock = (key: string) =>
+            typeof data[key] === 'string' &&
+            Number.isFinite(Date.parse(data[key]))
+              ? localClockParts(new Date(data[key])).time
+              : null;
+          return {
+            date,
+            firstIn: clock('firstIn'),
+            lastOut: clock('lastOut'),
+            registrationType:
+              data.registrationType === 'manual' ||
+              data.registrationType === 'device'
+                ? data.registrationType
+                : null,
+            lateMinutes: minutes('lateMinutes'),
+            overtimeMinutes: minutes('overtimeMinutes'),
+            deficitMinutes: minutes('deficitMinutes'),
+          };
+        }),
       todayAttendance: {
         date: today,
         firstIn: times('ورود')[0] ?? null,
