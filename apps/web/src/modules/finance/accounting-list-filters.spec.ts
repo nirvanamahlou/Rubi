@@ -3,6 +3,8 @@ import {
   combineMatches,
   filterRecords,
   listFields,
+  listRoute,
+  definitionRoute,
   matchesFilter,
   normalizeFilterText,
   type FilterRule,
@@ -32,6 +34,46 @@ const rule = (field: string, value: string): FilterRule => ({
   relationMode: 'any',
 });
 describe('accounting list filter semantics', () => {
+  it('keeps the legal standard list under legal reports with its observed columns', () => {
+    expect(listRoute('coding-standards')).toContain(
+      '/legal-reports/lists/standards',
+    );
+    expect(definitionRoute('coding-standards')).toContain(
+      '/legal-reports/standards',
+    );
+    expect(listFields('coding-standards').map((field) => field.key)).toEqual([
+      'title',
+      'titleEn',
+      'protocolTitle',
+      'protocolVersion',
+      'isSystem',
+    ]);
+    expect(
+      filterRecords(
+        [
+          {
+            id: 's',
+            values: {
+              title: 'استاندارد',
+              protocolVersion: '3.1',
+              isSystem: 'true',
+            },
+            allocations: [],
+          },
+        ],
+        {
+          type: 'group',
+          id: 'g',
+          mode: 'all',
+          children: [
+            { ...rule('isSystem', 'true'), operator: 'equals' as const },
+          ],
+        },
+        listFields('coding-standards'),
+        '',
+      ),
+    ).toHaveLength(1);
+  });
   it('filters voucher default flags independently of active status', () => {
     const voucherFields = listFields('voucher-types');
     const condition = {

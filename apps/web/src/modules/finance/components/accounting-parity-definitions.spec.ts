@@ -61,12 +61,12 @@ describe('accounting parity evidence controls', () => {
     ).toBe(true);
   });
   it('publishes the exact support totals used by the executable matrix', () => {
-    expect(accountingParityDefinitions).toHaveLength(91);
+    expect(accountingParityDefinitions).toHaveLength(93);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
       ),
-    ).toHaveLength(52);
+    ).toHaveLength(54);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',

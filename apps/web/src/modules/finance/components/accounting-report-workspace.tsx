@@ -40,12 +40,22 @@ export function AccountingReportWorkspace({
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   const [reportFilter, setReportFilter] = useState('');
+  const [structure, setStructure] = useState('4');
+  const [balanceType, setBalanceType] = useState('ALL');
   const [turnoverFilter, setTurnoverFilter] = useState('');
-  const filter = JSON.stringify([book.book.id, from, to, periodId, level]);
+  const filter = JSON.stringify([
+    book.book.id,
+    from,
+    to,
+    periodId,
+    level,
+    structure,
+    balanceType,
+  ]);
   const currentReport = reportFilter === filter ? report : null;
   const currentTurnover =
     turnoverFilter === JSON.stringify([filter, accountId]) ? turnover : null;
-  const query = () => ({ from, to, periodId, level });
+  const query = () => ({ from, to, periodId, level, structure, balanceType });
   const generate = async () => {
     setBusy(true);
     setError('');
@@ -150,6 +160,36 @@ export function AccountingReportWorkspace({
           </FormField>
         ) : (
           <>
+            <FormField label="ساختار گزارش" required>
+              <SearchCombobox
+                label="ساختار گزارش"
+                value={structure}
+                onValueChange={setStructure}
+                options={[
+                  { value: '2', label: 'دوستونی' },
+                  { value: '4', label: 'چهار ستونی' },
+                  { value: '6', label: 'شش ستونی' },
+                  { value: '8', label: 'هشت ستونی' },
+                ]}
+              />
+            </FormField>
+            <FormField label="نوع مانده" required>
+              <SearchCombobox
+                label="نوع مانده"
+                value={balanceType}
+                onValueChange={setBalanceType}
+                options={[
+                  { value: 'DEBIT', label: 'بدهکار' },
+                  { value: 'CREDIT', label: 'بستانکار' },
+                  { value: 'ALL', label: 'بدهکار بستانکار' },
+                  {
+                    value: 'NONZERO',
+                    label: 'بدهکار بستانکار با مانده غیرصفر',
+                  },
+                  { value: 'ZERO', label: 'مانده صفر' },
+                ]}
+              />
+            </FormField>
             <FormField label="سطح گزارش">
               <SearchCombobox
                 label="سطح گزارش"
@@ -191,56 +231,142 @@ export function AccountingReportWorkspace({
           <p className="text-sm text-muted-foreground">
             مبنای گزارش: اسناد قطعی · ارز پایه {book.book.baseCurrency}
           </p>
-          <div className="overflow-auto rounded-xl border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  {[
-                    'کد',
-                    'حساب',
-                    'مانده اول دوره',
-                    'بدهکار',
-                    'بستانکار',
-                    'مانده پایان',
-                  ].map((t) => (
-                    <th key={t} className="p-3 text-start">
-                      {t}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {currentReport.rows.map((r) => (
-                  <tr key={r.accountId} className="border-t">
-                    <td className="p-3">{r.code}</td>
-                    <td className="p-3">
-                      {level === 'SUBSIDIARY' ? (
-                        <Button
-                          variant="ghost"
-                          onClick={() => void browse(r.accountId)}
+          {currentReport.table ? (
+            <div className="overflow-auto border">
+              <table className="w-full text-xs" aria-label="گزارش تراز">
+                <thead className="bg-muted">
+                  <tr>
+                    {currentReport.table.headers.slice(0, 2).map((header) => (
+                      <th
+                        key={header}
+                        rowSpan={2}
+                        scope="col"
+                        className="border p-2 text-start"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                    {currentReport.table.headers
+                      .slice(2)
+                      .filter((_, index) => index % 2 === 0)
+                      .map((header) => (
+                        <th
+                          key={header}
+                          colSpan={2}
+                          scope="colgroup"
+                          className="border p-2 text-center"
                         >
-                          {r.title}
-                        </Button>
-                      ) : (
-                        r.title
-                      )}
-                    </td>
-                    {[r.opening, r.debit, r.credit, r.balance].map(
-                      (value, i) => (
-                        <td key={i} className="p-3" dir="ltr">
-                          {value}
-                        </td>
-                      ),
-                    )}
+                          {header.split(' — ')[0]}
+                        </th>
+                      ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="font-bold">
-            جمع بدهکار {currentReport.debit} · جمع بستانکار{' '}
-            {currentReport.credit}
-          </p>
+                  <tr>
+                    {currentReport.table.headers.slice(2).map((header) => (
+                      <th
+                        key={header}
+                        scope="col"
+                        className="border p-2 text-center"
+                      >
+                        {header.split(' — ')[1]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentReport.table.rows.map((row) => (
+                    <tr key={row.accountId} className="border-b">
+                      {row.values.map((value, index) => (
+                        <td
+                          key={index}
+                          className="border p-2"
+                          dir={index > 1 ? 'ltr' : undefined}
+                        >
+                          {index === 1 && level === 'SUBSIDIARY' ? (
+                            <button
+                              type="button"
+                              className="text-primary underline"
+                              disabled={busy}
+                              onClick={() => void browse(row.accountId)}
+                            >
+                              {value}
+                            </button>
+                          ) : (
+                            value
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-muted font-bold">
+                  <tr>
+                    {currentReport.table.totals.map((value, index) => (
+                      <td
+                        key={index}
+                        className="border p-2"
+                        dir={index > 1 ? 'ltr' : undefined}
+                      >
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            <div className="overflow-auto rounded-xl border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    {[
+                      'کد',
+                      'حساب',
+                      'مانده اول دوره',
+                      'بدهکار',
+                      'بستانکار',
+                      'مانده پایان',
+                    ].map((t) => (
+                      <th key={t} className="p-3 text-start">
+                        {t}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentReport.rows.map((r) => (
+                    <tr key={r.accountId} className="border-t">
+                      <td className="p-3">{r.code}</td>
+                      <td className="p-3">
+                        {level === 'SUBSIDIARY' ? (
+                          <Button
+                            variant="ghost"
+                            onClick={() => void browse(r.accountId)}
+                          >
+                            {r.title}
+                          </Button>
+                        ) : (
+                          r.title
+                        )}
+                      </td>
+                      {[r.opening, r.debit, r.credit, r.balance].map(
+                        (value, i) => (
+                          <td key={i} className="p-3" dir="ltr">
+                            {value}
+                          </td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!currentReport.table && (
+            <p className="font-bold">
+              جمع بدهکار {currentReport.debit} · جمع بستانکار{' '}
+              {currentReport.credit}
+            </p>
+          )}
         </>
       ) : null}
       {currentTurnover ? (

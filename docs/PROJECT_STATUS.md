@@ -8792,6 +8792,9 @@ GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA2
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
 
+## LEDGER-SOURCE-PARITY-1103 — PC-B — IN_PROGRESS
+Fresh read-only source observations confirm chart-first navigation without a form-mode selector. Removed unbound form preview, GL KPI/hero additions and compacted the tree; automatic authorized-book resolution prefers active main book. Reference data validates (222 accounts,26 detail types), but production data activation is not established. Scoped tests pass; broader suite timeout passed on isolated rerun. Host memory blocked remaining lint/type/build; local route responds200 after bounded source copy. Full GL comparison is ongoing; no production deployment or complete-parity claim. See tasks/LEDGER-SOURCE-PARITY-1103.md.
+
 
 
 
@@ -8840,6 +8843,15 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
 
+
+### LEDGER-SOURCE-PARITY-1103 — ادامه تطبیق، تکمیل‌نشده
+
+فرم معرفی کدینگ استاندارد با ذخیره نسخه‌دار و اعتبارسنجی اضافه شد؛ زیرمنوی قانونی و چیدمان فشرده دفتر کل اصلاح شد. کل دفتر کل هنوز تطبیق کامل ندارد. نگاشت/فرمول/صحت‌سنجی/گزارش استاندارد و فیلترهای باقی‌مانده گزارش‌ها ادامه کار هستند. PR1345 نباید پیش از تکمیل و آزمون نهایی مرج شود. جزئیات و حدود مشاهده منبع در docs/tasks/LEDGER-SOURCE-PARITY-1103.md ثبت است.
+
+2026-11-03 PC-B LEDGER-SOURCE-PARITY-1103: fiscal-year list and persisted named filters updated on rubi3100; scoped tests pass, runtime API build/health pass. Full GL/legal/report parity remains incomplete; PR1345 stays draft. No production data changes. Details: docs/tasks/LEDGER-SOURCE-PARITY-1103.md.
+
+2026-11-03 PC-B: trial balance2/4/6/8 structures now retain gross prior turnover, selected balance filters and matching Excel.10 targeted API checks and5 route/translation checks pass; runtime API build passes. Full GL source parity is still incomplete; PR1345 remains draft.
+
 ## DASHBOARD-SERIES-SUMMARY-1103 — PC-C
 
 PR1335 and its merge checks passed; first source-backed Dashboard release is healthy with12 native charts and11 KPI IDs under diagnostic scope. Full metadata:316 operational tables plus restricted migration table (317/3993 columns total),209 completed migrations. Browser follow-up fixes all-series accessible descriptions and expandable tables;54 Web/translation checks pass with1 existing skip. Final CI and follow-up rollout pending; no schema/API/IAM/data/dependency changes.
@@ -8872,3 +8884,6 @@ Sales country dropdowns pin Iran first and Turkey second using ISO2/ISO3 identif
 Read-only production audit found no RECEIPT document type or PROCUREMENT_FINANCE category; existing Sales contract/branch authorization is not the cause. Added an insert-only reference migration using restrictive PDF/JPEG/PNG, 25 MiB and RESTRICTED defaults. Existing IDs, configured policies and disabled rows remain unchanged. PostgreSQL regression covers empty/partial installations and replay/customization preservation; included in hosted database gate. No application/IAM/schema changes. Targeted reference activation and final-head checks/authorized develop merge pending.
 
 CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay/custom-policy regression passes; database build/typecheck, scoped ESLint, formatting and five CI-policy checks pass. Initial cold Docker startup exceeded the default five-second test budget; database readiness and a bounded integration-test timeout resolved it. No production records have yet changed. Exact-head hosted quality/tests/migrations/build gates precede merge.
+
+
+2026-11-04 PC-B FINANCE-PUBLISH-1104: owner explicitly requests publishing and merging all completed Finance changes, including the bounded implementation in PR1345. Integrate latest develop in clean voucher-source-1104 worktree; preserve both work logs and translation additions. This supersedes the previous draft-only publication hold, not the documented incomplete full-GL parity. No additional voucher-type implementation, source data import, migration or production deployment in this publication. Final-head hosted quality/tests/build/migration checks must all pass before merge. Finance inbox changes already merged separately in PR1365.
