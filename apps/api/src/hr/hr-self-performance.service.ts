@@ -1,3 +1,4 @@
+import { attendanceFrom } from './hr-attendance-range';
 import { resolveDeviceDirections } from './hr-device-attendance.domain';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import {
@@ -116,7 +117,7 @@ export class HrSelfPerformanceService {
       currentMonth
     )
       monthStart = new Date(monthStart.getTime() - 86400000);
-    const fromDate =
+    const requestedFromDate =
       windowDays === undefined
         ? monthStart.toISOString().slice(0, 10)
         : new Date(
@@ -125,6 +126,7 @@ export class HrSelfPerformanceService {
           )
             .toISOString()
             .slice(0, 10);
+    const fromDate = attendanceFrom(requestedFromDate);
     const monthlyRows = await this.database.client.hrRecord.findMany({
       where: {
         ...scope,
@@ -147,7 +149,7 @@ export class HrSelfPerformanceService {
       if (day && !days.has(day))
         days.set(
           day,
-          row.status === 'حاضر' ||
+          ['حاضر', 'غایب', 'مرخصی'].includes(row.status) ||
             (typeof (row.data as Record<string, unknown> | null)?.firstIn ===
               'string' &&
               Number.isFinite(
@@ -180,7 +182,7 @@ export class HrSelfPerformanceService {
                 ...scope,
                 OR: [
                   { section: 'time', tab: 'leave' },
-                  { section: 'requests', tab: 'leave' },
+                  { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
                 ],
               },
               orderBy: [
@@ -233,9 +235,13 @@ export class HrSelfPerformanceService {
               where: {
                 ...scope,
                 status: { in: [...APPROVED] },
+                AND: [
+                  { values: { path: ['2'], lte: today } },
+                  { values: { path: ['3'], gte: fromDate } },
+                ],
                 OR: [
                   { section: 'time', tab: 'leave' },
-                  { section: 'requests', tab: 'leave' },
+                  { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
                 ],
               },
             })

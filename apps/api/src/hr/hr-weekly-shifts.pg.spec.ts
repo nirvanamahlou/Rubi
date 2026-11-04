@@ -1,6 +1,14 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { HrService } from './hr.service';
@@ -9,6 +17,10 @@ import { HrSelfPerformanceService } from './hr-self-performance.service';
 describe.skipIf(process.env.HR_WEEKLY_SHIFTS_DATABASE_TEST !== '1')(
   'Weekly shifts PostgreSQL',
   () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+    });
     let database: DatabaseService;
     let service: HrService;
     let actor: AuthenticatedActor;
@@ -75,6 +87,169 @@ describe.skipIf(process.env.HR_WEEKLY_SHIFTS_DATABASE_TEST !== '1')(
       };
       return { reader, input, staff };
     }
+    it('recalculates saved attendance after assignment/edit and credits approved hourly leave', async () => {
+      const { reader, input, staff } = await fixture();
+      await service.importDevicePunches(
+        {
+          branchId: input.branchId,
+          source: 'test-refresh',
+          punches: [
+            {
+              id: randomUUID(),
+              personnelCode: staff[0]!.personnelCode,
+              date: '2026-11-01',
+              time: '09:30',
+              kind: 'ورود',
+              accepted: true,
+            },
+            {
+              id: randomUUID(),
+              personnelCode: staff[0]!.personnelCode,
+              date: '2026-11-01',
+              time: '17:45',
+              kind: 'خروج',
+              accepted: true,
+            },
+          ],
+        },
+        randomUUID(),
+        reader,
+      );
+      await service.processAttendance(
+        { branchId: input.branchId, date: '2026-11-01' },
+        randomUUID(),
+        reader,
+        true,
+      );
+      const rows = await service.assignWeeklyShift(input, randomUUID(), reader);
+      const read = () =>
+        database.client.hrRecord.findFirstOrThrow({
+          where: { employeeId: staff[0]!.id, tab: 'attendance' },
+        });
+      expect((await read()).data).toMatchObject({
+        lateMinutes: 30,
+        deficitMinutes: 30,
+        overtimeMinutes: 15,
+      });
+      const row = rows.find((r) => r.employeeId === staff[0]!.id)!;
+      const values = [...row.values];
+      values[1] = '09:15';
+      await service.updateRecord(
+        row.id,
+        { values, version: row.version },
+        reader,
+      );
+      expect((await read()).data).toMatchObject({
+        lateMinutes: 15,
+        deficitMinutes: 15,
+        overtimeMinutes: 15,
+      });
+      await database.client.hrRecord.create({
+        data: {
+          branchId: input.branchId,
+          employeeId: staff[0]!.id,
+          section: 'requests',
+          tab: 'radanLeave',
+          code: randomUUID(),
+          status: 'تأییدشده',
+          values: [
+            'Synthetic',
+            'استحقاقی',
+            '2026-11-01',
+            '2026-11-01',
+            'ساعتی',
+            '09:15',
+            '09:30',
+          ],
+          data: {
+            startsAt: '2026-11-01T05:45:00Z',
+            endsAt: '2026-11-01T06:00:00Z',
+          },
+        },
+      });
+      await service.processAttendance(
+        { branchId: input.branchId, date: '2026-11-01' },
+        randomUUID(),
+        reader,
+        true,
+      );
+      expect((await read()).data).toMatchObject({
+        lateMinutes: 0,
+        deficitMinutes: 0,
+        overtimeMinutes: 15,
+      });
+    });
+    it('shows an open current shift as present and approved whole-day leave as leave', async () => {
+      const { reader, input, staff } = await fixture();
+      await service.assignWeeklyShift(input, randomUUID(), reader);
+      await service.importDevicePunches(
+        {
+          branchId: input.branchId,
+          source: 'open-shift',
+          punches: [
+            {
+              id: randomUUID(),
+              personnelCode: staff[0]!.personnelCode,
+              date: '2026-11-01',
+              time: '09:30',
+              kind: 'ورود',
+              accepted: true,
+            },
+          ],
+        },
+        randomUUID(),
+        reader,
+      );
+      await database.client.hrRecord.create({
+        data: {
+          branchId: input.branchId,
+          employeeId: staff[1]!.id,
+          section: 'time',
+          tab: 'leave',
+          code: randomUUID(),
+          status: 'تأییدشده',
+          values: ['Synthetic', 'استحقاقی', '2026-11-01', '2026-11-01', '1'],
+          data: {},
+        },
+      });
+      vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-01T07:00:00Z'));
+      await service.processAttendance(
+        { branchId: input.branchId, date: '2026-11-01' },
+        randomUUID(),
+        reader,
+        true,
+      );
+      const first = await database.client.hrRecord.findFirstOrThrow({
+        where: { employeeId: staff[0]!.id, tab: 'attendance' },
+      });
+      expect(first.status).toBe('حاضر');
+      expect(first.data).toMatchObject({
+        lateMinutes: 30,
+        deficitMinutes: null,
+        exceptionCodes: [],
+      });
+      const leave = await database.client.hrRecord.findFirstOrThrow({
+        where: { employeeId: staff[1]!.id, tab: 'attendance' },
+      });
+      expect(leave.status).toBe('مرخصی');
+    });
+    it('does not generate device workdays before the configured cutoff', async () => {
+      const { reader, input } = await fixture();
+      vi.stubEnv('HR_RADAN_FROM_DATE', '2026-10-29');
+      expect(
+        await service.processAttendance(
+          { branchId: input.branchId, date: '2026-10-28' },
+          randomUUID(),
+          reader,
+          true,
+        ),
+      ).toMatchObject({ processed: 0 });
+      expect(
+        await database.client.hrRecord.count({
+          where: { branchId: input.branchId, tab: 'attendance' },
+        }),
+      ).toBe(0);
+    });
     it('saves and edits multiple weekdays, applies each day and rejects any overlapping selection', async () => {
       const { reader, input } = await fixture();
       const rows = await service.assignWeeklyShift(
