@@ -1,4 +1,5 @@
 import { nextRadanSyncAt } from './hr-radan-sync-schedule';
+import { attendanceFrom } from './hr-attendance-range';
 import {
   ConflictException,
   ForbiddenException,
@@ -228,9 +229,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
     if (new Set(codes).size !== codes.length)
       throw new Error('Ambiguous provider personnel codes');
     const today = localClockParts(new Date()).date;
-    const from = new Date(isoDate(today).getTime() - 31 * 86400000)
-      .toISOString()
-      .slice(0, 10);
+    const from = attendanceFrom(
+      new Date(isoDate(today).getTime() - 31 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+    );
     const source = config.source ?? `radan:${branchId}`;
     let skipped = 0;
     let invalid = 0;
