@@ -16,12 +16,10 @@ describe('Customers-owned creation from another form', () => {
     'uses the supplied branch when creating from a ledger (%s)',
     async (branchId) => {
       process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({ data: { id: 'owner' } }),
-        });
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { id: 'owner' } }),
+      });
       vi.stubGlobal('fetch', fetchMock);
       await customersApi.create(
         { kind: 'person', displayName: 'Test owner', roles: ['customer'] },
