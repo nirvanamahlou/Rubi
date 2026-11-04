@@ -8,6 +8,88 @@ const actor: AuthenticatedActor = {
   permissions: ['hr.manage'],
   branchIds: ['branch'],
 };
+
+function dualSource() {
+  for (const [key, value] of Object.entries({
+    HR_RADAN_BRANCH_ID: 'branch',
+    HR_RADAN_BASE_URL: 'http://one',
+    HR_RADAN_USERNAME: 'synthetic',
+    HR_RADAN_PASSWORD: 'synthetic',
+    HR_RADAN_SECONDARY_BRANCH_ID: 'second',
+    HR_RADAN_SECONDARY_BASE_URL: 'http://two',
+  }))
+    vi.stubEnv(key, value);
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-04T12:00:00Z'));
+  vi.spyOn(RadanDeviceClient.prototype, 'login').mockResolvedValue(undefined);
+  vi.spyOn(RadanDeviceClient.prototype, 'list').mockImplementation(
+    async (path) =>
+      (path === '/V1/Users'
+        ? [{ id: 1, profile: { personnel_id: '2001' } }]
+        : [
+            {
+              id: 1,
+              user_id: 1,
+              datetime: '2026-11-03 09:30:00',
+              entry_type: 'in',
+              status: 'accepted',
+            },
+          ]) as never,
+  );
+  const hr = {
+    importDevicePunches: vi.fn().mockResolvedValue({
+      imported: 1,
+      unchanged: 0,
+      unmatched: 0,
+      closed: 0,
+      dates: [],
+    }),
+    processAttendance: vi.fn(),
+  };
+  return { hr, service: new HrRadanDeviceService(hr as never, {} as never) };
+}
+
+it('isolates identical source IDs and personnel codes by branch and date policy', async () => {
+  const { hr, service } = dualSource();
+  const result = await service.sync({
+    ...actor,
+    branchIds: ['branch', 'second'],
+  });
+  expect(result.state).toBe('ready');
+  expect(
+    hr.importDevicePunches.mock.calls.map(([input]) => ({
+      branchId: input.branchId,
+      source: input.source,
+      date: input.punches[0].date,
+    })),
+  ).toEqual([
+    { branchId: 'branch', source: 'radan:branch', date: '2026-11-04' },
+    { branchId: 'second', source: 'radan:second', date: '2026-11-03' },
+  ]);
+  expect(service.status(actor)).toMatchObject({
+    sources: [expect.objectContaining({ branchId: 'branch' })],
+  });
+});
+
+it('continues the second source after a provider fails', async () => {
+  const { service, hr } = dualSource();
+  vi.mocked(RadanDeviceClient.prototype.login).mockRejectedValueOnce(
+    new Error('offline'),
+  );
+  expect(
+    await service.sync({ ...actor, branchIds: ['branch', 'second'] }),
+  ).toMatchObject({ state: 'partial' });
+  expect(hr.importDevicePunches).toHaveBeenCalledTimes(1);
+  expect(hr.importDevicePunches.mock.calls[0]![0].branchId).toBe('second');
+});
+
+it('fetches only the branch authorized for the caller', async () => {
+  const { service, hr } = dualSource();
+  await service.sync({ ...actor, branchIds: ['second'] });
+  expect(hr.importDevicePunches).toHaveBeenCalledTimes(1);
+  expect(hr.importDevicePunches.mock.calls[0]![0].branchId).toBe('second');
+  expect(service.status(actor)).toMatchObject({ state: 'idle' });
+});
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();
