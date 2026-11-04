@@ -17661,5 +17661,13 @@
   "حاضر با تأخیر و خروج زودهنگام": "Present with late arrival and early departure",
   "حاضر با خروج زودهنگام": "Present with early departure",
   "حداقل یک روز هفته انتخاب کنید.": "Select at least one weekday.",
-  "روزهای هفته": "Weekdays"
+  "روزهای هفته": "Weekdays",
+  "اضافه‌کاری (دقیقه)": "Overtime (minutes)",
+  "انگشت": "Fingerprint",
+  "تأخیر (دقیقه)": "Late arrival (minutes)",
+  "ترددی در این بازه ثبت نشده است.": "No attendance was recorded in this period.",
+  "جدول تردد روزانه": "Daily attendance table",
+  "سوابق تردد من": "My attendance history",
+  "کسری کار (دقیقه)": "Work deficit (minutes)",
+  "نوع ثبت": "Entry type"
 }
