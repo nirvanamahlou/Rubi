@@ -1829,10 +1829,11 @@ export class HrService {
         );
       const nameParts = this.nameParts(input);
       if (nameParts) data.name = nameParts.join(' ');
-      if (input.status !== undefined && input.status !== existing.status)
-        throw new BadRequestException(
-          'پایان همکاری باید از پرونده خروج ثبت شود.',
-        );
+      if (input.status !== undefined && input.status !== existing.status) {
+        if (!['فعال', 'غیرفعال'].includes(String(input.status)))
+          throw new BadRequestException('وضعیت کارمند معتبر نیست.');
+        data.status = String(input.status);
+      }
       if (input.groupId !== undefined)
         await this.setEmployeeGroup(tx, destination, input.groupId, actor);
       if (input.userId !== undefined)

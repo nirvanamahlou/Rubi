@@ -87,6 +87,50 @@ describe.skipIf(process.env.HR_WEEKLY_SHIFTS_DATABASE_TEST !== '1')(
       };
       return { reader, input, staff };
     }
+    it('updates employee active status with versioning, validation and branch authorization', async () => {
+      const { reader, staff } = await fixture();
+      const employee = staff[0]!;
+      const inactive = await service.updateEmployee(
+        employee.id,
+        { version: employee.version, status: 'غیرفعال' },
+        reader,
+      );
+      expect(inactive.status).toBe('غیرفعال');
+      await expect(
+        service.updateEmployee(
+          employee.id,
+          { version: employee.version, status: 'فعال' },
+          reader,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          employee.id,
+          { version: inactive.version, status: 'invalid' },
+          reader,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          employee.id,
+          { version: inactive.version, status: 'فعال' },
+          { ...reader, branchIds: [] },
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          employee.id,
+          { version: inactive.version, status: 'فعال' },
+          { ...reader, permissions: ['hr.read'] },
+        ),
+      ).rejects.toThrow();
+      const active = await service.updateEmployee(
+        employee.id,
+        { version: inactive.version, status: 'فعال' },
+        reader,
+      );
+      expect(active.status).toBe('فعال');
+    });
     it('uses 14:00 on Thursday in multi-day office shifts and preserves device provenance', async () => {
       const { reader, input, staff } = await fixture();
       await service.assignWeeklyShift(
