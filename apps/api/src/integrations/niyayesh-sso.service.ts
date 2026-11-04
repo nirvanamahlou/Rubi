@@ -192,8 +192,22 @@ export class NiyayeshSsoService {
       ),
     };
   }
-  async access(actor: AuthenticatedActor, branch: string) {
+  async access(actor: AuthenticatedActor, branch: string, systemId?: string) {
     try {
+      if (systemId) {
+        const primary = await this.site.configuration();
+        if (primary?.registrySystemId !== systemId) return { enabled: false };
+        const selected = await this.site.configuration(systemId, branch);
+        if (
+          !selected ||
+          ['origin', 'client', 'system', 'organization', 'environment'].some(
+            (field) =>
+              primary[field as keyof typeof primary] !==
+              selected[field as keyof typeof selected],
+          )
+        )
+          return { enabled: false };
+      }
       await this.claims(actor, branch);
       return {
         enabled: true,

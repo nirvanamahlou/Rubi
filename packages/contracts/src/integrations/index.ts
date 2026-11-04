@@ -1,3 +1,8 @@
+export type {
+  SiteConnectionInputV1,
+  SiteConnectionStatusV1,
+} from './site-connection';
+
 /** Nonsecret configuration only; operational connections remain adapter-owned. */
 export type IntegrationLifecycle = 'ENABLED' | 'DISABLED' | 'ARCHIVED';
 export type IntegrationBusinessDomain = 'TRAVEL' | 'EDUCATION' | 'OTHER';

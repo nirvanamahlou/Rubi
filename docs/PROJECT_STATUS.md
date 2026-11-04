@@ -8647,6 +8647,31 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-API-FORMS-1104 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+Add editable API settings and separate save/test actions for all three other
+listed sites in the common selected-site disclosure. Adapter-owned AES-GCM
+credentials, branch/site binding, atomic version CAS, write-only secret retention
+and purpose-separated persistent storage fallback. All native service/report/
+workbook operations now accept the selected site ID; legacy primary file remains
+compatible. SSO availability cannot launch a different selected producer.
+37 API and70 Web/3 English regressions pass; full types/production builds, live
+form acceptance and all final CI checks gate authorized develop merge. No
+migration/dependency/IAM grants/producer code or operational-data writes.
+Full server API/Web types and production builds pass; all8 hosted gates succeeded
+on aaff2d389 after fixing exact-optional Web props/test fixture types. Local API
+default heap was insufficient; isolated server/hosted checks passed without
+skipping any gate. Live owner-session forms are editable for all3 sites; drafts
+survive collapse and reset on site change. Secret is empty/masked, save responds
+to editing, test requires saved configuration and GH/native continuity remains.
+Desktop/narrow views show no overflow/browser errors. API/Web activation preserves
+1202 API and2004 Web/Contracts outside-scope files, other service IDs/env/mounts.
+Temporary memory removed; health, secure storage readiness/writability,19 runtime
+file copies and49 locale keys verified. No credentials/native records saved in
+production acceptance. Actual upstream connection still requires each site's
+real ERP v1 credentials. Final documentation head requires the same8 gates before
+PR1362 develop merge. Details: tasks/SITE-API-FORMS-1104.md.
+
 ## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 Connections now has one top selector for the four listed websites and one shared
