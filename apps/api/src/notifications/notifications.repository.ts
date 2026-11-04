@@ -27,7 +27,11 @@ export class NotificationsRepository {
       this.database.client.notification.findMany({
         where: { recipientUserId },
         include: notificationInclude,
-        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+        orderBy: [
+          { readAt: { sort: 'asc', nulls: 'first' } },
+          { occurredAt: 'desc' },
+          { id: 'desc' },
+        ],
         ...(permissions ? {} : { take: limit }),
       }),
       this.database.client.notification.count({

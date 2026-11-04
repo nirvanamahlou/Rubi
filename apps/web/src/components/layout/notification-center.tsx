@@ -7,6 +7,8 @@ import {
   Bell,
   BellRing,
   CheckCheck,
+  ClipboardList,
+  MessageSquare,
   CircleAlert,
   LoaderCircle,
   RefreshCw,
@@ -45,9 +47,17 @@ import {
   type ChangeNotification,
 } from './change-notifications';
 
-const SERVER_POLL_INTERVAL_MS = 45_000;
+import {
+  compareNotifications,
+  notificationColors,
+  notificationKind,
+  type NotificationKind,
+} from './notification-presentation';
+
+const SERVER_POLL_INTERVAL_MS = 10_000;
 
 interface CenterNotification {
+  kind?: NotificationKind;
   key: string;
   id: string;
   source: 'local' | 'server' | 'hr';
@@ -104,6 +114,7 @@ export function mergeMasterDataFeed(
 function serverNotification(item: NotificationItemV1): CenterNotification {
   return {
     key: `server:${item.id}`,
+    kind: notificationKind(item),
     id: item.id,
     source: 'server',
     title: item.title,
@@ -158,6 +169,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const loginChecked = useRef(false);
+  const serverLoadInFlight = useRef(false);
   const serverWrites = useRef(Promise.resolve());
   const pendingWrites = useRef(0);
   const feedVersion = useRef(0);
@@ -165,7 +177,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   const [serverItems, setServerItems] = useState<NotificationItemV1[]>([]);
   const [hrItems, setHrItems] = useState<HrNotificationDto[]>([]);
   const [hrError, setHrError] = useState<string | null>(null);
-  const [, setServerUnreadCount] = useState(0);
+  const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [refreshingMasterData, setRefreshingMasterData] = useState(false);
@@ -186,7 +198,8 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   }, []);
 
   const loadServer = useCallback(async () => {
-    if (pendingWrites.current) return;
+    if (pendingWrites.current || serverLoadInFlight.current) return;
+    serverLoadInFlight.current = true;
     const version = feedVersion.current;
     try {
       const response = await notificationsApi.list();
@@ -211,6 +224,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
           : 'دریافت اعلان‌های پایدار ناموفق بود.',
       );
     } finally {
+      serverLoadInFlight.current = false;
       setServerLoading(false);
     }
   }, []);
@@ -246,24 +260,19 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
           .filter((item) => canViewRoute(actor.permissions, item.href))
           .map(localNotification),
         ...pendingHrBellNotifications(hrItems),
-      ].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
+      ].sort(compareNotifications),
     [localItems, serverItems, hrItems, actor.permissions],
   );
   const unreadCount = useMemo(
     () =>
-      serverItems.filter(
-        (item) =>
-          !item.isRead &&
-          item.href &&
-          canViewRoute(actor.permissions, item.href),
-      ).length +
+      serverUnreadCount +
       hrItems.filter((item) => !item.readAt).length +
       localItems.filter(
         (notification) =>
           !notification.readAt &&
           canViewRoute(actor.permissions, notification.href),
       ).length,
-    [localItems, serverItems, hrItems, actor.permissions],
+    [localItems, serverUnreadCount, hrItems, actor.permissions],
   );
 
   const syncMasterDataFeed = useCallback(
@@ -292,7 +301,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   useEffect(() => {
     const refresh = () => void loadHr();
     const initial = window.setTimeout(refresh, 0);
-    const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
+    const interval = window.setInterval(refresh, 45_000);
     window.addEventListener('nora:hr-server-change', refresh);
     window.addEventListener('focus', refresh);
     return () => {
@@ -319,11 +328,11 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
 
   useEffect(() => {
     const initial = window.setTimeout(() => void loadServer(), 0);
-    const interval = window.setInterval(
-      () => void loadServer(),
-      SERVER_POLL_INTERVAL_MS,
-    );
-    const refresh = () => void loadServer();
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void loadServer();
+    };
+    const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
@@ -331,6 +340,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
       window.clearInterval(interval);
       window.removeEventListener('focus', refresh);
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+      document.removeEventListener('visibilitychange', refresh);
     };
   }, [loadServer]);
 
@@ -454,6 +464,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   }
 
   const hasRead = notifications.some((notification) => notification.isRead);
+  const BellIcon = unreadCount ? BellRing : Bell;
 
   return (
     <DropdownMenu
@@ -473,11 +484,20 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
               ? `اعلان‌ها، ${unreadCount.toLocaleString('fa-IR')} خوانده‌نشده`
               : 'اعلان‌ها'
           }
-          className="relative"
+          className={cn(
+            'relative',
+            unreadCount > 0 && 'text-amber-300 hover:text-amber-200',
+          )}
           size="icon"
           variant="ghost"
         >
-          <Bell aria-hidden="true" className="size-5" />
+          <BellIcon
+            aria-hidden="true"
+            className={cn(
+              'size-5',
+              unreadCount > 0 && 'fill-amber-300/25 text-amber-300',
+            )}
+          />
           {unreadCount ? (
             <span className="absolute end-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-black leading-4 text-destructive-foreground ring-2 ring-surface">
               {unreadCount > 99 ? '+۹۹' : unreadCount.toLocaleString('fa-IR')}
@@ -546,7 +566,8 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                 asChild
                 className={cn(
                   'mb-1 h-auto items-start px-3 py-3',
-                  !notification.isRead && 'bg-primary/5',
+                  notificationColors(notification.kind, notification.isRead)
+                    .item,
                 )}
                 key={notification.key}
               >
@@ -557,12 +578,17 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                   <span
                     className={cn(
                       'mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl',
-                      notification.isRead
-                        ? 'bg-muted text-muted-foreground'
-                        : 'bg-primary/10 text-primary',
+                      notificationColors(notification.kind, notification.isRead)
+                        .icon,
                     )}
                   >
-                    <BellRing aria-hidden="true" className="size-4" />
+                    {notification.kind === 'message' ? (
+                      <MessageSquare aria-hidden="true" className="size-4" />
+                    ) : notification.kind === 'request' ? (
+                      <ClipboardList aria-hidden="true" className="size-4" />
+                    ) : (
+                      <BellRing aria-hidden="true" className="size-4" />
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">
                     <strong className="block text-sm">
@@ -584,7 +610,13 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                   {!notification.isRead ? (
                     <span
                       aria-label="خوانده‌نشده"
-                      className="mt-2 size-2 shrink-0 rounded-full bg-primary"
+                      className={cn(
+                        'mt-2 size-2 shrink-0 rounded-full',
+                        notificationColors(
+                          notification.kind,
+                          notification.isRead,
+                        ).dot,
+                      )}
                     />
                   ) : null}
                 </Link>
