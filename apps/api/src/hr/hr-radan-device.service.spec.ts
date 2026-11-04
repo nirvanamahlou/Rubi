@@ -64,7 +64,11 @@ it('isolates identical source IDs and personnel codes by branch and date policy'
     })),
   ).toEqual([
     { branchId: 'branch', source: 'radan:branch', date: '2026-11-04' },
-    { branchId: 'second', source: 'radan:second', date: '2026-11-03' },
+    {
+      branchId: 'second',
+      source: 'radan:secondary:second',
+      date: '2026-11-03',
+    },
   ]);
   expect(service.status(actor)).toMatchObject({
     sources: [expect.objectContaining({ branchId: 'branch' })],
@@ -94,6 +98,36 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+it('allows two providers for the same branch but skips non-allowlisted secondary personnel', async () => {
+  const { service, hr } = dualSource();
+  vi.stubEnv('HR_RADAN_SECONDARY_BRANCH_ID', 'branch');
+  vi.stubEnv('HR_RADAN_SECONDARY_PERSONNEL_CODES', '2003,2004');
+  vi.mocked(RadanDeviceClient.prototype.list).mockImplementation(
+    async (path) =>
+      (path === '/V1/Users'
+        ? [
+            { id: 1, profile: { personnel_id: '2001' } },
+            { id: 2, profile: { personnel_id: '2003' } },
+          ]
+        : [1, 2].map((id) => ({
+            id,
+            user_id: id,
+            datetime: '2026-11-03 09:30:00',
+            entry_type: 'in',
+            status: 'accepted',
+          }))) as never,
+  );
+  await service.sync(actor);
+  const calls = hr.importDevicePunches.mock.calls.map(([input]) => input);
+  expect(calls[0].source).toBe('radan:branch');
+  expect(calls[0].punches).toHaveLength(2);
+  expect(calls[1].source).toBe('radan:secondary:branch');
+  expect(calls[1].branchId).toBe('branch');
+  expect(calls[1].punches).toEqual([
+    expect.objectContaining({ personnelCode: '2003', date: '2026-11-03' }),
+  ]);
 });
 describe('attendance connector authorization', () => {
   it('rejects a foreign branch and self-only user before provider access', async () => {
