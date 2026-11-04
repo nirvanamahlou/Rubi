@@ -122,8 +122,14 @@ describe('native queue capture', () => {
     const receipts = new Map<string, TelephonyEventV1>();
     const actions: string[] = [];
     const sockets = new Set<net.Socket>();
+    const socketErrors: Error[] = [];
+    let stopping = false;
     const server = net.createServer((socket) => {
       sockets.add(socket);
+      socket.on('error', (error: NodeJS.ErrnoException) => {
+        // The test client can reset its peer while shutdown is in progress.
+        if (!stopping || error.code !== 'ECONNRESET') socketErrors.push(error);
+      });
       const parser = new AmiParser();
       socket.on('data', (bytes) => {
         for (const action of parser.push(
@@ -206,9 +212,11 @@ describe('native queue capture', () => {
         actions.every((action) => ['Login', 'Ping'].includes(action)),
       ).toBe(true);
     } finally {
+      stopping = true;
       await service.onModuleDestroy();
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
+      expect(socketErrors).toEqual([]);
     }
   });
   it('captures one root across member rings and answer without exposing a popup recipient', async () => {
