@@ -814,6 +814,43 @@ describe('parseHotelImportWorkbook', () => {
     expect(response.details.entries.length).toBeGreaterThan(0);
   });
 
+  it('accepts Excel printer settings only when the internal package part exists', () => {
+    const type =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings';
+    const rel = 'xl/worksheets/_rels/sheet1.xml.rels';
+    const target = '../printerSettings/printerSettings1.bin';
+    expect(
+      parse(
+        fixture({
+          entries: {
+            [rel]: relationship(target, undefined, type),
+            'xl/printerSettings/printerSettings1.bin': 'printer bytes',
+          },
+        }),
+      ).security.externalLinkCount,
+    ).toBe(0);
+    for (const declaration of [
+      relationship(target, 'External', type),
+      relationship(target, undefined, 'unknown'),
+      relationship('../../outside.bin', undefined, type),
+    ])
+      expect(() =>
+        parse(
+          fixture({
+            entries: {
+              [rel]: declaration,
+              'xl/printerSettings/printerSettings1.bin': 'printer bytes',
+            },
+          }),
+        ),
+      ).toThrow();
+    expect(() =>
+      parse(
+        fixture({ entries: { [rel]: relationship(target, undefined, type) } }),
+      ),
+    ).toThrow();
+  });
+
   it('accepts a healthy internal relationship with zero external links', () => {
     const result = parse(
       fixture({
