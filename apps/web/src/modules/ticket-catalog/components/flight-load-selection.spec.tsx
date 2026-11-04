@@ -4,7 +4,9 @@ import type * as ReactModule from 'react';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { FlightLoadGrid } from './flight-load-grid';
+import { FlightLoadContracts } from './flight-load-contracts';
 import styles from './flight-load-grid.module.css';
+import { searchOptions } from '@/components/ui/search-combobox';
 
 const hooks = vi.hoisted(() => ({ states: [] as unknown[], index: 0 }));
 vi.mock('react', async (original) => ({
@@ -53,10 +55,20 @@ function render() {
     canonicalTestTree(
       FlightLoadGrid({
         offers: [
-          flight('out-a', 10),
+          {
+            ...flight('out-a', 10),
+            saleRoutes: [
+              'bodrum',
+              'izmir',
+              'kusadasi',
+              'istanbul',
+              'ankara',
+            ].map((destinationId) => ({ originId: 'a', destinationId })),
+          },
           flight('out-b', 20),
           flight('return-a', 12, true),
         ],
+        references: [{ kind: 'city', id: 'a', name: 'تهران', active: true }],
         cityName: (id) => id,
         refreshing: false,
         onRefresh: vi.fn(),
@@ -82,6 +94,28 @@ function select(id: string) {
 }
 const tables = () =>
   render().filter((n) => n.props.className === styles.scroller);
+it('opens contracts for the clicked dated offer and clears the report when filters change', () => {
+  route();
+  click('جست‌وجو');
+  const date = render().find(
+    (n) =>
+      n.type === 'button' &&
+      String(n.props['aria-label']).includes('قراردادهای پرواز out-a '),
+  );
+  expect(date).toBeDefined();
+  const stopPropagation = vi.fn();
+  (date!.props.onClick as (event: unknown) => void)({ stopPropagation });
+  expect(stopPropagation).toHaveBeenCalledOnce();
+  expect(
+    render().find((n) => n.type === FlightLoadContracts)?.props.offer,
+  ).toMatchObject({ id: 'out-a' });
+  const field = render().find(
+    (n) =>
+      n.props.id === 'load-number' && typeof n.props.onChange === 'function',
+  )!;
+  (field.props.onChange as (e: unknown) => void)({ target: { value: 'new' } });
+  expect(render().some((n) => n.type === FlightLoadContracts)).toBe(false);
+});
 function route() {
   for (const [id, value] of [
     ['load-origin', 'a'],
@@ -148,4 +182,60 @@ it('hides both load tables when either endpoint is cleared after searching', () 
     target: { value: '' },
   });
   expect(tables()).toHaveLength(0);
+});
+
+it('defaults and resets the origin to Tehran but preserves a manual city choice', () => {
+  const field = () =>
+    render().find(
+      (n) =>
+        n.props.id === 'load-origin' && typeof n.props.onChange === 'function',
+    )!;
+  expect(field().props.value).toBe('a');
+  (field().props.onChange as (event: unknown) => void)({
+    target: { value: 'b' },
+  });
+  expect(field().props.value).toBe('b');
+  click('پاک‌کردن فیلترها');
+  expect(field().props.value).toBe('a');
+  expect(render().some((n) => n.props.id === 'load-origin-country')).toBe(
+    false,
+  );
+});
+
+it('shows all primary and alternate charter destinations, including Bodrum and Izmir, without the shared five-option truncation', () => {
+  const field = render().find(
+    (n) =>
+      n.props.id === 'load-destination' &&
+      typeof n.props.onChange === 'function',
+  )!;
+  const options = nodes(field.props.children as ReactNode)
+    .filter((n) => n.type === 'option')
+    .map((n) => ({
+      value: String(n.props.value),
+      label: n.props.children as ReactNode,
+    }));
+  expect(options.map((o) => o.value)).toEqual([
+    '',
+    'b',
+    'bodrum',
+    'izmir',
+    'kusadasi',
+    'istanbul',
+    'ankara',
+  ]);
+  expect(
+    searchOptions(options, '', field.props.optionLimit as number).map(
+      (o) => o.value,
+    ),
+  ).toEqual(options.map((o) => o.value));
+  (field.props.onChange as (event: unknown) => void)({
+    target: { value: 'izmir' },
+  });
+  click('جست‌وجو');
+  expect(
+    render().some(
+      (n) =>
+        n.type === 'input' && String(n.props['aria-label']).includes(' out-a '),
+    ),
+  ).toBe(true);
 });

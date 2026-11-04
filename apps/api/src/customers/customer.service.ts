@@ -1,4 +1,12 @@
-import { hotelAgeOn, isOptionalOperationReason } from '@nora/contracts';
+import { createHash } from 'node:crypto';
+import {
+  canViewRoute,
+  hasSalesContractSelfService,
+  CUSTOMER_EDITABLE_FIELDS,
+  allowAccessControl,
+  hotelAgeOn,
+  isOptionalOperationReason,
+} from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -144,6 +152,8 @@ function prepareMutation(
   update: boolean,
   protectedNationalId?: ProtectedNationalId,
   protectedPassportNumber?: ProtectedPassportNumber,
+  nationalIdOptional = false,
+  birthDateOptional = false,
 ) {
   const roles = new Set(input.roles);
   if (!roles.size)
@@ -159,6 +169,7 @@ function prepareMutation(
     );
   if (
     !update &&
+    !nationalIdOptional &&
     input.kind === 'person' &&
     roles.has('passenger') &&
     !protectedNationalId
@@ -204,7 +215,12 @@ function prepareMutation(
     if (value && !/^[A-Z]{3}$/.test(value.trim().toUpperCase()))
       throw new BadRequestException('کد کشور باید سه حرف لاتین ISO باشد.');
   }
-  if (!update && roles.has('passenger') && !input.birthDate)
+  if (
+    !update &&
+    !birthDateOptional &&
+    roles.has('passenger') &&
+    !input.birthDate
+  )
     throw new BadRequestException({
       code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED',
       message: 'تاریخ تولد مسافر الزامی است.',
@@ -403,6 +419,33 @@ export class CustomerService {
     @Inject(CustomerNationalIdProtector)
     private readonly nationalIdProtector: CustomerNationalIdProtector,
   ) {}
+
+  /** Request-local capabilities for the owner-authorized new-contract person workflow. */
+  salesEntryActor(actor: AuthenticatedActor): AuthenticatedActor {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !canViewRoute(actor.permissions, '/sales/contracts/new') ||
+      !actor.branchIds.length
+    )
+      throw new ForbiddenException();
+    return {
+      ...actor,
+      permissions: [
+        ...new Set([
+          ...actor.permissions.filter(
+            (p) => !p.startsWith('ui.deny.field.customers.'),
+          ),
+          'customers.read',
+          'customers.create',
+          'customers.update',
+          'customers.sensitive.read',
+          ...CUSTOMER_EDITABLE_FIELDS.map((field) =>
+            allowAccessControl(`field.customers.${field}`),
+          ),
+        ]),
+      ] as AuthenticatedActor['permissions'],
+    };
+  }
 
   private async present(
     row: CustomerRow,
@@ -711,6 +754,37 @@ export class CustomerService {
     return { data: toCustomerDetail(row, false) };
   }
 
+  /** Sales output calls this only for passengers of an already-authorized contract. */
+  async salesOutputIdentity(
+    id: string,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    if (
+      !actor.permissions.includes('sales.export') &&
+      !hasSalesContractSelfService(actor.permissions)
+    )
+      throw new ForbiddenException();
+    const row = await this.repository.find(id, actor.branchIds);
+    if (!row || row.kind !== 'PERSON')
+      throw new NotFoundException('مشتری یافت نشد.');
+    await this.repository.auditSensitiveRead(
+      row.id,
+      actor.userId,
+      row.ownerBranchId,
+      'customer-verification',
+      traceId,
+    );
+    return {
+      displayName: row.displayName,
+      passportName:
+        row.passportFirstName?.trim() && row.passportLastName?.trim()
+          ? `${row.passportFirstName.trim()} ${row.passportLastName.trim()}`
+          : null,
+      birthDate: row.birthDate?.toISOString().slice(0, 10) ?? null,
+    };
+  }
+
   /** Request-scoped Reservations output; never exposes raw DOB or document numbers. */
   async reservationOutputIdentity(
     id: string,
@@ -736,6 +810,7 @@ export class CustomerService {
     return {
       customerId: id,
       passportName: first && last ? `${last} / ${first}` : null,
+      gender: row.gender === 'M' || row.gender === 'F' ? row.gender : null,
       hotelChildAgeBand,
     };
   }
@@ -754,32 +829,125 @@ export class CustomerService {
       throw new ForbiddenException();
     return this.repository.salesPartyKinds(ids);
   }
+  /** Sales-only create/reuse of an agency buyer; no general Customer write grant. */
+  async resolveSalesOrganization(
+    organization: { id: string; name: string },
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+    traceId?: string,
+  ) {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !canViewRoute(actor.permissions, '/sales/contracts/new')
+    )
+      throw new ForbiddenException();
+    const branchId = branchOf(actor, requestedBranch);
+    const row = await this.repository.resolveSalesOrganization(
+      organization.id,
+      organization.name,
+      branchId,
+      actor.userId,
+      traceId,
+    );
+    if (!row)
+      throw new ConflictException(
+        'پرونده این سازمان موجود است؛ فعال‌سازی یا نقش مشتری را در بخش مشتریان اصلاح کنید.',
+      );
+    return { data: toCustomerSummary(row) };
+  }
+
   async create(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
     requestedBranch?: string,
     traceId?: string,
   ) {
+    return this.createRecord(input, actor, requestedBranch, traceId, false);
+  }
+
+  /** Contract-entry policy only; callers cannot opt in through a request DTO. */
+  async createForSales(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+    traceId?: string,
+    registrationKey?: string,
+  ) {
+    const salesActor = this.salesEntryActor(actor);
+    if (input.kind !== 'person') throw new BadRequestException();
+    return this.createRecord(
+      input,
+      salesActor,
+      requestedBranch,
+      traceId,
+      true,
+      true,
+      registrationKey,
+    );
+  }
+
+  /** Called only after Sales authorizes an available historical completion. */
+  async createForSalesCompletion(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+  ) {
+    const salesActor = this.salesEntryActor(actor);
+    if (input.kind !== 'person') throw new BadRequestException();
+    return this.createRecord(
+      input,
+      salesActor,
+      undefined,
+      undefined,
+      true,
+      true,
+    );
+  }
+
+  private async createRecord(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch: string | undefined,
+    traceId: string | undefined,
+    nationalIdOptional: boolean,
+    birthDateOptional = false,
+    registrationKey?: string,
+  ) {
     this.assertMutationFields(input, actor);
     let row;
     try {
-      row = await this.repository.create(
-        prepareMutation(
-          input,
-          false,
-          input.kind === 'person' && input.nationalId
-            ? this.nationalIdProtector.protect(input.nationalId)
-            : undefined,
-          input.kind === 'person' && input.passportNumber
-            ? this.nationalIdProtector.protectPassportNumber(
-                input.passportNumber,
-              )
-            : undefined,
-        ),
-        actor.userId,
-        branchOf(actor, requestedBranch),
-        traceId,
+      const data = prepareMutation(
+        input,
+        false,
+        input.kind === 'person' && input.nationalId
+          ? this.nationalIdProtector.protect(input.nationalId)
+          : undefined,
+        input.kind === 'person' && input.passportNumber
+          ? this.nationalIdProtector.protectPassportNumber(input.passportNumber)
+          : undefined,
+        nationalIdOptional,
+        birthDateOptional,
       );
+      const branch = branchOf(actor, requestedBranch);
+      row = registrationKey
+        ? await this.repository.createSalesRegistration(
+            data,
+            actor.userId,
+            branch,
+            registrationKey,
+            createHash('sha256')
+              .update(
+                JSON.stringify(
+                  Object.fromEntries(
+                    Object.entries(input).sort(([a], [b]) =>
+                      a.localeCompare(b),
+                    ),
+                  ),
+                ),
+              )
+              .digest('hex'),
+            traceId,
+          )
+        : await this.repository.create(data, actor.userId, branch, traceId);
     } catch (error) {
       if (prismaCode(error) === 'P2003')
         throw new BadRequestException({

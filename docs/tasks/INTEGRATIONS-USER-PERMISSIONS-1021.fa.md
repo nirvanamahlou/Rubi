@@ -50,3 +50,7 @@ Schema، Migration، Seed، Dependency/Lockfile، تنظیمات Docker و دا�
 ## اعتبارسنجی
 
 ۱۱۹ تست هدفمند موفق‌اند: ۱۳ قرارداد، ۳۵ رابط یکپارچه‌سازی/مدیریت کاربران، ۶۲ API/IAM و ۹ ترجمه. ESLint محدوده، typecheck قرارداد/API/Web، build تولیدی API/Web با ۶۵ مسیر، همگام‌سازی ترجمه و format موفق‌اند. خروجی قدیمی Prisma از Schema موجود با URL نمونه بدون اتصال به دیتابیس بازتولید شد؛ Migration یا تغییر داده انجام نشد. آزمون تعاملی مرورگر روی runtime به‌روزشده در محدوده این واحد نیست؛ پوشش UI از تست render و مسیر ذخیره موجود انجام می‌شود.
+
+## انتشار مجاز
+
+کاربر در ادامه صریحاً Push، CI، PR و Merge به PC-D-Integration و سپس develop را مجاز کرد. [PR1028](https://github.com/nirvanamahlou/Rubi/pull/1028) پس از موفقیت هر ۱۰ بررسی GitHub روی `e031313f`، با Merge معمولی در `f6cd1cd0` ادغام شد. بازبینی دستی امنیت/سازگاری بدون مورد مسدودکننده بود؛ Review ثبت‌شده یا گفت‌وگوی حل‌نشده‌ای در GitHub وجود نداشت. شاخه انتقال `codex/pc-d-integrations-access-develop-1021` از همان نتیجه ایجاد و با `develop@93c7a2ea` هماهنگ شد. انتشار نهایی از PR انتقال و بررسی‌های همان Head پیگیری می‌شود؛ این مجوز شامل Deploy یا Docker نیست.

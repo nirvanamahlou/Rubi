@@ -20,7 +20,39 @@ describe('complete section selection', () => {
     expect(section.screenIds).toContain('integrations.home');
     expect(section.screenIds).toContain('system.module.integrations');
     expect(section.screenIds).toContain('integrations.section.connections');
-    expect(section.screenIds).toHaveLength(10);
+    expect([...section.screenIds].sort()).toEqual(
+      [
+        'integrations.home',
+        'system.module.integrations',
+        ...[
+          'brands',
+          'overview',
+          'connections',
+          'events',
+          'mapping',
+          'sync',
+          'health',
+          'logs',
+        ].map((id) => `integrations.section.${id}`),
+        ...['login', 'provision', 'analytics', 'publish'].map(
+          (id) => `integrations.niyayesh.${id}`,
+        ),
+        ...[
+          'tours',
+          'hotels',
+          'service-offers',
+          'visas',
+          'destinations',
+          'countries',
+          'airlines',
+          'categories',
+          'editorial-content',
+        ].map((id) => `integrations.niyayesh.manage.${id}`),
+        ...['hotels', 'tour-prices', 'tickets'].map(
+          (id) => `integrations.niyayesh.import.${id}`,
+        ),
+      ].sort(),
+    );
     expect(section.permissionCodes).not.toContain('iam.users.manage');
     expect(section.allowedControlIds).toContain(
       'field.system-settings.integrations.registry',

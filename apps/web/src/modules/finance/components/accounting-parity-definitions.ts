@@ -8,6 +8,7 @@ import { accountingParitySource4 } from './accounting-parity-source-4';
 export type AccountingParitySupport =
   'supported' | 'dependency' | 'source-error';
 export type AccountingParityImplementation =
+  | 'coding-standard'
   | 'configuration'
   | 'ledger'
   | 'accounts'
@@ -77,6 +78,8 @@ export interface AccountingParityDefinition {
 const implementationByRoute: Readonly<
   Record<string, AccountingParityImplementation>
 > = {
+  'general-ledger/reports/legal-reports/standards': 'coding-standard',
+  'general-ledger/reports/legal-reports/lists/standards': 'configuration-list',
   'general-ledger/base-information/fiscal-years': 'configuration',
   'general-ledger/base-information/ledgers': 'ledger',
   'general-ledger/base-information/voucher-types': 'configuration',
@@ -280,6 +283,72 @@ const menuOnlyCaptures: readonly AccountingParityCapture[] = [
 
 const explicitGaps: readonly AccountingParityCapture[] = [
   {
+    route: 'general-ledger/reports/legal-reports/lists/standards',
+    title: 'کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / فهرست ها / معرفی کدینگ استاندارد',
+    sourcePage:
+      'List.aspx?ComponentName=SystemGroup.Financial.CodingStandardManagement&EntityName=CodingStandard',
+    evidenceStatus: 'observed-layout',
+    fields: [],
+    columns: [
+      'عنوان کدینگ استاندارد',
+      'عنوان لاتین کدینگ استاندارد',
+      'عنوان پروتکل',
+      'نسخه پروتکل',
+      'استاندارد پیش فرض',
+    ],
+    actions: [
+      'جدید',
+      'ویرایش',
+      'حذف',
+      'بارگذاری مجدد',
+      'فیلتر',
+      'انتخاب چند رکورد',
+      'محاسبه تعداد رکوردها',
+      'چاپ',
+      'ارسال به Excel',
+    ],
+    blocker: '',
+    stage: 'فهرست کدینگ استاندارد',
+  },
+  {
+    route: 'general-ledger/reports/legal-reports/standards',
+    title: 'معرفی کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / معرفی کدینگ استاندارد',
+    sourcePage:
+      'Financial/CodingStandardManagement/CodingStandardPages/EditView.view',
+    evidenceStatus: 'observed-layout',
+    fields: [
+      'عنوان کدینگ استاندارد',
+      'عنوان لاتین کدینگ استاندارد',
+      'نسخه پروتکل',
+    ].map((label) => ({ label, type: 'text', disabled: false })),
+    columns: [
+      'شماره قلم',
+      'عنوان موجودیت استاندارد',
+      'عنوان لاتین موجودیت استاندارد',
+      'موجودیت سیستمی',
+      'مرجع جزئیات',
+      'عنوان فیلد',
+      'مقدار فیلد',
+      'شرح فیلد',
+    ],
+    actions: [
+      'جدید',
+      'باز کردن',
+      'ذخیره',
+      'عملیات کپی',
+      'افزودن',
+      'حذف',
+      'جستجو',
+    ],
+    blocker:
+      'درخت در فرم معرفی خالی دیده شد؛ کدهای استاندارد در فرم نگاشت قابل مشاهده‌اند. ویرایش کد از فرم معرفی هنوز مشاهده نشده است.',
+    stage: 'اطلاعات اصلی و فیلدهای تکمیلی',
+  },
+  {
     route: 'general-ledger/reports/legal-reports',
     title: 'گزارش‌های قانونی',
     sourcePath: 'مالی / دفتر کل / گزارش ها / گزارش های قانونی',
@@ -289,7 +358,7 @@ const explicitGaps: readonly AccountingParityCapture[] = [
     columns: [],
     actions: [],
     blocker:
-      'منوی منبع صفحه مستقلی را اثبات نکرد و alias مشاهده‌شده متعلق به دفاتر تجاری الکترونیکی بود',
+      'زیرمنوی مستقل شامل معرفی کدینگ استاندارد، نگاشت کدهای استاندارد، گزارش کدینگ استاندارد، فرمول کدینگ استاندارد و صحت سنجی کنترل است؛ پیاده‌سازی این فرم‌ها هنوز کامل نشده است',
     stage: 'گزارش‌های قانونی',
   },
   {
@@ -382,7 +451,7 @@ for (const capture of [
   definitions.set(capture.route, {
     route: capture.route,
     title:
-      capture.title === 'خطا' || capture.stage === 'خطا'
+      capture.title.startsWith('خطا') || capture.stage === 'خطا'
         ? capture.sourcePath.split('/').at(-1)!.trim()
         : capture.title,
     sourcePath: capture.sourcePath,

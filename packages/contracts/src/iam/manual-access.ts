@@ -1,5 +1,6 @@
 /** Stored only in an exclusive per-user role. Never inferred from a job title. */
 export * from './call-center-access';
+export * from './manual-access-prerequisites';
 export const MANUAL_ACCESS_VERSION = 'ui.manual.v3' as const;
 export const MANUAL_ACCESS_ROLE_PREFIX = 'manual-access-v3-' as const;
 export const MANUAL_NEW_PERMISSIONS = [
@@ -59,6 +60,7 @@ export function manualSectionForScreen(screen: {
   group: string;
   route: string;
 }) {
+  if (screen.group === 'integrations') return 'integrations';
   if (screen.route === '/customer-affairs/call-center') return 'call-center';
   if (screen.route.startsWith('/sales/ticket-prices')) return 'flight-pricing';
   if (screen.route.startsWith('/sales/pricing')) return 'packages';

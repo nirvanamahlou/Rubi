@@ -84,3 +84,27 @@ export async function callCenterTaskRevision(
   });
   return [result._count, result._max.updatedAt?.toISOString() ?? '', overdue];
 }
+
+/** Public task facts: current backlog, bounded and scoped; no private task payload. */
+export async function callCenterExpertTasks(
+  tx: Prisma.TransactionClient,
+  branchId: string,
+  users: string[] | null,
+) {
+  const rows = await tx.automationTask.findMany({
+    where: {
+      branchId,
+      sourceModule: 'CALL_CENTER',
+      status: 'OPEN',
+      ...(users === null ? {} : { assigneeUserId: { in: users } }),
+    },
+    select: { assigneeUserId: true, dueAt: true },
+    orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+    take: 10001,
+  });
+  if (rows.length > 10000) throw new Error('EXPERT_TASK_LIMIT');
+  return rows.map((r) => ({
+    ownerId: r.assigneeUserId,
+    dueAt: r.dueAt?.toISOString() ?? null,
+  }));
+}

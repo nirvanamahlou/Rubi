@@ -1,3 +1,9 @@
+vi.mock('../../finance/accounting/sales-contract-accounting.public', () => ({
+  captureSalesContractAccounting: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../finance/accounting/accounting-workflows.public', () => ({
+  assertRevenueEditable: vi.fn().mockResolvedValue(undefined),
+}));
 import { it, expect, vi } from 'vitest';
 import { Prisma } from '@nora/database';
 import {
@@ -170,3 +176,82 @@ it('reuses one correction row and consolidates previous corrections without addi
 vi.mock('../sales-financial-settlement', () => ({
   recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
 }));
+
+it('allows own-contract price amendment while rechecking ownership in the write transaction', async () => {
+  const row = {
+    id: 'c',
+    ownerUserId: 'u',
+    branchId: 'b',
+    version: 2,
+    status: 'CONFIRMED',
+    priceComponents: [
+      { type: 'BASE', currencyCode: 'IRR', amount: new Prisma.Decimal('100') },
+    ],
+  };
+  const tx = {
+    salesContract: {
+      findFirst: vi.fn().mockResolvedValue(row),
+      updateMany: vi.fn(),
+    },
+  };
+  const db = {
+    client: {
+      salesContract: tx.salesContract,
+      $transaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) =>
+        fn(tx),
+      ),
+    },
+  };
+  const service = new ContractPriceCorrectionService(
+    db as never,
+    { canCorrectContractPrice: async () => false } as never,
+  );
+  const creator = {
+    userId: 'u',
+    branchIds: ['b'],
+    permissions: ['sales.contracts.create'],
+  } as never;
+  await expect(service.form('c', creator)).resolves.toMatchObject({
+    version: 2,
+  });
+  await expect(
+    service.save(
+      'c',
+      {
+        expectedVersion: 2,
+        totals: [{ currencyCode: 'IRR', amount: '100' }],
+        reason: 'Synthetic review',
+      },
+      creator,
+    ),
+  ).resolves.toMatchObject({ version: 2 });
+  tx.salesContract.findFirst.mockResolvedValue({
+    ...row,
+    ownerUserId: 'other',
+  });
+  await expect(service.form('c', creator)).rejects.toThrow('مجوز');
+  await expect(
+    service.save(
+      'c',
+      {
+        expectedVersion: 2,
+        totals: [{ currencyCode: 'IRR', amount: '90' }],
+        reason: 'Synthetic review',
+      },
+      creator,
+    ),
+  ).rejects.toThrow('مجوز');
+  tx.salesContract.findFirst.mockResolvedValue({ ...row, branchId: 'other' });
+  await expect(
+    service.save(
+      'c',
+      {
+        expectedVersion: 2,
+        totals: [{ currencyCode: 'IRR', amount: '90' }],
+        reason: 'Synthetic review',
+      },
+      creator,
+    ),
+  ).rejects.toThrow('مجوز');
+  expect(tx.salesContract.updateMany).not.toHaveBeenCalled();
+});

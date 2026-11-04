@@ -1,4 +1,7 @@
+import { ticketOfferRoutes } from './ticket-sale-routes';
+import type { TicketSaleRouteV1 } from './index';
 export interface ReturnWindowOffer {
+  saleRoutes?: readonly TicketSaleRouteV1[];
   originId: string;
   destinationId: string;
   departureAt: string | Date;
@@ -50,8 +53,11 @@ export function eligibleTicketReturn(
   returning: ReturnWindowOffer,
 ) {
   if (
-    outbound.originId !== returning.destinationId ||
-    outbound.destinationId !== returning.originId ||
+    !ticketOfferRoutes(outbound).some((a) =>
+      ticketOfferRoutes(returning).some(
+        (b) => a.originId === b.destinationId && a.destinationId === b.originId,
+      ),
+    ) ||
     new Date(returning.departureAt) < new Date(outbound.arrivalAt) ||
     new Date(returning.departureAt) <= new Date(outbound.departureAt)
   )

@@ -195,3 +195,44 @@ describe('contract counterparty correction', () => {
     expect(s.tx.salesContract.updateMany).not.toHaveBeenCalled();
   });
 });
+
+it.each(['', '   '])(
+  'accepts an optional empty postal code %j during contact correction',
+  async (postalCode) => {
+    const s = setup();
+    await s.service.correct(
+      'contract',
+      {
+        ...input,
+        buyerContact: {
+          name: 'Synthetic Person',
+          phone: '09120000000',
+          address: 'Synthetic Address',
+          postalCode,
+        },
+      },
+      actor,
+    );
+    expect(s.tx.salesContract.updateMany).toHaveBeenCalledOnce();
+    expect(s.crypto.protect).toHaveBeenCalled();
+  },
+);
+it('still rejects a supplied invalid postal code', async () => {
+  const s = setup();
+  await expect(
+    s.service.correct(
+      'contract',
+      {
+        ...input,
+        buyerContact: {
+          name: 'Synthetic Person',
+          phone: '09120000000',
+          address: 'Synthetic Address',
+          postalCode: '123',
+        },
+      },
+      actor,
+    ),
+  ).rejects.toThrow();
+  expect(s.tx.salesContract.updateMany).not.toHaveBeenCalled();
+});

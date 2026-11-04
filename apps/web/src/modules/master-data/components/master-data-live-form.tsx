@@ -1,6 +1,7 @@
 'use client';
 import { hotelMultilineFields } from '../model/hotel-profile-fields';
 import { MasterDataBrokerForm } from './master-data-broker-form';
+import { MasterDataCompositeHotelForm } from './master-data-composite-hotel-form';
 
 import {
   isMasterTransportFormResource,
@@ -183,6 +184,15 @@ export function partnerPersistValues(
 export function MasterDataLiveForm(
   props: Parameters<typeof GenericMasterDataLiveForm>[0],
 ) {
+  if (props.definition.key === 'composite-hotels')
+    return props.open ? (
+      <MasterDataCompositeHotelForm
+        mode={props.mode}
+        onOpenChange={props.onOpenChange}
+        onPersist={props.onPersist}
+        {...(props.record ? { record: props.record } : {})}
+      />
+    ) : null;
   if (props.definition.key === 'brokers')
     return props.open ? (
       <MasterDataBrokerForm
@@ -628,6 +638,7 @@ function GenericMasterDataLiveForm({
                     aria-invalid={Boolean(error)}
                     disabled={readonly || saving}
                     dir={
+                      field.key === 'gmtOffset' ||
                       field.key.toLowerCase().includes('code')
                         ? 'ltr'
                         : undefined

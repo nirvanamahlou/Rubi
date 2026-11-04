@@ -70,3 +70,92 @@ describe('flight ticket placement and English carrier', () => {
     ).toContain('&lt;img onerror=bad&gt;');
   });
 });
+
+it('uses the airport city and IATA instead of the commercial route city on the ticket', () => {
+  const original = structuredClone(data);
+  const html = ticketPageHtml(
+    {
+      ...data,
+      offers: [
+        {
+          ...flight,
+          destinationAirport: {
+            code: 'GZP',
+            name: 'Gazipasa Airport',
+            cityName: 'Gazipasa',
+          },
+        },
+      ],
+    },
+    { teh: 'Tehran', ayt: 'Commercial Antalya' },
+    { name: 'Test', logoDataUrl: '' },
+  );
+  expect(html).toContain('Gazipasa');
+  expect(html).toContain('GZP');
+  expect(html).not.toContain('Commercial Antalya');
+  expect(data).toEqual(original);
+});
+
+it('displays ARRIVAL/DEPARTURE without changing leg direction, route or source data', () => {
+  const before = structuredClone(data);
+  const html = ticketPageHtml(data, cities, brand, airlines);
+  expect(html).toContain('class="leg outbound"');
+  expect(html).toContain('<strong>ARRIVAL</strong>');
+  expect(html).toContain('class="leg return"');
+  expect(html).toContain('<strong>DEPARTURE</strong>');
+  expect(html).not.toContain('<strong>OUTBOUND</strong>');
+  expect(html).not.toContain('<strong>RETURN</strong>');
+  expect(data).toEqual(before);
+  const returningOnly = ticketPageHtml(
+    { ...data, offers: [data.offers[1]!] },
+    cities,
+    brand,
+    airlines,
+  );
+  expect(returningOnly).toContain('<strong>DEPARTURE</strong>');
+  expect(returningOnly).not.toContain('<strong>ARRIVAL</strong>');
+});
+it('uses Latin digits for every displayed value including Persian/Arabic legacy numbers in a Persian UI', () => {
+  const original = {
+    ...data,
+    contractNumber: '۱۲۰۱۲۸',
+    eTicketNumber: '١٠٠٠٠٠',
+    issuedAt: '2026-10-27T10:00:00Z',
+    offers: data.offers.map((o) => ({
+      ...o,
+      serviceNumber: '۹۷۴۰',
+      baggageKg: '٢٠',
+    })),
+  };
+  const before = structuredClone(original);
+  const html = ticketDocumentHtml([original], cities, brand, airlines);
+  expect(html).toContain('120128');
+  expect(html).toContain('100000');
+  expect(html).toContain('9740');
+  expect(html).toContain('20 KG');
+  expect(html).toContain('27 OCT 2026');
+  expect(html).toContain('21:20');
+  expect(html).not.toMatch(/[\u0660-\u0669\u06f0-\u06f9]/);
+  expect(html).toContain('font-family:TicketLatin,');
+  expect(html).toContain('vazirmatn-latin-wght-normal.woff2');
+  expect(original).toEqual(before);
+});
+
+it('allows explicitly logo-free ticket documents, keeps airline marks, and retains strict logo validation otherwise', () => {
+  const airlineLogo = 'data:image/png;base64,c2FmZQ==';
+  const html = ticketDocumentHtml(
+    [data],
+    cities,
+    { name: 'Issuer', logoDataUrl: '', withoutLogo: true },
+    { 'ایران ایرتور': { name: 'Iran Airtour', logoDataUrl: airlineLogo } },
+  );
+  expect(html).not.toContain('class="agency-logo"');
+  expect(html).toContain('class="airline-logo"');
+  expect(html).toContain('Synthetic Passenger');
+  expect(() =>
+    ticketDocumentHtml([data], cities, { name: 'Issuer', logoDataUrl: '' }),
+  ).toThrow('TICKET_LOGO_INVALID');
+  expect(
+    ticketPageHtml(data, cities, { ...brand, withoutLogo: true }),
+  ).not.toContain('class="agency-logo"');
+});

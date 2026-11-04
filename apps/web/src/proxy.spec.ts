@@ -2,6 +2,27 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 import { config, proxy } from './proxy';
 describe('Reauthentication and local build verification', () => {
+  it.each([
+    '/sales/contracts/new',
+    '/reservations?section=hotel',
+    '/ticket-purchases',
+  ])('lets the shell recover an expired access cookie on %s', (route) => {
+    const response = proxy(
+      new NextRequest(`http://localhost:3116${route}`, {
+        headers: { cookie: 'nora_refresh=opaque-refresh-cookie' },
+      }),
+    );
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+  it('does not treat a refresh cookie as API authentication', () => {
+    const response = proxy(
+      new NextRequest('http://localhost:3116/api/assistant/executive', {
+        headers: { cookie: 'nora_refresh=opaque-refresh-cookie' },
+      }),
+    );
+    expect(response.status).toBe(401);
+  });
   it('returns uncached JSON401 for assistant fetches instead of HTML login redirects', async () => {
     for (const path of [
       '/api/assistant/executive',

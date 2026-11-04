@@ -6,6 +6,7 @@ import {
   Clock3,
   FileText,
   RefreshCw,
+  Trash2,
   UserRound,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -40,6 +41,8 @@ export function WorkbenchOwnRequests() {
   const [selected, setSelected] = useState<WorkbenchRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [removing, setRemoving] = useState<string | null>(null);
+  const removed = useRef(new Set<string>());
   const [refresh, setRefresh] = useState(0);
   const [mode, setMode] = useState<'all' | 'incoming' | 'outgoing'>('all');
   const params = useSearchParams();
@@ -52,7 +55,7 @@ export function WorkbenchOwnRequests() {
         .workbenchRequests()
         .then(({ data }) => {
           if (active) {
-            setRows(data);
+            setRows(data.filter((row) => !removed.current.has(row.id)));
             setError('');
             if (requestedId && openedRequest.current !== requestedId) {
               const request = data.find((row) => row.id === requestedId);
@@ -203,6 +206,35 @@ export function WorkbenchOwnRequests() {
               </div>
             </div>
             <div className="flex items-center justify-between gap-2 border-t border-primary/10 bg-primary/5 px-5 py-3 text-xs text-muted-foreground">
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={removing !== null}
+                aria-label={`حذف درخواست ${row.subject}`}
+                onClick={async () => {
+                  setRemoving(row.id);
+                  try {
+                    await customerAffairsApi.removeWorkbenchRequest(row.id);
+                    removed.current.add(row.id);
+                    setRows((current) =>
+                      current.filter((item) => item.id !== row.id),
+                    );
+                    if (selected?.id === row.id) setSelected(null);
+                    setError('');
+                  } catch (reason) {
+                    setError(
+                      reason instanceof Error
+                        ? reason.message
+                        : 'حذف درخواست انجام نشد.',
+                    );
+                  } finally {
+                    setRemoving(null);
+                  }
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+                حذف
+              </Button>
               <span>موعد اقدام: {workbenchDate(row.nextActionAt)}</span>
               <Button
                 size="sm"

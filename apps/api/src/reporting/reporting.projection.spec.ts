@@ -46,6 +46,135 @@ function fact(overrides: Partial<ReportingFactRow> = {}): ReportingFactRow {
 }
 
 describe('travel reporting approved projection', () => {
+  it('keeps cancelled pipeline rows separate without adding them or drafts to confirmed sales totals', () => {
+    const input = {
+      code: 'sales_contract_pipeline',
+      query: {
+        filters: {},
+        page: 1,
+        pageSize: 1,
+        timezone: 'Asia/Tehran' as const,
+      },
+      now: new Date(),
+      facts: [
+        fact({ id: 'active', salesAmount: new Prisma.Decimal(100) }),
+        fact({
+          id: 'cancelled',
+          orderNumber: 'cancelled',
+          orderStatus: 'CANCELLED',
+          salesAmount: new Prisma.Decimal(900),
+        }),
+        fact({
+          id: 'draft',
+          orderNumber: 'draft',
+          orderStatus: 'DRAFT',
+          salesAmount: new Prisma.Decimal(50),
+        }),
+      ],
+    };
+    const preview = buildTravelReportResult(input);
+    const exported = buildTravelReportResult({
+      ...input,
+      includeAllRows: true,
+    });
+    expect(
+      exported.rows.some(
+        (row) =>
+          row.primaryDimension === 'CANCELLED' && row.salesAmount === '900',
+      ),
+    ).toBe(true);
+    expect(exported.totalsByCurrency[0]?.salesAmount).toBe('100');
+    expect(preview.totalsByCurrency).toEqual(exported.totalsByCurrency);
+    for (const code of [
+      'sales_by_organization',
+      'sales_by_service_route',
+      'route_passengers',
+      'contract_service_profit',
+      'agency_performance',
+      'lead_to_order_conversion',
+    ]) {
+      const result = buildTravelReportResult({
+        ...input,
+        code,
+        facts: input.facts.slice(0, 2),
+        includeAllRows: true,
+      });
+      expect(result.totalsByCurrency[0]?.salesAmount).toBe('100');
+    }
+    const cancelledOnly = buildTravelReportResult({
+      ...input,
+      facts: [input.facts[1]!],
+    });
+    expect(cancelledOnly.total).toBe(1);
+    expect(cancelledOnly.totalsByCurrency).toEqual([]);
+  });
+  it('excludes issued, unpaid, cancelled and unknown issuance before preview/export reconciliation', () => {
+    const input = {
+      code: 'paid_not_issued',
+      query: {
+        filters: {},
+        page: 1,
+        pageSize: 1,
+        timezone: 'Asia/Tehran' as const,
+      },
+      facts: [
+        fact({
+          id: 'pending-paid',
+          issueStatus: 'PENDING',
+          salesAmount: new Prisma.Decimal(100),
+        }),
+        fact({
+          id: 'failed-paid',
+          issueStatus: 'FAILED',
+          providerName: 'تأمین‌کننده دوم',
+          salesAmount: new Prisma.Decimal(200),
+        }),
+        fact(),
+        fact({ issueStatus: 'PENDING', paymentStatus: 'UNPAID' }),
+        fact({ issueStatus: 'PENDING', orderStatus: 'CANCELLED' }),
+        fact({ issueStatus: 'UNKNOWN' }),
+      ],
+      now: new Date('2026-10-27T10:00:00Z'),
+    };
+    const preview = buildTravelReportResult(input);
+    const exported = buildTravelReportResult({
+      ...input,
+      includeAllRows: true,
+    });
+    expect(preview.total).toBe(2);
+    expect(preview.rows).toHaveLength(1);
+    expect(exported.rows).toHaveLength(2);
+    expect(preview.totalsByCurrency[0]?.salesAmount).toBe('300');
+    expect(exported.totalsByCurrency).toEqual(preview.totalsByCurrency);
+    expect(preview.reconciliation.sourceRowCount).toBe(2);
+  });
+
+  it('keeps failure and cancellation/refund reports on their actual eligible populations', () => {
+    const input = {
+      query: {
+        filters: {},
+        page: 1,
+        pageSize: 20,
+        timezone: 'Asia/Tehran' as const,
+      },
+      facts: [
+        fact({ id: 'ordinary' }),
+        fact({ id: 'error', reservationStatus: 'ERROR' }),
+        fact({ id: 'cancelled', reservationStatus: 'CANCELLED' }),
+        fact({ id: 'refunded', refundAmount: new Prisma.Decimal(500) }),
+      ],
+      now: new Date('2026-10-27T10:00:00Z'),
+    };
+    expect(
+      buildTravelReportResult({ ...input, code: 'reservation_errors' })
+        .reconciliation.sourceRowCount,
+    ).toBe(1);
+    expect(
+      buildTravelReportResult({ ...input, code: 'cancellations_refunds' })
+        .reconciliation.sourceRowCount,
+    ).toBe(2);
+  });
+
   it('keeps money at order-item currency grain while passenger and segment counts vary', () => {
     const result = buildTravelReportResult({
       code: 'sales_by_service_route',
@@ -99,10 +228,11 @@ describe('travel reporting approved projection', () => {
       code: 'paid_not_issued',
       query: { filters: {}, page: 1, pageSize: 20, timezone: 'Asia/Tehran' },
       facts: [
-        fact({ reservationStatus: 'QUEUED' }),
+        fact({ reservationStatus: 'QUEUED', issueStatus: 'PENDING' }),
         fact({
           id: 'fact-2',
           reservationStatus: 'PARTIALLY_FULFILLED',
+          issueStatus: 'PENDING',
           salesAmount: new Prisma.Decimal(3_000_000),
         }),
       ],

@@ -10,6 +10,7 @@ import { DatabaseService } from '../database/database.service';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { CallCenterAccessService } from './call-center-access.service';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import type { CallCenterOwnerDto } from './call-center-owner.dto';
 
 @Injectable()
@@ -45,9 +46,11 @@ export class CallCenterOwnerService {
     const canChange = actor.permissions.includes(
       'customer_affairs.call_center.owner.change',
     );
-    if (row.ownerUserId || !canAssign)
+    if (answeredCallAccess() || row.ownerUserId || !canAssign)
       await this.access.contact(actor, branchId, id);
-    const users = await this.teams.callCenterTeam(actor, branchId);
+    const users =
+      (await this.access.users(actor, branchId, 'workflow')) ??
+      (await this.directory.list(branchId)).map((user) => user.id);
     return {
       data: {
         ownerUserId: row.ownerUserId,
@@ -81,9 +84,11 @@ export class CallCenterOwnerService {
         : 'customer_affairs.call_center.owner.assign';
       if (!actor.permissions.includes(permission))
         throw new ForbiddenException();
-      if (row.ownerUserId)
+      if (answeredCallAccess() || row.ownerUserId)
         await this.access.contact(actor, branchId, id, 'contacts', tx);
-      const team = await this.teams.callCenterTeam(actor, branchId, tx);
+      const team =
+        (await this.access.users(actor, branchId, 'workflow', tx)) ??
+        (await this.directory.list(branchId, tx)).map((user) => user.id);
       if (!team.includes(input.ownerUserId))
         throw new ForbiddenException(
           'مسئول باید عضو فعال واحد سازمانی شما در همین شعبه باشد.',

@@ -2,28 +2,39 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { groupPurchaseFx } from './summary';
 import { purchaseFxPaymentPreview } from './payment-preview';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import { Button } from '@/components/ui/button';
 import type { FinancePurchaseFxV1 } from '@nora/contracts';
 
-async function fxRequest(path: string, body?: unknown) {
+async function fxRequest(path: string, body?: unknown, purchaseRoot?: string) {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('ارتباط با سامانه برقرار نیست.');
   const send = () =>
-    localizedFetch(base + '/finance/' + path, {
-      method: body ? 'POST' : 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-      ...(body
-        ? {
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          }
-        : {}),
-    });
+    localizedFetch(
+      base +
+        (purchaseRoot
+          ? '/' +
+            purchaseRoot +
+            '/fx?currency=' +
+            encodeURIComponent(
+              new URLSearchParams(path.split('?')[1]).get('currency') ?? '',
+            )
+          : '/finance/' + path),
+      {
+        method: body ? 'POST' : 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+        ...(body
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }
+          : {}),
+      },
+    );
   let response = await send();
   if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await send();
@@ -32,47 +43,15 @@ async function fxRequest(path: string, body?: unknown) {
     throw new Error(result?.message || 'ثبت نرخ ارز انجام نشد.');
   return result.data;
 }
-export function PurchaseFxRate({
-  currencyCode,
-  value,
-  onChange,
-}: {
+/** Purchase entry no longer collects or suggests FX; Finance owns later capture. */
+export function PurchaseFxRate(props: {
   currencyCode: string;
+  purchaseRoot?: string | undefined;
   value: string;
   onChange: (currency: string, value: string, suggested?: boolean) => void;
 }) {
-  const [error, setError] = useState('');
-  useEffect(() => {
-    if (!currencyCode || currencyCode === 'IRR' || value) return;
-    let active = true;
-    void fxRequest(
-      'purchase-fx-quote?currency=' + encodeURIComponent(currencyCode),
-    )
-      .then((data) => {
-        if (active && data) onChange(currencyCode, data.rateToIrr, true);
-      })
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error ? cause.message : 'نرخ ارز در دسترس نیست.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [currencyCode, value, onChange]);
-  if (!currencyCode || currencyCode === 'IRR') return null;
-  return (
-    <label className="grid gap-1 text-xs">
-      نرخ مبنای خرید · ریال برای هر {currencyCode}
-      <MoneyInput
-        aria-label="نرخ مبنای خرید"
-        value={value}
-        onValueChange={(rate) => onChange(currencyCode, rate)}
-      />
-      {error && <span role="status">{error}</span>}
-    </label>
-  );
+  void props;
+  return null;
 }
 const rial = (value: string | null) =>
   value === null ? '—' : `${formatSalesMoney(value)} ریال`;
@@ -116,9 +95,11 @@ export function PurchaseFxSummary({
 export function PurchaseFxCapture({
   entry,
   onSaved,
+  referenceIds,
 }: {
   entry: FinancePurchaseFxV1;
   onSaved: () => void;
+  referenceIds?: readonly string[];
 }) {
   const [rate, setRate] = useState(''),
     [busy, setBusy] = useState(false),
@@ -139,7 +120,10 @@ export function PurchaseFxCapture({
           try {
             await fxRequest(
               'purchase-fx/' + encodeURIComponent(entry.referenceId),
-              { rateToIrr: rate },
+              {
+                rateToIrr: rate,
+                ...(referenceIds?.length ? { referenceIds } : {}),
+              },
             );
             onSaved();
           } catch (cause) {
@@ -155,6 +139,34 @@ export function PurchaseFxCapture({
       </Button>
       {error && <p role="alert">{error}</p>}
     </div>
+  );
+}
+
+export function PurchaseFxCaptures({
+  entries,
+  onSaved,
+}: {
+  entries?: readonly FinancePurchaseFxV1[] | undefined;
+  onSaved: () => void;
+}) {
+  const groups = new Map<string, FinancePurchaseFxV1[]>();
+  for (const entry of entries ?? [])
+    if (!entry.rateToIrr)
+      groups.set(entry.currencyCode, [
+        ...(groups.get(entry.currencyCode) ?? []),
+        entry,
+      ]);
+  return (
+    <>
+      {[...groups].map(([currency, rows]) => (
+        <PurchaseFxCapture
+          key={currency}
+          entry={rows[0]!}
+          referenceIds={rows.slice(1).map((row) => row.referenceId)}
+          onSaved={onSaved}
+        />
+      ))}
+    </>
   );
 }
 

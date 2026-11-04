@@ -27,6 +27,7 @@ export function MasterDataLogoImage({
   } | null>(null);
   const [errorState, setErrorState] = useState<{
     key: string;
+    kind: 'error' | 'pending';
     message: string;
   } | null>(null);
   const [retry, setRetry] = useState(0);
@@ -38,7 +39,14 @@ export function MasterDataLogoImage({
     ? `local:${file.name}:${file.size}:${file.lastModified}`
     : `${resource}/${recordId}/${documentId}`;
   const url = imageState?.key === imageKey ? imageState.url : null;
-  const error = errorState?.key === imageKey ? errorState.message : '';
+  const issue = errorState?.key === imageKey ? errorState : null;
+  const error = issue?.message ?? '';
+  const logoName = record?.name ?? 'انتخاب‌شده';
+  const fallbackLabel = issue
+    ? issue.kind === 'pending'
+      ? `لوگوی ${logoName} در حال بررسی امنیتی است.`
+      : `نمایش لوگوی ${logoName} ممکن نیست: ${issue.message}`
+    : `در حال دریافت لوگوی ${logoName}`;
 
   useEffect(() => {
     if (
@@ -75,6 +83,7 @@ export function MasterDataLogoImage({
             scanRetries += 1;
             setErrorState({
               key: imageKey,
+              kind: 'pending',
               message:
                 'لوگو در حال بررسی امنیتی است؛ نمایش آن خودکار انجام می‌شود.',
             });
@@ -83,6 +92,7 @@ export function MasterDataLogoImage({
           }
           setErrorState({
             key: imageKey,
+            kind: 'error',
             message:
               caught instanceof Error
                 ? caught.message
@@ -110,6 +120,16 @@ export function MasterDataLogoImage({
           className={`${className} rounded-lg border border-border object-contain`}
           src={url}
         />
+      ) : null}
+      {!url && !showError ? (
+        <span
+          aria-label={fallbackLabel}
+          className={`${className} inline-flex items-center justify-center rounded-lg bg-muted/50 text-xs font-black text-muted-foreground`}
+          role="status"
+          title={fallbackLabel}
+        >
+          <span aria-hidden="true">{issue?.kind === 'error' ? '!' : '…'}</span>
+        </span>
       ) : null}
       {error && showError ? (
         <div

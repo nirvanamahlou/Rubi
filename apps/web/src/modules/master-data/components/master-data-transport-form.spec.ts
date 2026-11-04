@@ -44,7 +44,7 @@ const expected = {
     'unit',
     'pieceCount',
   ],
-  'rail-companies': ['name', 'englishName', 'countryId', 'organizationId'],
+  'rail-companies': ['name', 'englishName', 'countryId'],
   'train-types': [
     'name',
     'englishName',

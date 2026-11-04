@@ -106,6 +106,8 @@ export interface SystemContractTemplateDocumentResult {
 }
 
 const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
+// Server-only capability: never accepted from a DTO or HTTP query.
+const masterDataLogoScanExemption = Symbol('master-data-logo-antivirus-exempt');
 
 function masterDataLogoMarker(file: UploadedDocumentFile): string {
   const bytes = createHash('sha256')
@@ -279,6 +281,15 @@ function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
 }
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
+// Preview is a raster-only, authenticated delivery path; scan status is unchanged.
+function imagePreviewScanAllowed(status: string): boolean {
+  return [
+    'CLEAN',
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ].includes(status);
+}
 const scrypt = promisify(scryptCallback);
 
 const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
@@ -331,6 +342,8 @@ function mapListItem(
     archiveCode: hasConfidentialAccessCode ? 'DOC-••••••' : row.archiveCode,
     title: revealMetadata ? row.title : 'سند محرمانه ••••••',
     description: revealMetadata ? row.description : null,
+    senderName: revealMetadata ? row.senderName : null,
+    isIncomingLetter: row.isIncomingLetter,
     type: revealMetadata
       ? row.documentType
       : {
@@ -877,20 +890,37 @@ export class DocumentsService {
     if (file.size < 1 || file.size > MASTER_DATA_LOGO_MAX_BYTES)
       throw new BadRequestException('حجم لوگو باید حداکثر ۵ مگابایت باشد.');
 
-    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    let values = await this.repository.options(actor.branchIds, ['BRAND']);
     const branch = input.branchId
       ? values.branches.find((item) => item.id === input.branchId)
       : values.branches[0];
     const owner = values.owners.find((item) => item.id === actor.userId);
+    if (!branch || !owner)
+      throw new ForbiddenException(
+        'شعبه یا مالک مجاز برای بارگذاری لوگو مشخص نیست.',
+      );
+    if (
+      !values.documentTypes.some(
+        (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+      ) ||
+      !values.categories.some((item) => item.code === 'BRAND_ASSETS')
+    ) {
+      if (
+        !(await this.repository.ensureMasterDataLogoReferences(
+          actor.userId,
+          branch.id,
+        ))
+      )
+        throw new ForbiddenException('مالک در شعبه انتخاب‌شده معتبر نیست.');
+      values = await this.repository.options(actor.branchIds, ['BRAND']);
+    }
     const documentType = values.documentTypes.find(
       (item) => item.code === 'BRAND_ASSET_TEMPLATE',
     );
     const category = values.categories.find(
       (item) => item.code === 'BRAND_ASSETS',
     );
-    if (!branch)
-      throw new ForbiddenException('شعبه مجاز برای بارگذاری لوگو مشخص نیست.');
-    if (!owner || !documentType || !category)
+    if (!documentType || !category)
       throw new ConflictException(
         'پیش‌نیاز بارگذاری لوگو در آرشیو اسناد کامل نیست.',
       );
@@ -915,7 +945,10 @@ export class DocumentsService {
         actor.userId,
       )
     ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
-    if (duplicate?.currentVersion) {
+    if (
+      duplicate?.currentVersion &&
+      !['INFECTED', 'QUARANTINED'].includes(duplicate.currentVersion.scanStatus)
+    ) {
       try {
         // A saved metadata reference is not proof that its encrypted object
         // survived a storage move. Never reuse a missing or corrupt object.
@@ -956,6 +989,7 @@ export class DocumentsService {
       file,
       masterDataLogoActor(actor),
       metadata,
+      masterDataLogoScanExemption,
     );
     return {
       id: uploaded.data.id,
@@ -1043,14 +1077,18 @@ export class DocumentsService {
       row.archiveStatus !== 'ACTIVE' ||
       row.documentType.domain !== 'BRAND' ||
       row.confidentiality !== 'INTERNAL' ||
+      !row.currentVersion ||
+      Number(row.currentVersion.sizeBytes) < 1 ||
+      Number(row.currentVersion.sizeBytes) > MASTER_DATA_LOGO_MAX_BYTES ||
       !ownsReference
     )
       throw new ForbiddenException('لوگوی این رکورد قابل مشاهده نیست.');
     try {
-      return await this.preview(
+      return await this.previewFile(
         row.id,
         masterDataLogoActor(actor, 'documents.file.read'),
         metadata,
+        row,
       );
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
@@ -1245,6 +1283,72 @@ export class DocumentsService {
     return { documentId: row.id, versionId: row.currentVersion.id };
   }
 
+  private incomingActor(actor: AuthenticatedActor): AuthenticatedActor {
+    return {
+      ...actor,
+      permissions: [
+        ...new Set([
+          ...actor.permissions,
+          'documents.list' as const,
+          'documents.upload' as const,
+          'documents.metadata.read' as const,
+          'documents.file.read' as const,
+          'documents.download' as const,
+        ]),
+      ],
+    };
+  }
+  async incomingOptions(actor: AuthenticatedActor) {
+    const result = await this.options(this.incomingActor(actor));
+    return {
+      data: {
+        ...result.data,
+        owners: actor.permissions.includes('documents.upload')
+          ? result.data.owners
+          : result.data.owners.filter((user) => user.id === actor.userId),
+      },
+    };
+  }
+  incomingList(query: DocumentListQueryV1, actor: AuthenticatedActor) {
+    return this.list(
+      { ...query, isIncomingLetter: true, archiveStatus: 'ACTIVE' },
+      this.incomingActor(actor),
+    );
+  }
+  incomingUpload(
+    dto: DocumentUploadDto,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    return this.upload(
+      {
+        ...dto,
+        isIncomingLetter: true,
+        ownerUserId: actor.permissions.includes('documents.upload')
+          ? dto.ownerUserId
+          : actor.userId,
+      },
+      file,
+      this.incomingActor(actor),
+      metadata,
+    );
+  }
+  async incomingFile(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    preview: boolean,
+  ) {
+    const scoped = this.incomingActor(actor);
+    const row = await this.findVisibleDetail(id, actor);
+    if (!row?.isIncomingLetter || row.archiveStatus !== 'ACTIVE')
+      throw new NotFoundException('نامه یافت نشد.');
+    return preview
+      ? this.preview(id, scoped, metadata)
+      : this.download(id, scoped, metadata);
+  }
+
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
     const sourceReference = [
       query.sourceModule,
@@ -1259,8 +1363,9 @@ export class DocumentsService {
     );
     if (
       suppliedSourceFields !== 0 &&
-      (suppliedSourceFields !== 3 ||
-        normalizedSourceReference.some((value) => !value))
+      (!normalizedSourceReference[0] ||
+        !normalizedSourceReference[1] ||
+        (query.sourceEntityId !== undefined && !normalizedSourceReference[2]))
     ) {
       throw new BadRequestException({
         code: 'DOCUMENT_SOURCE_FILTER_INCOMPLETE',
@@ -1275,7 +1380,7 @@ export class DocumentsService {
     const normalized = {
       ...query,
       ...(query.search ? { search: query.search.trim().slice(0, 120) } : {}),
-      ...(suppliedSourceFields === 3
+      ...(suppliedSourceFields >= 2
         ? {
             sourceModule: normalizedSourceReference[0]!,
             sourceEntityType: normalizedSourceReference[1]!,
@@ -1765,8 +1870,12 @@ export class DocumentsService {
     file: UploadedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    scanPolicy?: typeof masterDataLogoScanExemption,
   ): Promise<{ data: DocumentDetailV1 }> {
     if (!file) throw new BadRequestException('انتخاب فایل الزامی است.');
+    if (dto.isIncomingLetter && !dto.senderName?.trim()) {
+      throw new BadRequestException('فرستنده را وارد کنید.');
+    }
     if (!actor.branchIds.includes(dto.branchId)) {
       throw new ForbiddenException('شعبه انتخاب‌شده خارج از دسترسی کاربر است.');
     }
@@ -1939,6 +2048,8 @@ export class DocumentsService {
         versionId,
         storageObjectKey,
         title: dto.title.trim(),
+        senderName: dto.senderName?.trim() || null,
+        isIncomingLetter: dto.isIncomingLetter ?? false,
         description: dto.description?.trim() || null,
         documentTypeId: references.documentType.id,
         categoryId: references.category.id,
@@ -1966,8 +2077,14 @@ export class DocumentsService {
         actorBranchId: dto.branchId,
         ipSummary: summarizeIp(metadata.ipAddress),
         userAgentSummary: summarizeUserAgent(metadata.userAgent),
+        ...(scanPolicy === masterDataLogoScanExemption
+          ? { skipAntivirusForMasterDataLogo: true }
+          : {}),
       });
-      if (await this.scanProcessor.processVersion(versionId)) {
+      if (
+        scanPolicy !== masterDataLogoScanExemption &&
+        (await this.scanProcessor.processVersion(versionId))
+      ) {
         const scanned = await this.repository.findDetail(
           documentId,
           actor.branchIds,
@@ -2212,7 +2329,9 @@ export class DocumentsService {
       !hasPurposePermission ||
       !previewable ||
       row.archiveStatus !== 'ACTIVE' ||
-      row.currentVersion.scanStatus !== 'CLEAN'
+      !(dto.purpose === 'PREVIEW'
+        ? imagePreviewScanAllowed(row.currentVersion.scanStatus)
+        : row.currentVersion.scanStatus === 'CLEAN')
     ) {
       await this.auditAccessGrantFailure(
         row,
@@ -2302,6 +2421,19 @@ export class DocumentsService {
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const packagePendingAllowed =
+      expectedSource?.sourceModule === 'WORKBENCH' &&
+      expectedSource.sourceEntityType === 'WorkbenchDailyPackage' &&
+      expectedSource.sourceEntityId === row.branchId &&
+      row.sourceModule === 'WORKBENCH' &&
+      row.sourceEntityType === 'WorkbenchDailyPackage' &&
+      row.sourceEntityId === row.branchId &&
+      row.documentType.code === 'BRAND_ASSET_TEMPLATE' &&
+      row.confidentiality === 'INTERNAL' &&
+      row.currentVersion.detectedMimeType === 'application/pdf' &&
+      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+        row.currentVersion.scanStatus,
+      );
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
@@ -2309,7 +2441,10 @@ export class DocumentsService {
         (actor.permissions.includes('documents.sensitive.download') &&
           isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
-      row.currentVersion.scanStatus === 'CLEAN';
+      (row.currentVersion.scanStatus === 'CLEAN' ||
+        packagePendingAllowed ||
+        (row.isIncomingLetter &&
+          imagePreviewScanAllowed(row.currentVersion.scanStatus)));
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
       actor,
@@ -2338,7 +2473,14 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!allowed) {
-      if (row.currentVersion.scanStatus !== 'CLEAN') {
+      if (
+        row.currentVersion.scanStatus !== 'CLEAN' &&
+        !packagePendingAllowed &&
+        !(
+          row.isIncomingLetter &&
+          imagePreviewScanAllowed(row.currentVersion.scanStatus)
+        )
+      ) {
         throw new ConflictException(
           'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
         );
@@ -2407,7 +2549,16 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.findVisibleDetail(id, actor);
+    return this.previewFile(id, actor, metadata);
+  }
+
+  private async previewFile(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    authorizedLogo?: DocumentDetailRow,
+  ): Promise<DocumentFileDelivery> {
+    const row = authorizedLogo ?? (await this.findVisibleDetail(id, actor));
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
@@ -2420,14 +2571,16 @@ export class DocumentsService {
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
         isOptionalOperationReason(metadata.sensitiveReason, 500));
-    const previewable = previewableImageMimeTypes.has(
-      row.currentVersion.detectedMimeType,
-    );
+    const previewable =
+      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType) ||
+      (row.isIncomingLetter &&
+        row.currentVersion.detectedMimeType === 'application/pdf');
+    const scanAllowed = imagePreviewScanAllowed(row.currentVersion.scanStatus);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
       row.archiveStatus === 'ACTIVE' &&
-      row.currentVersion.scanStatus === 'CLEAN' &&
+      scanAllowed &&
       previewable;
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
@@ -2440,16 +2593,15 @@ export class DocumentsService {
         : true;
     const allowed = baseAllowed && confidentialAccessAllowed && stepUpAllowed;
 
-    const denialReason =
-      row.currentVersion.scanStatus !== 'CLEAN'
-        ? 'PREVIEW_SCAN_BLOCKED'
-        : !previewable
-          ? 'PREVIEW_TYPE_UNSUPPORTED'
-          : baseAllowed && !confidentialAccessAllowed
-            ? 'CONFIDENTIAL_CODE_REQUIRED'
-            : baseAllowed && row.requiresStepUpVerification
-              ? 'PREVIEW_STEP_UP_DENIED'
-              : 'PREVIEW_POLICY_DENIED';
+    const denialReason = !scanAllowed
+      ? 'PREVIEW_SCAN_BLOCKED'
+      : !previewable
+        ? 'PREVIEW_TYPE_UNSUPPORTED'
+        : baseAllowed && !confidentialAccessAllowed
+          ? 'CONFIDENTIAL_CODE_REQUIRED'
+          : baseAllowed && row.requiresStepUpVerification
+            ? 'PREVIEW_STEP_UP_DENIED'
+            : 'PREVIEW_POLICY_DENIED';
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -2457,15 +2609,17 @@ export class DocumentsService {
       actorBranchId: row.branchId,
       action: 'documents.file.preview',
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
-      reason: allowed ? metadata.sensitiveReason?.trim() || null : denialReason,
+      reason: allowed
+        ? authorizedLogo
+          ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+          : metadata.sensitiveReason?.trim() || null
+        : denialReason,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
 
-    if (row.currentVersion.scanStatus !== 'CLEAN') {
-      throw new ConflictException(
-        'پیش‌نمایش تا پایان اسکن امنیتی فعال نمی‌شود.',
-      );
+    if (!scanAllowed) {
+      throw new ConflictException('مشاهده محتوای این سند مجاز نیست.');
     }
     if (!previewable) {
       throw new UnsupportedMediaTypeException(

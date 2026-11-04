@@ -3,11 +3,26 @@ import type {
   SalesServiceInput,
   TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
+
+export function purchaseServiceLabel(
+  request: ReservationIntakeV1,
+  service: SalesServiceInput,
+) {
+  if (
+    service.kind === 'HOTEL' &&
+    isFloatingSalesContract(request.snapshot.serviceSelections)
+  )
+    return 'هتل شناور';
+  if (service.kind === 'FLIGHT') return 'بلیط شناور';
+  return purchaseCategories.find(([key]) => key === service.kind)?.[1];
+}
 
 export const purchaseCategories = [
   ['ALL', 'همه خدمات'],
   ['HOTEL', 'خرید هتل'],
   ['FLIGHT', 'خرید پرواز'],
+  ['FLOATING', 'بلیط شناور'],
   ['TRANSFER', 'خرید ترانسفر'],
   ['INSURANCE', 'خرید بیمه'],
 ] as const;
@@ -155,7 +170,7 @@ export function ticketPurchaseDate(
   return dateBy === 'ENTRY'
     ? item.request.createdAt
     : dateBy === 'DEPARTURE'
-      ? item.request.serviceDate
+      ? (item.flightGroup?.departureDate ?? item.request.serviceDate)
       : dateBy === 'PURCHASE'
         ? (item.cost?.createdAt ?? null)
         : null;

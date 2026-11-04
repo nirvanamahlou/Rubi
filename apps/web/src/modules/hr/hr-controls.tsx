@@ -159,31 +159,35 @@ export function HrTable({
   onEdit,
   onDelete,
   onAssess,
+  rowActions,
   empty = 'رکوردی مطابق این فیلترها وجود ندارد.',
   showPagination = true,
   busy = false,
   selectedIds,
   onSelectionChange,
   showOpenButton = false,
+  showSelection = true,
 }: {
   data: HrPreviewDataset;
   onOpen?: (index: number) => void;
   onEdit?: (index: number) => void;
   onDelete?: (index: number) => void;
   onAssess?: (index: number) => void;
+  rowActions?: (index: number) => ReactNode;
   empty?: string;
   showPagination?: boolean;
   busy?: boolean;
   selectedIds?: ReadonlySet<string>;
   onSelectionChange?: (ids: ReadonlySet<string>) => void;
   showOpenButton?: boolean;
+  showSelection?: boolean;
 }) {
   const localSelection = useHrRowSelection(data.columns.join('|'));
   const selected = selectedIds ?? localSelection.selectedIds;
   const select = onSelectionChange ?? localSelection.onSelectionChange;
   const exportSelection = selectedHrDataset(data, selected);
   const hasActions =
-    (onOpen && showOpenButton) || onEdit || onDelete || onAssess;
+    (onOpen && showOpenButton) || onEdit || onDelete || onAssess || rowActions;
   const [page, setPage] = useState(0);
   const currentPage = Math.min(
     page,
@@ -225,15 +229,17 @@ export function HrTable({
         <table className={ui.table}>
           <thead>
             <tr>
-              <th scope="col" className={ui.selectionCell}>
-                <input
-                  type="checkbox"
-                  aria-label="انتخاب همه رکوردهای این صفحه"
-                  checked={allSelected}
-                  disabled={busy || !visibleIds.length}
-                  onChange={(e) => toggle(visibleIds, e.target.checked)}
-                />
-              </th>
+              {showSelection ? (
+                <th scope="col" className={ui.selectionCell}>
+                  <input
+                    type="checkbox"
+                    aria-label="انتخاب همه رکوردهای این صفحه"
+                    checked={allSelected}
+                    disabled={busy || !visibleIds.length}
+                    onChange={(e) => toggle(visibleIds, e.target.checked)}
+                  />
+                </th>
+              ) : null}
               {data.columns.map((column, i) => (
                 <th scope="col" key={`${i}-${column}`}>
                   {column}
@@ -251,17 +257,19 @@ export function HrTable({
               const index = start + offset;
               return (
                 <tr key={recordKey(data, index) || index}>
-                  <td className={ui.selectionCell}>
-                    <input
-                      type="checkbox"
-                      aria-label={`انتخاب ${cellText(row[1]) || cellText(row[0])}`}
-                      checked={selected.has(recordKey(data, index))}
-                      disabled={busy}
-                      onChange={(e) =>
-                        toggle([recordKey(data, index)], e.target.checked)
-                      }
-                    />
-                  </td>
+                  {showSelection ? (
+                    <td className={ui.selectionCell}>
+                      <input
+                        type="checkbox"
+                        aria-label={`انتخاب ${cellText(row[1]) || cellText(row[0])}`}
+                        checked={selected.has(recordKey(data, index))}
+                        disabled={busy}
+                        onChange={(e) =>
+                          toggle([recordKey(data, index)], e.target.checked)
+                        }
+                      />
+                    </td>
+                  ) : null}
                   {data.columns.map((column, col) => (
                     <td
                       key={`${column}-${col}`}
@@ -285,6 +293,7 @@ export function HrTable({
                   {hasActions ? (
                     <td className={ui.operationCell}>
                       <div className={ui.rowActions}>
+                        {rowActions?.(index)}
                         {onAssess ? (
                           <Button
                             type="button"

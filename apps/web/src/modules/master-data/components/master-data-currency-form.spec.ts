@@ -22,7 +22,6 @@ describe('currency popup form', () => {
     for (const label of [
       'نام فارسی ارز',
       'وضعیت ارز',
-      'ارز پایه',
       'نرخ خرید',
       'نرخ فروش',
       'منبع',
@@ -31,6 +30,7 @@ describe('currency popup form', () => {
     ])
       expect(source).toContain(label);
     expect(source).not.toContain('displayPolicy');
+    expect(source).not.toContain('currency-base');
     expect(source).not.toContain('سیاست نمایش');
     expect(source).not.toContain('تاریخ و ساعت');
     expect(source).not.toContain('observedAt');
@@ -43,7 +43,7 @@ describe('currency popup form', () => {
     );
     expect(workspace).toContain('<MasterDataCurrencyForm');
     expect(workspace).not.toContain("changeTab('approvals')");
-    expect(source).toContain('قرارداد آن هنوز متصل نیست');
+    expect(source).not.toContain('قرارداد آن هنوز متصل نیست');
     expect(source).not.toContain('masterDataApi.decideCurrencyRate');
   });
   it('shows quote registration only when editing an existing currency', () => {

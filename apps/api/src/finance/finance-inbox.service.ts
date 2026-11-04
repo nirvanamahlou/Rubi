@@ -6,7 +6,10 @@ import {
 import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
-import { paymentSource } from './payments/payment-source';
+import {
+  paymentSource,
+  purchasePaymentCashMoney,
+} from './payments/payment-source';
 import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
 import {
   BadRequestException,
@@ -143,6 +146,35 @@ export class FinanceInboxService {
     return { ...first, items };
   }
 
+  private async completeReservationInbox(actor: AuthenticatedActor) {
+    if (typeof this.reservations.listForFinance === 'function')
+      return this.reservations.listForFinance(actor.branchIds);
+    // Compatibility with older public adapters; never silently keep page one.
+    const first = await this.reservations.list(actor.branchIds);
+    const items = [...first],
+      seen = new Set(items.map((item) => item.id));
+    let batch = first;
+    for (let page = 2; batch.length === 100; page++) {
+      if (page > 100 || seen.size !== items.length)
+        throw new ConflictException(
+          'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
+        );
+      batch = await this.reservations.list(actor.branchIds, {
+        page: String(page),
+      });
+      if (
+        batch.some((item) => seen.has(item.id)) ||
+        new Set(batch.map((item) => item.id)).size !== batch.length
+      )
+        throw new ConflictException(
+          'فهرست ارجاع‌ها هم‌زمان تغییر کرده است؛ دوباره به‌روز کنید.',
+        );
+      batch.forEach((item) => seen.add(item.id));
+      items.push(...batch);
+    }
+    return items;
+  }
+
   async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
@@ -160,7 +192,7 @@ export class FinanceInboxService {
     ] = await Promise.allSettled([
       this.sales.financeInbox(actor),
       this.completeHrInbox(actor),
-      this.reservations.list(actor.branchIds),
+      this.completeReservationInbox(actor),
       this.procurement
         .listFinanceTicketPurchases(actor.branchIds)
         .then(async (items) => ({
@@ -264,9 +296,12 @@ export class FinanceInboxService {
             : row.kind === 'PETTY_CASH_EXPENSE'
               ? 'NON_CASH'
               : 'PAYMENT',
-        source: row.kind === 'PAYROLL' ? 'HR' : 'FINANCE',
-        kind:
-          row.kind === 'PAYROLL' ? 'PAYROLL_REQUEST' : 'OPERATIONAL_REQUEST',
+        source: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'HR'
+          : 'FINANCE',
+        kind: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'PAYROLL_REQUEST'
+          : 'OPERATIONAL_REQUEST',
         sourceReference: row.id,
         sourceContextReference: row.hrRecordId ?? row.id,
         contractReference: row.reference,
@@ -293,6 +328,8 @@ export class FinanceInboxService {
         origin: 'PERSISTED_SOURCE',
       })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
+        destinationAccountId: item.destinationAccountId ?? null,
+        destinationAccountTitle: item.destinationAccountTitle ?? null,
         version: 1,
         id: `sales:${item.paymentId}`,
         source: 'SALES',
@@ -552,7 +589,10 @@ export class FinanceInboxService {
       this.sourceState(
         'HR',
         hrResult.status === 'fulfilled',
-        hrItems.length,
+        hrItems.length +
+          payrollRows.filter((row) =>
+            ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
         'ارجاع‌های ثبت‌شده منابع انسانی به واحد مالی',
       ),
       this.sourceState(
@@ -590,7 +630,9 @@ export class FinanceInboxService {
         {
           source: 'FINANCE',
           connection: 'CONNECTED',
-          itemCount: payrollRows.filter((row) => row.kind !== 'PAYROLL').length,
+          itemCount: payrollRows.filter(
+            (row) => !['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
           message:
             'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },
@@ -616,6 +658,7 @@ export class FinanceInboxService {
     referenceId: string,
     rateToIrr: string,
     actor: AuthenticatedActor,
+    additionalReferences?: readonly string[],
   ) {
     if (!actor.permissions.includes('finance.payment.create'))
       throw new ForbiddenException();
@@ -640,6 +683,31 @@ export class FinanceInboxService {
     const currencyCode = line?.currencyCode ?? item.amount?.currencyCode;
     if (!amount || !currencyCode || currencyCode === 'IRR')
       throw new BadRequestException('ارز خرید معتبر نیست.');
+    if (
+      additionalReferences !== undefined &&
+      (!Array.isArray(additionalReferences) ||
+        additionalReferences.length > 100 ||
+        additionalReferences.some(
+          (id) =>
+            typeof id !== 'string' ||
+            !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              id,
+            ),
+        ))
+    )
+      throw new BadRequestException('مرجع خرید معتبر نیست.');
+    const ids = [
+      ...new Set([referenceId, ...(additionalReferences ?? [])]),
+    ].sort();
+    // A grouped manual rate belongs to one authorized request and one currency.
+    const lines = ids.map((id) => {
+      const row = item.reservationPurchase?.lines.find(
+        (p) => p.purchaseId === id,
+      );
+      if (id !== referenceId && (!row || row.currencyCode !== currencyCode))
+        throw new BadRequestException('ارز خرید معتبر نیست.');
+      return { id, row };
+    });
     return this.database.client.$transaction(async (tx) => {
       let invoiceRevisionId: string | undefined;
       if (item.id.startsWith('purchases:invoice:')) {
@@ -655,19 +723,24 @@ export class FinanceInboxService {
           throw new BadRequestException('ابتدا خرید را تأیید کنید.');
         invoiceRevisionId = revision.id;
       }
-      return this.purchaseFx!.capture(tx, {
-        ...(line
-          ? { reservationPurchaseId: referenceId }
-          : item.ticketPurchase
-            ? { ticketCostId: referenceId }
-            : { invoiceRevisionId: invoiceRevisionId! }),
-        branchId: item.branchReference,
-        actorUserId: actor.userId,
-        currencyCode,
-        amount,
-        rateToIrr,
-        baselineAt: new Date(item.createdAt),
-      });
+      const captures = [];
+      for (const { id, row } of lines)
+        captures.push(
+          await this.purchaseFx!.capture(tx, {
+            ...(row
+              ? { reservationPurchaseId: id }
+              : item.ticketPurchase
+                ? { ticketCostId: id }
+                : { invoiceRevisionId: invoiceRevisionId! }),
+            branchId: item.branchReference,
+            actorUserId: actor.userId,
+            currencyCode,
+            amount: row?.amount ?? amount,
+            rateToIrr,
+            baselineAt: new Date(item.createdAt),
+          }),
+        );
+      return additionalReferences ? captures : captures[0];
     });
   }
 
@@ -779,6 +852,9 @@ export class FinanceInboxService {
     return Promise.all(
       candidates.map(async (candidate) => ({
         ...candidate,
+        canApproveReservationDelivery: actor.permissions.includes(
+          'reservations.documents.manage',
+        ),
         delivery: await this.delivery.readCustomerContract(
           candidate.contractId,
         ),
@@ -786,6 +862,39 @@ export class FinanceInboxService {
     );
   }
 
+  async reservationDocumentDelivery(
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.readCustomerContract(contractId);
+  }
+  async decideReservationDocumentDelivery(
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    if (input?.basis !== 'RESERVATION_PERMISSION')
+      throw new BadRequestException('مبنای مجوز رزرواسیون معتبر نیست.');
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.updateCustomerContract(input, facts, actor, (tx) =>
+      this.sales.financeCustomerDocumentDeliveryFacts(
+        contractId,
+        actor.branchIds,
+        tx,
+      ),
+    );
+  }
   async decideCustomerDocumentDelivery(
     contractId: string,
     input: FinanceCustomerDocumentDeliveryCommandV1,
@@ -829,10 +938,20 @@ export class FinanceInboxService {
     );
     if (!receipt)
       throw new NotFoundException('درخواست دریافت در شعب مجاز یافت نشد.');
+    if (
+      input.action === 'APPROVE' &&
+      receipt.destinationAccountId &&
+      input.accountId &&
+      input.accountId !== receipt.destinationAccountId
+    )
+      throw new BadRequestException(
+        'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+      );
+    const receiptAccountId = receipt.destinationAccountId ?? input.accountId;
     if (receipt.status === 'FINANCE_CONFIRMED') {
       if (
         input.action !== 'APPROVE' ||
-        receipt.financeReceiptAccountId !== input.accountId
+        receipt.financeReceiptAccountId !== receiptAccountId
       )
         throw new ConflictException(
           'دریافت قبلاً تأیید شده است؛ اصلاح از مسیر استرداد انجام می‌شود.',
@@ -870,12 +989,12 @@ export class FinanceInboxService {
       throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
     const payment = { ...receipt, branchId: receipt.contract.branchId };
     if (input.action === 'APPROVE') {
-      if (!input.accountId)
+      if (!receiptAccountId)
         throw new BadRequestException('حساب مقصد دریافت را انتخاب کنید.');
       const account =
         await this.database.client.financeSettlementAccount.findFirst({
           where: {
-            id: input.accountId,
+            id: receiptAccountId,
             branchId: payment.branchId,
             currencyCode: payment.currencyCode,
             isActive: true,
@@ -1145,6 +1264,7 @@ export class FinanceInboxService {
             input,
             source.currencyCode,
             source.branchId,
+            'ACCOUNT_OR_SUPPLIER',
           );
         const method = await tx.masterPaymentMethod.findFirst({
           where: {
@@ -1199,8 +1319,12 @@ export class FinanceInboxService {
           branchId: source.branchId,
           actorId: actor.userId,
           occurredAt: transferAt,
-          amount: paidAmount.toString(),
-          currency: source.currencyCode,
+          ...purchasePaymentCashMoney(
+            account,
+            source.currencyCode,
+            paidAmount.toString(),
+            row.rialEquivalent?.toString(),
+          ),
           settlementAccountId: account?.id ?? null,
           partyId: `${source.supplier.id}:${payingSupplierId ?? ''}`,
           reference: row.paymentReference,

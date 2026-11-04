@@ -117,6 +117,38 @@ function renderResultPanel(
 }
 
 describe('ReportingWorkspace', () => {
+  it('renders every native source column with sort arrows and its original values, without legacy money columns', () => {
+    const html = renderResultPanel({
+      started: true,
+      result: {
+        ...reportResult,
+        dataLayout: 'SOURCE_COLUMNS',
+        columns: [
+          { key: 'primaryDimension', label: 'پرواز', kind: 'TEXT' },
+          { key: 'remaining', label: 'ظرفیت باقی‌مانده', kind: 'NUMBER' },
+          { key: 'departAt', label: 'زمان حرکت UTC', kind: 'TEXT' },
+        ],
+        rows: [
+          {
+            ...reportResult.rows[0]!,
+            sourceValues: {
+              primaryDimension: 'پرواز نمونه',
+              remaining: 987,
+              departAt: '2026-11-03T12:00:00Z',
+            },
+          },
+        ],
+      },
+    });
+    expect(html).toContain('ظرفیت باقی‌مانده');
+    expect(html).toContain('زمان حرکت UTC');
+    expect(html).toContain('پرواز نمونه');
+    expect(html).toContain('987');
+    expect(html).toContain('2026-11-03T12:00:00Z');
+    expect(html).not.toContain('تعداد قرارداد</button>');
+    expect(html).not.toContain('مبلغ قرارداد</button>');
+    expect(html.match(/aria-sort=/g)).toHaveLength(3);
+  });
   it('right-aligns catalog categories with monochrome icons beside their labels', () => {
     const html = renderToStaticMarkup(
       <ReportCategorySelectOption category="فروش و قراردادها" />,
@@ -180,6 +212,8 @@ describe('ReportingWorkspace', () => {
   });
   it('renders the Persian RTL catalog without fabricated KPI values', () => {
     const html = renderToStaticMarkup(<ReportingWorkspace view="catalog" />);
+    expect(html).not.toContain('href="/hr?section=reports"');
+    expect(html).not.toContain('گزارش‌های منابع انسانی');
 
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('گزارش‌ها و خروجی‌های مدیریتی');
@@ -190,7 +224,7 @@ describe('ReportingWorkspace', () => {
       'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
     );
     expect(html).toContain(
-      'کدام پروازها و مسیرها بیشترین صدور و ظرفیت مصرف‌شده را دارند؟',
+      'برای کدام قراردادها مدرک داخلی مسافر صادر شده است؟',
     );
     expect(html).not.toContain('اولویت اول ضروری و عملیاتی');
     expect(html).not.toContain('اولویت دوم کنترل عملکرد');
@@ -303,7 +337,7 @@ describe('ReportingWorkspace', () => {
     )!;
     const snapshot = buildReportingFilterSnapshot({
       currency: 'USD',
-      filterValues: { وضعیت: 'ACTIVE', مسیر: 'THR-DXB' },
+      filterValues: { وضعیت: 'SENT_TO_RESERVATIONS', کارشناس: 'agent-1' },
       fromDate: '2026-09-01',
       legalEntity: 'NIYAYESH_SEIR_SAHAR',
       report,
@@ -319,8 +353,8 @@ describe('ReportingWorkspace', () => {
         },
         { active: true, label: 'شرکت', value: 'نیایش سیر سحر' },
         { active: true, label: 'ارز', value: 'USD' },
-        { active: true, label: 'وضعیت', value: 'ACTIVE' },
-        { active: true, label: 'مسیر', value: 'THR-DXB' },
+        { active: true, label: 'وضعیت', value: 'SENT_TO_RESERVATIONS' },
+        { active: true, label: 'کارشناس', value: 'agent-1' },
         { active: false, label: 'شعبه', value: 'همه شعبه‌ها' },
       ]),
     );
@@ -333,15 +367,7 @@ describe('ReportingWorkspace', () => {
     expect(reportingDateRangeError('2026-09-01', '2026-09-10')).toBe('');
     expect(reportingDateRangeError('', '2026-09-10')).toBe('');
     expect(reportCatalog[0]?.filters).toEqual(
-      expect.arrayContaining([
-        'بازه تاریخ',
-        'شرکت',
-        'شعبه',
-        'سایت',
-        'کارشناس',
-        'ارز',
-        'وضعیت',
-      ]),
+      expect.arrayContaining(['بازه تاریخ', 'شعبه', 'کارشناس', 'ارز', 'وضعیت']),
     );
   });
 
@@ -431,7 +457,7 @@ describe('ReportingWorkspace', () => {
       result: reportResult,
     });
     expect(chart).toContain('role="img"');
-    expect(chart).toContain('مبلغ قرارداد به تفکیک شرکت و سایت');
+    expect(chart).toContain('مبلغ قرارداد به تفکیک شعبه و کارشناس');
     expect(chart).toContain('نمودار میله‌ای افقی');
     expect(chart).toContain('نوع نمودار');
     expect(chart).toContain('id="report-result-sort"');
@@ -537,4 +563,46 @@ describe('ReportingWorkspace', () => {
     expect(html).not.toContain('محبوب‌ها');
     expect(html).not.toContain('aria-label="فیلتر گزارش‌های من"');
   });
+});
+
+it('shows one organization table row with combined currencies and separates them again in pie charts', () => {
+  const combined: SalesByOrganizationReportResult = {
+    ...reportResult,
+    dataLayout: 'SOURCE_COLUMNS',
+    columns: [
+      { key: 'orderCount', label: 'تعداد قرارداد', kind: 'NUMBER' },
+      { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
+      { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
+    ],
+    rows: [
+      {
+        ...reportResult.rows[0]!,
+        amount: '900',
+        contractCount: 1,
+        passengerCount: 3,
+        amountsByCurrency: [
+          { currencyCode: 'IRR', amount: '900' },
+          { currencyCode: 'EUR', amount: '20' },
+        ],
+        sourceValues: {
+          orderCount: 1,
+          passengerCount: 3,
+          salesAmount: '900 ریال - 20 €',
+        },
+      },
+    ],
+  };
+  const table = renderResultPanel({ started: true, result: combined });
+  expect(table).toContain('900 ریال - 20 €');
+  expect(table.match(/<tbody/g)).toHaveLength(1);
+  const pie = renderResultPanel({
+    started: true,
+    result: combined,
+    mode: 'chart',
+    chartType: 'pie',
+  });
+  expect(pie).toContain('€');
+  expect(pie).toContain('راهنمای رنگ‌های نمودار IRR');
+  expect(pie).toContain('راهنمای رنگ‌های نمودار EUR');
+  expect(pie).not.toContain('900 ریال - 20 €');
 });

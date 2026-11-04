@@ -11,7 +11,7 @@ import {
 describe('master data sections', () => {
   it('defines the eight requested top-level sections in display order', () => {
     expect(masterDataSections.map((section) => section.title)).toEqual([
-      'مالی و پولی',
+      'ارز و بانک',
       'جغرافیا',
       'سازمان‌ها و همکاران',
       'اقامت',

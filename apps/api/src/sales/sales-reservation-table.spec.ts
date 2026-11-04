@@ -53,14 +53,49 @@ function setup() {
   const findMany = vi.fn().mockResolvedValue([record]);
   const tickets = { reservationCommissions: vi.fn().mockResolvedValue([]) };
   return {
+    record,
     findMany,
     tickets,
     service: new SalesReservationTableService(
-      { client: { salesContract: { findMany } } } as never,
+      {
+        client: {
+          salesContract: { findMany },
+          salesContractAuditEvent: { findMany: vi.fn().mockResolvedValue([]) },
+        },
+      } as never,
       tickets as never,
     ),
   };
 }
+it('reads completed name-only passengers without manufacturing ages or crashing', async () => {
+  const s = setup();
+  s.findMany.mockResolvedValueOnce([
+    {
+      ...s.record,
+      passengers: [
+        {
+          birthDate: null,
+          ageCategory: 'ADT',
+          displayNameSnapshot: 'SYNTHETIC ADULT',
+        },
+        { birthDate: null, ageCategory: 'INF' },
+        { birthDate: null, ageCategory: 'CHD' },
+      ],
+    },
+  ]);
+  const result = await s.service.read(['c'], {
+    permissions: ['reservations.read'],
+    branchIds: ['b'],
+  } as never);
+  expect(result.get('c')).toMatchObject({
+    passengerCount: 3,
+    passengerNames: ['SYNTHETIC ADULT'],
+    adults: 1,
+    infants: 1,
+    children2To6: 0,
+    children6To12: 0,
+  });
+});
 it('keeps currency balances separate, finance-confirmed debt and exact age boundaries', async () => {
   const s = setup();
   const result = await s.service.read(['c'], {
@@ -159,7 +194,7 @@ it('projects ages only for the matching hotel contract and allocated guests', as
   expect(await service.hotelGuestAges(snapshot, actor)).toBeNull();
 });
 
-it('uses only explicit sales corrections for the purple correction marker', async () => {
+it('uses successful sales corrections and historical completions for the correction marker', async () => {
   const s = setup();
   await s.service.read(['c'], {
     permissions: ['reservations.read'],
@@ -167,7 +202,9 @@ it('uses only explicit sales corrections for the purple correction marker', asyn
   } as never);
   expect(s.findMany.mock.calls[0]![0].include.auditEvents.where).toEqual({
     outcome: 'SUCCESS',
-    action: { in: ['SALES_PASSENGER_CORRECTION'] },
+    action: {
+      in: ['SALES_PASSENGER_CORRECTION', 'SALES_PASSENGER_COMPLETION'],
+    },
   });
 });
 
@@ -230,4 +267,46 @@ it('matches unchanged room products even when old stored counts differ from thei
   expect(await service.hotelGuestAges(snapshot as never, actor)).toEqual([35]);
   hotel.rooms[0]!.childAges = [8];
   expect(await service.hotelGuestAges(snapshot as never, actor)).toBeNull();
+});
+
+it('projects successful operational, contract and party amendments independently of passenger acknowledgement', async () => {
+  const s = setup();
+  const findMany = vi
+    .fn()
+    .mockResolvedValue([
+      { contractId: 'c', occurredAt: new Date('2026-11-02T10:00:00Z') },
+    ]);
+  const service = new SalesReservationTableService(
+    {
+      client: {
+        salesContract: { findMany: s.findMany },
+        salesContractAuditEvent: { findMany },
+      },
+    } as never,
+    s.tickets as never,
+  );
+  const result = await service.read(['c'], {
+    permissions: ['reservations.read'],
+    branchIds: ['b'],
+  } as never);
+  expect(result.get('c')?.amendedAt).toBe('2026-11-02T10:00:00.000Z');
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: {
+        contractId: { in: ['c'] },
+        outcome: 'SUCCESS',
+        OR: [
+          { action: 'OPERATIONAL_FORM_AMENDMENT' },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'CONTRACT' },
+          },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'PARTY' },
+          },
+        ],
+      },
+    }),
+  );
 });

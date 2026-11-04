@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -23,13 +24,18 @@ import {
 } from './call-center-search.dto';
 import { CallCenterReadService } from './call-center-read.service';
 @Controller('customer-affairs/call-center')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @RequirePermissions('customer_affairs.call_center.read')
 export class CallCenterReadController {
   constructor(
     @Inject(CallCenterReadService)
     private readonly service: CallCenterReadService,
   ) {}
+  @Get('recording-access')
+  @Header('Cache-Control', 'private, no-store')
+  recordingAccess(@Req() req: AuthenticatedRequest) {
+    return this.service.recordingAccess(req.actor);
+  }
   @Get('branches')
   @Header('Cache-Control', 'private, no-store')
   branches(@Req() req: AuthenticatedRequest) {
@@ -59,6 +65,42 @@ export class CallCenterReadController {
     @Body() query: CallCenterSearchDto,
   ) {
     return this.service.search(req.actor, branch, query);
+  }
+  @Post('without-outcome')
+  @Header('Cache-Control', 'private, no-store')
+  withoutOutcome(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.withoutOutcome(req.actor, branch, query);
+  }
+  @Post('today-calls')
+  @Header('Cache-Control', 'private, no-store')
+  todayCalls(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.withoutOutcome(req.actor, branch, query, 'today');
+  }
+  @Post('week-calls')
+  @Header('Cache-Control', 'private, no-store')
+  weekCalls(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.withoutOutcome(req.actor, branch, query, 'week');
+  }
+  @Post('missed-callbacks')
+  @Header('Cache-Control', 'private, no-store')
+  missedCallbacks(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.missedCallbacks(req.actor, branch, query);
   }
   @Post('report')
   @Header('Cache-Control', 'private, no-store')

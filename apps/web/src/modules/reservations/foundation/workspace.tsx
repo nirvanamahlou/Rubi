@@ -1,10 +1,12 @@
 'use client';
 import { RefreshCw } from 'lucide-react';
+import Link from '@/components/access-link';
 import { HotelSavingsDashboard } from '../components/hotel-purchase-savings';
 import { useQueueNames } from './queue-names';
 import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
 import { ContractTableAction } from './contract-table-action';
 import { HotelTableAction } from './hotel-table-action';
+import { ReservationServices } from './reservation-services';
 import {
   reservationColumns,
   reservationCells,
@@ -190,6 +192,8 @@ export function ReservationOperationsWorkspace({
   const effectiveQuery = reservationWindowQuery(query, now);
   const result = queryRows(visibleRows, effectiveQuery);
   const metrics = dashboard(result.filteredRows, now);
+  if (selectedId === null && result.filteredRows[0])
+    setSelectedId(result.filteredRows[0].id);
   const selected =
     result.filteredRows.find((r) => r.id === selectedId) ??
     result.filteredRows[0];
@@ -211,6 +215,9 @@ export function ReservationOperationsWorkspace({
           <header className={styles.header}>
             <div>
               <h1>رزرواسیون</h1>
+              {available && (
+                <Link href="/reservations/insurance">بیمه مسافرتی</Link>
+              )}
             </div>
             <span className={styles.badge}>
               {preview
@@ -280,7 +287,7 @@ export function ReservationOperationsWorkspace({
                   changeQuery({
                     ...defaultQuery,
                     status: 'NEW',
-                    sort: 'newest',
+                    sort: defaultQuery.sort,
                   });
                   setSection('inbox');
                   onDismissNewRequests?.();
@@ -601,13 +608,7 @@ export function ReservationOperationsWorkspace({
                   </label>
                   <label>
                     مرتب‌سازی
-                    <Select
-                      dir="rtl"
-                      value={query.sort}
-                      onValueChange={(value) =>
-                        changeQuery({ sort: value as Query['sort'] })
-                      }
-                    >
+                    <Select dir="rtl" value="contract" disabled>
                       <SelectTrigger
                         aria-label="مرتب‌سازی"
                         className="min-w-0 text-xs"
@@ -618,11 +619,9 @@ export function ReservationOperationsWorkspace({
                         align="start"
                         className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
                       >
-                        <SelectItem value="deadline">
-                          نزدیک‌ترین مهلت
+                        <SelectItem value="contract">
+                          شماره قرارداد (از کوچک به بزرگ)
                         </SelectItem>
-                        <SelectItem value="newest">جدیدترین درخواست</SelectItem>
-                        <SelectItem value="priority">بیشترین اولویت</SelectItem>
                       </SelectContent>
                     </Select>
                   </label>
@@ -727,7 +726,15 @@ export function ReservationOperationsWorkspace({
                     <thead>
                       <tr>
                         {reservationColumns.map((column) => (
-                          <th key={column} scope="col">
+                          <th
+                            key={column}
+                            scope="col"
+                            data-room-category={
+                              ['SGL', 'DBL', 'EXT', 'FAM/TPL'].includes(
+                                column,
+                              ) || undefined
+                            }
+                          >
                             {column}
                           </th>
                         ))}
@@ -738,8 +745,9 @@ export function ReservationOperationsWorkspace({
                         <tr
                           key={row.id}
                           data-corrected={
-                            Boolean(row.correctedAt) &&
-                            row.salesCorrectionPending !== false
+                            Boolean(row.amendedAt) ||
+                            (Boolean(row.correctedAt) &&
+                              row.salesCorrectionPending !== false)
                           }
                           data-tone={statusTones[row.status]}
                           data-selected={selected?.id === row.id}
@@ -760,6 +768,9 @@ export function ReservationOperationsWorkspace({
                           {reservationCells(row).map((value, index) => (
                             <td
                               key={reservationColumns[index]}
+                              data-room-category={
+                                (index >= 5 && index <= 8) || undefined
+                              }
                               data-has-note={index === 1 && !!row.hasNotes}
                               title={
                                 index === 1 && row.hasNotes
@@ -779,17 +790,20 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
-                                  {row.correctedAt &&
-                                  row.salesCorrectionPending !== false ? (
-                                    <small className="block font-bold">
+                                  {row.amendedAt ||
+                                  (row.correctedAt &&
+                                    row.salesCorrectionPending !== false) ? (
+                                    <small className={styles.correctedLabel}>
                                       اصلاح‌شده
                                     </small>
                                   ) : null}
                                 </button>
-                              ) : index === 9 || index === 10 ? (
+                              ) : reservationColumns[index] === 'خدمات' ? (
+                                <ReservationServices row={row} />
+                              ) : index === 10 || index === 11 ? (
                                 <HotelTableAction
                                   row={row}
-                                  confirmation={index === 10}
+                                  confirmation={index === 11}
                                   canManage={access.permissions.includes(
                                     'reservations.documents.manage',
                                   )}
@@ -804,10 +818,10 @@ export function ReservationOperationsWorkspace({
                                     'reservations.documents.manage',
                                   )}
                                 />
-                              ) : index === 11 || index === 44 ? (
+                              ) : index === 12 || index === 45 ? (
                                 <ContractTableAction
                                   row={row}
-                                  cancel={index === 44}
+                                  cancel={index === 45}
                                   access={access}
                                 />
                               ) : (
@@ -891,7 +905,11 @@ export function ReservationOperationsWorkspace({
         </div>
         {section === 'inbox' && (
           <ContractActionPanel
-            key={selected?.id ?? 'unselected'}
+            key={JSON.stringify([
+              effectiveState === 'SUCCESS',
+              [...access.branchIds].sort(),
+              [...access.permissions].sort(),
+            ])}
             request={selected}
           />
         )}

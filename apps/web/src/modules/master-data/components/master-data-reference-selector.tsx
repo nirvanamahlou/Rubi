@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { referenceDisplayName } from '@/i18n/reference-name';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 
@@ -214,7 +216,7 @@ export function MasterDataReferenceSelector({
             ? selectedOptions
                 .map(
                   (record) =>
-                    `${referenceDisplayName(record, language)} (${record.code})`,
+                    `${referenceDisplayName(record, language)} (${masterDataDisplayCode(record)})`,
                 )
                 .join('، ')
             : selectedValues.length
@@ -298,7 +300,7 @@ export function MasterDataReferenceSelector({
                 selectedOptions.map((record) => (
                   <Badge
                     key={record.id}
-                  >{`${referenceDisplayName(record, language)} · ${record.code}`}</Badge>
+                  >{`${referenceDisplayName(record, language)} · ${masterDataDisplayCode(record)}`}</Badge>
                 ))
               ) : (
                 <Badge>
@@ -463,7 +465,7 @@ export function MasterDataReferenceSelector({
                         </span>
                       ) : null}
                       <span className="ms-2 font-mono text-xs" dir="ltr">
-                        {record.code}
+                        {masterDataDisplayCode(record)}
                       </span>
                     </button>
                   );

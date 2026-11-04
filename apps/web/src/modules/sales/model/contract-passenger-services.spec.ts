@@ -114,7 +114,9 @@ it('leaves hotel dates blank for flight-only guests and escapes passenger and ot
   expect(services).toContain('&lt;Other&gt;');
   expect(services).not.toContain('<Passenger>');
   const firstRow = [...services.matchAll(/<tr>(.*?)<\/tr>/g)][1]![1]!;
-  expect(firstRow).toContain('<td>—</td><td>—</td>');
+  expect(firstRow).toContain(
+    '<td class="stay-date-cell">—</td><td class="stay-date-cell">—</td>',
+  );
 });
 
 it('prints city tour, guide and visa only in each assigned passenger Other Services cell', () => {

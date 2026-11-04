@@ -1,3 +1,23 @@
+import { fiscalYearAttributes } from './accounting.fiscal-year';
+import { listFilterAttributes } from './accounting-list-filter';
+import { trialBalanceTable } from './accounting.trial-balance';
+import { codingStandardAttributes } from './accounting.coding-standard';
+import {
+  SALES_CONTRACT_EVENT,
+  hasPendingSalesContractAccounting,
+  assertSalesContractJournalReversible,
+  validateSalesContractAccounts,
+  validateSalesContractAccountingSource,
+} from './sales-contract-accounting.public';
+import {
+  workflowPostingContext,
+  captureWorkflow,
+  workflowJournal,
+  cancelWorkflow,
+  workflowList,
+  workflowSources,
+  assertWorkflowsClosed,
+} from './accounting.workflows';
 import {
   isReceiptAllocation,
   postedReceiptBasis,
@@ -165,6 +185,8 @@ const resetApprovalAttributes = (value: unknown) =>
     'warnings',
   ]);
 const kinds = [
+  'coding-standards',
+  'accounting-list-filters',
   'approval-policies',
   'fiscal-years',
   'voucher-types',
@@ -797,7 +819,8 @@ export class AccountingService {
         requestId: e.requestId,
         trackingNumber: e.trackingNumber ?? e.requestId,
         trackingDate: e.trackingDate ?? financialDate(e.occurredAt),
-        reference: e.reference,
+        reference:
+          e.kind === SALES_CONTRACT_EVENT ? e.trackingNumber : e.reference,
         amount: e.amount.toString(),
         currency: e.currency,
         occurredAt: e.occurredAt.toISOString(),
@@ -809,6 +832,26 @@ export class AccountingService {
     };
   }
 
+  async workflows(bookId: string, actor: AuthenticatedActor) {
+    this.require(actor, 'finance.journal.read');
+    return this.database.client.$transaction(async (tx) =>
+      workflowList(tx, await this.book(tx, bookId, actor)),
+    );
+  }
+  async workflowSources(
+    bookId: string,
+    search: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'finance.journal.create');
+    return this.database.client.$transaction(async (tx) =>
+      workflowSources(
+        tx,
+        await this.book(tx, bookId, actor),
+        v.text(search, 160),
+      ),
+    );
+  }
   async command(
     bookId: string,
     action: string,
@@ -816,62 +859,68 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     const permission: IamPermissionCode =
-      action === 'export-batch'
-        ? 'finance.export'
-        : [
-              'approve',
-              'approve-fx',
-              'review-document',
-              'unreview-document',
-              'review-documents',
-              'unreview-documents',
-              'review-all-preview',
-              'review-all-documents',
-            ].includes(action)
-          ? 'finance.journal.approve'
-          : [
-                'post',
-                'document-posting-preview',
-                'post-documents',
-                'general-document-preview',
-                'general-document-issue',
-                'general-document-date',
-              ].includes(action)
-            ? 'finance.journal.post'
-            : action === 'reverse'
-              ? 'finance.journal.reverse'
+      action === 'workflow-cancel'
+        ? 'finance.journal.approve'
+        : action.startsWith('workflow-')
+          ? 'finance.journal.create'
+          : action === 'export-batch'
+            ? 'finance.export'
+            : [
+                  'approve',
+                  'approve-fx',
+                  'review-document',
+                  'unreview-document',
+                  'review-documents',
+                  'unreview-documents',
+                  'review-all-preview',
+                  'review-all-documents',
+                ].includes(action)
+              ? 'finance.journal.approve'
               : [
-                    'close-period',
-                    'year-end-closing',
-                    'year-end-opening',
-                    'year-end-preview',
-                    'year-end-final',
-                    'year-end-nature-adjustment',
+                    'post',
+                    'document-posting-preview',
+                    'post-documents',
+                    'general-document-preview',
+                    'general-document-issue',
+                    'general-document-date',
                   ].includes(action)
-                ? 'finance.period.close'
-                : [
-                      'source-journal',
-                      'financial-event-journal',
-                      'allocation-run',
-                      'allocation-preview',
-                      'automatic-preview',
-                      'automatic-run',
-                      'document-revaluation-preview',
-                      'document-revaluation-run',
-                      'document-transfer-preview',
-                      'document-transfer-run',
-                      'document-import-run',
-                      'revaluation-preview',
-                      'revaluation-run',
-                      'number-drafts',
-                      'number-journal-preview',
-                      'move-drafts',
-                      'reorder-journals',
-                    ].includes(action) ||
-                    action.startsWith('journal') ||
-                    ['submit', 'return', 'cancel', 'restore'].includes(action)
-                  ? 'finance.journal.create'
-                  : 'finance.account.manage';
+                ? 'finance.journal.post'
+                : action === 'reverse'
+                  ? 'finance.journal.reverse'
+                  : [
+                        'close-period',
+                        'year-end-closing',
+                        'year-end-opening',
+                        'year-end-preview',
+                        'year-end-final',
+                        'year-end-nature-adjustment',
+                      ].includes(action)
+                    ? 'finance.period.close'
+                    : [
+                          'source-journal',
+                          'financial-event-journal',
+                          'allocation-run',
+                          'allocation-preview',
+                          'automatic-preview',
+                          'automatic-run',
+                          'document-revaluation-preview',
+                          'document-revaluation-run',
+                          'document-transfer-preview',
+                          'document-transfer-run',
+                          'document-import-run',
+                          'revaluation-preview',
+                          'revaluation-run',
+                          'number-drafts',
+                          'number-journal-preview',
+                          'move-drafts',
+                          'reorder-journals',
+                        ].includes(action) ||
+                        action.startsWith('journal') ||
+                        ['submit', 'return', 'cancel', 'restore'].includes(
+                          action,
+                        )
+                      ? 'finance.journal.create'
+                      : 'finance.account.manage';
     this.require(actor, permission);
     const c = v.object(body) as unknown as AccountingCommandV1;
     const key = v.text(c.key, 100, true),
@@ -954,6 +1003,35 @@ export class AccountingService {
     financialSourceRebuild = false,
   ): Promise<unknown> {
     const bookId = book.id;
+    if (action === 'workflow-create')
+      return captureWorkflow(tx, book, p, actor);
+    if (action === 'workflow-cancel') return cancelWorkflow(tx, book, p, actor);
+    if (action === 'workflow-journal') {
+      const result = await workflowJournal(
+        tx,
+        book,
+        p,
+        actor,
+        async (payload) =>
+          this.execute(
+            tx,
+            book,
+            'journal-save',
+            payload,
+            undefined,
+            actor,
+            true,
+            stateEvents,
+          ) as Promise<{ id: string }>,
+      );
+      if ('noJournal' in result) return result;
+      const journal = await tx.accountingJournal.findUniqueOrThrow({
+        where: { id: result.id },
+        include: journalInclude,
+      });
+      await this.validatePosting(tx, book, journal);
+      return journal;
+    }
     if (
       action === 'close-period' ||
       action === 'year-end-final' ||
@@ -966,13 +1044,22 @@ export class AccountingService {
         },
       });
       if (!period) throw new NotFoundException();
+      await assertWorkflowsClosed(tx, book, period.startDate, period.endDate);
       const [pending] = await tx.$queryRaw<
         { count: number }[]
       >`SELECT count(*)::int AS count FROM finance_accounting_events e
         LEFT JOIN accounting_journals j ON j.id=e."journalId"
-        WHERE e."branchId"=${book.branchId}::uuid AND (e."journalId" IS NULL OR j.status='CANCELLED')
+        WHERE e.kind<>${SALES_CONTRACT_EVENT} AND e."branchId"=${book.branchId}::uuid AND (e."journalId" IS NULL OR j.status='CANCELLED')
           AND (e."occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date`;
-      if (pending?.count)
+      if (
+        pending?.count ||
+        (await hasPendingSalesContractAccounting(
+          tx,
+          book.branchId,
+          period.startDate,
+          period.endDate,
+        ))
+      )
         v.rule(
           'منابع مالی بدون سند این شعبه در بازه دوره باید پیش از بستن دوره تعیین تکلیف شوند.',
         );
@@ -1647,6 +1734,8 @@ export class AccountingService {
             'detail-types',
             'allocation-templates',
             'account-mappings',
+            'coding-standards',
+            'accounting-list-filters',
           ].includes(row.kind))
       )
         v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
@@ -2759,6 +2848,7 @@ export class AccountingService {
         where: { id: eventId, branchId: book.branchId },
       });
       if (!event) v.rule('رویداد مالی در این شعبه پیدا نشد.');
+      await validateSalesContractAccountingSource(tx, event);
       if (isReceiptAllocation(event.kind)) {
         if (action === 'financial-rule-save')
           v.rule('حساب تخصیص از سند دریافت اصلی حمل می‌شود و قاعده جدا ندارد.');
@@ -2811,6 +2901,13 @@ export class AccountingService {
         fx
           ? { id: fx.id, rate: fx.rate, baseCurrency: book.baseCurrency }
           : undefined,
+      );
+      await validateSalesContractAccounts(
+        tx,
+        event,
+        bookId,
+        lines[0]!.accountId,
+        lines[1]!.accountId,
       );
       if (lines[0]!.accountId === lines[1]!.accountId)
         v.rule('حساب بدهکار و بستانکار باید متفاوت باشند.');
@@ -2960,7 +3057,11 @@ export class AccountingService {
               journal?.description ??
               accountingFinancialEventLabels[event.kind] ??
               'عملیات مالی',
-            reference: journal?.reference ?? event.reference,
+            reference:
+              journal?.reference ??
+              (event.kind === SALES_CONTRACT_EVENT
+                ? event.trackingNumber
+                : event.reference),
             sourceKey: event.sourceKey,
             attributes: {
               ...resetApprovalAttributes(journal?.attributes ?? {}),
@@ -3158,7 +3259,23 @@ export class AccountingService {
         this.version(existing.version, expected);
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
-      const attributes = v.attributes(p.attributes);
+      let attributes = v.attributes(p.attributes);
+      if (kind === 'accounting-list-filters')
+        attributes = listFilterAttributes(attributes);
+      if (kind === 'coding-standards') {
+        attributes = codingStandardAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+        );
+        attributes.notes = JSON.stringify(
+          setupNotes(
+            attributes.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
+        v.attributes(attributes);
+      }
       if (kind === 'detail-types' && attributes.notes !== undefined)
         attributes.notes = JSON.stringify(
           setupNotes(
@@ -3179,8 +3296,12 @@ export class AccountingService {
           v.rule('حد بالای تأیید باید بزرگ‌تر از حد پایین باشد.');
       }
 
-      if (kind === 'fiscal-years' && Object.keys(attributes).length)
-        v.invalid('بازه سال مالی فقط در تخصیص سال به دفتر ثبت می‌شود.');
+      if (kind === 'fiscal-years')
+        attributes = fiscalYearAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+          actorName,
+        );
       if (kind === 'detail-types') {
         if (
           existing &&
@@ -3831,13 +3952,15 @@ export class AccountingService {
       });
       if (existing) this.version(existing.version, expected);
       const kind = v.text(p.kind, 16, true);
-      const sourceForm = p.sourceForm === 'rahkaran-documents-v1';
-      if (sourceForm && kind === 'CLOSING') v.invalid('فرم الگو معتبر نیست.');
+      const closingSource = p.sourceForm === 'rahkaran-closing-v1';
+      const sourceForm =
+        closingSource || p.sourceForm === 'rahkaran-documents-v1';
+      if (sourceForm && closingSource !== (kind === 'CLOSING'))
+        v.invalid('فرم الگو معتبر نیست.');
       if (
         existing &&
-        sourceForm !==
-          (v.attributes(existing.attributes).sourceForm ===
-            'rahkaran-documents-v1')
+        (sourceForm ? p.sourceForm : undefined) !==
+          v.attributes(existing.attributes).sourceForm
       )
         v.rule('فرم این الگو با قالب ذخیره‌شده یکسان نیست.');
       if (!['AUTOMATIC', 'REVALUATION', 'CLOSING'].includes(kind))
@@ -3885,6 +4008,7 @@ export class AccountingService {
             !lossAccountId ||
             retainedAccountId)) ||
         (kind === 'CLOSING' &&
+          !closingSource &&
           (!voucherTypeId ||
             !retainedAccountId ||
             gainAccountId ||
@@ -3925,7 +4049,7 @@ export class AccountingService {
         if (
           sourceForm &&
           !(
-            kind === 'AUTOMATIC' ? ['SOURCE', 'TARGET'] : ['OFFSET', 'BASIS']
+            kind !== 'REVALUATION' ? ['SOURCE', 'TARGET'] : ['OFFSET', 'BASIS']
           ).includes(role!)
         )
           v.invalid('نقش ردیف الگو معتبر نیست.');
@@ -4046,7 +4170,9 @@ export class AccountingService {
           ? {
               attributes: json({
                 ...v.attributes(existing?.attributes ?? {}),
-                sourceForm: 'rahkaran-documents-v1',
+                sourceForm: closingSource
+                  ? 'rahkaran-closing-v1'
+                  : 'rahkaran-documents-v1',
                 sourceAssignments: JSON.stringify(sourceAssignments),
                 ...(p.notes !== undefined
                   ? {
@@ -4367,7 +4493,8 @@ export class AccountingService {
         existing?.sourceKey &&
         !internal &&
         (/^(OPEN|CLOSE|FINAL|NATURE):/.test(existing.sourceKey) ||
-          !!v.attributes(existing.attributes).financialEventId) &&
+          !!v.attributes(existing.attributes).financialEventId ||
+          !!v.attributes(existing.attributes).financialWorkflowId) &&
         (periodId !== existing.periodId ||
           typeId !== existing.typeId ||
           documentDate !== existing.documentDate)
@@ -4932,6 +5059,7 @@ export class AccountingService {
               'ابتدا همه تخصیص‌های دریافت را برگشت دهید و اسناد تخصیص و برگشت را ثبت نهایی کنید.',
             );
         }
+        await assertSalesContractJournalReversible(tx, journal.id);
         if (journal.status !== 'POSTED')
           v.rule('فقط سند قطعی برگشت داده می‌شود.');
         if (
@@ -5186,7 +5314,8 @@ export class AccountingService {
     }>,
   ) {
     const endAttributes = v.attributes(journal.attributes);
-    let financialValuationAt: Date | null = null;
+    const workflowContext = await workflowPostingContext(tx, book, journal);
+    let financialValuationAt: Date | null = workflowContext.at;
     let allocationCarry = false;
     if (endAttributes.financialEventId) {
       const event = await tx.financeAccountingEvent.findFirst({
@@ -5197,6 +5326,34 @@ export class AccountingService {
         },
       });
       if (!event) v.rule('مبنای رویداد مالی سند پیدا نشد.');
+      await validateSalesContractAccountingSource(tx, event);
+      await validateSalesContractAccounts(
+        tx,
+        event,
+        book.id,
+        journal.lines.find((l) => l.debit.gt(0))?.accountId ?? '',
+        journal.lines.find((l) => l.credit.gt(0))?.accountId ?? '',
+      );
+      if (event.kind === SALES_CONTRACT_EVENT) {
+        const debit = journal.lines.find((l) => l.debit.gt(0));
+        const credit = journal.lines.find((l) => l.credit.gt(0));
+        if (
+          journal.lines.length !== 2 ||
+          !debit ||
+          !credit ||
+          !debit.credit.isZero() ||
+          !credit.debit.isZero() ||
+          (event.currency === book.baseCurrency
+            ? !debit.debit.eq(event.amount) || !credit.credit.eq(event.amount)
+            : !debit.foreignAmount?.eq(event.amount) ||
+              !credit.foreignAmount?.eq(event.amount) ||
+              debit.currency !== event.currency ||
+              credit.currency !== event.currency)
+        )
+          v.rule(
+            'اقلام تعهد قرارداد باید دقیقاً با مبلغ و ارز مبدأ منطبق باشند.',
+          );
+      }
       financialValuationAt = event.occurredAt;
       if (isReceiptAllocation(event.kind)) {
         if (!event.basisEventId) v.rule('مبنای تخصیص سند یافت نشد.');
@@ -5516,6 +5673,7 @@ export class AccountingService {
       }
       if (row.currency && row.currency !== book.baseCurrency) {
         const historicalCarry =
+          workflowContext.carryAccounts.includes(row.accountId!) ||
           allocationCarry ||
           (!!journal.sourceKey &&
             /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
@@ -5743,12 +5901,12 @@ export class AccountingService {
       }[]
     >`
       SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",
-        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
+        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
         SUM(CASE WHEN l.currency<>${book.baseCurrency} THEN CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END ELSE 0 END) AS quantity,
         SUM(l.debit-l.credit) AS base
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
       WHERE j."bookId"=${book.id}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED' AND j."documentDate"<=${asOf}
-      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
+      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
     const rows = values
       .filter(
         (r) =>
@@ -6073,6 +6231,8 @@ export class AccountingService {
           title: a.title,
           level: a.level,
           opening: DecimalValue.zero(),
+          priorDebit: DecimalValue.zero(),
+          priorCredit: DecimalValue.zero(),
           debit: DecimalValue.zero(),
           credit: DecimalValue.zero(),
         },
@@ -6080,10 +6240,13 @@ export class AccountingService {
     );
     for (const row of openingRows) {
       const a = row.accountId ? map.get(row.accountId) : null;
-      if (a)
+      if (a) {
+        a.priorDebit = DecimalValue.parse(row._sum.debit?.toString() ?? '0');
+        a.priorCredit = DecimalValue.parse(row._sum.credit?.toString() ?? '0');
         a.opening = DecimalValue.parse(
           row._sum.debit?.toString() ?? '0',
         ).subtract(DecimalValue.parse(row._sum.credit?.toString() ?? '0'));
+      }
     }
     let debit = DecimalValue.zero(),
       credit = DecimalValue.zero();
@@ -6103,6 +6266,8 @@ export class AccountingService {
           parent = account.parentId ? map.get(account.parentId) : null;
         if (own && parent) {
           parent.opening = parent.opening.add(own.opening);
+          parent.priorDebit = parent.priorDebit.add(own.priorDebit);
+          parent.priorCredit = parent.priorCredit.add(own.priorCredit);
           parent.debit = parent.debit.add(own.debit);
           parent.credit = parent.credit.add(own.credit);
         }
@@ -6117,6 +6282,8 @@ export class AccountingService {
         code: a.code,
         title: a.title,
         opening: a.opening.toString(),
+        priorDebit: a.priorDebit.toString(),
+        priorCredit: a.priorCredit.toString(),
         debit: a.debit.toString(),
         credit: a.credit.toString(),
         balance: a.opening.add(a.debit).subtract(a.credit).toString(),
@@ -6134,6 +6301,7 @@ export class AccountingService {
       rows,
       debit: (groupMembers ? selectedDebit : debit).toString(),
       credit: (groupMembers ? selectedCredit : credit).toString(),
+      table: trialBalanceTable(rows, query.structure, query.balanceType),
     };
   }
   async analyticalReport(

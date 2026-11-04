@@ -10,6 +10,11 @@ import {
 } from './model';
 
 describe('call center contact history', () => {
+  it('preserves local caller numbers without guessing an area code', () => {
+    expect(validPhone('۲۲۳۳۴۴۵۵')).toBe(true);
+    expect(normalizePhone('۲۲۳۳۴۴۵۵')).toBe('22334455');
+    expect(validPhone('123abc')).toBe(false);
+  });
   it('groups Persian, Arabic and international Iranian phone formats together', () => {
     expect(normalizePhone('+98 (912) 000-0001')).toBe('09120000001');
     expect(normalizePhone('۰۰۹۸۹۱۲۰۰۰۰۰۰۱')).toBe('09120000001');

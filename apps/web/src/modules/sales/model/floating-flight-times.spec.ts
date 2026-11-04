@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  confirmFloatingFlight,
   floatingFlightClock,
+  floatingFlightDate,
   floatingFlightTimes,
 } from './floating-flight-times';
 const flight = {
@@ -46,4 +48,29 @@ describe('floating flight clocks reuse prior calendar dates', () => {
         .departureAt,
     ).toBe('');
   });
+});
+
+it('does not confirm incomplete details or invalid dates', () => {
+  expect(confirmFloatingFlight('', flight).confirmation).toBe('invalid');
+  expect(
+    confirmFloatingFlight('2027-09-01', {
+      ...flight,
+      departureAt: '2027-09-01T01:08',
+      arrivalAt: '2027-09-01T00:02',
+      carrierName: '',
+    }).confirmation,
+  ).toBe('invalid');
+  const saved = confirmFloatingFlight('2027-09-01', {
+    ...flight,
+    departureAt: '2027-09-01T01:08',
+    arrivalAt: '2027-09-01T00:02',
+  });
+  expect(saved.confirmation).toBe('saved');
+  expect(saved.arrivalAt).toBe('2027-09-02T00:02');
+});
+
+it('restores the saved Tehran flight day without catalog search state', () => {
+  expect(floatingFlightDate('2026-10-18T21:30:00Z')).toBe('2026-10-19');
+  expect(floatingFlightDate('2026-10-19T01:00')).toBe('2026-10-19');
+  expect(floatingFlightDate('')).toBe('');
 });

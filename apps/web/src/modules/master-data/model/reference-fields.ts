@@ -8,7 +8,7 @@ export interface ReferenceFieldConfig {
   requiredRole?: string;
   optional?: boolean;
   multiple?: boolean;
-  scopeField?: 'organizationId' | 'countryId';
+  scopeField?: 'organizationId' | 'countryId' | 'cityId';
 }
 export type ReferenceSelectorState =
   'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
@@ -179,6 +179,7 @@ const configs: Partial<
     countryId: { target: 'countries', payload: 'id' },
   },
   hotels: {
+    currencyId: { target: 'currencies', payload: 'id', optional: true },
     cityId: { target: 'cities', payload: 'id' },
     chainId: {
       target: 'hotel-chains',

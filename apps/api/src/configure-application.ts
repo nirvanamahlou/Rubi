@@ -1,11 +1,33 @@
-import { Logger, ValidationPipe, type INestApplication } from '@nestjs/common';
+import {
+  Logger,
+  PayloadTooLargeException,
+  ValidationPipe,
+  type INestApplication,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { parseCommaSeparatedList } from '@nora/config';
+import { json, type RequestHandler } from 'express';
 
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { requestIdMiddleware } from './common/request-id.middleware';
+
+function boundedJson(limit: string): RequestHandler {
+  const parse = json({ limit });
+  return (req, res, next) =>
+    parse(req, res, (error: unknown) => {
+      // Keep parser limit errors as client errors through the application filter.
+      next(
+        error &&
+          typeof error === 'object' &&
+          'status' in error &&
+          error.status === 413
+          ? new PayloadTooLargeException()
+          : error,
+      );
+    });
+}
 
 export function configureApplication(app: INestApplication): void {
   const config = app.get(ConfigService);
@@ -17,6 +39,10 @@ export function configureApplication(app: INestApplication): void {
   );
 
   app.use(requestIdMiddleware);
+  // A bounded 500-row worksheet can exceed Express's default 100 KiB JSON limit.
+  // Register before Nest's default parser; all other routes retain their limit.
+  app.use(`/${apiPrefix}/hr/payroll-worksheets`, boundedJson('2mb'));
+  app.use(boundedJson('100kb'));
   app.setGlobalPrefix(apiPrefix);
   app.enableCors({
     credentials: true,

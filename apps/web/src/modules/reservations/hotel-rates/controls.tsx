@@ -1,4 +1,5 @@
 'use client';
+import { brokerEnglishDisplayName } from '@nora/contracts';
 import { useEffect, useState } from 'react';
 import Link from '@/i18n/link';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -45,6 +46,15 @@ export async function rateRequest<T>(
   return response.json();
 }
 export type Option = { id: string; name: string };
+export function lookupSelectedLabel(
+  kind: string,
+  value: Option | null,
+  options: Option[],
+) {
+  if (kind !== 'brokers') return value?.name;
+  const selected = options.find((option) => option.id === value?.id) ?? value;
+  return selected ? brokerEnglishDisplayName(selected) : undefined;
+}
 export function Choice({
   label,
   value,
@@ -128,7 +138,7 @@ export function Lookup({
       <SearchCombobox
         label={label}
         value={value?.id ?? ''}
-        selectedLabel={value?.name}
+        selectedLabel={lookupSelectedLabel(kind, value, options)}
         placeholder={`جست‌وجو و انتخاب ${label}`}
         remote
         onSearchChange={(query) => {
@@ -141,7 +151,9 @@ export function Lookup({
         }}
         options={choices.map((option) => ({
           value: option.id,
-          label: option.name,
+          label:
+            kind === 'brokers' ? brokerEnglishDisplayName(option) : option.name,
+          searchText: option.name,
         }))}
       />
       {total > 50 && (

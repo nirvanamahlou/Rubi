@@ -5,6 +5,18 @@ import { TelephonyWorker } from './telephony-worker';
 
 afterEach(() => vi.unstubAllGlobals());
 describe('telephony worker transport', () => {
+  it('rejects public plaintext transport before exposing the machine credential', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const worker = new TelephonyWorker(
+      new ConfigService({
+        TELEPHONY_API_URL: 'http://example.invalid/api/v1',
+        TELEPHONY_WORKER_SECRET: 'x'.repeat(32),
+      }),
+    );
+    await expect(worker.request('pending')).rejects.toThrow('HTTPS');
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('is disabled without explicit internal transport configuration', () => {
     const worker = new TelephonyWorker(new ConfigService({}));
     worker.onModuleInit();

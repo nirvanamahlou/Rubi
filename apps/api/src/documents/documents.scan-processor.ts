@@ -85,9 +85,9 @@ export class DocumentsScanProcessor implements OnModuleInit, OnModuleDestroy {
     } catch {
       await this.repository.finishScanJob(job, {
         status: 'SCAN_FAILED',
-        adapterReference: 'windows-defender:error',
+        adapterReference: 'document-antivirus:error',
         scannedAt: new Date(),
-        engineVersion: 'Microsoft Defender',
+        engineVersion: 'Configured document antivirus',
         threatCode: 'ANTIVIRUS_SCAN_FAILED',
       });
     }

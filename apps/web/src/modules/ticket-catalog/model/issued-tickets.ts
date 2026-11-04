@@ -1,6 +1,17 @@
-export type IssuedTicketStatus = 'issued' | 'changed' | 'refunded' | 'voided';
+export type IssuedTicketStatus =
+  'issued' | 'changed' | 'refunded' | 'voided' | 'allocated';
 
 export interface IssuedTicketReadModel {
+  direction?: string | undefined;
+  flightNumber?: string | undefined;
+  arrivalAt?: string | undefined;
+  serviceKind?: string | undefined;
+  serviceTitle?: string | undefined;
+  hotelId?: string | undefined;
+  hotelName?: string | undefined;
+  checkInDate?: string | undefined;
+  checkOutDate?: string | undefined;
+  reportStatus?: string | undefined;
   id: string;
   contractNumber: string;
   passengerDisplayName: string;
@@ -18,6 +29,9 @@ export interface IssuedTicketReadModel {
 }
 
 export interface IssuedTicketQuery {
+  serviceKind?: string | undefined;
+  hotelId?: string | undefined;
+  dateBasis?: string | undefined;
   search: string;
   contractNumber: string;
   passenger: string;
@@ -32,6 +46,9 @@ export interface IssuedTicketQuery {
 }
 
 export const initialIssuedTicketQuery: IssuedTicketQuery = {
+  serviceKind: 'FLIGHT',
+  hotelId: 'all',
+  dateBasis: 'ISSUED',
   search: '',
   contractNumber: '',
   passenger: '',
@@ -50,6 +67,14 @@ const includes = (value: string, query: string) =>
     .toLocaleLowerCase('fa-IR')
     .includes(query.trim().toLocaleLowerCase('fa-IR'));
 
+function reportDay(ticket: IssuedTicketReadModel, query: IssuedTicketQuery) {
+  const time = Date.parse(
+    query.dateBasis === 'TRAVEL' ? ticket.departureAt : ticket.issuedAt,
+  );
+  return Number.isFinite(time)
+    ? new Date(time + 12600000).toISOString().slice(0, 10)
+    : '';
+}
 export function queryIssuedTickets(
   tickets: readonly IssuedTicketReadModel[],
   query: IssuedTicketQuery,
@@ -67,6 +92,8 @@ export function queryIssuedTickets(
               ticket.origin,
               ticket.destination,
               ticket.airline,
+              ticket.serviceTitle ?? '',
+              ticket.hotelName ?? '',
             ].join(' '),
             query.search,
           )) &&
@@ -79,20 +106,21 @@ export function queryIssuedTickets(
             `${ticket.ticketNumber ?? ''} ${ticket.pnr ?? ''}`,
             query.documentNumber,
           )) &&
+        (!query.serviceKind ||
+          query.serviceKind === 'all' ||
+          ticket.serviceKind === query.serviceKind ||
+          (!ticket.serviceKind && query.serviceKind === 'FLIGHT')) &&
+        (!query.hotelId ||
+          query.hotelId === 'all' ||
+          ticket.hotelId === query.hotelId) &&
         (query.originCityId === 'all' ||
           ticket.originCityId === query.originCityId) &&
         (query.destinationCityId === 'all' ||
           ticket.destinationCityId === query.destinationCityId) &&
         (query.airlineId === 'all' || ticket.airlineId === query.airlineId) &&
         (query.status === 'all' || ticket.status === query.status) &&
-        (!query.issuedFrom ||
-          new Date(Date.parse(ticket.issuedAt) + 12600000)
-            .toISOString()
-            .slice(0, 10) >= query.issuedFrom) &&
-        (!query.issuedTo ||
-          new Date(Date.parse(ticket.issuedAt) + 12600000)
-            .toISOString()
-            .slice(0, 10) <= query.issuedTo),
+        (!query.issuedFrom || reportDay(ticket, query) >= query.issuedFrom) &&
+        (!query.issuedTo || reportDay(ticket, query) <= query.issuedTo),
     )
     .sort(
       (left, right) =>
@@ -103,6 +131,7 @@ export function queryIssuedTickets(
   const page = Math.max(1, Math.min(pages, query.page));
   return {
     total: rows.length,
+    matchedRows: rows,
     pages,
     page,
     rows: rows.slice((page - 1) * 10, page * 10),
@@ -117,6 +146,12 @@ export function countIssuedTicketsByRoute(
     { key: string; origin: string; destination: string; count: number }
   >();
   for (const ticket of tickets) {
+    if (
+      (ticket.serviceKind && ticket.serviceKind !== 'FLIGHT') ||
+      !ticket.originCityId ||
+      !ticket.destinationCityId
+    )
+      continue;
     const key = `${ticket.originCityId}::${ticket.destinationCityId}`;
     const current = counts.get(key);
     if (current) current.count += 1;

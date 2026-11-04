@@ -4,8 +4,13 @@ import {
   reservationFormData,
   type ReservationFormIntake,
 } from './reservation-form';
-import { defaultVoucherSettings, supplierFormData } from './voucher-settings';
+import {
+  defaultVoucherSettings,
+  supplierFormData,
+  voucherFormData,
+} from './voucher-settings';
 import { ReservationFormSheet } from '../components/reservation-form-sheet';
+import { VoucherFormSheet } from '../components/voucher-form-sheet';
 import { reservationPdfHtml } from '../server/reservation-pdf-html';
 function fixture() {
   return {
@@ -89,3 +94,85 @@ it('retains legacy snapshot names and saved child bands when the optional new pr
     reservationFormData(intake).passengers.find((p) => p.id === 'a'),
   ).toMatchObject({ name: 'OLD TITLE', age: 'CHD (2-6)' });
 });
+
+it('keeps names separate from room allocation and prints registered genders in both previews and PDFs', () => {
+  const intake = fixture();
+  intake.outputPassengers = intake.outputPassengers!.map((person) => ({
+    ...person,
+    gender: person.customerId === 'a' ? 'M' : 'F',
+  }));
+  const settings = defaultVoucherSettings(intake, {});
+  settings.flags.withLetterhead = false;
+  settings.flags.hotel = true;
+  settings.text.hotel = 'SYNTHETIC HOTEL';
+  settings.text.checkIn = '2026-11-01';
+  settings.text.checkOut = '2026-11-04';
+  settings.rooms = [
+    {
+      ordinal: 1,
+      roomTypeNameSnapshot: 'SYNTHETIC DOUBLE',
+      adults: 2,
+      childAges: [],
+    },
+  ];
+  settings.passengers.forEach((person) => {
+    person.roomOrdinal = 1;
+    person.sex = '';
+    person.services = {
+      outboundFlight: false,
+      returnFlight: false,
+      outboundTransfer: false,
+      returnTransfer: false,
+      hotel: true,
+    };
+  });
+  intake.workflow.supplierFormSettings = structuredClone(settings);
+  intake.workflow.voucherSettings = structuredClone(settings);
+  const before = structuredClone(intake);
+  for (const model of [supplierFormData(intake), voucherFormData(intake, {})]) {
+    expect(model.passengers.map((person) => [person.name, person.sex])).toEqual(
+      [
+        ['SECOND / CHILD', 'Female'],
+        ['FIRST / CHILD', 'Male'],
+      ],
+    );
+    expect(model.roomBreakdown[0]?.roomType).toBe('SYNTHETIC DOUBLE');
+  }
+  for (const html of [
+    renderToStaticMarkup(<ReservationFormSheet intake={intake} logo="" />),
+    renderToStaticMarkup(<VoucherFormSheet intake={intake} logo="" voucher />),
+    reservationPdfHtml(intake, {}, '', '', false),
+    reservationPdfHtml(intake, {}, '', '', true),
+  ]) {
+    expect(html).toContain('FIRST / CHILD</td>');
+    expect(html).toContain('SECOND / CHILD</td>');
+    expect(html).toContain('>Male</td>');
+    expect(html).toContain('>Female</td>');
+    expect(html).toContain('SYNTHETIC DOUBLE');
+    expect(html).not.toContain('/ ROOM');
+  }
+  expect(intake).toEqual(before);
+});
+
+it.each(['voucherSettings', 'sentSupplierFormSettings'] as const)(
+  'fills legacy blank gender in %s defaults from registered identity while retaining explicit overrides',
+  (source) => {
+    const intake = fixture();
+    const saved = defaultVoucherSettings(intake, {});
+    intake.workflow[source] = saved;
+    intake.outputPassengers = intake.outputPassengers!.map((person) => ({
+      ...person,
+      gender: person.customerId === 'a' ? 'M' : null,
+    }));
+    const before = structuredClone(intake);
+    const defaults = defaultVoucherSettings(intake, {});
+    expect(defaults.passengers.find((p) => p.id === 'a')?.sex).toBe('MALE');
+    expect(defaults.passengers.find((p) => p.id === 'b')?.sex).toBe('MALE');
+    expect(intake).toEqual(before);
+    saved.passengers.find((p) => p.id === 'a')!.sex = 'FEMALE';
+    expect(
+      defaultVoucherSettings(intake, {}).passengers.find((p) => p.id === 'a')
+        ?.sex,
+    ).toBe('FEMALE');
+  },
+);

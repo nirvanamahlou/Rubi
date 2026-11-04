@@ -27,26 +27,23 @@ import type {
   ProcurementRequestV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { Input, FormField, Textarea } from '@/components/ui/form-controls';
+import { FormField, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
-import { DraftForm, selectClass } from './draft-form';
+import { DraftForm } from './draft-form';
 import { statusLabels } from './model';
 import { InternalSections } from './internal-sections';
 import { PurchaseOrdersSection } from './orders-section';
 import { DocumentLinks, recordData } from './record-details';
-import { ProcurementOwnerPicker } from './owner-picker';
 import { ProcurementExportPanel } from './export-panel';
 import { formatProcurementDate } from './presentation';
-import {
-  filterSampleRequests,
-  sampleRequests,
-  type ProcurementListRow,
-} from './sample-requests';
-import { ProcurementSelect } from './procurement-select';
-import { ProcurementRecordActions } from './record-actions';
-import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
+import type { ProcurementListRow } from './sample-requests';
 import { cn } from '@/lib/utils';
+import { PettyFundCard } from './petty-fund-card';
+import {
+  PettyRegistrationForm,
+  PettyRegistrations,
+} from './petty-registrations';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -61,8 +58,16 @@ const groups = [
   'سفارش‌های خرید',
   'دریافت، پذیرش و مغایرت',
   'فاکتورها و ارتباط مالی',
+  'ثبت‌ها',
 ] as const;
 const areaTone = {
+  8: {
+    icon: ReceiptText,
+    border: 'border-violet-300/70 dark:border-violet-400/25',
+    glow: 'from-violet-400/20 dark:from-violet-400/12',
+    badge:
+      'bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300',
+  },
   1: {
     icon: ClipboardList,
     border: 'border-blue-300/70 dark:border-blue-400/25',
@@ -97,56 +102,14 @@ const sectionKeys = [
   'orders',
   'receipts',
   'invoices',
+  'registrations',
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
-  return index < 0 || index === 7 ? 0 : index;
+  return index < 0 || index === 7 || index === 5 ? 0 : index;
 }
-const nextAction: Record<ProcurementRequestV1['status'], string> = {
-  DRAFT: 'تکمیل و ارسال درخواست',
-  SUBMITTED: 'تعیین مسئول و بررسی',
-  IN_REVIEW: 'ثبت تصمیم تأییدکننده',
-  CHANGES_REQUESTED: 'اصلاح و ارسال مجدد',
-  APPROVED: 'دریافت پیشنهاد تأمین‌کنندگان',
-  SOURCING: 'پیگیری سفارش و تحویل',
-  REJECTED: 'پایان بررسی',
-  CANCELLED: 'لغوشده',
-  CLOSED: 'پرونده بسته است',
-};
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'دریافت اطلاعات ناموفق بود.';
-function Pager({
-  page,
-  hasMore,
-  setPage,
-}: {
-  page: number;
-  hasMore: boolean;
-  setPage: (value: number) => void;
-}) {
-  return (
-    <nav
-      aria-label="صفحه‌بندی"
-      className="flex items-center justify-between gap-3 pt-4"
-    >
-      <Button
-        variant="outline"
-        disabled={page === 1}
-        onClick={() => setPage(page - 1)}
-      >
-        قبلی
-      </Button>
-      <span className="text-sm">صفحه {page.toLocaleString('fa-IR')}</span>
-      <Button
-        variant="outline"
-        disabled={!hasMore}
-        onClick={() => setPage(page + 1)}
-      >
-        بعدی
-      </Button>
-    </nav>
-  );
-}
 export function ProcurementWorkspace() {
   const bootstrap = useQuery({
     queryKey: ['procurement', 'bootstrap'],
@@ -206,15 +169,19 @@ function WorkspaceState({
 }) {
   const client = useQueryClient();
   const [group, setGroup] = useState(() => sectionIndex(initialSection));
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
-  const [createdFrom, setCreatedFrom] = useState('');
-  const [createdTo, setCreatedTo] = useState('');
+  const [status] = useState('');
+  const [search] = useState('');
+  const [createdFrom] = useState('');
+  const [createdTo] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(initialRequestId);
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [registrationBranch, setRegistrationBranch] = useState(
+    bootstrap.defaultBranchId ?? bootstrap.branches[0]?.id ?? '',
+  );
   const can = (permission: ProcurementPermission) =>
     bootstrap.permissions.includes(permission);
   useEffect(() => {
@@ -246,6 +213,7 @@ function WorkspaceState({
   );
   const navigateGroup = useCallback(
     (index: number) => {
+      if (index === 5) index = 0;
       setGroup(index);
       setPage(1);
       setSelectedId(null);
@@ -296,22 +264,6 @@ function WorkspaceState({
     enabled: group === 0,
     retry: false,
   });
-  const baselineList = useQuery({
-    queryKey: ['procurement', 'requests', 1, '', '', queryQueue, '', ''],
-    queryFn: () =>
-      procurementApi.list(
-        new URLSearchParams({
-          page: '1',
-          search: '',
-          status: '',
-          queue: queryQueue,
-          createdFrom: '',
-          createdTo: '',
-        }),
-      ),
-    enabled: group === 0,
-    retry: false,
-  });
   const detail = useQuery({
     queryKey: ['procurement', 'request', selectedId],
     queryFn: () => procurementApi.get(selectedId!),
@@ -350,20 +302,7 @@ function WorkspaceState({
     closeRequest,
   ]);
   usePageBreadcrumbs('/purchases', breadcrumbs);
-  const showSamples =
-    group === 0 &&
-    page === 1 &&
-    list.isSuccess &&
-    baselineList.isSuccess &&
-    baselineList.data.items.length === 0;
-  const rows: ProcurementListRow[] = showSamples
-    ? filterSampleRequests(sampleRequests, {
-        search: querySearch,
-        status,
-        createdFrom,
-        createdTo,
-      })
-    : (list.data?.items ?? []);
+  const rows: ProcurementListRow[] = list.data?.items ?? [];
   function saved(request: ProcurementRequestV1 & { deleted?: boolean }) {
     if (request.deleted) {
       closeRequest();
@@ -378,6 +317,7 @@ function WorkspaceState({
     setCreating(false);
     setEditing(false);
     openRequest(request.id);
+    void client.invalidateQueries({ queryKey: ['procurement', 'petty-fund'] });
     client.setQueryData(['procurement', 'request', request.id], request);
     void client.invalidateQueries({ queryKey: ['procurement', 'requests'] });
     void client.invalidateQueries({
@@ -401,10 +341,6 @@ function WorkspaceState({
         queryKey: ['procurement', 'operation-options'],
       }),
     ]);
-  }
-  async function deleteListRequest(row: ProcurementListRow) {
-    const result = await procurementApi.get(row.id);
-    await removeRequest(result);
   }
   if (creating || (editing && detail.data))
     return (
@@ -443,6 +379,15 @@ function WorkspaceState({
         </div>
       </div>
     );
+  if (group === 8)
+    return (
+      <PettyRegistrations
+        bootstrap={bootstrap}
+        onBack={() => navigateGroup(0)}
+        selectedBranchId={registrationBranch}
+        onBranchChange={setRegistrationBranch}
+      />
+    );
   if (group === 5) return <PurchaseOrdersSection bootstrap={bootstrap} />;
   if (group > 0)
     return (
@@ -464,6 +409,13 @@ function WorkspaceState({
     );
   return (
     <div className="space-y-5">
+      {registering && (
+        <PettyRegistrationForm
+          branchId={registrationBranch}
+          onClose={() => setRegistering(false)}
+          onSaved={() => setRegistering(false)}
+        />
+      )}
       {selectedId ? (
         <div className="space-y-4">
           <Button variant="outline" onClick={closeRequest}>
@@ -506,9 +458,12 @@ function WorkspaceState({
                 query={{ status, search: querySearch, queue: queryQueue }}
               />
               {can('procurement.request.create') && (
-                <Button onClick={() => setCreating(true)}>
-                  درخواست خرید جدید
-                </Button>
+                <>
+                  <Button onClick={() => setCreating(true)}>
+                    درخواست خرید جدید
+                  </Button>
+                  <Button onClick={() => setRegistering(true)}>ثبت جدید</Button>
+                </>
               )}
             </div>
           </header>
@@ -579,7 +534,7 @@ function WorkspaceState({
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([1, 3, 5] as const).map((index) => {
+            {([1, 3, 8] as const).map((index) => {
               const tone = areaTone[index];
               const Icon = tone.icon;
               return (
@@ -616,127 +571,19 @@ function WorkspaceState({
                 </button>
               );
             })}
+            <PettyFundCard
+              bootstrap={bootstrap}
+              onBranchChange={setRegistrationBranch}
+              selectedBranchId={registrationBranch}
+            />
           </div>
-          <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
-              <div className="grid w-full items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(140px,200px)_minmax(280px,330px)] lg:[&>fieldset]:col-span-1">
-                <FormField id="proc-home-search" label="شماره یا عنوان">
-                  <Input
-                    id="proc-home-search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                </FormField>
-                <FormField id="proc-home-status" label="وضعیت">
-                  <ProcurementSelect
-                    id="proc-home-status"
-                    className={selectClass}
-                    value={status}
-                    onChange={(event) => {
-                      setStatus(event.target.value);
-                      setPage(1);
-                    }}
-                  >
-                    <option value="">همه وضعیت‌ها</option>
-                    {Object.entries(statusLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </ProcurementSelect>
-                </FormField>
-                <MasterDataDateRangeFilter
-                  title="تاریخ ثبت پرونده"
-                  fromDate={createdFrom}
-                  toDate={createdTo}
-                  idPrefix="proc-home"
-                  onFromDateChange={(value) => {
-                    setCreatedFrom(value.slice(0, 10));
-                    if (createdTo && value && value > createdTo)
-                      setCreatedTo('');
-                    setPage(1);
-                  }}
-                  onToDateChange={(value) => {
-                    setCreatedTo(value.slice(0, 10));
-                    if (createdFrom && value && value < createdFrom)
-                      setCreatedFrom('');
-                    setPage(1);
-                  }}
-                  onReset={() => {
-                    setCreatedFrom('');
-                    setCreatedTo('');
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </div>
-            {list.isPending ? (
-              <Skeleton className="m-5 h-52" />
-            ) : list.isError ? (
-              <div className="p-5">
-                <Alert
-                  tone="error"
-                  title="درخواست‌ها دریافت نشدند"
-                  description={errorText(list.error)}
-                />
-              </div>
-            ) : rows.length ? (
-              <div className="divide-y divide-border">
-                {rows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
-                  >
-                    <div className="min-w-0 max-w-full flex-1">
-                      <p className="whitespace-normal break-words font-semibold">
-                        {row.draft.title || 'درخواست بدون عنوان'}
-                      </p>
-                      <p
-                        className="mt-1 text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {row.number}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{statusLabels[row.status]}</Badge>
-                      <ProcurementRecordActions
-                        label={row.draft.title || row.number}
-                        onEdit={() => {
-                          if (!row.sample) openRequest(row.id);
-                        }}
-                        onDelete={async () => {
-                          if (row.sample) {
-                            throw new Error(
-                              'رکورد نمونه در این فهرست قابل حذف نیست.',
-                            );
-                          }
-                          await deleteListRequest(row);
-                        }}
-                        deleteDisabled={
-                          row.sample ||
-                          !bootstrap.permissions.includes(
-                            'procurement.request.cancel',
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                درخواستی پیدا نشد.
-              </p>
-            )}
-            {!showSamples && list.data && (
-              <Pager
-                page={page}
-                hasMore={list.data.hasMore}
-                setPage={setPage}
-              />
-            )}
-          </Card>
+          <PettyRegistrations
+            bootstrap={bootstrap}
+            onBack={() => setGroup(0)}
+            embedded
+            selectedBranchId={registrationBranch}
+            onBranchChange={setRegistrationBranch}
+          />
         </>
       )}
     </div>
@@ -759,7 +606,6 @@ export function RequestDetail({
     heading.current?.focus();
   }, []);
   const [reason, setReason] = useState('');
-  const [owner, setOwner] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
@@ -784,7 +630,9 @@ export function RequestDetail({
       setBusy(false);
     }
   }
-  const editable = ['DRAFT', 'CHANGES_REQUESTED'].includes(request.status);
+  const editable = !['CANCELLED', 'CLOSED', 'REJECTED'].includes(
+    request.status,
+  );
   return (
     <div className="space-y-5">
       <Card className="overflow-hidden border-primary/15 p-4 sm:p-6">
@@ -812,8 +660,6 @@ export function RequestDetail({
             ],
             ['شرح نیاز', request.draft.needReason || 'ثبت نشده'],
             ['تحویل', request.draft.deliveryLocation || 'ثبت نشده'],
-            ['مسئول', request.ownerUserId ?? 'بدون مسئول'],
-            ['اقدام بعدی', nextAction[request.status]],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -828,8 +674,7 @@ export function RequestDetail({
           {request.draft.items.map((item) => (
             <p className="rounded-lg bg-muted/40 p-3 text-sm" key={item.id}>
               {item.kind === 'GOODS' ? 'کالا' : 'خدمت'} · {item.description} ·{' '}
-              {item.quantity} {item.unit} · معیار پذیرش:{' '}
-              {item.acceptanceCriteria || 'ثبت نشده'}
+              {item.quantity} {item.unit}
             </p>
           ))}
         </div>
@@ -846,7 +691,7 @@ export function RequestDetail({
           className="mt-5 space-y-4 rounded-xl border border-primary/15 bg-primary/5 p-4"
         >
           <legend className="mb-3 font-semibold">اقدامات پرونده</legend>
-          <FormField id="proc-action-reason" label="دلیل تصمیم یا لغو">
+          <FormField id="proc-action-reason" label="دلیل لغو">
             <Textarea
               id="proc-action-reason"
               value={reason}
@@ -858,68 +703,6 @@ export function RequestDetail({
               <Button variant="outline" onClick={onEdit}>
                 ویرایش درخواست
               </Button>
-            )}
-            {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
-              can('procurement.order.cancel') && (
-                <Button
-                  variant="outline"
-                  disabled={!isOptionalOperationReason(reason)}
-                  onClick={() => {
-                    if (
-                      uiConfirm(
-                        'پرونده پس از کنترل بسته‌بودن سفارش‌ها و تعیین تکلیف مغایرت‌ها بسته شود؟',
-                      )
-                    )
-                      void command({ action: 'CLOSE_REQUEST', reason });
-                  }}
-                >
-                  بستن پرونده خرید
-                </Button>
-              )}
-            {editable && can('procurement.request.submit') && (
-              <Button onClick={() => void command({ action: 'PUBLISH' })}>
-                تأیید و انتشار
-              </Button>
-            )}
-            {request.status === 'SUBMITTED' &&
-              can('procurement.request.submit') && (
-                <Button onClick={() => void command({ action: 'SUBMIT' })}>
-                  ارسال برای تأیید
-                </Button>
-              )}
-            {request.status === 'IN_REVIEW' && can('procurement.approve') && (
-              <>
-                <Button
-                  onClick={() =>
-                    void command({
-                      action: 'DECIDE',
-                      decision: 'APPROVED',
-                      reason,
-                    })
-                  }
-                >
-                  تأیید
-                </Button>
-                <Button
-                  variant="destructive"
-                  disabled={
-                    !isOptionalOperationReason(reason) ||
-                    !can('procurement.request.cancel') ||
-                    !can('procurement.assign')
-                  }
-                  onClick={() => {
-                    if (!uiConfirm('درخواست رد و برای همیشه حذف شود؟')) return;
-                    void command({
-                      action: 'DECIDE',
-                      decision: 'REJECTED',
-                      deleteRejected: true,
-                      reason,
-                    });
-                  }}
-                >
-                  رد درخواست
-                </Button>
-              </>
             )}
             {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
               can('procurement.request.cancel') && (
@@ -935,26 +718,6 @@ export function RequestDetail({
                 </Button>
               )}
           </div>
-          {can('procurement.assign') && (
-            <div className="flex flex-wrap items-end gap-3">
-              <ProcurementOwnerPicker
-                showSearch={false}
-                showHints={false}
-                branchId={request.draft.branchId}
-                value={owner}
-                onChange={setOwner}
-              />
-              <Button
-                variant="outline"
-                disabled={!owner.trim()}
-                onClick={() =>
-                  void command({ action: 'ASSIGN', ownerUserId: owner })
-                }
-              >
-                تخصیص مسئول
-              </Button>
-            </div>
-          )}
         </fieldset>
       </Card>
     </div>

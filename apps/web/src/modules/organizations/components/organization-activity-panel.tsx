@@ -136,9 +136,6 @@ export function OrganizationActivityPanel({
       <header className="panel-head">
         <div>
           <h2 className="panel-title">گزارش فعالیت پرونده</h2>
-          <p className="hint">
-            سوابق ثبت‌شده در سامانه؛ تاریخ‌ها بر اساس ساعت تهران هستند.
-          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -254,12 +251,6 @@ export function OrganizationActivityPanel({
             {error || sessionError || 'تاریخ پایان نباید قبل از شروع باشد.'}
           </p>
         )}
-        <p className="hint">
-          تغییر تضمین و سقف اعتبار همراه نسخه قرارداد ثبت می‌شود. عملیات مالی
-          این پرونده فعلاً نمایشی است و در سوابق واقعی محسوب نمی‌شود. این گزارش
-          شامل رویدادهای ذخیره‌شده است؛ کلیک‌ها و تلاش‌هایی که در منبع لاگ
-          نشده‌اند قابل بازسازی نیستند.
-        </p>
         {!!report?.unavailableSources.length && (
           <div role="status" className="notice">
             {report.unavailableSources.map((message) => (

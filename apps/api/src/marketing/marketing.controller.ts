@@ -171,6 +171,24 @@ export class MarketingController {
     );
   }
 
+  @Delete('campaigns/:id')
+  @RequirePermissions('marketing.campaign.update')
+  deleteCampaign(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: MarketingAssetDeleteDto,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    return this.records.deleteCampaign(
+      id,
+      input.expectedVersion,
+      req.actor,
+      key,
+      traceId,
+    );
+  }
+
   @Delete('assets/:id')
   @RequirePermissions('marketing.read')
   deleteAsset(

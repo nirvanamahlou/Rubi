@@ -1,4 +1,5 @@
 export const MASTER_DATA_CONTRACT_VERSION = 14 as const;
+export { normalizeAirlineCode } from './airline-code';
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 export { MASTER_DATA_EDITABLE_FIELDS } from './editable-fields';
 export type { MasterDataEditableField } from './editable-fields';
@@ -133,7 +134,8 @@ export type MasterTransferServiceMode = 'PRIVATE' | 'SHARED';
 export type MasterVisaValidityMode = 'DAYS' | 'PASSPORT_EXPIRY';
 export type MasterCipPassengerScope = 'ADT' | 'CHD' | 'INF' | 'ALL';
 
-export type MasterDataSortField = 'name' | 'code' | 'updatedAt';
+export type MasterDataSortField =
+  'displayOrder' | 'name' | 'code' | 'updatedAt';
 export type MasterDataSortDirection = 'asc' | 'desc';
 
 export {

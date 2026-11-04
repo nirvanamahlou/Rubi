@@ -26,15 +26,6 @@ export function MasterDataFilterActions({
       role="group"
     >
       <Button
-        className="border-border bg-background shadow-xs hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-        onClick={onClear}
-        type="button"
-        variant="outline"
-      >
-        <FilterX aria-hidden="true" className="size-4" />
-        پاک‌کردن
-      </Button>
-      <Button
         aria-label="تازه‌سازی"
         className="border-primary/25 bg-primary/5 text-primary shadow-xs hover:border-primary/40 hover:bg-primary/10"
         onClick={onRefresh}
@@ -42,6 +33,15 @@ export function MasterDataFilterActions({
         variant="outline"
       >
         <RefreshCw aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        className="border-border bg-background shadow-xs hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+        onClick={onClear}
+        type="button"
+        variant="outline"
+      >
+        <FilterX aria-hidden="true" className="size-4" />
+        پاک‌کردن
       </Button>
     </div>
   );

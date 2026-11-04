@@ -44,7 +44,7 @@ describe('flight load search entry', () => {
     expect(html).toContain('جست‌وجو');
     expect(html).toContain('load-country');
     expect(html).toContain('شهر');
-    expect(html).toContain('load-origin-country');
+    expect(html).not.toContain('load-origin-country');
     expect(html).toContain('load-origin');
     expect(html).not.toContain('<table');
     expect(html).not.toContain('Manage selected flight');

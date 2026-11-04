@@ -8,6 +8,11 @@ import { apiRequest } from './finance-inbox-api';
 const path = (bankId: string) =>
   `/finance/banks/${encodeURIComponent(bankId)}/accounts`;
 export const bankAccountsApi = {
+  remove: (bankId: string, id: string, expectedVersion: number) =>
+    apiRequest<{ id: string }>(`${path(bankId)}/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ expectedVersion }),
+    }),
   options: (bankId: string) =>
     apiRequest<CompanyBankAccountOptionsV1>(`${path(bankId)}/options`),
   list: (bankId: string, page: number) =>

@@ -45,15 +45,8 @@ export function internalReportFieldKey(
   if (id === 'cboRow_Input') return 'rowAxis';
   if (id === 'cboColumn_Input') return 'columnAxis';
   if (id === 'lkpAnalyseType_ComboBox_Input') return 'axes';
-  if (
-    [
-      'lkpReportFeature_ComboBox_Input',
-      'lkpAccountSpecification_ComboBox_Input',
-      'cboAccountSpecification_Input',
-      'cmbAccountSpecification_Input',
-    ].includes(id)
-  )
-    return 'groupId';
+  // Source report/account specification is not an account group. Keep it
+  // unsupported until its currency presentation semantics are implemented.
   return (
     {
       chkSLWithNoDL: 'noDetails',

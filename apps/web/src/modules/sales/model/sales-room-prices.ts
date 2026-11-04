@@ -1,3 +1,4 @@
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import { usesRoomDrivenGuests } from './contract-guest-stays';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import type { SalesMoney } from '@nora/contracts';
@@ -22,6 +23,7 @@ export function roomPartyUsage(
   return result;
 }
 export function salesRoomPartyError(state: SalesFormState): string | null {
+  if (!enforceSalesHotelCapacity()) return null;
   if (
     !state.serviceKinds.includes('HOTEL') ||
     !state.serviceKinds.includes('FLIGHT') ||

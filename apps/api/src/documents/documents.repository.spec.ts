@@ -5,6 +5,145 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it.each([true, false])(
+    'creates scan jobs only for nonexempt uploads (logo=%s)',
+    async (exempt) => {
+      const create = () => ({ create: vi.fn().mockResolvedValue({}) });
+      const transaction = {
+        document: {
+          ...create(),
+          update: vi.fn(),
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'doc' }),
+        },
+        documentVersion: create(),
+        documentRelation: create(),
+        documentQuarantine: create(),
+        documentProcessingJob: create(),
+        documentAuditEvent: create(),
+      };
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            $transaction: (callback: (value: unknown) => unknown) =>
+              callback(transaction),
+          },
+        } as unknown as DatabaseService,
+        {
+          createWithinTransaction: vi.fn().mockResolvedValue(undefined),
+        } as unknown as NotificationsService,
+      );
+      await repository.createUploaded({
+        documentId: 'doc',
+        versionId: 'version',
+        storageObjectKey: 'private/key',
+        title: 'logo',
+        description: null,
+        documentTypeId: 'type',
+        categoryId: 'category',
+        branchId: 'branch',
+        ownerUserId: 'actor',
+        sourceModule: 'master-data',
+        sourceEntityType: 'hotels',
+        sourceEntityId: 'hotel',
+        sourceDisplayLabel: 'Hotel',
+        confidentiality: 'INTERNAL',
+        requiresStepUpVerification: false,
+        confidentialAccessCodeHash: null,
+        confidentialAccessCodeSalt: null,
+        validUntil: null,
+        originalFileName: 'logo.png',
+        safeDownloadName: 'logo.png',
+        detectedMimeType: 'image/png',
+        extension: 'png',
+        sizeBytes: 12,
+        sha256: 'a'.repeat(64),
+        versionNote: 'logo',
+        actorUserId: 'actor',
+        actorBranchId: 'branch',
+        ipSummary: '',
+        userAgentSummary: '',
+        ...(exempt ? { skipAntivirusForMasterDataLogo: true } : {}),
+      });
+      expect(transaction.documentProcessingJob.create).toHaveBeenCalledTimes(
+        exempt ? 0 : 1,
+      );
+      expect(transaction.documentQuarantine.create).toHaveBeenCalledTimes(
+        exempt ? 0 : 1,
+      );
+      expect(transaction.documentVersion.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            scanStatus: 'AWAITING_ANTIVIRUS_ADAPTER',
+          }),
+        }),
+      );
+      expect(transaction.documentAuditEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reason: exempt
+              ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+              : 'UPLOAD_ACCEPTED_TO_QUARANTINE',
+          }),
+        }),
+      );
+    },
+  );
+  it.each([true, false])(
+    'initializes only missing fixed brand references when selected membership is %s',
+    async (allowed) => {
+      const types = vi.fn().mockResolvedValue({ count: 1 });
+      const categories = vi.fn().mockResolvedValue({ count: 1 });
+      const user = vi.fn().mockResolvedValue(allowed ? { id: 'user' } : null);
+      const transaction = {
+        user: { findFirst: user },
+        branch: { findFirst: vi.fn().mockResolvedValue({ id: 'branch' }) },
+        documentType: { createMany: types },
+        documentCategory: { createMany: categories },
+      };
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            $transaction: (callback: (value: unknown) => unknown) =>
+              callback(transaction),
+          },
+        } as unknown as DatabaseService,
+        {} as NotificationsService,
+      );
+      expect(
+        await repository.ensureMasterDataLogoReferences('user', 'branch'),
+      ).toBe(allowed);
+      expect(user).toHaveBeenCalledWith({
+        where: {
+          id: 'user',
+          status: 'ACTIVE',
+          branches: { some: { branchId: 'branch' } },
+        },
+        select: { id: true },
+      });
+      if (!allowed) {
+        expect(types).not.toHaveBeenCalled();
+        expect(categories).not.toHaveBeenCalled();
+        return;
+      }
+      expect(types).toHaveBeenCalledWith({
+        skipDuplicates: true,
+        data: [
+          expect.objectContaining({
+            code: 'BRAND_ASSET_TEMPLATE',
+            domain: 'BRAND',
+            defaultConfidentiality: 'INTERNAL',
+            maxFileSizeBytes: 26214400n,
+            requiresExpiry: false,
+          }),
+        ],
+      });
+      expect(categories).toHaveBeenCalledWith({
+        skipDuplicates: true,
+        data: [{ code: 'BRAND_ASSETS', name: 'دارایی‌های برند' }],
+      });
+      // No update/upsert methods exist in this fixture: existing policies cannot be overwritten.
+    },
+  );
   it('locks confidential attempts by document and actor and denies only that actor after five attempts', async () => {
     const queryRaw = vi.fn().mockResolvedValue([]);
     const findFirst = vi.fn().mockResolvedValue(null);
@@ -202,61 +341,70 @@ describe('DocumentsRepository source scoping', () => {
     );
   });
 
-  it('combines exact primary-case source filtering with branch and domain scope', async () => {
-    const count = vi.fn().mockResolvedValue(0);
-    const findMany = vi.fn().mockResolvedValue([]);
-    const database = {
-      client: {
-        document: { count, findMany },
-        $transaction: vi.fn(async (operations: Promise<unknown>[]) =>
-          Promise.all(operations),
-        ),
-      },
-    } as unknown as DatabaseService;
-    const repository = new DocumentsRepository(database, {
-      createWithinTransaction: vi.fn(),
-    } as unknown as NotificationsService);
+  it.each([true, false])(
+    'combines primary-case source scope and incoming classification (exact=%s)',
+    async (exact) => {
+      const count = vi.fn().mockResolvedValue(0);
+      const findMany = vi.fn().mockResolvedValue([]);
+      const database = {
+        client: {
+          document: { count, findMany },
+          $transaction: vi.fn(async (operations: Promise<unknown>[]) =>
+            Promise.all(operations),
+          ),
+        },
+      } as unknown as DatabaseService;
+      const repository = new DocumentsRepository(database, {
+        createWithinTransaction: vi.fn(),
+      } as unknown as NotificationsService);
 
-    await repository.list(
-      {
-        branchId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-        domain: 'CUSTOMER_IDENTITY',
-        sourceModule: 'customers',
-        sourceEntityType: 'Customer',
-        sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-        page: 1,
-        pageSize: 25,
-        sortBy: 'updatedAt',
-        sortDirection: 'desc',
-      },
-      ['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'],
-      ['CUSTOMER_IDENTITY'],
-      'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-    );
+      await repository.list(
+        {
+          branchId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          domain: 'CUSTOMER_IDENTITY',
+          isIncomingLetter: true,
+          sourceModule: 'customers',
+          sourceEntityType: 'Customer',
+          ...(exact
+            ? { sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }
+            : {}),
+          page: 1,
+          pageSize: 25,
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+        },
+        ['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'],
+        ['CUSTOMER_IDENTITY'],
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      );
 
-    expect(count).toHaveBeenCalledWith({
-      where: expect.objectContaining({
-        branchId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-        documentType: expect.objectContaining({
-          domain: { in: ['CUSTOMER_IDENTITY'] },
-        }),
-        relations: {
-          some: {
-            relationType: 'PRIMARY_CASE',
-            sourceModule: 'customers',
-            sourceEntityType: 'Customer',
-            sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      expect(count).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          isIncomingLetter: true,
+          branchId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          documentType: expect.objectContaining({
+            domain: { in: ['CUSTOMER_IDENTITY'] },
+          }),
+          relations: {
+            some: {
+              relationType: 'PRIMARY_CASE',
+              sourceModule: 'customers',
+              sourceEntityType: 'Customer',
+              ...(exact
+                ? { sourceEntityId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }
+                : {}),
+            },
           },
-        },
-        NOT: {
-          sourceModule: 'WORKBENCH',
-          sourceEntityType: 'WorkbenchFeedback',
-          ownerUserId: { not: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' },
-        },
-      }),
-    });
-    expect(findMany).toHaveBeenCalledOnce();
-  });
+          NOT: {
+            sourceModule: 'WORKBENCH',
+            sourceEntityType: 'WorkbenchFeedback',
+            ownerUserId: { not: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' },
+          },
+        }),
+      });
+      expect(findMany).toHaveBeenCalledOnce();
+    },
+  );
 
   it('does not expose sensitive metadata through filtered result counts', async () => {
     const count = vi.fn().mockResolvedValue(0);

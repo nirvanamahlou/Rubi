@@ -13,6 +13,31 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it.each(['rail-companies', 'bus-companies'] as const)(
+    'creates %s without an organization selector or required organization',
+    (resource) => {
+      const definition = getMasterDataDefinition(resource);
+      expect(
+        getMasterDataFormFields(definition, 'create').map((field) => field.key),
+      ).not.toContain('organizationId');
+      expect(
+        validateMasterDataDraft(resource, {
+          name: 'Synthetic operator',
+          countryId: '11111111-1111-4111-8111-111111111111',
+        }).errors,
+      ).not.toHaveProperty('organizationId');
+    },
+  );
+  it('offers optional GMT on country create/edit and keeps saved values', () => {
+    const definition = getMasterDataDefinition('countries');
+    for (const mode of ['create', 'edit', 'view'] as const) {
+      const field = getMasterDataFormFields(definition, mode).find(
+        ({ key }) => key === 'gmtOffset',
+      );
+      expect(field).toMatchObject({ type: 'text', placeholder: '+03:30' });
+      expect(field?.required).not.toBe(true);
+    }
+  });
   it('keeps bank code optional in create/edit while retaining required name and country', () => {
     const definition = getMasterDataDefinition('banks');
     for (const mode of ['create', 'edit'] as const) {

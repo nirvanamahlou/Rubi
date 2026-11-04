@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
-import { Alert, Badge, Card } from '@/components/ui/surfaces';
+import { Alert, Card } from '@/components/ui/surfaces';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { masterDataApi } from '../api/client';
 import { MasterDataClearableField } from './master-data-clearable-field';
@@ -171,7 +171,6 @@ export function HotelImportPanel({
             <Download aria-hidden="true" className="size-4" />
             دانلود قالب اکسل هتل‌ها
           </a>
-          <Badge>HOTEL_IMPORT_V1</Badge>
         </div>
       </div>
 

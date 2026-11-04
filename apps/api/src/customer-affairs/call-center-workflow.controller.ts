@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -28,7 +29,7 @@ import {
   CallCenterLinkDto,
 } from './call-center-workflow.dto';
 
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @Controller('customer-affairs/call-center')
 export class CallCenterWorkflowController {
   constructor(
@@ -65,7 +66,7 @@ export class CallCenterWorkflowController {
     @Query() query: CallCenterQueueDto,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.queue(req.actor, branch, query.view, query.page);
+    return this.service.queue(req.actor, branch, query.view, query.page, query);
   }
   @Get('operators')
   @Header('Cache-Control', 'private, no-store')
@@ -75,6 +76,15 @@ export class CallCenterWorkflowController {
     @Headers('x-branch-id') branch?: string,
   ) {
     return this.service.options(req.actor, branch);
+  }
+  @Get('request-operators')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.workflow.manage')
+  requestOptions(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.requestOptions(req.actor, branch);
   }
   @Get('contacts/:id/next-action')
   @Header('Cache-Control', 'private, no-store')
@@ -95,7 +105,15 @@ export class CallCenterWorkflowController {
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.list(req.actor, branch, id, query.page, query.taskPage);
+    return this.service.list(
+      req.actor,
+      branch,
+      id,
+      query.page,
+      query.taskPage,
+      query.requestId,
+      query.openOnly === 'true',
+    );
   }
   @Post('contacts/:id/requests')
   @Header('Cache-Control', 'private, no-store')

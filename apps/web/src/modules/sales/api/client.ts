@@ -1,9 +1,16 @@
 'use client';
+import { waitForPurchaseContext } from '../model/new-contract-purchases';
+import type { ReservationIntakeV1 } from '@nora/contracts';
+import type { StagedPurchase } from '../model/new-contract-purchases';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
+  CustomerMutationRequest,
+  CustomerDetail,
   HotelRoomRateV1,
+  CustomerSummary,
+  SalesBuyerContactV1,
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataRecord,
@@ -21,9 +28,12 @@ import type {
   SalesReceivables,
   SalesReceivablesQuery,
   SalesPaymentCreateRequest,
+  SalesPaymentAccountV1,
   SalesPassengerIdentityV1,
   SalesPassengerCorrectionHistoryV1,
   SalesPassengerCorrectionCommandV1,
+  SalesPassengerCompletionFormV1,
+  SalesPassengerCompletionCommandV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -110,6 +120,30 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  purchaseContext: (id: string) =>
+    waitForPurchaseContext(() =>
+      request<{ data: ReservationIntakeV1 }>(
+        `/contracts/${encodeURIComponent(id)}/purchases/purchase-context`,
+      ),
+    ),
+  recordInitialPurchase: (id: string, purchase: StagedPurchase, key: string) =>
+    request<unknown>(
+      `/contracts/${encodeURIComponent(id)}/purchases/${purchase.path}`,
+      {
+        method: 'POST',
+        headers: { 'Idempotency-Key': key },
+        body: JSON.stringify(purchase.body),
+      },
+    ),
+  agencyBuyerContact: (organizationId: string) =>
+    request<{ data: SalesBuyerContactV1 }>(
+      `/agency-customers/${encodeURIComponent(organizationId)}/contact`,
+    ),
+  resolveAgencyCustomer: (organizationId: string) =>
+    request<{ data: CustomerSummary }>(
+      `/agency-customers/${encodeURIComponent(organizationId)}`,
+      { method: 'POST' },
+    ),
   listReferences: (
     resource: MasterDataResource,
     query: MasterDataListQuery,
@@ -152,6 +186,20 @@ export const salesApi = {
       contractNumber: string;
       passengers: SalesPassengerIdentityV1[];
     }>(`/contracts/${encodeURIComponent(id)}/passenger-corrections/form`),
+  createCompletionPerson: (id: string, input: CustomerMutationRequest) =>
+    request<{ data: CustomerDetail }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion/people`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+  passengerCompletionForm: (id: string) =>
+    request<SalesPassengerCompletionFormV1>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion`,
+    ),
+  completePassengers: (id: string, input: SalesPassengerCompletionCommandV1) =>
+    request<{ version: number }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
   passengerCorrectionHistory: (id: string, cursor?: string, eventId?: string) =>
     request<{
       items: SalesPassengerCorrectionHistoryV1[];
@@ -233,6 +281,10 @@ export const salesApi = {
       `/hotel-room-rates?${query}`,
     );
   },
+  paymentAccounts: (id: string) =>
+    request<{ data: SalesPaymentAccountV1[] }>(
+      `/contracts/${id}/payment-accounts`,
+    ),
   addPayment: (id: string, input: SalesPaymentCreateRequest, key: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}/payments`,

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import type { CustomerSummary } from '@nora/contracts';
-import { customersApi } from '@/modules/customers/api/client';
+import { salesPeopleApi as customersApi } from '@/modules/customers/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';

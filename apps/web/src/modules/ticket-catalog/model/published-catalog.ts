@@ -100,6 +100,7 @@ export function catalogProductsFromOffers(
       day: '2-digit',
     }).format(new Date(offer.departureAt));
     definition.totalCapacity = offer.totalCapacity;
+    definition.saleRoutes = offer.saleRoutes ?? [];
     if (offer.supplyType) {
       definition.supplyType =
         offer.supplyType === 'COMPANY'
@@ -228,6 +229,7 @@ export function publishedLoadGroups(
 
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
+    saleRoutes: offer.saleRoutes ?? [],
     originAirportId: offer.originAirportId ?? null,
     destinationAirportId: offer.destinationAirportId ?? null,
     supplyType: offer.supplyType ?? null,

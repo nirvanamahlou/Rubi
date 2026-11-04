@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -19,7 +20,7 @@ import { CallCenterTelephonyService } from './call-center-telephony.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { TelephonyActionDto, TelephonyLeaseDto } from './telephony.dto';
 @Controller('customer-affairs/call-center/telephony')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @RequirePermissions('customer_affairs.call_center.read')
 export class CallCenterTelephonyController {
   constructor(
@@ -38,6 +39,14 @@ export class CallCenterTelephonyController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.service.history(req.actor, id);
+  }
+  @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  read(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.read(req.actor, id);
   }
   @Post('lease')
   lease(@Req() req: AuthenticatedRequest, @Body() input: TelephonyLeaseDto) {

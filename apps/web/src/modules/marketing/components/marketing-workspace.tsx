@@ -91,13 +91,13 @@ import {
   type MarketingSectionKey,
 } from '../model/reference-data';
 import { downloadRowsAsExcel } from '../utils/excel-export';
+import { CampaignDeleteButton } from './campaign-delete-button';
 import { CampaignCalendar } from './campaign-calendar';
 import {
   CampaignForm,
   type CampaignDraft,
   type CampaignFormMode,
 } from './campaign-form';
-import { MarketingProcessTracker } from './marketing-process-tracker';
 import { CampaignDetail } from './campaign-detail';
 import { CampaignDeclarationsForm } from './campaign-declarations-form';
 import {
@@ -272,12 +272,14 @@ export function CampaignCard({
   onOpen,
   onToggleActive,
   onDetails,
+  onDeleted,
 }: {
   campaign: CampaignPreview;
   disabled: boolean;
   onOpen: (mode: CampaignFormMode, campaign: CampaignPreview) => void;
   onToggleActive: () => void;
   onDetails: () => void;
+  onDeleted?: () => void;
 }) {
   return (
     <Card className={cn('p-4 transition', disabled && 'opacity-60')}>
@@ -342,6 +344,9 @@ export function CampaignCard({
           >
             <FilePenLine aria-hidden="true" className="size-4" />
           </Button>
+          {onDeleted ? (
+            <CampaignDeleteButton campaign={campaign} onDeleted={onDeleted} />
+          ) : null}
         </div>
       </div>
       <dl className="mt-4 grid gap-3 rounded-xl bg-muted/45 p-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
@@ -510,7 +515,7 @@ function CampaignList({
           </Button>
         </div>
       </div>
-      <FilterBar className="grid sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+      <FilterBar className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <FormField id="marketing-search" label="جست‌وجو">
           <div className="relative">
             <Search
@@ -658,6 +663,7 @@ function CampaignList({
               key={campaign.id}
               onOpen={(mode, item) => onOpen(mode, item)}
               onDetails={() => onDetails(campaign)}
+              onDeleted={onRetry}
               onToggleActive={() => {
                 const isDisabled = disabledCampaigns.has(campaign.id);
                 setDisabledCampaigns((current) => {
@@ -959,8 +965,10 @@ export function MarketingWorkspace({
     >
       <PageHeader
         description={
-          selectedSection?.description ??
-          'مدیریت یکپارچه کمپین، مخاطب، محتوا و پیشنهاد'
+          section === 'content'
+            ? ''
+            : (selectedSection?.description ??
+              'مدیریت یکپارچه کمپین، مخاطب، محتوا و پیشنهاد')
         }
         title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />
@@ -972,9 +980,7 @@ export function MarketingWorkspace({
         />
       ) : (
         <section className="grid gap-5">
-          {section === 'process' ? (
-            <MarketingProcessTracker />
-          ) : section === 'dashboard' ? (
+          {section === 'dashboard' ? (
             <MarketingDashboardReference
               onNotice={setNotice}
               onOpen={setDetailItem}

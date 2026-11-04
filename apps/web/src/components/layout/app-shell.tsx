@@ -1,4 +1,5 @@
 'use client';
+import { CallFormProvider } from '@/modules/call-center/call-form-host';
 import { TelephonyAttention } from '@/modules/call-center/telephony-attention';
 import { assistantDashboardHref } from '@/modules/assistant/dashboard-location';
 import { FloatingAssistant } from '@/modules/assistant/floating-assistant';
@@ -385,12 +386,14 @@ function SearchDialog() {
     <Dialog>
       <DialogTrigger asChild>
         <button
-          className="flex h-10 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-sm text-muted-foreground outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring lg:max-w-64"
+          className="flex h-11 w-11 sm:h-10 sm:w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-sm text-muted-foreground outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring lg:max-w-64"
           id="global-search-trigger"
           type="button"
         >
           <Search aria-hidden="true" className="size-4" />
-          <span className="truncate">{messages.common.search}</span>
+          <span className="sr-only sm:not-sr-only sm:truncate">
+            {messages.common.search}
+          </span>
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -663,7 +666,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -675,7 +678,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   <Menu aria-hidden="true" className="size-5" />
                 </Button>
               </DrawerTrigger>
-              <DrawerContent>
+              <DrawerContent className="start-0 end-auto border-e border-s-0">
                 <DialogTitle className="sr-only">
                   {messages.shell.openNavigation}
                 </DialogTitle>
@@ -720,7 +723,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
           </Suspense>
         </div>
         <main
-          className="px-4 pb-6 pt-3 outline-none sm:px-6 lg:px-7"
+          className="min-w-0 px-3 pb-6 pt-3 outline-none sm:px-6 lg:px-7"
           id="main-content"
           tabIndex={-1}
         >
@@ -742,9 +745,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <AccessProvider>
       <LegalEntityProvider>
         <PageBreadcrumbProvider>
-          <AppShellContent>{children}</AppShellContent>
-          <FloatingAssistant />
-          <TelephonyAttention />
+          <CallFormProvider>
+            <AppShellContent>{children}</AppShellContent>
+            <FloatingAssistant />
+            <TelephonyAttention outboundOnly bothDirections />
+          </CallFormProvider>
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
     </AccessProvider>

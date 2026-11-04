@@ -1,4 +1,19 @@
+import { callPerformanceStaff } from '../hr/hr-call-performance-directory';
+import { callCenterExpertTasks } from '../tasks/call-center-read';
+import {
+  expertPerformance,
+  type ExpertCallFact,
+  type ExpertMetric,
+} from './expert-performance';
+import type { TelephonyTechnical } from './telephony-state';
+import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
+import { matchesContactColumns } from './contact-column-filters';
+import {
+  missedCallbackCount,
+  missedCallbackContacts,
+} from './call-center-callbacks';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -52,6 +67,10 @@ export class CallCenterReadService {
     @Inject(CallCenterCrypto) private readonly crypto: CallCenterCrypto,
     @Inject(IamWorkbenchRequestDirectory)
     private readonly directory: IamWorkbenchRequestDirectory,
+    @Inject(IamCallCenterDirectory)
+    private readonly recordingAccounts: IamCallCenterDirectory = new IamCallCenterDirectory(
+      db,
+    ),
   ) {}
   private conditions(
     branch: string,
@@ -114,7 +133,7 @@ export class CallCenterReadService {
     }
     if (q.requestStatus)
       terms.push(
-        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND r.status=${q.requestStatus} AND r.category='CALL_CENTER_REQUEST')`,
+        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND ${q.requestStatus === 'IN_PROGRESS' || q.requestStatus === 'NEW' ? Prisma.sql`r.status IN ('NEW', 'IN_PROGRESS')` : Prisma.sql`r.status=${q.requestStatus}`} AND r.category='CALL_CENTER_REQUEST')`,
       );
     const now = new Date();
     if (q.followUp)
@@ -141,6 +160,15 @@ export class CallCenterReadService {
       _sum: { version: true },
     });
     const tasks = await callCenterTaskRevision(tx, branch);
+    const telephony = await tx.callCenterTelephonySession.aggregate({
+      where: { call: { contact: { branchId: branch } } },
+      _sum: { version: true },
+    });
+    const completions = await tx.customerAffairsAuditEvent.aggregate({
+      where: { branchId: branch, action: { in: ['COMPLETE_CALL', 'SAVE'] } },
+      _count: true,
+      _max: { occurredAt: true },
+    });
     const filters = Object.fromEntries(
       Object.entries(q).filter(([key]) => key !== 'page' && key !== 'revision'),
     );
@@ -149,6 +177,8 @@ export class CallCenterReadService {
         branch,
         filters,
         calls,
+        completions,
+        telephony,
         requests,
         tasks,
         teamUsers: teamUsers?.slice().sort(),
@@ -157,14 +187,62 @@ export class CallCenterReadService {
       }),
     );
   }
+  async recordingAccess(actor: AuthenticatedActor) {
+    this.workflow.scope(actor, undefined);
+    return {
+      data: {
+        allowed: await this.recordingAccounts.canDownloadCallRecordings(actor),
+      },
+    };
+  }
   async branches(actor: AuthenticatedActor) {
     this.workflow.scope(actor, undefined);
-    return { data: await this.directory.callCenterBranches(actor) };
+    const data = await this.directory.callCenterBranches(actor);
+    const employeeBranches =
+      await this.directory.callCenterEmployeeBranches(actor);
+    const ownBranches = data.filter((branch) =>
+      employeeBranches.includes(branch.id),
+    );
+    const candidates = ownBranches.length ? ownBranches : data;
+    let defaultBranchId: string | null = candidates[0]?.id ?? null;
+    if (candidates.length > 1) {
+      const recent = await Promise.all(
+        candidates.map(async (branch) => {
+          try {
+            const scope = await this.calls.access.where(actor, branch.id);
+            const call = await this.db.client.callCenterCall.findFirst({
+              where: { contact: scope },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+              select: { occurredAt: true },
+            });
+            return {
+              id: branch.id,
+              at: call?.occurredAt.getTime() ?? -Infinity,
+            };
+          } catch (error) {
+            if (!(error instanceof ForbiddenException)) throw error;
+            return { id: branch.id, at: -Infinity };
+          }
+        }),
+      );
+      recent.sort((a, b) => b.at - a.at);
+      defaultBranchId = recent[0]?.id ?? defaultBranchId;
+    }
+    return { data, meta: { defaultBranchId } };
   }
   async teams(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
-    const options = await this.directory.options(actor, branchId);
+    const options = await this.directory.options(
+      actor,
+      branchId,
+      undefined,
+      true,
+    );
     if (!this.workflow.access.scoped(actor)) return options;
+    if (
+      (await this.workflow.access.users(actor, branchId, 'contacts')) === null
+    )
+      return options;
     const users = actor.permissions.some((p) =>
       [
         'customer_affairs.call_center.contacts.read.team',
@@ -215,11 +293,77 @@ export class CallCenterReadService {
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
         const latest = Prisma.sql`SELECT x.id FROM customer_affairs_calls x WHERE x.contact_id=c.id ORDER BY x.occurred_at DESC,x.id ASC LIMIT 1`;
-        const predicate = Prisma.sql`(${this.conditions(branchId, q, teamUsers)}) AND (${scope})`;
+        const columnFilters = !!(
+          q.direction ||
+          q.outcome ||
+          q.source ||
+          q.unit ||
+          q.incomplete
+        );
+        const sqlFilters = { ...q };
+        if (columnFilters) {
+          delete sqlFilters.direction;
+          delete sqlFilters.outcome;
+          delete sqlFilters.source;
+          delete sqlFilters.unit;
+          delete sqlFilters.incomplete;
+        }
+        const predicate = Prisma.sql`(${this.conditions(branchId, sqlFilters, teamUsers)}) AND (${scope})`;
         const matching =
           q.scope === 'ANY'
             ? Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.contact_id=c.id AND ${predicate})`
             : Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.id=(${latest}) AND ${predicate})`;
+        if (columnFilters) {
+          type Row = { id: string; latestId: string; callCount: bigint };
+          const selected: {
+            id: string;
+            callCount: number;
+            latest: ReturnType<CallCenterService['presentSummary']>;
+          }[] = [];
+          let total = 0;
+          for (let offset = 0; ; offset += 200) {
+            const rows = await tx.$queryRaw<Row[]>`
+              SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+              FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}
+              ORDER BY c.latest_occurred_at DESC,c.id ASC LIMIT 200 OFFSET ${offset}`;
+            const calls = await tx.callCenterCall.findMany({
+              where: { id: { in: rows.map((row) => row.latestId) } },
+            });
+            const summaries = await this.calls.hydrateDestinations(
+              branchId,
+              calls.map((call) => this.calls.presentSummary(call)),
+              tx,
+            );
+            const indexed = new Map(summaries.map((call) => [call.id, call]));
+            for (const row of rows) {
+              const call = indexed.get(row.latestId);
+              if (!call || !matchesContactColumns(call, q)) continue;
+              if (
+                total >= (q.page - 1) * q.pageSize &&
+                selected.length < q.pageSize
+              )
+                selected.push({
+                  id: row.id,
+                  callCount: Number(row.callCount),
+                  latest: call,
+                });
+              total++;
+            }
+            if (rows.length < 200) break;
+          }
+          return {
+            data: selected,
+            meta: {
+              branchId,
+              total,
+              page: q.page,
+              pageSize: q.pageSize,
+              revision,
+              scope: q.scope,
+              asOf: new Date().toISOString(),
+            },
+          };
+        }
         const count = await tx.$queryRaw<
           Array<{ total: bigint }>
         >`SELECT count(*) AS total FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}`;
@@ -232,13 +376,16 @@ export class CallCenterReadService {
         const calls = await tx.callCenterCall.findMany({
           where: { id: { in: rows.map((r) => r.latestId) } },
         });
+        const summaries = await this.calls.hydrateDestinations(
+          branchId,
+          calls.map((call) => this.calls.presentSummary(call)),
+          tx,
+        );
         return {
           data: rows.map((row) => ({
             id: row.id,
             callCount: Number(row.callCount),
-            latest: this.calls.presentSummary(
-              calls.find((c) => c.id === row.latestId)!,
-            ),
+            latest: summaries.find((call) => call.id === row.latestId)!,
           })),
           meta: {
             branchId,
@@ -296,7 +443,10 @@ export class CallCenterReadService {
         take: q.pageSize + 1,
       });
       return {
-        data: rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        data: await this.calls.hydrateDestinations(
+          branchId,
+          rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        ),
         meta: {
           next: rows.length > q.pageSize ? rows[q.pageSize - 1]!.id : null,
         },
@@ -334,6 +484,7 @@ export class CallCenterReadService {
   async kpis(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
     const scope = await this.workflow.access.sql(actor, branchId, 'reports');
+    const contactScope = await this.identityScope(actor, branchId);
     const now = new Date(),
       day = tehranDay(now),
       week = tehranWeek(now);
@@ -342,18 +493,11 @@ export class CallCenterReadService {
         today: bigint;
         week: bigint;
         withoutOutcome: bigint;
-        needsFollowUp: bigint;
       }>
     >`SELECT
-      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
-      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
-      count(*) FILTER(WHERE a.outcome IS NULL) AS "withoutOutcome",
-      count(*) FILTER(WHERE EXISTS(
-        SELECT 1 FROM customer_affairs_tickets r
-        WHERE r.id=a.ticket_id AND r.branch_id=c.branch_id
-          AND r.category='CALL_CENTER_REQUEST' AND r.status <> 'CLOSED'
-          AND ${callCenterTaskFilter(branchId, 'OPEN', now, day)}
-      )) AS "needsFollowUp"
+      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now} AND (${contactScope})) AS today,
+      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now} AND (${contactScope})) AS week,
+      count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome"
       FROM customer_affairs_calls a
       JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
       WHERE c.branch_id=${branchId}::uuid AND a.occurred_at <= ${now}
@@ -364,7 +508,21 @@ export class CallCenterReadService {
         today: Number(row.today),
         week: Number(row.week),
         withoutOutcome: Number(row.withoutOutcome),
-        needsFollowUp: Number(row.needsFollowUp),
+        needsFollowUp: await this.db.client.$transaction(
+          (tx) =>
+            missedCallbackCount(
+              tx,
+              this.crypto,
+              branchId,
+              scope,
+              contactScope,
+              now,
+            ),
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+            timeout: 60000,
+          },
+        ),
       },
       meta: {
         branchId,
@@ -375,9 +533,177 @@ export class CallCenterReadService {
         scope:
           'selected branch; independent of list filters; excludes synthetic calls',
         basis:
-          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=distinct calls linked to non-closed Call Center requests with OPEN follow-up',
+          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=unique known callers with missed inbound calls and no later answered inbound/outbound conversation; provider technical facts precede manual outcomes; all history',
       },
     };
+  }
+  private async identityScope(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      return await this.workflow.access.sql(actor, branchId, 'contacts', tx);
+    } catch (error) {
+      if (!(error instanceof ForbiddenException)) throw error;
+      return Prisma.sql`FALSE`;
+    }
+  }
+  async withoutOutcome(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+    period?: 'today' | 'week',
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    // Only paging is accepted semantically: contact-list filters never affect this KPI.
+    const q = {
+      page: input.page,
+      pageSize: input.pageSize,
+      revision: input.revision,
+      outcome: period ? undefined : 'UNKNOWN',
+    } as CallCenterSearchDto;
+    return this.db.client.$transaction(
+      async (tx) => {
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const now = new Date();
+        const from =
+          period === 'today'
+            ? tehranDay(now)
+            : period === 'week'
+              ? tehranWeek(now)
+              : null;
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            period: period ?? 'without-outcome',
+            from,
+            data: await this.revision(tx, branchId, q),
+          }),
+        );
+        if (q.page > 1 && q.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND ${period ? Prisma.sql`a.occurred_at >= ${from}` : Prisma.sql`a.outcome IS NULL`}
+        AND a.occurred_at <= ${now} AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')
+        AND (${reportScope}) AND (${contactScope})`;
+        const count = await tx.$queryRaw<
+          Array<{ total: bigint }>
+        >`SELECT count(*) AS total
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
+        const ids = await tx.$queryRaw<
+          Array<{ id: string; callCount: bigint }>
+        >`SELECT a.id,
+        (SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}
+        ORDER BY a.occurred_at DESC,a.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
+        const rows = await tx.callCenterCall.findMany({
+          where: { id: { in: ids.map((r) => r.id) } },
+        });
+        return {
+          data: ids.map((r) => ({
+            call: this.calls.presentSummary(rows.find((c) => c.id === r.id)!),
+            callCount: Number(r.callCount),
+          })),
+          meta: {
+            total: Number(count[0]!.total),
+            page: q.page,
+            pageSize: q.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 15000,
+      },
+    );
+  }
+  async missedCallbacks(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    return this.db.client.$transaction(
+      async (tx) => {
+        const now = new Date();
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const pending = await missedCallbackContacts(
+          tx,
+          this.crypto,
+          branchId,
+          reportScope,
+          contactScope,
+          now,
+        );
+        // Membership hash also invalidates paging after ownership/permission changes.
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            kind: 'missed-callbacks-v1',
+            pending,
+            pageSize: input.pageSize,
+            data: await this.revision(tx, branchId, {
+              page: 1,
+              pageSize: input.pageSize,
+            } as CallCenterSearchDto),
+          }),
+        );
+        if (input.page > 1 && input.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const page = pending.slice(
+          (input.page - 1) * input.pageSize,
+          input.page * input.pageSize,
+        );
+        const calls = await tx.callCenterCall.findMany({
+          where: { id: { in: page.map((p) => p.callId) } },
+        });
+        const counts = await tx.callCenterCall.groupBy({
+          by: ['contactId'],
+          where: {
+            contactId: { in: page.map((p) => p.contactId) },
+            occurredAt: { lte: now },
+            OR: [{ origin: null }, { origin: { not: 'SYNTHETIC' } }],
+          },
+          _count: true,
+        });
+        return {
+          data: page.map((p) => ({
+            call: this.calls.presentSummary(
+              calls.find((c) => c.id === p.callId)!,
+            ),
+            callCount:
+              counts.find((c) => c.contactId === p.contactId)?._count ?? 0,
+          })),
+          meta: {
+            total: pending.length,
+            page: input.page,
+            pageSize: input.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 60000,
+      },
+    );
   }
   async report(
     actor: AuthenticatedActor,
@@ -454,7 +780,12 @@ export class CallCenterReadService {
         >`SELECT count(DISTINCT a.contact_id) AS contacts,count(*) FILTER(WHERE a.needs_completion) AS incomplete,count(*) FILTER(WHERE a.search_version=0) AS unindexed FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
         const sources = await tx.$queryRaw<
           Array<{ token: string | null; count: bigint }>
-        >`SELECT a.source_token AS token,count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} GROUP BY a.source_token`;
+        >`SELECT chosen.token,count(*) AS count FROM (
+SELECT DISTINCT ON (a.contact_id) a.contact_id,a.source_token AS token
+FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
+WHERE ${predicate}
+ORDER BY a.contact_id,a.occurred_at DESC,a.id ASC
+) chosen GROUP BY chosen.token`;
         const registrations = await tx.$queryRaw<
           Array<{ actorId: string; count: bigint }>
         >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND (a.origin IS NULL OR a.origin = 'MANUAL') GROUP BY a.created_by_user_id`;
@@ -483,6 +814,16 @@ export class CallCenterReadService {
             category: 'CALL_CENTER_REQUEST',
             createdAt: { gte: from, lt: to },
             ...(users ? { executionOwnerUserId: { in: users } } : {}),
+            ...(answeredCallAccess()
+              ? {
+                  callCenterContact: await this.workflow.access.where(
+                    actor,
+                    branchId,
+                    'reports',
+                    tx,
+                  ),
+                }
+              : {}),
           },
           _count: true,
         });
@@ -495,6 +836,101 @@ export class CallCenterReadService {
           tehranDay(now),
           users,
         );
+        const expertIds = await tx.$queryRaw<
+          { id: string }[]
+        >`SELECT a.id FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND a.origin='TELEPHONY' ORDER BY a.occurred_at,a.id LIMIT 10001`;
+        if (expertIds.length > 10000)
+          throw new BadRequestException(
+            'برای گزارش کارشناسان بازه کوتاه‌تری انتخاب کنید؛ حداکثر ۱۰۰۰۰ تماس.',
+          );
+        const expertCalls = await tx.callCenterCall.findMany({
+          where: { id: { in: expertIds.map((r) => r.id) } },
+          include: { answerResponsibilities: { select: { userId: true } } },
+          orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+        });
+        const sessions = await tx.callCenterTelephonySession.findMany({
+          where: {
+            callId: { in: expertIds.map((r) => r.id) },
+            synthetic: false,
+          },
+          include: { offers: { select: { userId: true } } },
+        });
+        const sessionByCall = new Map(sessions.map((s) => [s.callId, s]));
+        const facts: ExpertCallFact[] = expertCalls.map((call) => {
+          const session = sessionByCall.get(call.id);
+          const technical = session
+            ? this.crypto.decrypt<TelephonyTechnical>(
+                session.encryptedTechnical,
+                session.keyVersion,
+                `telephony:${session.id}`,
+              )
+            : null;
+          const valid =
+            technical &&
+            (technical.first.direction === 'OUT' ? 'OUTBOUND' : 'INBOUND') ===
+              call.direction;
+          const connected =
+            call.answerResponsibilities.length > 0 ||
+            !!(valid && technical.answered);
+          const ids =
+            call.direction === 'INBOUND'
+              ? call.answerResponsibilities.map((a) => a.userId)
+              : valid
+                ? (session?.offers.map((o) => o.userId) ?? [])
+                : [];
+          const payload = this.calls.presentSummary(call);
+          return {
+            id: call.id,
+            contactId: call.contactId,
+            knownPhone: !!payload.phone,
+            at: call.occurredAt.toISOString(),
+            direction: call.direction,
+            connected,
+            complete: !call.needsCompletion && !!call.outcome,
+            actors: [...new Set(ids)],
+            extension:
+              valid && call.direction === 'OUTBOUND'
+                ? (technical.first.extension ?? undefined)
+                : undefined,
+          };
+        });
+        const expert = expertPerformance(
+          await callPerformanceStaff(tx, branchId, users),
+          facts,
+          await callCenterExpertTasks(tx, branchId, users),
+          now.toISOString(),
+          users,
+        );
+        let activityDetail:
+          | {
+              actorId: string;
+              metric: string;
+              rows: unknown[];
+              total: number;
+              page: number;
+              pageSize: number;
+            }
+          | undefined;
+        if (q.activityActorId || q.activityMetric) {
+          if (!q.activityActorId || !q.activityMetric)
+            throw new BadRequestException('کارشناس و ستون را انتخاب کنید.');
+          const detail = expert.details.get(q.activityActorId)?.[
+            q.activityMetric as ExpertMetric
+          ];
+          if (!detail)
+            throw new ForbiddenException('کارشناس در محدوده گزارش نیست.');
+          const sorted = [...detail].sort((a, b) =>
+            (a.at ?? '9999').localeCompare(b.at ?? '9999'),
+          );
+          activityDetail = {
+            actorId: q.activityActorId,
+            metric: q.activityMetric,
+            rows: sorted.slice((q.page - 1) * q.pageSize, q.page * q.pageSize),
+            total: sorted.length,
+            page: q.page,
+            pageSize: q.pageSize,
+          };
+        }
         const labels = [
           'نامشخص',
           'اینستاگرام',
@@ -502,9 +938,17 @@ export class CallCenterReadService {
           'سایت',
           'تلگرام',
           'معرفی دوستان',
+          'SMS',
+          'آژانس',
+          'سایر',
         ];
         return {
           data: {
+            expertActivity: {
+              rows: expert.rows,
+              unattributed: expert.unattributed,
+            },
+            ...(activityDetail ? { activityDetail } : {}),
             calls: groups.reduce((n, g) => n + Number(g.count), 0),
             contacts: Number(totals[0]!.contacts),
             incomplete: Number(totals[0]!.incomplete),
@@ -549,6 +993,8 @@ export class CallCenterReadService {
             asOf: now.toISOString(),
             timezone: 'Asia/Tehran',
             callBasis: 'occurredAt',
+            sourceBasis:
+              'unique branch phone-group; latest matching call source within authorized report filters and time range; occurredAt DESC/id ASC',
             requestBasis: 'createdAt; current status',
             taskBasis:
               'open=current branch backlog; completed=completedAt; denominator=completed only',

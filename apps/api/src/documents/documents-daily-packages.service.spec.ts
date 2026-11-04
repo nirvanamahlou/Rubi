@@ -234,3 +234,66 @@ describe('daily packages authorization and persistence', () => {
     );
   });
 });
+
+describe('immediate daily PDF delivery', () => {
+  it.each([
+    'CLEAN',
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'INFECTED',
+    'QUARANTINED',
+    'SCAN_FAILED',
+  ])('delivers only allowed states: %s', async (scanStatus) => {
+    const repository = { appendAudit: vi.fn() };
+    const storage = {
+      openQuarantined: vi.fn().mockResolvedValue('pdf-stream'),
+    };
+    const documents = new DocumentsService(
+      repository as never,
+      storage as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    Object.assign(documents, {
+      findVisibleDetail: vi.fn().mockResolvedValue({
+        ...row,
+        id: 'doc',
+        archiveStatus: 'ACTIVE',
+        documentType: { code: 'BRAND_ASSET_TEMPLATE', domain: 'BRAND' },
+        currentVersion: {
+          ...row.currentVersion,
+          id: 'version',
+          scanStatus,
+          storageObjectKey: 'stored-pdf',
+          sizeBytes: 13,
+          safeDownloadName: 'package.pdf',
+        },
+      }),
+      assertDomain: vi.fn(),
+      hasConfidentialAccess: vi.fn().mockResolvedValue(true),
+    });
+    const result = documents.download(
+      'doc',
+      { ...actor, permissions: ['documents.file.read', 'documents.download'] },
+      {},
+      {
+        sourceModule: 'WORKBENCH',
+        sourceEntityType: 'WorkbenchDailyPackage',
+        sourceEntityId: 'branch',
+      },
+    );
+    if (
+      ['CLEAN', 'PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+        scanStatus,
+      )
+    ) {
+      await expect(result).resolves.toMatchObject({ stream: 'pdf-stream' });
+      expect(storage.openQuarantined).toHaveBeenCalledOnce();
+    } else {
+      await expect(result).rejects.toThrow();
+      expect(storage.openQuarantined).not.toHaveBeenCalled();
+    }
+    expect(repository.appendAudit).toHaveBeenCalledOnce();
+  });
+});

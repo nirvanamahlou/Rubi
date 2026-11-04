@@ -7,6 +7,7 @@ import type {
   TourPackageInputV1,
   TourDepartureInputV1,
   TicketOfferV1,
+  TicketSaleRouteV1,
   TicketSaleCommissionUpdateV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
@@ -113,17 +114,30 @@ export const toursApi = {
       '/tours/departures',
       post(input, branch, key),
     ),
+  setDepartureStatus: (
+    id: string,
+    isActive: boolean,
+    expectedVersion: number,
+    branch: string,
+  ) =>
+    request('/tours/departures/' + encodeURIComponent(id) + '/status', {
+      method: 'PATCH',
+      headers: { 'x-branch-id': branch },
+      body: JSON.stringify({ isActive, expectedVersion }),
+    }),
   offers: async (
     originId: string,
     destinationId: string,
-    startsOn: string,
+    startsOn?: string,
     endsOn = startsOn,
   ) => {
     const data: TicketOfferV1[] = [];
-    const departureFrom = new Date(`${startsOn}T00:00:00+03:30`).toISOString();
+    const departureFrom = startsOn
+      ? new Date(`${startsOn}T00:00:00+03:30`).toISOString()
+      : undefined;
     for (let page = 1; ; page++) {
       const result = await request<{ data: TicketOfferV1[]; hasMore: boolean }>(
-        `/offers?${new URLSearchParams({ originId, destinationId, departureFrom, departureTo: endsOn, page: String(page) })}`,
+        `/offers?${new URLSearchParams({ originId, destinationId, ...(departureFrom ? { departureFrom } : {}), ...(endsOn ? { departureTo: endsOn } : {}), page: String(page) })}`,
       );
       data.push(
         ...result.data.filter((offer) => {
@@ -133,7 +147,11 @@ export const toursApi = {
             month: '2-digit',
             day: '2-digit',
           }).format(new Date(offer.departureAt));
-          return localDay >= startsOn && localDay <= endsOn;
+          return (
+            offer.status === 'ACTIVE' &&
+            (!startsOn || localDay >= startsOn) &&
+            (!endsOn || localDay <= endsOn)
+          );
         }),
       );
       if (!result.hasMore) return data;
@@ -147,6 +165,10 @@ export const toursApi = {
         headers: { 'idempotency-key': key },
         body: JSON.stringify(input),
       },
+    ),
+  charterRoutes: () =>
+    request<{ version: 1; data: TicketSaleRouteV1[] }>(
+      '/offers/charter-routes',
     ),
   managedOffers: async (includePast = false) => {
     const offers = new Map<string, TicketOfferV1>();

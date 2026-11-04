@@ -432,7 +432,7 @@ export interface PackageTourPublicationV1 {
   commissionMode?: 'percent' | 'fixed';
   commissionAmount?: string;
   commissionCurrencyCode?: string;
-  outboundCostRevisionId: string;
+  outboundCostRevisionId: string | null;
   returnCostRevisionId: string | null;
   roomPrices: readonly PackageTourPublishedRoomPriceV1[];
   publishedAt: string;
@@ -501,6 +501,7 @@ export type { HotelPackageTablePrice } from './hotel-package-table';
 
 export {
   buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomCode,
   packageRoomIdentity,
   packageRoomTitle,

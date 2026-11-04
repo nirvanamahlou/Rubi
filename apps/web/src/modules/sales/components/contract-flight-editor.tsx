@@ -5,22 +5,31 @@ import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { TimePicker } from '@/components/ui/time-picker';
 import {
+  confirmFloatingFlight,
   floatingFlightClock,
+  floatingFlightDate,
   floatingFlightTimes,
 } from '../model/floating-flight-times';
 import { SalesThemedSelect } from './sales-themed-select';
 import type { ContractFlightDraft } from '../model/sales-form';
+import { FloatingFlightAirport } from './floating-flight-airport';
 
 export function ContractFlightEditor({
   value,
   flightDate = '',
   airlines = [],
+  destinationCityId = '',
+  destinationCountryId = '',
+  workflow = 'sales',
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
   international?: boolean;
   flightDate?: string;
   airlines?: readonly MasterDataRecord[];
+  destinationCityId?: string;
+  destinationCountryId?: string;
+  workflow?: 'sales' | 'reservations';
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
   if (!value)
@@ -41,8 +50,9 @@ export function ContractFlightEditor({
         افزودن بلیط شناور
       </Button>
     );
+  const date = flightDate || floatingFlightDate(value.departureAt);
   const patch = (next: Partial<ContractFlightDraft>) =>
-    onChange({ ...value, ...next });
+    onChange({ ...value, ...next, confirmation: undefined });
   return (
     <section
       aria-label="بلیط شناور این قرارداد"
@@ -99,13 +109,17 @@ export function ContractFlightEditor({
         <FormField label="ساعت حرکت" required>
           <TimePicker
             aria-label="ساعت حرکت بلیط شناور"
-            disabled={!flightDate}
+            disabled={!date}
             value={floatingFlightClock(value.departureAt)}
             onChange={(e) =>
               onChange(
-                floatingFlightTimes(flightDate, value, {
-                  departure: e.target.value,
-                }),
+                floatingFlightTimes(
+                  date,
+                  { ...value, confirmation: undefined },
+                  {
+                    departure: e.target.value,
+                  },
+                ),
               )
             }
           />
@@ -113,13 +127,17 @@ export function ContractFlightEditor({
         <FormField label="ساعت رسیدن" required>
           <TimePicker
             aria-label="ساعت رسیدن بلیط شناور"
-            disabled={!flightDate}
+            disabled={!date}
             value={floatingFlightClock(value.arrivalAt)}
             onChange={(e) =>
               onChange(
-                floatingFlightTimes(flightDate, value, {
-                  arrival: e.target.value,
-                }),
+                floatingFlightTimes(
+                  date,
+                  { ...value, confirmation: undefined },
+                  {
+                    arrival: e.target.value,
+                  },
+                ),
               )
             }
           />
@@ -141,7 +159,32 @@ export function ContractFlightEditor({
             ]}
           />
         </FormField>
+        <FormField label="فرودگاه مقصد">
+          <FloatingFlightAirport
+            cityId={destinationCityId}
+            countryId={destinationCountryId}
+            workflow={workflow}
+            value={value.destinationAirport}
+            onChange={(destinationAirport) => patch({ destinationAirport })}
+          />
+        </FormField>
       </div>
+      <Button
+        type="button"
+        aria-label="ثبت بلیط شناور"
+        onClick={() => onChange(confirmFloatingFlight(date, value))}
+      >
+        ثبت بلیط شناور
+      </Button>
+      {value.confirmation === 'saved' &&
+      value.departureAt.startsWith(date + 'T') ? (
+        <p role="status">بلیط شناور ثبت شد.</p>
+      ) : null}
+      {value.confirmation === 'invalid' ? (
+        <p role="alert" className="text-sm text-destructive">
+          اطلاعات بلیط شناور کامل نیست.
+        </p>
+      ) : null}
     </section>
   );
 }

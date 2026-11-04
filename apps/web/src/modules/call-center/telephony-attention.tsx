@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { livePopupEligible } from './live-popup-eligibility';
 import { Phone, RotateCcw } from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import {
@@ -13,6 +14,10 @@ import { callCenterRequest, CallCenterHttpError } from './client';
 import { workflowApi, type Operator } from './workflow-client';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
+import { telephonyDraftName } from './telephony-draft';
+import { OperationalCallPopup } from './operational-call-popup';
+import { shownCallSession } from './shown-call-session';
+import { watchTelephonyWakeup } from './telephony-wakeup';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -22,9 +27,17 @@ export interface AttentionCall {
   synthetic: boolean;
   claimed: boolean;
   deferred: boolean;
-  call: { phone: string; name: string; subject: string; note: string };
+  call: {
+    direction?: string;
+    phone: string;
+    name: string;
+    subject: string;
+    note: string;
+  };
   technical: {
+    offeredAt?: string;
     caller: { kind: string; value: string | null };
+    callerName?: string | null;
     destination: { kind: string; value: string | null };
     extension: string | null;
     occurredAt: string;
@@ -36,7 +49,7 @@ export interface AttentionCall {
 interface Snapshot {
   incoming?: AttentionCall[];
   data: AttentionCall[];
-  meta: { total: number; page: number };
+  meta: { total: number; page: number; receivedAt?: string };
 }
 const states: Record<string, string> = {
   RINGING: 'در حال زنگ',
@@ -44,8 +57,23 @@ const states: Record<string, string> = {
   ENDED: 'پایان‌یافته',
   UNKNOWN: 'وضعیت نامشخص',
 };
-export function TelephonyAttention() {
+export function TelephonyAttention({
+  outboundOnly = false,
+  bothDirections = false,
+}: {
+  outboundOnly?: boolean;
+  bothDirections?: boolean;
+}) {
   const actor = useAccessActor();
+  // Explicit local rollout hold: no automatic attention UI before owner activation.
+  if (
+    bothDirections
+      ? process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED !== 'true'
+      : outboundOnly
+        ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
+        : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
+  )
+    return null;
   const allowed =
     !!actor?.permissions.includes(
       'customer_affairs.call_center.workflow.manage',
@@ -55,10 +83,26 @@ export function TelephonyAttention() {
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      actorId={actor.userId}
+      authorizationKey={actor.permissions.slice().sort().join(',')}
+      outboundOnly={outboundOnly}
+      bothDirections={bothDirections}
     />
   );
 }
-function Attention({ branch }: { branch: string }) {
+function Attention({
+  branch,
+  actorId,
+  outboundOnly,
+  bothDirections,
+  authorizationKey,
+}: {
+  branch: string;
+  actorId: string;
+  outboundOnly: boolean;
+  bothDirections: boolean;
+  authorizationKey: string;
+}) {
   const [rows, setRows] = useState<AttentionCall[]>([]),
     [total, setTotal] = useState(0),
     [page, setPage] = useState(1);
@@ -66,8 +110,13 @@ function Attention({ branch }: { branch: string }) {
     [open, setOpen] = useState(false),
     [leader, setLeader] = useState(false),
     [status, setStatus] = useState('در حال اتصال'),
-    [blocked, setBlocked] = useState(false),
+    [blockedAuthorization, setBlockedAuthorization] = useState<string | null>(
+      null,
+    ),
     [error, setError] = useState('');
+  const [wakeVersion, setWakeVersion] = useState(0);
+  // A denial expires when refreshed IAM permissions change. Keep the form mounted.
+  const blocked = blockedAuthorization === authorizationKey;
   const [history, setHistory] = useState<
     { id: string; subject: string; occurredAt: string }[]
   >([]);
@@ -76,24 +125,30 @@ function Attention({ branch }: { branch: string }) {
     [busy, setBusy] = useState(false),
     [operators, setOperators] = useState<Operator[]>([]),
     [target, setTarget] = useState('');
-  const tab = useRef(''),
-    currentRef = useRef<AttentionCall | null>(null),
+  const [tab] = useState(() => crypto.randomUUID());
+  const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
-    seen = useRef(new Set<string>());
+    seen = useRef(shownCallSession(actorId, () => window.sessionStorage));
+  const liveSince = useRef<string | null>(null);
   useUnsavedGuard(dirty);
+  useEffect(() => {
+    return watchTelephonyWakeup(() => {
+      setBlockedAuthorization(null);
+      setWakeVersion((version) => version + 1);
+    });
+  }, []);
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
   useEffect(() => {
-    tab.current = crypto.randomUUID();
     return () => {
       void callCenterRequest('/telephony/lease', branch, {
         method: 'POST',
-        body: JSON.stringify({ tabId: tab.current, release: true }),
+        body: JSON.stringify({ tabId: tab, release: true }),
         keepalive: true,
       }).catch(() => {});
     };
-  }, [branch]);
+  }, [branch, tab]);
   useEffect(() => {
     if (blocked) return;
     let disposed = false;
@@ -107,18 +162,27 @@ function Attention({ branch }: { branch: string }) {
           branch,
           {
             method: 'POST',
-            body: JSON.stringify({ tabId: tab.current, release: !visible }),
-            signal: abort.signal,
+            body: JSON.stringify({ tabId: tab, release: !visible }),
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
           },
         );
         const data = await callCenterRequest<Snapshot>(
           `/telephony?page=${page}`,
           branch,
-          { signal: abort.signal },
+          {
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
+          },
         );
         if (disposed) return;
+        if (!liveSince.current)
+          liveSince.current = data.meta.receivedAt ?? new Date().toISOString();
         setLeader(lease.leader);
-        const attention = data.incoming ?? data.data;
+        const attention = (data.incoming ?? data.data).filter(
+          (row) =>
+            !outboundOnly ||
+            bothDirections ||
+            (!row.synthetic && row.call.direction === 'OUTBOUND'),
+        );
         const visibleRows = [
           ...new Map(
             [...data.data, ...attention].map((row) => [row.id, row]),
@@ -141,24 +205,29 @@ function Attention({ branch }: { branch: string }) {
           !document.querySelector('[role="dialog"]')
         ) {
           const incoming = attention.find(
-            (r) => !r.deferred && !seen.current.has(r.id),
+            (r) =>
+              !r.deferred &&
+              !seen.current.has(r.id) &&
+              livePopupEligible(r, liveSince.current!),
           );
           if (incoming) {
             seen.current.add(incoming.id);
             setCurrent(incoming);
             setDraft({
-              name: incoming.call.name,
+              name: telephonyDraftName(incoming),
               subject: incoming.call.subject,
               note: incoming.call.note,
             });
             setDirty(false);
             setOpen(true);
+            if (outboundOnly && incoming.call.direction === 'OUTBOUND')
+              window.dispatchEvent(new Event('call-center:outbound-received'));
           }
         }
       } catch (e) {
         if (disposed) return;
         if (e instanceof CallCenterHttpError && [401, 403].includes(e.status)) {
-          setBlocked(true);
+          setBlockedAuthorization(authorizationKey);
           setRows([]);
           setCurrent(null);
           setDraft({ name: '', subject: '', note: '' });
@@ -179,7 +248,16 @@ function Attention({ branch }: { branch: string }) {
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked]);
+  }, [
+    branch,
+    page,
+    blocked,
+    tab,
+    outboundOnly,
+    bothDirections,
+    wakeVersion,
+    authorizationKey,
+  ]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {
@@ -217,7 +295,7 @@ function Attention({ branch }: { branch: string }) {
     }
     setCurrent(row);
     setDraft({
-      name: row.call.name,
+      name: telephonyDraftName(row),
       subject: row.call.subject,
       note: row.call.note,
     });
@@ -238,7 +316,7 @@ function Attention({ branch }: { branch: string }) {
           method: 'POST',
           body: JSON.stringify({
             version: current.version,
-            tabId: tab.current,
+            tabId: tab,
             action: kind,
             ...(kind === 'SAVE' ? draft : {}),
             ...(kind === 'TRANSFER' ? { targetUserId: target } : {}),
@@ -267,17 +345,40 @@ function Attention({ branch }: { branch: string }) {
     }
   }
   return (
-    <aside className={styles.attention} aria-label="صف تماس تلفنی">
-      <button ref={button} type="button" onClick={() => setOpen(true)}>
-        <Phone size={18} /> تماس‌ها ({total})
-      </button>
-      <small role="status">{status}</small>
-      {blocked && (
-        <button onClick={() => setBlocked(false)} type="button">
-          <RotateCcw size={14} /> تلاش مجدد
-        </button>
+    <aside
+      className={outboundOnly ? undefined : styles.attention}
+      aria-label="صف تماس تلفنی"
+    >
+      {!outboundOnly && (
+        <>
+          <button ref={button} type="button" onClick={() => setOpen(true)}>
+            <Phone size={18} /> تماس‌ها ({total})
+          </button>
+          <small role="status">{status}</small>
+          {blocked && (
+            <button onClick={() => setBlockedAuthorization(null)} type="button">
+              <RotateCcw size={14} /> تلاش مجدد
+            </button>
+          )}
+        </>
       )}
-      <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+      {open && current && !current.synthetic && (
+        <OperationalCallPopup
+          key={current.id}
+          row={current}
+          tabId={tab}
+          leader={leader}
+          onClose={() => {
+            setOpen(false);
+            setCurrent(null);
+            setDirty(false);
+          }}
+        />
+      )}
+      <Dialog
+        open={!outboundOnly && open && (!current || current.synthetic)}
+        onOpenChange={(value) => setOpen(value)}
+      >
         <DialogContent
           className={styles.dialog}
           onCloseAutoFocus={(event) => {

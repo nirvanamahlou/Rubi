@@ -55,8 +55,9 @@ type RecipientDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (
-    recipientId: string,
+    recipientIds: string[],
     status: InternalLetterStatus,
+    description: string,
   ) => Promise<void>;
   forward?: boolean;
 };
@@ -70,8 +71,8 @@ function OpenRecipientDialog({
   forward = false,
 }: RecipientDialogProps) {
   const [users, setUsers] = useState<CorrespondenceUser[]>([]);
-  const [recipient, setRecipient] = useState('');
-  const [search, setSearch] = useState('');
+  const [recipients, setRecipients] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
   const [status, setStatus] = useState<InternalLetterStatus>('APPROVED');
   const [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
@@ -111,14 +112,15 @@ function OpenRecipientDialog({
         <DialogTitle>
           {forward ? 'بازارسال نامه' : 'ارسال نامه داخلی'}
         </DialogTitle>
-        <DialogDescription>کاربر مقصد را انتخاب کنید.</DialogDescription>
+        <DialogDescription>کاربران مقصد را انتخاب کنید.</DialogDescription>
         <form
           className="mt-5 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
+            if (busy || loading || !recipients.length) return;
             setBusy(true);
             setError('');
-            void onSubmit(recipient, status)
+            void onSubmit(recipients, status, description)
               .then(() => onOpenChange(false))
               .catch((cause) =>
                 setError(
@@ -151,40 +153,55 @@ function OpenRecipientDialog({
               </select>
             </label>
           )}
-          <label className="block text-sm">
-            جست‌وجوی کاربر
-            <input
-              className="mt-2 w-full rounded-xl border bg-surface p-3"
-              value={search}
-              disabled={busy}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-          <label className="block text-sm">
-            ارسال به
-            <select
-              required
-              className="mt-2 w-full rounded-xl border bg-surface p-3"
-              value={recipient}
-              disabled={busy || loading}
-              onChange={(event) => setRecipient(event.target.value)}
-            >
-              <option value="">
-                {loading ? 'در حال بارگذاری کاربران…' : 'انتخاب کاربر'}
-              </option>
-              {users
-                .filter((user) =>
-                  `${user.displayName} ${user.username}`
-                    .toLocaleLowerCase()
-                    .includes(search.toLocaleLowerCase()),
-                )
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
+          <fieldset
+            disabled={busy || loading}
+            className="rounded-xl border bg-surface p-4"
+          >
+            <legend className="px-2 text-sm font-semibold">ارسال به</legend>
+            {loading && (
+              <p role="status" className="text-sm">
+                در حال بارگذاری کاربران…
+              </p>
+            )}
+            <div className="max-h-60 space-y-3 overflow-y-auto">
+              {users.map((user) => (
+                <label
+                  key={user.id}
+                  className="flex items-center gap-3 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={recipients.includes(user.id)}
+                    disabled={
+                      !recipients.includes(user.id) && recipients.length >= 100
+                    }
+                    onChange={(event) =>
+                      setRecipients((current) =>
+                        event.target.checked
+                          ? [...current, user.id]
+                          : current.filter((id) => id !== user.id),
+                      )
+                    }
+                  />
+                  <span>
                     {user.displayName} ({user.username})
-                  </option>
-                ))}
-            </select>
-          </label>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {forward && (
+            <label className="block text-sm">
+              توضیحات
+              <textarea
+                className="mt-2 min-h-28 w-full resize-y rounded-xl border bg-surface p-3"
+                value={description}
+                maxLength={2000}
+                disabled={busy}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </label>
+          )}
           {!loading && !users.length && !error && (
             <p className="text-sm text-muted-foreground">
               کاربر فعالی برای ارسال وجود ندارد.
@@ -216,7 +233,10 @@ function OpenRecipientDialog({
             >
               انصراف
             </Button>
-            <Button type="submit" disabled={!recipient || busy || loading}>
+            <Button
+              type="submit"
+              disabled={!recipients.length || busy || loading}
+            >
               {busy ? 'در حال ارسال…' : 'ارسال'}
             </Button>
           </div>

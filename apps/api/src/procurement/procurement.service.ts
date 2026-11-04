@@ -1,3 +1,13 @@
+import { validatePettyReceipt } from './procurement.registrations';
+import {
+  registerPettyCash,
+  listPettyRegistrations,
+} from './procurement.registrations';
+import {
+  debitPettyFund,
+  savePettyFund,
+  pettyFundDto,
+} from './procurement.petty-cash';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   ForbiddenException,
@@ -149,6 +159,49 @@ export class ProcurementService {
     @Inject(AutomationTasksService)
     private readonly tasks: AutomationTasksService,
   ) {}
+  async registerPettyCash(body: unknown, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    return registerPettyCash(this.database, this.documents, body, actor);
+  }
+  async pettyRegistrations(
+    query: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    await this.scope(actor);
+    return listPettyRegistrations(this.database, query, actor);
+  }
+  async pettyFund(branchId: string, actor: AuthenticatedActor) {
+    await this.scope(actor);
+    this.branch(actor, v.uuid(branchId));
+    const row = await this.database.client.procurementPettyFund.findUnique({
+      where: { branchId },
+    });
+    return row ? pettyFundDto(row) : null;
+  }
+  async savePettyFund(body: unknown, actor: AuthenticatedActor) {
+    const input = v.object(body, [
+      'branchId',
+      'balance',
+      'currencyCode',
+      'version',
+      'bankName',
+      'accountNumber',
+      'iban',
+      'cardNumber',
+      'receipt',
+    ]);
+    if (input.currencyCode)
+      await this.master.assertCurrency(String(input.currencyCode));
+    const receipt = await validatePettyReceipt(
+      input.receipt,
+      v.uuid(input.branchId),
+      actor,
+      this.documents,
+    );
+    return this.database.client.$transaction((tx) =>
+      savePettyFund(tx, input, actor, receipt),
+    );
+  }
   private require(
     actor: AuthenticatedActor,
     permission: ProcurementPermission,
@@ -884,7 +937,10 @@ export class ProcurementService {
               data: { status: 'SUBMITTED', version: { increment: 1 } },
             })
           : row;
-        if (publish) await this.audit(tx, result, actor, 'PUBLISH');
+        if (publish) {
+          await debitPettyFund(tx, id, draft, actor);
+          await this.audit(tx, result, actor, 'PUBLISH');
+        }
         await this.tasks.syncProcurementWithinTransaction(tx, {
           eventId: randomUUID(),
           requestId: id,
@@ -995,6 +1051,7 @@ export class ProcurementService {
           where: { id },
           data: { status: 'SUBMITTED', version: { increment: 1 } },
         });
+        await debitPettyFund(tx, id, draft, actor);
         await this.audit(tx, published, actor, 'PUBLISH');
         return requestDto(published);
       },
@@ -1365,6 +1422,7 @@ export class ProcurementService {
             data: { status: 'SUBMITTED' },
           });
         } else if (action === 'SUBMIT') {
+          await debitPettyFund(tx, id, draft, actor);
           requireRule(
             ['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(before.status),
             'INVALID_STATE',

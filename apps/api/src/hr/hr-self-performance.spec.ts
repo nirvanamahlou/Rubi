@@ -38,6 +38,52 @@ function fixture() {
   };
 }
 describe('HR self performance public projection', () => {
+  it('allows all staff to read only their own device attendance without granting broader HR access', async () => {
+    const f = fixture();
+    const result = await f.service.get({ ...actor, permissions: [] }, 30, true);
+    expect(result.employee?.personnelCode).toBe('100');
+    expect(result.payslipVisible).toBe(false);
+    expect(result.leaves).toEqual([]);
+    expect(result.shifts).toEqual([]);
+    expect(f.hr.leaveBalances).not.toHaveBeenCalled();
+    expect(f.client.hrRecord.count).not.toHaveBeenCalled();
+    for (const [query] of f.client.hrRecord.findMany.mock.calls) {
+      if (query.where.tab)
+        expect(['attendance', 'checkins']).toContain(query.where.tab);
+      else
+        expect(query.where.OR).toContainEqual({
+          section: 'time',
+          tab: 'shift',
+        });
+      expect(query.where.employee).toEqual({ userId: 'self', deletedAt: null });
+    }
+  });
+  it.each([30, 90, 365])(
+    'uses the selected %i calendar-day window including today',
+    async (days) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-11-02T21:10:00Z'));
+      try {
+        const f = fixture();
+        await f.service.get(actor, days);
+        const query = f.client.hrRecord.findMany.mock.calls.find(
+          ([q]) => q.where.tab === 'attendance',
+        )![0];
+        const start = new Date(
+          Date.parse('2026-11-03T12:00:00Z') - (days - 1) * 86400000,
+        )
+          .toISOString()
+          .slice(0, 10);
+        expect(query.where.AND).toEqual([
+          { values: { path: ['1'], gte: start } },
+          { values: { path: ['1'], lte: '2026-11-03' } },
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it('sums reviewed own attendance in the current Persian month without duplicate days', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-15T12:00:00Z'));
@@ -49,7 +95,11 @@ describe('HR self performance public projection', () => {
               {
                 status: 'حاضر',
                 values: ['User', '2026-10-15'],
-                data: { lateMinutes: 0, overtimeMinutes: 90 },
+                data: {
+                  lateMinutes: 0,
+                  overtimeMinutes: 90,
+                  deficitMinutes: 0,
+                },
               },
               {
                 status: 'حاضر',
@@ -59,7 +109,11 @@ describe('HR self performance public projection', () => {
               {
                 status: 'حاضر',
                 values: ['User', '2026-10-14'],
-                data: { lateMinutes: 15, overtimeMinutes: 0 },
+                data: {
+                  lateMinutes: 15,
+                  overtimeMinutes: 0,
+                  deficitMinutes: 25,
+                },
               },
             ]
           : [],
@@ -68,6 +122,7 @@ describe('HR self performance public projection', () => {
       expect(result.monthlyAttendance).toMatchObject({
         lateMinutes: 15,
         overtimeMinutes: 90,
+        deficitMinutes: 25,
       });
       const query = f.client.hrRecord.findMany.mock.calls.find(
         ([q]) => q.where.tab === 'attendance',
@@ -83,6 +138,39 @@ describe('HR self performance public projection', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+  it('keeps completed-day totals when another day has incomplete measurements', async () => {
+    const f = fixture();
+    f.client.hrRecord.findMany.mockImplementation(async (query) =>
+      query.where.tab === 'attendance'
+        ? [
+            {
+              status: 'نیازمند بررسی',
+              values: ['User', '2026-11-02'],
+              data: {
+                firstIn: '2026-11-02T05:50:00Z',
+                lateMinutes: 5,
+                deficitMinutes: null,
+                overtimeMinutes: null,
+              },
+            },
+            {
+              status: 'حاضر',
+              values: ['User', '2026-11-01'],
+              data: {
+                lateMinutes: 10,
+                deficitMinutes: 20,
+                overtimeMinutes: 45,
+              },
+            },
+          ]
+        : [],
+    );
+    expect((await f.service.get(actor, 30)).monthlyAttendance).toMatchObject({
+      lateMinutes: 15,
+      deficitMinutes: 20,
+      overtimeMinutes: 45,
+    });
   });
   it('distinguishes missing attendance measurements from a real zero', async () => {
     const f = fixture();
@@ -254,4 +342,69 @@ describe('HR self performance public projection', () => {
       vi.useRealTimers();
     }
   });
+});
+
+it('returns newest-first own history with stored metrics and registration provenance', async () => {
+  const f = fixture();
+  f.client.hrRecord.findMany.mockImplementation(async (q) =>
+    q.where.tab === 'attendance'
+      ? [
+          {
+            values: ['User', '2026-11-02'],
+            status: 'حاضر',
+            data: {
+              firstIn: '2026-11-02T05:46:00Z',
+              lastOut: '2026-11-02T13:30:00Z',
+              lateMinutes: 1,
+              deficitMinutes: 1,
+              overtimeMinutes: 0,
+              registrationType: 'manual',
+            },
+          },
+          {
+            values: ['User', '2026-11-03'],
+            status: 'حاضر',
+            data: {
+              firstIn: '2026-11-03T05:45:00Z',
+              lastOut: null,
+              lateMinutes: 0,
+              deficitMinutes: null,
+              overtimeMinutes: null,
+              registrationType: 'device',
+            },
+          },
+          {
+            values: ['User', '2026-11-03'],
+            status: 'حاضر',
+            data: { lateMinutes: 999 },
+          },
+        ]
+      : [],
+  );
+  const result = await f.service.get(actor, 30);
+  expect(result.attendanceHistory).toEqual([
+    {
+      date: '2026-11-03',
+      firstIn: '09:15',
+      lastOut: null,
+      lateMinutes: 0,
+      deficitMinutes: null,
+      overtimeMinutes: null,
+      registrationType: 'device',
+    },
+    {
+      date: '2026-11-02',
+      firstIn: '09:16',
+      lastOut: '17:00',
+      lateMinutes: 1,
+      deficitMinutes: 1,
+      overtimeMinutes: 0,
+      registrationType: 'manual',
+    },
+  ]);
+  const query = f.client.hrRecord.findMany.mock.calls.find(
+    ([q]) => q.where.tab === 'attendance',
+  )![0];
+  expect(query.where.employeeId).toBe('employee');
+  expect(query.where.employee.userId).toBe('self');
 });

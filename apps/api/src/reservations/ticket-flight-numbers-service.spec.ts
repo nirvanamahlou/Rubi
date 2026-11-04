@@ -43,6 +43,7 @@ function setup() {
     {} as never,
   );
   const detail = vi.spyOn(service, 'detail').mockResolvedValue({
+    workflow: state,
     snapshot: {
       passengerIds: [],
       serviceSelections: [{ clientKey: 'flight', kind: 'FLIGHT' }],
@@ -67,7 +68,7 @@ describe('persisted ticket flight-number correction', () => {
   it('uses branch-scoped intake, serializes writes and appends an actor-stamped revision', async () => {
     const s = setup();
     const result = await s.service.update('request', command, actor);
-    expect(s.detail).toHaveBeenCalledWith('request', ['branch']);
+    expect(s.detail).toHaveBeenCalledWith('request', ['branch'], true);
     expect(s.tx.$queryRaw).toHaveBeenCalledOnce();
     expect(s.tx.reservationWorkflowRevision.create).toHaveBeenCalledWith({
       data: expect.objectContaining({

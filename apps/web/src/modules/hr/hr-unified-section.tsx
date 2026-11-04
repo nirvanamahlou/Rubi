@@ -18,6 +18,7 @@ import {
 import { hrApi, hrRequest } from './hr-api';
 import { allHrRecords, type HrStore } from './hr-store';
 import { recordsDataset, hrCompanies } from './hr-live-data';
+import { recentAttendanceDataset } from './employee-attendance-dataset';
 import {
   HrButton,
   HrLoading,
@@ -32,12 +33,16 @@ import type { HrFormTarget } from './hr-record-form';
 const HrImport = dynamic(() =>
   import('./hr-import').then((module) => module.HrImport),
 );
+const HrPayrollWorksheet = dynamic(() =>
+  import('./hr-payroll-worksheet').then((module) => module.HrPayrollWorksheet),
+);
 import { ShiftCalendar } from './shift-calendar';
 import { useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
+import { HrLeaveBalance } from './hr-leave-balance';
 import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
@@ -122,6 +127,11 @@ function AccessibleHrSection({
   const queryKey = JSON.stringify(requestQuery);
   const selection = useHrRowSelection(queryKey);
   useEffect(() => {
+    if (
+      group.id === 'leaveBalance' ||
+      (section === 'payroll' && group.id === 'settings')
+    )
+      return;
     let active = true;
     const timer = window.setTimeout(() => {
       setLoading(true);
@@ -154,7 +164,16 @@ function AccessibleHrSection({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [queryKey, page, store.revision, remember, sourceSection, activeTab]);
+  }, [
+    queryKey,
+    page,
+    store.revision,
+    remember,
+    sourceSection,
+    activeTab,
+    group.id,
+    section,
+  ]);
   useEffect(() => {
     if (!calendar) return;
     let active = true;
@@ -172,7 +191,11 @@ function AccessibleHrSection({
   }, [calendar, queryKey, store.revision]);
   const matchingSource = loadedSource === `${sourceSection}.${activeTab}`;
   const currentItems = matchingSource ? items : [];
-  const dataset = recordsDataset(source.section, source.tab, currentItems);
+  const attendanceView =
+    source.section === 'time' && source.tab === 'attendance';
+  const dataset = attendanceView
+    ? recentAttendanceDataset(currentItems, store.data!.employees)
+    : recordsDataset(source.section, source.tab, currentItems);
   const writable = Boolean(
     definition &&
     !definition.readOnly &&
@@ -195,7 +218,9 @@ function AccessibleHrSection({
         selection.selectedIds.has(record.id),
       );
       if (!all.length) throw new Error('رکوردی برای خروجی انتخاب نشده است.');
-      const data = recordsDataset(source.section, source.tab, all);
+      const data = attendanceView
+        ? recentAttendanceDataset(all, store.data!.employees)
+        : recordsDataset(source.section, source.tab, all);
       if (pdf) {
         const { downloadSectionPdf } = await import('./section-report-pdf');
         await downloadSectionPdf(source.label, [
@@ -220,6 +245,51 @@ function AccessibleHrSection({
       setBusy(false);
     }
   };
+  if (section === 'payroll' && group.id === 'settings')
+    return (
+      <div className={ui.spaced}>
+        {!embedded ? (
+          <>
+            <header className={ui.heading}>
+              <h1>{screenMeta[section].title}</h1>
+            </header>
+            {groups.length > 1 ? (
+              <HrTabs
+                items={groups}
+                value={group.id}
+                onChange={switchGroup}
+                label="بخش‌های حقوق و دستمزد"
+              />
+            ) : null}
+          </>
+        ) : null}
+        <HrPayrollWorksheet data={store.data!} />
+      </div>
+    );
+  if (group.id === 'leaveBalance')
+    return (
+      <div className={ui.spaced}>
+        {!embedded ? (
+          <header className={ui.heading}>
+            <h1>{screenMeta[section].title}</h1>
+          </header>
+        ) : null}
+        {!embedded ? (
+          <HrTabs
+            items={groups}
+            value={group.id}
+            onChange={switchGroup}
+            label={`بخش‌های ${screenMeta[section].title}`}
+          />
+        ) : null}
+        <HrLeaveBalance
+          store={store}
+          initialView={
+            source.tab === 'leaveTransferRules' ? 'generalTransfer' : 'grant'
+          }
+        />
+      </div>
+    );
   return (
     <div className={ui.spaced}>
       {!embedded ? (
@@ -301,7 +371,8 @@ function AccessibleHrSection({
               value={calendar ? 'calendar' : 'list'}
               onChange={(id) => {
                 setCalendar(id === 'calendar');
-                if (id === 'calendar') setSourceTab('shift');
+                setSourceTab('shift');
+                setPage(1);
               }}
               label="نمای شیفت"
             />
@@ -391,7 +462,9 @@ function AccessibleHrSection({
                 setPage(1);
               }}
             >
-              <option value="createdAt">تاریخ ثبت</option>
+              <option value="createdAt">
+                {attendanceView ? 'تاریخ کارکرد' : 'تاریخ ثبت'}
+              </option>
               <option value="name">اسم و فامیل</option>
               <option value="personnelCode">کد پرسنلی</option>
             </NativeSearchSelect>
@@ -570,6 +643,28 @@ function AccessibleHrSection({
               محاسبه و بستن کارکرد
             </summary>
             <div className={ui.actions}>
+              <HrButton
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError('');
+                  try {
+                    await hrRequest('/attendance/device/sync', {
+                      method: 'POST',
+                    });
+                    await store.mutated();
+                    setNotice('ترددهای دستگاه دریافت شد.');
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : 'دریافت تردد انجام نشد.',
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                دریافت تردد دستگاه
+              </HrButton>
               <HrButton
                 disabled={busy}
                 onClick={async () => {

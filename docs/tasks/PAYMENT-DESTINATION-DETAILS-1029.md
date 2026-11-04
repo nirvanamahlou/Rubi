@@ -1,0 +1,11 @@
+# Named complete Sales payment destinations
+
+COMPUTER_ID=PC-A. User authorizes the fix, develop merge and Avina server update.
+
+The contract-scoped payment-account endpoint previously published only the account title and masked identifier. Finance now decrypts the company's saved account/card/IBAN instructions using the existing authenticated encryption context, adds the canonical bank name through Master Data's public directory, and audits each reveal without putting identifiers in the audit metadata. Neither ciphertext nor cryptographic context is returned. Sales continues to authorize the exact contract and payment-creation capability before invoking this owner service. Active branch and destination currency validation remain unchanged. No global Finance permission or financial confirmation is granted. The existing private/no-store response header is preserved.
+
+The picker searches and displays the bank name, account title, and full available identifiers in wrapped rows with LTR number isolation. The selected account also has a persistent multiline detail panel. Currency changes discard the visible stale selection. Missing identifiers are omitted; older API responses retain their masked fallback. The DTO extension is optional and additive: deploy API before/with Web. No database, dependency, migration or approval-workflow changes.
+
+Validation: focused Finance encryption/audit/directory/Sales authorization/payment tests, Web payment/account/receipt flow tests, scoped lint and type/build gates. Full hosted final-head tests, quality, build and PostgreSQL checks gate merge.
+
+Server baseline inspected through the existing deployment key: b5ce75bcc97a0c34cf8563aa18b0280634d23ad9. The earlier destination-account and transactional-numbering migrations are already applied by its verified rollout. Before activation, pin the merged revision, compare migration history, acquire the existing deploy lock, verify the new image and isolated Web canary, create and validate encrypted database/documents backups, then retain env/volumes and old static assets. Verify HTTPS login, API health, authorization and service/image identities; rollback the app on failed health. The operational receipt is stored outside Git. Do not claim deployment until its receipt verifies success.

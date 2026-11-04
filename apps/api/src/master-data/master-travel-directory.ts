@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MasterDataService } from './master-data.service';
+import { brokerEnglishDisplayName } from '@nora/contracts';
 
 /** Public, non-PII reference validation for Ticket Catalog consumers. */
 @Injectable()
@@ -122,11 +123,17 @@ export class MasterTravelDirectory {
       data: result.data.map((row) => ({
         id: kind === 'currencies' ? row.code : row.id,
         name:
-          kind === 'hotels'
-            ? String(row.attributes.englishName || row.name)
-            : kind === 'currencies'
-              ? `${row.name} (${row.code})`
-              : row.name,
+          kind === 'brokers'
+            ? brokerEnglishDisplayName({
+                name: row.name,
+                englishName: row.attributes?.englishName,
+                code: row.code,
+              })
+            : kind === 'hotels'
+              ? String(row.attributes.englishName || row.name)
+              : kind === 'currencies'
+                ? `${row.name} (${row.code})`
+                : row.name,
       })),
       meta: result.meta,
     };
@@ -464,7 +471,9 @@ export class MasterTravelDirectory {
     hotelIds: readonly string[];
     insuranceId?: string;
   }) {
-    for (const cityId of [input.originId, input.destinationId]) {
+    for (const cityId of [input.originId, input.destinationId].filter(
+      Boolean,
+    )) {
       const { data } = await this.master.detail('cities', cityId);
       if (data.status !== 'active')
         throw new BadRequestException('شهر تور غیرفعال است.');

@@ -20,10 +20,8 @@ import {
   type MasterDataResource,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import {
-  refreshAuthenticatedSession,
-  AUTH_SESSION_RECOVERED_EVENT,
-} from '@/lib/auth-session';
+import { AUTH_SESSION_RECOVERED_EVENT } from '@/lib/auth-session';
+import { loadAccessSession } from './access-session';
 const ActorContext = createContext<AuthenticatedActor | null>(null);
 export function useAccessActor() {
   return useContext(ActorContext);
@@ -97,23 +95,12 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       try {
         const base = getPublicApiBaseUrl();
         if (!base) throw Error();
-        let response = await fetch(base + '/iam/auth/access', {
-          credentials: 'include',
-          cache: 'no-store',
-        });
-        if (
-          response.status === 401 &&
-          (await refreshAuthenticatedSession(base))
-        )
-          response = await fetch(base + '/iam/auth/access', {
-            credentials: 'include',
-            cache: 'no-store',
-          });
-        if (response.status === 401) {
+        const result = await loadAccessSession(base);
+        if (result.status === 'expired') {
           if (active) setExpired(true);
           return;
         }
-        if (response.status === 403) {
+        if (result.status === 'forbidden') {
           if (active) {
             setActor(null);
             setPermissions([]);
@@ -121,9 +108,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
           }
           return;
         }
-        if (!response.ok) throw Error();
-        const actor = (await response.json()) as AuthenticatedActor;
-        if (!Array.isArray(actor.permissions)) throw Error();
+        if (result.status !== 'ready') return;
+        const actor = result.actor;
         if (active) {
           setActor(actor);
           setPermissions(actor.permissions);
@@ -131,7 +117,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         if (active) {
-          setPermissions(null);
+          // Keep the authenticated subtree mounted during temporary outages;
+          // API authorization still runs on every operation.
           setError(true);
         }
       } finally {

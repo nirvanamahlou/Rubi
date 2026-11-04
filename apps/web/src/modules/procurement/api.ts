@@ -230,6 +230,7 @@ export const procurementApi = {
     requesterEmployeeId?: string,
     publish = false,
     ownerUserId?: string,
+    reason?: string,
   ) =>
     procurementRequest<ProcurementRequestV1>(
       request ? `/requests/${encodeURIComponent(request.id)}` : '/requests',
@@ -241,6 +242,7 @@ export const procurementApi = {
             ? {
                 expectedVersion: request.version,
                 draft,
+                ...(reason ? { reason } : {}),
                 ...(publish ? { publish: true } : {}),
               }
             : {

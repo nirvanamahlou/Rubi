@@ -69,8 +69,8 @@ describe('server issued ticket report', () => {
           issuedFrom: '2026-10-01',
           issuedTo: '2026-10-05',
         }),
-      ).toEqual([]);
-      expect(fetcher.mock.calls[0]?.[0]).toContain('/issued-tickets?');
+      ).toEqual({ data: [] });
+      expect(fetcher.mock.calls[0]?.[0]).toContain('/service-report?');
       expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
         credentials: 'include',
         cache: 'no-store',

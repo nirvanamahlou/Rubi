@@ -14,7 +14,7 @@ export function mergeHrReferenceRecords(
   ];
 }
 
-export function useHrReferenceData(store: HrStore) {
+export function useHrReferenceData(store: HrStore, enabled = true) {
   const [result, setResult] = useState<{
     revision: number;
     records?: HrRecordDto[];
@@ -23,7 +23,7 @@ export function useHrReferenceData(store: HrStore) {
   const loaded =
     result?.revision === store.revision ? result.records : undefined;
   const error = result?.revision === store.revision ? (result.error ?? '') : '';
-  const truncated = store.data!.recordsTruncated;
+  const truncated = enabled && store.data!.recordsTruncated;
   useEffect(() => {
     if (!truncated) return;
     let active = true;

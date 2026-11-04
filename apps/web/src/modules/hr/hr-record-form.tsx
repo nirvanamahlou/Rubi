@@ -1,4 +1,6 @@
 'use client';
+import { WeeklyShiftForm } from './weekly-shift-form';
+import { isHrSharedResource } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -72,6 +74,12 @@ interface HrRecordFormProps {
 }
 
 export function HrRecordForm(props: HrRecordFormProps) {
+  if (
+    props.target.source.section === 'time' &&
+    props.target.source.tab === 'shift' &&
+    (!props.target.record || props.target.record.values[9])
+  )
+    return <WeeklyShiftForm {...props} />;
   return props.target.organizationNode ? (
     <HrNodePicker {...props} />
   ) : (
@@ -143,6 +151,7 @@ function HrRecordFormFields({
   allowInlineCreate = true,
 }: HrRecordFormProps & { nodePicker?: ReactNode }) {
   const definition = getHrResource(target.source.section, target.source.tab)!;
+  const isChartEmployee = definition.key === 'organization.chartEmployees';
   const external = useHrFormReferences();
   const references = useHrReferenceData(store);
   const data = references.data;
@@ -153,6 +162,9 @@ function HrRecordFormFields({
   );
   const [companyId, setCompanyId] = useState(
     () =>
+      (target.record?.data.allBranches || target.parent?.data.allBranches
+        ? companies.find((c) => c.isHeadquarters)?.id
+        : undefined) ??
       (missionExpense
         ? (target.record?.data.organizationBranchId ??
           target.parent?.data.organizationBranchId)
@@ -172,7 +184,7 @@ function HrRecordFormFields({
       companies[0]?.id ??
       '',
   );
-  const company = companies.find((item) => item.id === companyId);
+  const company = companies.find((item) => item.aliases.includes(companyId));
   const [branchId, setBranchId] = useState(
     target.record?.branchId ??
       target.parent?.branchId ??
@@ -206,7 +218,7 @@ function HrRecordFormFields({
   const [employeeId, setEmployeeId] = useState(
     target.employeeId ??
       target.record?.employeeId ??
-      target.parent?.employeeId ??
+      (isChartEmployee ? undefined : target.parent?.employeeId) ??
       '',
   );
   const [parentId, setParentId] = useState(
@@ -259,10 +271,23 @@ function HrRecordFormFields({
   const employee = data.employees.find((item) => item.id === employeeId);
   const employees = data.employees.filter(
     (item) =>
-      item.branchId === branchId &&
+      (company?.isHeadquarters ||
+        company?.branchIds.includes(item.branchId) ||
+        item.branchId === branchId) &&
       (!company?.organizationBranchId ||
         item.organizationBranchId === company.organizationBranchId ||
-        item.id === employeeId),
+        company.aliases.includes(item.organizationBranchId ?? '') ||
+        item.id === employeeId ||
+        (isChartEmployee && !item.organizationBranchId)) &&
+      (!isChartEmployee ||
+        item.id === employeeId ||
+        !data.records.some(
+          (r) =>
+            r.section === 'organization' &&
+            r.tab === 'chartEmployees' &&
+            r.employeeId === item.id &&
+            !r.deletedAt,
+        )),
   );
   const parents = missionExpense
     ? expenseMissionOptions(
@@ -275,10 +300,15 @@ function HrRecordFormFields({
         (item) =>
           item.branchId === branchId &&
           item.id !== target.record?.id &&
+          (!company?.isHeadquarters ||
+            !isHrSharedResource(target.source.section, target.source.tab) ||
+            item.data.allBranches) &&
           (!company?.organizationBranchId ||
             !item.data.organizationBranchId ||
-            item.data.organizationBranchId === company.organizationBranchId) &&
-          (!definition.employeeRequired ||
+            item.data.organizationBranchId === company.organizationBranchId ||
+            company.aliases.includes(item.data.organizationBranchId ?? '')) &&
+          (isChartEmployee ||
+            !definition.employeeRequired ||
             !employeeId ||
             !item.employeeId ||
             item.employeeId === employeeId) &&
@@ -298,7 +328,8 @@ function HrRecordFormFields({
         item.tab === 'units' &&
         item.branchId === branchId &&
         (!company?.organizationBranchId ||
-          item.data.organizationBranchId === company.organizationBranchId),
+          item.data.organizationBranchId === company.organizationBranchId ||
+          company.aliases.includes(item.data.organizationBranchId ?? '')),
     )
     .map((item) => item.values[0]!)
     .filter(Boolean);
@@ -363,6 +394,9 @@ function HrRecordFormFields({
         }
       : {}),
   };
+  const isJobTitle =
+    target.source.section === 'organization' &&
+    target.source.tab === 'positions';
   const isUnit =
     target.source.section === 'organization' && target.source.tab === 'units';
   const isApplicant =
@@ -493,33 +527,40 @@ function HrRecordFormFields({
           {nodePicker}
           {allowInlineCreate &&
           target.source.tab !== 'branches' &&
-          target.source.tab !== 'units' ? (
+          target.source.tab !== 'units' &&
+          !isJobTitle ? (
             <button type="button" onClick={() => openReference('branches')}>
               افزودن شعبه
             </button>
           ) : null}
-          <label className={ui.field}>
-            <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
-            <NativeSearchSelect
-              disabled={Boolean(target.parent || (target.record && !isUnit))}
-              value={companyId || branchId}
-              onChange={(event) => {
-                const selectedCompany = companies.find(
-                  (item) => item.id === event.target.value,
-                );
-                setCompanyId(event.target.value);
-                setBranchId(selectedCompany?.branchId ?? event.target.value);
-                setEmployeeId('');
-                setParentId('');
-              }}
-            >
-              {companies.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
+          {!isJobTitle ? (
+            <label className={ui.field}>
+              <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
+              <NativeSearchSelect
+                disabled={Boolean(
+                  target.employeeId ||
+                  target.parent ||
+                  (target.record && !isUnit),
+                )}
+                value={company?.id || branchId}
+                onChange={(event) => {
+                  const selectedCompany = companies.find(
+                    (item) => item.id === event.target.value,
+                  );
+                  setCompanyId(event.target.value);
+                  setBranchId(selectedCompany?.branchId ?? event.target.value);
+                  setEmployeeId('');
+                  setParentId('');
+                }}
+              >
+                {companies.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+          ) : null}
           {definition.employeeRequired ? (
             <label className={ui.field}>
               <RequiredFieldLabel required>کارمند</RequiredFieldLabel>
@@ -528,10 +569,20 @@ function HrRecordFormFields({
                 disabled={Boolean(
                   target.record ||
                   target.employeeId ||
-                  target.parent?.employeeId,
+                  (!isChartEmployee && target.parent?.employeeId),
                 )}
                 onChange={(event) => {
                   setEmployeeId(event.target.value);
+                  const chosen = data.employees.find(
+                    (e) => e.id === event.target.value,
+                  );
+                  if (chosen) {
+                    setBranchId(chosen.branchId);
+                    if (!company?.isHeadquarters)
+                      setCompanyId(
+                        chosen.organizationBranchId || chosen.branchId,
+                      );
+                  }
                   if (missionExpense) setParentId('');
                 }}
               >
@@ -544,12 +595,7 @@ function HrRecordFormFields({
               </NativeSearchSelect>
             </label>
           ) : null}
-          {allowInlineCreate && definition.employeeRequired ? (
-            <button type="button" onClick={() => openReference('employee')}>
-              افزودن کارمند
-            </button>
-          ) : null}
-          {definition.parentResources.length && !isUnit ? (
+          {definition.parentResources.length ? (
             <label className={ui.field}>
               <RequiredFieldLabel required={!definition.parentOptional}>
                 {parentFieldLabel(target.source.section, target.source.tab)}
@@ -558,14 +604,20 @@ function HrRecordFormFields({
                 disabled={Boolean(
                   target.parent ||
                   (target.record &&
-                    !(isUnit || isApplicant || missionExpense)) ||
+                    !(
+                      isUnit ||
+                      isChartEmployee ||
+                      isApplicant ||
+                      missionExpense
+                    )) ||
                   references.loading,
                 )}
                 value={parentId}
                 onChange={(event) => {
                   setParentId(event.target.value);
                   const item = parents.find((p) => p.id === event.target.value);
-                  if (item?.employeeId) setEmployeeId(item.employeeId);
+                  if (item?.employeeId && !isChartEmployee)
+                    setEmployeeId(item.employeeId);
                 }}
               >
                 <option value="">
@@ -589,7 +641,9 @@ function HrRecordFormFields({
                       ? missionOptionLabel(item)
                       : isApplicant && item.tab === 'staffing'
                         ? `برنامه ${valueOf(item, 'سال برنامه')} - ${valueOf(item, 'واحد')}`
-                        : item.values[0]}
+                        : item.tab === 'chartEmployees'
+                          ? item.values[1] || item.values[0]
+                          : item.values[0]}
                   </option>
                 ))}
               </NativeSearchSelect>
@@ -703,10 +757,10 @@ function HrRecordFormFields({
                     skipCreateReferenceLabels:
                       target.source.section === 'organization' &&
                       target.source.tab === 'positions'
-                        ? ['عنوان سمت', 'عنوان شغل']
-                        : [],
+                        ? ['کارمند', 'عنوان سمت', 'عنوان شغل']
+                        : ['کارمند'],
                     onCreateReference: (label: string) => {
-                      if (label === 'کارمند') openReference('employee', label);
+                      if (label === 'کارمند') return;
                       else if (/شعبه|شرکت/.test(label))
                         openReference('branches', label);
                       else if (/واحد/.test(label))
@@ -719,6 +773,8 @@ function HrRecordFormFields({
                 نام: 'text',
                 'نام خانوادگی': 'text',
                 'کد ملی': 'text',
+                'کد پستی': 'text',
+                'عنوان شغلی': 'text',
                 'شماره شناسنامه': 'text',
                 'نام پدر': 'text',
                 'شهر محل صدور': 'text',
@@ -851,7 +907,22 @@ function HrRecordFormFields({
                 }
                 return '';
               };
+              const actualOrganizationId = employee
+                ? employee.organizationBranchId
+                : (parent?.data.organizationBranchId ??
+                  (company?.aliases.includes(companyId) &&
+                  data.records.some(
+                    (r) =>
+                      r.id === companyId &&
+                      r.section === 'organization' &&
+                      r.tab === 'branches',
+                  )
+                    ? companyId
+                    : company?.organizationBranchId));
               const extra: HrWorkflowData = {
+                ...(isHrSharedResource(target.source.section, target.source.tab)
+                  ? { allBranches: Boolean(company?.isHeadquarters) }
+                  : {}),
                 ...Object.fromEntries(
                   Object.entries(target.record?.data ?? {}).filter(([field]) =>
                     [
@@ -868,10 +939,11 @@ function HrRecordFormFields({
                     ].includes(field),
                   ),
                 ),
-                ...(company?.organizationBranchId
-                  ? { organizationBranchId: company.organizationBranchId }
+                ...(!isJobTitle && actualOrganizationId
+                  ? { organizationBranchId: actualOrganizationId }
                   : {}),
               };
+              if (extra.allBranches) delete extra.organizationBranchId;
               if (
                 target.source.section === 'time' &&
                 target.source.tab === 'checkins'
@@ -995,7 +1067,10 @@ function HrRecordFormFields({
                       : {}),
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
-                    ...(isUnit || isApplicant || missionExpense
+                    ...(isUnit ||
+                    isChartEmployee ||
+                    isApplicant ||
+                    missionExpense
                       ? { parentId: parentId || null }
                       : {}),
                     ...(input.effectiveAt
@@ -1039,13 +1114,13 @@ function HrRecordFormFields({
                       ? 'شرکت و شعبه'
                       : newReference.kind === 'units'
                         ? 'واحد سازمانی'
-                        : 'شغل و سمت',
+                        : 'عنوان‌های شغلی',
                   action:
                     newReference.kind === 'branches'
                       ? 'افزودن شعبه'
                       : newReference.kind === 'units'
                         ? 'افزودن واحد'
-                        : 'افزودن سمت',
+                        : 'افزودن عنوان شغلی',
                 },
                 preferredCompanyId: companyId,
               }}
@@ -1060,8 +1135,8 @@ function HrRecordFormFields({
                 }
                 if (newReference.label) {
                   const value =
-                    newReference.label === 'عنوان شغل'
-                      ? valueOf(record, 'عنوان شغل')
+                    newReference.kind === 'positions'
+                      ? record.values[1] || record.values[0] || ''
                       : (record.values[0] ?? '');
                   setCreatedReference({
                     id: record.id,

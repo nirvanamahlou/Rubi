@@ -92,6 +92,12 @@
 }
 .transfer {
   order: 3;
+  display: flex;
+  align-items: center;
+}
+
+.transfer > label {
+  width: 100%;
 }
 .visa {
   order: 4;
@@ -102,20 +108,20 @@
 .tour {
   order: 6;
 }
-.cip {
+.cityTour {
   order: 7;
 }
-.bus {
+.tourGuide {
   order: 8;
-  grid-column: span 4;
+}
+.bus {
+  order: 9;
 }
 .train {
-  order: 9;
-  grid-column: span 4;
+  order: 10;
 }
 .other {
-  order: 10;
-  grid-column: span 4;
+  order: 11;
 }
 
 @media (max-width: 640px) {
@@ -133,7 +139,7 @@
 }
 
 .summary {
-  order: 11;
+  order: 12;
   grid-column: 1 / -1;
   display: flex;
   align-items: center;

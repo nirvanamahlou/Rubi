@@ -10,6 +10,7 @@ import {
   IAM_PERMISSION_CODES,
   CALL_CENTER_SCOPED_ACCESS,
   mustScopeCallCenter,
+  completeManualAccessPrerequisites,
   MANUAL_ACCESS_ROLE_PREFIX,
   MANUAL_ACCESS_VERSION,
   USER_ACCESS_SCREENS,
@@ -261,11 +262,15 @@ export class ManualUserAccessService {
             'دسترسی کاربر تغییر کرده است؛ دوباره بارگذاری کنید.',
           );
         const before = manualAccessSelection(scopedUser);
-        const requested: ManualAccessSelection = {
-          permissionCodes: [...dto.permissionCodes].sort(),
-          screenIds: [...dto.screenIds].sort(),
-          allowedControlIds: [...dto.allowedControlIds].sort(),
-        };
+        const requested: ManualAccessSelection =
+          completeManualAccessPrerequisites(
+            {
+              permissionCodes: [...dto.permissionCodes].sort(),
+              screenIds: [...dto.screenIds].sort(),
+              allowedControlIds: [...dto.allowedControlIds].sort(),
+            },
+            before,
+          );
         // Opt-in is sticky: removing scope ticks cannot fall back to legacy branch-wide read.
         // Unrelated edits to pre-existing accounts do not opt them in.
         if (mustScopeCallCenter(before, requested)) {

@@ -156,6 +156,7 @@ describe('Reservations passenger and document consumers', () => {
     expect(r.canEdit).toBe(true);
     expect(r.canEditIdentity).toBe(false);
     expect(r.data[0]).toEqual({
+      insurancePolicyNumber: null,
       id: s.pid,
       firstName: 'Actual',
       lastName: 'Passenger',
@@ -177,7 +178,7 @@ describe('Reservations passenger and document consumers', () => {
       version: 4,
     });
     expect(JSON.stringify(r)).not.toContain('not-returned');
-    expect(s.workflow.detail).toHaveBeenCalledWith(s.id, [s.branch]);
+    expect(s.workflow.detail).toHaveBeenCalledWith(s.id, [s.branch], true);
     expect(s.customers.detail).toHaveBeenCalledWith(
       s.pid,
       s.actor,

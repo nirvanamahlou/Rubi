@@ -44,6 +44,25 @@ export class AccountingController {
   snapshot(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
     return this.accounting.snapshot(id, request.actor);
   }
+  @Get('books/:bookId/workflows')
+  @Header('Cache-Control', 'private, no-store')
+  workflows(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
+    return this.accounting.workflows(id, request.actor);
+  }
+  @Get('books/:bookId/workflow-sources')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('finance.journal.create')
+  workflowSources(
+    @Param('bookId') id: string,
+    @Query() query: Record<string, string>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.workflowSources(
+      id,
+      query.search ?? '',
+      request.actor,
+    );
+  }
   @Get('books/:bookId/journals')
   @Header('Cache-Control', 'private, no-store')
   journals(
@@ -75,22 +94,26 @@ export class AccountingController {
     return new StreamableFile(
       accountingXlsx(
         displayText('تراز حساب‌ها', language),
-        [
-          'کد',
-          'حساب',
-          'مانده اول دوره',
-          'بدهکار',
-          'بستانکار',
-          'مانده پایان',
-        ].map((label) => displayText(label, language)),
-        report.rows.map((r) => [
-          r.code,
-          r.title,
-          r.opening,
-          r.debit,
-          r.credit,
-          r.balance,
-        ]),
+        (
+          report.table?.headers ?? [
+            'کد',
+            'حساب',
+            'مانده اول دوره',
+            'بدهکار',
+            'بستانکار',
+            'مانده پایان',
+          ]
+        ).map((label) => displayText(label, language)),
+        report.table
+          ? [...report.table.rows.map((row) => row.values), report.table.totals]
+          : report.rows.map((r) => [
+              r.code,
+              r.title,
+              r.opening,
+              r.debit,
+              r.credit,
+              r.balance,
+            ]),
         language === 'fa',
       ),
       {

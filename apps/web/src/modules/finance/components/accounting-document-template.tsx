@@ -86,6 +86,7 @@ function TemplateGrid({
   book,
   busy,
   parentPosition,
+  inclusion = false,
   onSelectParent,
   onParentPositionChange,
 }: {
@@ -95,6 +96,7 @@ function TemplateGrid({
   setRows: (rows: Line[]) => void;
   book: AccountingSnapshotV1;
   busy: boolean;
+  inclusion?: boolean;
   parentPosition?: number | null;
   onSelectParent?: (position: number | null) => void;
   onParentPositionChange?: (position: number | null) => void;
@@ -134,7 +136,7 @@ function TemplateGrid({
       ...rows,
       {
         ...freshLine(role),
-        ...(role === 'SOURCE' || role === 'BASIS' ? { parentPosition } : {}),
+        ...(childRole ? { parentPosition } : {}),
       },
     ]);
     setSelected(rows.length);
@@ -215,6 +217,7 @@ function TemplateGrid({
           <thead className="bg-muted">
             <tr>
               {[
+                ...(inclusion ? ['شمول/عدم شمول'] : []),
                 'کد حساب معین',
                 'سطح 4',
                 'سطح 5',
@@ -260,6 +263,24 @@ function TemplateGrid({
                     }}
                     onDoubleClick={() => onSelectParent?.(index)}
                   >
+                    {inclusion ? (
+                      <td className="border p-1">
+                        <select
+                          aria-label={`شمول/عدم شمول ${index + 1}`}
+                          disabled={busy}
+                          value={row.include ? 'include' : 'exclude'}
+                          onChange={(event) =>
+                            update(index, {
+                              include: event.target.value === 'include',
+                            })
+                          }
+                          className="h-10 rounded border bg-background px-2"
+                        >
+                          <option value="include">شمول</option>
+                          <option value="exclude">عدم شمول</option>
+                        </select>
+                      </td>
+                    ) : null}
                     <td className="border p-1">
                       <SearchCombobox
                         label={`کد حساب معین ${title} ${index + 1}`}
@@ -427,9 +448,7 @@ function TemplateGrid({
                   .map((accountId) => ({
                     ...freshLine(role),
                     accountId,
-                    ...(role === 'SOURCE' || role === 'BASIS'
-                      ? { parentPosition }
-                      : {}),
+                    ...(childRole ? { parentPosition } : {}),
                   })),
               ]);
               setBulk(false);
@@ -457,18 +476,25 @@ export function AccountingDocumentTemplate({
   listOnly = false,
 }: {
   book: AccountingSnapshotV1;
-  kind: 'AUTOMATIC' | 'REVALUATION';
+  kind: 'AUTOMATIC' | 'REVALUATION' | 'CLOSING';
   run: Run;
   busy: boolean;
   listOnly?: boolean;
 }) {
   const router = useRouter();
   const linkedId = useSearchParams().get('id');
+  const sourceForm =
+    kind === 'CLOSING' ? 'rahkaran-closing-v1' : 'rahkaran-documents-v1';
+  const route =
+    kind === 'CLOSING'
+      ? 'year-end/closing-templates'
+      : `documents/${kind === 'AUTOMATIC' ? 'automatic-templates' : 'revaluation-templates'}`;
+  const listRoute = route.replace('/', '/lists/');
   const initial = book.templates.find(
     (template) =>
       template.id === linkedId &&
       template.kind === kind &&
-      template.attributes?.sourceForm === 'rahkaran-documents-v1',
+      template.attributes?.sourceForm === sourceForm,
   );
   const [selected, setSelected] = useState<AccountingTemplateV1 | null>(
     initial ?? null,
@@ -481,6 +507,7 @@ export function AccountingDocumentTemplate({
     descriptionEn: initial?.descriptionEn ?? '',
   });
   const [lines, setLines] = useState<Line[]>(initial?.lines ?? []);
+  const [active, setActive] = useState(initial?.active ?? true);
   const [parentPosition, setParentPosition] = useState<number | null>(null);
   const [notes, setNotes] = useState<SetupNote[]>(
     parseSetupNotes(initial?.attributes?.notes),
@@ -488,14 +515,19 @@ export function AccountingDocumentTemplate({
   const [tab, setTab] = useState<'main' | 'notes'>('main');
   const [openVisible, setOpenVisible] = useState(false);
   const [search, setSearch] = useState('');
-  const title = kind === 'AUTOMATIC' ? 'الگوی سند اتوماتیک' : 'الگوی تسعیر ارز';
+  const title =
+    kind === 'CLOSING'
+      ? 'الگوی بستن حساب'
+      : kind === 'AUTOMATIC'
+        ? 'الگوی سند اتوماتیک'
+        : 'الگوی تسعیر ارز';
   const templates = book.templates.filter(
     (template) =>
-      template.kind === kind &&
-      template.attributes?.sourceForm === 'rahkaran-documents-v1',
+      template.kind === kind && template.attributes?.sourceForm === sourceForm,
   );
   const reset = () => {
     setSelected(null);
+    setActive(true);
     setHead({
       code: '',
       title: '',
@@ -509,17 +541,22 @@ export function AccountingDocumentTemplate({
     setTab('main');
   };
   const close = () =>
-    router.push(
-      `/finance/accounting/general-ledger/documents/lists/${kind === 'AUTOMATIC' ? 'automatic-templates' : 'revaluation-templates'}`,
-    );
+    router.push(`/finance/accounting/general-ledger/${listRoute}`);
   const open = (template: AccountingTemplateV1) => {
+    if (kind === 'CLOSING' && template.attributes?.sourceForm !== sourceForm) {
+      router.push(
+        `/finance/accounting/general-ledger/${route}?legacyTemplateId=${template.id}`,
+      );
+      return;
+    }
     if (listOnly) {
       router.push(
-        `/finance/accounting/general-ledger/documents/${kind === 'AUTOMATIC' ? 'automatic-templates' : 'revaluation-templates'}?id=${template.id}`,
+        `/finance/accounting/general-ledger/${route}?id=${template.id}`,
       );
       return;
     }
     setSelected(template);
+    setActive(template.active);
     setHead({
       code: template.code,
       title: template.title,
@@ -538,7 +575,8 @@ export function AccountingDocumentTemplate({
       {
         ...head,
         kind,
-        sourceForm: 'rahkaran-documents-v1',
+        sourceForm,
+        ...(kind === 'CLOSING' ? { active } : {}),
         ...(selected ? { id: selected.id } : {}),
         lines,
         notes,
@@ -622,7 +660,7 @@ export function AccountingDocumentTemplate({
                     'code',
                     'title',
                     'titleEn',
-                    ...(kind === 'AUTOMATIC'
+                    ...(kind !== 'REVALUATION'
                       ? (['description', 'descriptionEn'] as const)
                       : []),
                   ] as const
@@ -656,11 +694,26 @@ export function AccountingDocumentTemplate({
                   </FormField>
                 ))}
               </div>
+              {kind === 'CLOSING' ? (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={active}
+                    disabled={busy}
+                    onChange={(event) => setActive(event.target.checked)}
+                  />
+                  فعال
+                </label>
+              ) : null}
               <TemplateGrid
                 title={
-                  kind === 'AUTOMATIC' ? 'حساب های مقصد' : 'حساب های تسعیر'
+                  kind === 'CLOSING'
+                    ? 'حساب های طرف مقابل'
+                    : kind === 'AUTOMATIC'
+                      ? 'حساب های مقصد'
+                      : 'حساب های تسعیر'
                 }
-                role={kind === 'AUTOMATIC' ? 'TARGET' : 'OFFSET'}
+                role={kind !== 'REVALUATION' ? 'TARGET' : 'OFFSET'}
                 rows={lines}
                 setRows={setLines}
                 book={book}
@@ -669,9 +722,14 @@ export function AccountingDocumentTemplate({
               />
               <TemplateGrid
                 title={
-                  kind === 'AUTOMATIC' ? 'حساب های مبدا' : 'حساب تسعیر پذیر'
+                  kind === 'CLOSING'
+                    ? 'حساب های قابل بستن'
+                    : kind === 'AUTOMATIC'
+                      ? 'حساب های مبدا'
+                      : 'حساب تسعیر پذیر'
                 }
-                role={kind === 'AUTOMATIC' ? 'SOURCE' : 'BASIS'}
+                role={kind !== 'REVALUATION' ? 'SOURCE' : 'BASIS'}
+                inclusion={kind === 'CLOSING'}
                 rows={lines}
                 setRows={setLines}
                 book={book}

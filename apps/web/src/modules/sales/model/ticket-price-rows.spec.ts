@@ -334,3 +334,26 @@ describe('unpriced defined load pairs', () => {
     expect(rows.find((row) => row.id === 'out:back')?.base?.amount).toBe('260');
   });
 });
+
+it('filters a shared fare by its explicit second destination without creating another price row', () => {
+  const shared = {
+    ...outbound,
+    roundTripSalePrices: [],
+    saleRoutes: [{ originId: 'tehran', destinationId: 'bodrum' }],
+  };
+  const rows = ticketPriceRows([shared]);
+  const visible = filterTicketRows(
+    rows,
+    { ...filters, originId: 'tehran', destinationId: 'bodrum' },
+    (o) => o.id,
+  );
+  expect(visible).toHaveLength(1);
+  expect(visible[0]!.offer.id).toBe(shared.id);
+  expect(
+    filterTicketRows(
+      rows,
+      { ...filters, originId: 'bodrum', destinationId: 'antalya' },
+      (o) => o.id,
+    ),
+  ).toEqual([]);
+});

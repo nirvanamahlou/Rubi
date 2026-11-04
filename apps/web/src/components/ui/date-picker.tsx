@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { cn } from '@/lib/utils';
 import { TimePicker } from './time-picker';
+import { DatePickerWeekdays } from './date-picker-weekdays';
 import {
   calendarMonthDays,
   calendarMonthLabel,
@@ -22,11 +23,6 @@ import {
   type CalendarSystem,
 } from './date-picker.utils';
 
-const weekdayLabels = {
-  persian: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
-  gregorian: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'],
-} satisfies Record<CalendarSystem, string[]>;
-
 type CalendarView = 'days' | 'months' | 'years';
 
 function formatCalendarNumber(value: number, system: CalendarSystem): string {
@@ -36,6 +32,7 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  filterCalendar?: boolean;
   availableDates?: readonly string[];
   markedDates?: readonly string[];
   minimumDate?: string;
@@ -63,6 +60,7 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({
+  filterCalendar = false,
   availableDates,
   markedDates,
   minimumDate,
@@ -118,6 +116,9 @@ export function DatePicker({
   const selectedDate = currentValue.slice(0, 10);
 
   const days = calendarMonthDays(anchor, calendarSystem);
+  const calendarEnglish = filterCalendar
+    ? calendarSystem === 'gregorian'
+    : english;
   const rubiCalendar = variant === 'rubi';
   const anchorParts = calendarParts(anchor, calendarSystem);
   const yearOptions = React.useMemo(
@@ -136,10 +137,10 @@ export function DatePicker({
         );
         return {
           month,
-          label: calendarMonthName(date, calendarSystem, english),
+          label: calendarMonthName(date, calendarSystem, calendarEnglish),
         };
       }),
-    [anchor, anchorParts.year, calendarSystem, english],
+    [anchor, anchorParts.year, calendarSystem, calendarEnglish],
   );
 
   React.useEffect(() => {
@@ -362,6 +363,12 @@ export function DatePicker({
               data-placement={popoverPlacement}
               role="dialog"
               style={{
+                ...(filterCalendar
+                  ? {
+                      '--primary': '#173f7b',
+                      '--primary-foreground': '#ffffff',
+                    }
+                  : {}),
                 margin: 0,
                 right: 'auto',
                 bottom: 'auto',
@@ -438,7 +445,11 @@ export function DatePicker({
                         onClick={() => setCalendarView('months')}
                         type="button"
                       >
-                        {calendarMonthName(anchor, calendarSystem, english)}
+                        {calendarMonthName(
+                          anchor,
+                          calendarSystem,
+                          calendarEnglish,
+                        )}
                       </button>
                       <button
                         aria-label={t('نمایش شبکه سال‌ها', 'Choose year')}
@@ -471,6 +482,7 @@ export function DatePicker({
               {calendarView === 'months' ? (
                 <div
                   aria-label={t('شبکه انتخاب ماه', 'Choose month')}
+                  dir={filterCalendar ? 'ltr' : undefined}
                   className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
                   role="group"
                 >
@@ -504,6 +516,7 @@ export function DatePicker({
               ) : calendarView === 'years' ? (
                 <div
                   aria-label={t('شبکه انتخاب سال', 'Choose year')}
+                  dir={filterCalendar ? 'ltr' : undefined}
                   className="grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2"
                   role="group"
                 >
@@ -537,19 +550,10 @@ export function DatePicker({
                 </div>
               ) : (
                 <div dir="ltr" className="grid grid-cols-7 gap-1 text-center">
-                  {(english
-                    ? calendarSystem === 'persian'
-                      ? ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-                      : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                    : weekdayLabels[calendarSystem]
-                  ).map((label, index) => (
-                    <span
-                      className="py-1 text-xs font-bold text-primary"
-                      key={`${label}-${index}`}
-                    >
-                      {label}
-                    </span>
-                  ))}
+                  <DatePickerWeekdays
+                    calendarSystem={calendarSystem}
+                    english={calendarEnglish}
+                  />
                   {days.map((day) => {
                     const selected = day.isoDate === selectedDate;
                     const available =
@@ -622,7 +626,33 @@ export function DatePicker({
                   {t('انتخاب تاریخ الزامی است.', 'A date is required.')}
                 </span>
               ) : null}
-              {withinDialog && !required && currentValue ? (
+              {filterCalendar ? (
+                <div className="mt-3 flex items-center justify-between border-t border-input pt-2">
+                  <button
+                    type="button"
+                    disabled={required || !currentValue}
+                    className="rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
+                    onClick={() => {
+                      emit('');
+                      setOpen(false);
+                      triggerRef.current?.focus();
+                    }}
+                  >
+                    {t('پاک کردن', 'Clear')}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => {
+                      setOpen(false);
+                      triggerRef.current?.focus();
+                    }}
+                  >
+                    {t('بستن', 'Close')}
+                  </button>
+                </div>
+              ) : null}
+              {!filterCalendar && withinDialog && !required && currentValue ? (
                 <button
                   type="button"
                   className="mt-3 w-full rounded-lg border p-2 text-sm"

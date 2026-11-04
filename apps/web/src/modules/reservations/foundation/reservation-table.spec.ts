@@ -9,6 +9,7 @@ import {
   reservationColumns,
   reservationCells,
   reservationExportRows,
+  tableFlagColumns,
 } from './reservation-table';
 import { createReservationXlsx } from './reservation-xlsx';
 import { unzipWorkbook } from '@/modules/organizations/model/organization-xlsx';
@@ -70,11 +71,12 @@ describe('reservation table and workbook', () => {
       hotelRequested: true,
       hotelConfirmed: false,
     });
-    expect(cells.slice(3, 11)).toEqual([
+    expect(cells.slice(3, 12)).toEqual([
       '09/09/2026',
       '—',
       '0',
       '2',
+      '—',
       '—',
       '2',
       '✓',
@@ -89,7 +91,7 @@ describe('reservation table and workbook', () => {
     const xml = entries.get('xl/worksheets/sheet1.xml')!;
     expect(xml).toContain('rightToLeft="1"');
     expect(xml).toContain('state="frozen"');
-    expect(xml).toContain('autoFilter ref="A1:AT2"');
+    expect(xml).toContain('autoFilter ref="A1:AU2"');
     expect(xml).toContain('t="inlineStr"');
     expect(xml).toContain('=1+1');
     expect(xml).toContain('Hotel &amp; &lt;Test&gt;');
@@ -109,19 +111,19 @@ it('includes additional contract columns in the filtered workbook and keeps unkn
       hotelNotes: 'TWIN BED',
     },
   ]);
-  expect(exported[0]!.slice(13, 17)).toEqual([
+  expect(exported[0]!.slice(14, 18)).toEqual([
     'خدمات',
     'فروشنده',
     'طرف قرارداد',
     'سرویس هتل',
   ]);
-  expect(exported[1]!.slice(13, 17)).toEqual([
+  expect(exported[1]!.slice(14, 18)).toEqual([
     'Flight، Hotel',
     'Seller',
     'Agency',
     'UALL',
   ]);
-  expect(reservationCells(row('EMPTY')).slice(14, 18)).toEqual([
+  expect(reservationCells(row('EMPTY')).slice(15, 19)).toEqual([
     '—',
     '—',
     '—',
@@ -131,15 +133,15 @@ it('includes additional contract columns in the filtered workbook and keeps unkn
 
 it('matches the exact column order, keeps ages/zero counts and independent currencies in export', () => {
   const fields = reservationColumns;
-  expect(fields).toHaveLength(46);
-  expect(fields.slice(8, 13)).toEqual([
+  expect(fields).toHaveLength(47);
+  expect(fields.slice(9, 14)).toEqual([
     'تعداد اتاق',
     'اقدام هتل',
     'تأیید هتل',
     'اصلاح',
     'تاریخ اصلاح',
   ]);
-  expect(fields.slice(28, 32)).toEqual([
+  expect(fields.slice(29, 33)).toEqual([
     'اقدام ویزا',
     'تأیید ویزا',
     'اقدام پرواز',
@@ -185,11 +187,11 @@ it('matches the exact column order, keeps ages/zero counts and independent curre
       },
     },
   });
-  expect(cells.slice(19, 22)).toEqual(['6', '5', '4']);
-  expect(cells.slice(24, 28)).toEqual(['1', '1', '1', '1']);
-  expect(cells[28]).toBe('✓');
-  expect(cells[32]).toBe('01/09/2026');
-  expect(cells.slice(36, 44)).toEqual([
+  expect(cells.slice(20, 23)).toEqual(['6', '5', '4']);
+  expect(cells.slice(25, 29)).toEqual(['1', '1', '1', '1']);
+  expect(cells[29]).toBe('✓');
+  expect(cells[33]).toBe('01/09/2026');
+  expect(cells.slice(37, 45)).toEqual([
     '900',
     '200 USD / 100 EUR',
     'IRR / USD / EUR',
@@ -198,5 +200,33 @@ it('matches the exact column order, keeps ages/zero counts and independent curre
     '500 IRR / 150 USD',
     '600',
     '200 USD / 100 EUR',
+  ]);
+});
+
+it('keeps FAM/TPL alongside equally scoped room counters and shifts workflow flags correctly', () => {
+  expect(reservationColumns.slice(5, 9)).toEqual([
+    'SGL',
+    'DBL',
+    'EXT',
+    'FAM/TPL',
+  ]);
+  const cells = reservationCells({
+    ...row('ROOMS'),
+    singleRooms: 1,
+    doubleRooms: 2,
+    extraBeds: 1,
+    familyTripleRooms: 3,
+  });
+  expect(cells.slice(5, 9)).toEqual(['1', '2', '1', '3']);
+  expect(
+    Object.entries(tableFlagColumns).map(([index, flag]) => [
+      reservationColumns[Number(index)],
+      flag,
+    ]),
+  ).toEqual([
+    ['اقدام ویزا', 'visaRequested'],
+    ['تأیید ویزا', 'visaConfirmed'],
+    ['اقدام پرواز', 'flightRequested'],
+    ['تأیید پرواز', 'flightConfirmed'],
   ]);
 });

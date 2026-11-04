@@ -44,7 +44,7 @@ export function reportRange(query: Record<string, unknown>) {
       throw new BadRequestException('فیلتر نامعتبر است.');
   if (
     query.status &&
-    !['all', 'issued', 'changed', 'refunded', 'voided'].includes(
+    !['all', 'issued', 'changed', 'refunded', 'voided', 'allocated'].includes(
       String(query.status),
     )
   )
@@ -106,10 +106,9 @@ export function issuedRows(
       ];
     });
 }
-export function filterIssuedRows(
-  rows: IssuedTicketRow[],
-  q: Record<string, unknown>,
-) {
+export function filterIssuedRows<
+  T extends Omit<IssuedTicketRow, 'status'> & { status: string },
+>(rows: T[], q: Record<string, unknown>) {
   const has = (value: string, term: unknown) =>
     !term ||
     value
@@ -125,6 +124,8 @@ export function filterIssuedRows(
           r.origin,
           r.destination,
           r.airline,
+          'serviceTitle' in r ? String(r.serviceTitle) : '',
+          'hotelName' in r ? String(r.hotelName) : '',
         ].join(' '),
         q.search,
       ) &&

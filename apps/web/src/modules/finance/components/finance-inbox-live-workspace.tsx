@@ -1,7 +1,13 @@
+import { PartyReceipts } from './party-receipts';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
+  initialReceiptAccount,
+  receiptAccountLabel,
+  declaredReceiptAccountLabel,
+} from '../model/receipt-account';
+import {
   PurchaseFxSummary,
-  PurchaseFxCapture,
+  PurchaseFxCaptures,
   PurchaseFxPaymentPreview,
 } from '../purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -34,8 +40,6 @@ import { paymentWithReceipt } from '../model/payment-with-receipt';
 import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceExportActions } from './finance-export-actions';
 import { FinancePayrollActions } from './finance-payroll-actions';
-import { FinanceFollowupPanel } from './finance-followup-panel';
-import { FinanceRequestCreate } from './finance-request-create';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
@@ -51,7 +55,8 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { MoneyInput } from '@/components/ui/money-input';
+import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
+import { purchasePaymentActualIrr } from '../purchase-fx/payment-preview';
 import {
   Input,
   Select,
@@ -157,6 +162,9 @@ export function FinanceInboxLiveWorkspace() {
   } | null>(null);
   const [search, setSearch] = useState('');
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
+  const [category, setCategory] = useState<'ALL' | 'PURCHASE' | 'RECEIPT'>(
+    'ALL',
+  );
   const [status, setStatus] = useState<
     'ALL' | 'OPEN' | 'CLOSED' | FinanceRequestStatus
   >('OPEN');
@@ -213,6 +221,9 @@ export function FinanceInboxLiveWorkspace() {
   const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
   const [accountId, setAccountId] = useState('');
   const [payingSupplierId, setPayingSupplierId] = useState('');
+  const [paymentSourceKind, setPaymentSourceKind] = useState<
+    'ACCOUNT' | 'SUPPLIER'
+  >('ACCOUNT');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [supplierPage, setSupplierPage] = useState(1);
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>(
@@ -237,6 +248,7 @@ export function FinanceInboxLiveWorkspace() {
     () => ({
       search,
       source: source === 'ALL' ? undefined : source,
+      category: category === 'ALL' ? undefined : category,
       status: status === 'ALL' ? undefined : status,
       fromDate,
       toDate,
@@ -251,6 +263,7 @@ export function FinanceInboxLiveWorkspace() {
     [
       search,
       source,
+      category,
       status,
       fromDate,
       toDate,
@@ -270,13 +283,20 @@ export function FinanceInboxLiveWorkspace() {
   const paymentCurrency = actionItem?.ticketPurchase
     ? actionItem.amount?.currencyCode
     : actionItem?.amount?.currencyCode;
-  const foreignPayment =
-    actionKind === 'PAYMENT' &&
-    Boolean(paymentCurrency) &&
-    paymentCurrency !== 'IRR';
+  const supplierPayment =
+    actionKind === 'PAYMENT' && paymentSourceKind === 'SUPPLIER';
+  const paymentAccount = supplierPayment
+    ? undefined
+    : accounts.find((account) => account.id === accountId);
+  const actualRialWithdrawal =
+    paymentAccount?.currencyCode === 'IRR' &&
+    paymentCurrency &&
+    paymentCurrency !== 'IRR'
+      ? purchasePaymentActualIrr(paidAmount, exchangeRate)
+      : null;
 
   useEffect(() => {
-    if (!foreignPayment) return;
+    if (!supplierPayment) return;
     let active = true;
     const timer = setTimeout(() => {
       setSupplierBusy(true);
@@ -306,7 +326,7 @@ export function FinanceInboxLiveWorkspace() {
       active = false;
       clearTimeout(timer);
     };
-  }, [foreignPayment, supplierSearch, supplierPage]);
+  }, [supplierPayment, supplierSearch, supplierPage]);
 
   useEffect(() => {
     let active = true;
@@ -432,14 +452,11 @@ export function FinanceInboxLiveWorkspace() {
     item: FinanceInboxItemV1,
     kind: 'APPROVE' | 'CORRECTION_REQUIRED',
   ) {
-    const eligibleAccounts = accounts.filter(
-      (account) =>
-        account.branchId === item.branchReference &&
-        account.currencyCode === item.amount?.currencyCode,
-    );
     setActionItem(item);
     setActionKind(kind);
-    setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
+    setAccountId(
+      kind === 'APPROVE' ? initialReceiptAccount(item, accounts) : '',
+    );
     setReason('');
     setIssueDocumentDelivery(false);
     setActionError('');
@@ -451,17 +468,15 @@ export function FinanceInboxLiveWorkspace() {
     const eligibleAccounts = accounts.filter(
       (account) =>
         account.branchId === item.branchReference &&
-        account.currencyCode ===
-          (item.amount?.currencyCode ??
-            (item.ticketPurchase ? 'IRR' : undefined)),
+        (account.currencyCode === 'IRR' ||
+          account.currencyCode ===
+            (item.amount?.currencyCode ??
+              (item.ticketPurchase ? 'IRR' : undefined))),
     );
     setActionItem(item);
     setActionKind('PAYMENT');
-    setAccountId(
-      item.amount?.currencyCode === 'IRR'
-        ? (eligibleAccounts[0]?.id ?? '')
-        : '',
-    );
+    setAccountId(eligibleAccounts[0]?.id ?? '');
+    setPaymentSourceKind(eligibleAccounts.length ? 'ACCOUNT' : 'SUPPLIER');
     setPayingSupplierId('');
     setSupplierSearch('');
     setSupplierPage(1);
@@ -555,8 +570,8 @@ export function FinanceInboxLiveWorkspace() {
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
-          accountId: foreignPayment ? null : accountId,
-          payingSupplierId: foreignPayment ? payingSupplierId : null,
+          accountId: supplierPayment ? null : accountId,
+          payingSupplierId: supplierPayment ? payingSupplierId : null,
           paymentMethodId,
           paidAmount,
           exchangeRateToIrr: exchangeRate,
@@ -609,8 +624,8 @@ export function FinanceInboxLiveWorkspace() {
             version: 1,
             expectedVersion: actionItem.financeVersion ?? 0,
             expectedSourceVersion: actionItem.sourceVersion,
-            accountId: foreignPayment ? null : accountId,
-            payingSupplierId: foreignPayment ? payingSupplierId : null,
+            accountId: supplierPayment ? null : accountId,
+            payingSupplierId: supplierPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -638,8 +653,8 @@ export function FinanceInboxLiveWorkspace() {
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
-            accountId: foreignPayment ? null : accountId,
-            payingSupplierId: foreignPayment ? payingSupplierId : null,
+            accountId: supplierPayment ? null : accountId,
+            payingSupplierId: supplierPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -791,6 +806,7 @@ export function FinanceInboxLiveWorkspace() {
               className="bg-white text-slate-900 hover:bg-blue-50"
               onClick={() => {
                 setStatus('OPEN');
+                setCategory('ALL');
                 setSource('ALL');
               }}
               size="sm"
@@ -816,10 +832,7 @@ export function FinanceInboxLiveWorkspace() {
         </div>
       </Card>
 
-      <details className={styles.summary}>
-        <summary className="cursor-pointer px-5 py-3 text-sm font-semibold">
-          نمای کلی عملیات مالی
-        </summary>
+      <div className={styles.summary}>
         <div className="space-y-4 p-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {kpis.map(({ label, helper, value, icon: Icon, tone }) => (
@@ -898,9 +911,6 @@ export function FinanceInboxLiveWorkspace() {
                 </span>
                 <div>
                   <p className="text-sm font-black">حساب‌های قابل استفاده</p>
-                  <p className="text-xs text-muted-foreground">
-                    برای ثبت دریافت و پرداخت
-                  </p>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
@@ -946,6 +956,7 @@ export function FinanceInboxLiveWorkspace() {
                   onClick={() => {
                     setSource('SALES');
                     setStatus('OPEN');
+                    setCategory('ALL');
                   }}
                   size="sm"
                 >
@@ -956,6 +967,7 @@ export function FinanceInboxLiveWorkspace() {
                   onClick={() => {
                     setSource('RESERVATIONS');
                     setStatus('OPEN');
+                    setCategory('ALL');
                   }}
                   size="sm"
                   variant="outline"
@@ -967,18 +979,10 @@ export function FinanceInboxLiveWorkspace() {
             </Card>
           </div>
         </div>
-      </details>
+      </div>
 
       <Card className={`${styles.filters} p-5`}>
-        <FinanceRequestCreate
-          onCreated={() => setRevision((value) => value + 1)}
-        />
-        <div className="mb-4 flex items-center gap-2">
-          <ListFilter className="size-4 text-primary" />
-          <div>
-            <h3 className="text-sm font-black">فیلتر و جست‌وجوی کارتابل</h3>
-          </div>
-        </div>
+        <PartyReceipts onChanged={() => setRevision((value) => value + 1)} />
         <div className={styles.filterGrid}>
           <label className="grid gap-1 text-xs text-muted-foreground">
             مرتب‌سازی بر اساس
@@ -1023,10 +1027,7 @@ export function FinanceInboxLiveWorkspace() {
             </p>
           ) : null}
           <div className={styles.searchField}>
-            <label
-              htmlFor="finance-inbox-search"
-              className="text-xs font-semibold text-muted-foreground"
-            >
+            <label htmlFor="finance-inbox-search" className="sr-only">
               جست‌وجوی درخواست
             </label>
             <div className="relative">
@@ -1041,6 +1042,25 @@ export function FinanceInboxLiveWorkspace() {
               />
             </div>
           </div>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            فیلتر نوع درخواست
+            <Select
+              value={category}
+              onValueChange={(value) => {
+                setCategory(value as typeof category);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger aria-label="فیلتر نوع درخواست">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">همه درخواست‌ها</SelectItem>
+                <SelectItem value="PURCHASE">خرید</SelectItem>
+                <SelectItem value="RECEIPT">تأیید دریافت</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             فیلتر واحد ارسال‌کننده
             <Select
@@ -1094,6 +1114,7 @@ export function FinanceInboxLiveWorkspace() {
               setSearch('');
               setSource('ALL');
               setStatus('OPEN');
+              setCategory('ALL');
               setFromDate('');
               setToDate('');
               setCurrencyCode('');
@@ -1140,54 +1161,6 @@ export function FinanceInboxLiveWorkspace() {
             />
           </label>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={page === 1 || loading}
-            onClick={() => setPage((value) => value - 1)}
-          >
-            صفحه قبل
-          </Button>
-          <span className="text-sm">
-            صفحه {page.toLocaleString('fa-IR')} ·{' '}
-            {data?.total.toLocaleString('fa-IR') ?? '—'} نتیجه
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={loading || !data || page * 25 >= data.total}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            صفحه بعد
-          </Button>
-          {page > 1 ? (
-            <Button size="sm" variant="ghost" onClick={() => setPage(1)}>
-              بازگشت به صفحه اول
-            </Button>
-          ) : null}
-        </div>
-        <FinanceExportActions
-          disabled={loading || !!error}
-          query={{ ...inboxQuery, scope: 'INBOX' }}
-        />
-        <FinanceFollowupPanel
-          showSavedViews={false}
-          query={inboxQuery}
-          onApply={(value) => {
-            setSortBy(value.sortBy ?? 'createdAt');
-            setSortDirection(value.sortDirection ?? 'desc');
-            setSearch(value.search ?? '');
-            setSource(value.source ?? 'ALL');
-            setStatus(value.status ?? 'ALL');
-            setCurrencyCode(value.currencyCode ?? '');
-            setMinAmount(value.minAmount ?? '');
-            setMaxAmount(value.maxAmount ?? '');
-            setFromDate(value.fromDate ?? '');
-            setToDate(value.toDate ?? '');
-            setPage(1);
-          }}
-        />
       </Card>
 
       {error ? (
@@ -1209,453 +1182,475 @@ export function FinanceInboxLiveWorkspace() {
           description="فیلترها را تغییر دهید یا کارتابل را به‌روزرسانی کنید."
         />
       ) : null}
-      {!loading && !error && items.length ? (
-        <div className="flex flex-col gap-4">
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-4">
-              <div>
-                <h3 className="font-bold">فهرست درخواست‌ها</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  برای مشاهده فرم و رسیدگی، روی درخواست کلیک کنید.
-                </p>
-              </div>
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-4">
+            <div>
+              <h3 className="font-bold">فهرست درخواست‌ها</h3>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
               <Badge className="px-3 py-1">
                 {items.length.toLocaleString('fa-IR')} درخواست
               </Badge>
+              <FinanceExportActions
+                showPdf={false}
+                disabled={loading || !!error}
+                query={{ ...inboxQuery, scope: 'INBOX' }}
+              />
             </div>
-            {items.map((item) => {
-              const active = selected?.id === item.id;
-              const overdue = Boolean(
-                data &&
-                item.dueAt &&
-                !isClosed(item) &&
-                data.generatedAt > item.dueAt,
-              );
-              return (
-                <button
-                  aria-pressed={active}
-                  aria-controls="finance-request-details"
-                  className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedId(item.id);
-                  }}
-                  type="button"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={sourceTone(item.source)}>
-                          {item.source === 'PURCHASES'
-                            ? item.ticketPurchase
-                              ? 'خرید و تأمین'
-                              : 'تنخواه'
-                            : sourceLabels[item.source]}
-                        </Badge>
-                        <Badge>
-                          {statusLabels[item.status] ?? item.status}
-                        </Badge>
-                        {overdue ? (
-                          <Badge className="bg-rose-100 text-rose-700">
-                            سررسید گذشته
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
-                        {item.title}
-                      </h3>
-                    </div>
-                    <p
-                      className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums text-primary"
-                      dir="ltr"
-                    >
-                      {money(item)}
-                    </p>
-                  </div>
-                  <PurchaseFxSummary entries={item.purchaseFx} />
-                  {item.ticketPurchase ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      تعداد صندلی:{' '}
-                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
-                        '—'}{' '}
-                      · قیمت تکی:{' '}
-                      {item.ticketPurchase.unitCost
-                        ? item.ticketPurchase.unitCost +
-                          ' ' +
-                          (item.amount?.currencyCode ?? '')
-                        : 'ثبت نشده'}
-                    </p>
-                  ) : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                    <bdi className="break-all">
-                      {item.contractReference ?? item.sourceReference}
-                    </bdi>
-                    <span>
-                      {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
-                    </span>
-                    <span>سررسید: {faDate(item.dueAt)}</span>
-                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
-                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
-                      <ChevronLeft aria-hidden="true" className="size-4" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
           </div>
-          {selected ? (
-            <Dialog
-              open={actionItem === null && !accountDialog}
-              onOpenChange={(open) => {
-                if (!open) setSelectedId(null);
-              }}
-            >
-              <DialogContent dir="rtl" className={styles.requestDialog}>
-                <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
-                <DialogDescription>{selected.title}</DialogDescription>
-                <PurchaseFxSummary entries={selected.purchaseFx} />
-                {canPay &&
-                  selected.purchaseFx?.map((entry) => (
-                    <PurchaseFxCapture
-                      key={entry.referenceId}
-                      entry={entry}
-                      onSaved={() => setRevision((v) => v + 1)}
-                    />
-                  ))}
-                <Card
-                  id="finance-request-details"
-                  className="scroll-mt-24 overflow-hidden p-0"
-                  aria-label="جزئیات درخواست انتخاب‌شده"
-                >
-                  <div className="border-b border-border bg-primary/5 p-5">
-                    <p className="mb-3 text-xs font-bold text-primary">
-                      جزئیات درخواست انتخاب‌شده
-                    </p>
-                    <div className="flex items-center justify-between gap-3">
-                      <Badge className={sourceTone(selected.source)}>
-                        {selected.source === 'PURCHASES'
-                          ? selected.ticketPurchase
+          {items.map((item) => {
+            const active = selected?.id === item.id;
+            const overdue = Boolean(
+              data &&
+              item.dueAt &&
+              !isClosed(item) &&
+              data.generatedAt > item.dueAt,
+            );
+            return (
+              <button
+                aria-pressed={active}
+                aria-controls="finance-request-details"
+                className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
+                key={item.id}
+                onClick={() => {
+                  setSelectedId(item.id);
+                }}
+                type="button"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={sourceTone(item.source)}>
+                        {item.source === 'PURCHASES'
+                          ? item.ticketPurchase
                             ? 'خرید و تأمین'
                             : 'تنخواه'
-                          : sourceLabels[selected.source]}
+                          : sourceLabels[item.source]}
                       </Badge>
-                      <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
-                        <CheckCircle2 className="size-4" />
-                        {selected.origin === 'PERSISTED_SOURCE'
-                          ? 'منبع ثبت‌شده'
-                          : 'منبع نامشخص'}
-                      </span>
+                      <Badge>{statusLabels[item.status] ?? item.status}</Badge>
+                      {overdue ? (
+                        <Badge className="bg-rose-100 text-rose-700">
+                          سررسید گذشته
+                        </Badge>
+                      ) : null}
                     </div>
-                    <h3 className="mt-4 text-lg font-black">
-                      {selected.title}
+                    <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                      {item.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {selected.description}
-                    </p>
                   </div>
-                  <div className="space-y-4 p-5">
-                    {selected.reservationPurchase ? (
-                      <div className="space-y-3 rounded-xl border border-border p-3">
-                        <strong className="text-sm">خریدهای این درخواست</strong>
-                        {selected.reservationPurchase.lines.map((line) => (
-                          <div
-                            key={line.purchaseId}
-                            className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
-                          >
-                            <span>
-                              {line.serviceTitle} · {line.supplierName}
-                            </span>
-                            <span dir="ltr">
-                              {line.amount}{' '}
-                              {currencySymbol(line.currencyCode ?? '')}
-                            </span>
-                            {line.hotelSavings ? (
-                              <HotelPurchaseSavings value={line.hotelSavings} />
-                            ) : null}
-                            {line.status !== 'PAID' ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  openSupplierPayment({
-                                    ...selected,
-                                    sourceReference: line.purchaseId,
-                                    title: line.serviceTitle,
-                                    amount: {
-                                      amount: line.amount,
-                                      currencyCode: line.currencyCode,
-                                    },
-                                    settlement: {
-                                      paidAmount: line.paidAmount,
-                                      remainingAmount: line.remainingAmount,
-                                    },
-                                    sourceVersion: line.financeVersion,
-                                  })
-                                }
-                              >
-                                ثبت پرداخت این خرید
-                              </Button>
-                            ) : (
-                              <span>پرداخت‌شده</span>
-                            )}
-                          </div>
-                        ))}
-                        {selected.reservationPurchase.totals.map((total) => (
-                          <p
-                            key={total.currencyCode}
-                            className="text-sm font-bold"
-                          >
-                            جمع درخواست: {total.amount}{' '}
-                            {currencySymbol(total.currencyCode ?? '')}
-                          </p>
-                        ))}
-                      </div>
-                    ) : null}
-                    {[
-                      ['شماره منبع', selected.sourceReference],
-                      ['قرارداد', selected.contractReference ?? '—'],
-                      [
-                        'طرف‌حساب / کارمند',
-                        selected.partyDisplaySnapshot ?? '—',
-                      ],
-                      ['مبلغ', money(selected)],
-                      ...(selected.ticketPurchase
-                        ? [
-                            [
-                              'تعداد صندلی',
-                              selected.ticketPurchase.seatCount?.toLocaleString(
-                                'fa-IR',
-                              ) ?? 'در انتظار تعیین مالی',
-                            ],
-                            [
-                              'قیمت خرید هر صندلی',
-                              selected.ticketPurchase.unitCost
-                                ? selected.ticketPurchase.unitCost +
-                                  ' ' +
-                                  (selected.amount?.currencyCode ?? '')
-                                : 'ثبت نشده',
-                            ],
-                            [
-                              'پرداخت‌های ثبت‌شده',
-                              selected.ticketPurchase.paymentCount.toLocaleString(
-                                'fa-IR',
-                              ),
-                            ],
-                          ]
-                        : []),
-                      ...(selected.settlement
-                        ? [
-                            [
-                              'پرداخت‌شده',
-                              `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
-                            ],
-                            [
-                              'مانده',
-                              `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
-                            ],
-                          ]
-                        : []),
-                      [
-                        'درخواست‌کننده',
-                        selected.requesterDisplaySnapshot ?? '—',
-                      ],
-                      ['تاریخ ایجاد', faDate(selected.createdAt)],
-                      ['تاریخ سررسید', faDate(selected.dueAt)],
-                      [
-                        'نسخه منبع',
-                        selected.sourceVersion.toLocaleString('fa-IR'),
-                      ],
-                    ].map(([label, value]) => (
-                      <div
-                        className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
-                        key={label}
-                      >
-                        <span className="text-xs text-muted-foreground">
-                          {label}
-                        </span>
-                        <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
-                          {value}
-                        </strong>
-                      </div>
-                    ))}
-                    {selected.source === 'SALES' &&
-                      selected.kind === 'RECEIPT_VERIFICATION' && (
-                        <ContractProfit
-                          key={selected.sourceContextReference}
-                          id={selected.sourceContextReference}
-                        />
-                      )}
-                    {selected.hrReferral ? (
-                      <div className="space-y-2">
-                        {selected.hrReferral.response ? (
-                          <p>پاسخ مالی: {selected.hrReferral.response}</p>
-                        ) : null}
-                        {selected.hrReferral.canRespond ? (
-                          <div className="flex flex-wrap gap-2">
-                            {selected.status === 'NEW' ? (
-                              <Button
-                                onClick={() =>
-                                  openHrResponse(selected, 'HR_REVIEW')
-                                }
-                              >
-                                شروع بررسی ارجاع
-                              </Button>
-                            ) : null}
-                            {selected.status === 'UNDER_REVIEW' ? (
-                              <Button
-                                onClick={() =>
-                                  openHrResponse(selected, 'HR_ANSWER')
-                                }
-                              >
-                                ثبت پاسخ ارجاع
-                              </Button>
-                            ) : null}
+                  <p
+                    className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums text-primary"
+                    dir="ltr"
+                  >
+                    {money(item)}
+                  </p>
+                </div>
+                <PurchaseFxSummary entries={item.purchaseFx} />
+                {item.ticketPurchase ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    تعداد صندلی:{' '}
+                    {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                      '—'}{' '}
+                    · قیمت تکی:{' '}
+                    {item.ticketPurchase.unitCost
+                      ? item.ticketPurchase.unitCost +
+                        ' ' +
+                        (item.amount?.currencyCode ?? '')
+                      : 'ثبت نشده'}
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                  <bdi className="break-all">
+                    {item.contractReference ?? item.sourceReference}
+                  </bdi>
+                  <span>
+                    {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
+                  </span>
+                  <span>سررسید: {faDate(item.dueAt)}</span>
+                  <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
+                    {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                    <ChevronLeft aria-hidden="true" className="size-4" />
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-4 py-4">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page === 1 || loading}
+              onClick={() => setPage((value) => value - 1)}
+            >
+              صفحه قبل
+            </Button>
+            <span className="text-sm">
+              صفحه {page.toLocaleString('fa-IR')} ·{' '}
+              {data?.total.toLocaleString('fa-IR') ?? '—'} نتیجه
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={loading || !data || page * 25 >= data.total}
+              onClick={() => setPage((value) => value + 1)}
+            >
+              صفحه بعد
+            </Button>
+            {page > 1 ? (
+              <Button size="sm" variant="ghost" onClick={() => setPage(1)}>
+                بازگشت به صفحه اول
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        {selected ? (
+          <Dialog
+            open={actionItem === null && !accountDialog}
+            onOpenChange={(open) => {
+              if (!open) setSelectedId(null);
+            }}
+          >
+            <DialogContent dir="rtl" className={styles.requestDialog}>
+              <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
+              <DialogDescription>{selected.title}</DialogDescription>
+              <PurchaseFxSummary entries={selected.purchaseFx} />
+              {canPay && (
+                <PurchaseFxCaptures
+                  entries={selected.purchaseFx}
+                  onSaved={() => setRevision((v) => v + 1)}
+                />
+              )}
+              <Card
+                id="finance-request-details"
+                className="scroll-mt-24 overflow-hidden p-0"
+                aria-label="جزئیات درخواست انتخاب‌شده"
+              >
+                <div className="border-b border-border bg-primary/5 p-5">
+                  <p className="mb-3 text-xs font-bold text-primary">
+                    جزئیات درخواست انتخاب‌شده
+                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <Badge className={sourceTone(selected.source)}>
+                      {selected.source === 'PURCHASES'
+                        ? selected.ticketPurchase
+                          ? 'خرید و تأمین'
+                          : 'تنخواه'
+                        : sourceLabels[selected.source]}
+                    </Badge>
+                    <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 className="size-4" />
+                      {selected.origin === 'PERSISTED_SOURCE'
+                        ? 'منبع ثبت‌شده'
+                        : 'منبع نامشخص'}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-black">{selected.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {selected.description}
+                  </p>
+                </div>
+                <div className="space-y-4 p-5">
+                  {selected.reservationPurchase ? (
+                    <div className="space-y-3 rounded-xl border border-border p-3">
+                      <strong className="text-sm">خریدهای این درخواست</strong>
+                      {selected.reservationPurchase.lines.map((line) => (
+                        <div
+                          key={line.purchaseId}
+                          className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
+                        >
+                          <span>
+                            {line.serviceTitle} · {line.supplierName}
+                          </span>
+                          <span dir="ltr">
+                            {line.amount}{' '}
+                            {currencySymbol(line.currencyCode ?? '')}
+                          </span>
+                          {line.hotelSavings ? (
+                            <HotelPurchaseSavings value={line.hotelSavings} />
+                          ) : null}
+                          {line.status !== 'PAID' ? (
                             <Button
+                              size="sm"
                               variant="outline"
                               onClick={() =>
-                                openHrResponse(selected, 'HR_REJECT')
+                                openSupplierPayment({
+                                  ...selected,
+                                  sourceReference: line.purchaseId,
+                                  title: line.serviceTitle,
+                                  amount: {
+                                    amount: line.amount,
+                                    currencyCode: line.currencyCode,
+                                  },
+                                  settlement: {
+                                    paidAmount: line.paidAmount,
+                                    remainingAmount: line.remainingAmount,
+                                  },
+                                  sourceVersion: line.financeVersion,
+                                })
                               }
                             >
-                              رد ارجاع با علت
+                              ثبت پرداخت این خرید
                             </Button>
-                          </div>
-                        ) : null}
-                        <p className="text-xs text-muted-foreground">
-                          این مورد ارجاع منابع انسانی است؛ ثبت پاسخ به معنی ثبت
-                          پرداخت حقوق نیست.
+                          ) : (
+                            <span>پرداخت‌شده</span>
+                          )}
+                        </div>
+                      ))}
+                      {selected.reservationPurchase.totals.map((total) => (
+                        <p
+                          key={total.currencyCode}
+                          className="text-sm font-bold"
+                        >
+                          جمع درخواست: {total.amount}{' '}
+                          {currencySymbol(total.currencyCode ?? '')}
                         </p>
-                      </div>
-                    ) : null}
-                    {selected.source === 'PURCHASES' &&
-                    !selected.ticketPurchase ? (
-                      <div className="space-y-2">
-                        {selected.status === 'UNDER_REVIEW' ? (
-                          <div className="flex gap-2">
+                      ))}
+                    </div>
+                  ) : null}
+                  {[
+                    ['شماره منبع', selected.sourceReference],
+                    ['قرارداد', selected.contractReference ?? '—'],
+                    ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
+                    ['مبلغ', money(selected)],
+                    ...(selected.source === 'SALES' &&
+                    selected.destinationAccountId
+                      ? [
+                          [
+                            'حساب مقصد',
+                            declaredReceiptAccountLabel(selected, accounts),
+                          ],
+                        ]
+                      : []),
+                    ...(selected.ticketPurchase
+                      ? [
+                          [
+                            'تعداد صندلی',
+                            selected.ticketPurchase.seatCount?.toLocaleString(
+                              'fa-IR',
+                            ) ?? 'در انتظار تعیین مالی',
+                          ],
+                          [
+                            'قیمت خرید هر صندلی',
+                            selected.ticketPurchase.unitCost
+                              ? selected.ticketPurchase.unitCost +
+                                ' ' +
+                                (selected.amount?.currencyCode ?? '')
+                              : 'ثبت نشده',
+                          ],
+                          [
+                            'پرداخت‌های ثبت‌شده',
+                            selected.ticketPurchase.paymentCount.toLocaleString(
+                              'fa-IR',
+                            ),
+                          ],
+                        ]
+                      : []),
+                    ...(selected.settlement
+                      ? [
+                          [
+                            'پرداخت‌شده',
+                            `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
+                          ],
+                          [
+                            'مانده',
+                            `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
+                          ],
+                        ]
+                      : []),
+                    ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
+                    ['تاریخ ایجاد', faDate(selected.createdAt)],
+                    ['تاریخ سررسید', faDate(selected.dueAt)],
+                    [
+                      'نسخه منبع',
+                      selected.sourceVersion.toLocaleString('fa-IR'),
+                    ],
+                  ].map(([label, value]) => (
+                    <div
+                      className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
+                      key={label}
+                    >
+                      <span className="text-xs text-muted-foreground">
+                        {label}
+                      </span>
+                      <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
+                        {value}
+                      </strong>
+                    </div>
+                  ))}
+                  {selected.source === 'SALES' &&
+                    selected.kind === 'RECEIPT_VERIFICATION' && (
+                      <ContractProfit
+                        key={selected.sourceContextReference}
+                        id={selected.sourceContextReference}
+                      />
+                    )}
+                  {selected.hrReferral ? (
+                    <div className="space-y-2">
+                      {selected.hrReferral.response ? (
+                        <p>پاسخ مالی: {selected.hrReferral.response}</p>
+                      ) : null}
+                      {selected.hrReferral.canRespond ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selected.status === 'NEW' ? (
                             <Button
                               onClick={() =>
-                                openReceiptAction(selected, 'APPROVE')
+                                openHrResponse(selected, 'HR_REVIEW')
                               }
                             >
-                              تأیید درخواست خرید
+                              شروع بررسی ارجاع
                             </Button>
+                          ) : null}
+                          {selected.status === 'UNDER_REVIEW' ? (
                             <Button
-                              variant="outline"
                               onClick={() =>
-                                openReceiptAction(
-                                  selected,
-                                  'CORRECTION_REQUIRED',
-                                )
+                                openHrResponse(selected, 'HR_ANSWER')
                               }
                             >
-                              برگشت برای اصلاح
+                              ثبت پاسخ ارجاع
                             </Button>
-                          </div>
-                        ) : null}
-                        {isActionablePayment(selected) ? (
-                          <Button onClick={() => openSupplierPayment(selected)}>
-                            ثبت پرداخت فاکتور خرید
+                          ) : null}
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              openHrResponse(selected, 'HR_REJECT')
+                            }
+                          >
+                            رد ارجاع با علت
                           </Button>
-                        ) : null}
-                        {selected.kind === 'PAYMENT_REQUEST' ? (
-                          <FinanceHistoryPanel
-                            requestId={selected.sourceReference}
-                            source="INVOICE"
-                            compact
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
-                    {selected.reservationPurchase
-                      ? selected.reservationPurchase.lines.map((line) => (
-                          <FinanceHistoryPanel
-                            key={line.purchaseId}
-                            requestId={line.purchaseId}
-                            source="RESERVATIONS"
-                            compact
-                          />
-                        ))
-                      : null}
-                    {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
-                      selected.kind,
-                    ) ? (
-                      <FinancePayrollActions
-                        key={selected.id}
-                        item={selected}
-                        accounts={accounts}
-                        methods={methods}
-                        onChanged={() => setRevision((value) => value + 1)}
-                      />
-                    ) : null}
-                    {selected.kind === 'RECEIPT_VERIFICATION' ? (
-                      <div className="grid grid-cols-2 gap-2 pt-2">
-                        <Button
-                          onClick={() => openReceiptAction(selected, 'APPROVE')}
-                        >
-                          <CheckCircle2 className="size-4" />
-                          تأیید دریافت
+                        </div>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        این مورد ارجاع منابع انسانی است؛ ثبت پاسخ به معنی ثبت
+                        پرداخت حقوق نیست.
+                      </p>
+                    </div>
+                  ) : null}
+                  {selected.source === 'PURCHASES' &&
+                  !selected.ticketPurchase ? (
+                    <div className="space-y-2">
+                      {selected.status === 'UNDER_REVIEW' ? (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() =>
+                              openReceiptAction(selected, 'APPROVE')
+                            }
+                          >
+                            تأیید درخواست خرید
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              openReceiptAction(selected, 'CORRECTION_REQUIRED')
+                            }
+                          >
+                            برگشت برای اصلاح
+                          </Button>
+                        </div>
+                      ) : null}
+                      {isActionablePayment(selected) ? (
+                        <Button onClick={() => openSupplierPayment(selected)}>
+                          ثبت پرداخت فاکتور خرید
                         </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() =>
-                            openReceiptAction(selected, 'CORRECTION_REQUIRED')
-                          }
-                        >
-                          <RotateCcw className="size-4" />
-                          درخواست اصلاح
-                        </Button>
-                      </div>
-                    ) : null}
-                    {selected.kind === 'PAYMENT_REQUEST' &&
-                    selected.source === 'RESERVATIONS' &&
-                    !selected.reservationPurchase ? (
-                      <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
-                          می‌شود. پرداخت جزئی نیز مجاز است.
-                        </p>
-                        <Button
-                          className="w-full"
-                          onClick={() => openSupplierPayment(selected)}
-                        >
-                          <WalletCards className="size-4" />
-                          ثبت پرداخت کارگزار
-                        </Button>
-                      </div>
-                    ) : null}
-                    {selected.kind === 'PAYMENT_REQUEST' &&
-                    selected.source === 'RESERVATIONS' &&
-                    !selected.reservationPurchase ? (
-                      <FinanceHistoryPanel
-                        requestId={selected.sourceReference}
-                        source="RESERVATIONS"
-                        compact
-                      />
-                    ) : null}
-                    {selected.kind === 'PAYMENT_REQUEST' &&
-                    selected.source === 'PURCHASES' &&
-                    selected.ticketPurchase ? (
-                      <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
-                        <Button
-                          className="w-full"
-                          onClick={() => openSupplierPayment(selected)}
-                        >
-                          <WalletCards className="size-4" /> ثبت پرداخت خرید
-                          بلیت
-                        </Button>
+                      ) : null}
+                      {selected.kind === 'PAYMENT_REQUEST' ? (
                         <FinanceHistoryPanel
                           requestId={selected.sourceReference}
-                          source="TICKET"
+                          source="INVOICE"
                           compact
                         />
-                      </div>
-                    ) : null}
-                  </div>
-                </Card>
-              </DialogContent>
-            </Dialog>
-          ) : null}
-        </div>
-      ) : null}
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {selected.reservationPurchase
+                    ? selected.reservationPurchase.lines.map((line) => (
+                        <FinanceHistoryPanel
+                          key={line.purchaseId}
+                          requestId={line.purchaseId}
+                          source="RESERVATIONS"
+                          compact
+                        />
+                      ))
+                    : null}
+                  {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
+                    selected.kind,
+                  ) ? (
+                    <FinancePayrollActions
+                      key={selected.id}
+                      item={selected}
+                      accounts={accounts}
+                      methods={methods}
+                      onChanged={() => setRevision((value) => value + 1)}
+                    />
+                  ) : null}
+                  {selected.kind === 'RECEIPT_VERIFICATION' ? (
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <Button
+                        onClick={() => openReceiptAction(selected, 'APPROVE')}
+                      >
+                        <CheckCircle2 className="size-4" />
+                        تأیید دریافت
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          openReceiptAction(selected, 'CORRECTION_REQUIRED')
+                        }
+                      >
+                        <RotateCcw className="size-4" />
+                        درخواست اصلاح
+                      </Button>
+                    </div>
+                  ) : null}
+                  {selected.kind === 'PAYMENT_REQUEST' &&
+                  selected.source === 'RESERVATIONS' &&
+                  !selected.reservationPurchase ? (
+                    <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
+                        می‌شود. پرداخت جزئی نیز مجاز است.
+                      </p>
+                      <Button
+                        className="w-full"
+                        onClick={() => openSupplierPayment(selected)}
+                      >
+                        <WalletCards className="size-4" />
+                        ثبت پرداخت کارگزار
+                      </Button>
+                    </div>
+                  ) : null}
+                  {selected.kind === 'PAYMENT_REQUEST' &&
+                  selected.source === 'RESERVATIONS' &&
+                  !selected.reservationPurchase ? (
+                    <FinanceHistoryPanel
+                      requestId={selected.sourceReference}
+                      source="RESERVATIONS"
+                      compact
+                    />
+                  ) : null}
+                  {selected.kind === 'PAYMENT_REQUEST' &&
+                  selected.source === 'PURCHASES' &&
+                  selected.ticketPurchase ? (
+                    <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                      <Button
+                        className="w-full"
+                        onClick={() => openSupplierPayment(selected)}
+                      >
+                        <WalletCards className="size-4" /> ثبت پرداخت خرید بلیت
+                      </Button>
+                      <FinanceHistoryPanel
+                        requestId={selected.sourceReference}
+                        source="TICKET"
+                        compact
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </Card>
+            </DialogContent>
+          </Dialog>
+        ) : null}
+      </div>
 
       <Dialog
         open={actionItem !== null && actionKind !== null}
@@ -1719,7 +1714,24 @@ export function FinanceInboxLiveWorkspace() {
               {actionKind === 'PAYMENT' ? (
                 <>
                   <label className="grid gap-2">
-                    {foreignPayment ? (
+                    منبع پرداخت
+                    <NativeSearchSelect
+                      aria-label="منبع پرداخت"
+                      value={paymentSourceKind}
+                      onChange={(event) => {
+                        setPaymentSourceKind(
+                          event.target.value as 'ACCOUNT' | 'SUPPLIER',
+                        );
+                        setAccountId('');
+                        setPayingSupplierId('');
+                      }}
+                    >
+                      <option value="ACCOUNT">حساب پرداخت‌کننده</option>
+                      <option value="SUPPLIER">تأمین‌کننده پرداخت‌کننده</option>
+                    </NativeSearchSelect>
+                  </label>
+                  <label className="grid gap-2">
+                    {supplierPayment ? (
                       <>
                         <span>تأمین‌کننده پرداخت‌کننده</span>
                         <Input
@@ -1788,11 +1800,12 @@ export function FinanceInboxLiveWorkspace() {
                                 (account) =>
                                   account.branchId ===
                                     actionItem?.branchReference &&
-                                  account.currencyCode === paymentCurrency,
+                                  (account.currencyCode === paymentCurrency ||
+                                    account.currencyCode === 'IRR'),
                               )
                               .map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
-                                  {account.title} ·{' '}
+                                  {receiptAccountLabel(account)} ·{' '}
                                   {currencySymbol(account.currencyCode ?? '')}
                                 </SelectItem>
                               ))}
@@ -1890,6 +1903,12 @@ export function FinanceInboxLiveWorkspace() {
                       )?.rateToIrr ?? null
                     }
                   />
+                  {actualRialWithdrawal !== null && (
+                    <p className="rounded-lg border bg-primary/5 p-3 text-sm">
+                      برداشت از حساب ریالی:{' '}
+                      <b>{formatSalesMoney(actualRialWithdrawal)} ریال</b>
+                    </p>
+                  )}
                   <label className="grid gap-2">
                     <span>تاریخ و ساعت پرداخت</span>
                     <DatePicker
@@ -1931,40 +1950,53 @@ export function FinanceInboxLiveWorkspace() {
                 </>
               ) : null}
               {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
-                <label className="grid gap-2">
-                  <span>واریز به حساب</span>
-                  <Select value={accountId} onValueChange={setAccountId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="انتخاب حساب مقصد" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts
-                        .filter(
-                          (account) =>
-                            account.branchId === actionItem?.branchReference &&
-                            account.currencyCode === paymentCurrency,
-                        )
-                        .map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.title} ·{' '}
-                            {currencySymbol(account.currencyCode ?? '')}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setAccountDialog(true);
-                      setActionError('');
-                    }}
-                  >
-                    <PlusCircle className="size-4" />
-                    تعریف حساب جدید
-                  </Button>
-                </label>
+                actionItem.destinationAccountId ? (
+                  <div className="grid gap-2 rounded-xl border bg-muted/30 p-3">
+                    <span>واریز به حساب</span>
+                    <p className="font-semibold" dir="auto">
+                      {declaredReceiptAccountLabel(actionItem, accounts)}
+                    </p>
+                    <small className="text-muted-foreground">
+                      حساب مقصد قبلاً در پرداخت ثبت شده است.
+                    </small>
+                  </div>
+                ) : (
+                  <label className="grid gap-2">
+                    <span>واریز به حساب</span>
+                    <Select value={accountId} onValueChange={setAccountId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب حساب مقصد" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts
+                          .filter(
+                            (account) =>
+                              account.branchId ===
+                                actionItem?.branchReference &&
+                              account.currencyCode === paymentCurrency,
+                          )
+                          .map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {receiptAccountLabel(account)} ·{' '}
+                              {currencySymbol(account.currencyCode ?? '')}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setAccountDialog(true);
+                        setActionError('');
+                      }}
+                    >
+                      <PlusCircle className="size-4" />
+                      تعریف حساب جدید
+                    </Button>
+                  </label>
+                )
               ) : null}
               {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
                 <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
@@ -2021,7 +2053,7 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!(foreignPayment ? payingSupplierId : accountId) ||
+                    (!(supplierPayment ? payingSupplierId : accountId) ||
                       !paymentMethodId ||
                       !paidAmount))
                 }

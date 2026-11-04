@@ -41,7 +41,7 @@ export const unlistedMasterDataResources = [
 export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   {
     slug: 'finance',
-    title: 'مالی و پولی',
+    title: 'ارز و بانک',
     description:
       'ارزها با تاریخچه نرخ، گردش تأیید، بانک‌ها، شعب و روش‌های پرداخت مرجع',
     resources: [

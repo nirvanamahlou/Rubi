@@ -3,6 +3,7 @@ import { ExecutiveWorkspace } from '@/modules/assistant/executive-workspace';
 import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
+import { currencyMetricParts } from '../model/currency-metric';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -118,7 +119,14 @@ import {
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
+import { dashboardUnavailableReason } from '../model/availability';
+import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
+import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
+import {
+  DashboardSeriesDataTable,
+  dashboardSeriesSummary,
+} from './dashboard-series-data-table';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -136,15 +144,6 @@ const trendCalendarOptions: readonly [TrendCalendarSystem, string][] = [
   ['persian', 'تاریخ شمسی'],
   ['gregorian', 'تاریخ میلادی'],
 ];
-
-const executiveSalesTitles: Record<DashboardRange, string> = {
-  today: 'فروش امروز',
-  week: 'فروش این هفته',
-  month: 'فروش این ماه',
-  quarter: 'فروش این فصل',
-  year: 'فروش امسال',
-  custom: 'فروش بازه انتخابی',
-};
 
 const dimensionFilters: readonly {
   key: DashboardFilterKey;
@@ -568,6 +567,13 @@ export function dashboardVisualKindForData(
   kind: DashboardVisualKind,
   values: readonly number[],
 ): DashboardVisualKind {
+  // The compact combo has eight slots and a positive baseline. Use the signed,
+  // scrollable comparison for larger/negative datasets rather than clipping them.
+  if (
+    kind === 'stacked-bar' &&
+    (values.length > 8 || values.some((value) => value < 0))
+  )
+    return 'bar';
   if (
     kind === 'donut' &&
     (values.length < 2 ||
@@ -1023,7 +1029,10 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : '—'}
+              : definition?.id === 'gross-profit' ||
+                  definition?.id === 'net-profit'
+                ? 'قابل محاسبه نیست'
+                : '—'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -1041,16 +1050,6 @@ const currencyNames: Readonly<Record<string, string>> = {
   IRR: 'ریال ایران',
   IRI: 'ریال ایران',
 };
-
-function currencyMetricParts(value: string) {
-  const symbol = [...new Set(Object.values(currencySymbols))]
-    .sort((left, right) => right.length - left.length)
-    .find((candidate) => value.startsWith(candidate));
-  return {
-    amount: symbol ? value.slice(symbol.length) : value,
-    symbol: symbol ?? '',
-  };
-}
 
 function compactCurrencyAmount(amount: string) {
   const latinDigits = amount
@@ -1285,6 +1284,7 @@ function KpiCard({
   onSelect,
   featured = false,
   metric,
+  unavailableReason,
 }: {
   definition: DashboardKpiDefinition;
   loading?: boolean;
@@ -1292,6 +1292,7 @@ function KpiCard({
   onSelect(): void;
   featured?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
+  unavailableReason?: string | undefined;
 }) {
   return (
     <button
@@ -1352,6 +1353,10 @@ function KpiCard({
               {metric.trend ? (
                 <MiniTrend title={definition.title} trend={metric.trend} />
               ) : null}
+            </span>
+          ) : unavailableReason ? (
+            <span className="relative mt-3 block text-xs leading-6 text-muted-foreground">
+              {dashboardUnavailableReason(unavailableReason)}
             </span>
           ) : null}
         </>
@@ -1759,6 +1764,7 @@ function VisualDataSummary({
   trend,
   unit,
   values,
+  series,
 }: {
   labels: readonly string[];
   title: string;
@@ -1770,6 +1776,7 @@ function VisualDataSummary({
       }
     | undefined;
   values: readonly number[];
+  series?: DashboardVisualSnapshot['series'];
 }) {
   const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
   const firstColumnLabel = trend
@@ -1795,41 +1802,18 @@ function VisualDataSummary({
             <strong className="text-foreground">{temporalLabel}</strong>
           </p>
         ) : null}
-        <table className="w-full min-w-72 text-xs">
-          <caption className="sr-only">داده‌های نمودار {title}</caption>
-          <thead className="bg-muted/60 text-foreground">
-            <tr>
-              <th className="px-3 py-2 text-start" scope="col">
-                {firstColumnLabel}
-              </th>
-              <th className="px-3 py-2 text-end" scope="col">
-                مقدار
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {values.map((value, index) => (
-              <tr
-                className="border-t border-border/70"
-                key={`${labels[index]}-${index}`}
-              >
-                <th className="px-3 py-2 text-start font-medium" scope="row">
-                  {trend
-                    ? trendDateLabel(
-                        labels[index] ?? '',
-                        trend.calendarSystem,
-                        trend.grain,
-                        true,
-                      )
-                    : (labels[index] ?? `دسته ${index + 1}`)}
-                </th>
-                <td className="px-3 py-2 text-end font-bold tabular-nums">
-                  {formatVisualNumber(value, unit)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DashboardSeriesDataTable
+          title={title}
+          firstColumnLabel={firstColumnLabel}
+          labels={labels.map((label) =>
+            trend
+              ? trendDateLabel(label, trend.calendarSystem, trend.grain, true)
+              : label,
+          )}
+          values={values}
+          series={series}
+          formatValue={(value) => formatVisualNumber(value, unit)}
+        />
       </div>
     </details>
   );
@@ -2130,15 +2114,22 @@ function DashboardChart({
   unit: string | undefined;
   values: readonly number[];
 }) {
+  if (kind === 'stacked-bar' && series?.length)
+    return (
+      <DashboardStackedSeriesChart
+        labels={labels}
+        series={series}
+        title={title}
+      />
+    );
   const resolvedKind = dashboardVisualKindForData(kind, values);
-  const maximum = Math.max(...values, 1);
   const total = values.reduce((sum, value) => sum + value, 0);
-  const accessibleSummary = values
-    .map(
-      (value, index) =>
-        `${labels[index] ?? `دسته ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
-    )
-    .join('، ');
+  const accessibleSummary = dashboardSeriesSummary(
+    labels,
+    values,
+    series,
+    (value) => formatVisualNumber(value, unit),
+  );
 
   if (resolvedKind === 'line') {
     const chartLeft = 100;
@@ -2146,16 +2137,15 @@ function DashboardChart({
     const chartTop = 18;
     const chartBottom = 140;
     const lineSeries = series?.length ? series : [{ label: title, values }];
-    const chartMaximum = Math.max(
-      ...lineSeries.flatMap((item) => item.values),
-      1,
+    const axis = dashboardNumericAxis(
+      lineSeries.flatMap((item) => item.values),
     );
     const pointFor = (value: number, index: number, totalPoints: number) => ({
       x:
         totalPoints > 1
           ? chartLeft + (index * (chartRight - chartLeft)) / (totalPoints - 1)
           : (chartLeft + chartRight) / 2,
-      y: chartBottom - (value / chartMaximum) * (chartBottom - chartTop),
+      y: chartBottom - (axis.position(value) / 100) * (chartBottom - chartTop),
     });
     const lineSeriesWithPoints = lineSeries.map((seriesItem) => ({
       ...seriesItem,
@@ -2180,7 +2170,8 @@ function DashboardChart({
         >
           {[0, 1, 2, 3, 4].map((index) => {
             const y = chartTop + (index * (chartBottom - chartTop)) / 4;
-            const value = chartMaximum * (1 - index / 4);
+            const value =
+              axis.maximum - (axis.maximum - axis.minimum) * (index / 4);
             return (
               <g key={y}>
                 <line
@@ -2343,7 +2334,7 @@ function DashboardChart({
             </g>
           ))}
           {visibleValues.map((value, index) => {
-            const height = Math.max(4, (value / comboMaximum) * 118);
+            const height = (value / comboMaximum) * 118;
             const width = Math.min(42, slotWidth * 0.58);
             const x = 48 + slotWidth * index + (slotWidth - width) / 2;
             return (
@@ -2669,8 +2660,8 @@ function DashboardChart({
       value,
       index,
     }))
-    .sort((left, right) => right.value - left.value)
-    .slice(0, 12);
+    .sort((left, right) => right.value - left.value);
+  const barAxis = dashboardNumericAxis(values);
   return (
     <figure
       aria-label={`${visualLabels[resolvedKind]} ${title}. ${accessibleSummary}`}
@@ -2687,12 +2678,21 @@ function DashboardChart({
             <span className="truncate text-[11px] font-bold" title={label}>
               {label}
             </span>
-            <span className="relative block h-5 overflow-hidden rounded-md bg-slate-200/80 dark:bg-slate-700/80">
+            <span
+              className="relative block h-5 overflow-hidden rounded-md bg-slate-200/80 dark:bg-slate-700/80"
+              dir="ltr"
+            >
               <span
-                className="absolute inset-y-0 start-0 rounded-md"
+                aria-hidden="true"
+                className="absolute inset-y-0 z-10 border-l border-slate-500"
+                style={{ left: `${barAxis.position(0)}%` }}
+              />
+              <span
+                className="absolute inset-y-0 rounded-md"
                 style={{
                   background: `linear-gradient(to left, ${comparisonRankColor(rank, rankedRows.length)}, ${comparisonRankColor(Math.min(rank + 1, rankedRows.length - 1), rankedRows.length)})`,
-                  width: `${Math.max(2, (value / maximum) * 100)}%`,
+                  left: `${Math.min(barAxis.position(0), barAxis.position(value))}%`,
+                  width: `${Math.abs(barAxis.position(value) - barAxis.position(0))}%`,
                 }}
               />
             </span>
@@ -2960,9 +2960,12 @@ function ProjectionSlot({
       ) ?? data)
     : data;
   const displayUnit = displayData?.unit ?? data?.unit;
-  const resolvedKind = displayData?.values.length
-    ? dashboardVisualKindForData(kind, displayData.values)
-    : kind;
+  const resolvedKind =
+    kind === 'stacked-bar' && displayData?.series?.length
+      ? kind
+      : displayData?.values.length
+        ? dashboardVisualKindForData(kind, displayData.values)
+        : kind;
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
@@ -3123,15 +3126,21 @@ function ProjectionSlot({
                 trendCalendarSystem={trendCalendarSystem}
                 unit={displayUnit}
                 values={displayData.values}
-                series={data?.series}
+                series={displayData.series}
               />
             )
           ) : (
             <>
               <EmptyVisualCanvas kind={kind} />
-              <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای
+                این نمودار باید بررسی شوند.
+              </p>
             </>
           )}
+          {data?.notice ? (
+            <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
+          ) : null}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -3154,6 +3163,7 @@ function ProjectionSlot({
                   }
                   unit={displayUnit}
                   values={displayData.values}
+                  series={displayData.series}
                 />
               )}
             </>
@@ -3710,13 +3720,9 @@ export function DashboardWorkspace() {
     /\.png$/,
     '-dark.png',
   );
-  const activePageKpis = dashboardKpis
-    .filter((kpi) => activePage.kpiIds.includes(kpi.id))
-    .map((kpi) =>
-      activePage.id === 'executive-overview' && kpi.id === 'collected'
-        ? { ...kpi, title: executiveSalesTitles[filters.range] }
-        : kpi,
-    );
+  const activePageKpis = dashboardKpis.filter((kpi) =>
+    activePage.kpiIds.includes(kpi.id),
+  );
   const query = useQuery({
     queryKey: ['dashboard-public-projection-v1', filters, selection],
     queryFn: ({ signal }) =>
@@ -3833,42 +3839,45 @@ export function DashboardWorkspace() {
       data-dashboard-workspace
       style={{ overflowAnchor: 'none' }}
     >
-      {!assistantPage && (
-        <section aria-live="polite">
-          {query.isError ? (
-            <ErrorState
-              title="خطا در دریافت Dashboard"
-              description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
-              action={
-                <Button onClick={refreshDashboard} variant="outline">
-                  تلاش دوباره
-                </Button>
-              }
-            />
-          ) : null}
-          {query.data?.state === 'forbidden' ? (
-            <EmptyState
-              icon={LockKeyhole}
-              title="دسترسی مجاز نیست"
-              description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
-            />
-          ) : null}
-          {query.data?.state === 'empty' ? (
-            <EmptyState
-              title="داده‌ای در این دامنه نیست"
-              description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
-            />
-          ) : null}
-          {query.data?.state === 'stale' ? (
-            <Alert
-              title="داده ممکن است قدیمی باشد"
-              description={query.data.message}
-              tone="warning"
-            />
-          ) : null}
-        </section>
-      )}
-
+      {!assistantPage &&
+        (query.isError ||
+          ['forbidden', 'empty', 'stale'].includes(
+            query.data?.state ?? '',
+          )) && (
+          <section aria-live="polite">
+            {query.isError ? (
+              <ErrorState
+                title="خطا در دریافت Dashboard"
+                description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
+                action={
+                  <Button onClick={refreshDashboard} variant="outline">
+                    تلاش دوباره
+                  </Button>
+                }
+              />
+            ) : null}
+            {query.data?.state === 'forbidden' ? (
+              <EmptyState
+                icon={LockKeyhole}
+                title="دسترسی مجاز نیست"
+                description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
+              />
+            ) : null}
+            {query.data?.state === 'empty' ? (
+              <EmptyState
+                title="داده‌ای در این دامنه نیست"
+                description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
+              />
+            ) : null}
+            {query.data?.state === 'stale' ? (
+              <Alert
+                title="داده ممکن است قدیمی باشد"
+                description={query.data.message}
+                tone="warning"
+              />
+            ) : null}
+          </section>
+        )}
       <section
         aria-label="فضای صفحه‌های داشبورد"
         className={cn(
@@ -3989,6 +3998,9 @@ export function DashboardWorkspace() {
                         featured
                         loading={query.isPending}
                         metric={query.data?.metrics[item.id]}
+                        unavailableReason={
+                          query.data?.unavailableMetrics?.[item.id]
+                        }
                         selected={filters.widget === item.id}
                         onSelect={() =>
                           updateFilters({

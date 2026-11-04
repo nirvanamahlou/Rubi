@@ -1,4 +1,6 @@
 {
+  "کد تفصیلی حسابداری": "Accounting detail code",
+  "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",
   "· تعداد رکوردها:": "· Record count:",
   "آخرین بررسی کننده": "Last reviewer",
@@ -239,5 +241,21 @@
   "همه قلم سند حسابداری ها": "All accounting journal articles",
   "هیچکدام": "None",
   "هیچکدام از": "None of",
-  "یادداشت/پیوست": "Note/attachment"
+  "یادداشت/پیوست": "Note/attachment",
+  "این راهبر به منظور صدور سند بستن حساب ها به کار برده می شود. هدف از بستن حساب ها، انتقال مانده حساب های موقت به یک یا چند حساب طرف مقابل با درصدی مشخص است به طوریکه این حساب ها و درصد آن ها از طریق انتخاب یکی از الگوهای از پیش تعیین شده، مشخص می شود.": "This wizard issues closing journals by transferring temporary account balances to one or more counterpart accounts at the percentages specified in a selected template.",
+  "تعریف حساب های طرف مقابل": "Define counterpart accounts",
+  "تعریف مشخصات سند": "Define journal details",
+  "زیرمنوی مستقل شامل معرفی کدینگ استاندارد، نگاشت کدهای استاندارد، گزارش کدینگ استاندارد، فرمول کدینگ استاندارد و صحت سنجی کنترل است؛ پیاده‌سازی این فرم‌ها هنوز کامل نشده است": "Separate submenu for standard coding, code mappings, standard coding reports, formulas and control validation; implementation is not yet complete.",
+  "ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.": "The chart of accounts has not yet been set up for the current company.",
+  "سند تعدیل ماهیت حاصل صفر کردن مانده حساب های معین دارای وضعیت خلاف ماهیت می باشد. صدور سند تعدیل ماهیت شامل مراحل زیر می باشد:": "A balance-nature adjustment journal clears subsidiary accounts with abnormal balances. Issuing it involves the following steps:",
+  "صدور سند بستن حساب ها": "Issue closing journal",
+  "صدور سند تعدیل ماهیت": "Issue balance-nature adjustment journal",
+  "مراحل راهبر": "Wizard steps",
+  "حساب های طرف مقابل": "Counterpart accounts",
+  "حساب های قابل بستن": "Accounts to close",
+  "شمول/عدم شمول": "Include/exclude",
+  "شمول": "Include",
+  "عدم شمول": "Exclude",
+  "مراحل بعدی در راهکاران قابل مشاهده نیست": "The subsequent stages cannot be viewed in Rahkaran",
+  "صدور سند معکوس تعدیل ماهیت": "Issue reversal of the balance-nature adjustment journal"
 }

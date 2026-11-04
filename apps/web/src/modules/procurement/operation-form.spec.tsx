@@ -232,7 +232,8 @@ describe('Procurement lifecycle operation forms', () => {
     expect(html).toContain('انتخاب ثبت‌شده');
     expect(html).toContain('کد پیگیری');
     expect(html).toContain('بارگذاری فایل سند سفارش');
-    expect(html).toContain('اسناد و فایل‌ها');
+    expect(html).not.toContain('فایل در بخش');
+    expect(html).not.toContain('نسخه سالم اسناد خرید');
   });
   it('opens an order edit form prefilled from the persisted order and offers an audited cancellation form', () => {
     const order = {
@@ -349,6 +350,7 @@ describe('Procurement lifecycle operation forms', () => {
     );
 
     expect(html).toContain('بارگذاری فایل فاکتور');
-    expect(html).toContain('اسناد و فایل‌ها');
+    expect(html).not.toContain('فایل در بخش');
+    expect(html).not.toContain('نسخه سالم اسناد خرید');
   });
 });

@@ -1,0 +1,76 @@
+.dialog {
+  width: min(1400px, 96vw);
+  max-width: 96vw;
+  max-height: 90dvh;
+  overflow-y: auto;
+  color: var(--foreground);
+}
+.toolbar,
+.pagination,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar {
+  justify-content: space-between;
+  margin-block: 12px;
+}
+.pagination {
+  justify-content: center;
+  margin-top: 16px;
+}
+.actions {
+  flex-direction: column;
+}
+.dialog button {
+  border: 1px solid var(--border, #dce5ef);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--foreground);
+  background: var(--surface, #fff);
+}
+.dialog button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.dialog button:focus-visible {
+  outline: 2px solid #1875e5;
+  outline-offset: 2px;
+}
+.scroll {
+  overflow: auto;
+  max-height: 58dvh;
+}
+.scroll table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.scroll th,
+.scroll td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border, #dce5ef);
+  max-width: 230px;
+  overflow-wrap: anywhere;
+}
+.scroll th {
+  position: sticky;
+  top: 0;
+  background: var(--muted, #eef5ff);
+}
+.scroll td:nth-child(2),
+.scroll td:nth-child(6) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.badge {
+  display: inline-block;
+  background: #fff1d6;
+  color: #925b07;
+  padding: 4px 8px;
+  border-radius: 6px;
+}

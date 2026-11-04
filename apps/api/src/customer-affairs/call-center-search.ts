@@ -53,7 +53,10 @@ export function callSearchMetadata(
       !value.phone ||
       !outcome ||
       !value.subject.trim() ||
-      value.source === 'نامشخص',
+      !value.source.trim() ||
+      value.source === 'نامشخص' ||
+      !value.operator.trim() ||
+      value.operator === 'نامشخص',
     searchVersion: 1,
   };
 }

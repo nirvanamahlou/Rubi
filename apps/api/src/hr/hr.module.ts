@@ -1,3 +1,4 @@
+import { HrRadanDeviceService } from './hr-radan-device.service';
 import { Module } from '@nestjs/common';
 import { HrDirectoryModule } from './hr-directory.module';
 
@@ -10,13 +11,21 @@ import { HrService } from './hr.service';
 import { HrSelfPerformanceService } from './hr-self-performance.service';
 import { HrConnectionsService } from './hr-connections.service';
 import { HrConnectionsController } from './hr-connections.controller';
+import { HrPayrollWorksheetController } from './hr-payroll-worksheet.controller';
+import { HrPayrollWorksheetService } from './hr-payroll-worksheet.service';
 
 @Module({
   imports: [IamModule, DocumentsModule, HrDirectoryModule],
-  controllers: [HrController, HrConnectionsController],
+  controllers: [
+    HrController,
+    HrConnectionsController,
+    HrPayrollWorksheetController,
+  ],
   providers: [
     AuthGuard,
     HrService,
+    HrRadanDeviceService,
+    HrPayrollWorksheetService,
     HrPayrollFinancePublicService,
     HrConnectionsService,
     HrSelfPerformanceService,

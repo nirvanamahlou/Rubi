@@ -27,15 +27,18 @@ export function ProcurementDocumentPicker({
   invoiceUpload?: {
     requestId: string;
     requestNumber: string;
-    purpose?: 'ORDER' | 'RETURN';
+    purpose?: 'ORDER' | 'RETURN' | 'REQUEST';
+    sourceEntityType?: 'ProcurementRequest' | 'ProcurementDraft';
   };
 }) {
   const uploadLabel =
-    invoiceUpload?.purpose === 'ORDER'
-      ? 'سند سفارش'
-      : invoiceUpload?.purpose === 'RETURN'
-        ? 'مدرک مرجوعی'
-        : 'فاکتور';
+    invoiceUpload?.purpose === 'REQUEST'
+      ? 'فیش'
+      : invoiceUpload?.purpose === 'ORDER'
+        ? 'سند سفارش'
+        : invoiceUpload?.purpose === 'RETURN'
+          ? 'مدرک مرجوعی'
+          : 'فاکتور';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<readonly DocumentListItemV1[]>([]);
@@ -136,7 +139,10 @@ export function ProcurementDocumentPicker({
       form.set('branchId', branchId);
       form.set('ownerUserId', owner.id);
       form.set('sourceModule', 'PROCUREMENT');
-      form.set('sourceEntityType', 'ProcurementRequest');
+      form.set(
+        'sourceEntityType',
+        invoiceUpload.sourceEntityType ?? 'ProcurementRequest',
+      );
       form.set('sourceEntityId', invoiceUpload.requestId);
       form.set(
         'sourceDisplayLabel',
@@ -178,10 +184,6 @@ export function ProcurementDocumentPicker({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="font-semibold">بارگذاری فایل {uploadLabel}</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    فایل در بخش «اسناد و فایل‌ها» با مرجع همین درخواست ذخیره و
-                    به {uploadLabel} پیوست می‌شود.
-                  </p>
                 </div>
                 <input
                   ref={fileInput}
@@ -219,10 +221,6 @@ export function ProcurementDocumentPicker({
               )}
             </section>
           )}
-          <p className="text-xs text-muted-foreground">
-            نسخه سالم اسناد خرید مربوط به همین شعبه را انتخاب کنید. اصل فایل در
-            آرشیو اسناد باقی می‌ماند.
-          </p>
           <div className="flex flex-wrap gap-2">
             <Input
               className="min-w-40 flex-1"

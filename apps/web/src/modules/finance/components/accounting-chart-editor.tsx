@@ -2,7 +2,6 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from '@/i18n/link';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import type {
@@ -111,24 +110,7 @@ export function AccountingChartEditor({
 }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState('');
-  const [draft, setDraft] = useState<ChartDraft | null>(
-    book
-      ? null
-      : {
-          code: '',
-          title: '',
-          titleEn: '',
-          description: '',
-          level: 'GROUP',
-          parentId: '',
-          nature: 'DEBIT',
-          active: true,
-          attributes: {
-            accountType: 'PERMANENT',
-            detailLevels: ['4', '5', '6'],
-          },
-        },
-  );
+  const [draft, setDraft] = useState<ChartDraft | null>(null);
   const accounts = book?.accounts ?? [];
   const periods = book?.periods ?? [];
   const [tab, setTab] = useState('main');
@@ -298,39 +280,12 @@ export function AccountingChartEditor({
   return (
     <section dir="rtl" className="@container space-y-2">
       {!book && (
-        <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
-          <p role="status">
-            برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب کنید. ساختار زیر
-            هنوز به دفتری متصل نیست.
-          </p>
-          <Link
-            className="text-primary underline"
-            href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
-          >
-            ایجاد دفتر کل
-          </Link>
-          {' · '}
-          <Link
-            className="text-primary underline"
-            href="/finance/accounting/general-ledger/base-information/lists/ledgers"
-          >
-            انتخاب دفتر کل
-          </Link>
-          <label className="block">
-            نمایش فرم
-            <select
-              className={control}
-              value={draft?.level ?? 'GROUP'}
-              onChange={(event) =>
-                reset(event.target.value as AccountingAccountV1['level'])
-              }
-            >
-              <option value="GROUP">گروه حساب</option>
-              <option value="GENERAL">حساب کل</option>
-              <option value="SUBSIDIARY">حساب معین</option>
-            </select>
-          </label>
-        </div>
+        <p
+          role="status"
+          className="border border-slate-300 bg-slate-50 p-2 text-xs"
+        >
+          ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.
+        </p>
       )}
       <AccountingButton
         aria-label="جدید"
@@ -352,7 +307,7 @@ export function AccountingChartEditor({
         reset={() => reset(draft?.level ?? 'GROUP', draft?.parentId)}
         close={close}
       />
-      <div className="grid min-h-[40rem] items-start gap-3 @min-[42rem]:grid-cols-[18rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid min-h-[40rem] items-start gap-3 @min-[30rem]:grid-cols-[14rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[18rem_minmax(0,1fr)]">
         <AccountingChartTree
           accounts={accounts}
           selectedId={selectedId}
@@ -459,44 +414,6 @@ export function AccountingChartEditor({
                       {check('active', 'فعال')}
                       {draft.level === 'SUBSIDIARY' && (
                         <>
-                          {!book && (
-                            <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
-                              <p role="status">
-                                برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب
-                                کنید. ساختار زیر هنوز به دفتری متصل نیست.
-                              </p>
-                              <Link
-                                className="text-primary underline"
-                                href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
-                              >
-                                ایجاد دفتر کل
-                              </Link>
-                              {' · '}
-                              <Link
-                                className="text-primary underline"
-                                href="/finance/accounting/general-ledger/base-information/lists/ledgers"
-                              >
-                                انتخاب دفتر کل
-                              </Link>
-                              <label className="block">
-                                نمایش فرم
-                                <select
-                                  className={control}
-                                  value={draft?.level ?? 'GROUP'}
-                                  onChange={(event) =>
-                                    reset(
-                                      event.target
-                                        .value as AccountingAccountV1['level'],
-                                    )
-                                  }
-                                >
-                                  <option value="GROUP">گروه حساب</option>
-                                  <option value="GENERAL">حساب کل</option>
-                                  <option value="SUBSIDIARY">حساب معین</option>
-                                </select>
-                              </label>
-                            </div>
-                          )}
                           {check('multiCurrency', 'ویژگی ارزی')}
                           {check(
                             'revaluable',

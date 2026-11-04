@@ -471,7 +471,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     source: [salesContract, payment],
     rule: 'تعداد یکتای مشتریانی که نخستین خرید پرداخت‌شده آن‌ها در بازه انتخابی ثبت شده است',
     exclusions:
-      'ثبت‌نام بدون خرید، پرداخت ناموفق یا برگشت‌شده و مشتری تکراری خارج‌اند.',
+      'ثبت‌نام بدون خرید، پرداخت تأییدنشده و مشتری تکراری خارج‌اند؛ لغو یا استرداد بعدی سابقهٔ خرید موفق را حذف نمی‌کند.',
     dateBasis: 'paid',
     currency: 'not-applicable',
     permission: 'reports.dashboard.customers.read',
@@ -488,7 +488,7 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     source: [salesContract, payment],
     rule: 'تعداد یکتای مشتریانی که پیش از شروع بازه حداقل یک خرید موفق و در بازه انتخابی نیز خرید موفق داشته‌اند',
     exclusions:
-      'مشتری فقط با یک خرید، پرداخت ناموفق یا برگشت‌شده و قرارداد آزمایشی خارج‌اند.',
+      'مشتری بدون خرید موفق قبلی یا بدون خرید موفق در بازه خارج است؛ لغو بعدی سابقهٔ خرید را حذف نمی‌کند.',
     dateBasis: 'paid',
     currency: 'not-applicable',
     permission: 'reports.dashboard.customers.read',
@@ -1353,7 +1353,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'executive-sales-by-service',
         'فروش بر اساس نوع خدمت',
-        'مقایسه مبلغ فروش پرداخت‌شده خدمات در بازه انتخابی، بدون ادغام ارزهای تبدیل‌نشده.',
+        'مقایسه مبلغ فروش خالصِ قراردادهای نهایی‌شده در بازه انتخابی؛ وصول تأییدشده شاخص مستقلی است و ارزها ادغام نمی‌شوند.',
         'bar',
         [travelFacts, payment],
         'reports.dashboard.executive.read',
@@ -1479,8 +1479,8 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       ),
       visual(
         'sales-weekday-pattern',
-        'الگوی فروش روزهای هفته',
-        'تعداد و مبلغ فروش نهایی هر روز هفته برای تشخیص روزهای پرتراکنش، بدون مقایسه دوره‌های ناقص.',
+        'مبلغ فروش روزهای هفته',
+        'مبلغ فروش خالص بر اساس روز هفته در زمان تهران، در بازه انتخابی و به تفکیک ارز.',
         'bar',
         [salesContract],
         'reports.dashboard.sales.read',
@@ -1876,7 +1876,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'finance-profit-trend',
         'روند درآمد و سود',
-        'روند درآمد ثبت‌شده، سود ناخالص و سود خالص در دوره‌های هم‌طول؛ سود خالص فقط برای دوره دارای ثبت کامل هزینه نمایش داده می‌شود.',
+        'روند فروش خالص، سود ناخالص و سود خالص؛ سری سود فقط با منبع معتبر هزینه و حسابداری نمایش داده می‌شود و نبود آن صفر نیست.',
         'line',
         [serviceItem, journalBalance],
         'reports.dashboard.finance.read',
@@ -1961,7 +1961,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'customer-growth-overview',
         'روند جذب تا سفارش',
-        'حجم لید، سفارش و نرخ تبدیل در cohortهای هم‌دوره و قابل مقایسه.',
+        'تعداد لید بدون خرید موفق، مشتری با اولین خرید تأییدشده و سفارش ایجادشده در بازه؛ این سری‌های مستقل نرخ تبدیل یک cohort نیستند.',
         'line',
         [leadPipeline, travelFacts],
         'reports.dashboard.customer-growth.read',

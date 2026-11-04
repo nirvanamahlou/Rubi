@@ -1,3 +1,9 @@
+vi.mock('../finance/accounting/sales-contract-accounting.public', () => ({
+  captureSalesContractAccounting: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../finance/accounting/accounting-workflows.public', () => ({
+  assertRevenueEditable: vi.fn().mockResolvedValue(undefined),
+}));
 import { describe, it, expect, vi } from 'vitest';
 import { SalesRepository } from './sales.repository';
 import type { SalesContractCreateRequest } from '@nora/contracts';
@@ -22,8 +28,11 @@ function setup(count = 1) {
     },
     salesContractHotelSelection: { ...remove, create: vi.fn() },
     salesContractTicketSelection: { ...remove },
-    salesPassengerServiceAllocation: { ...remove },
-    salesContractPassenger: { ...remove },
+    salesPassengerServiceAllocation: { ...remove, createMany: vi.fn() },
+    salesContractPassenger: {
+      ...remove,
+      create: vi.fn(async () => ({ id: 'new-person' })),
+    },
     salesContractService: {
       ...remove,
       create: vi.fn(async () => ({ id: 'hotel-service' })),
@@ -48,6 +57,31 @@ const amendment = {
   reserve: vi.fn(async () => {}),
 };
 describe('contract amendment transaction', () => {
+  it('persists an unknown birth date as SQL NULL with the booked category', async () => {
+    const { tx, repository } = setup();
+    await repository.updateDraft(
+      'id',
+      {
+        ...input,
+        passengers: [
+          {
+            customerId: 'person',
+            displayNameSnapshot: 'Synthetic',
+            birthDate: '',
+            ageCategory: 'CHD',
+            serviceClientKeys: [],
+          },
+        ],
+      },
+      2,
+      'Synthetic',
+      { userId: 'u', branchId: 'b' },
+      amendment,
+    );
+    expect(tx.salesContractPassenger.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ birthDate: null, ageCategory: 'CHD' }),
+    });
+  });
   it('writes the versioned outbox in the same transaction without replacing payments', async () => {
     const { tx, repository } = setup();
     await expect(
@@ -246,3 +280,71 @@ it('persists the room occupancy summary from products rather than stale submitte
 vi.mock('./sales-financial-settlement', () => ({
   recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
 }));
+
+it('persists independent additional stays in the hotel transaction without adding charged services', async () => {
+  const { tx, repository } = setup();
+  const additionalStays = [
+    {
+      hotelId: 'hotel-two',
+      cityId: 'city-two',
+      hotelNameSnapshot: 'Second Hotel',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'second-room',
+          roomTypeNameSnapshot: 'Suite',
+          adults: 2,
+          childAges: [5],
+          roomCategory: 'DOUBLE_EXTRA' as const,
+        },
+      ],
+      checkInDate: '2099-01-03',
+      checkOutDate: '2099-01-06',
+    },
+  ];
+  await repository.updateDraft(
+    'id',
+    {
+      ...input,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'first',
+        hotelNameSnapshot: 'First',
+        cityId: 'first-city',
+        checkInDate: '2099-01-01',
+        checkOutDate: '2099-01-03',
+        roomCount: 1,
+        roomTypeId: 'room',
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        additionalStays,
+      },
+    },
+    2,
+    'Synthetic',
+    { userId: 'u', branchId: 'b' },
+    amendment,
+  );
+  expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        additionalStays: {
+          create: [
+            {
+              ...additionalStays[0],
+              rooms: { create: additionalStays[0]!.rooms },
+              ordinal: 2,
+              checkInDate: new Date('2099-01-03T00:00:00.000Z'),
+              checkOutDate: new Date('2099-01-06T00:00:00.000Z'),
+            },
+          ],
+        },
+      }),
+    }),
+  );
+  expect(tx.salesContractService.create).toHaveBeenCalledTimes(1);
+  expect(tx.salesContractPriceComponent.createMany).toHaveBeenCalledWith({
+    data: [],
+  });
+});

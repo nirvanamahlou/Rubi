@@ -1,3 +1,5 @@
+import { attendanceFrom } from './hr-attendance-range';
+import { resolveDeviceDirections } from './hr-device-attendance.domain';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import {
   getHrResource,
@@ -8,7 +10,12 @@ import {
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { HrService } from './hr.service';
-import { APPROVED, digits, localClockParts } from './hr.validation';
+import {
+  APPROVED,
+  digits,
+  localClockParts,
+  localClockToUtc,
+} from './hr.validation';
 
 /** Public HR projection; broad HR permissions never widen the subject beyond self. */
 @Injectable()
@@ -45,8 +52,16 @@ export class HrSelfPerformanceService {
     }));
   }
 
-  async get(actor: AuthenticatedActor): Promise<WorkbenchHrPerformanceV1> {
+  async get(
+    actor: AuthenticatedActor,
+    windowDays?: number,
+    allowOwnAttendance = false,
+  ): Promise<WorkbenchHrPerformanceV1> {
+    const canReadHr = actor.permissions.some((p) =>
+      ['hr.self', 'hr.read', 'hr.manage', 'hr.team'].includes(p),
+    );
     if (
+      !allowOwnAttendance &&
       !actor.permissions.some((p) =>
         ['hr.self', 'hr.read', 'hr.manage', 'hr.team'].includes(p),
       )
@@ -69,8 +84,9 @@ export class HrSelfPerformanceService {
       },
     });
     const payslipVisible =
-      actor.permissions.includes('hr.self') ||
-      actor.permissions.includes('hr.sensitive');
+      canReadHr &&
+      (actor.permissions.includes('hr.self') ||
+        actor.permissions.includes('hr.sensitive'));
     if (!employee)
       return {
         employee: null,
@@ -101,7 +117,16 @@ export class HrSelfPerformanceService {
       currentMonth
     )
       monthStart = new Date(monthStart.getTime() - 86400000);
-    const fromDate = monthStart.toISOString().slice(0, 10);
+    const requestedFromDate =
+      windowDays === undefined
+        ? monthStart.toISOString().slice(0, 10)
+        : new Date(
+            new Date(`${today}T12:00:00Z`).getTime() -
+              (windowDays - 1) * 86400000,
+          )
+            .toISOString()
+            .slice(0, 10);
+    const fromDate = attendanceFrom(requestedFromDate);
     const monthlyRows = await this.database.client.hrRecord.findMany({
       where: {
         ...scope,
@@ -124,56 +149,68 @@ export class HrSelfPerformanceService {
       if (day && !days.has(day))
         days.set(
           day,
-          row.status === 'حاضر'
+          ['حاضر', 'غایب', 'مرخصی'].includes(row.status) ||
+            (typeof (row.data as Record<string, unknown> | null)?.firstIn ===
+              'string' &&
+              Number.isFinite(
+                Date.parse(
+                  String((row.data as Record<string, unknown>).firstIn),
+                ),
+              ))
             ? ((row.data ?? {}) as Record<string, unknown>)
             : {},
         );
     }
     const total = (key: string) => {
-      const values = [...days.values()].map((day) => day[key]);
-      return values.length &&
-        values.every(
-          (value) =>
+      const values = [...days.values()]
+        .map((day) => day[key])
+        .filter(
+          (value): value is number =>
             typeof value === 'number' &&
             Number.isSafeInteger(value) &&
             value >= 0,
-        )
-        ? (values as number[]).reduce((sum, value) => sum + value, 0)
+        );
+      return values.length
+        ? values.reduce((sum, value) => sum + value, 0)
         : null;
     };
     const [leaves, shifts, payslips, balances, approvedLeaveCount, punches] =
       await Promise.all([
-        this.database.client.hrRecord.findMany({
-          where: {
-            ...scope,
-            OR: [
-              { section: 'time', tab: 'leave' },
-              { section: 'requests', tab: 'leave' },
-            ],
-          },
-          orderBy: [
-            { effectiveAt: { sort: 'desc', nulls: 'last' } },
-            { createdAt: 'desc' },
-            { id: 'asc' },
-          ],
-          take: 10,
-        }),
-        this.database.client.hrRecord.findMany({
-          where: {
-            ...scope,
-            OR: [
-              { section: 'time', tab: 'shift' },
-              { section: 'employee', tab: 'shift' },
-              { section: 'time', tab: 'roster' },
-            ],
-          },
-          orderBy: [
-            { effectiveAt: { sort: 'desc', nulls: 'last' } },
-            { createdAt: 'desc' },
-            { id: 'asc' },
-          ],
-          take: 10,
-        }),
+        canReadHr
+          ? this.database.client.hrRecord.findMany({
+              where: {
+                ...scope,
+                OR: [
+                  { section: 'time', tab: 'leave' },
+                  { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
+                ],
+              },
+              orderBy: [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ],
+              take: 10,
+            })
+          : Promise.resolve([]),
+        canReadHr || allowOwnAttendance
+          ? this.database.client.hrRecord.findMany({
+              where: {
+                ...scope,
+                OR: [
+                  { section: 'time', tab: 'shift' },
+                  { section: 'employee', tab: 'shift' },
+                  { section: 'time', tab: 'roster' },
+                ],
+              },
+              orderBy: [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ],
+              take: 10,
+            })
+          : Promise.resolve([]),
         payslipVisible
           ? this.database.client.hrRecord.findMany({
               where: {
@@ -190,17 +227,25 @@ export class HrSelfPerformanceService {
               take: 1,
             })
           : Promise.resolve([]),
-        this.hr.leaveBalances({ employeeId: employee.id }, actor),
-        this.database.client.hrRecord.count({
-          where: {
-            ...scope,
-            status: { in: [...APPROVED] },
-            OR: [
-              { section: 'time', tab: 'leave' },
-              { section: 'requests', tab: 'leave' },
-            ],
-          },
-        }),
+        canReadHr
+          ? this.hr.leaveBalances({ employeeId: employee.id }, actor)
+          : Promise.resolve({ items: [], year: null }),
+        canReadHr
+          ? this.database.client.hrRecord.count({
+              where: {
+                ...scope,
+                status: { in: [...APPROVED] },
+                AND: [
+                  { values: { path: ['2'], lte: today } },
+                  { values: { path: ['3'], gte: fromDate } },
+                ],
+                OR: [
+                  { section: 'time', tab: 'leave' },
+                  { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
+                ],
+              },
+            })
+          : Promise.resolve(0),
         this.database.client.hrRecord.findMany({
           where: {
             ...scope,
@@ -219,26 +264,69 @@ export class HrSelfPerformanceService {
     const selected = correction
       ? punches.filter((row) => row.parentId === correction.parentId)
       : punches;
+    const resolved = resolveDeviceDirections(
+      selected.flatMap((row) => {
+        const v = row.values as string[];
+        if (!/^\d{2}:\d{2}$/.test(digits(v[2] ?? ''))) return [];
+        return [{ kind: v[3]!, at: localClockToUtc(today, digits(v[2]!)) }];
+      }),
+    );
     const times = (kind: string) =>
-      selected
-        .map((row) => row.values as string[])
-        .filter(
-          (values) =>
-            values[3] === kind && /^\d{2}:\d{2}$/.test(digits(values[2] ?? '')),
-        )
-        .map((values) => digits(values[2]!))
+      resolved
+        .filter((e) => e.kind === kind)
+        .map((e) => localClockParts(e.at).time)
         .sort();
     return {
       monthlyAttendance: {
-        period: new Intl.DateTimeFormat('fa-IR', {
-          timeZone: 'Asia/Tehran',
-          month: 'long',
-          year: 'numeric',
-        }).format(new Date()),
+        period:
+          windowDays === undefined
+            ? new Intl.DateTimeFormat('fa-IR', {
+                timeZone: 'Asia/Tehran',
+                month: 'long',
+                year: 'numeric',
+              }).format(new Date())
+            : `${fromDate} — ${today}`,
         lateMinutes: total('lateMinutes'),
         overtimeMinutes: total('overtimeMinutes'),
+        deficitMinutes: total('deficitMinutes'),
       },
       approvedLeaveCount,
+      attendanceHistory: [
+        ...new Map(
+          monthlyRows
+            .slice()
+            .reverse()
+            .map((row) => [(row.values as string[])[1]!, row]),
+        ).entries(),
+      ]
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([date, row]) => {
+          const data = (row.data ?? {}) as Record<string, unknown>;
+          const minutes = (key: string) =>
+            typeof data[key] === 'number' &&
+            Number.isSafeInteger(data[key]) &&
+            data[key] >= 0
+              ? (data[key] as number)
+              : null;
+          const clock = (key: string) =>
+            typeof data[key] === 'string' &&
+            Number.isFinite(Date.parse(data[key]))
+              ? localClockParts(new Date(data[key])).time
+              : null;
+          return {
+            date,
+            firstIn: clock('firstIn'),
+            lastOut: clock('lastOut'),
+            registrationType:
+              data.registrationType === 'manual' ||
+              data.registrationType === 'device'
+                ? data.registrationType
+                : null,
+            lateMinutes: minutes('lateMinutes'),
+            overtimeMinutes: minutes('overtimeMinutes'),
+            deficitMinutes: minutes('deficitMinutes'),
+          };
+        }),
       todayAttendance: {
         date: today,
         firstIn: times('ورود')[0] ?? null,

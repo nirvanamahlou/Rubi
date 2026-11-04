@@ -96,7 +96,12 @@ export function DocumentImagePreview({
   const previewable = previewableImageMimeTypes.has(
     document.currentVersion.detectedMimeType,
   );
-  const clean = document.currentVersion.scanStatus === 'CLEAN';
+  const scanAllowed = [
+    'CLEAN',
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ].includes(document.currentVersion.scanStatus);
   const allowed = document.capabilities.viewFile;
   const [reason, setReason] = useState('');
   const [approvedReason, setApprovedReason] = useState<string | null>(
@@ -111,7 +116,7 @@ export function DocumentImagePreview({
   );
   const readyToLoad =
     allowed &&
-    clean &&
+    scanAllowed &&
     previewable &&
     approvedReason !== null &&
     accessGrantToken !== null;
@@ -177,10 +182,10 @@ export function DocumentImagePreview({
     );
   }
 
-  if (!clean) {
+  if (!scanAllowed) {
     return (
       <PreviewMessage
-        description="تصویر فقط پس از پایان موفق اسکن امنیتی نمایش داده می‌شود."
+        description="مشاهده محتوای این سند مجاز نیست."
         title="پیش‌نمایش هنوز آماده نیست"
       >
         <Badge className="mt-4">{document.currentVersion.scanStatus}</Badge>

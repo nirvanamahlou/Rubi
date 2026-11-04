@@ -186,7 +186,7 @@ export function AgencyRatesPanel({
           />
         </div>
       </header>
-      <div className="panel-body space-y-4">
+      <div className="panel-body space-y-4 pb-0">
         <div className="dossier-filter-grid">
           <label className="field">
             شعبه نورا
@@ -216,7 +216,7 @@ export function AgencyRatesPanel({
         ) : null}
         {loading ? (
           <p role="status">در حال دریافت شرایط تجاری…</p>
-        ) : !visible.length ? (
+        ) : !visible.length && kind !== 'COMMISSION_PERCENT' ? (
           <p>هنوز {kindLabels[kind]} ثبت نشده است.</p>
         ) : null}
         {visible.map((row) => (
@@ -285,18 +285,10 @@ export function AgencyRatesPanel({
             </p>
           </article>
         ))}
-        <Button
-          variant="outline"
-          disabled={!branchId || loading}
-          onClick={() => void load()}
-        >
-          تازه‌سازی
-        </Button>
       </div>
       {editor ? (
         <DossierFormDialog
           title={`${editor.row ? 'ویرایش' : 'ثبت'} ${kindLabels[kind]}`}
-          description="مبلغ و درصد با دقت کامل ذخیره می‌شود؛ بازه نرخ فعال نباید با مورد مشابه هم‌پوشانی داشته باشد."
           onClose={close}
           onSave={async () => {
             if (

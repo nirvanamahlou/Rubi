@@ -22,6 +22,7 @@ describe('company bank account HTTP routing and native permission guard', () => 
   let app: INestApplication;
   let actor: AuthenticatedActor;
   const service = {
+    remove: vi.fn().mockResolvedValue({ id: 'account-id' }),
     list: vi.fn().mockResolvedValue({ items: [], hasMore: false, page: 1 }),
     options: vi
       .fn()
@@ -108,6 +109,17 @@ describe('company bank account HTTP routing and native permission guard', () => 
     await request(app.getHttpServer())
       .get(`${base}/account-id/details`)
       .expect(404);
+    const removed = await request(app.getHttpServer())
+      .delete(`${base}/account-id`)
+      .send({ expectedVersion: 3 })
+      .expect(200);
+    expect(removed.headers['cache-control']).toContain('no-store');
+    expect(service.remove).toHaveBeenCalledWith(
+      'bank-id',
+      'account-id',
+      { expectedVersion: 3 },
+      actor,
+    );
   });
   it('permits masked reads but denies full reads and writes without account management', async () => {
     actor = { ...actor, permissions: ['master_data.read', 'finance.read'] };
@@ -124,6 +136,11 @@ describe('company bank account HTTP routing and native permission guard', () => 
       .expect(403);
     expect(service.details).not.toHaveBeenCalled();
     expect(service.save).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .delete(`${base}/account-id`)
+      .send({ expectedVersion: 1 })
+      .expect(403);
+    expect(service.remove).not.toHaveBeenCalled();
     actor = { ...actor, permissions: ['master_data.read'] };
     await request(app.getHttpServer()).get(base).expect(403);
   });

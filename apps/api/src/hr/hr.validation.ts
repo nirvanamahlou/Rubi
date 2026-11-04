@@ -90,6 +90,9 @@ export function resource(section: unknown, tab: unknown): HrResourceDefinition {
 export function workflowData(value: unknown): HrWorkflowData {
   if (value === undefined) return {};
   const data = object(value, [
+    'allBranches',
+    'chartX',
+    'chartY',
     'managerId',
     'targetBranchId',
     'organizationBranchId',
@@ -101,6 +104,8 @@ export function workflowData(value: unknown): HrWorkflowData {
     'currency',
     'reason',
   ]);
+  if (data.allBranches !== undefined && typeof data.allBranches !== 'boolean')
+    throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const key of [
     'managerId',
     'targetBranchId',
@@ -138,6 +143,17 @@ export function workflowData(value: unknown): HrWorkflowData {
     !/^\d{1,3}(\.\d{1,2})?$/.test(String(data.allowanceDays))
   )
     throw new BadRequestException('سهمیه معتبر نیست.');
+  for (const coordinate of ['chartX', 'chartY']) {
+    if (
+      data[coordinate] !== undefined &&
+      (typeof data[coordinate] !== 'number' ||
+        !Number.isFinite(data[coordinate]) ||
+        Math.abs(Number(data[coordinate])) > 5000)
+    )
+      throw new BadRequestException(
+        'مختصات گره باید عددی بین منفی و مثبت ۵۰۰۰ باشد.',
+      );
+  }
   if (data.reason !== undefined) text(data.reason, 'دلیل', 1000);
   return data as HrWorkflowData;
 }
@@ -148,13 +164,20 @@ export function recordValues(
   if (
     !Array.isArray(value) ||
     (value.length !== schema.columns.length &&
-      value.length !== HR_RADAN_LEGACY_LENGTHS[schema.key])
+      value.length !== HR_RADAN_LEGACY_LENGTHS[schema.key] &&
+      !(schema.key === 'time.shift' && value.length === 9))
   )
     throw new BadRequestException('تعداد فیلدها با فرم مصوب مطابقت ندارد.');
   const padded = [
     ...value,
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
+  if (
+    schema.key === 'organization.positions' &&
+    !padded[1] &&
+    typeof padded[0] === 'string'
+  )
+    padded[1] = padded[0];
   return validateCompletionValues(
     schema.key,
     schema.columns,

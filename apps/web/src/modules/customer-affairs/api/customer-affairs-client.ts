@@ -164,6 +164,11 @@ export const customerAffairsApi = {
     request<{ data: WorkbenchRequestOptionsV1 }>('/workbench/request-options', {
       headers: { 'x-branch-id': branchId },
     }),
+  removeWorkbenchRequest: (id: string) =>
+    request<{ data: { id: string } }>(
+      `/workbench/requests/${encodeURIComponent(id)}`,
+      { method: 'DELETE' },
+    ),
   workbenchRequests: () =>
     request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
   hrWorkbenchRequests: () =>

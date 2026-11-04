@@ -1,3 +1,5 @@
+import { Optional, ServiceUnavailableException } from '@nestjs/common';
+import { HrRadanDeviceService } from './hr-radan-device.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import {
@@ -26,7 +28,38 @@ import { HrService } from './hr.service';
 @UseGuards(AuthGuard)
 @Controller('hr')
 export class HrController {
-  constructor(@Inject(HrService) private readonly service: HrService) {}
+  constructor(
+    @Inject(HrService) private readonly service: HrService,
+    @Optional()
+    @Inject(HrRadanDeviceService)
+    private readonly device?: HrRadanDeviceService,
+  ) {}
+  @Get('attendance/device/status') deviceStatus(
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.device) throw new ServiceUnavailableException();
+    return this.device.status(req.actor);
+  }
+  @Post('attendance/device/sync') deviceSync(@Req() req: AuthenticatedRequest) {
+    if (!this.device) throw new ServiceUnavailableException();
+    return this.device.sync(req.actor);
+  }
+  @Get('reports/attendance-data')
+  @Header('Cache-Control', 'private, no-store')
+  attendanceReportData(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.attendanceReportData(query, req.actor);
+  }
+  @Get('dashboard/charts')
+  @Header('Cache-Control', 'private, no-store')
+  dashboardCharts(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.dashboardCharts(query, req.actor);
+  }
   @Get('bootstrap') @Header('Cache-Control', 'private, no-store') bootstrap(
     @Req() req: AuthenticatedRequest,
   ) {
@@ -152,6 +185,19 @@ export class HrController {
   ) {
     return this.service.minuteLeave(body, key, req.actor);
   }
+  @Get('leave/personnel')
+  @Header('Cache-Control', 'private, no-store')
+  leavePersonnel(@Req() req: AuthenticatedRequest) {
+    return this.service.leavePersonnel(req.actor);
+  }
+  @Get('leave/report')
+  @Header('Cache-Control', 'private, no-store')
+  leaveReport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.leaveReport(query, req.actor);
+  }
   @Get('leave/cardex')
   @Header('Cache-Control', 'private, no-store')
   minuteCardex(
@@ -179,6 +225,14 @@ export class HrController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.importPayslips(file, body, key, req.actor);
+  }
+
+  @Post('shifts/weekly') weeklyShift(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.assignWeeklyShift(body, key, req.actor);
   }
 
   @Post('shifts/:id/calendar') calendar(

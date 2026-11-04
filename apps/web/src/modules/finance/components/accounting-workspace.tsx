@@ -1,6 +1,9 @@
 'use client';
+
+import { AccountingCodingStandard } from './accounting-coding-standard';
+import { accountingBookId } from '../accounting-book-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, FolderOpen, FileText } from 'lucide-react';
+import { FolderOpen, FileText } from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import Link from '@/i18n/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -136,7 +139,7 @@ function FieldControl({
   const fieldId = useId();
   const id = `accounting-${field.key}-${fieldId}`;
   return (
-    <FormField id={id} label={field.label}>
+    <FormField id={id} label={field.label} required={field.required ?? false}>
       {field.kind === 'check' ? (
         <input
           id={id}
@@ -248,7 +251,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   const params = useSearchParams();
   return (
     <AccountingOperations
-      key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}`}
+      key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}:${params.get('recordId') ?? ''}`}
       exportView={async (format) => {
         if (viewRef.current)
           return await exportAccountingView(viewRef.current, format);
@@ -272,14 +275,11 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const books = booksQuery.data?.books ?? [],
     branches = booksQuery.data?.branches ?? [];
   const [selectedBookId, setBookId] = useState('');
+  const [fiscalTab, setFiscalTab] = useState<'main' | 'notes'>('main');
   const urlParams = useSearchParams(),
     router = useRouter();
   const requestedBookId = urlParams.get('bookId');
-  const bookId =
-    selectedBookId ||
-    books.find((b) => b.id === requestedBookId)?.id ||
-    books[0]?.id ||
-    '';
+  const bookId = accountingBookId(books, selectedBookId || requestedBookId);
   const snapshotQuery = useQuery({
     queryKey: ['accounting', 'snapshot', bookId],
     queryFn: () => accountingApi.snapshot(bookId),
@@ -299,6 +299,27 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     id: string;
     version: number;
   } | null>(null);
+  const [loadedRecord, setLoadedRecord] = useState('');
+  const linkedRecordId = urlParams.get('recordId');
+  const linkedRecord =
+    linkedRecordId && pathname.endsWith('/base-information/fiscal-years')
+      ? snapshot?.configurations.find(
+          (record) =>
+            record.id === linkedRecordId && record.kind === 'fiscal-years',
+        )
+      : undefined;
+  if (linkedRecord && loadedRecord !== linkedRecord.id) {
+    const values: Draft = {};
+    for (const [key, value] of Object.entries({
+      ...linkedRecord,
+      ...linkedRecord.attributes,
+    }))
+      if (typeof value === 'string' || typeof value === 'boolean')
+        values[key] = value;
+    setLoadedRecord(linkedRecord.id);
+    setDraft(values);
+    setEditing({ id: linkedRecord.id, version: linkedRecord.version });
+  }
   const pending = useRef<{ signature: string; key: string } | null>(null);
   const section = pathname.replace(/^\/finance\/accounting\/?/, '');
   const refresh = async () => {
@@ -413,6 +434,24 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
           else router.replace(`${pathname}?${params}`, { scroll: false });
           await refresh();
         }}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/reports/legal-reports/standards'
+  )
+    content = (
+      <AccountingCodingStandard
+        key={`${bookId}:${urlParams.get('recordId') ?? ''}`}
+        book={snapshot}
+        initialRecord={snapshot.configurations.find(
+          (row) =>
+            row.kind === 'coding-standards' &&
+            row.id === urlParams.get('recordId'),
+        )}
+        run={run}
+        busy={busy}
+        refresh={refresh}
       />
     );
   else if (snapshot && section === 'dashboard')
@@ -657,15 +696,33 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       : section.includes('closing')
         ? 'CLOSING'
         : 'AUTOMATIC';
-    content = (
-      <AccountingTemplateEditor
-        book={snapshot}
-        run={run}
-        busy={busy}
-        kind={templateKind}
-        readOnly={section.includes('/lists/')}
-      />
+    const legacyTemplate = snapshot.templates.find(
+      (template) =>
+        template.id === urlParams.get('legacyTemplateId') &&
+        template.kind === templateKind &&
+        !template.attributes?.sourceForm,
     );
+    content =
+      templateKind === 'CLOSING' && !legacyTemplate ? (
+        <AccountingDocumentTemplate
+          key={bookId + section}
+          book={snapshot}
+          run={run}
+          busy={busy}
+          kind="CLOSING"
+          listOnly={section.includes('/lists/')}
+        />
+      ) : (
+        <AccountingTemplateEditor
+          key={legacyTemplate?.id ?? section}
+          book={snapshot}
+          run={run}
+          busy={busy}
+          kind={templateKind}
+          {...(legacyTemplate ? { initialTemplate: legacyTemplate } : {})}
+          readOnly={section.includes('/lists/')}
+        />
+      );
   } else if (
     snapshot &&
     accountingParityByRoute.get(section)?.implementation === 'move-drafts'
@@ -675,11 +732,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     );
   } else if (
     snapshot &&
-    ['fiscal-years', 'ledgers', 'voucher-types'].some(
-      (kind) => section === `general-ledger/base-information/lists/${kind}`,
-    )
+    (section === 'general-ledger/reports/legal-reports/lists/standards' ||
+      ['fiscal-years', 'ledgers', 'voucher-types'].some(
+        (kind) => section === `general-ledger/base-information/lists/${kind}`,
+      ))
   ) {
-    const kind = section.split('/').at(-1) as AccountingListKind;
+    const kind: AccountingListKind = section.endsWith('/lists/standards')
+      ? 'coding-standards'
+      : (section.split('/').at(-1) as AccountingListKind);
     content = (
       <AccountingBaseList
         key={`${bookId}:${kind}`}
@@ -875,7 +935,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
               (field) =>
                 field.key !== 'code' &&
                 field.key !== 'active' &&
-                field.key !== 'description',
+                (kind === 'fiscal-years' || field.key !== 'description'),
             )
           : fields.filter((field) => field.key !== 'description');
       const attrFields: Field[] =
@@ -1013,6 +1073,8 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
             ? rows.find((row) => row.id === editing.id)?.attributes
             : {}),
         };
+        if (kind === 'fiscal-years' && draft.notes !== undefined)
+          attrs.notes = draft.notes;
         for (const f of attrFields) {
           const value = draft[f.key];
           if (value !== undefined) attrs[f.key] = value;
@@ -1112,27 +1174,84 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
                   }}
                 />
               }
-              <Fields
-                fields={[...recordFields, ...specific]}
-                draft={draft}
-                set={set}
-              />
-              <details className="rounded-xl border p-4">
-                <summary className="cursor-pointer font-bold">
-                  یادداشت‌ها
-                </summary>
-                <div className="pt-4">
-                  <FieldControl
-                    field={{
-                      key: 'description',
-                      label: 'یادداشت',
-                      kind: 'area',
-                    }}
-                    value={draft.description ?? ''}
-                    onChange={(value) => set('description', value)}
+              {kind === 'fiscal-years' ? (
+                <>
+                  <div
+                    role="tablist"
+                    aria-label="دوره مالی"
+                    className="flex border-b"
+                  >
+                    {(['main', 'notes'] as const).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="tab"
+                        aria-selected={fiscalTab === value}
+                        className={`px-4 py-2 text-xs ${fiscalTab === value ? 'border-b-2 border-primary text-primary' : ''}`}
+                        onClick={() => setFiscalTab(value)}
+                      >
+                        {value === 'main' ? 'اطلاعات اصلی' : 'یادداشت'}
+                      </button>
+                    ))}
+                  </div>
+                  <div
+                    role="tabpanel"
+                    hidden={fiscalTab !== 'main'}
+                    className="min-h-32 border bg-muted/20 p-3 [&>div>div:last-child]:sm:col-span-2"
+                  >
+                    <Fields
+                      fields={recordFields.map((field) =>
+                        field.key === 'description'
+                          ? { ...field, kind: 'area' as const }
+                          : { ...field, required: field.key === 'title' },
+                      )}
+                      draft={draft}
+                      set={set}
+                    />
+                  </div>
+                  <div role="tabpanel" hidden={fiscalTab !== 'notes'}>
+                    <AccountingSetupNotes
+                      requireDate={false}
+                      notes={parseSetupNotes(draft.notes)}
+                      onChange={(notes) => set('notes', JSON.stringify(notes))}
+                      book={snapshot}
+                      {...(editing
+                        ? {
+                            record: {
+                              id: editing.id,
+                              entityType: 'AccountingConfiguration',
+                              title: String(draft.title ?? ''),
+                            },
+                          }
+                        : {})}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Fields
+                    fields={[...recordFields, ...specific]}
+                    draft={draft}
+                    set={set}
                   />
-                </div>
-              </details>
+                  <details className="rounded-xl border p-4">
+                    <summary className="cursor-pointer font-bold">
+                      یادداشت‌ها
+                    </summary>
+                    <div className="pt-4">
+                      <FieldControl
+                        field={{
+                          key: 'description',
+                          label: 'یادداشت',
+                          kind: 'area',
+                        }}
+                        value={draft.description ?? ''}
+                        onChange={(value) => set('description', value)}
+                      />
+                    </div>
+                  </details>
+                </>
+              )}
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -1140,62 +1259,52 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
               قلم را باز کنید.
             </p>
           )}
-          <Table headers={['کد', 'عنوان', 'وضعیت', 'عملیات']}>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className={cell}>{r.code}</td>
-                <td className={cell}>{r.title}</td>
-                <td className={cell}>{r.active ? 'فعال' : 'غیرفعال'}</td>
-                <td className={cell}>
-                  {listOnly ? (
-                    <Link
-                      className="inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-bold text-primary"
-                      href={`/finance/accounting/${section.replace('/lists/', '/')}?bookId=${bookId}`}
-                    >
-                      بازکردن فرم
-                    </Link>
-                  ) : (
-                    <Button
-                      permission="finance.account.manage"
-                      size="sm"
-                      variant="outline"
-                      {...(kind === 'fiscal-years'
-                        ? {
-                            'aria-label': 'ویرایش دوره مالی',
-                            'aria-keyshortcuts': 'Enter',
-                            title:
-                              'ویرایش دوره مالی · Enter هنگام تمرکز روی دکمه',
-                          }
-                        : {})}
-                      onClick={() => {
-                        const base: Draft = {};
-                        for (const [k, value] of Object.entries(r))
-                          if (
-                            typeof value === 'string' ||
-                            typeof value === 'boolean'
-                          )
-                            base[k] = value;
-                        for (const [k, value] of Object.entries(r.attributes))
-                          if (
-                            typeof value === 'string' ||
-                            typeof value === 'boolean'
-                          )
-                            base[k] = value;
-                        setDraft(base);
-                        setEditing({ id: r.id, version: r.version });
-                      }}
-                    >
-                      {kind === 'fiscal-years' ? (
-                        <Pencil className="size-4" />
-                      ) : (
-                        'ویرایش'
-                      )}
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </Table>
+          {kind !== 'fiscal-years' && (
+            <Table headers={['کد', 'عنوان', 'وضعیت', 'عملیات']}>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className={cell}>{r.code}</td>
+                  <td className={cell}>{r.title}</td>
+                  <td className={cell}>{r.active ? 'فعال' : 'غیرفعال'}</td>
+                  <td className={cell}>
+                    {listOnly ? (
+                      <Link
+                        className="inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-bold text-primary"
+                        href={`/finance/accounting/${section.replace('/lists/', '/')}?bookId=${bookId}`}
+                      >
+                        بازکردن فرم
+                      </Link>
+                    ) : (
+                      <Button
+                        permission="finance.account.manage"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const base: Draft = {};
+                          for (const [k, value] of Object.entries(r))
+                            if (
+                              typeof value === 'string' ||
+                              typeof value === 'boolean'
+                            )
+                              base[k] = value;
+                          for (const [k, value] of Object.entries(r.attributes))
+                            if (
+                              typeof value === 'string' ||
+                              typeof value === 'boolean'
+                            )
+                              base[k] = value;
+                          setDraft(base);
+                          setEditing({ id: r.id, version: r.version });
+                        }}
+                      >
+                        ویرایش
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </Table>
+          )}
         </Panel>
       );
     } else {

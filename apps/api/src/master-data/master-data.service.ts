@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 
 import {
   changedDeniedFields,
+  normalizeAirlineCode,
   hasAccessControl,
   isMasterTransportFormResource,
 } from '@nora/contracts';
@@ -289,7 +290,7 @@ function normalizeManufacturerModel(value: unknown): {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
+  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId'],
   cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
   airports: [
@@ -481,6 +482,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'facilityIds',
   ],
   hotels: [
+    'currencyId',
     'name',
     'englishName',
     'cityId',
@@ -701,16 +703,16 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'cabin-classes': ['bookingCode'],
   'baggage-rules': ['name', 'airlineId', 'passengerType', 'allowance', 'unit'],
   'manifest-templates': ['name', 'airlineId', 'destinationCityId'],
-  'rail-companies': ['name', 'organizationId', 'countryId'],
+  'rail-companies': ['name', 'countryId'],
   'train-types': ['name', 'manufacturer', 'model', 'category'],
-  'bus-companies': ['name', 'organizationId', 'countryId'],
+  'bus-companies': ['name', 'countryId'],
   'bus-types': ['name', 'manufacturerModel', 'serviceClass'],
   hotels: ['name', 'cityId'],
   'hotel-chains': ['name', 'countryId'],
   'room-types': ['name'],
   'meal-services': ['name', 'category'],
   facilities: ['name'],
-  'composite-hotels': ['name', 'cityId', 'memberHotelIds'],
+  'composite-hotels': ['name', 'memberHotelIds'],
   organizations: ['legalName', 'roleCodes'],
   suppliers: [],
   brokers: ['name'],
@@ -834,7 +836,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     throw new BadRequestException('وضعیت فیلتر خروجی معتبر نیست.');
   if (
     input.filters.sortBy !== undefined &&
-    !['name', 'code', 'updatedAt'].includes(String(input.filters.sortBy))
+    !['displayOrder', 'name', 'code', 'updatedAt'].includes(
+      String(input.filters.sortBy),
+    )
   )
     throw new BadRequestException('مرتب‌سازی خروجی معتبر نیست.');
   for (const field of [
@@ -990,7 +994,8 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
     search:
       typeof input.filters.search === 'string' ? input.filters.search : '',
     status: (input.filters.status ?? 'all') as MasterDataListQuery['status'],
-    sortBy: (input.filters.sortBy ?? 'name') as MasterDataListQuery['sortBy'],
+    sortBy: (input.filters.sortBy ??
+      'displayOrder') as MasterDataListQuery['sortBy'],
     sortDirection: (input.filters.sortDirection ??
       'asc') as MasterDataListQuery['sortDirection'],
     ...(typeof input.filters.countryId === 'string'
@@ -1305,6 +1310,32 @@ export class MasterDataService {
       actorBranchId: branchOf(actor, requestedBranch),
     });
     return { data: { id, phone, email, nationalId } };
+  }
+
+  async salesOrganizationPhones(
+    organizationId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const branchId = branchOf(actor, requestedBranch);
+    const contacts =
+      await this.repository.salesOrganizationContacts(organizationId);
+    return Promise.all(
+      contacts.map(async (contact) => {
+        const phone = this.contactCrypto.decrypt('phone', {
+          encrypted: contact.phoneEncrypted,
+          encryptionIv: contact.phoneEncryptionIv,
+          encryptionAuthTag: contact.phoneEncryptionAuthTag,
+          encryptionKeyVersion: contact.phoneEncryptionKeyVersion,
+        });
+        await this.repository.recordSensitiveContactRead({
+          contactId: contact.id,
+          actorUserId: actor.userId,
+          actorBranchId: branchId,
+        });
+        return phone;
+      }),
+    );
   }
 
   async organizationSupplierSummary() {
@@ -1956,6 +1987,22 @@ export class MasterDataService {
     ) {
       data.code = await this.generateAutoCode(resource, values);
     }
+    if (resource === 'countries' && Object.hasOwn(data, 'gmtOffset')) {
+      const raw = data.gmtOffset;
+      if (raw !== null && typeof raw !== 'string')
+        throw new BadRequestException('اختلاف ساعت با گرینویچ معتبر نیست.');
+      const offset = String(raw ?? '').trim();
+      if (
+        offset &&
+        !/^([+]((0[0-9]|1[0-3]):[0-5][0-9]|14:00)|-((0[0-9]|1[01]):[0-5][0-9]|12:00))$/.test(
+          offset,
+        )
+      )
+        throw new BadRequestException(
+          'اختلاف ساعت را مانند +03:30 و در بازهٔ -12:00 تا +14:00 وارد کنید.',
+        );
+      data.gmtOffset = offset === '-00:00' ? '+00:00' : offset || null;
+    }
     if (resource === 'countries' && typeof data.iso2Code === 'string') {
       const iso2Code = data.iso2Code.trim().toUpperCase();
       if (!isValidIso2(iso2Code))
@@ -2002,7 +2049,7 @@ export class MasterDataService {
       resource !== 'bank-branches' &&
       resource !== 'payment-methods' &&
       resource !== 'meal-services';
-    // IATA is the public business identifier of an airline and is never generated.
+    // Airline business identifiers are entered explicitly, never generated.
     const generatesInternalCode = usesGeneratedCode && resource !== 'airlines';
     if (generatesInternalCode) {
       if (partial && Object.hasOwn(values, 'code'))
@@ -2054,6 +2101,8 @@ export class MasterDataService {
           .split(/[/|،,]+/)
           .map((part) => part.trim())
           .filter(Boolean);
+        if (parts.length > 2)
+          throw new BadRequestException('مقادیر فرم معتبر نیستند.');
         data.code = parts[0] ?? '';
         data.icaoCode = parts[1] ?? null;
         delete data.airlineCodes;
@@ -2065,14 +2114,23 @@ export class MasterDataService {
         ['icaoCode', 3, 'ICAO'],
       ] as const) {
         if (data[field] === undefined || data[field] === null) continue;
-        const code = String(data[field]).trim().toUpperCase();
+        const code = String(data[field])
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, ' ');
         if (field === 'icaoCode' && !code) {
           data[field] = null;
           continue;
         }
-        if (!new RegExp(`^[A-Z0-9]{${length}}$`).test(code))
+        if (
+          field === 'code'
+            ? !normalizeAirlineCode(code)
+            : !new RegExp(`^[A-Z0-9]{${length}}$`).test(code)
+        )
           throw new BadRequestException(
-            `کد ${label} باید ${length} حرف یا عدد بزرگ باشد.`,
+            field === 'code'
+              ? 'کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.'
+              : `کد ${label} باید ${length} حرف یا عدد بزرگ باشد.`,
           );
         if (
           await this.repository.fieldExists('airlines', field, code, entityId)
@@ -2081,7 +2139,7 @@ export class MasterDataService {
             code: 'MASTER_DATA_DUPLICATE_CODE',
             message: `کد ${label} قبلاً ثبت شده است.`,
           });
-        data[field] = code;
+        data[field] = field === 'code' ? normalizeAirlineCode(code)! : code;
       }
     }
     if (resource === 'regions' && !partial && data.type === undefined)
@@ -2115,6 +2173,7 @@ export class MasterDataService {
       if (data[optionalReference] === '') data[optionalReference] = null;
     }
     if (data.chainId === '') data.chainId = null;
+    if (resource === 'hotels' && data.currencyId === '') data.currencyId = null;
     if (resource === 'insurance-plans' && data.validTo === '')
       data.validTo = null;
     if (resource === 'insurance-plans' && data.maximumAge === '')
@@ -3088,6 +3147,8 @@ export class MasterDataService {
         );
         if (!memberIds.length)
           throw new BadRequestException('حداقل یک هتل عضو الزامی است.');
+        if (memberIds.length > 50)
+          throw new BadRequestException('Maximum 50 hotels per itinerary');
         const backupIds = Object.hasOwn(data, 'backupMemberIds')
           ? referenceIds(data.backupMemberIds, 'اعضای پشتیبان')
           : [];
@@ -3095,25 +3156,18 @@ export class MasterDataService {
           throw new BadRequestException(
             'هتل پشتیبان باید در فهرست اعضای ترکیب باشد.',
           );
-        const existing =
-          partial && entityId
-            ? await this.repository.find('composite-hotels', entityId)
-            : null;
-        const cityId = String(data.cityId ?? existing?.cityId ?? '');
         const hotels = await Promise.all(
           memberIds.map((id) => this.repository.find('hotels', id)),
         );
         if (
-          hotels.some(
-            (hotel) =>
-              !hotel?.isActive ||
-              !hotel.isSaleableReference ||
-              hotel.cityId !== cityId,
-          )
+          hotels.some((hotel) => !hotel?.isActive || !hotel.isSaleableReference)
         )
           throw new BadRequestException(
-            'هتل‌های عضو باید فعال، فروش‌پذیر و در شهر ترکیب باشند.',
+            'هتل‌های عضو باید فعال و فروش‌پذیر باشند.',
           );
+        // Legacy parent city is the first actual member's anchor, not a
+        // restriction on subsequent cities in the ordered itinerary.
+        data.cityId = hotels[0]!.cityId;
         delete data.memberHotelIds;
         delete data.backupMemberIds;
         data.members = partial
@@ -3438,6 +3492,14 @@ export class MasterDataService {
       const country = await this.repository.find('countries', data.countryId);
       if (!country?.isActive)
         throw new BadRequestException('کشور فعال برای شرکت حمل‌ونقل یافت نشد.');
+    }
+    if (resource === 'hotels' && typeof data.currencyId === 'string') {
+      const currency = await this.repository.find(
+        'currencies',
+        data.currencyId,
+      );
+      if (!currency?.isActive)
+        throw new BadRequestException('ارز فعال یافت نشد.');
     }
     if (resource === 'insurers' && typeof data.countryId === 'string') {
       const country = await this.repository.find('countries', data.countryId);

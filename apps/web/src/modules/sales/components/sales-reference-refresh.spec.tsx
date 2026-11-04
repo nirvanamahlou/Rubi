@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest';
 import { isValidElement, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { SalesContractForm } from './sales-contract-form';
+vi.mock('@/modules/iam/access-context', () => ({ useAccessActor: () => null }));
 const setters = vi.hoisted(() => ({
   draft: vi.fn(),
   refresh: vi.fn(),

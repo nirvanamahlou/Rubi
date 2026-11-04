@@ -164,7 +164,7 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('ظرفیت متعلق به شرکت است');
     expect(html).toContain('جست‌وجو و انتخاب…');
     expect(html).toContain('فرودگاه مبدأ');
-    expect(html).toContain('ابتدا شهر را انتخاب کنید');
+    expect(html).not.toContain('ابتدا شهر را انتخاب کنید');
     expect(html).toContain('ذخیره بلیط');
     expect(html).not.toContain('پیش‌نمایش');
     expect(html).not.toMatch(/name="(held|confirmed)"/);

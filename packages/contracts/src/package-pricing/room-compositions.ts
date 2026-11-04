@@ -104,7 +104,31 @@ export function buildHotelPackageCompositions(
         childAges: [...rate.childAges],
         board: rate.board,
       };
-      identities.set(packageRoomCode(identity), identity);
+      let variants = [identity];
+      if (input.calculation.infantFlight) {
+        let bands: (typeof identity.childAges)[] = [[]];
+        for (const band of identity.childAges) {
+          const boundaries = [
+            band.min,
+            ...[2, 12].filter(
+              (age) => age > band.min && age < band.maxExclusive,
+            ),
+            band.maxExclusive,
+          ];
+          const options = boundaries.slice(0, -1).map((min, index) => ({
+            min,
+            maxExclusive: boundaries[index + 1]!,
+          }));
+          if (bands.length * options.length > 4096)
+            throw Error('Too many age combinations');
+          bands = bands.flatMap((prefix) =>
+            options.map((option) => [...prefix, option]),
+          );
+        }
+        variants = bands.map((childAges) => ({ ...identity, childAges }));
+      }
+      for (const variant of variants)
+        identities.set(packageRoomCode(variant), variant);
     }
     return [...identities].flatMap(([roomCode, identity]) => {
       const quote = (ages: number[]) =>
@@ -146,8 +170,19 @@ export function buildHotelPackageCompositions(
         factor: '1',
         nights: 1,
         hotelCurrency: currency,
-        adults: identity.adults,
-        children: identity.childAges.length,
+        adults:
+          identity.adults +
+          (input.calculation.infantFlight
+            ? identity.childAges.filter((band) => band.min >= 12).length
+            : 0),
+        children: identity.childAges.filter(
+          (band) =>
+            !input.calculation.infantFlight ||
+            (band.min >= 2 && band.maxExclusive <= 12),
+        ).length,
+        infants: input.calculation.infantFlight
+          ? identity.childAges.filter((band) => band.maxExclusive <= 2).length
+          : 0,
       });
       return [
         {
@@ -161,4 +196,38 @@ export function buildHotelPackageCompositions(
       ];
     });
   });
+}
+
+/** Hotel sale rows and footer prices are independent in the composition editor.
+ * Keep the generic package calculator unchanged for historical/legacy consumers.
+ */
+export function buildHotelOnlyPackageCompositions(
+  input: Parameters<typeof buildHotelPackageCompositions>[0],
+) {
+  const zero = {
+    amount: '0',
+    currencyCode: input.row.currencyCode ?? input.currencyCode,
+  };
+  return buildHotelPackageCompositions({
+    ...input,
+    calculation: {
+      ...input.calculation,
+      adultFlight: zero,
+      childFlight: zero,
+      infantFlight: zero,
+      businessUplift: zero,
+      businessCabin: false,
+      commissionPercent: '0',
+      commissionMode: 'percent',
+      commissionAmount: zero,
+      extraSaleFields: [],
+      flightCosts: [],
+    },
+  }).map((price) => ({
+    ...price,
+    currencyAmounts: price.currencyAmounts.map((part) => ({
+      ...part,
+      priceBasis: 'HOTEL_ONLY' as const,
+    })),
+  }));
 }

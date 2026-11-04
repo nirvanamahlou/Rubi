@@ -118,6 +118,9 @@ describe('MarketingRecordsService durable boundaries', () => {
     await expect(records.listAssets(undefined, revoked)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+    await expect(
+      records.deleteCampaign('campaign-1', 1, revoked, 'key'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
     expect(transaction).not.toHaveBeenCalled();
   });
 
@@ -128,7 +131,7 @@ describe('MarketingRecordsService durable boundaries', () => {
 
     await records.validateCampaignReference('campaign-1', branchId, authorized);
     expect(findFirst).toHaveBeenCalledWith({
-      where: { id: 'campaign-1', branchId },
+      where: { id: 'campaign-1', branchId, deletedAt: null },
       select: { id: true },
     });
 

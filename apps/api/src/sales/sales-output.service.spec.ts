@@ -10,7 +10,7 @@ import type {
 } from './sales.adapters';
 import type { CustomerService } from '../customers/customer.service';
 import type { LegalEntitiesService } from '../legal-entities/legal-entities.service';
-import type { IamService } from '../iam/iam.service';
+import type { IamFinanceDirectory } from '../iam/iam-finance-directory';
 const actor: AuthenticatedActor = {
   userId: 'owner',
   sessionId: 'session',
@@ -34,6 +34,11 @@ function setup() {
   const sales = { detail: vi.fn().mockResolvedValue({ data: contract }) };
   const repo = { recordOutputPreview: vi.fn().mockResolvedValue({}) };
   const customers = {
+    salesOutputIdentity: vi.fn().mockResolvedValue({
+      displayName: null,
+      passportName: null,
+      birthDate: null,
+    }),
     maskedDetail: vi
       .fn()
       .mockResolvedValue({ data: { kind: 'person', addresses: [] } }),
@@ -54,16 +59,16 @@ function setup() {
     }),
   };
   const iam = {
-    listUsers: vi
+    documentOwnerName: vi
       .fn()
-      .mockResolvedValue([{ id: 'owner', displayName: 'نام نمونه' }]),
+      .mockResolvedValue({ id: 'owner', displayName: 'نام نمونه' }),
   };
   const service = new SalesOutputService(
     sales as unknown as SalesService,
     repo as unknown as SalesRepository,
     customers as unknown as CustomerService,
     legal as unknown as LegalEntitiesService,
-    iam as unknown as IamService,
+    iam as unknown as IamFinanceDirectory,
   );
   return { service, contract, sales, repo, customers, legal, iam };
 }
@@ -112,12 +117,14 @@ describe('Sales saved output authorization', () => {
       );
     },
   );
-  it('denies export without existing permission before reading any data', async () => {
+  it('retains authoritative contract-read denial before reading document data', async () => {
     const t = setup();
+    t.sales.detail.mockRejectedValue(new ForbiddenException());
     await expect(
       t.service.prepare('contract', { ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(t.sales.detail).not.toHaveBeenCalled();
+    expect(t.sales.detail).toHaveBeenCalled();
+    expect(t.customers.maskedDetail).not.toHaveBeenCalled();
     expect(t.repo.recordOutputPreview).not.toHaveBeenCalled();
   });
   it('delegates existing contract scope and propagates forbidden access', async () => {
@@ -162,12 +169,12 @@ describe('Sales saved output authorization', () => {
       'شرکت مشخص',
     );
   });
-  it('returns saved amounts, omits ungranted IAM names and audits a preview rather than official issue', async () => {
+  it('returns the authorized document owner name without an IAM directory grant and audits a preview', async () => {
     const t = setup();
     const result = await t.service.prepare('contract', actor, 'trace');
     expect(result.data.contract.balances).toEqual(t.contract.balances);
-    expect(t.iam.listUsers).not.toHaveBeenCalled();
-    expect(result.data.ownerName).toBeNull();
+    expect(t.iam.documentOwnerName).toHaveBeenCalledWith('owner');
+    expect(result.data.ownerName).toBe('نام نمونه');
     expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
       'contract',
       expect.objectContaining({
@@ -194,20 +201,116 @@ it('uses passport Latin names for contract output without mutating the saved con
       displayNameSnapshot: 'Wrong display name',
     },
   ] as never;
-  t.customers.maskedDetail.mockImplementation(
-    async (id: string) =>
-      ({
-        data:
-          id === 'passenger'
-            ? { passportFirstName: 'PASSPORT', passportLastName: 'SURNAME' }
-            : { kind: 'person', addresses: [] },
-      }) as never,
-  );
+  t.customers.salesOutputIdentity.mockResolvedValue({
+    displayName: 'CURRENT NAME',
+    passportName: 'PASSPORT SURNAME',
+    birthDate: '1991-02-03',
+  } as never);
   const result = await t.service.prepare('contract', actor);
   expect(result.data.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
     'PASSPORT SURNAME',
+  );
+  expect(result.data.contract.passengersDetail[0]?.birthDate).toBe(
+    '1991-02-03',
   );
   expect(t.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
     'Wrong display name',
   );
 });
+
+it('allows a creator to output their own contract without separate export/legal-directory grants', async () => {
+  const t = setup();
+  const result = await t.service.prepare('contract', {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  });
+  expect(result.data.ownerName).toBe('نام نمونه');
+  expect(t.iam.documentOwnerName).toHaveBeenCalledWith('owner');
+});
+it('rejects another owner or branch for creator-only output without recording output', async () => {
+  for (const scope of ['owner', 'branch']) {
+    const t = setup();
+    t.sales.detail.mockRejectedValue(new ForbiddenException(scope));
+    await expect(
+      t.service.prepare('contract', {
+        ...actor,
+        permissions: ['sales.contracts.create'],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(t.repo.recordOutputPreview).not.toHaveBeenCalled();
+    expect(t.iam.documentOwnerName).not.toHaveBeenCalled();
+  }
+});
+
+it('prints the saved seller rather than the exporting manager without granting IAM access', async () => {
+  const t = setup();
+  t.contract.ownerUserId = 'other-seller';
+  t.iam.documentOwnerName.mockResolvedValue({
+    id: 'other-seller',
+    displayName: 'Actual Seller',
+  });
+  const result = await t.service.prepare('contract', {
+    ...actor,
+    userId: 'manager',
+    permissions: [
+      'sales.contracts.read.all',
+      'sales.export',
+      'legal-entity.read',
+    ],
+  });
+  expect(result.data.ownerName).toBe('Actual Seller');
+  expect(t.iam.documentOwnerName).toHaveBeenCalledExactlyOnceWith(
+    'other-seller',
+  );
+});
+it('does not substitute the exporting user when the historical owner is missing', async () => {
+  const t = setup();
+  t.iam.documentOwnerName.mockResolvedValue(null as never);
+  expect(
+    (await t.service.prepare('contract', actor)).data.ownerName,
+  ).toBeNull();
+});
+
+it.each(['own', 'branch', 'all'])(
+  'allows an authorized %s reader to output the latest amended contract without export/company grants',
+  async (scope) => {
+    const t = setup();
+    const reader: AuthenticatedActor = {
+      ...actor,
+      branchIds: scope === 'all' ? [] : actor.branchIds,
+      permissions: [
+        `sales.contracts.read.${scope}` as 'sales.contracts.read.own',
+      ],
+    };
+    t.contract.version = 9;
+    t.contract.passengersDetail = [
+      {
+        id: 'p',
+        customerId: 'passenger',
+        displayNameSnapshot: 'Corrected Name',
+      },
+    ] as never;
+    const result = await t.service.prepare('contract', reader);
+    expect(t.sales.detail).toHaveBeenCalledExactlyOnceWith('contract', reader);
+    expect(result.data.contract.version).toBe(9);
+    expect(result.data.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
+      'Corrected Name',
+    );
+    expect(t.customers.salesOutputIdentity).toHaveBeenCalledWith(
+      'passenger',
+      expect.objectContaining({
+        userId: reader.userId,
+        branchIds: expect.arrayContaining([t.contract.branchId]),
+        permissions: expect.arrayContaining(['sales.export']),
+      }),
+      undefined,
+    );
+    expect(reader.permissions).toEqual([`sales.contracts.read.${scope}`]);
+    expect(reader.branchIds).toEqual(scope === 'all' ? [] : actor.branchIds);
+    expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
+      'contract',
+      expect.anything(),
+      expect.objectContaining({ contractVersion: 9 }),
+    );
+  },
+);

@@ -53,10 +53,15 @@ function resourceArray(functionName: string, resource: string) {
 }
 
 describe('Master Data geography workspace terminal filters', () => {
+  it('shows the manual GMT offset in an isolated LTR table cell', () => {
+    expect(source).toContain("'اختلاف ساعت (GMT)'");
+    expect(source).toContain('key="gmtOffset"');
+    expect(source).toContain('GMT${record.attributes.gmtOffset}');
+  });
   it('keeps country and region tables aligned without last-change cells', () => {
     const cellsStart = source.indexOf('function recordCells');
     for (const [resource, next, expectedHeaderCount] of [
-      ['countries', 'regions', 8],
+      ['countries', 'regions', 9],
       ['regions', 'cities', 10],
     ] as const) {
       const headerArray = resourceArray('geographyColumns', resource);

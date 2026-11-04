@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -28,7 +29,7 @@ import { CallCenterService } from './call-center.service';
 
 @ApiTags('Customer Affairs Call Center')
 @ApiCookieAuth('nora_access')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @Controller('customer-affairs/call-center')
 export class CallCenterController {
   constructor(
@@ -53,6 +54,25 @@ export class CallCenterController {
     @Body() input: CallCenterCallDto,
   ) {
     return this.service.create(input, req.actor, branch);
+  }
+  @Get('destination-options')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.calls.create')
+  destinationOptions(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+  ) {
+    return this.service.destinationOptions(req.actor, branch);
+  }
+  @Get('calls/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.read')
+  getCall(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.getCall(id, req.actor, branch);
   }
   @Post('contacts/:id/notes')
   @Header('Cache-Control', 'private, no-store')

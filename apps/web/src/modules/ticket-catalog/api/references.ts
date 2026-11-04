@@ -47,7 +47,11 @@ export async function listReferences(
   page: number,
   signal?: AbortSignal,
   filters: ReferenceFilters = {},
-  workflow: 'ticket-catalog' | 'sales' = 'ticket-catalog',
+  workflow:
+    | 'ticket-catalog'
+    | 'sales'
+    | 'reservations'
+    | 'procurement' = 'ticket-catalog',
 ): Promise<MasterDataListResponse> {
   const base = getPublicApiBaseUrl();
   if (!base)
@@ -104,7 +108,7 @@ export async function listReferences(
 }
 
 export async function listActiveCurrencyReferences(
-  workflow: 'ticket-catalog' | 'sales' = 'ticket-catalog',
+  workflow: 'ticket-catalog' | 'sales' | 'procurement' = 'ticket-catalog',
 ): Promise<readonly Reference[]> {
   const records: MasterDataRecord[] = [];
   for (let page = 1; page <= 100; page += 1) {
@@ -136,10 +140,11 @@ export async function listActiveCurrencyReferences(
 }
 export async function getActiveCityReference(
   id: string,
+  workflow: 'ticket-catalog' | 'procurement' = 'ticket-catalog',
 ): Promise<Reference | undefined> {
   const base = getPublicApiBaseUrl();
   if (!base || !id) return undefined;
-  const path = `/selections/ticket-catalog/cities/${encodeURIComponent(id)}`;
+  const path = `/selections/${workflow}/cities/${encodeURIComponent(id)}`;
   const response = await localizedFetch(`${base}/master-data${path}`, {
     credentials: 'include',
     headers: { accept: 'application/json' },

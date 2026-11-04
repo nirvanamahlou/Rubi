@@ -7,24 +7,25 @@ import type {
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
+import { DocumentsApiError } from '@/modules/documents/api/client';
+import { paymentReceiptsApi } from '../api/payment-receipts';
 import {
-  documentsApi,
-  DocumentsApiError,
-} from '@/modules/documents/api/client';
-import {
-  paymentDocumentQuery,
   paymentDocumentScanLabel,
-  paymentEvidenceForm,
+  validatePaymentEvidenceFile,
 } from '../model/payment-evidence';
 
 export function PaymentDocuments({
   contract,
   paymentId,
   expanded = false,
+  initialFile = null,
+  initialUnknown = false,
 }: {
   contract: SalesContractDetail;
   paymentId: string;
   expanded?: boolean;
+  initialFile?: File | null;
+  initialUnknown?: boolean;
 }) {
   const [open, setOpen] = useState(expanded);
   const initialSource = useRef({ contract, paymentId });
@@ -32,13 +33,17 @@ export function PaymentDocuments({
   const [options, setOptions] = useState<
     DocumentOptionsResponseV1['data'] | null
   >(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initialFile);
   const fileInput = useRef<HTMLInputElement>(null);
   const [inputKey, setInputKey] = useState(0);
   const [busy, setBusy] = useState(expanded);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [unknown, setUnknown] = useState(false);
+  const [notice, setNotice] = useState(
+    initialUnknown
+      ? 'پیش از بارگذاری دوباره، فهرست مدارک را تازه و نتیجهٔ تلاش قبلی را بررسی کنید.'
+      : '',
+  );
+  const [unknown, setUnknown] = useState(initialUnknown);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   useEffect(() => {
@@ -46,10 +51,8 @@ export function PaymentDocuments({
     let active = true;
     const source = initialSource.current;
     Promise.all([
-      documentsApi.list(
-        paymentDocumentQuery(source.contract, source.paymentId, 1),
-      ),
-      documentsApi.options(),
+      paymentReceiptsApi.list(source.contract.id, source.paymentId, 1),
+      paymentReceiptsApi.options(source.contract.id, source.paymentId),
     ])
       .then(([result, available]) => {
         if (!active) return;
@@ -75,8 +78,10 @@ export function PaymentDocuments({
   const message = (reason: unknown) =>
     reason instanceof Error ? reason.message : 'عملیات مدرک ناموفق بود.';
   async function refresh(nextPage = 1) {
-    const result = await documentsApi.list(
-      paymentDocumentQuery(contract, paymentId, nextPage),
+    const result = await paymentReceiptsApi.list(
+      contract.id,
+      paymentId,
+      nextPage,
     );
     setItems(result.data);
     setPage(nextPage);
@@ -87,7 +92,9 @@ export function PaymentDocuments({
     setError('');
     try {
       await refresh(nextPage);
-      setOptions((await documentsApi.options()).data);
+      setOptions(
+        (await paymentReceiptsApi.options(contract.id, paymentId)).data,
+      );
     } catch (reason) {
       setError(message(reason));
     } finally {
@@ -101,9 +108,15 @@ export function PaymentDocuments({
     setNotice('');
     let submitted = false;
     try {
-      const form = paymentEvidenceForm(contract, paymentId, options, file);
+      validatePaymentEvidenceFile(options, file);
+      const form = new FormData();
+      form.set('file', file);
       submitted = true;
-      const result = await documentsApi.upload(form);
+      const result = await paymentReceiptsApi.upload(
+        contract.id,
+        paymentId,
+        form,
+      );
       setFile(null);
       setInputKey((key) => key + 1);
       setNotice(
@@ -138,9 +151,10 @@ export function PaymentDocuments({
     setBusy(true);
     setError('');
     try {
-      const result = await documentsApi.download(
+      const result = await paymentReceiptsApi.download(
+        contract.id,
+        paymentId,
         item.id,
-        'بررسی مدرک پرداخت قرارداد ' + contract.contractNumber,
       );
       const url = URL.createObjectURL(result.blob);
       const link = document.createElement('a');

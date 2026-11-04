@@ -1,4 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import { callContactPrefill } from './call-contact-prefill';
+import { HR_OFFER_VERSION, hrCallRoutingEnabled } from '../iam/hr-call-routing';
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -33,6 +37,8 @@ export class CallCenterTelephonyService {
     @Inject(CallCenterService) private readonly calls: CallCenterService,
     @Inject(IamCallCenterDirectory)
     private readonly directory: IamCallCenterDirectory,
+    @Inject(HrCallAnswerDirectory)
+    private readonly answerDirectory?: HrCallAnswerDirectory,
   ) {}
   authorize(actor: AuthenticatedActor, write = false) {
     if (
@@ -58,6 +64,8 @@ export class CallCenterTelephonyService {
       creatorId: string;
       synthetic: boolean;
       receivedAt: Date;
+      answerEvidence?: { inboxId: string; userIds: string[] };
+      hrRecipients?: { extension: string; userIds: string[] };
       recipient: {
         userId: string;
         version: number;
@@ -65,6 +73,32 @@ export class CallCenterTelephonyService {
       } | null;
     },
   ) {
+    // Shared physical extensions never identify an individual caller.
+    if (event.direction === 'OUT' && context.recipient) {
+      const shared =
+        event.extension && this.answerDirectory
+          ? (
+              await this.answerDirectory.resolve(
+                context.branchId,
+                event.extension,
+                event.occurredAt,
+                tx,
+                event.connectionId,
+              )
+            ).shared
+          : false;
+      if (
+        shared ||
+        !(await this.directory.eligibleMapping(
+          context.branchId,
+          context.recipient.userId,
+          context.recipient.teamId ?? null,
+          tx,
+        ))
+      ) {
+        context = { ...context, recipient: null };
+      }
+    }
     const rootFingerprint = this.crypto.fingerprint(
       `telephony:root:${event.connectionId}:${event.rootCallId ?? event.externalCallId}`,
     );
@@ -97,20 +131,14 @@ export class CallCenterTelephonyService {
       const id = randomUUID(),
         callId = randomUUID();
       const raw = event.direction === 'IN' ? event.caller : event.destination;
-      let phone = '';
-      if (raw.kind === 'KNOWN') {
-        try {
-          phone = normalizedCallPhone(raw.value!);
-        } catch {
-          /* Internal/short numbers remain technical-only. */
-        }
-      }
+      const phone = raw.kind === 'KNOWN' ? normalizedCallPhone(raw.value!) : '';
       const phoneFingerprint = this.crypto.fingerprint(
         context.synthetic
           ? `synthetic:${phone || id}`
           : phone || `anonymous:${id}`,
       );
       const occurredAt = new Date(event.occurredAt);
+      const newContactId = randomUUID();
       const contact = await tx.callCenterContact.upsert({
         where: {
           branchId_phoneFingerprint: {
@@ -119,23 +147,73 @@ export class CallCenterTelephonyService {
           },
         },
         create: {
+          id: newContactId,
           branchId: context.branchId,
           phoneFingerprint,
           latestOccurredAt: occurredAt,
+          ...(event.direction === 'OUT' && context.recipient
+            ? { ownerUserId: context.recipient.userId, ownerVersion: 1 }
+            : {}),
         },
         update: {},
       });
+      if (contact.id === newContactId && contact.ownerUserId) {
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId: context.branchId,
+            actorUserId: context.creatorId,
+            entityType: 'CALL_CENTER_CONTACT',
+            entityId: contact.id,
+            action: 'OWNER_ASSIGNED',
+            version: 1,
+            afterSnapshot: {
+              previousOwnerUserId: null,
+              ownerUserId: contact.ownerUserId,
+              reason: 'OUTBOUND_ORIGINATOR',
+            },
+          },
+        });
+      }
       await tx.callCenterContact.updateMany({
         where: { id: contact.id, latestOccurredAt: { lt: occurredAt } },
         data: { latestOccurredAt: occurredAt },
       });
+      const history =
+        phone && !context.synthetic
+          ? await tx.callCenterCall.findMany({
+              where: { contactId: contact.id, origin: { not: 'SYNTHETIC' } },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+              take: 25,
+            })
+          : [];
+      const profile = callContactPrefill(
+        history.map((call) => this.calls.presentCall(call)),
+      );
       const payload = {
         phone,
-        name: '',
+        name: profile.name,
         subject: '',
-        source: 'نامشخص',
-        operator: '',
+        source: profile.source,
+        operator:
+          event.direction === 'OUT' && event.extension
+            ? `داخلی ${event.extension}`
+            : '',
         note: '',
+        ...(event.direction === 'OUT' && event.extension && this.answerDirectory
+          ? {
+              answerRecipient: {
+                ...(await this.answerDirectory.resolve(
+                  context.branchId,
+                  event.extension,
+                  event.occurredAt,
+                  tx,
+                  event.connectionId,
+                )),
+                answeredAt: null,
+                observedAt: event.occurredAt,
+              },
+            }
+          : {}),
       };
       await tx.callCenterCall.create({
         data: {
@@ -169,6 +247,28 @@ export class CallCenterTelephonyService {
         },
       });
     } else {
+      if (
+        previous &&
+        technical.first.occurredAt !== previous.first.occurredAt
+      ) {
+        const call = await tx.callCenterCall.update({
+          where: { id: row.callId },
+          data: { occurredAt: new Date(technical.first.occurredAt) },
+          select: { contactId: true },
+        });
+        // Correct the contact ordering after a delayed earlier ring, without
+        // rewriting operator-entered business data or inventing a call outcome.
+        await tx.$queryRaw`SELECT id FROM customer_affairs_call_contacts WHERE id=${call.contactId}::uuid FOR UPDATE`;
+        const latest = await tx.callCenterCall.aggregate({
+          where: { contactId: call.contactId },
+          _max: { occurredAt: true },
+        });
+        if (latest._max.occurredAt)
+          await tx.callCenterContact.update({
+            where: { id: call.contactId },
+            data: { latestOccurredAt: latest._max.occurredAt },
+          });
+      }
       row = await tx.callCenterTelephonySession.update({
         where: { id: row.id },
         data: {
@@ -179,6 +279,79 @@ export class CallCenterTelephonyService {
           ),
           version: { increment: 1 },
         },
+      });
+    }
+    await this.recordAnswer(
+      tx,
+      row.callId,
+      event,
+      context.synthetic,
+      context.answerEvidence,
+    );
+    if (
+      this.answerDirectory &&
+      technical.lastAnswer &&
+      technical.lastAnswer.at !== previous?.lastAnswer?.at
+    ) {
+      const call = await tx.callCenterCall.findUniqueOrThrow({
+        where: { id: row.callId },
+      });
+      const old = this.calls.presentCall(call);
+      const answerRecipient = await this.answerDirectory.resolve(
+        context.branchId,
+        technical.lastAnswer.extension,
+        technical.lastAnswer.at,
+        tx,
+        event.connectionId,
+      );
+      const payload = {
+        phone: old.phone,
+        name: old.name,
+        subject: old.subject,
+        source: old.source,
+        note: old.note,
+        operator: `داخلی ${answerRecipient.extension}`,
+        answerRecipient,
+      };
+      await tx.callCenterCall.update({
+        where: { id: row.callId },
+        data: {
+          encryptedPayload: this.crypto.encrypt(
+            payload,
+            `call:${row.callId}:${call.contactId}`,
+          ),
+          keyVersion: this.crypto.keyVersion,
+        },
+      });
+    }
+    // Only provider-confirmed unanswered facts affect the business list. A late
+    // answer retracts our provisional label, but never an operator's saved result.
+    const operatorSaved =
+      (technical.unanswered || technical.answered) &&
+      (await tx.customerAffairsAuditEvent.findFirst({
+        where: {
+          entityId: { in: [row.id, row.callId] },
+          action: { in: ['COMPLETE_CALL', 'SAVE'] },
+        },
+        select: { id: true },
+      }));
+    if (
+      !row.completed &&
+      (!operatorSaved || !technical.answered) &&
+      (technical.unanswered || technical.answered)
+    ) {
+      await tx.callCenterCall.updateMany({
+        where: {
+          id: row.callId,
+          outcome: technical.answered ? 'NO_ANSWER' : null,
+        },
+        data: technical.answered
+          ? { outcome: null, status: 'جدید' }
+          : {
+              outcome: 'NO_ANSWER',
+              status: 'بدون پاسخ',
+              needsCompletion: true,
+            },
       });
     }
     // Never offer a terminal/stale ring; mapping snapshots are not retroactively rewritten.
@@ -229,7 +402,98 @@ export class CallCenterTelephonyService {
           mappingVersion: context.recipient.version,
         },
       });
+    if (
+      context.hrRecipients &&
+      context.hrRecipients.extension === event.extension &&
+      technical.state !== 'ENDED' &&
+      ['RINGING', 'ANSWERED', 'TRANSFERRED'].includes(event.kind)
+    ) {
+      const current =
+        (await this.directory.employeeCallRoutes(context.branchId, tx)).find(
+          (r) => r.extension === context.hrRecipients!.extension,
+        )?.userIds ?? [];
+      for (const userId of context.hrRecipients.userIds.filter((id) =>
+        current.includes(id),
+      ))
+        await tx.callCenterTelephonyOffer.upsert({
+          where: { sessionId_userId: { sessionId: row.id, userId } },
+          create: {
+            sessionId: row.id,
+            userId,
+            mappingVersion: HR_OFFER_VERSION,
+          },
+          update: {},
+        });
+    }
     return row.id;
+  }
+
+  /** Public evidence projection for Integrations live ingestion and receipt-only backfill.
+   * Never resolves current labels, claims, manual owners or outcomes into an identity.
+   */
+  async recordAnswer(
+    tx: Prisma.TransactionClient,
+    callId: string,
+    event: TelephonyEventV1,
+    synthetic: boolean,
+    evidence?: { inboxId: string; userIds: string[] },
+  ) {
+    if (synthetic || event.kind !== 'ANSWERED' || !event.extension || !evidence)
+      return 0;
+    const userIds = [...new Set(evidence.userIds)];
+    if (!userIds.every((id) => /^[0-9a-f-]{36}$/i.test(id)))
+      throw new BadRequestException();
+    for (const userId of userIds) {
+      await tx.callCenterAnswerResponsibility.upsert({
+        where: { callId_userId: { callId, userId } },
+        create: {
+          callId,
+          userId,
+          inboxId: evidence.inboxId,
+          answeredAt: new Date(event.occurredAt),
+        },
+        update: {},
+      });
+      await tx.callCenterAnswerResponsibility.updateMany({
+        where: {
+          callId,
+          userId,
+          answeredAt: { gt: new Date(event.occurredAt) },
+        },
+        data: {
+          answeredAt: new Date(event.occurredAt),
+          inboxId: evidence.inboxId,
+        },
+      });
+    }
+    return userIds.length;
+  }
+
+  async reprojectAnswer(
+    tx: Prisma.TransactionClient,
+    event: TelephonyEventV1,
+    branchId: string,
+    evidence: { inboxId: string; userIds: string[] },
+    apply: boolean,
+  ) {
+    if (event.kind !== 'ANSWERED' || !event.extension) return false;
+    const rootFingerprint = this.crypto.fingerprint(
+      `telephony:root:${event.connectionId}:${event.rootCallId ?? event.externalCallId}`,
+    );
+    await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${rootFingerprint},0))`;
+    const session = await tx.callCenterTelephonySession.findFirst({
+      where: {
+        connectionId: event.connectionId,
+        rootFingerprint,
+        synthetic: false,
+        call: { contact: { branchId } },
+      },
+      select: { callId: true },
+    });
+    if (!session) return false;
+    if (apply)
+      await this.recordAnswer(tx, session.callId, event, false, evidence);
+    return true;
   }
   private async reviewScope(
     branchIds: readonly string[],
@@ -338,6 +602,109 @@ export class CallCenterTelephonyService {
     });
     return { data: calls.map((c) => this.calls.presentSummary(c)) };
   }
+  async authorizeRecordingDownload(
+    actor: AuthenticatedActor,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!(await this.directory.canDownloadCallRecordings(actor, tx)))
+      throw new ForbiddenException();
+  }
+  /** Public media authorization: Integrations never queries Customer Affairs tables. */
+  async callRecordingContext(
+    actor: AuthenticatedActor,
+    callId: string,
+    tx: Prisma.TransactionClient = this.db.client,
+  ) {
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    await this.authorizeRecordingDownload(actor, tx);
+    const call = await tx.callCenterCall.findFirst({
+      where: {
+        id: callId,
+        contact: { branchId: { in: [...actor.branchIds] } },
+      },
+      select: {
+        id: true,
+        contactId: true,
+        contact: { select: { branchId: true } },
+      },
+    });
+    if (!call) throw new NotFoundException();
+    await this.calls.access.contact(
+      actor,
+      call.contact.branchId,
+      call.contactId,
+      'contacts',
+      tx,
+    );
+    const session = await tx.callCenterTelephonySession.findUnique({
+      where: { callId },
+    });
+    if (!session) return null;
+    const technical = this.crypto.decrypt<TelephonyTechnical>(
+      session.encryptedTechnical,
+      session.keyVersion,
+      `telephony:${session.id}`,
+    );
+    return {
+      connectionId: session.connectionId,
+      rootFingerprint: session.rootFingerprint,
+      references: technical.recordings,
+    };
+  }
+  async authorizeRecording(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    rootFingerprint: string,
+    reference: string,
+    tx: Prisma.TransactionClient = this.db.client,
+  ) {
+    this.authorize(actor);
+    await this.authorizeRecordingDownload(actor, tx);
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    const session = await tx.callCenterTelephonySession.findFirst({
+      where: {
+        ...(answeredCallAccess()
+          ? { call: { contact: { branchId: { in: [...actor.branchIds] } } } }
+          : this.scope(actor)),
+        connectionId,
+        rootFingerprint,
+      },
+      select: {
+        id: true,
+        encryptedTechnical: true,
+        keyVersion: true,
+        call: {
+          select: { contactId: true, contact: { select: { branchId: true } } },
+        },
+      },
+    });
+    if (!session) throw new NotFoundException();
+    await this.calls.access.contact(
+      actor,
+      session.call.contact.branchId,
+      session.call.contactId,
+      'contacts',
+      tx,
+    );
+    const technical = this.crypto.decrypt<TelephonyTechnical>(
+      session.encryptedTechnical,
+      session.keyVersion,
+      `telephony:${session.id}`,
+    );
+    if (!technical.recordings.includes(reference))
+      throw new NotFoundException();
+    return { sessionId: session.id };
+  }
   private scope(
     actor: AuthenticatedActor,
   ): Prisma.CallCenterTelephonySessionWhereInput {
@@ -349,6 +716,8 @@ export class CallCenterTelephonyService {
     };
   }
   async snapshot(actor: AuthenticatedActor, page = 1) {
+    await this.pruneHrOffers(actor);
+    const snapshotAt = new Date().toISOString();
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException();
     const where = { ...this.scope(actor), completed: false };
@@ -367,6 +736,7 @@ export class CallCenterTelephonyService {
       this.db.client.callCenterTelephonySession.findMany({
         where: {
           ...where,
+          state: { in: ['RINGING', 'ANSWERED'] },
           offers: {
             some: { userId: actor.userId, active: true, deferred: false },
           },
@@ -396,9 +766,12 @@ export class CallCenterTelephonyService {
         deferred: row.offers[0]?.deferred ?? false,
         call: this.calls.presentCall(row.call),
         technical: {
+          offeredAt: row.offers[0]?.createdAt.toISOString(),
           caller: t.first.caller,
+          callerName:
+            t.first.direction === 'IN' ? (t.first.callerName ?? null) : null,
           destination: t.first.destination,
-          extension: t.first.extension,
+          extension: t.lastAnswer?.extension ?? t.first.extension,
           occurredAt: t.first.occurredAt,
           receivedAt: t.receivedAt,
           legs: Object.keys(t.legs).length,
@@ -413,10 +786,42 @@ export class CallCenterTelephonyService {
         total,
         page,
         pageSize: 25,
-        receivedAt: new Date().toISOString(),
+        receivedAt: snapshotAt,
         delivery: 'AUTHENTICATED_POLLING',
         provider: 'NOT_CONNECTED',
       },
+    };
+  }
+  async read(actor: AuthenticatedActor, id: string) {
+    await this.pruneHrOffers(actor);
+    const row = await this.db.client.callCenterTelephonySession.findFirst({
+      where: { id, ...this.scope(actor) },
+      include: { call: { include: { contact: true } } },
+    });
+    if (!row) throw new NotFoundException();
+    let canLinkRequests = true;
+    if (this.calls.access.scoped(actor)) {
+      try {
+        await this.calls.access.contact(
+          actor,
+          row.call.contact.branchId,
+          row.call.contactId,
+          'workflow',
+        );
+      } catch (error) {
+        if (!(
+          error instanceof ForbiddenException ||
+          error instanceof NotFoundException
+        ))
+          throw error;
+        canLinkRequests = false;
+      }
+    }
+    return {
+      call: this.calls.presentCall(row.call),
+      version: row.version,
+      claimed: row.claimUserId === actor.userId,
+      canLinkRequests,
     };
   }
   async lease(actor: AuthenticatedActor, tabId: string, release = false) {
@@ -457,10 +862,15 @@ export class CallCenterTelephonyService {
       subject?: string;
       name?: string;
       note?: string;
+      source?: string;
+      operator?: string;
+      outcome?: string;
+      ticketId?: string;
       targetUserId?: string;
     },
   ) {
     this.authorize(actor, true);
+    await this.pruneHrOffers(actor);
     return this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM call_center_telephony_sessions WHERE id=${id}::uuid FOR UPDATE`;
       const row = await tx.callCenterTelephonySession.findFirst({
@@ -542,17 +952,60 @@ export class CallCenterTelephonyService {
           if (!input.subject?.trim())
             throw new BadRequestException('موضوع را وارد کنید.');
           const old = this.calls.presentCall(row.call);
+          if (
+            (input.source !== undefined && !input.source.trim()) ||
+            (input.operator !== undefined && !input.operator.trim())
+          )
+            throw new BadRequestException('اطلاعات تماس را کامل کنید.');
+          if (input.ticketId) {
+            if (this.calls.access.scoped(actor))
+              await this.calls.access.request(
+                actor,
+                row.call.contact.branchId,
+                input.ticketId,
+                tx,
+              );
+            await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${input.ticketId}::uuid FOR SHARE`;
+            if (
+              !(await tx.customerAffairsTicket.findFirst({
+                where: {
+                  id: input.ticketId,
+                  branchId: row.call.contact.branchId,
+                  callCenterContactId: row.call.contactId,
+                  category: 'CALL_CENTER_REQUEST',
+                  status: { not: 'CLOSED' },
+                },
+              }))
+            )
+              throw new BadRequestException(
+                'درخواست باز و متعلق به همین مخاطب را انتخاب کنید.',
+              );
+          }
+          const outcome = input.outcome ?? row.call.outcome;
           const payload = {
             phone: old.phone,
             name: input.name?.trim() ?? '',
             subject: input.subject.trim(),
-            source: old.source,
-            operator: old.operator,
+            source: input.source?.trim() ?? old.source,
+            operator: old.answerRecipient
+              ? old.operator
+              : (input.operator?.trim() ?? old.operator),
+            ...(old.answerRecipient
+              ? { answerRecipient: old.answerRecipient }
+              : {}),
             note: input.note?.trim() ?? '',
           };
           await tx.callCenterCall.update({
             where: { id: row.callId },
             data: {
+              outcome,
+              ticketId: input.ticketId ?? row.call.ticketId,
+              status:
+                outcome === 'NO_ANSWER'
+                  ? 'بدون پاسخ'
+                  : row.call.status === 'بدون پاسخ'
+                    ? 'جدید'
+                    : row.call.status,
               encryptedPayload: this.crypto.encrypt(
                 payload,
                 `call:${row.callId}:${row.call.contactId}`,
@@ -561,14 +1014,21 @@ export class CallCenterTelephonyService {
                 this.crypto,
                 row.call.contact.branchId,
                 payload,
-                row.call.outcome,
+                outcome,
               ),
-              needsCompletion: false,
             },
           });
           await tx.callCenterTelephonySession.update({
             where: { id },
-            data: { completed: true, version: { increment: 1 } },
+            data: {
+              completed: !callSearchMetadata(
+                this.crypto,
+                row.call.contact.branchId,
+                payload,
+                outcome,
+              ).needsCompletion,
+              version: { increment: 1 },
+            },
           });
         }
       }
@@ -584,5 +1044,61 @@ export class CallCenterTelephonyService {
       });
       return { ok: true };
     });
+  }
+
+  /** Revoke only live automatic routing; historical answer facts remain intact. */
+  private async pruneHrOffers(actor: AuthenticatedActor) {
+    if (!hrCallRoutingEnabled()) return;
+    const rows = await this.db.client.callCenterTelephonyOffer.findMany({
+      where: {
+        userId: actor.userId,
+        active: true,
+        mappingVersion: { gt: 0 },
+        session: { completed: false },
+      },
+      include: {
+        session: {
+          include: {
+            call: { select: { contact: { select: { branchId: true } } } },
+          },
+        },
+      },
+    });
+    const routes = new Map<string, string[]>();
+    for (const offer of rows) {
+      const branch = offer.session.call.contact.branchId;
+      if (!routes.has(branch))
+        routes.set(
+          branch,
+          (await this.directory.employeeCallRoutes(branch))
+            .filter((r) => r.userIds.includes(actor.userId))
+            .map((r) => r.extension),
+        );
+      const t = this.crypto.decrypt<TelephonyTechnical>(
+        offer.session.encryptedTechnical,
+        offer.session.keyVersion,
+        `telephony:${offer.sessionId}`,
+      );
+      const observed = [
+        t.first.extension,
+        t.lastAnswer?.extension,
+        ...(t.destinations ?? []).map((d) => d.extension),
+      ];
+      if (observed.some((e) => e && routes.get(branch)!.includes(e))) continue;
+      await this.db.client.$transaction(async (tx) => {
+        await tx.callCenterTelephonyOffer.updateMany({
+          where: { id: offer.id, active: true },
+          data: { active: false },
+        });
+        await tx.callCenterTelephonySession.updateMany({
+          where: {
+            id: offer.sessionId,
+            claimUserId: actor.userId,
+            completed: false,
+          },
+          data: { claimUserId: null, version: { increment: 1 } },
+        });
+      });
+    }
   }
 }

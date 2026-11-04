@@ -113,7 +113,7 @@ export function SalesReceivablesCard({
         <FormField label="جست‌وجوی قرارداد">
           <input
             aria-label="جست‌وجوی قرارداد"
-            placeholder="شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت…"
+            placeholder="شماره قرارداد، نام مشتری، نوتیس یا شماره پیگیری پرداخت…"
             maxLength={160}
             value={draft.search ?? ''}
             onChange={(event) =>
@@ -284,14 +284,6 @@ export function SalesReceivablesCard({
           </p>
         ) : (
           <>
-            <p className="mb-2 text-xs text-muted-foreground">
-              {query.dateBasis === 'TRAVEL'
-                ? 'بر اساس تاریخ سفر'
-                : 'بر اساس تاریخ قرارداد'}
-              {query.from || query.to
-                ? ` · ${query.from ?? '…'} — ${query.to ?? '…'}`
-                : ' · همه تاریخ‌ها'}
-            </p>
             <div className="flex flex-wrap gap-2">
               {data?.balances.length ? (
                 data.balances.map((balance) => (

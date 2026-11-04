@@ -1,0 +1,18 @@
+{
+  "origin": "https://niyayeshseir.ir",
+  "local": false,
+  "client": "rubi",
+  "system": "niyayesh-seir",
+  "organization": "",
+  "environment": "production",
+  "keyId": "",
+  "secret": "",
+  "users": [
+    {
+      "userId": "NORA_USER_UUID",
+      "branchId": "NORA_BRANCH_UUID",
+      "subject": "MATCHED_SITE_ERP_SUBJECT",
+      "resources": ["countries", "airlines", "destinations", "categories", "hotels", "visas", "tours", "service-offers", "editorial-content", "exchange-rates", "customer-accounts", "customer-travelers", "customer-orders", "customer-cart-items", "support-threads", "travel-requests"]
+    }
+  ]
+}

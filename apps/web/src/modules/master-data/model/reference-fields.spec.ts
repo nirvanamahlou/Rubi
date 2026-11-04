@@ -22,6 +22,13 @@ const record: MasterDataRecord = {
 };
 
 describe('master data reference field mapping', () => {
+  it('uses an optional currency-id selector backed by native currencies for hotels', () => {
+    expect(getReferenceFieldConfig('hotels', 'currencyId')).toEqual({
+      target: 'currencies',
+      payload: 'id',
+      optional: true,
+    });
+  });
   it('does not define an organization selector for hotels', () => {
     expect(getReferenceFieldConfig('hotels', 'organizationId')).toBeUndefined();
   });

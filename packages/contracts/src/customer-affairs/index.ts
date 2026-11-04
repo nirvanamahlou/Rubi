@@ -15,6 +15,7 @@ export const CUSTOMER_AFFAIRS_PERMISSIONS = {
   callCenterScopedAccess: CALL_CENTER_SCOPED_ACCESS,
   callCenterWorkflowManage: 'customer_affairs.call_center.workflow.manage',
   callCenterRead: 'customer_affairs.call_center.read',
+  callCenterRecordingRead: 'customer_affairs.call_center.recordings.read',
   callCenterCallCreate: 'customer_affairs.call_center.calls.create',
   callCenterNoteCreate: 'customer_affairs.call_center.notes.create',
   leadRead: 'customer_affairs.lead.read',
@@ -257,6 +258,9 @@ export type CustomerAffairsMarketingIntakeStatus =
   'NEW' | 'CONTACTED' | 'QUALIFIED' | 'NURTURE' | 'LOST';
 
 export interface CustomerAffairsMarketingIntakeInputV1 {
+  firstName?: string | null;
+  lastName?: string | null;
+  entryDate?: string | null;
   phone: string;
   sourceCategory: string;
   campaignId?: string | null;
@@ -266,6 +270,9 @@ export interface CustomerAffairsMarketingIntakeInputV1 {
 }
 
 export interface CustomerAffairsMarketingIntakeViewV1 {
+  firstName?: string | null;
+  lastName?: string | null;
+  entryDate?: string | null;
   contractVersion: typeof CUSTOMER_AFFAIRS_MARKETING_INTAKE_CONTRACT_VERSION;
   id: string;
   branchId: string;

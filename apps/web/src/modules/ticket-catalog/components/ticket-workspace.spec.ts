@@ -54,7 +54,11 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain(
       'طوری تنظیم کنید که همین تعداد ردیف ساخته شود',
     );
-    expect(source).not.toContain('publishedLoadGroups(');
+    expect(source).toContain('publishedLoadGroups(');
+    expect(source).toContain('onClick={() => editPublishedLoad([offer])}');
+    expect(source).toContain(
+      "setForm({ mode: 'edit', product, products: grouped, offers })",
+    );
     expect(source).not.toContain('ویرایش کل جدول');
     expect(source).not.toContain('حذف کل جدول');
     expect(source).toContain('catalogOffer(current, publishedOffers)');

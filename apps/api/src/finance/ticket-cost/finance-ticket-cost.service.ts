@@ -1,3 +1,5 @@
+import { recordPurchaseGroup } from './record-purchase-group';
+import { purchaseFlightGroup, readPurchasePool } from './ticket-purchase-group';
 import { financialDate } from '../accounting/accounting.financial-events';
 import {
   recordFinancialEvent,
@@ -7,7 +9,10 @@ import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
-import { paymentSource } from '../payments/payment-source';
+import {
+  paymentSource,
+  purchasePaymentCashMoney,
+} from '../payments/payment-source';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import {
   BadRequestException,
@@ -24,6 +29,7 @@ import type {
   FinanceTicketCostCommandV1,
   FinanceTicketPaymentCommandV1,
   TicketPurchaseInboxItemV1,
+  TicketPurchaseGroupCommandV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
@@ -55,6 +61,20 @@ export class FinanceTicketCostService {
     private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
+  recordGroupCost(
+    input: TicketPurchaseGroupCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    return recordPurchaseGroup(
+      this.database,
+      this.procurement,
+      this.tickets,
+      this.purchaseFx,
+      input,
+      actor,
+    );
+  }
+
   async recordCost(
     requestId: string,
     input: FinanceTicketCostCommandV1,
@@ -66,10 +86,21 @@ export class FinanceTicketCostService {
       );
     if (input?.version !== 1 || !/^[A-Z]{3}$/.test(input.currencyCode ?? ''))
       throw new BadRequestException('جزئیات قیمت خرید معتبر نیست.');
-    const request = await this.procurement.forFinance(
+    const savedRequest = await this.procurement.forFinance(
       requestId,
       actor.branchIds,
     );
+    const offers = savedRequest.offerId
+      ? await this.tickets?.purchaseCapacityInventory?.(
+          actor.branchIds,
+          undefined,
+          [savedRequest.offerId],
+        )
+      : undefined;
+    const currentOffer = offers?.find((o) => o.id === savedRequest.offerId);
+    const request = currentOffer
+      ? { ...savedRequest, seatCount: currentOffer.totalCapacity }
+      : savedRequest;
     if (
       input.operationId !== undefined &&
       (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -211,6 +242,10 @@ export class FinanceTicketCostService {
         throw new ConflictException(
           'قیمت خرید هم‌زمان تغییر کرده؛ کارتابل را به‌روز کنید.',
         );
+      if (readPurchasePool(previous?.reason))
+        throw new ConflictException(
+          'Edit the complete original purchase group.',
+        );
       if (previous?.payments.length)
         throw new ConflictException(
           'پس از آغاز پرداخت، اصلاح قیمت خرید مجاز نیست.',
@@ -298,6 +333,8 @@ export class FinanceTicketCostService {
           const state = states.get(request.id);
           const offer = inventory?.find((item) => item.id === request.offerId);
           const purchasedSeats = state?.seatCount;
+          const pool = state?.purchaseGroup;
+          const grouping = purchaseFlightGroup(request, offer);
           const unsoldSeats =
             purchasedSeats && offer
               ? purchasedSeats - offer.allocatedCapacity
@@ -312,9 +349,10 @@ export class FinanceTicketCostService {
                   allocatedSeats: offer.allocatedCapacity,
                   unsoldSeats,
                   amount: moneyDecimal(
-                    (moneyUnits(state.invoiceAmount) * BigInt(unsoldSeats) +
-                      BigInt(purchasedSeats) / 2n) /
-                      BigInt(purchasedSeats),
+                    (moneyUnits(pool?.totalCost ?? state.invoiceAmount) *
+                      BigInt(unsoldSeats) +
+                      BigInt(pool?.seatCount ?? purchasedSeats) / 2n) /
+                      BigInt(pool?.seatCount ?? purchasedSeats),
                   ),
                   currencyCode: state.currencyCode,
                   status:
@@ -324,10 +362,39 @@ export class FinanceTicketCostService {
                 }
               : null;
           return {
-            request,
+            request:
+              !state && offer
+                ? { ...request, seatCount: offer.totalCapacity }
+                : request,
+            ...(offer
+              ? {
+                  currentCapacity: {
+                    total: offer.totalCapacity,
+                    allocated: offer.allocatedCapacity,
+                    destinationId: offer.destinationId,
+                  },
+                }
+              : {}),
+            ...(grouping ? { flightGroup: grouping } : {}),
             capacityCost,
             cost: state
               ? {
+                  ...(pool &&
+                  actor.permissions.some((p) =>
+                    [
+                      'procurement.quote.manage',
+                      'procurement.read.all',
+                      'procurement.read.unit',
+                    ].includes(p),
+                  )
+                    ? {
+                        purchaseGroup: {
+                          id: pool.id,
+                          seatCount: pool.seatCount,
+                          totalCost: pool.totalCost,
+                        },
+                      }
+                    : {}),
                   id: state.costRevisionId,
                   createdAt: state.createdAt,
                   version: state.costVersion,
@@ -468,6 +535,7 @@ export class FinanceTicketCostService {
           input,
           cost.currencyCode,
           request.branchId,
+          'ACCOUNT_OR_SUPPLIER',
         );
       const method = await tx.masterPaymentMethod.findFirst({
         where: {
@@ -543,8 +611,12 @@ export class FinanceTicketCostService {
         branchId: request.branchId,
         actorId: actor.userId,
         occurredAt: transferAt,
-        amount: amount.toString(),
-        currency: cost.currencyCode,
+        ...purchasePaymentCashMoney(
+          account,
+          cost.currencyCode,
+          amount.toString(),
+          row.rialEquivalent?.toString(),
+        ),
         settlementAccountId: account?.id ?? null,
         partyId: `${requestId}:${payingSupplierId ?? ''}`,
         reference: row.paymentReference,
@@ -587,6 +659,7 @@ export class FinanceTicketCostService {
         where: { branchId, offerId: { in: [...new Set(offerIds)] } },
         orderBy: [{ version: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }],
         select: {
+          reason: true,
           id: true,
           offerId: true,
           currencyCode: true,
@@ -606,8 +679,10 @@ export class FinanceTicketCostService {
       if (!row.offerId || seen.has(row.offerId) || type === 'FLOATING')
         return [];
       seen.add(row.offerId);
+      const poolCost = readPurchasePool(row.reason);
       return [
         {
+          ...(poolCost ? { poolCost } : {}),
           id: row.id,
           supplyType: type,
           offerId: row.offerId,
@@ -674,6 +749,7 @@ export class FinanceTicketCostService {
       return new Map<
         string,
         {
+          purchaseGroup?: { id: string; seatCount: number; totalCost: string };
           createdAt: string | null;
           costVersion: number;
           costRevisionId: string;
@@ -699,6 +775,7 @@ export class FinanceTicketCostService {
     const states = new Map<
       string,
       {
+        purchaseGroup?: { id: string; seatCount: number; totalCost: string };
         createdAt: string | null;
         costVersion: number;
         costRevisionId: string;
@@ -715,7 +792,9 @@ export class FinanceTicketCostService {
     for (const row of rows) {
       if (states.has(row.requestId)) continue;
       const latest = row.payments[0];
+      const purchaseGroup = readPurchasePool(row.reason);
       states.set(row.requestId, {
+        ...(purchaseGroup ? { purchaseGroup } : {}),
         createdAt: row.createdAt?.toISOString() ?? null,
         costVersion: row.version,
         costRevisionId: row.id,

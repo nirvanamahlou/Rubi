@@ -210,7 +210,7 @@ describe('finance workspace component contract', () => {
     expect(liveInboxSource).toContain('واریز به حساب');
     expect(liveInboxSource).toContain('انتخاب حساب مقصد');
     expect(liveInboxSource).toContain("accountId: actionKind === 'APPROVE'");
-    expect(liveInboxSource).toContain(
+    expect(liveInboxSource.replace(/\s+/g, ' ')).toContain(
       'account.branchId === actionItem?.branchReference',
     );
     expect(liveInboxSource).toContain('درخواست اصلاح');

@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsIn,
+  IsDefined,
   IsInt,
   IsISO8601,
   Matches,
@@ -22,9 +23,10 @@ export const CALL_CENTER_STATUSES = [
   'نهایی شده',
 ] as const;
 export class CallCenterCallDto {
+  @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) completionToken?: string;
   @IsOptional() @IsUUID() ticketId?: string;
-  @IsOptional()
-  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])
+  @IsDefined({ message: 'نتیجه تماس را انتخاب کنید.' })
+  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED', 'WRONG_NUMBER'])
   outcome?: string;
   @IsUUID('4') id!: string;
   @IsString() @Length(0, 24) phone!: string;
@@ -35,7 +37,7 @@ export class CallCenterCallDto {
   @IsString() @Length(0, 100) name!: string;
   @IsString() @Length(1, 200) subject!: string;
   @IsString() @Length(1, 80) source!: string;
-  @IsString() @Length(1, 100) operator!: string;
+  @IsString() @Length(1, 800) operator!: string;
   @IsIn(CALL_CENTER_STATUSES) status!: (typeof CALL_CENTER_STATUSES)[number];
   @IsString() @Length(0, 2000) note!: string;
 }

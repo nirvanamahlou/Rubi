@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 const offer = (id: string, departureAt: string) =>
-  ({ id, departureAt }) as TicketOfferV1;
+  ({ id, departureAt, status: 'ACTIVE' }) as TicketOfferV1;
 
 describe('tour departure ticket range', () => {
   it('loads every management page and deduplicates offers', async () => {
@@ -117,4 +117,15 @@ describe('tour departure ticket range', () => {
       '/management?includePast=true&page=2',
     );
   });
+});
+
+it('loads authorized charter history separately from selectable inventory', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+  const data = [{ originId: 'a', destinationId: 'b' }];
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ version: 1, data }) });
+  vi.stubGlobal('fetch', fetcher);
+  expect((await toursApi.charterRoutes()).data).toEqual(data);
+  expect(fetcher.mock.calls[0]?.[0]).toContain('/offers/charter-routes');
 });

@@ -9,6 +9,41 @@ afterEach(() => {
   else process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
 });
 describe('Procurement failure and retry contract', () => {
+  it('sends the explicit amendment reason and current version from the shared request form', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const request = {
+      id: 'request',
+      number: 'PR-1',
+      version: 4,
+      status: 'SUBMITTED' as const,
+      requesterUserId: 'user',
+      ownerUserId: null,
+      createdAt: '',
+      updatedAt: '',
+      draft: emptyDraft(),
+    };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify(request), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    await procurementApi.save(
+      request.draft,
+      'edit-key',
+      request,
+      undefined,
+      false,
+      undefined,
+      'Corrected specification',
+    );
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body as string)).toMatchObject({
+      expectedVersion: 4,
+      reason: 'Corrected specification',
+      draft: request.draft,
+    });
+    expect(fetcher.mock.calls[0]![1].method).toBe('PATCH');
+  });
   it('preserves the server explanation for a forbidden form operation', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     vi.stubGlobal(

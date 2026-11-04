@@ -1,5 +1,7 @@
 import {
   Body,
+  Delete,
+  Patch,
   Controller,
   Get,
   Header,
@@ -69,6 +71,20 @@ export class MessagingController {
   @Post('conversations/groups')
   createGroup(@Body() body: unknown, @Req() request: AuthenticatedRequest) {
     return this.service.createGroup(body, request.actor);
+  }
+
+  @Delete('conversations/:id')
+  remove(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.service.remove(id, request.actor);
+  }
+
+  @Patch('conversations/:id')
+  updateGroup(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.updateGroup(id, body, request.actor);
   }
 
   @Get('conversations/:id/messages')

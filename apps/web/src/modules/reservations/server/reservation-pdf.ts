@@ -16,6 +16,44 @@ import { resolveTicketPdfRuntime } from './ticket-pdf';
 const run = promisify(execFile);
 let active = 0;
 /** Renderer accepts saved, permission-scoped output only, never client HTML or URLs. */
+export async function prepareReservationHtml(
+  output: ReservationFormIntake,
+  refs: ReservationFormReferences,
+  logo: string,
+  css: string,
+  voucher = false,
+  origin = '',
+  _language: DisplayLanguage = 'fa',
+  publicDocumentUrl?: string,
+): Promise<string> {
+  void _language; // Keep the existing caller signature; travel forms are English.
+  const { fontPath: font } = await resolveTicketPdfRuntime();
+  let html = localizeDocumentHtml(
+    reservationPdfHtml(
+      output,
+      refs,
+      logo,
+      css,
+      voucher,
+      origin,
+      publicDocumentUrl,
+    ),
+    'en',
+  );
+  if (font) {
+    const fontBytes = await readFile(font);
+    if (fontBytes.length && fontBytes.length <= 5_000_000)
+      html = html.replace(
+        '</style>',
+        '@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,' +
+          fontBytes.toString('base64') +
+          ') format("truetype");font-weight:normal}</style>',
+      );
+  }
+  if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
+  return html;
+}
+
 export async function renderReservationPdf(
   output: ReservationFormIntake,
   refs: ReservationFormReferences,
@@ -24,29 +62,24 @@ export async function renderReservationPdf(
   voucher = false,
   origin = '',
   language: DisplayLanguage = 'fa',
+  publicDocumentUrl?: string,
 ): Promise<Buffer> {
-  const { chromePath: chrome, fontPath: font } =
-    await resolveTicketPdfRuntime();
+  const { chromePath: chrome } = await resolveTicketPdfRuntime();
   if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    let html = localizeDocumentHtml(
-      reservationPdfHtml(output, refs, logo, css, voucher, origin),
+    const html = await prepareReservationHtml(
+      output,
+      refs,
+      logo,
+      css,
+      voucher,
+      origin,
       language,
+      publicDocumentUrl,
     );
-    if (font) {
-      const fontBytes = await readFile(font);
-      if (fontBytes.length && fontBytes.length <= 5_000_000)
-        html = html.replace(
-          '</style>',
-          '@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,' +
-            fontBytes.toString('base64') +
-            ') format("truetype");font-weight:normal}</style>',
-        );
-    }
-    if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'nora-reservation-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
@@ -79,7 +112,7 @@ export async function renderReservationPdf(
         '--print-to-pdf=' + result,
         pathToFileURL(input).href,
       ],
-      { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
+      { env, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 },
     );
     // Chrome may return before its child finishes writing the PDF on Windows.
     const deadline = Date.now() + 10_000;

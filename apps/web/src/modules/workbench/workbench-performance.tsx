@@ -68,6 +68,12 @@ export function WorkbenchPerformance() {
       active = false;
     };
   }, [days, version]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setVersion((v) => v + 1);
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
   function reload(value = days) {
     setData(null);
     setError('');
@@ -90,14 +96,11 @@ export function WorkbenchPerformance() {
             </span>
             <div>
               <h2 className="text-2xl font-black">عملکرد من</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                حضور امروز، برنامه کاری و دستاوردهای شما
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <WorkbenchSelect
-              label="بازه آمار فروش و مشتریان"
+              label="بازه زمانی"
               value={days}
               onValueChange={reload}
               options={[
@@ -230,9 +233,6 @@ export function WorkbenchPerformance() {
                   ترددی برای امروز ثبت نشده است.
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                ترددهای روز تقویمی امروز، با اعمال اصلاحات تأییدشده منابع انسانی
-              </p>
             </Card>
             <Card className="space-y-4 p-6">
               <h3 className="flex items-center gap-2 text-lg font-bold">
@@ -281,11 +281,9 @@ export function WorkbenchPerformance() {
                   {linked ? 'هنوز برنامه شیفتی ثبت نشده است.' : hrHint}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                ۱۰ برنامه اخیر ثبت‌شده در منابع انسانی
-              </p>
             </Card>
           </div>
+          {linked && <AttendanceHistory rows={hr?.attendanceHistory ?? []} />}
           {!!hr?.leaveBalances.length && (
             <Card className="space-y-4 p-6">
               <h3 className="text-lg font-bold">مانده مرخصی</h3>
@@ -422,8 +420,8 @@ export function PerformanceExtraCards({
       />
       <Metric
         label="کسری کار"
-        value="—"
-        hint="کسری کار تأییدشده به عملکرد متصل نشده است"
+        value={duration(month?.deficitMinutes)}
+        hint={attendanceHint}
         icon={<TimerOff />}
         tone="border-amber-500/20 bg-amber-500/10"
       />
@@ -690,7 +688,6 @@ function MonthlySales({
 function Metric({
   label,
   value,
-  hint,
   icon,
   tone,
 }: {
@@ -714,7 +711,99 @@ function Metric({
       <strong className="my-4 block break-words text-3xl font-black tabular-nums">
         {value}
       </strong>
-      <p className="text-xs leading-6 text-muted-foreground">{hint}</p>
     </div>
+  );
+}
+
+export function AttendanceHistory({
+  rows,
+}: {
+  rows: NonNullable<WorkbenchHrPerformanceV1['attendanceHistory']>;
+}) {
+  return (
+    <Card className="min-w-0 overflow-hidden" aria-label="سوابق تردد من">
+      <div className="flex items-center justify-between border-b p-4">
+        <h3 className="font-bold">سوابق تردد من</h3>
+        <span className="text-xs text-muted-foreground">
+          {number(rows.length)} روز
+        </span>
+      </div>
+      <div
+        className="max-h-[480px] overflow-auto"
+        tabIndex={0}
+        role="region"
+        aria-label="جدول تردد روزانه"
+      >
+        <table className="w-full min-w-[760px] text-right text-sm">
+          <thead className="sticky top-0 bg-muted">
+            <tr>
+              {[
+                'تاریخ',
+                'روز',
+                'ورود',
+                'خروج',
+                'نوع ثبت',
+                'تأخیر (دقیقه)',
+                'اضافه‌کاری (دقیقه)',
+                'کسری کار (دقیقه)',
+              ].map((label) => (
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                  key={label}
+                >
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.date} className="border-t hover:bg-muted/40">
+                <td className="whitespace-nowrap px-4 py-3">
+                  {date(row.date)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  {new Intl.DateTimeFormat('fa-IR', {
+                    weekday: 'long',
+                    timeZone: 'Asia/Tehran',
+                  }).format(new Date(`${row.date}T12:00:00Z`))}
+                </td>
+                <td className="px-4 py-3">
+                  <span dir="ltr">{row.firstIn ?? '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span dir="ltr">{row.lastOut ?? '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  {row.registrationType === 'device'
+                    ? 'انگشت'
+                    : row.registrationType === 'manual'
+                      ? 'دستی'
+                      : '—'}
+                </td>
+                {[row.lateMinutes, row.overtimeMinutes, row.deficitMinutes].map(
+                  (value, i) => (
+                    <td className="px-4 py-3" key={i}>
+                      {number(value ?? undefined)}
+                    </td>
+                  ),
+                )}
+              </tr>
+            ))}
+            {!rows.length && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="p-8 text-center text-muted-foreground"
+                >
+                  ترددی در این بازه ثبت نشده است.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

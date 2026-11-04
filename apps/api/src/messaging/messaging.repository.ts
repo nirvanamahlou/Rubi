@@ -1,4 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -58,6 +64,87 @@ export class MessagingRepository {
     });
   }
 
+  async removeMembership(id: string, userId: string, branchIds: string[]) {
+    await this.database.client.$transaction(async (tx) => {
+      // Serialize membership changes and sends on the conversation row.
+      const locked = await tx.messagingConversation.updateMany({
+        where: {
+          id,
+          branchId: { in: branchIds },
+          members: { some: { userId } },
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (!locked.count) throw new NotFoundException('گفت‌وگو پیدا نشد.');
+      const member = await tx.messagingMember.findUnique({
+        where: { conversationId_userId: { conversationId: id, userId } },
+      });
+      if (!member) return;
+      await tx.messagingMember.delete({
+        where: { conversationId_userId: { conversationId: id, userId } },
+      });
+      if (member.role === 'OWNER') {
+        const next = await tx.messagingMember.findFirst({
+          where: { conversationId: id },
+          orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
+        });
+        if (next)
+          await tx.messagingMember.update({
+            where: {
+              conversationId_userId: {
+                conversationId: id,
+                userId: next.userId,
+              },
+            },
+            data: { role: 'OWNER' },
+          });
+      }
+    });
+  }
+
+  async updateGroup(
+    id: string,
+    userId: string,
+    branchIds: string[],
+    title: string,
+    memberIds: string[],
+  ) {
+    return this.database.client.$transaction(async (tx) => {
+      const locked = await tx.messagingConversation.updateMany({
+        where: { id, type: 'GROUP', branchId: { in: branchIds } },
+        data: { updatedAt: new Date() },
+      });
+      if (!locked.count) throw new NotFoundException('گفت‌وگو پیدا نشد.');
+      const members = await tx.messagingMember.findMany({
+        where: { conversationId: id },
+      });
+      if (!members.some((m) => m.userId === userId && m.role === 'OWNER'))
+        throw new ForbiddenException(
+          'ویرایش گروه فقط برای مدیر گروه مجاز است.',
+        );
+      if (new Set([...members.map((m) => m.userId), ...memberIds]).size > 51)
+        throw new BadRequestException(
+          'گروه باید بین ۱ تا ۵۰ عضو انتخابی داشته باشد.',
+        );
+      return tx.messagingConversation.update({
+        where: { id },
+        data: {
+          title,
+          members: {
+            createMany: {
+              data: memberIds.map((userId) => ({
+                userId,
+                role: 'MEMBER' as const,
+              })),
+              skipDuplicates: true,
+            },
+          },
+        },
+        include: conversationInclusion,
+      });
+    });
+  }
+
   async createDirect(input: {
     actorUserId: string;
     recipientId: string;
@@ -67,7 +154,17 @@ export class MessagingRepository {
   }) {
     return this.database.client.messagingConversation.upsert({
       where: { directPairKey: input.directPairKey },
-      update: {},
+      update: {
+        members: {
+          createMany: {
+            data: [
+              { userId: input.actorUserId, role: 'MEMBER' },
+              { userId: input.recipientId, role: 'MEMBER' },
+            ],
+            skipDuplicates: true,
+          },
+        },
+      },
       create: {
         type: 'DIRECT',
         branchId: input.branchId,
@@ -166,6 +263,22 @@ export class MessagingRepository {
     recipientUserIds: string[];
   }) {
     return this.database.client.$transaction(async (transaction) => {
+      const locked = await transaction.messagingConversation.update({
+        where: { id: input.conversationId },
+        data: { updatedAt: new Date() },
+        include: { members: true },
+      });
+      if (!locked.members.some((m) => m.userId === input.senderUserId))
+        throw new ForbiddenException('عضویت در گفت‌وگو الزامی است.');
+      const recipients =
+        locked.type === 'DIRECT' && locked.directPairKey
+          ? locked.directPairKey
+              .split(':')
+              .slice(-2)
+              .filter((id) => id !== input.senderUserId)
+          : locked.members
+              .map((m) => m.userId)
+              .filter((id) => id !== input.senderUserId);
       const existing = await transaction.messagingMessage.findUnique({
         where: {
           conversationId_senderUserId_clientRequestId: {
@@ -177,6 +290,16 @@ export class MessagingRepository {
         select: messageSelection,
       });
       if (existing) return existing;
+      if (locked.type === 'DIRECT')
+        await transaction.messagingMember.createMany({
+          data: recipients.map((userId) => ({
+            conversationId: input.conversationId,
+            userId,
+            role: 'MEMBER' as const,
+          })),
+          skipDuplicates: true,
+        });
+
       const message = await transaction.messagingMessage.upsert({
         where: {
           conversationId_senderUserId_clientRequestId: {
@@ -215,7 +338,7 @@ export class MessagingRepository {
         data: { updatedAt: message.createdAt },
       });
       await this.notifications.createWithinTransaction(transaction, {
-        recipientUserIds: input.recipientUserIds,
+        recipientUserIds: recipients,
         actorUserId: input.senderUserId,
         sourceModule: 'messaging',
         eventType: 'message.received',

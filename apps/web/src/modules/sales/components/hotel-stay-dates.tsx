@@ -16,6 +16,9 @@ export function HotelStayDates({
       aria-label="تاریخ اقامت مهمانان"
     >
       <h3 className="font-bold md:col-span-2">جزئیات اقامت هتل</h3>
+      {state.hotel.additionalStays?.length ? (
+        <p className="md:col-span-2">{state.hotel.name}</p>
+      ) : null}
       <FormField label="ورود (چک‌این)" required>
         <DatePicker
           calendarSystem={salesHotelCalendarSystem(state)}

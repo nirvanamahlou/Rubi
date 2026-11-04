@@ -10,6 +10,7 @@ import { configureApplication } from './configure-application';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   configureApplication(app);
+  app.enableShutdownHooks();
 
   const config = app.get(ConfigService);
   const port = config.getOrThrow<number>('API_PORT');

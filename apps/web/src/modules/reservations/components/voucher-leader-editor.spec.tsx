@@ -68,9 +68,11 @@ function elements(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   return [node, ...elements(node.props.children as ReactNode)];
 }
 function choose(tree: ReactNode, index: number, value: string) {
-  const control = elements(tree).filter((node) => node.type === SearchCombobox)[
-    index
-  ]!;
+  const control = elements(tree).filter(
+    (node) =>
+      node.type === SearchCombobox &&
+      node.props.label !== 'انتخاب کارگزار ترانسفر',
+  )[index]!;
   (control.props.onValueChange as (value: string) => void)(value);
 }
 async function flush() {
@@ -96,12 +98,12 @@ beforeEach(() => {
   }));
 });
 describe('voucher leader selection', () => {
-  it('uses two searchable dropdowns and a readonly automatic Board field', () => {
+  it('uses separate supplier and leader dropdowns and an automatic Board field', () => {
     const tree = render();
     const controls = elements(tree).filter(
       (node) => node.type === SearchCombobox,
     );
-    expect(controls).toHaveLength(2);
+    expect(controls).toHaveLength(3);
     expect(controls[0]?.props).toMatchObject({
       remote: true,
       selectedLabel: 'A',
@@ -279,4 +281,131 @@ it('initializes voucher content without copying supplier-form settings while ret
     text: { broker: 'B' },
   });
   expect(form.workflow.voucherSettings).toBeUndefined();
+});
+
+it('saves voucher settings without a leader when transfer is not selected', async () => {
+  const tree = render();
+  const save = elements(tree).find(
+    (node) => node.props.children === 'ذخیره تنظیمات واچر',
+  )!;
+  expect(save.props.disabled).toBe(false);
+  harness.request.mockResolvedValueOnce({ data: { version: 2 } });
+  await (save.props.onClick as () => Promise<void>)();
+  expect(harness.request).toHaveBeenCalledWith(
+    'reservations/requests/intake/workflow',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({ brokerId: 'broker-a' }),
+    }),
+  );
+});
+
+it('selects a transfer supplier independently from the hotel supplier', async () => {
+  render();
+  for (const effect of harness.effects) effect();
+  await flush();
+  const transfer = elements(render()).find(
+    (node) =>
+      node.type === SearchCombobox &&
+      node.props.label === 'انتخاب کارگزار ترانسفر',
+  )!;
+  (transfer.props.onValueChange as (id: string) => void)('broker-b');
+  expect(harness.states[0]).toMatchObject({
+    brokerId: 'broker-a',
+    transferBrokerId: 'broker-b',
+    text: { broker: 'A' },
+  });
+  harness.request.mockResolvedValueOnce({
+    data: {
+      id: 'leader',
+      name: 'Transfer leader',
+      phone: '',
+      board: 'Transfer board',
+    },
+  });
+  harness.request.mockResolvedValueOnce({ data: { version: 2 } });
+  choose(render(), 1, 'leader');
+  await flush();
+  expect(harness.request).toHaveBeenCalledWith(
+    'reservations/requests/intake/voucher-brokers/broker-b/leaders/leader/contact',
+  );
+  expect(harness.states[0]).toMatchObject({
+    brokerId: 'broker-a',
+    transferBrokerId: 'broker-b',
+    text: {
+      broker: 'A',
+      leaderName: 'Transfer leader',
+      transferBoard: 'Transfer board',
+    },
+  });
+});
+
+it('allows explicit per-voucher board and leader edits without modifying the directory', async () => {
+  let tree = render();
+  const toggle = elements(tree).find(
+    (node) => node.type === 'input' && node.props.type === 'checkbox',
+  )!;
+  (toggle.props.onChange as (event: unknown) => void)({
+    target: { checked: true },
+  });
+  tree = render();
+  const board = elements(tree).find(
+    (node) => node.props['aria-label'] === 'Board ثبت‌شدهٔ کارگزار',
+  )!;
+  expect(board.props.readOnly).toBe(false);
+  (board.props.onChange as (event: unknown) => void)({
+    target: { value: 'SPECIAL BOARD' },
+  });
+  tree = render();
+  const name = elements(tree).find(
+    (node) => node.props['aria-label'] === 'نام راهنما',
+  )!;
+  (name.props.onChange as (event: unknown) => void)({
+    target: { value: 'SPECIAL LEADER' },
+  });
+  tree = render();
+  const save = elements(tree).find(
+    (node) => node.props.children === 'ذخیره تنظیمات واچر',
+  )!;
+  harness.request.mockResolvedValueOnce({ data: { version: 2 } });
+  await (save.props.onClick as () => Promise<void>)();
+  expect(harness.request).toHaveBeenCalledWith(
+    'reservations/requests/intake/workflow',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({
+        transferDetailsOverride: true,
+        text: expect.objectContaining({
+          transferBoard: 'SPECIAL BOARD',
+          leaderName: 'SPECIAL LEADER',
+        }),
+      }),
+    }),
+  );
+});
+
+it('retains a separate transfer supplier when the hotel supplier changes', async () => {
+  render();
+  for (const effect of harness.effects) effect();
+  await flush();
+  harness.states[0] = {
+    brokerId: 'broker-a',
+    transferBrokerId: 'broker-b',
+    transferBrokerName: 'B',
+    leaderId: 'transfer-leader',
+    transferDetailsOverride: true,
+    text: {
+      broker: 'A',
+      transferBoard: 'KEEP BOARD',
+      leaderName: 'KEEP LEADER',
+      leaderPhone: 'KEEP PHONE',
+    },
+    flags: { tourLeader: true },
+  };
+  choose(render(), 0, 'broker-b');
+  expect(harness.states[0]).toMatchObject({
+    brokerId: 'broker-b',
+    transferBrokerId: 'broker-b',
+    leaderId: 'transfer-leader',
+    transferDetailsOverride: true,
+    text: { transferBoard: 'KEEP BOARD', leaderName: 'KEEP LEADER' },
+  });
 });

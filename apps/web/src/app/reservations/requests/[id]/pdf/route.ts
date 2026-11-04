@@ -1,3 +1,9 @@
+import {
+  supplierDocumentScope,
+  type SupplierDocumentKind,
+} from '@/modules/reservations/model/supplier-document-scope';
+import { reservationHotelStays } from '@nora/contracts';
+import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
 import { languageFromCookies } from '@/i18n/language';
@@ -9,7 +15,11 @@ import type {
   ReservationFormIntake,
   ReservationFormReferences,
 } from '@/modules/reservations/model/reservation-form';
-import { renderReservationPdf } from '@/modules/reservations/server/reservation-pdf';
+import { createPublicDocument } from '@/modules/travel-documents/server/public-document-store';
+import {
+  renderReservationPdf,
+  prepareReservationHtml,
+} from '@/modules/reservations/server/reservation-pdf';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const headers = {
@@ -26,6 +36,15 @@ export async function GET(
   const kind = new URL(request.url).searchParams.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  const formScope =
+    new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
+  if (
+    !['HOTEL', 'TRANSFER', 'OUTBOUND', 'RETURN'].includes(formScope) ||
+    (voucher && formScope !== 'HOTEL')
+  )
+    return fail('نوع سند معتبر نیست.', 400);
+  const hotelStayKey = new URL(request.url).searchParams.get('hotelStayKey');
+  if (voucher && hotelStayKey) return fail('نوع سند معتبر نیست.', 400);
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
   )
@@ -46,12 +65,30 @@ export async function GET(
         'دریافت فرم مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
         response.status,
       );
-    const { data: intake } = (await response.json()) as {
+    const { data: rawIntake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    let intake = rawIntake;
+    if (hotelStayKey) {
+      try {
+        intake = hotelFormScope(rawIntake, hotelStayKey);
+      } catch {
+        return fail('اقامت هتل معتبر نیست.', 400);
+      }
+    }
     if (!voucher && intake.workflow.sentSupplierFormSettings) {
       intake.workflow.supplierFormSettings =
         intake.workflow.sentSupplierFormSettings;
+    }
+    if (!voucher) {
+      try {
+        intake = supplierDocumentScope(
+          intake,
+          formScope as SupplierDocumentKind,
+        );
+      } catch {
+        return fail('نوع سند معتبر نیست.', 400);
+      }
     }
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);
@@ -77,12 +114,16 @@ export async function GET(
     let logo: string;
     if (
       voucher &&
-      intake.workflow.voucherSettings?.flags.withLetterhead === false
+      (branding.voucherWithoutLogo === true ||
+        intake.workflow.voucherSettings?.flags.withLetterhead === false)
     ) {
       logo = '';
     } else if (
       branding.logoFileId &&
-      !(branding.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
+      !(
+        branding.kind === 'OWN' &&
+        ['JAHAN_BASTAN', 'GHESATI_RO'].includes(branding.companyCode ?? '')
+      )
     ) {
       const logoResponse = await get(
         `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
@@ -106,6 +147,7 @@ export async function GET(
               {
                 NIYAYESH_SEIR_SAHAR: 'niyayesh.png',
                 JAHAN_BASTAN: 'jahan-bastan-transparent.png',
+                GHESATI_RO: 'ghesati-ro.png',
               } as Record<string, string>
             )[branding.companyCode ?? '']
           : undefined;
@@ -123,16 +165,24 @@ export async function GET(
       },
       id,
     );
-    const hotel = intake.snapshot.hotelSelection;
+    const referenceSnapshot =
+      intake.workflow.supplierFormSettings?.sharedHotelBroker === true
+        ? (intake.supplierHotelSourceSnapshot ?? intake.snapshot)
+        : intake.snapshot;
+    const hotels = reservationHotelStays(referenceSnapshot).map(
+      (stay) => stay.hotel,
+    );
     const keys = [
-      ['hotels', hotel?.hotelId],
-      [
-        'cities',
-        hotel?.cityId ?? intake.snapshot.ticketSelections?.[0]?.destinationId,
-      ],
-      ['room-types', hotel?.roomTypeId],
-      ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
-      ['meal-services', hotel?.mealServiceId],
+      ...hotels.flatMap((hotel) => [
+        ['hotels', hotel.hotelId],
+        ['cities', hotel.cityId],
+        ['room-types', hotel.roomTypeId],
+        ...(hotel.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
+        ['meal-services', hotel.mealServiceId],
+      ]),
+      ...(!hotels.length
+        ? [['cities', intake.snapshot.ticketSelections?.[0]?.destinationId]]
+        : []),
     ];
     await Promise.all(
       keys.map(async ([resource, key]) => {
@@ -173,6 +223,30 @@ export async function GET(
       ),
       'utf8',
     );
+    const share = createPublicDocument();
+    const language = languageFromCookies(request.headers.get('cookie'));
+    if (share) {
+      const html = await prepareReservationHtml(
+        intake,
+        refs,
+        logo,
+        css,
+        voucher,
+        '',
+        language,
+        share.url,
+      );
+      await share.save(html);
+      if (new URL(request.url).searchParams.get('format') === 'share')
+        return Response.json({ url: share.url, html }, { headers });
+    } else if (new URL(request.url).searchParams.get('format') === 'share')
+      return Response.json(
+        {
+          message: 'Public documents unavailable',
+          code: 'PUBLIC_DOCUMENTS_DISABLED',
+        },
+        { status: 503, headers },
+      );
     const bytes = await renderReservationPdf(
       intake,
       refs,
@@ -180,7 +254,8 @@ export async function GET(
       css,
       voucher,
       new URL(request.url).origin,
-      languageFromCookies(request.headers.get('cookie')),
+      language,
+      share?.url,
     );
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {

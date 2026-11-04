@@ -20,6 +20,51 @@ const departure = {
   returnOfferId: second,
 };
 describe('tour inputs', () => {
+  it('accepts a title-only definition with canonical optional defaults', () => {
+    expect(validateTourPackage({ name: '  تور  ' })).toEqual({
+      name: 'تور',
+      originId: '',
+      destinationId: '',
+      hotelIds: [],
+      transferOutbound: false,
+      transferReturn: false,
+      visa: false,
+    });
+  });
+  it('accepts untouched blank optional controls and blank itinerary fields without mutating the request', () => {
+    const input = {
+      name: 'ت',
+      originId: '',
+      destinationId: '  ',
+      insuranceId: '',
+      details: {
+        summary: ' ',
+        durationDays: '',
+        rating: '',
+        itinerary: [{ title: '', startTime: ' ' }],
+      },
+    };
+    expect(validateTourPackage(input).details).toEqual({
+      version: 1,
+      itinerary: [{}],
+    });
+    expect(input.details.summary).toBe(' ');
+  });
+  it('accepts a partially selected route but rejects hotels until a destination is set', () => {
+    expect(
+      validateTourPackage({ name: 'Partial', originId: id }).originId,
+    ).toBe(id);
+    expect(() =>
+      validateTourPackage({ name: 'Partial', hotelIds: [id] }),
+    ).toThrow('شهر مقصد');
+    expect(() =>
+      validateTourPackage({ name: 'Partial', originId: 'invalid' }),
+    ).toThrow('شهر مبدأ');
+    expect(() => validateTourPackage({ name: ' ' })).toThrow('عنوان تور');
+    expect(() =>
+      validateTourPackage({ name: 'Partial', surprise: '' }),
+    ).toThrow();
+  });
   it('converts Toman to exact canonical IRR without mutating input', () => {
     const input = {
       ...pack,

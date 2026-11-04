@@ -4,6 +4,8 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export interface SalesByOrganizationReportResult {
+  dataLayout?: 'SOURCE_COLUMNS';
+  columns?: readonly { key: string; label: string; kind: string }[];
   reportCode: string;
   reportVersion: number;
   grain: string;
@@ -23,6 +25,8 @@ export interface SalesByOrganizationReportResult {
     refundAmount?: string;
     settlementBalance?: string;
     pendingReservationActions?: number;
+    amountsByCurrency?: readonly { currencyCode: string; amount: string }[];
+    sourceValues?: Readonly<Record<string, string | number>>;
   }[];
   total: number;
   page: number;
@@ -45,6 +49,7 @@ export interface SalesByOrganizationReportResult {
     filters: Readonly<Record<string, string | readonly string[]>>;
   };
   filterOptions: {
+    labels?: Readonly<Record<string, string>>;
     branchIds: readonly string[];
     ownerUserIds: readonly string[];
     currencyCodes: readonly string[];
@@ -81,19 +86,7 @@ export interface SalesByOrganizationPreviewInput {
   pageSize?: number;
   recordAction?: boolean;
   sort?: {
-    column:
-      | 'branchId'
-      | 'ownerUserId'
-      | 'currencyCode'
-      | 'amount'
-      | 'contractCount'
-      | 'passengerCount'
-      | 'ticketCount'
-      | 'purchaseAmount'
-      | 'grossProfit'
-      | 'refundAmount'
-      | 'settlementBalance'
-      | 'pendingReservationActions';
+    column: string;
     direction: 'ASC' | 'DESC';
   };
 }
@@ -119,12 +112,17 @@ export interface ReportingSavedReportRecord {
 }
 
 interface TravelReportResult {
+  dataLayout?: 'SOURCE_COLUMNS';
+  chartMeasure?: string;
+  filterOptionLabels?: Readonly<Record<string, string>>;
   reportCode: string;
   reportVersion: number;
   grain: string;
   sourceProjection: string;
   columns?: readonly { key: string; label: string; kind: string }[];
   rows: readonly {
+    amountsByCurrency?: readonly { currencyCode: string; amount: string }[];
+    sourceValues?: Readonly<Record<string, string | number>>;
     grainId: string;
     primaryDimension: string;
     secondaryDimension: string;
@@ -219,22 +217,18 @@ async function request<T>(path: string, init: RequestInit, retried = false) {
   return response.json() as Promise<T>;
 }
 
+export function reportSortApiColumn(column = 'amount') {
+  const aliases: Readonly<Record<string, string>> = {
+    amount: 'salesAmount',
+    branchId: 'primaryDimension',
+    contractCount: 'orderCount',
+    ownerUserId: 'secondaryDimension',
+  };
+  return Object.hasOwn(aliases, column) ? aliases[column]! : column;
+}
+
 export const reportingApi = {
   salesByOrganization(input: SalesByOrganizationPreviewInput = {}) {
-    const genericSortAliases: Record<string, string> = {
-      amount: 'salesAmount',
-      branchId: 'primaryDimension',
-      contractCount: 'orderCount',
-      ownerUserId: 'secondaryDimension',
-      passengerCount: 'passengerCount',
-      ticketCount: 'ticketCount',
-      purchaseAmount: 'purchaseAmount',
-      grossProfit: 'grossProfit',
-      refundAmount: 'refundAmount',
-      settlementBalance: 'settlementBalance',
-      pendingReservationActions: 'pendingReservationActions',
-      currencyCode: 'currencyCode',
-    };
     const filters = {
       ...reportDateRangeUtc(input.fromDate, input.toDate),
       ...(input.currencyCode ? { currencyCode: input.currencyCode } : {}),
@@ -255,9 +249,7 @@ export const reportingApi = {
           page: input.page ?? 1,
           pageSize: input.pageSize ?? 25,
           sort: {
-            column:
-              genericSortAliases[input.sort?.column ?? 'amount'] ??
-              'salesAmount',
+            column: reportSortApiColumn(input.sort?.column),
             direction: input.sort?.direction ?? 'DESC',
           },
           timezone: 'Asia/Tehran',
@@ -268,26 +260,50 @@ export const reportingApi = {
         return result as SalesByOrganizationReportResult;
       }
       const travel = result as TravelReportResult;
+      const hasColumn = (key: string) =>
+        !travel.columns || travel.columns.some((column) => column.key === key);
       return {
+        ...(travel.dataLayout ? { dataLayout: travel.dataLayout } : {}),
+        ...(travel.columns ? { columns: travel.columns } : {}),
         reportCode: travel.reportCode,
         reportVersion: travel.reportVersion,
         grain: travel.grain,
-        rowGrain: 'ORDER_ITEM_CURRENCY',
+        rowGrain: travel.grain,
         sourceProjection: travel.sourceProjection,
         rows: travel.rows.map((row) => ({
           grainId: row.grainId,
           branchId: row.primaryDimension,
           ownerUserId: row.secondaryDimension,
-          amount: row.salesAmount,
+          amount: String(
+            travel.chartMeasure && !row.amountsByCurrency
+              ? (row.sourceValues?.[travel.chartMeasure] ?? '0')
+              : row.salesAmount,
+          ),
           currencyCode: row.currencyCode,
+          ...(row.amountsByCurrency
+            ? { amountsByCurrency: row.amountsByCurrency }
+            : {}),
           contractCount: row.orderCount,
-          passengerCount: row.passengerCount,
-          ticketCount: row.ticketCount,
-          purchaseAmount: row.purchaseAmount,
-          grossProfit: row.grossProfit,
-          refundAmount: row.refundAmount,
-          settlementBalance: row.settlementBalance,
-          pendingReservationActions: row.pendingReservationActions,
+          ...(travel.dataLayout === 'SOURCE_COLUMNS'
+            ? { sourceValues: row.sourceValues ?? {} }
+            : {}),
+          ...(hasColumn('passengerCount')
+            ? { passengerCount: row.passengerCount }
+            : {}),
+          ...(hasColumn('ticketCount') ? { ticketCount: row.ticketCount } : {}),
+          ...(hasColumn('purchaseAmount')
+            ? { purchaseAmount: row.purchaseAmount }
+            : {}),
+          ...(hasColumn('grossProfit') ? { grossProfit: row.grossProfit } : {}),
+          ...(hasColumn('refundAmount')
+            ? { refundAmount: row.refundAmount }
+            : {}),
+          ...(hasColumn('settlementBalance')
+            ? { settlementBalance: row.settlementBalance }
+            : {}),
+          ...(hasColumn('pendingReservationActions')
+            ? { pendingReservationActions: row.pendingReservationActions }
+            : {}),
         })),
         total: travel.total,
         page: travel.page,
@@ -309,6 +325,9 @@ export const reportingApi = {
         },
         filterSnapshot: travel.filterSnapshot,
         filterOptions: {
+          ...(travel.filterOptionLabels
+            ? { labels: travel.filterOptionLabels }
+            : {}),
           branchIds: travel.filterOptions.branch ?? [],
           ownerUserIds: travel.filterOptions.expert ?? [],
           currencyCodes: travel.filterOptions.currency ?? [],
@@ -327,9 +346,12 @@ export const reportingApi = {
           partiallySettledContracts: 0,
           settledContracts: 0,
           pendingFinancePayments: 0,
-          pendingReservationActions: travel.rows.filter(
-            (row) => row.ticketCount === 0,
-          ).length,
+          pendingReservationActions: hasColumn('pendingReservationActions')
+            ? travel.rows.reduce(
+                (sum, row) => sum + row.pendingReservationActions,
+                0,
+              )
+            : 0,
         },
       } satisfies SalesByOrganizationReportResult;
     });

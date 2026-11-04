@@ -3,6 +3,57 @@ import { describe, expect, it } from 'vitest';
 import { validateMasterDataDraft } from './validation';
 
 describe('master data validation', () => {
+  it.each(['W5', 'IRM', 'mahan air', 'W5 / IRM'])(
+    'accepts airline identifier %s',
+    (airlineCodes) => {
+      expect(
+        validateMasterDataDraft('airlines', { airlineCodes, name: 'Test' })
+          .success,
+      ).toBe(true);
+    },
+  );
+  it.each([
+    '',
+    'A',
+    'A'.repeat(65),
+    'W5 / IRM / EXTRA',
+    'W5 / TOOO',
+    'BAD@CODE',
+  ])('rejects invalid airline identifier %s', (airlineCodes) => {
+    expect(
+      validateMasterDataDraft('airlines', { airlineCodes, name: 'Test' })
+        .success,
+    ).toBe(false);
+  });
+  it.each(['+03:30', '+05:45', '-09:30', '+14:00', '-12:00', '+00:00', ''])(
+    'accepts optional GMT offset %s',
+    (gmtOffset) => {
+      const result = validateMasterDataDraft('countries', {
+        iso2Code: 'IR',
+        name: 'ایران',
+        gmtOffset,
+      });
+      expect(result.success).toBe(true);
+      expect(result.values.gmtOffset).toBe(gmtOffset);
+    },
+  );
+  it.each([
+    '3.5',
+    '03:30',
+    '+14:01',
+    '-12:01',
+    '+03:60',
+    '+25:00',
+    'Europe/London',
+  ])('rejects invalid GMT offset %s', (gmtOffset) => {
+    expect(
+      validateMasterDataDraft('countries', {
+        iso2Code: 'IR',
+        name: 'ایران',
+        gmtOffset,
+      }).errors.gmtOffset,
+    ).toBeDefined();
+  });
   it('accepts a country draft without an internal code', () => {
     const result = validateMasterDataDraft('countries', {
       iso2Code: 'IR',

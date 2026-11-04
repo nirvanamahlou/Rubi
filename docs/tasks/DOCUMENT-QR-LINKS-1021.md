@@ -1,0 +1,10 @@
+# Document QR links
+
+## DOCUMENT-QR-LINKS-1021 — public document capabilities (2026-10-21)
+
+The owner explicitly chooses unauthenticated viewing through an unguessable link scoped to the scanned document. Authenticated, permission-scoped canonical Web PDF producers alone publish immutable distribution artifacts; no public API reads domain records and no client HTML is accepted. Each contract, supplier form, voucher and individual passenger ticket receives a separate random 192-bit capability. Batch ticket downloads publish passenger-isolated snapshots. Existing branch, cancellation, supplier/leader and financial-delivery guards execute before publication; local unsaved edits are never published.
+
+Web owns these encrypted HTML distribution artifacts, not a second Sales/Reservations source of truth. AES-256-GCM uses a runtime-only key, token-bound AAD and hash-only filenames. Exact GET/HEAD /d/<32-character-token> bypasses login; no listing, mutation, identifier lookup or general proxy exception exists. Responses are no-store/noindex/noreferrer with script/form/network-restricting CSP. Previously issued snapshots remain immutable; updating a document creates a new link. Physical artifact removal revokes that capability. Existing legacy QR content cannot be made into a URL retroactively: regenerate outputs after activation.
+
+Activation requires all three PUBLIC_TRAVEL_DOCUMENTS_* settings: HTTPS canonical origin (short enough for the 78-byte QR), absolute persistent private root, and independently generated 32-byte key represented as 64 hex characters. Mount the directory into Web, keep it out of public/static paths, restrict access logs containing capability paths, and include both encrypted artifacts and the separately protected key in recovery procedures. Preserve them across container replacement. Missing all settings keeps existing output compatible and does not expose records; partial configuration fails closed. No schema, dependency or domain API contract changes. Merge/rollout remain separately owner-authorized.
+

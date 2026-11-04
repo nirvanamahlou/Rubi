@@ -1,0 +1,14 @@
+{
+  "name": "@nora/identity-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --check src/server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "oidc-provider": "9.13.0",
+    "ioredis": "5.11.1"
+  }
+}

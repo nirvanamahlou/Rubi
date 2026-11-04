@@ -1,10 +1,12 @@
 import {
   getHrResource,
+  hrBranchName,
+  hrBranchKey,
   type HrRecordDto,
   type HrBootstrapDto,
 } from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
-import { retiredHrColumns } from './hr-form-model';
+import { hrFieldLabel, retiredHrColumns } from './hr-form-model';
 import { hrDisplayDate } from './hr-dates';
 
 export function recordsDataset(
@@ -23,7 +25,11 @@ export function recordsDataset(
       record.section === section && record.tab === tab && !record.deletedAt,
   );
   return {
-    columns: ['شناسه', ...visible.map((item) => item.label), 'وضعیت'],
+    columns: [
+      'شناسه',
+      ...visible.map((item) => hrFieldLabel(item.label)),
+      'وضعیت',
+    ],
     rows: items.map((record) => [
       record.code,
       ...visible.map((item) =>
@@ -55,16 +61,58 @@ export function hrCompanies(data: HrBootstrapDto) {
       !item.deletedAt &&
       item.status === 'فعال',
   );
-  return catalog.length
-    ? catalog.map((item) => ({
-        id: item.id,
-        branchId: item.branchId,
-        name: item.values[0] ?? item.code,
-        organizationBranchId: item.id,
-      }))
-    : data.branches.map((item) => ({
+  const options = [
+    ...catalog.map((item) => ({
+      id: item.id,
+      branchId: item.branchId,
+      name: item.values[0] ?? item.code,
+      organizationBranchId: item.id,
+    })),
+    ...data.branches
+      .filter(
+        (branch) => !catalog.some((company) => company.branchId === branch.id),
+      )
+      .map((item) => ({
         ...item,
         branchId: item.id,
         organizationBranchId: '',
-      }));
+      })),
+  ];
+  const headquarters =
+    data.branches.find((b) => hrBranchName(b.name) === 'دفتر مرکزی') ??
+    data.branches[0];
+  const grouped = new Map<
+    string,
+    (typeof options)[number] & {
+      aliases: string[];
+      branchIds: string[];
+      isHeadquarters: boolean;
+    }
+  >();
+  for (const item of options) {
+    const key = hrBranchKey(item.name);
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.aliases.push(item.id);
+      existing.branchIds.push(item.branchId);
+    } else
+      grouped.set(key, {
+        ...item,
+        name: hrBranchName(item.name),
+        aliases: [item.id],
+        branchIds: [item.branchId],
+        isHeadquarters: key === 'دفتر مرکزی',
+      });
+  }
+  if (headquarters && !grouped.has('دفتر مرکزی'))
+    grouped.set('دفتر مرکزی', {
+      id: 'hr-headquarters',
+      branchId: headquarters.id,
+      name: 'دفتر مرکزی',
+      organizationBranchId: '',
+      aliases: ['hr-headquarters'],
+      branchIds: [headquarters.id],
+      isHeadquarters: true,
+    });
+  return [...grouped.values()];
 }

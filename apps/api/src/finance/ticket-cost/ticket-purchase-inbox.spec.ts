@@ -36,7 +36,7 @@ type Row = {
   currencyCode: string;
   payments: { id: string }[];
 };
-function fixture() {
+function fixture(totalCapacity?: number) {
   const rows: Row[] = [];
   const create = vi.fn(async ({ data }: { data: Omit<Row, 'payments'> }) => {
     const row = { ...data, payments: [] };
@@ -77,10 +77,59 @@ function fixture() {
         },
       } as never,
       procurement as never,
+      undefined,
+      totalCapacity === undefined
+        ? undefined
+        : ({
+            documentSupply: vi.fn(async () => 'COMPANY'),
+            purchaseCapacityInventory: vi.fn(async () => [
+              { id: 'offer', totalCapacity },
+            ]),
+          } as never),
     ),
   };
 }
 describe('Travel purchase cost handoff', () => {
+  it('edits a saved total into a per-seat price as a new revision before payment', async () => {
+    const f = fixture();
+    const {
+      version,
+      operationId,
+      expectedCostVersion,
+      seatCount,
+      currencyCode,
+    } = input;
+    const base = {
+      version,
+      operationId,
+      expectedCostVersion,
+      seatCount,
+      currencyCode,
+    };
+    const original = await f.service.recordCost(
+      'request',
+      { ...base, totalCost: '2500' },
+      actor,
+    );
+    const revised = await f.service.recordCost(
+      'request',
+      {
+        ...input,
+        operationId: '22222222-2222-4222-8222-222222222222',
+        expectedCostVersion: 1,
+        unitCost: '130',
+      },
+      actor,
+    );
+    expect(original.invoiceAmount).toBe('2500');
+    expect(revised).toMatchObject({
+      version: 2,
+      unitCost: '130',
+      invoiceAmount: '2600',
+    });
+    expect(f.rows[0]!.invoiceAmount.toString()).toBe('2500');
+    expect(f.rows).toHaveLength(2);
+  });
   it('preserves a total that cannot be evenly divided and protects total-cost replay', async () => {
     const f = fixture();
     const { version, operationId, expectedCostVersion, currencyCode } = input;
@@ -152,4 +201,16 @@ describe('Travel purchase cost handoff', () => {
     ).rejects.toBeInstanceOf(ConflictException);
     expect(f.create).toHaveBeenCalledTimes(1);
   });
+});
+
+it('accepts the current catalog block instead of the stale original request capacity', async () => {
+  const f = fixture(50);
+  await expect(
+    f.service.recordCost('request', { ...input, seatCount: 50 }, actor),
+  ).resolves.toMatchObject({ seatCount: 50 });
+  const smaller = fixture(10);
+  await expect(
+    smaller.service.recordCost('request', input, actor),
+  ).rejects.toThrow();
+  expect(smaller.create).not.toHaveBeenCalled();
 });

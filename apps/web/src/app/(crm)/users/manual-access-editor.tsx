@@ -17,6 +17,7 @@ import {
   type ManualAccessSelection,
   screenPermission,
   denyPermission,
+  completeManualAccessPrerequisites,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -111,7 +112,12 @@ export function ManualAccessEditor({
         );
         next.allowedControlIds = change(next.allowedControlIds, screenControls);
       }
-      return { ...current, selection: next };
+      return {
+        ...current,
+        selection: checked
+          ? completeManualAccessPrerequisites(next, current.selection)
+          : next,
+      };
     });
   }
   async function save() {
@@ -187,7 +193,7 @@ export function ManualAccessEditor({
           setSnapshot({
             ...snapshot,
             title: role.name,
-            selection: {
+            selection: completeManualAccessPrerequisites({
               permissionCodes: replace(
                 selection.permissionCodes,
                 native,
@@ -214,7 +220,7 @@ export function ManualAccessEditor({
                         codes.includes(screenPermission(c.id))),
                   ).map((c) => c.id),
               ),
-            },
+            }),
           });
         }}
       />
@@ -305,11 +311,12 @@ export function ManualAccessEditor({
               if (!current) return current;
               return {
                 ...current,
-                selection: changeSectionAccess(
-                  current.selection,
-                  section,
-                  checked,
-                ),
+                selection: checked
+                  ? completeManualAccessPrerequisites(
+                      changeSectionAccess(current.selection, section, checked),
+                      current.selection,
+                    )
+                  : changeSectionAccess(current.selection, section, checked),
               };
             });
           }

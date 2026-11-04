@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, FilePenLine, Plus } from 'lucide-react';
+import { Eye, FilePenLine, Plus, Trash2 } from 'lucide-react';
 import type {
   CompanyBankAccountInputV1,
   CompanyBankAccountV1,
@@ -53,6 +53,25 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
     [pending, setPending] = useState(false);
   const busy = useRef(false),
     generation = useRef(0);
+  const [deleting, setDeleting] = useState<CompanyBankAccountV1 | null>(null);
+  async function remove() {
+    if (!deleting || busy.current) return;
+    busy.current = true;
+    setPending(true);
+    setError('');
+    try {
+      await bankAccountsApi.remove(bankId, deleting.id, deleting.version);
+      setDeleting(null);
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'حذف حساب بانکی ناموفق بود.',
+      );
+    } finally {
+      busy.current = false;
+      setPending(false);
+    }
+  }
   const load = useCallback(async () => {
     const current = ++generation.current;
     setLoading(true);
@@ -235,6 +254,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
               <tr>
                 {[
                   'عنوان حساب',
+                  'کد تفصیلی حسابداری',
                   'شعبه شرکت',
                   'ارز',
                   'شماره حساب',
@@ -253,6 +273,9 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-border">
                   <td className="p-3 text-center">{row.title}</td>
+                  <td className="p-3 text-center font-mono" dir="ltr">
+                    {row.accountingCode ?? '—'}
+                  </td>
                   <td className="p-3 text-center">
                     {options?.branches.find((x) => x.id === row.branchId)
                       ?.name ?? '—'}
@@ -299,6 +322,18 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                               className="size-4"
                             />
                           </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            aria-label="حذف حساب بانکی"
+                            disabled={pending}
+                            onClick={() => {
+                              setError('');
+                              setDeleting(row);
+                            }}
+                          >
+                            <Trash2 aria-hidden="true" className="size-4" />
+                          </Button>
                         </>
                       ) : (
                         '—'
@@ -331,6 +366,37 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
         </div>
       ) : null}
       <Dialog
+        open={Boolean(deleting)}
+        onOpenChange={(value) => {
+          if (!value && !busy.current) setDeleting(null);
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>حذف حساب بانکی</DialogTitle>
+          <DialogDescription>
+            فقط حساب بدون استفاده حذف می‌شود و سابقه عملیات باقی می‌ماند.
+          </DialogDescription>
+          <p>{deleting?.title}</p>
+          {error ? <p role="alert">{error}</p> : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => setDeleting(null)}
+            >
+              انصراف
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pending}
+              onClick={() => void remove()}
+            >
+              حذف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={editor !== null}
         onOpenChange={(value) => {
           if (!value && !busy.current) setEditor(null);
@@ -353,6 +419,19 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                 void save();
               }}
             >
+              {editor.record ? (
+                <FormField
+                  id="company-bank-accounting-code"
+                  label="کد تفصیلی حسابداری"
+                >
+                  <Input
+                    id="company-bank-accounting-code"
+                    readOnly
+                    dir="ltr"
+                    value={editor.record.accountingCode ?? ''}
+                  />
+                </FormField>
+              ) : null}
               <FormField id="company-bank-title" label="عنوان حساب" required>
                 <Input
                   id="company-bank-title"

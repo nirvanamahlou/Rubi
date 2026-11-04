@@ -72,6 +72,85 @@ function fixture() {
   };
 }
 describe('published package sale projection', () => {
+  it('adds published airfare once at contract time, keeping hotel rows and historical combined prices intact', async () => {
+    const { service, findMany, tourCostGrid } = fixture();
+    const rows = await findMany();
+    const publication = rows[0].publications[0];
+    const grid = await tourCostGrid();
+    Object.assign(grid.tour, { outbound: { cabinClassCode: 'BUSINESS' } });
+    const fields = [
+      ['adultFlight', '100', 'IRR', 'fixed'],
+      ['childFlight', '50', 'IRR', 'fixed'],
+      ['infantFlight', '10', 'IRR', 'fixed'],
+      ['business', '20', 'EUR', 'fixed'],
+      ['commission', '10', 'IRR', 'percent'],
+      ['custom', '999', 'EUR', 'fixed'],
+    ].map(([kind, amount, currencyCode, mode]) => ({
+      id: kind,
+      title: kind,
+      kind,
+      amount,
+      currencyCode,
+      mode,
+    }));
+    Object.assign(publication, { priceFields: fields, currencyCode: 'EUR' });
+    const price = publication.roomPrices[0];
+    const childAges = [
+      { min: 0, maxExclusive: 2 },
+      { min: 2, maxExclusive: 6 },
+      { min: 12, maxExclusive: 15 },
+    ];
+    price.roomCode = packageRoomCode({
+      roomTypeId: 'room',
+      adults: 2,
+      childAges,
+      board: 'BB',
+    });
+    // Absence of the per-row marker preserves the historical combined total.
+    expect((await service.saleCatalog('tour', actor)).data[0]?.prices).toEqual([
+      { currencyCode: 'EUR', amount: '123.45' },
+    ]);
+    Object.assign(price.currencyAmounts[0], { priceBasis: 'HOTEL_ONLY' });
+    const expected = [
+      { currencyCode: 'EUR', amount: '183.45' },
+      { currencyCode: 'IRR', amount: '360' },
+    ];
+    const result = await service.saleCatalog('tour', actor);
+    expect(result.data[0]?.prices).toEqual(expected);
+    expect(price.currencyAmounts[0].sale).toBe('123.45');
+    const request = {
+      services: [
+        {
+          metadata: {
+            tourDepartureId: 'tour',
+            packagePublishedSale: JSON.stringify({
+              tourDepartureId: 'tour',
+              items: [{ publicationId: 'pub', roomCode: price.roomCode }],
+              prices: expected,
+            }),
+          },
+        },
+      ],
+      hotelSelection: {
+        hotelId: 'hotel',
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-03',
+        rooms: [{ roomTypeId: 'room', adults: 2, childAges: [1, 5, 13] }],
+      },
+      priceComponents: expected.map((p) => ({
+        type: 'BASE',
+        title: 'Published',
+        ...p,
+      })),
+    } as unknown as SalesContractCreateRequest;
+    await expect(service.validateContractSale(request, actor)).resolves.toBe(
+      'hotel',
+    );
+    request.priceComponents![1]!.amount = '350';
+    await expect(service.validateContractSale(request, actor)).rejects.toThrow(
+      'قیمت فروش معتبر نیست.',
+    );
+  });
   it('requires sales permission before reading any prices and delegates branch scope to the owner', async () => {
     const { service, findMany, tourCostGrid } = fixture();
     await expect(
@@ -182,4 +261,26 @@ it('requires a canonical quote for a published tour but retains legacy unpriced 
   await expect(
     service.assertContractSale(request, actor, 'branch'),
   ).resolves.toBeUndefined();
+});
+
+it('rejects manual published base price increases without a discount and excessive discounts', () => {
+  const { service } = fixture();
+  for (const priceComponents of [
+    [{ type: 'BASE', currencyCode: 'EUR', amount: '124', title: 'Base' }],
+    [
+      { type: 'BASE', currencyCode: 'EUR', amount: '123.45', title: 'Base' },
+      {
+        type: 'DISCOUNT',
+        currencyCode: 'EUR',
+        amount: '124',
+        title: 'Discount',
+      },
+    ],
+  ])
+    expect(() =>
+      service.validateContractAmounts(
+        { services: [], priceComponents } as never,
+        [{ currencyCode: 'EUR', amount: '123.45' }],
+      ),
+    ).toThrow();
 });

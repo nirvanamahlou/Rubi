@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto';
 import net from 'node:net';
 import tls from 'node:tls';
 import { StringDecoder } from 'node:string_decoder';
+import { QueueSnapshotCollector } from './queue-snapshot';
+import type { MemberSnapshot } from './sticky-sales';
 
 export type AmiMessage = Record<string, string>;
 
@@ -70,6 +72,7 @@ export function encodeAction(
 export class AmiClient extends EventEmitter {
   private socket?: net.Socket;
   private ready = false;
+  private snapshotBusy = false;
   private parser = new AmiParser();
   private pending = new Map<
     string,
@@ -77,6 +80,7 @@ export class AmiClient extends EventEmitter {
       resolve: (value: AmiMessage) => void;
       reject: (reason: Error) => void;
       timer: ReturnType<typeof setTimeout>;
+      login: boolean;
     }
   >();
   get connected() {
@@ -103,8 +107,11 @@ export class AmiClient extends EventEmitter {
           if (message.response && pending) {
             clearTimeout(pending.timer);
             this.pending.delete(message.actionid!);
-            if (message.response === 'Success') pending.resolve(message);
-            else pending.reject(Error('AMI_ACTION_REJECTED'));
+            if (message.response === 'Success') {
+              // Login and the first event can arrive in the same TCP chunk.
+              if (pending.login) this.ready = true;
+              pending.resolve(message);
+            } else pending.reject(Error('AMI_ACTION_REJECTED'));
           }
           if (this.ready && message.event) this.emit('event', message);
         }
@@ -154,6 +161,8 @@ export class AmiClient extends EventEmitter {
     action: string,
     fields: Record<string, string | string[]>,
     id: string = randomUUID(),
+    timeoutMs = 5000,
+    closeOnTimeout = true,
   ) {
     if (!this.socket || this.socket.destroyed || this.pending.size >= 32)
       return Promise.reject(Error('AMI_UNAVAILABLE'));
@@ -162,14 +171,64 @@ export class AmiClient extends EventEmitter {
       const timer = setTimeout(() => {
         this.pending.delete(id);
         reject(Error('AMI_OUTCOME_UNKNOWN'));
-        this.socket?.destroy();
-      }, 5000);
-      this.pending.set(id, { resolve, reject, timer });
+        if (closeOnTimeout) this.socket?.destroy();
+      }, timeoutMs);
+      this.pending.set(id, {
+        resolve,
+        reject,
+        timer,
+        login: action === 'Login',
+      });
       this.socket!.write(frame);
     });
   }
   ping() {
     return this.send('Ping', {});
+  }
+  /** Read-only, one in flight; a failed preview must not interrupt call capture. */
+  async queueSnapshot(
+    queue: string,
+    wrapupSeconds: number,
+  ): Promise<MemberSnapshot | null> {
+    if (
+      !this.ready ||
+      this.snapshotBusy ||
+      !Number.isInteger(wrapupSeconds) ||
+      wrapupSeconds < 0 ||
+      wrapupSeconds > 86400 ||
+      !/^[a-zA-Z0-9_.:-]{1,100}$/.test(queue)
+    )
+      return null;
+    this.snapshotBusy = true;
+    const id = randomUUID();
+    const collector = new QueueSnapshotCollector(queue, id, wrapupSeconds);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let finish: () => void = () => {};
+    const completed = new Promise<void>((resolve) => {
+      finish = resolve;
+      timer = setTimeout(resolve, 750);
+    });
+    const receive = (message: AmiMessage) => {
+      collector.accept(message);
+      if (message.actionid === id && message.event === 'QueueStatusComplete')
+        finish();
+    };
+    this.on('event', receive);
+    this.once('disconnected', finish);
+    try {
+      await Promise.all([
+        this.send('QueueStatus', { Queue: queue }, id, 750, false),
+        completed,
+      ]);
+      return this.ready ? collector.snapshot() : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+      this.off('event', receive);
+      this.off('disconnected', finish);
+      this.snapshotBusy = false;
+    }
   }
   originate(
     id: string,

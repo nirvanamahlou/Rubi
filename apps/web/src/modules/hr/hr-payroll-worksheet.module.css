@@ -1,0 +1,328 @@
+.workspace {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.actions,
+.filters,
+.footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.actions {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.filters {
+  margin-bottom: 18px;
+  align-items: end;
+}
+.filters label,
+.form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 150px;
+}
+.filters input,
+.form input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--foreground);
+  min-width: 0;
+  width: 100%;
+}
+.filters span {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.stats > div {
+  padding: 18px;
+  border: 1px solid #bfd3f5;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e5efff, #f1f6ff);
+  color: #204d91;
+}
+.stats > div:nth-child(2) {
+  background: linear-gradient(135deg, #fff0df, #fff7ed);
+  border-color: #f1d2ac;
+  color: #884b19;
+}
+.stats > div:nth-child(3) {
+  background: linear-gradient(135deg, #eee6ff, #f7f2ff);
+  border-color: #d5c4ef;
+  color: #65418c;
+}
+.stats > div:nth-child(4) {
+  background: linear-gradient(135deg, #dcf5ec, #effbf6);
+  border-color: #b0dfce;
+  color: #146b52;
+}
+.stats strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+}
+.stats small {
+  font-size: 11px;
+}
+.grid {
+  overflow: auto;
+  max-height: 65vh;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.grid table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.grid th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 16px 10px;
+  font-weight: 500;
+}
+.grid th,
+.grid td {
+  border: 1px solid var(--border);
+  text-align: right;
+}
+.grid td {
+  padding: 0;
+}
+.grid th:first-child,
+.grid td:first-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: var(--muted);
+  min-width: 50px;
+  text-align: center;
+  padding: 9px;
+}
+.grid th:first-child {
+  z-index: 4;
+}
+.grid input,
+.grid output {
+  display: block;
+  width: 150px;
+  min-height: 42px;
+  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.grid input[data-field='name'] {
+  width: 190px;
+}
+.grid output {
+  background: var(--muted);
+  text-align: right;
+}
+.grid input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.grid input[aria-invalid='true'] {
+  outline: 2px solid #bb3645;
+  outline-offset: -2px;
+  background: #fff0f1;
+}
+.grid tfoot td {
+  padding: 12px;
+  background: var(--muted);
+}
+.list {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.list table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.list th,
+.list td {
+  text-align: right;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.list th {
+  background: var(--muted);
+  font-weight: 500;
+}
+.list tbody tr:last-child td {
+  border-bottom: 0;
+}
+.list tbody tr:hover {
+  background: var(--muted);
+}
+.listFilters {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1.5fr) minmax(170px, 1.3fr) minmax(90px, 0.7fr)
+    repeat(2, minmax(115px, 1fr)) minmax(130px, 1fr) minmax(155px, 1.2fr);
+  gap: 10px;
+  align-items: end;
+}
+.listFilters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.listFilters input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 12px;
+}
+.listFilters input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.listFilters input[role='combobox'] {
+  padding-inline-end: 32px;
+}
+.listTools,
+.listTools > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.listTools {
+  justify-content: space-between;
+  padding-block: 10px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.listTools button,
+.list td button {
+  min-height: 32px;
+  height: 32px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+@media (max-width: 1400px) {
+  .listFilters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .listFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .listFilters label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 400px) {
+  .listFilters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.empty {
+  padding: 45px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+.footer {
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.error {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff0f1;
+  color: #9e2536;
+}
+.form {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+.form .filters {
+  margin: 0;
+}
+.form label {
+  min-width: 0;
+  flex: 1;
+}
+.form input {
+  font-size: 14px;
+}
+@media (max-width: 1100px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stats strong {
+    font-size: 20px;
+  }
+}
+@media (max-width: 500px) {
+  .stats {
+    gap: 8px;
+  }
+  .stats > div {
+    padding: 12px;
+  }
+  .stats strong {
+    font-size: 16px;
+  }
+  .filters label {
+    width: 100%;
+  }
+}
+@media print {
+  .actions,
+  .filters,
+  .listFilters,
+  .listTools,
+  .footer {
+    display: none;
+  }
+  .grid {
+    max-height: none;
+    overflow: visible;
+  }
+  .grid input,
+  .grid output {
+    width: 90px;
+    font-size: 9px;
+  }
+  .stats strong {
+    font-size: 16px;
+  }
+}

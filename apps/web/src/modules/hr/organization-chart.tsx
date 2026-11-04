@@ -3,7 +3,16 @@ import { uiConfirm } from '@/i18n/dialogs';
 
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { Building2, Info, PencilLine, Trash2 } from 'lucide-react';
+import {
+  Building2,
+  Info,
+  PencilLine,
+  Trash2,
+  UserRoundPlus,
+  UserRound,
+  Plus,
+  Move,
+} from 'lucide-react';
 import {
   useCallback,
   useLayoutEffect,
@@ -26,7 +35,7 @@ import {
 } from './organization-catalog';
 import { RequiredFieldLabel } from './required-field-label';
 
-export type OrganizationNodeKind = 'MANAGEMENT' | 'UNIT';
+export type OrganizationNodeKind = 'MANAGEMENT' | 'UNIT' | 'EMPLOYEE';
 export type OrganizationNodeStatus = 'فعال' | 'غیرفعال';
 
 export interface OrganizationNode {
@@ -39,7 +48,10 @@ export interface OrganizationNode {
   positionCapacity: number;
   effectiveFrom: string;
   status: OrganizationNodeStatus;
-  catalogSource?: 'branch' | 'unit';
+  catalogSource?: 'branch' | 'unit' | 'employee';
+  offsetX?: number;
+  offsetY?: number;
+  mutable?: boolean;
 }
 
 export interface OrganizationNodeFormValue {
@@ -252,7 +264,8 @@ export function validateOrganizationNodeForm(
     capacity < 0 ||
     capacity > 9999
   )
-    errors.positionCapacity = 'ظرفیت سمت باید عددی بین صفر تا ۹۹۹۹ باشد.';
+    errors.positionCapacity =
+      'ظرفیت عنوان شغلی باید عددی بین صفر تا ۹۹۹۹ باشد.';
   if (!value.effectiveFrom) errors.effectiveFrom = 'تاریخ اثر الزامی است.';
 
   return errors;
@@ -494,7 +507,9 @@ export function OrganizationNodeForm({
             </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-capacity">
-            <RequiredFieldLabel required>ظرفیت سمت‌ها</RequiredFieldLabel>
+            <RequiredFieldLabel required>
+              ظرفیت عنوان‌های شغلی
+            </RequiredFieldLabel>
             <input
               {...errorProps('positionCapacity')}
               className={styles.control}
@@ -513,7 +528,8 @@ export function OrganizationNodeForm({
             />
             {initialNode?.catalogSource ? (
               <small className={styles.fieldHint}>
-                ظرفیت از مجموع سمت‌های ثبت‌شده برای این ساختار محاسبه می‌شود.
+                ظرفیت از مجموع عنوان‌های شغلی ثبت‌شده برای این ساختار محاسبه
+                می‌شود.
               </small>
             ) : null}
             <FieldError errors={errors} field="positionCapacity" />
@@ -562,12 +578,23 @@ export function OrganizationChart({
   onDelete,
   editable = true,
   confirmDelete = true,
+  onAddDepartment,
+  onAddEmployee,
+  onPositionChange,
+  busy = false,
 }: {
   nodes: readonly OrganizationNode[];
   onEdit: (node: OrganizationNode) => void;
   onDelete: (node: OrganizationNode) => void;
   editable?: boolean;
   confirmDelete?: boolean;
+  onAddDepartment?: (node: OrganizationNode) => void;
+  onAddEmployee?: (node: OrganizationNode) => void;
+  onPositionChange?: (
+    node: OrganizationNode,
+    position: { x: number; y: number },
+  ) => Promise<void>;
+  busy?: boolean;
 }) {
   const chartRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
@@ -577,6 +604,48 @@ export function OrganizationChart({
     height: 1,
   });
   const roots = nodes.filter((node) => !node.parentId);
+  const [preview, setPreview] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
+  const drag = useRef<{
+    id: string;
+    pointer: number;
+    x: number;
+    y: number;
+    startX: number;
+    startY: number;
+    minX: number;
+    minY: number;
+    next: { x: number; y: number };
+  } | null>(null);
+  const commitPosition = async (
+    node: OrganizationNode,
+    position: { x: number; y: number },
+  ) => {
+    if (
+      position.x === (node.offsetX ?? 0) &&
+      position.y === (node.offsetY ?? 0)
+    ) {
+      setPreview((current) => {
+        const next = { ...current };
+        delete next[node.id];
+        return next;
+      });
+      return;
+    }
+    setPreview((current) => ({ ...current, [node.id]: position }));
+    try {
+      await onPositionChange?.(node, position);
+    } catch {
+      /* Parent displays the save error; restore authoritative coordinates. */
+    } finally {
+      setPreview((current) => {
+        const next = { ...current };
+        delete next[node.id];
+        return next;
+      });
+    }
+  };
 
   const updateEdges = useCallback(() => {
     const chart = chartRef.current;
@@ -601,7 +670,7 @@ export function OrganizationChart({
       },
     );
     const nextSize = {
-      width: Math.max(1, chart.clientWidth),
+      width: Math.max(1, chart.clientWidth, chart.scrollWidth),
       height: Math.max(1, chart.scrollHeight),
     };
     setChartSize((current) =>
@@ -648,6 +717,10 @@ export function OrganizationChart({
     };
   }, [updateEdges]);
 
+  useLayoutEffect(() => {
+    updateEdges();
+  }, [updateEdges, preview]);
+
   const renderNode = (node: OrganizationNode, primary = false) => {
     const children = nodes.filter((item) => item.parentId === node.id);
     return (
@@ -655,6 +728,9 @@ export function OrganizationChart({
         <article
           className={`${styles.orgNode} ${primary ? styles.orgNodePrimary : ''}`}
           data-org-node={node.id}
+          style={{
+            transform: `translate(${preview[node.id]?.x ?? node.offsetX ?? 0}px, ${preview[node.id]?.y ?? node.offsetY ?? 0}px)`,
+          }}
           ref={(element) => {
             if (element) nodeRefs.current.set(node.id, element);
             else nodeRefs.current.delete(node.id);
@@ -662,46 +738,237 @@ export function OrganizationChart({
         >
           {editable ? (
             <div className={styles.orgNodeActions}>
-              <button
-                aria-label={`ویرایش ${node.name}`}
-                className={styles.orgEditButton}
-                onClick={() => onEdit(node)}
-                type="button"
-              >
-                <PencilLine aria-hidden="true" size={14} />
-                ویرایش
-              </button>
-              <button
-                aria-label={`حذف ${node.name}`}
-                className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
-                onClick={() => {
-                  if (
-                    !confirmDelete ||
-                    uiConfirm(
-                      `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
-                    )
-                  )
-                    onDelete(node);
-                }}
-                type="button"
-              >
-                <Trash2 aria-hidden="true" size={14} />
-                حذف
-              </button>
+              {onAddDepartment && node.kind !== 'EMPLOYEE' ? (
+                <button
+                  type="button"
+                  className={styles.orgEditButton}
+                  disabled={busy || node.status !== 'فعال'}
+                  title="افزودن دپارتمان"
+                  aria-label={`افزودن دپارتمان زیر ${node.name}`}
+                  onClick={() => onAddDepartment(node)}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              ) : null}
+              {onAddEmployee ? (
+                <button
+                  type="button"
+                  className={styles.orgEditButton}
+                  disabled={busy || node.status !== 'فعال'}
+                  title="افزودن کارکن"
+                  aria-label={`افزودن کارکن زیر ${node.name}`}
+                  onClick={() => onAddEmployee(node)}
+                >
+                  <UserRoundPlus size={16} aria-hidden="true" />
+                </button>
+              ) : null}
+              {node.mutable !== false ? (
+                <>
+                  <button
+                    disabled={busy}
+                    title="ویرایش"
+                    aria-label={`ویرایش ${node.name}`}
+                    className={styles.orgEditButton}
+                    onClick={() => onEdit(node)}
+                    type="button"
+                  >
+                    <PencilLine aria-hidden="true" size={16} />
+                  </button>
+                  <button
+                    disabled={busy}
+                    title="حذف از چارت"
+                    aria-label={`حذف ${node.name}`}
+                    className={`${styles.orgEditButton} ${styles.orgDeleteButton}`}
+                    onClick={() => {
+                      if (
+                        !confirmDelete ||
+                        uiConfirm(
+                          `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
+                        )
+                      )
+                        onDelete(node);
+                    }}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" size={16} />
+                  </button>
+                  {onPositionChange ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className={`${styles.orgEditButton} ${styles.orgMoveButton}`}
+                      title="جابه‌جایی با کشیدن یا کلیدهای جهت"
+                      aria-label={`جابه‌جایی ${node.name}`}
+                      onPointerDown={(event) => {
+                        if (busy || event.button !== 0 || drag.current) return;
+                        event.preventDefault();
+                        event.currentTarget.focus();
+                        const x = node.offsetX ?? 0,
+                          y = node.offsetY ?? 0;
+                        const nodeRect = nodeRefs.current
+                          .get(node.id)
+                          ?.getBoundingClientRect();
+                        const canvas =
+                          chartRef.current?.getBoundingClientRect();
+                        drag.current = {
+                          id: node.id,
+                          pointer: event.pointerId,
+                          x,
+                          y,
+                          startX: event.clientX,
+                          startY: event.clientY,
+                          minX:
+                            nodeRect && canvas
+                              ? Math.max(
+                                  -5000,
+                                  x - (nodeRect.left - canvas.left),
+                                )
+                              : -5000,
+                          minY:
+                            nodeRect && canvas
+                              ? Math.max(-5000, y - (nodeRect.top - canvas.top))
+                              : -5000,
+                          next: { x, y },
+                        };
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                      }}
+                      onPointerMove={(event) => {
+                        const current = drag.current;
+                        if (
+                          !current ||
+                          current.id !== node.id ||
+                          current.pointer !== event.pointerId
+                        )
+                          return;
+                        current.next = {
+                          x: Math.max(
+                            current.minX,
+                            Math.min(
+                              5000,
+                              Math.round(
+                                current.x + event.clientX - current.startX,
+                              ),
+                            ),
+                          ),
+                          y: Math.max(
+                            current.minY,
+                            Math.min(
+                              5000,
+                              Math.round(
+                                current.y + event.clientY - current.startY,
+                              ),
+                            ),
+                          ),
+                        };
+                        setPreview((value) => ({
+                          ...value,
+                          [node.id]: current.next,
+                        }));
+                      }}
+                      onPointerUp={(event) => {
+                        const current = drag.current;
+                        if (
+                          !current ||
+                          current.id !== node.id ||
+                          current.pointer !== event.pointerId
+                        )
+                          return;
+                        drag.current = null;
+                        if (
+                          event.currentTarget.hasPointerCapture(event.pointerId)
+                        )
+                          event.currentTarget.releasePointerCapture(
+                            event.pointerId,
+                          );
+                        void commitPosition(node, current.next);
+                      }}
+                      onPointerCancel={() => {
+                        drag.current = null;
+                        setPreview((current) => {
+                          const next = { ...current };
+                          delete next[node.id];
+                          return next;
+                        });
+                      }}
+                      onLostPointerCapture={() => {
+                        if (drag.current?.id !== node.id) return;
+                        drag.current = null;
+                        setPreview((current) => {
+                          const next = { ...current };
+                          delete next[node.id];
+                          return next;
+                        });
+                      }}
+                      onKeyDown={(event) => {
+                        const delta: Record<string, [number, number]> = {
+                          ArrowLeft: [-10, 0],
+                          ArrowRight: [10, 0],
+                          ArrowUp: [0, -10],
+                          ArrowDown: [0, 10],
+                        };
+                        const step = delta[event.key];
+                        if (!step || busy) return;
+                        event.preventDefault();
+                        const rect = nodeRefs.current
+                            .get(node.id)
+                            ?.getBoundingClientRect(),
+                          canvas = chartRef.current?.getBoundingClientRect();
+                        const minX =
+                          rect && canvas
+                            ? Math.max(
+                                -5000,
+                                (node.offsetX ?? 0) - (rect.left - canvas.left),
+                              )
+                            : -5000;
+                        const minY =
+                          rect && canvas
+                            ? Math.max(
+                                -5000,
+                                (node.offsetY ?? 0) - (rect.top - canvas.top),
+                              )
+                            : -5000;
+                        void commitPosition(node, {
+                          x: Math.max(
+                            minX,
+                            Math.min(5000, (node.offsetX ?? 0) + step[0]),
+                          ),
+                          y: Math.max(
+                            minY,
+                            Math.min(5000, (node.offsetY ?? 0) + step[1]),
+                          ),
+                        });
+                      }}
+                    >
+                      <Move size={16} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
             </div>
           ) : null}
           <div className={styles.orgNodeTitle}>
-            <Building2 aria-hidden="true" size={17} />
+            {node.kind === 'EMPLOYEE' ? (
+              <UserRound aria-hidden="true" size={17} />
+            ) : (
+              <Building2 aria-hidden="true" size={17} />
+            )}
             <b>{node.name}</b>
           </div>
           <small>{node.manager}</small>
           <div className={styles.orgNodeMeta}>
             <span>
-              {node.kind === 'MANAGEMENT' ? 'مدیریت' : 'واحد سازمانی'}
+              {node.kind === 'MANAGEMENT'
+                ? 'مدیریت'
+                : node.kind === 'EMPLOYEE'
+                  ? 'کارکن'
+                  : 'دپارتمان'}
             </span>
-            <span>
-              {new Intl.NumberFormat('fa-IR').format(node.positionCapacity)} سمت
-            </span>
+            {node.kind !== 'EMPLOYEE' ? (
+              <span>
+                {new Intl.NumberFormat('fa-IR').format(node.positionCapacity)}{' '}
+                عنوان شغلی
+              </span>
+            ) : null}
             <span>{node.status}</span>
           </div>
         </article>
@@ -719,6 +986,7 @@ export function OrganizationChart({
       <svg
         aria-hidden="true"
         className={styles.orgEdges}
+        style={{ width: chartSize.width, height: chartSize.height }}
         data-edge-count={getOrganizationRelationships(nodes).length}
         preserveAspectRatio="none"
         viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
@@ -764,7 +1032,8 @@ export function OrganizationNodeDialog({
           {initialNode ? 'ویرایش گره سازمانی' : 'افزودن گره سازمانی'}
         </DialogTitle>
         <DialogDescription>
-          ارتباط شعبه، والد، مسئول و ظرفیت سمت‌های این گره را در چارت مشخص کنید.
+          ارتباط شعبه، والد، مسئول و ظرفیت عنوان‌های شغلی این گره را در چارت
+          مشخص کنید.
         </DialogDescription>
         <OrganizationNodeForm
           initialNode={initialNode}

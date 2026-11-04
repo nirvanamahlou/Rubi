@@ -100,6 +100,9 @@ class TicketOffersController {
   ) {
     return this.service.documentDetails(id, req.actor);
   }
+  @Get('charter-routes') charterRoutes(@Req() req: AuthenticatedRequest) {
+    return this.service.charterRoutes(req.actor);
+  }
   @Get('management') managed(
     @Req() req: AuthenticatedRequest,
     @Query('page') page = '1',

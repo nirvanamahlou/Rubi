@@ -5,7 +5,8 @@ import {
   flightRoomTotals,
   type SalesMoney,
 } from '@nora/contracts';
-import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
+import { formatSalesMoney } from '@/components/ui/money-input';
+import { SalesMoneyInput } from './sales-money-input';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 import {
@@ -203,6 +204,7 @@ export function PassengerServicePrices({
                       {salesPassengerAgeLabel(
                         p.birthDate,
                         salesTravelDate(state),
+                        p.ageCategory,
                       )}
                     </span>
                   </th>
@@ -236,7 +238,8 @@ export function PassengerServicePrices({
                     <span className="mb-1 block text-xs text-muted-foreground">
                       ریال (IRR)
                     </span>
-                    <MoneyInput
+                    <SalesMoneyInput
+                      currencyCode="IRR"
                       aria-label="قیمت ریالی"
                       value={rial?.amount ?? ''}
                       onValueChange={(amount) => change('rial', { amount })}
@@ -244,6 +247,7 @@ export function PassengerServicePrices({
                   </td>
                   <td className="min-w-36 space-y-1 p-2">
                     <SalesCurrencySelect
+                      hideLabel
                       label="نوع ارز"
                       currencies={foreignCurrencies}
                       value={fx.currencyCode}
@@ -251,7 +255,8 @@ export function PassengerServicePrices({
                         change('foreign', { currencyCode })
                       }
                     />
-                    <MoneyInput
+                    <SalesMoneyInput
+                      currencyCode={fx.currencyCode}
                       aria-label="قیمت ارزی"
                       value={foreign.length > 1 ? '' : fx.amount}
                       disabled={foreign.length > 1}
@@ -287,6 +292,7 @@ export function PassengerServicePrices({
                     return (
                       <td key={kind} className="min-w-28 space-y-1 p-2">
                         <SalesCurrencySelect
+                          hideLabel
                           label={'ارز ' + label}
                           currencies={currencies}
                           value={currencyCode}
@@ -294,7 +300,8 @@ export function PassengerServicePrices({
                             changeDeduction({ currencyCode })
                           }
                         />
-                        <MoneyInput
+                        <SalesMoneyInput
+                          currencyCode={currencyCode}
                           aria-label={label}
                           value={price?.amount ?? ''}
                           onValueChange={(amount) =>

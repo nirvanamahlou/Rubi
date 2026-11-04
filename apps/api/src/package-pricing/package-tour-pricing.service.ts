@@ -25,7 +25,7 @@ import {
   validatePackageRoomSales,
   calculateTourRoom,
   buildHotelPackageTable,
-  buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomIdentity,
   packageTourSelectionBatch,
   matchingPublishedRooms,
@@ -186,7 +186,11 @@ export class PackageTourPricingService {
           .filter((p) => p.type === 'DISCOUNT')
           .reduce((n, p) => n.add(p.amount), new Prisma.Decimal(0));
         const reference = baseline.get(code) ?? new Prisma.Decimal(0);
-        if (base.lt(reference) || (discount.gt(0) && !base.eq(reference)))
+        if (
+          !base.eq(reference) ||
+          discount.gt(base) ||
+          parts.some((part) => part.type !== 'BASE' && part.type !== 'DISCOUNT')
+        )
           throw new BadRequestException('قیمت فروش معتبر نیست.');
       }
     }
@@ -220,10 +224,77 @@ export class PackageTourPricingService {
       if (!batch || !publication) continue;
       for (const price of publication.roomPrices) {
         const row = batch.rows.find((r) => r.id === price.hotelRateId);
-        if (!row || !packageRoomIdentity(price.roomCode)) continue;
+        const identity = packageRoomIdentity(price.roomCode);
+        if (!row || !identity) continue;
         const amounts =
           price.currencyAmounts as unknown as TourRoomCurrencyAmount[];
         if (!Array.isArray(amounts)) continue;
+        let prices = amounts.map((p) => ({
+          currencyCode: p.currencyCode,
+          amount: p.sale,
+        }));
+        // The marker is immutable with each new row. Old combined publications
+        // have no marker and must never receive their airfare a second time.
+        if (
+          amounts.length &&
+          amounts.every((p) => p.priceBasis === 'HOTEL_ONLY')
+        ) {
+          const fields = Array.isArray(publication.priceFields)
+            ? validateTourPriceFields(publication.priceFields)
+            : tourPriceFields({
+                currencyCode: publication.currencyCode,
+                adultFlightSale: publication.adultFlightSale.toString(),
+                adultFlightSaleCurrencyCode:
+                  publication.adultFlightSaleCurrencyCode,
+                childFlightSale: publication.childFlightSale.toString(),
+                childFlightSaleCurrencyCode:
+                  publication.childFlightSaleCurrencyCode,
+                businessUplift: publication.businessUplift.toString(),
+                businessUpliftCurrencyCode:
+                  publication.businessUpliftCurrencyCode,
+              });
+          const values = tourPriceFieldValues(fields);
+          const airfare = calculateTourRoom({
+            basePerNight: '0',
+            factor: '1',
+            nights: 1,
+            hotelCurrency: publication.currencyCode,
+            adjustment: { direction: 'increase', mode: 'percent', value: '0' },
+            adults:
+              identity.adults +
+              identity.childAges.filter((a) => a.min >= 12).length,
+            children: identity.childAges.filter(
+              (a) => a.min >= 2 && a.maxExclusive <= 12,
+            ).length,
+            infants: identity.childAges.filter((a) => a.maxExclusive <= 2)
+              .length,
+            infantFlight: fields.find((f) => f.kind === 'infantFlight'),
+            adultFlight: {
+              amount: values.adultFlightSale,
+              currencyCode: values.adultFlightSaleCurrencyCode,
+            },
+            childFlight: {
+              amount: values.childFlightSale,
+              currencyCode: values.childFlightSaleCurrencyCode,
+            },
+            businessUplift: {
+              amount: values.businessUplift,
+              currencyCode: values.businessUpliftCurrencyCode,
+            },
+            businessCabin:
+              grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
+              grid.tour.returning?.cabinClassCode === 'BUSINESS',
+            commissionPercent: '0',
+          }).currencyAmounts;
+          prices = publishedSaleTotals([
+            { prices },
+            {
+              prices: airfare
+                .filter((p) => !/^0(?:\.0+)?$/.test(p.sale))
+                .map((p) => ({ currencyCode: p.currencyCode, amount: p.sale })),
+            },
+          ]);
+        }
         data.push({
           publicationId: publication.id,
           hotelId: row.hotelId,
@@ -232,10 +303,7 @@ export class PackageTourPricingService {
           roomCode: price.roomCode,
           checkIn: grid.tour.startsOn,
           checkOut: grid.tour.endsOn,
-          prices: amounts.map((p) => ({
-            currencyCode: p.currencyCode,
-            amount: p.sale,
-          })),
+          prices,
         });
       }
     }
@@ -432,7 +500,8 @@ export class PackageTourPricingService {
         priceFields ??
         (Array.isArray(existing?.priceFields)
           ? validateTourPriceFields(existing.priceFields).map((field) => {
-              if (field.kind === 'custom') return field;
+              if (field.kind === 'custom' || field.kind === 'infantFlight')
+                return field;
               const legacy = tourPriceFields({
                 ...input,
                 priceFields: undefined,
@@ -569,10 +638,6 @@ export class PackageTourPricingService {
     if (!draft) throw new NotFoundException('پیش‌نویس تور یافت نشد.');
     if (draft.version !== input.expectedDraftVersion)
       throw new ConflictException('نسخه پیش‌نویس قیمت تغییر کرده است.');
-    if (draft.updatedByUserId === actor.userId)
-      throw new ForbiddenException(
-        'تأییدکننده انتشار باید غیر از آخرین ویرایشگر قیمت باشد.',
-      );
     const grid = await this.pricing.tourCostGrid(draft.tourDepartureId, actor);
     const batch = packageTourSelectionBatch(
       grid,
@@ -602,9 +667,9 @@ export class PackageTourPricingService {
         'ردیف قیمت خرید هتلِ پیش‌نویس دیگر در این بازه نیست.',
       );
 
-    if (grid.missingFlightOfferIds.length || grid.tour.remainingCapacity < 1)
+    if (grid.tour.remainingCapacity < 1)
       throw new UnprocessableEntityException(
-        'نرخ پرداخت‌شده همه پروازها و ظرفیت تور لازم است.',
+        'ظرفیت تور برای انتشار قیمت کافی نیست.',
       );
     const outbound = grid.flightPurchaseCosts.find(
       (cost) => cost.offerId === grid.tour.outboundOfferId,
@@ -614,10 +679,12 @@ export class PackageTourPricingService {
           (cost) => cost.offerId === grid.tour.returnOfferId,
         )
       : undefined;
-    if (!outbound || (grid.tour.returnOfferId && !returning))
-      throw new UnprocessableEntityException(
-        'قیمت خرید پرواز یا پرداخت آن کامل نشده است.',
-      );
+    const flightCosts =
+      !grid.missingFlightOfferIds.length &&
+      outbound &&
+      (!grid.tour.returnOfferId || returning)
+        ? [outbound, ...(returning ? [returning] : [])]
+        : undefined;
     const nights = grid.nights;
     const businessCabin =
       grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
@@ -656,6 +723,11 @@ export class PackageTourPricingService {
           const adjustment = byRow.get(row.id);
           try {
             const calculated = calculateTourRoom({
+              infantFlight: Array.isArray(draft.priceFields)
+                ? validateTourPriceFields(draft.priceFields).find(
+                    (field) => field.kind === 'infantFlight',
+                  )
+                : undefined,
               extraSaleFields: Array.isArray(draft.priceFields)
                 ? validateTourPriceFields(draft.priceFields).filter(
                     (field) => field.kind === 'custom',
@@ -694,7 +766,7 @@ export class PackageTourPricingService {
                 currencyCode:
                   draft.commissionCurrencyCode ?? draft.currencyCode,
               },
-              flightCosts: [outbound, ...(returning ? [returning] : [])],
+              flightCosts,
             });
             const single =
               calculated.currencyAmounts.length === 1
@@ -741,7 +813,7 @@ export class PackageTourPricingService {
                 try {
                   return (
                     Array.isArray(draft.selectedRoomKeys)
-                      ? buildHotelPackageCompositions
+                      ? buildHotelOnlyPackageCompositions
                       : buildHotelPackageTable
                   )({
                     row,
@@ -779,15 +851,17 @@ export class PackageTourPricingService {
                         currencyCode:
                           draft.commissionCurrencyCode ?? draft.currencyCode,
                       },
+                      infantFlight: Array.isArray(draft.priceFields)
+                        ? validateTourPriceFields(draft.priceFields).find(
+                            (field) => field.kind === 'infantFlight',
+                          )
+                        : undefined,
                       extraSaleFields: Array.isArray(draft.priceFields)
                         ? validateTourPriceFields(draft.priceFields).filter(
                             (field) => field.kind === 'custom',
                           )
                         : [],
-                      flightCosts: [
-                        outbound,
-                        ...(returning ? [returning] : []),
-                      ],
+                      flightCosts,
                     },
                   });
                 } catch (error) {
@@ -822,7 +896,9 @@ export class PackageTourPricingService {
                     raw,
                     overrides,
                     (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
-                    draft.commissionPercent.toString(),
+                    Array.isArray(draft.selectedRoomKeys)
+                      ? '0'
+                      : draft.commissionPercent.toString(),
                   );
                   const single =
                     item.currencyAmounts.length === 1
@@ -922,7 +998,7 @@ export class PackageTourPricingService {
           tourVersion: grid.tour.version,
           sourceFingerprint: fingerprint,
           reason: (input.reason ?? '').trim(),
-          outboundCostRevisionId: outbound.costRevisionId,
+          outboundCostRevisionId: outbound?.costRevisionId ?? null,
           returnCostRevisionId: returning?.costRevisionId ?? null,
           adultFlightSale: draft.adultFlightSale,
           adultFlightSaleCurrencyCode: draft.adultFlightSaleCurrencyCode,

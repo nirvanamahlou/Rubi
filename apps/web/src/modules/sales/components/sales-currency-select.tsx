@@ -43,11 +43,13 @@ export function validateSalesCurrencySelection(
 }
 export function SalesCurrencySelect({
   label,
+  hideLabel = false,
   currencies,
   value,
   onChange,
 }: {
   label: string;
+  hideLabel?: boolean;
   currencies: readonly SalesCurrency[];
   value: string;
   onChange: (value: string) => void;
@@ -57,6 +59,7 @@ export function SalesCurrencySelect({
     <div className="min-w-0 flex-1 space-y-1">
       <SearchableReference
         label={label}
+        hideLabel={hideLabel}
         value={value}
         options={options}
         onChange={onChange}

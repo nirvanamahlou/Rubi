@@ -1,10 +1,14 @@
 'use client';
+import { hrBranchKey } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useMemo, useRef, useState } from 'react';
-import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
-import type { HrBootstrapDto, HrEmployeeDto } from '@nora/contracts';
+import type {
+  HrBootstrapDto,
+  HrEmployeeDto,
+  HrRecordDto,
+} from '@nora/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import {
@@ -34,32 +38,43 @@ import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
 import { hrStatusText } from './hr-presentation';
 import { hrDisplayDate } from './hr-dates';
+import { defaultPersonnelIdentity } from './personnel-identity-fields';
+import { useHrEmployeeRecords } from './hr-employee-records';
+import { employeeEmploymentDates } from './employee-employment-dates';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
   branches: readonly { id: string; name: string }[],
+  records: readonly HrRecordDto[] = [],
 ): HrPreviewDataset {
+  const dates = employeeEmploymentDates(records);
   return {
     columns: [
       'کد پرسنلی',
       'نام و نام خانوادگی',
+      'شماره داخلی',
       'نوع همکاری',
       'شرکت و واحد',
-      'سمت',
+      'عنوان شغلی',
       'رده',
       'مدیر مستقیم',
-      'تاریخ شروع',
+      'تاریخ شروع به کار',
+      'تاریخ پایان قرارداد',
+      'تاریخ پایان همکاری',
       'وضعیت',
     ],
     rows: employees.map((item) => [
       item.personnelCode,
       item.name,
+      item.extensions?.join('، ') || item.extension || '—',
       item.kind,
       `${item.companyName || branches.find((branch) => branch.id === item.branchId)?.name || ''} / ${item.unit}`,
       item.position,
       item.grade,
       item.manager,
       hrDisplayDate(item.startedAtValue),
+      hrDisplayDate(dates.get(item.id)?.contractEnd || '—'),
+      hrDisplayDate(dates.get(item.id)?.employmentEnd || '—'),
       hrStatusText(item.status),
     ]),
     recordIds: employees.map((item) => item.id),
@@ -84,10 +99,43 @@ export function employeeFormValue(
       ? identity.values
       : undefined;
   return {
+    ...(store.data!.capabilities?.sensitive
+      ? {
+          identityValues: identity
+            ? defaultPersonnelIdentity.map(
+                (value, index) => identity.values[index] ?? value,
+              )
+            : [...defaultPersonnelIdentity],
+          contactValues: store
+            .data!.records.filter(
+              (r) =>
+                r.employeeId === employee.id &&
+                r.section === 'employee' &&
+                r.tab === 'phones' &&
+                !r.deletedAt,
+            )
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((r) => [...r.values]),
+          profileRecords: store
+            .data!.records.filter(
+              (r) =>
+                r.employeeId === employee.id &&
+                r.section === 'employee' &&
+                ['identity', 'phones'].includes(r.tab) &&
+                !r.deletedAt,
+            )
+            .map((r) => ({ id: r.id, version: r.version })),
+        }
+      : {}),
     userId: employee.userId ?? '',
+    extension: employee.extension ?? '',
+    extensions: employee.extensions?.length
+      ? employee.extensions
+      : [employee.extension ?? ''],
     firstName: parts?.[0] ?? firstName ?? '',
     lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
+    identificationCode: employee.identificationCode ?? '',
     employmentType: employee.kind,
     branch:
       employee.companyName ||
@@ -102,24 +150,34 @@ export function employeeFormValue(
           ?.name ?? employee.manager)
       : 'بدون مدیر مستقیم',
     startedAt: employee.startedAtValue,
-    status: (['فعال', 'در حال تکمیل', 'تعلیق‌شده'].includes(employee.status)
-      ? employee.status
-      : 'فعال') as NewEmployeeFormValue['status'],
+    status: employee.status as NewEmployeeFormValue['status'],
   };
 }
-export function employeeOrganizationOptions(data: HrBootstrapDto) {
+export function employeeOrganizationOptions(
+  data: HrBootstrapDto,
+  ownerBranchId?: string,
+) {
   return hrCompanies(data).map((company) => {
+    const local = data.records.find(
+      (r) =>
+        r.section === 'organization' &&
+        r.tab === 'branches' &&
+        r.branchId === ownerBranchId &&
+        !r.deletedAt &&
+        r.status === 'فعال' &&
+        hrBranchKey(r.values[0] ?? '') === hrBranchKey(company.name),
+    );
     const options = hrReferenceOptions(
       data,
       'employee',
       'create',
-      company.branchId,
-      company.organizationBranchId,
+      local?.branchId ?? company.branchId,
+      local?.id ?? company.organizationBranchId,
     );
     return {
       branch: company.name,
       units: options['واحد'] ?? [],
-      positions: options['سمت'] ?? [],
+      positions: options['عنوان شغلی'] ?? [],
       grades: options['رده'] ?? [],
     };
   });
@@ -155,14 +213,38 @@ export function HrEmployeeEditor({
   }>();
   const references = useHrReferenceData(store);
   const external = useHrFormReferences(employee?.id);
+  const profile = useHrEmployeeRecords(employee?.id, store.revision);
   const companies = hrCompanies(references.data);
-  const preferredCompany = companies.find(
-    (company) => company.id === preferredCompanyId,
+  const preferredBase = companies.find((company) =>
+    company.aliases.includes(preferredCompanyId ?? ''),
   );
+  const preferredRecord = references.data.records.find(
+    (r) =>
+      r.id === preferredCompanyId &&
+      r.section === 'organization' &&
+      r.tab === 'branches',
+  );
+  const preferredBranch = store.data!.branches.find(
+    (b) => b.id === preferredCompanyId,
+  );
+  const preferredCompany = preferredBase
+    ? {
+        ...preferredBase,
+        ...(preferredRecord
+          ? {
+              branchId: preferredRecord.branchId,
+              organizationBranchId: preferredRecord.id,
+            }
+          : preferredBranch
+            ? { branchId: preferredBranch.id, organizationBranchId: '' }
+            : {}),
+      }
+    : undefined;
+
   return (
     <>
       <NewEmployeeDialog
-        personnelMode={!employee && store.data!.capabilities.sensitive}
+        personnelMode={store.data!.capabilities?.sensitive}
         cityOptions={references.data.records
           .filter(
             (record) =>
@@ -201,13 +283,16 @@ export function HrEmployeeEditor({
         userOptions={external.data?.users.map((u) => ({
           ...u,
           branches: companies
-            .filter((c) => u.branchIds.includes(c.branchId))
+            .filter((c) => c.branchIds.some((id) => u.branchIds.includes(id)))
             .map((c) => c.name),
         }))}
         userOptionsError={external.error}
-        referenceLoading={references.loading}
-        referenceError={references.error}
-        onRetryReferences={() => void store.refresh().catch(() => undefined)}
+        referenceLoading={references.loading || profile.loading}
+        referenceError={references.error || profile.error || ''}
+        onRetryReferences={() => {
+          profile.retry();
+          void store.refresh().catch(() => undefined);
+        }}
         lockAssignment={Boolean(employee)}
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
@@ -215,7 +300,10 @@ export function HrEmployeeEditor({
         initialValue={
           employee
             ? {
-                ...employeeFormValue(employee, store),
+                ...employeeFormValue(employee, {
+                  ...store,
+                  data: { ...store.data!, records: profile.records ?? [] },
+                }),
                 groupId:
                   references.data.records.find(
                     (r) =>
@@ -226,23 +314,42 @@ export function HrEmployeeEditor({
               }
             : undefined
         }
-        branchOptions={
-          employee?.organizationBranchId
-            ? [employee.companyName]
-            : [
-                ...(preferredCompany ? [preferredCompany.name] : []),
-                ...companies
-                  .filter((company) => company.id !== preferredCompanyId)
-                  .map((company) => company.name),
-              ]
-        }
-        organizationOptions={employeeOrganizationOptions(references.data)}
+        branchOptions={[
+          ...(preferredCompany ? [preferredCompany.name] : []),
+          ...companies
+            .filter((c) => c.id !== preferredCompany?.id)
+            .map((c) => c.name),
+        ]}
+        organizationOptions={employeeOrganizationOptions(
+          references.data,
+          employee?.branchId ?? preferredCompany?.branchId,
+        )}
         managerOptions={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.name)}
         onClose={onClose}
         onSubmit={async (value) => {
-          const branch = companies.find((item) => item.name === value.branch);
+          const chosenCompany = companies.find(
+            (item) => hrBranchKey(item.name) === hrBranchKey(value.branch),
+          );
+          const localCompany = references.data.records.find(
+            (r) =>
+              r.section === 'organization' &&
+              r.tab === 'branches' &&
+              r.branchId ===
+                (employee?.branchId ?? preferredCompany?.branchId) &&
+              !r.deletedAt &&
+              r.status === 'فعال' &&
+              hrBranchKey(r.values[0] ?? '') === hrBranchKey(value.branch),
+          );
+          const branch =
+            localCompany && chosenCompany
+              ? {
+                  ...chosenCompany,
+                  branchId: localCompany.branchId,
+                  organizationBranchId: localCompany.id,
+                }
+              : chosenCompany;
           if (!branch) throw new Error('شرکت یا شعبه مجاز را انتخاب کنید.');
           const managers = store.data!.employees.filter(
             (item) => item.name === value.manager && item.id !== employee?.id,
@@ -277,6 +384,11 @@ export function HrEmployeeEditor({
             }
           }
           const input = {
+            personnelCode: value.personnelCode.trim(),
+            extension: value.extension?.trim() ?? '',
+            extensions: (value.extensions ?? [value.extension ?? ''])
+              .map((item) => item.trim())
+              .filter(Boolean),
             ...(value.identityValues
               ? {
                   identityValues: value.identityValues,
@@ -296,6 +408,17 @@ export function HrEmployeeEditor({
             kind: value.employmentType,
             unit: value.unit,
             position: value.position,
+            ...(references.data.jobTitles?.find(
+              (title) =>
+                title.name === value.position && title.status === 'فعال',
+            )
+              ? {
+                  jobTitleId: references.data.jobTitles.find(
+                    (title) =>
+                      title.name === value.position && title.status === 'فعال',
+                  )!.id,
+                }
+              : {}),
             grade: value.grade,
             managerId: manager?.id ?? null,
             startedAtValue: value.startedAt,
@@ -303,11 +426,54 @@ export function HrEmployeeEditor({
           };
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
+                extension: input.extension,
+                extensions: input.extensions,
+                personnelCode: value.personnelCode.trim(),
+                ...(value.branch !==
+                (employee.companyName ||
+                  store.data!.branches.find((b) => b.id === employee.branchId)
+                    ?.name ||
+                  '')
+                  ? {
+                      branchId: input.branchId,
+                      organizationBranchId: input.organizationBranchId ?? null,
+                    }
+                  : {}),
+                ...(value.identityValues
+                  ? {
+                      identityValues: value.identityValues,
+                      contactValues: value.contactValues ?? [],
+                      profileRecords: value.profileRecords ?? [],
+                    }
+                  : {}),
+                ...(photoDocumentId ? { photoDocumentId } : {}),
                 groupId: input.groupId,
                 firstName: input.firstName,
                 lastName: input.lastName,
                 name: input.name,
                 kind: input.kind,
+                ...(input.unit !== employee.unit ||
+                value.branch !==
+                  (employee.companyName ||
+                    store.data!.branches.find((b) => b.id === employee.branchId)
+                      ?.name ||
+                    '')
+                  ? { unit: input.unit }
+                  : {}),
+                ...(input.position !== employee.position
+                  ? {
+                      position: input.position,
+                      ...(input.jobTitleId
+                        ? { jobTitleId: input.jobTitleId }
+                        : {}),
+                    }
+                  : {}),
+                ...(input.grade !== employee.grade
+                  ? { grade: input.grade }
+                  : {}),
+                ...(input.managerId !== employee.managerId
+                  ? { managerId: input.managerId }
+                  : {}),
                 status: input.status,
                 ...(input.userId !== employee.userId
                   ? { userId: input.userId }
@@ -333,13 +499,13 @@ export function HrEmployeeEditor({
                   ? 'شرکت و شعبه'
                   : newReference.kind === 'units'
                     ? 'واحد سازمانی'
-                    : 'شغل و سمت',
+                    : 'عنوان‌های شغلی',
               action:
                 newReference.kind === 'branches'
                   ? 'افزودن شعبه'
                   : newReference.kind === 'units'
                     ? 'افزودن واحد'
-                    : 'افزودن سمت',
+                    : 'افزودن عنوان شغلی',
             },
             ...(newReference.companyId
               ? { preferredCompanyId: newReference.companyId }
@@ -351,7 +517,10 @@ export function HrEmployeeEditor({
             setCreatedReference({
               id: record.id,
               kind: newReference.kind,
-              value: record.values[0] ?? '',
+              value:
+                newReference.kind === 'positions'
+                  ? record.values[1] || record.values[0] || ''
+                  : (record.values[0] ?? ''),
             });
             setNewReference(null);
           }}
@@ -387,26 +556,32 @@ export function HrEmployees({
   );
   const [branch, setBranch] = useState('');
   const [unit, setUnit] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('فعال');
   const [range, setRange] = useState({ from: '', to: '' });
   const [editing, setEditing] = useState<HrEmployeeDto | null | undefined>(
     undefined,
   );
   const [removing, setRemoving] = useState<HrEmployeeDto | null>(null);
+  const selectedCompany = useMemo(
+    () => hrCompanies(store.data!).find((c) => c.id === branch),
+    [store.data, branch],
+  );
   const filtered = useMemo(
     () =>
       store
         .data!.employees.filter(
           (item) =>
-            item.status !== 'پایان همکاری' &&
             (!groupId || members.includes(item.id)) &&
             (!branch ||
-              (item.organizationBranchId || item.branchId) === branch) &&
+              selectedCompany?.isHeadquarters ||
+              selectedCompany?.aliases.includes(
+                item.organizationBranchId || item.branchId,
+              )) &&
             (!unit || item.unit === unit) &&
             (!status || hrStatusText(item.status) === status) &&
             (!query ||
               normalizeHrText(
-                `${item.name} ${item.personnelCode} ${item.position}`,
+                `${item.name} ${item.personnelCode} ${item.position} ${item.extension ?? ''}`,
               ).includes(normalizeHrText(query))) &&
             (!range.from || item.startedAtValue >= range.from) &&
             (!range.to || item.startedAtValue <= range.to),
@@ -418,9 +593,24 @@ export function HrEmployees({
             { numeric: true },
           ),
         ),
-    [store.data, branch, unit, status, query, range, sort, groupId, members],
+    [
+      store.data,
+      branch,
+      selectedCompany,
+      unit,
+      status,
+      query,
+      range,
+      sort,
+      groupId,
+      members,
+    ],
   );
-  const dataset = employeeDataset(filtered, store.data!.branches);
+  const dataset = employeeDataset(
+    filtered,
+    store.data!.branches,
+    references.data.records,
+  );
   const selection = useHrRowSelection(
     JSON.stringify([query, branch, unit, status, range, groupId, sort]),
   );
@@ -432,9 +622,6 @@ export function HrEmployees({
           <h1>کارکنان</h1>
           <p>پرونده شخصی، جایگاه سازمانی و وضعیت همکاری کارکنان</p>
         </div>
-        <Link href="/hr?section=lifecycle&tab=onboarding">
-          ثبت ورود نیروی جدید
-        </Link>
       </header>
       <HrRangeBar
         onApply={(from, to) => setRange({ from, to })}
@@ -454,14 +641,35 @@ export function HrEmployees({
           </>
         }
       />
+      {references.error ? <p role="alert">{references.error}</p> : null}
       <HrPanel title="فهرست کارکنان">
+        <div
+          className="mb-4 flex gap-2 rounded-xl bg-muted p-1"
+          role="group"
+          aria-label="گروه کارکنان"
+        >
+          {[
+            { value: 'فعال', label: 'کارکنان فعلی' },
+            { value: 'غیرفعال', label: 'کارکنان سابق' },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              aria-pressed={status === tab.value}
+              onClick={() => setStatus(tab.value)}
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${status === tab.value ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:bg-background/50'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <div className={ui.filters}>
           <label>
             جست‌وجو
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="نام، کد پرسنلی یا سمت"
+              placeholder="نام، کد پرسنلی یا عنوان شغلی"
             />
           </label>
           <label>
@@ -497,24 +705,6 @@ export function HrEmployees({
             </NativeSearchSelect>
           </label>
           <label>
-            وضعیت
-            <NativeSearchSelect
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-            >
-              <option value="">همه وضعیت‌ها</option>
-              {Array.from(
-                new Set(
-                  store.data!.employees.map((item) =>
-                    hrStatusText(item.status),
-                  ),
-                ),
-              ).map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-          <label>
             شرکت / شعبه
             <NativeSearchSelect
               value={branch}
@@ -544,7 +734,10 @@ export function HrEmployees({
                     .data!.employees.filter(
                       (item) =>
                         !branch ||
-                        (item.organizationBranchId || item.branchId) === branch,
+                        selectedCompany?.isHeadquarters ||
+                        selectedCompany?.aliases.includes(
+                          item.organizationBranchId || item.branchId,
+                        ),
                     )
                     .map((item) => item.unit),
                 ),
@@ -560,7 +753,6 @@ export function HrEmployees({
               setSort('code');
               setBranch('');
               setUnit('');
-              setStatus('');
             }}
           >
             پاک‌کردن فیلتر

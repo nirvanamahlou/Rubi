@@ -1,5 +1,7 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
+import { useReportLiveRefresh } from '../model/use-report-live-refresh';
+import resultTableStyles from './report-result-table.module.css';
 
 import {
   AlertTriangle,
@@ -73,6 +75,7 @@ import {
 import {
   ReportingApiError,
   reportDateRangeUtc,
+  reportSortApiColumn,
   reportingApi,
   type SalesByOrganizationPreviewInput,
   type SalesByOrganizationReportResult,
@@ -967,11 +970,27 @@ export function ReportResultPanel({
 }) {
   const hasRows = Boolean(result?.rows.length);
   const incomplete = Boolean(
-    result && (!result.sourceDataAsOfUtc || result.warnings.length),
+    result &&
+    (!result.sourceDataAsOfUtc ||
+      (result.dataLayout !== 'SOURCE_COLUMNS' && result.warnings.length)),
+  );
+  const chartRows = useMemo(
+    () =>
+      (result?.rows ?? []).flatMap((row) =>
+        row.amountsByCurrency?.length
+          ? row.amountsByCurrency.map((money) => ({
+              ...row,
+              grainId: row.grainId + ':' + money.currencyCode,
+              amount: money.amount,
+              currencyCode: money.currencyCode,
+            }))
+          : [row],
+      ),
+    [result],
   );
   const maxAmountByCurrency = useMemo(() => {
     const maximums = new Map<string, number>();
-    for (const row of result?.rows ?? []) {
+    for (const row of chartRows) {
       maximums.set(
         row.currencyCode,
         Math.max(
@@ -981,13 +1000,13 @@ export function ReportResultPanel({
       );
     }
     return maximums;
-  }, [result]);
+  }, [chartRows]);
   const pieGroups = useMemo(() => {
     const rowsByCurrency = new Map<
       string,
       NonNullable<typeof result>['rows'][number][]
     >();
-    for (const row of result?.rows ?? []) {
+    for (const row of chartRows) {
       const rows = rowsByCurrency.get(row.currencyCode) ?? [];
       rows.push(row);
       rowsByCurrency.set(row.currencyCode, rows);
@@ -1027,7 +1046,7 @@ export function ReportResultPanel({
         segments,
       };
     });
-  }, [result]);
+  }, [chartRows]);
   const availableChartTypes = reportChartTypes(report);
   const detailColumns = useMemo(() => {
     const rows = result?.rows ?? [];
@@ -1166,7 +1185,7 @@ export function ReportResultPanel({
               تازگی منبع: {formatReportTimestamp(result.sourceDataAsOfUtc)}
             </span>
           </div>
-          {incomplete ? (
+          {incomplete || result.warnings.length ? (
             <div className="flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-6 text-amber-900">
               <AlertTriangle className="mt-1 size-4 shrink-0" />
               <p>
@@ -1216,11 +1235,35 @@ export function ReportResultPanel({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(reportSortLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {(result.dataLayout === 'SOURCE_COLUMNS'
+                      ? (result.columns ?? []).map(
+                          (column): [string, string] => [
+                            column.key,
+                            column.label,
+                          ],
+                        )
+                      : Object.entries(reportSortLabels)
+                    )
+                      .filter(
+                        ([value]) =>
+                          result.dataLayout === 'SOURCE_COLUMNS' ||
+                          !result.columns ||
+                          result.columns.some(
+                            (column) =>
+                              column.key ===
+                              ({
+                                amount: 'salesAmount',
+                                branchId: 'primaryDimension',
+                                ownerUserId: 'secondaryDimension',
+                                contractCount: 'orderCount',
+                              }[value] ?? value),
+                          ),
+                      )
+                      .map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </FormField>
@@ -1241,20 +1284,61 @@ export function ReportResultPanel({
             </div>
           ) : null}
 
-          {mode === 'table' ? (
+          {mode === 'table' && result.dataLayout === 'SOURCE_COLUMNS' ? (
+            <div className="overflow-x-auto rounded-2xl border">
+              <table className="w-full min-w-[42rem] text-center text-sm">
+                <thead className="bg-muted/60 text-muted-foreground">
+                  <tr>
+                    {result.columns?.map((column) => (
+                      <ResultSortHeader
+                        key={column.key}
+                        column={column.key}
+                        label={column.label}
+                        onSortChange={onSortChange}
+                        sort={sort}
+                      />
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={resultTableStyles.dataCells}>
+                  {result.rows.map((row) => (
+                    <tr className="border-t" key={row.grainId}>
+                      {result.columns?.map((column) => (
+                        <td className="p-3 text-center" key={column.key}>
+                          {row.sourceValues?.[column.key] ?? '—'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : mode === 'table' ? (
             <div className="overflow-x-auto rounded-2xl border">
               <table className="w-full min-w-[42rem] text-center text-sm">
                 <thead className="bg-muted/60 text-muted-foreground">
                   <tr>
                     <ResultSortHeader
                       column="branchId"
-                      label={report.dimensions[0] ?? 'بُعد اصلی'}
+                      label={
+                        result?.columns?.find(
+                          (column) => column.key === 'primaryDimension',
+                        )?.label ??
+                        report.dimensions[0] ??
+                        'بُعد اصلی'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
                     <ResultSortHeader
                       column="ownerUserId"
-                      label={report.dimensions[1] ?? 'بُعد تکمیلی'}
+                      label={
+                        result?.columns?.find(
+                          (column) => column.key === 'secondaryDimension',
+                        )?.label ??
+                        report.dimensions[1] ??
+                        'بُعد تکمیلی'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
@@ -1266,13 +1350,23 @@ export function ReportResultPanel({
                     />
                     <ResultSortHeader
                       column="contractCount"
-                      label="تعداد"
+                      label={
+                        result.columns?.find(
+                          (column) => column.key === 'orderCount',
+                        )?.label ?? 'تعداد'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
                     <ResultSortHeader
                       column="amount"
-                      label={report.measures[0] ?? 'مبلغ'}
+                      label={
+                        result.columns?.find(
+                          (column) => column.key === 'salesAmount',
+                        )?.label ??
+                        report.measures[0] ??
+                        'مبلغ'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
@@ -1334,7 +1428,7 @@ export function ReportResultPanel({
                     ) : null}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className={resultTableStyles.dataCells}>
                   {result.rows.map((row) => (
                     <tr className="border-t" key={row.grainId}>
                       <td
@@ -1432,7 +1526,7 @@ export function ReportResultPanel({
                 className="max-h-[32rem] space-y-3 overflow-y-auto overscroll-contain pe-2"
                 tabIndex={0}
               >
-                {result.rows.map((row) => {
+                {chartRows.map((row) => {
                   const maximum =
                     maxAmountByCurrency.get(row.currencyCode) ?? 0;
                   const width = maximum
@@ -1483,7 +1577,7 @@ export function ReportResultPanel({
                 tabIndex={0}
               >
                 <div className="flex min-w-max items-end gap-4 border-b border-border px-3 pt-8">
-                  {result.rows.map((row) => {
+                  {chartRows.map((row) => {
                     const maximum =
                       maxAmountByCurrency.get(row.currencyCode) ?? 0;
                     const height = maximum
@@ -1847,10 +1941,13 @@ export function ReportingWorkspace({
       ...(legalEntity !== 'ALL' ? { legalEntityId: legalEntity } : {}),
       page: 1,
       pageSize: 100,
-      sort: { column: 'salesAmount', direction: 'DESC' },
+      sort: {
+        column: reportSortApiColumn(resultSort.column),
+        direction: resultSort.direction,
+      },
       timezone: 'Asia/Tehran',
     }),
-    [currency, fromDate, legalEntity, reportFilterValues, toDate],
+    [currency, fromDate, legalEntity, reportFilterValues, resultSort, toDate],
   );
   const activeFilterCount = filterSnapshot.filter((item) => item.active).length;
   const dateRangeError = reportingDateRangeError(fromDate, toDate);
@@ -1862,12 +1959,12 @@ export function ReportingWorkspace({
     if (filter === 'شعبه')
       return (producerFilterOptions?.branchIds ?? []).map((value) => ({
         value,
-        label: value,
+        label: producerFilterOptions?.labels?.[value] ?? value,
       }));
     if (filter === 'کارشناس')
       return (producerFilterOptions?.ownerUserIds ?? []).map((value) => ({
         value,
-        label: value,
+        label: producerFilterOptions?.labels?.[value] ?? value,
       }));
     if (filter === 'وضعیت') {
       const allowed = new Set(producerFilterOptions?.statuses ?? []);
@@ -1988,6 +2085,16 @@ export function ReportingWorkspace({
     setRunError(null);
   }
 
+  const requestGeneration = useRef(0);
+  useReportLiveRefresh(
+    configurationOpen && resultPreviewVisible && connectedReportSelected,
+    JSON.stringify([selected.code, reportExportQuery, resultMode]),
+    (changed) => {
+      if (changed || !running)
+        void runReport(changed ? 1 : (result?.page ?? 1));
+    },
+  );
+
   async function runReport(
     page = 1,
     sort = resultSort,
@@ -2007,6 +2114,7 @@ export function ReportingWorkspace({
       });
       return;
     }
+    const generation = ++requestGeneration.current;
     setRunning(true);
     setRunError(null);
     setResult(null);
@@ -2039,12 +2147,14 @@ export function ReportingWorkspace({
         pageSize: reportResultPageSize(mode),
         sort,
       });
+      if (generation !== requestGeneration.current) return;
       setAvailableFilterOptions(preview.filterOptions);
       setResult(preview);
     } catch (error) {
-      setRunError(reportingRunError(error));
+      if (generation === requestGeneration.current)
+        setRunError(reportingRunError(error));
     } finally {
-      setRunning(false);
+      if (generation === requestGeneration.current) setRunning(false);
       if (recordAction) {
         setRunHistoryRevision((current) => current + 1);
         void refreshWorkspaceCounts();
@@ -2479,24 +2589,28 @@ export function ReportingWorkspace({
                   onToDateChange={setToDate}
                   toDate={toDate}
                 />
-                <ReportSearchableSelect
-                  allLabel="همه شرکت‌ها"
-                  id="report-company"
-                  label="شرکت"
-                  onValueChange={setLegalEntity}
-                  options={legalEntityOptions}
-                  value={legalEntity}
-                />
+                {selected.filters.includes('شرکت') ? (
+                  <ReportSearchableSelect
+                    allLabel="همه شرکت‌ها"
+                    id="report-company"
+                    label="شرکت"
+                    onValueChange={setLegalEntity}
+                    options={legalEntityOptions}
+                    value={legalEntity}
+                  />
+                ) : null}
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <ReportSearchableSelect
-                  allLabel="همه ارزها (بدون جمع)"
-                  id="report-currency"
-                  label="ارز"
-                  onValueChange={setCurrency}
-                  options={currencyOptions}
-                  value={currency}
-                />
+                {selected.filters.includes('ارز') ? (
+                  <ReportSearchableSelect
+                    allLabel="همه ارزها (بدون جمع)"
+                    id="report-currency"
+                    label="ارز"
+                    onValueChange={setCurrency}
+                    options={currencyOptions}
+                    value={currency}
+                  />
+                ) : null}
                 {selected.filters
                   .filter(
                     (filter) => !['بازه تاریخ', 'شرکت', 'ارز'].includes(filter),

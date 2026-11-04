@@ -1,3 +1,4 @@
+import { canSelfServeSalesContract } from '@nora/contracts';
 import { assertNoActiveReceiptAllocations } from './sales-receipt-allocation.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
@@ -54,7 +55,7 @@ export class SalesPartyCorrectionService {
         !/^\+?[0-9]{10,15}$/.test(c.phone.trim()) ||
         !c.address.trim() ||
         c.address.length > 1000 ||
-        !/^[0-9]{10}$/.test(c.postalCode.trim())
+        (!!c.postalCode.trim() && !/^[0-9]{10}$/.test(c.postalCode.trim()))
       )
         throw new BadRequestException(
           'مشخصات مشتری طرف حساب را کامل و معتبر وارد کنید.',
@@ -67,6 +68,7 @@ export class SalesPartyCorrectionService {
         if (
           !actor.branchIds.includes(row.branchId) ||
           !(
+            canSelfServeSalesContract(actor, row) ||
             actor.permissions.includes('sales.contracts.update.branch') ||
             (actor.permissions.includes('sales.contracts.update.own') &&
               row.ownerUserId === actor.userId)

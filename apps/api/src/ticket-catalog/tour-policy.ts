@@ -36,7 +36,7 @@ const money = Joi.object({
     .required(),
 });
 const detailsSchema = Joi.object({
-  version: Joi.number().valid(1).required(),
+  version: Joi.number().valid(1).default(1),
   summary: copy(500),
   description: copy(),
   requiredDocuments: copy(),
@@ -77,14 +77,14 @@ const detailsSchema = Joi.object({
     ),
 });
 const packageSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(160).required(),
-  originId: id.required(),
-  destinationId: id.invalid(Joi.ref('originId')).required(),
-  hotelIds: Joi.array().items(id).unique().max(30).required(),
+  name: Joi.string().trim().min(1).max(160).required(),
+  originId: id.allow('').default(''),
+  destinationId: id.allow('').default(''),
+  hotelIds: Joi.array().items(id).unique().max(30).default([]),
   insuranceId: id,
-  transferOutbound: Joi.boolean().required(),
-  transferReturn: Joi.boolean().required(),
-  visa: Joi.boolean().required(),
+  transferOutbound: Joi.boolean().default(false),
+  transferReturn: Joi.boolean().default(false),
+  visa: Joi.boolean().default(false),
   details: detailsSchema,
 });
 const departureSchema = Joi.object({
@@ -96,11 +96,67 @@ const departureSchema = Joi.object({
   returnOfferId: id.invalid(Joi.ref('outboundOfferId')),
 });
 
+function normalizeTourDefinition(input: unknown): unknown {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
+  const value = structuredClone(input) as Record<string, unknown>;
+  const clean = (record: Record<string, unknown>, keys: readonly string[]) => {
+    for (const key of keys) {
+      if (typeof record[key] !== 'string') continue;
+      record[key] = record[key].trim();
+      if (record[key] === '') delete record[key];
+    }
+  };
+  if (typeof value.name === 'string') value.name = value.name.trim();
+  clean(value, ['originId', 'destinationId', 'insuranceId']);
+  const details = value.details;
+  if (details && typeof details === 'object' && !Array.isArray(details)) {
+    const fields = details as Record<string, unknown>;
+    clean(fields, [
+      'summary',
+      'description',
+      'requiredDocuments',
+      'services',
+      'installmentTerms',
+      'refundRules',
+      'originAirportCode',
+      'airlineName',
+      'imageDocumentId',
+      'transport',
+      'durationDays',
+      'rating',
+    ]);
+    if (Array.isArray(fields.itinerary))
+      for (const step of fields.itinerary) {
+        if (!step || typeof step !== 'object' || Array.isArray(step)) continue;
+        clean(step, [
+          'kind',
+          'title',
+          'location',
+          'startTime',
+          'transport',
+          'cabinClass',
+          'description',
+          'stayDays',
+          'durationMinutes',
+          'baggageKg',
+        ]);
+      }
+  }
+  return value;
+}
+
 export function validateTourPackage(input: unknown): TourPackageInputV1 {
-  const result = packageSchema.validate(input, { convert: false });
+  const result = packageSchema.validate(normalizeTourDefinition(input), {
+    convert: false,
+  });
   if (result.error) {
     const path = result.error.details[0]?.path ?? [];
     const labels: Record<string, string> = {
+      name: 'عنوان تور',
+      originId: 'شهر مبدأ',
+      destinationId: 'شهر مقصد',
+      hotelIds: 'هتل‌های تور',
+      insuranceId: 'بیمه تور',
       basePrice: 'قیمت پایه و ارز پکیج',
       flightPrice: 'هزینه جداگانه پرواز و ارز',
       itinerary: 'برنامه سفر (ساعت HH:mm و مدت مثبت)',
@@ -112,10 +168,16 @@ export function validateTourPackage(input: unknown): TourPackageInputV1 {
     const label =
       path[0] === 'details'
         ? (labels[String(path[1])] ?? 'مشخصات تکمیلی تور')
-        : 'نام، مسیر و خدمات تور';
+        : (labels[String(path[0])] ?? 'نام، مسیر و خدمات تور');
     throw new BadRequestException(`${label} را بررسی کنید.`);
   }
   const value = structuredClone(result.value) as TourPackageInputV1;
+  if (value.originId && value.originId === value.destinationId)
+    throw new BadRequestException('شهر مبدأ و مقصد باید متفاوت باشند.');
+  if (value.hotelIds.length && !value.destinationId)
+    throw new BadRequestException(
+      'برای انتخاب هتل، شهر مقصد تور را مشخص کنید.',
+    );
   for (const key of ['basePrice', 'flightPrice'] as const) {
     const price = value.details?.[key];
     if (price?.currency !== 'IRT') continue;

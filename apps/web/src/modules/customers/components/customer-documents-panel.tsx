@@ -297,10 +297,6 @@ export function CustomerDocumentsPanel({
               <Badge>{total.toLocaleString('fa-IR')} مدرک</Badge>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            فایل‌ها در آرشیو اسناد، با سطح محرمانگی، نسخه و تاریخچه دسترسی
-            نگهداری می‌شوند.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -410,12 +406,6 @@ export function CustomerDocumentsPanel({
           ))}
         </div>
       ) : null}
-
-      <Alert
-        description="شماره پاسپورت در مرز امن Customers رمزنگاری و Mask می‌شود و فایل اختیاری در Documents نسخه‌دار می‌ماند. کشور صادرکننده، نگهداری تولید و گردش کلید همچنان به DEC-OPEN-006 وابسته‌اند."
-        title="مرز حفاظت اطلاعات هویتی"
-        tone="info"
-      />
 
       <Dialog
         onOpenChange={(open) => !submitting && setUploadOpen(open)}

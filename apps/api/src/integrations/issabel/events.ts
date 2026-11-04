@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { TelephonyEventV1, TelephonyNumberV1 } from '@nora/contracts';
 import type { AmiMessage } from './ami';
+import { issabelCallerName } from './caller-name';
 
 const phone = (value: string | undefined): TelephonyNumberV1 =>
   value && /^\+?\d{3,15}$/.test(value)
@@ -36,6 +37,9 @@ export function normalizeIssabelEvent(
     kind: kind as TelephonyEventV1['kind'],
     direction: message.direction as 'IN' | 'OUT',
     caller: phone(message.caller),
+    ...(issabelCallerName(message.calleridname)
+      ? { callerName: issabelCallerName(message.calleridname) }
+      : {}),
     destination: phone(message.destination),
     companyLine: message.companyline || null,
     extension: message.extension || null,

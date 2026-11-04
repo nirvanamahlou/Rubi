@@ -5,6 +5,18 @@ import { strToU8, zipSync } from 'fflate';
 import { LocalDocumentStorage } from '../documents/documents.storage';
 import type { TravelReportResultV1 } from './reporting.contracts';
 
+function reportCellValue(
+  row: TravelReportResultV1['rows'][number],
+  key: string,
+) {
+  if (row.sourceValues && Object.hasOwn(row.sourceValues, key))
+    return row.sourceValues[key];
+  const value: unknown = Object.entries(row).find(
+    ([name]) => name === key,
+  )?.[1];
+  return typeof value === 'string' || typeof value === 'number' ? value : '';
+}
+
 function escapeXml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -34,7 +46,9 @@ function csv(result: TravelReportResultV1, reportName: string) {
   );
   for (const row of result.rows)
     lines.push(
-      result.columns.map((column) => csvCell(row[column.key])).join(','),
+      result.columns
+        .map((column) => csvCell(reportCellValue(row, column.key)))
+        .join(','),
     );
   return Buffer.from(`\uFEFF${lines.join('\r\n')}`, 'utf8');
 }
@@ -194,7 +208,9 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     filters.map(([, value]) => ({ value, style: 3 })),
     tableColumnNames.map((label) => ({ value: label, style: 2 })),
     ...result.rows.map((row) =>
-      result.columns.map((column) => datasetCell(column, row[column.key])),
+      result.columns.map((column) =>
+        datasetCell(column, reportCellValue(row, column.key)),
+      ),
     ),
   ];
   const columnCount = Math.max(2, filters.length, result.columns.length);
@@ -253,7 +269,8 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
           '</cellXfs>',
           '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>',
         )
-        .replace('<cellXfs count="5">', '<cellXfs count="6">'),
+        .replace('<cellXfs count="5">', '<cellXfs count="6">')
+        .replaceAll('<name val="Arial"/>', '<name val="B Nazanin"/>'),
     ),
     'xl/worksheets/sheet1.xml': strToU8(
       `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><mergeCells count="2"><mergeCell ref="A1:${excelColumn(columnCount - 1)}1"/><mergeCell ref="A2:B2"/></mergeCells><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,

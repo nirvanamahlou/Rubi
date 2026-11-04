@@ -12,6 +12,113 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reporting public projection client', () => {
+  it('preserves all native source cells and chart measure while forwarding dynamic column sort', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          reportCode: 'ticket_capacity',
+          reportVersion: 1,
+          grain: 'INVENTORY',
+          sourceProjection: 'tickets.reporting.capacity.v1',
+          dataLayout: 'SOURCE_COLUMNS',
+          chartMeasure: 'allocated',
+          columns: [
+            { key: 'primaryDimension', label: 'پرواز', kind: 'TEXT' },
+            { key: 'remaining', label: 'ظرفیت باقی‌مانده', kind: 'NUMBER' },
+          ],
+          rows: [
+            {
+              grainId: 'o',
+              primaryDimension: 'نمونه',
+              secondaryDimension: '',
+              currencyCode: '',
+              orderCount: 0,
+              salesAmount: '0',
+              sourceValues: { allocated: 7, remaining: 3 },
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 5,
+          previewLimit: 100,
+          generatedAtUtc: '2026-11-03T00:00:00Z',
+          sourceDataAsOfUtc: '2026-11-03T00:00:00Z',
+          totalsByCurrency: [],
+          filterSnapshot: { branchIds: [], filters: {} },
+          filterOptions: {},
+          warnings: [],
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const result = await reportingApi.salesByOrganization({
+      reportCode: 'ticket_capacity',
+      sort: { column: 'remaining', direction: 'ASC' },
+    });
+    expect(result.dataLayout).toBe('SOURCE_COLUMNS');
+    expect(result.rows[0]?.amount).toBe('7');
+    expect(result.rows[0]?.sourceValues?.remaining).toBe(3);
+    expect(JSON.parse(fetch.mock.calls[0]?.[1].body).sort).toEqual({
+      column: 'remaining',
+      direction: 'ASC',
+    });
+  });
+  it('preserves native labels and grain without exposing unavailable cost or issuance measures', async () => {
+    const columns = [
+      { key: 'primaryDimension', label: 'شعبه' },
+      { key: 'secondaryDimension', label: 'کارشناس' },
+      { key: 'currencyCode', label: 'ارز' },
+      { key: 'orderCount', label: 'تعداد قرارداد' },
+      { key: 'salesAmount', label: 'مبلغ قرارداد' },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            reportCode: 'sales_by_organization',
+            reportVersion: 3,
+            grain: 'CONTRACT_CURRENCY',
+            sourceProjection: 'sales.reporting.contract-currency.v1',
+            columns,
+            rows: [
+              {
+                grainId: 'one',
+                primaryDimension: 'مرکزی',
+                secondaryDimension: 'کارشناس',
+                currencyCode: 'IRR',
+                orderCount: 1,
+                salesAmount: '900',
+                purchaseAmount: '0',
+                grossProfit: '900',
+                ticketCount: 0,
+                pendingReservationActions: 0,
+              },
+            ],
+            total: 1,
+            page: 1,
+            pageSize: 5,
+            previewLimit: 100,
+            generatedAtUtc: '2026-10-27T12:00:00Z',
+            sourceDataAsOfUtc: '2026-10-27T11:00:00Z',
+            totalsByCurrency: [{ currencyCode: 'IRR', salesAmount: '900' }],
+            filterOptions: { branch: ['branch'] },
+            filterOptionLabels: { branch: 'مرکزی' },
+            filterSnapshot: {},
+            warnings: [],
+          }),
+        ),
+      ),
+    );
+    const result = await reportingApi.salesByOrganization();
+    expect(result.rowGrain).toBe('CONTRACT_CURRENCY');
+    expect(result.columns).toEqual(columns);
+    expect(result.filterOptions.labels).toEqual({ branch: 'مرکزی' });
+    expect(result.rows[0]).not.toHaveProperty('grossProfit');
+    expect(result.rows[0]).not.toHaveProperty('purchaseAmount');
+    expect(result.rows[0]).not.toHaveProperty('pendingReservationActions');
+    expect(result.summary.pendingReservationActions).toBe(0);
+  });
   it('uses the recording endpoint only for the explicit result action', async () => {
     const fetch = vi.fn().mockImplementation(() =>
       Promise.resolve(
@@ -245,4 +352,56 @@ describe('reporting public projection client', () => {
       }),
     );
   });
+});
+
+it('keeps exact currency components for charts while the table uses one combined amount cell', async () => {
+  const payload = {
+    reportCode: 'sales_by_organization',
+    reportVersion: 4,
+    grain: 'CONTRACT',
+    sourceProjection: 'sales.reporting.contract-currency.v1',
+    dataLayout: 'SOURCE_COLUMNS',
+    chartMeasure: 'salesAmount',
+    columns: [
+      { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
+    ],
+    rows: [
+      {
+        grainId: 'group',
+        primaryDimension: 'branch',
+        secondaryDimension: 'owner',
+        currencyCode: 'IRR',
+        orderCount: 1,
+        passengerCount: 3,
+        salesAmount: '900',
+        amountsByCurrency: [
+          { currencyCode: 'IRR', amount: '900' },
+          { currencyCode: 'EUR', amount: '20.1234' },
+        ],
+        sourceValues: { salesAmount: '900 ریال - 20.1234 €' },
+      },
+    ],
+    total: 1,
+    page: 1,
+    pageSize: 5,
+    previewLimit: 100,
+    generatedAtUtc: '2026-11-03T10:00:00Z',
+    sourceDataAsOfUtc: '2026-11-03T10:00:00Z',
+    totalsByCurrency: [],
+    filterSnapshot: { filters: {}, branchIds: [] },
+    filterOptions: {},
+    warnings: [],
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
+  );
+  const result = await reportingApi.salesByOrganization();
+  expect(result.rows[0]?.amount).toBe('900');
+  expect(result.rows[0]?.amountsByCurrency).toEqual(
+    payload.rows[0]!.amountsByCurrency,
+  );
+  expect(result.rows[0]?.sourceValues?.salesAmount).toBe(
+    '900 ریال - 20.1234 €',
+  );
 });

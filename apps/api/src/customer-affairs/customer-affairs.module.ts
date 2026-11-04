@@ -1,3 +1,5 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import { CallCenterTelephonyService } from './call-center-telephony.service';
 import { CallCenterAccessService } from './call-center-access.service';
 import { CallCenterOwnerService } from './call-center-owner.service';
@@ -76,6 +78,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterActorGuard,
+    HrCallAnswerDirectory,
     CallCenterOwnerService,
     CallCenterAccessService,
     CallCenterTelephonyService,
@@ -97,6 +101,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeService,
   ],
   exports: [
+    CallCenterActorGuard,
     CallCenterAccessService,
     IamWorkbenchRequestDirectory,
     CallCenterTelephonyService,

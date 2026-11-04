@@ -1,4 +1,6 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
+
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { referenceDisplayName } from '@/i18n/reference-name';
@@ -103,7 +105,9 @@ function GenericMasterDataWorkspace({
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
-  const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
+  const [sortBy, setSortBy] = useState<'displayOrder' | 'code' | 'updatedAt'>(
+    'displayOrder',
+  );
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
@@ -176,7 +180,7 @@ function GenericMasterDataWorkspace({
     setResource(next);
     setSearch('');
     setStatus('active');
-    setSortBy('name');
+    setSortBy('displayOrder');
     setPage(1);
     setSelected(undefined);
     setNotice(null);
@@ -508,7 +512,7 @@ function GenericMasterDataWorkspace({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name">عنوان</SelectItem>
+                  <SelectItem value="displayOrder">ترتیب نمایش</SelectItem>
                   <SelectItem value="code">کد سیستمی</SelectItem>
                   <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
                 </SelectContent>
@@ -519,7 +523,7 @@ function GenericMasterDataWorkspace({
                 setSearch('');
                 resetDateRange();
                 setStatus('active');
-                setSortBy('name');
+                setSortBy('displayOrder');
                 setPage(1);
               }}
               onRefresh={() => void load()}
@@ -582,7 +586,7 @@ function GenericMasterDataWorkspace({
                   {records.map((record) => (
                     <tr className="border-t border-border" key={record.id}>
                       <td className="p-4 font-mono text-xs" dir="ltr">
-                        {record.code}
+                        {masterDataDisplayCode(record)}
                       </td>
                       <MasterDataLogoCell record={record} />
                       <td className="p-4 font-semibold">

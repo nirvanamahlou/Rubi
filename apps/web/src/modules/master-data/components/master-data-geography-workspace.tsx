@@ -181,6 +181,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'لوگو',
       'نام فارسی',
       'نام انگلیسی',
+      'اختلاف ساعت (GMT)',
       'ترتیب',
       'وابستگی‌ها',
       'وضعیت',
@@ -263,6 +264,11 @@ function recordCells(
       <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       record.name,
       attribute(record, 'englishName'),
+      <span dir="ltr" className="font-mono text-xs" key="gmtOffset">
+        {record.attributes.gmtOffset
+          ? `GMT${record.attributes.gmtOffset}`
+          : '—'}
+      </span>,
       attribute(record, 'displayOrder'),
       <span key="dependencies" title="وابستگی‌های مستقیم داخل اطلاعات پایه">
         {attribute(record, 'dependencyCount')} مورد ·{' '}
@@ -392,7 +398,9 @@ export function MasterDataGeographyWorkspace() {
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
-  const [sortBy, setSortBy] = useState<'name' | 'code' | 'updatedAt'>('name');
+  const [sortBy, setSortBy] = useState<'displayOrder' | 'code' | 'updatedAt'>(
+    'displayOrder',
+  );
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
@@ -673,7 +681,7 @@ export function MasterDataGeographyWorkspace() {
     setSearch('');
     resetColumnFilters();
     setStatus('active');
-    setSortBy('name');
+    setSortBy('displayOrder');
     setPage(1);
     setCountryId('all');
     setRegionId('all');
@@ -1258,7 +1266,7 @@ export function MasterDataGeographyWorkspace() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">عنوان</SelectItem>
+              <SelectItem value="displayOrder">ترتیب نمایش</SelectItem>
               <SelectItem value="code">کد</SelectItem>
               <SelectItem value="updatedAt">آخرین تغییر</SelectItem>
             </SelectContent>
@@ -1369,7 +1377,7 @@ export function MasterDataGeographyWorkspace() {
             resetColumnFilters();
             resetDateRange();
             setStatus('active');
-            setSortBy('name');
+            setSortBy('displayOrder');
             setCountryId('all');
             setRegionId('all');
             setCityId('all');

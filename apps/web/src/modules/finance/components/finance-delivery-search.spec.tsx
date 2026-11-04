@@ -101,3 +101,24 @@ it('ignores a late search response after clearing the search box', async () => {
   expect(hooks.values[0]).toEqual([]);
   expect(hooks.values[2]).toBe(false);
 });
+
+it('shows the authorization basis and recorded reason on the actual contract card', () => {
+  hooks.values[0] = [
+    {
+      contractId: 'c',
+      contractNumber: 'SYNTHETIC',
+      customerNameSnapshot: 'Test',
+      settlementStatus: 'UNPAID',
+      hasConfirmedPayment: false,
+      delivery: {
+        version: 1,
+        approved: true,
+        basis: 'RESERVATION_PERMISSION',
+        reason: 'Supplier authorization evidence',
+      },
+    },
+  ];
+  const card = find(render(), (e) => e.type === 'article');
+  expect(JSON.stringify(card)).toContain('با مجوز رزرواسیون');
+  expect(JSON.stringify(card)).toContain('Supplier authorization evidence');
+});

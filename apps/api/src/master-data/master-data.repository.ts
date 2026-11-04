@@ -285,13 +285,20 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   organizations: [
     'legalName',
     'code',
+    'accountingCode',
     'nationalId',
     'registrationNumber',
     'economicCode',
     'tourismLicenseNumber',
   ],
-  suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
-  brokers: ['name', 'englishName', 'code'],
+  suppliers: [
+    'name',
+    'code',
+    'accountingCode',
+    'englishName',
+    'externalProviderReference',
+  ],
+  brokers: ['name', 'englishName', 'code', 'accountingCode'],
   'travel-services': ['name', 'englishName', 'code'],
   'organization-contacts': ['fullName', 'jobTitle', 'code'],
   leaders: ['name', 'englishName', 'code', 'expertise', 'welcomeSignCode'],
@@ -469,6 +476,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'bank-branches') return { bank: true, city: true };
   if (resource === 'hotels')
     return {
+      currency: true,
       city: { include: { country: true, region: true } },
       chain: true,
       organization: true,
@@ -489,7 +497,10 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'composite-hotels')
     return {
       city: { include: { country: true, region: true } },
-      members: { include: { hotel: { include: { city: true } } } },
+      members: {
+        orderBy: { priority: 'asc' },
+        include: { hotel: { include: { city: true } } },
+      },
     };
   return undefined;
 }
@@ -910,6 +921,8 @@ export function toMasterDataRecord(
     attributes.countryName = String(hotelCountry?.name ?? '');
     attributes.regionName = String(hotelRegion?.name ?? '');
     attributes.chainName = String(chain?.name ?? '');
+    attributes.currencyCode = String(currency?.code ?? '');
+    attributes.currencyName = String(currency?.name ?? '');
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.facilityIds =
       facilityLinks
@@ -961,6 +974,18 @@ export function toMasterDataRecord(
     attributes.memberHotelIds =
       compositeMembers?.map(({ hotel }) => String(hotel.id ?? '')).join(',') ??
       '';
+    attributes.memberHotels = JSON.stringify(
+      compositeMembers?.map(({ hotel, priority }) => {
+        const memberCity = hotel.city as Record<string, unknown> | undefined;
+        return {
+          hotelId: String(hotel.id ?? ''),
+          hotelName: String(hotel.name ?? ''),
+          cityId: String(hotel.cityId ?? memberCity?.id ?? ''),
+          cityName: String(memberCity?.name ?? ''),
+          priority,
+        };
+      }) ?? [],
+    );
     attributes.memberHotelNames =
       compositeMembers
         ?.map(({ hotel }) => String(hotel.name ?? ''))
@@ -1171,7 +1196,13 @@ export class MasterDataRepository {
           nameField,
           codeFields[resource],
           ...searchFields[resource].filter((field) =>
-            ['name', 'englishName', 'iataCode', 'icaoCode'].includes(field),
+            [
+              'name',
+              'englishName',
+              'iataCode',
+              'icaoCode',
+              'accountingCode',
+            ].includes(field),
           ),
           ...(resource === 'organizations' ? ['displayName'] : []),
         ]),
@@ -1222,9 +1253,27 @@ export class MasterDataRepository {
       query.sortBy === 'name'
         ? nameField
         : query.sortBy === 'code'
-          ? codeFields[resource]
+          ? ['organizations', 'suppliers', 'brokers'].includes(resource)
+            ? 'accountingCode'
+            : codeFields[resource]
           : query.sortBy;
-    const orderBy = { [sortField]: query.sortDirection };
+    // Every reference resource except rate history has a persisted displayOrder.
+    // Apply it before pagination; sorting only the loaded page loses placement.
+    const orderBy =
+      (query.sortBy === 'displayOrder' || query.sortBy === 'name') &&
+      resource !== 'exchange-rates'
+        ? [
+            {
+              displayOrder:
+                query.sortBy === 'name' ? 'asc' : query.sortDirection,
+            },
+            { createdAt: 'asc' },
+            { id: 'asc' },
+          ]
+        : {
+            [query.sortBy === 'displayOrder' ? 'updatedAt' : sortField]:
+              query.sortDirection,
+          };
     const args: Record<string, unknown> = {
       where,
       orderBy,
@@ -1624,6 +1673,21 @@ export class MasterDataRepository {
         entityId: input.contactId,
         outcome: AuditOutcome.SUCCESS,
         afterSnapshot: { disclosure: 'SENSITIVE_CONTACT_UNMASKED' },
+      },
+    });
+  }
+
+  async salesOrganizationContacts(organizationId: string) {
+    return this.database.client.masterOrganizationContact.findMany({
+      where: { organizationId, isActive: true },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      take: 10,
+      select: {
+        id: true,
+        phoneEncrypted: true,
+        phoneEncryptionIv: true,
+        phoneEncryptionAuthTag: true,
+        phoneEncryptionKeyVersion: true,
       },
     });
   }

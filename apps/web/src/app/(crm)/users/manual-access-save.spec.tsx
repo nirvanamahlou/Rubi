@@ -96,10 +96,15 @@ describe('legacy administrator role save round trip', () => {
     fixture.effect = null;
     fixture.picker = null;
   });
-  function setup(canManage = true) {
+  function setup(
+    canManage = true,
+    template = role,
+    initial = before,
+    userId = 'legacy-admin',
+  ) {
     const request = vi
       .fn<(path: string, init?: RequestInit) => Promise<unknown>>()
-      .mockResolvedValueOnce(before)
+      .mockResolvedValueOnce(initial)
       .mockResolvedValueOnce({ success: true })
       .mockResolvedValueOnce(next);
     const onSaved = vi.fn(async () => {});
@@ -110,15 +115,15 @@ describe('legacy administrator role save round trip', () => {
       return renderToStaticMarkup(
         <ManualAccessEditor
           ref={ref}
-          userId="legacy-admin"
+          userId={userId}
           canManage={canManage}
-          templates={[role]}
+          templates={[template]}
           options={{
-            permissions: role.selection.permissionCodes.map((code) => ({
+            permissions: template.selection.permissionCodes.map((code) => ({
               code,
               name: code,
             })),
-            assignableScreenIds: role.selection.screenIds,
+            assignableScreenIds: template.selection.screenIds,
             assignableControlIds: [],
             canAssignAll: true,
           }}
@@ -136,6 +141,62 @@ describe('legacy administrator role save round trip', () => {
     await Promise.resolve();
     render();
   }
+  it('saves required view prerequisites for any selected user, not named accounts', async () => {
+    const template = {
+      ...role,
+      id: 'view-template',
+      name: 'Selected views',
+      selection: {
+        screenIds: [
+          'customer-affairs.call-center',
+          'integrations.section.connections',
+        ],
+        permissionCodes: [],
+        allowedControlIds: [],
+      },
+    };
+    for (const userId of [
+      'new-synthetic-user',
+      'existing-synthetic-user',
+      'another-synthetic-user',
+    ]) {
+      fixture.values = [];
+      fixture.refs = [];
+      fixture.stateIndex = 0;
+      fixture.refIndex = 0;
+      const initial = {
+        ...before,
+        selection: {
+          screenIds: [],
+          permissionCodes: [],
+          allowedControlIds: [],
+        },
+      };
+      const { request, ref, render } = setup(true, template, initial, userId);
+      await load(render);
+      fixture.picker!.onRoleChange(template.id);
+      render();
+      expect(await ref.current!.save()).toBe(true);
+      const [path, init] = request.mock.calls.find(
+        ([, value]) => value?.method === 'PATCH',
+      )!;
+      expect(path).toBe(`/iam/users/${userId}/manual-access`);
+      const payload = JSON.parse(String(init?.body));
+      expect(payload.screenIds).toEqual(
+        expect.arrayContaining([
+          'customer-affairs.call-center',
+          'integrations.home',
+          'integrations.section.connections',
+        ]),
+      );
+      expect(payload.permissionCodes.sort()).toEqual([
+        'customer_affairs.call_center.contacts.read.own',
+        'customer_affairs.call_center.read',
+        'customer_affairs.call_center.reports.read.own',
+      ]);
+      expect(payload.allowedControlIds).toEqual([]);
+    }
+  });
   it('keeps an unchanged administrator untouched when final Save is clicked', async () => {
     const { request, ref, render } = setup();
     await load(render);

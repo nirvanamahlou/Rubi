@@ -1,3 +1,5 @@
+import { TICKET_LATIN_FONT_URL } from '@/components/travel/flight-ticket-layout';
+import { readTicketLatinFont } from './ticket-pdf-assets';
 import { localizeDocumentHtml } from '@/i18n/document';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
@@ -95,28 +97,43 @@ async function waitForPdf(path: string): Promise<void> {
   throw new Error('PDF_NOT_CREATED');
 }
 
+export async function prepareTicketHtml(
+  html: string,
+  language: DisplayLanguage = 'fa',
+): Promise<string> {
+  const { fontPath: font } = await resolveTicketPdfRuntime();
+  let document = localizeDocumentHtml(html, language);
+  if (document.includes(`url("${TICKET_LATIN_FONT_URL}")`)) {
+    const latinFont = await readTicketLatinFont();
+    document = document.replaceAll(
+      `url("${TICKET_LATIN_FONT_URL}")`,
+      `url("data:font/woff2;base64,${latinFont.toString('base64')}")`,
+    );
+  }
+  if (font) {
+    const fontBytes = await readFile(/* turbopackIgnore: true */ font);
+    if (fontBytes.length && fontBytes.length <= 5_000_000)
+      document = document.replace(
+        '</style>',
+        `@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,${fontBytes.toString('base64')}) format("truetype")}</style>`,
+      );
+  }
+  if (Buffer.byteLength(document) > 10_000_000)
+    throw new Error('PDF_INPUT_INVALID');
+  return document;
+}
+
 export async function renderTicketPdf(
   html: string,
   language: DisplayLanguage = 'fa',
 ): Promise<Buffer> {
-  const { chromePath: chrome, fontPath: font } =
-    await resolveTicketPdfRuntime();
+  const { chromePath: chrome } = await resolveTicketPdfRuntime();
   if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    let document = localizeDocumentHtml(html, language);
-    if (font) {
-      const fontBytes = await readFile(/* turbopackIgnore: true */ font);
-      if (fontBytes.length && fontBytes.length <= 5_000_000)
-        document = document.replace(
-          '</style>',
-          `@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,${fontBytes.toString('base64')}) format("truetype")}</style>`,
-        );
-    }
-    if (Buffer.byteLength(document) > 10_000_000)
-      throw new Error('PDF_INPUT_INVALID');
+    const document = await prepareTicketHtml(html, language);
     directory = await mkdtemp(join(tmpdir(), 'nora-ticket-pdf-'));
     const input = join(directory, 'ticket.html');
     const output = join(directory, 'ticket.pdf');

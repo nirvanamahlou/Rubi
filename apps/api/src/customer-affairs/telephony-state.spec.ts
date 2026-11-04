@@ -62,3 +62,68 @@ describe('telephony root and leg state', () => {
     expect(b.recordings).toEqual(['opaque']);
   });
 });
+
+it('uses only confirmed answers and retains the latest answer across late events', () => {
+  const ring = applyTelephonyEvent(
+    null,
+    { ...e, extension: '100' },
+    new Date(),
+  );
+  expect(ring.lastAnswer).toBeUndefined();
+  const answer = applyTelephonyEvent(
+    ring,
+    {
+      ...e,
+      kind: 'ANSWERED',
+      extension: '203',
+      occurredAt: '2026-10-19T00:02:00Z',
+    },
+    new Date(),
+  );
+  const late = applyTelephonyEvent(
+    answer,
+    {
+      ...e,
+      kind: 'ANSWERED',
+      extension: '101',
+      occurredAt: '2026-10-19T00:01:00Z',
+    },
+    new Date(),
+  );
+  expect(late.lastAnswer?.extension).toBe('203');
+  const end = applyTelephonyEvent(
+    late,
+    { ...e, kind: 'ENDED', extension: '100', terminalForCall: true },
+    new Date(),
+  );
+  expect(end.lastAnswer?.extension).toBe('203');
+  expect(end.answers?.map((answer) => answer.extension)).toEqual([
+    '101',
+    '203',
+  ]);
+});
+
+it('does not grant answer evidence to ringing destinations and deduplicates answers', () => {
+  const ring = { ...e, extension: '105', queue: '1002' };
+  const first = applyTelephonyEvent(null, ring, new Date());
+  const repeated = applyTelephonyEvent(first, ring, new Date());
+  expect(repeated.answers).toBeUndefined();
+  expect(repeated.destinations).toHaveLength(1);
+  const answer = { ...ring, kind: 'ANSWERED' as const };
+  const answered = applyTelephonyEvent(repeated, answer, new Date());
+  const duplicate = applyTelephonyEvent(answered, answer, new Date());
+  expect(duplicate.answers).toEqual([{ extension: '105', at: e.occurredAt }]);
+  expect(first.answers).toBeUndefined();
+  expect(duplicate.destinations).toHaveLength(1);
+});
+
+it('initializes answer history from legacy lastAnswer without losing that employee', () => {
+  const previous = applyTelephonyEvent(null, e, new Date());
+  previous.lastAnswer = { extension: '105', at: e.occurredAt };
+  const result = applyTelephonyEvent(
+    previous,
+    { ...e, kind: 'ANSWERED', extension: '105' },
+    new Date(),
+  );
+  expect(result.answers).toEqual([previous.lastAnswer]);
+});

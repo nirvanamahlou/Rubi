@@ -18,15 +18,17 @@ export async function reservationOutputPassengers(
   )
     .filter((flight) => flight.direction === 'OUTBOUND')
     .sort((a, b) => a.departureAt.localeCompare(b.departureAt))[0];
+  const arrivalAt = outbound?.arrivalAt || outbound?.departureAt;
   const travelDate =
-    outbound && Number.isFinite(Date.parse(outbound.departureAt))
+    snapshot.hotelSelection?.checkInDate?.slice(0, 10) ||
+    (arrivalAt && Number.isFinite(Date.parse(arrivalAt))
       ? new Intl.DateTimeFormat('en-CA', {
           timeZone: 'Asia/Tehran',
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
-        }).format(new Date(outbound.departureAt))
-      : snapshot.hotelSelection?.checkInDate?.slice(0, 10);
+        }).format(new Date(arrivalAt))
+      : undefined);
   const result: Awaited<
     ReturnType<CustomerService['reservationOutputIdentity']>
   >[] = [];

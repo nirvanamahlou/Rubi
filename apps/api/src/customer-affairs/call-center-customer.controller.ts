@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -19,7 +20,7 @@ import { CallCenterCustomerService } from './call-center-customer.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { CallCenterCustomerLinkDto } from './call-center-customer.dto';
 @Controller('customer-affairs/call-center')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 export class CallCenterCustomerController {
   constructor(
     @Inject(CallCenterCustomerService)

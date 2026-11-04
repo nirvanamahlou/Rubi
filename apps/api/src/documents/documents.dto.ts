@@ -48,6 +48,11 @@ const multipartBoolean = ({ value }: { value: unknown }) => {
 
 export class DocumentListQueryDto {
   @IsOptional()
+  @Transform(multipartBoolean)
+  @IsBoolean()
+  isIncomingLetter?: boolean;
+
+  @IsOptional()
   @IsString()
   @MaxLength(120)
   search?: string;
@@ -175,6 +180,16 @@ export class DocumentCaseOptionsQueryDto {
 }
 
 export class DocumentUploadDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  senderName?: string;
+
+  @IsOptional()
+  @Transform(multipartBoolean)
+  @IsBoolean()
+  isIncomingLetter?: boolean;
+
   @IsString()
   @Length(2, 240)
   title!: string;

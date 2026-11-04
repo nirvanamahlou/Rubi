@@ -29,6 +29,7 @@ export interface AccountingFinancialEventPageV1 {
 }
 
 export const accountingFinancialEventLabels: Record<string, string> = {
+  SALES_CONTRACT_CONFIRMED: 'تعهد قرارداد فروش تأییدشده',
   CUSTOMER_RECEIPT: 'دریافت قرارداد',
   RECEIPT_ALLOCATION: 'تخصیص دریافت به قرارداد',
   RECEIPT_ALLOCATION_REVERSAL: 'برگشت تخصیص دریافت',

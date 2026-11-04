@@ -16,21 +16,23 @@ vi.mock('@/modules/iam/access-context', () => ({
   useScreenAccess: () => () => true,
 }));
 describe('accounting chart without an accessible book', () => {
-  it('renders an empty tree and editable draft form, with setup links and disabled persistence', () => {
+  it('renders the tree without a synthetic form selector or editable unbound account', () => {
     const run = vi.fn();
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
         <AccountingChartEditor book={null} run={run} busy={false} />
       </QueryClientProvider>,
     );
-    expect(html).toContain('coa-code');
-    expect(html).toContain('coa-title');
-    expect(html).toContain('ایجاد دفتر کل');
-    expect(html).toContain('انتخاب دفتر کل');
-    expect(html).toContain('ساختار زیر هنوز');
-    expect(html).toContain('حساب معین');
+    expect(html).not.toContain('coa-code');
+    expect(html).not.toContain('coa-title');
+    expect(html).not.toContain('ایجاد دفتر کل');
+    expect(html).not.toContain('انتخاب دفتر کل');
+    expect(html).toContain(
+      'ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.',
+    );
+    expect(html).not.toContain('نمایش فرم');
     const saves = html.match(/<button[^>]*type="submit"[^>]*>/g) ?? [];
-    expect(saves).toHaveLength(3);
+    expect(saves).toHaveLength(0);
     for (const button of saves) expect(button).toContain('disabled');
     expect(run).not.toHaveBeenCalled();
   });

@@ -11,6 +11,18 @@ import {
   Min,
 } from 'class-validator';
 export class CallCenterSearchDto {
+  @IsOptional() @IsUUID() activityActorId?: string;
+  @IsOptional()
+  @IsIn([
+    'inboundAnswered',
+    'outboundAttempts',
+    'outboundConnected',
+    'uniqueContacts',
+    'open',
+    'overdue',
+    'completion',
+  ])
+  activityMetric?: string;
   @IsOptional() @IsString() @Length(0, 120) query?: string;
   @IsOptional() @IsIn(['LATEST', 'ANY']) scope: 'LATEST' | 'ANY' = 'LATEST';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
@@ -20,7 +32,7 @@ export class CallCenterSearchDto {
   @IsOptional() @IsISO8601({ strict: true }) to?: string;
   @IsOptional() @IsIn(['INBOUND', 'OUTBOUND']) direction?: string;
   @IsOptional()
-  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED', 'UNKNOWN'])
+  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED', 'WRONG_NUMBER', 'UNKNOWN'])
   outcome?: string;
   @IsOptional() @IsIn(['MANUAL', 'TELEPHONY', 'UNKNOWN']) origin?: string;
   @IsOptional() @IsString() @Length(1, 80) source?: string;

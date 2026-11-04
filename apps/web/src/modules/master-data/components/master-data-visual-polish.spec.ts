@@ -158,7 +158,6 @@ describe('Master Data visual polish contract', () => {
     for (const label of [
       'کل ارزها',
       'ارز فعال',
-      'ارز پایه سازمان',
       'آخرین همگام‌سازی',
       'نرخ جاری',
       'تغییر نسبت به نرخ قبل',
@@ -198,7 +197,7 @@ describe('Master Data visual polish contract', () => {
     expect(cards).toContain("setFormMode('edit')");
     expect(cards).toContain('<MasterDataDeleteButton');
     const profile = source('master-data-profile-details.tsx');
-    expect(profile).toContain('{record.code}');
+    expect(profile).toContain('{masterDataDisplayCode(record)}');
     expect(profile).toContain('<MasterDataLogoImage record={record}');
   });
 

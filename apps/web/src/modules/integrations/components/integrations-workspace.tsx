@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   canViewScreen,
-  canViewIntegrationSection,
   visibleIntegrationSections,
   type AuthenticatedActor,
   type BranchReference,
-  type IntegrationExistingAdapterV1,
   type IntegrationRegistryV1,
   type IntegrationRegistryWriteV1,
   type IntegrationSystemConfigV1,
@@ -16,7 +14,6 @@ import {
   Activity,
   ArrowLeft,
   Building2,
-  Cable,
   ChevronLeft,
   Globe2,
   Plus,
@@ -46,7 +43,11 @@ import {
 import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
-import { ConnectionReadiness } from './connection-readiness';
+import {
+  SiteConnectionsWorkspace,
+  SelectedSiteConnection,
+} from './site-connections-workspace';
+import { isGhestirooSystem } from '../system-connector';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -98,7 +99,6 @@ export function IntegrationWorkspaceBody({
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [branchId, setBranchId] = useState('');
   const [data, setData] = useState<IntegrationRegistryV1 | null>(null);
-  const [adapters, setAdapters] = useState<IntegrationExistingAdapterV1[]>([]);
   const allowedSections = visibleIntegrationSections(actor.permissions);
   const [section, setSection] = useState<IntegrationSection>(
     () => allowedSections[0] ?? 'brands',
@@ -146,15 +146,9 @@ export function IntegrationWorkspaceBody({
       setLoading(true);
       setError('');
       try {
-        const [registry, adapters] = await Promise.all([
-          integrationsApi.read(branchId, signal, section),
-          canViewIntegrationSection(actor.permissions, 'connections')
-            ? integrationsApi.adapters(signal)
-            : Promise.resolve([]),
-        ]);
+        const registry = await integrationsApi.read(branchId, signal, section);
         if (signal?.aborted || sequence !== loadSequence.current) return;
         setData(registry);
-        setAdapters(adapters);
       } catch (cause) {
         if (!signal?.aborted && sequence === loadSequence.current)
           setError(errorMessage(cause));
@@ -163,7 +157,7 @@ export function IntegrationWorkspaceBody({
           setLoading(false);
       }
     },
-    [branchId, section, actor.permissions],
+    [branchId, section],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -339,6 +333,8 @@ export function IntegrationWorkspaceBody({
           {edit ? null : system ? (
             <SystemDetail
               key={system.id}
+              branchId={branchId}
+              userId={actor.userId}
               system={system}
               data={data}
               allowedSections={allowedSections}
@@ -350,15 +346,10 @@ export function IntegrationWorkspaceBody({
             <>
               {section === 'overview' ? (
                 <>
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {[
                       ['برندهای در فهرست', data.counts?.brands, 'brands'],
                       ['سامانه‌های در فهرست', data.counts?.systems, 'brands'],
-                      [
-                        'سامانه‌های منتظر اتصال',
-                        data.counts?.awaitingConnection,
-                        'connections',
-                      ],
                     ].map(([label, count, target]) => (
                       <button
                         type="button"
@@ -389,44 +380,22 @@ export function IntegrationWorkspaceBody({
                       </button>
                     ))}
                   </div>
-                  <Card className="grid gap-4 p-5 sm:grid-cols-2">
-                    <div>
-                      <h2 className="font-bold">عملیات منتظر اقدام</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        مشخصات اتصال، دسترسی بیرونی و مستندات API سامانه‌ها هنوز
-                        ارائه نشده است.
-                      </p>
-                      <Button
-                        variant="outline"
-                        className="mt-3"
-                        type="button"
-                        disabled={!allowedSections.includes('connections')}
-                        onClick={() => changeSection('connections')}
-                      >
-                        بررسی اتصال‌ها
-                      </Button>
-                    </div>
-                    <div>
-                      <h2 className="font-bold">روند و مقایسه عملکرد</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        داده موجود نیست؛ پس از اتصال منبع معتبر، روند و مقایسه
-                        هر سامانه نمایش داده می‌شود.
-                      </p>
-                      <Badge className="mt-3">
-                        آکادمی از فروش مستقیم سفر جداست
-                      </Badge>
-                    </div>
-                  </Card>
                 </>
               ) : null}
-              {section === 'brands' && !managingCatalogue ? (
+              {(section === 'brands' ||
+                (section === 'overview' &&
+                  allowedSections.includes('brands'))) &&
+              !managingCatalogue ? (
                 <BrandsDashboard
                   key={data.branchId}
                   data={data}
                   onOpen={setSelectedSystem}
                   onSection={changeSection}
                   allowedSections={allowedSections}
-                  onManage={() => setManagingCatalogue(true)}
+                  onManage={() => {
+                    if (section === 'overview') changeSection('brands');
+                    setManagingCatalogue(true);
+                  }}
                   {...(data.canManage ? { onCreate: () => openSite() } : {})}
                 />
               ) : null}
@@ -582,31 +551,11 @@ export function IntegrationWorkspaceBody({
                 </>
               ) : null}
               {section === 'connections' ? (
-                <>
-                  <ConnectionReadiness />
-                  <h2 className="text-lg font-bold">مسیرهای تخصصی موجود</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {adapters.map((adapter) => (
-                      <Card key={adapter.code} className="p-5">
-                        <Cable className="mb-3 size-6 text-primary" />
-                        <h2 className="font-bold">{adapter.title}</h2>
-                        <Badge className="mt-3">
-                          مسیر موجود؛ اتصال زنده تأیید نشده
-                        </Badge>
-                        <p className="mt-3 text-sm text-muted-foreground">
-                          {adapter.owner === 'Integrations'
-                            ? 'ارسال سفارش و دریافت پیام امضاشده تأمین‌کننده'
-                            : 'ثبت تیکت و استعلام وضعیت از سایت‌ها'}
-                        </p>
-                      </Card>
-                    ))}
-                  </div>
-                  <SystemList
-                    data={data}
-                    onOpen={setSelectedSystem}
-                    listedOnly={listedOnly}
-                  />
-                </>
+                <SiteConnectionsWorkspace
+                  key={branchId}
+                  registry={data}
+                  userId={actor.userId}
+                />
               ) : null}
               {section === 'events' ? (
                 <EmptyState
@@ -812,7 +761,9 @@ function SystemList({
     />
   );
 }
-function SystemDetail({
+export function SystemDetail({
+  branchId,
+  userId,
   system,
   data,
   onBack,
@@ -820,6 +771,8 @@ function SystemDetail({
   onSetup,
   allowedSections,
 }: {
+  branchId: string;
+  userId: string;
   system: IntegrationSystemConfigV1;
   data: IntegrationRegistryV1;
   onBack: () => void;
@@ -827,7 +780,14 @@ function SystemDetail({
   onSetup: () => void;
   allowedSections: readonly IntegrationSection[];
 }) {
-  const [area, setArea] = useState('settings');
+  const ghestiroo = isGhestirooSystem(system, data);
+  const [area, setArea] = useState(
+    allowedSections.includes('connections')
+      ? ghestiroo
+        ? 'connection'
+        : 'data'
+      : 'settings',
+  );
   return (
     <Card className="grid gap-5 p-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -845,6 +805,7 @@ function SystemDetail({
       </div>
       <nav aria-label="مدیریت سامانه" className="flex flex-wrap gap-2">
         {[
+          ['data', 'آمار، اطلاعات و ورود فایل'],
           ['settings', 'مشخصات سامانه'],
           ['connection', 'اتصال'],
           ['sync', 'همگام‌سازی'],
@@ -855,7 +816,7 @@ function SystemDetail({
             ([id]) =>
               id === 'settings' ||
               allowedSections.includes(
-                (id === 'connection'
+                (id === 'connection' || id === 'data'
                   ? 'connections'
                   : id === 'history'
                     ? 'logs'
@@ -874,7 +835,15 @@ function SystemDetail({
             </Button>
           ))}
       </nav>
-      {area === 'settings' ? (
+      {['connection', 'data'].includes(area) ||
+      (ghestiroo && area === 'health') ? (
+        <SelectedSiteConnection
+          key={`${branchId}:${system.id}`}
+          registry={data}
+          system={system}
+          userId={userId}
+        />
+      ) : area === 'settings' ? (
         <>
           <div className="flex flex-wrap gap-2">
             <Badge>{domainLabels[system.businessDomain]}</Badge>

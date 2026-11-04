@@ -27,7 +27,7 @@ describe('Call Center report highlights', () => {
     const html = renderToStaticMarkup(
       <ReportHighlights data={data} agents={[]} />,
     );
-    expect(html).toContain('تماس خروجی منطبق');
+    expect(html).toContain('منبع گزارش کارشناسان در دسترس نیست');
     expect(html).not.toContain('NaN');
     expect(html).not.toContain('Infinity');
     expect(html).not.toContain('نرخ پاسخ');
@@ -38,6 +38,7 @@ describe('Call Center report highlights', () => {
         data={{
           ...data,
           calls: 10,
+          contacts: 10,
           sources: [
             { label: 'سایت', count: 3 },
             { label: 'سایت', count: 2 },
@@ -56,10 +57,68 @@ describe('Call Center report highlights', () => {
         agents={[{ id: 'u', displayName: 'کارشناس نمونه' }]}
       />,
     );
-    expect(html).toContain('مخاطب نمونه');
-    expect(html).toContain('کارشناس نمونه');
-    expect(html).toContain('50%');
-    expect(html).not.toContain('30%');
-    expect(html).toContain('۷');
+    expect(html).not.toContain('مخاطب نمونه');
+    expect(html).toContain('عملکرد تماس و وضعیت پیگیری کارشناسان');
+    expect(html).toContain('50 50');
+    expect(html).not.toContain('30 70');
+    expect(html).not.toContain('بیشترین تماس خروجی');
   });
+});
+
+it('shows the operational columns and real completion denominator without outbound contact ranking', () => {
+  const html = renderToStaticMarkup(
+    <ReportHighlights
+      data={{
+        ...data,
+        expertActivity: {
+          unattributed: 3,
+          rows: [
+            {
+              id: 'u',
+              name: 'Synthetic',
+              extensions: ['001', '002'],
+              inboundAnswered: 2,
+              outboundAttempts: 4,
+              outboundConnected: 1,
+              uniqueContacts: 3,
+              open: 2,
+              overdue: 1,
+              total: 6,
+              incomplete: 3,
+              completionRate: 0.5,
+              shared: true,
+            },
+          ],
+        },
+      }}
+    />,
+  );
+  expect(html).toContain('Synthetic');
+  expect(html).toContain('001');
+  expect(html).toContain('002');
+  expect(html).toContain('ورودی پاسخ‌داده‌شده');
+  expect(html).toContain('عقب‌افتاده');
+  expect(html).toContain('۵۰');
+  expect(html).toContain('از');
+  expect(html).not.toContain('بیشترین تماس خروجی');
+  expect(html).toContain('بدون انتساب معتبر');
+});
+
+it('uses contact-based source share for repeated calls', () => {
+  const html = renderToStaticMarkup(
+    <ReportHighlights
+      data={{
+        ...data,
+        calls: 28,
+        contacts: 1,
+        sources: [{ label: 'معرفی دوستان', count: 1 }],
+      }}
+      agents={[]}
+    />,
+  );
+  expect(html).toContain('سهم منابع آشنایی');
+  expect(html).toContain('کل مخاطبان');
+  expect(html).toContain('100 0');
+  expect(html).toContain('۱۰۰٪');
+  expect(html).not.toContain('۲۸');
 });

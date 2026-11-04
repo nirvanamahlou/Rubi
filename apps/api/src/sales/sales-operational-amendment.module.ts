@@ -1,3 +1,6 @@
+import { currentSalesExecution } from './sales-current-execution';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
+import { canSelfServeSalesContract } from '@nora/contracts';
 import {
   Module,
   Injectable,
@@ -10,6 +13,14 @@ import type { AuthenticatedActor, VoucherSettingsV1 } from '@nora/contracts';
 /** Public Sales boundary. The caller supplies its transaction for atomic cross-module work. */
 @Injectable()
 export class SalesOperationalAmendmentService {
+  currentExecution(
+    tx: Pick<Prisma.TransactionClient, 'salesContract'>,
+    snapshot: SalesReservationRequestV1,
+    branchIds: readonly string[],
+  ) {
+    return currentSalesExecution(tx, snapshot, branchIds);
+  }
+
   async assertActive(
     tx: Pick<Prisma.TransactionClient, 'salesContract'>,
     id: string,
@@ -52,6 +63,7 @@ export class SalesOperationalAmendmentService {
       !row ||
       !actor.branchIds.includes(row.branchId) ||
       !(
+        canSelfServeSalesContract(actor, row) ||
         actor.permissions.includes('sales.contracts.update.branch') ||
         (actor.permissions.includes('sales.contracts.update.own') &&
           row.ownerUserId === actor.userId)

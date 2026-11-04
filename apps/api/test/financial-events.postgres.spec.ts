@@ -596,221 +596,294 @@ describe.skipIf(!url)(
         }),
       ).toBe(0);
     }, 30000);
-    it('records the full manual petty-cash cycle without treating funding as expense', async () => {
-      const checker: AuthenticatedActor = { ...maker, userId: checkerId };
-      const directory = new MasterProcurementDirectory({ client: db } as never);
-      const documents = {
-        detail: async (id: string) => {
-          const doc = await db.document.findUniqueOrThrow({
-            where: { id },
-            include: { currentVersion: true },
-          });
-          return { data: { ...doc, currentVersion: doc.currentVersion! } };
-        },
-      };
-      const finance = new FinancePayrollService(
-        { client: db } as never,
-        {} as never,
-        undefined,
-        documents as never,
-        {
-          assertCurrency: async () => {},
-          activeOutgoingPaymentMethod:
-            directory.activeOutgoingPaymentMethod.bind(directory),
-          activeIncomingPaymentMethod:
-            directory.activeIncomingPaymentMethod.bind(directory),
-        } as never,
-      );
-      const method = await db.masterPaymentMethod.create({
-        data: {
-          code: randomUUID().slice(0, 32).toUpperCase(),
-          name: 'Manual cash',
-          channel: 'CASH',
-          direction: 'BOTH',
-          createdByUserId: makerId,
-          updatedByUserId: makerId,
-        },
-      });
-      const account = await db.financeSettlementAccount.create({
-        data: {
+    it.each(['COMMISSION', 'ADJUSTMENT', 'CHECK'])(
+      'requires independent approval and preserves the existing %s form workflow',
+      async (kind) => {
+        const finance = new FinancePayrollService(
+          { client: db } as never,
+          {} as never,
+          undefined,
+          undefined,
+          { assertCurrency: async () => {} } as never,
+        );
+        const input = {
+          operationId: randomUUID(),
           branchId,
-          title: randomUUID(),
-          kind: 'CASH',
+          kind,
+          title: 'Synthetic request',
+          party: 'Synthetic payee',
+          amount: '25.125',
           currencyCode: 'IRR',
-          createdByUserId: makerId,
-        },
-      });
-      const docType = await db.documentType.create({
-        data: {
-          code: randomUUID(),
-          name: 'Synthetic expense proof',
-          domain: 'FINANCE',
-          allowedMimeTypes: ['application/pdf'],
-        },
-      });
-      const proof = async () => {
-        const doc = await db.document.create({
+          dueAt: '2026-10-26',
+          reference: randomUUID(),
+        };
+        if (kind === 'CHECK') {
+          await expect(
+            finance.createManual({ ...input, reference: ' ' }, maker),
+          ).rejects.toThrow('شماره چک');
+          expect(
+            await db.financeOperationalRequest.count({
+              where: { id: input.operationId },
+            }),
+          ).toBe(0);
+        }
+        const { requestId } = await finance.createManual(input, maker);
+        await finance.action(
+          requestId,
+          { operationId: randomUUID(), expectedVersion: 1, action: 'REVIEW' },
+          maker,
+        );
+        const approve = {
+          operationId: randomUUID(),
+          expectedVersion: 2,
+          action: 'APPROVE',
+        };
+        await expect(finance.action(requestId, approve, maker)).rejects.toThrow(
+          'شخص دیگری',
+        );
+        expect(await finance.detail(requestId, maker)).toMatchObject({
+          status: 'UNDER_REVIEW',
+          version: 2,
+        });
+        expect(
+          await db.financeAccountingEvent.count({ where: { requestId } }),
+        ).toBe(0);
+        const checker = { ...maker, userId: checkerId };
+        await expect(
+          finance.action(requestId, approve, checker),
+        ).resolves.toMatchObject({ status: 'APPROVED', version: 3 });
+        await expect(
+          finance.action(requestId, approve, checker),
+        ).resolves.toMatchObject({ status: 'APPROVED', version: 3 });
+        expect(
+          await db.financeOperationalRevision.count({
+            where: { requestId, action: 'APPROVE' },
+          }),
+        ).toBe(1);
+      },
+      30000,
+    );
+    it.each(['IRR', 'USD'])(
+      'records the full manual %s petty-cash cycle without treating funding as expense',
+      async (currencyCode) => {
+        const checker: AuthenticatedActor = { ...maker, userId: checkerId };
+        const directory = new MasterProcurementDirectory({
+          client: db,
+        } as never);
+        const documents = {
+          detail: async (id: string) => {
+            const doc = await db.document.findUniqueOrThrow({
+              where: { id },
+              include: { currentVersion: true },
+            });
+            return { data: { ...doc, currentVersion: doc.currentVersion! } };
+          },
+        };
+        const finance = new FinancePayrollService(
+          { client: db } as never,
+          {} as never,
+          undefined,
+          documents as never,
+          {
+            assertCurrency: async () => {},
+            activeOutgoingPaymentMethod:
+              directory.activeOutgoingPaymentMethod.bind(directory),
+            activeIncomingPaymentMethod:
+              directory.activeIncomingPaymentMethod.bind(directory),
+          } as never,
+        );
+        const method = await db.masterPaymentMethod.create({
           data: {
-            title: 'Synthetic receipt',
-            documentTypeId: docType.id,
-            branchId,
-            ownerUserId: makerId,
-            sourceModule: 'FINANCE',
+            code: randomUUID().slice(0, 32).toUpperCase(),
+            name: 'Manual cash',
+            channel: 'CASH',
+            direction: 'BOTH',
             createdByUserId: makerId,
             updatedByUserId: makerId,
           },
         });
-        const version = await db.documentVersion.create({
+        const account = await db.financeSettlementAccount.create({
           data: {
-            documentId: doc.id,
-            versionNumber: 1,
-            storageObjectKey: randomUUID(),
-            originalFileName: 'synthetic.pdf',
-            safeDownloadName: 'synthetic.pdf',
-            detectedMimeType: 'application/pdf',
-            extension: 'pdf',
-            sizeBytes: 1n,
-            sha256: 'a'.repeat(64),
-            scanStatus: 'CLEAN',
-            versionNote: 'Synthetic only',
+            branchId,
+            title: randomUUID(),
+            kind: 'CASH',
+            currencyCode,
             createdByUserId: makerId,
           },
         });
-        await db.document.update({
-          where: { id: doc.id },
-          data: { currentVersionId: version.id, currentVersionNumber: 1 },
+        const docType = await db.documentType.create({
+          data: {
+            code: randomUUID(),
+            name: 'Synthetic expense proof',
+            domain: 'FINANCE',
+            allowedMimeTypes: ['application/pdf'],
+          },
         });
-        return doc.id;
-      };
-      const create = async (
-        kind: string,
-        amount: string,
-        fundId?: string,
-        documentId?: string,
-      ) =>
-        (
-          await finance.createManual(
+        const proof = async () => {
+          const doc = await db.document.create({
+            data: {
+              title: 'Synthetic receipt',
+              documentTypeId: docType.id,
+              branchId,
+              ownerUserId: makerId,
+              sourceModule: 'FINANCE',
+              createdByUserId: makerId,
+              updatedByUserId: makerId,
+            },
+          });
+          const version = await db.documentVersion.create({
+            data: {
+              documentId: doc.id,
+              versionNumber: 1,
+              storageObjectKey: randomUUID(),
+              originalFileName: 'synthetic.pdf',
+              safeDownloadName: 'synthetic.pdf',
+              detectedMimeType: 'application/pdf',
+              extension: 'pdf',
+              sizeBytes: 1n,
+              sha256: 'a'.repeat(64),
+              scanStatus: 'CLEAN',
+              versionNote: 'Synthetic only',
+              createdByUserId: makerId,
+            },
+          });
+          await db.document.update({
+            where: { id: doc.id },
+            data: { currentVersionId: version.id, currentVersionNumber: 1 },
+          });
+          return doc.id;
+        };
+        const create = async (
+          kind: string,
+          amount: string,
+          fundId?: string,
+          documentId?: string,
+        ) =>
+          (
+            await finance.createManual(
+              {
+                operationId: randomUUID(),
+                branchId,
+                kind,
+                title: kind,
+                party: 'Synthetic custodian',
+                description: 'Synthetic isolated expense',
+                reference: randomUUID(),
+                amount,
+                currencyCode,
+                dueAt: '2026-10-18',
+                ...(fundId ? { pettyFundId: fundId } : {}),
+                ...(documentId ? { documentId } : {}),
+              },
+              maker,
+            )
+          ).requestId;
+        const act = async (
+          id: string,
+          action: string,
+          body: Record<string, unknown> = {},
+          actor = checker,
+        ) =>
+          finance.action(
+            id,
             {
               operationId: randomUUID(),
-              branchId,
-              kind,
-              title: kind,
-              party: 'Synthetic custodian',
-              description: 'Synthetic isolated expense',
-              reference: randomUUID(),
-              amount,
-              currencyCode: 'IRR',
-              dueAt: '2026-10-18',
-              ...(fundId ? { pettyFundId: fundId } : {}),
-              ...(documentId ? { documentId } : {}),
+              expectedVersion: (await finance.detail(id, maker)).version,
+              action,
+              reason: 'Synthetic proof review',
+              ...body,
             },
-            maker,
-          )
-        ).requestId;
-      const act = async (
-        id: string,
-        action: string,
-        body: Record<string, unknown> = {},
-        actor = checker,
-      ) =>
-        finance.action(
-          id,
-          {
-            operationId: randomUUID(),
-            expectedVersion: (await finance.detail(id, maker)).version,
-            action,
-            reason: 'Synthetic proof review',
-            ...body,
-          },
-          actor,
+            actor,
+          );
+        const approve = async (id: string) => {
+          await act(id, 'REVIEW');
+          return act(id, 'APPROVE');
+        };
+        const pay = (amount: string) => ({
+          paidAmount: amount,
+          accountId: account.id,
+          methodId: method.id,
+          transferAt: new Date().toISOString(),
+          paymentReference: randomUUID(),
+        });
+        const fund = await create('PETTY_CASH_ADVANCE', '1000');
+        await act(fund, 'REVIEW');
+        await expect(act(fund, 'APPROVE', {}, maker)).rejects.toThrow();
+        await act(fund, 'APPROVE');
+        await act(fund, 'PAY', pay('1000'));
+        const firstProof = await proof();
+        const expense = await create(
+          'PETTY_CASH_EXPENSE',
+          '600',
+          fund,
+          firstProof,
         );
-      const approve = async (id: string) => {
-        await act(id, 'REVIEW');
-        return act(id, 'APPROVE');
-      };
-      const pay = (amount: string) => ({
-        paidAmount: amount,
-        accountId: account.id,
-        methodId: method.id,
-        transferAt: new Date().toISOString(),
-        paymentReference: randomUUID(),
-      });
-      const fund = await create('PETTY_CASH_ADVANCE', '1000');
-      await act(fund, 'REVIEW');
-      await expect(act(fund, 'APPROVE', {}, maker)).rejects.toThrow();
-      await act(fund, 'APPROVE');
-      await act(fund, 'PAY', pay('1000'));
-      const firstProof = await proof();
-      const expense = await create(
-        'PETTY_CASH_EXPENSE',
-        '600',
-        fund,
-        firstProof,
-      );
-      await approve(expense);
-      expect((await finance.detail(fund, maker)).pettyBalance?.available).toBe(
-        '400',
-      );
-      await expect(
-        create('PETTY_CASH_EXPENSE', '600', fund, firstProof),
-      ).rejects.toThrow();
-      await expect(act(expense, 'PAY', pay('600'))).rejects.toThrow();
-      const overspend = await create(
-        'PETTY_CASH_EXPENSE',
-        '700',
-        fund,
-        await proof(),
-      );
-      await act(overspend, 'REVIEW');
-      await expect(act(overspend, 'APPROVE')).rejects.toThrow();
-      await act(overspend, 'REJECT');
-      const topup = await create('PETTY_CASH_TOPUP', '700', fund);
-      await approve(topup);
-      await expect(act(topup, 'PAY', pay('700'))).rejects.toThrow();
-      const secondExpense = await create(
-        'PETTY_CASH_EXPENSE',
-        '100',
-        fund,
-        await proof(),
-      );
-      await approve(secondExpense);
-      await act(topup, 'PAY', pay('700'));
-      await expect(act(fund, 'CLOSE')).rejects.toThrow();
-      const receipt = await create('PETTY_CASH_RETURN', '1000', fund);
-      await approve(receipt);
-      await act(receipt, 'PAY', pay('1000'));
-      const closed = await act(fund, 'CLOSE');
-      expect(closed.status).toBe('CLOSED');
-      expect(closed.pettyBalance).toMatchObject({
-        funded: '1700',
-        expenses: '700',
-        returned: '1000',
-        available: '0',
-      });
-      await expect(
-        create('PETTY_CASH_EXPENSE', '1', fund, await proof()),
-      ).rejects.toThrow();
-      const history = await readFinanceHistory(
-        { client: db } as never,
-        {} as never,
-        {} as never,
-        { source: 'OPERATIONAL', requestId: receipt, direction: 'RECEIPT' },
-        maker,
-      );
-      expect(history.items).toHaveLength(1);
-      expect(history.items[0]!.direction).toBe('RECEIPT');
-      const expenseEvents = await db.financeAccountingEvent.findMany({
-        where: { requestId: expense },
-      });
-      expect(expenseEvents.map((e) => e.kind)).toEqual([
-        'PETTY_CASH_EXPENSE_POSTED',
-      ]);
-      expect(
-        await db.financeOperationalRevision.count({
-          where: { requestId: expense, action: 'PAY' },
-        }),
-      ).toBe(0);
-    }, 60000);
+        await approve(expense);
+        expect(
+          (await finance.detail(fund, maker)).pettyBalance?.available,
+        ).toBe('400');
+        await expect(
+          create('PETTY_CASH_EXPENSE', '600', fund, firstProof),
+        ).rejects.toThrow();
+        await expect(act(expense, 'PAY', pay('600'))).rejects.toThrow();
+        const overspend = await create(
+          'PETTY_CASH_EXPENSE',
+          '700',
+          fund,
+          await proof(),
+        );
+        await act(overspend, 'REVIEW');
+        await expect(act(overspend, 'APPROVE')).rejects.toThrow();
+        await act(overspend, 'REJECT');
+        const topup = await create('PETTY_CASH_TOPUP', '700', fund);
+        await approve(topup);
+        await expect(act(topup, 'PAY', pay('700'))).rejects.toThrow();
+        const secondExpense = await create(
+          'PETTY_CASH_EXPENSE',
+          '100',
+          fund,
+          await proof(),
+        );
+        await approve(secondExpense);
+        await act(topup, 'PAY', pay('700'));
+        await expect(act(fund, 'CLOSE')).rejects.toThrow();
+        const receipt = await create('PETTY_CASH_RETURN', '1000', fund);
+        await approve(receipt);
+        await act(receipt, 'PAY', pay('1000'));
+        const closed = await act(fund, 'CLOSE');
+        expect(closed.status).toBe('CLOSED');
+        expect(closed.pettyBalance).toMatchObject({
+          funded: '1700',
+          expenses: '700',
+          returned: '1000',
+          available: '0',
+        });
+        await expect(
+          create('PETTY_CASH_EXPENSE', '1', fund, await proof()),
+        ).rejects.toThrow();
+        const history = await readFinanceHistory(
+          { client: db } as never,
+          {} as never,
+          {} as never,
+          { source: 'OPERATIONAL', requestId: receipt, direction: 'RECEIPT' },
+          maker,
+        );
+        expect(history.items).toHaveLength(1);
+        expect(history.items[0]!.direction).toBe('RECEIPT');
+        const expenseEvents = await db.financeAccountingEvent.findMany({
+          where: { requestId: expense },
+        });
+        expect(expenseEvents.map((e) => e.kind)).toEqual([
+          'PETTY_CASH_EXPENSE_POSTED',
+        ]);
+        expect(
+          await db.financeOperationalRevision.count({
+            where: { requestId: expense, action: 'PAY' },
+          }),
+        ).toBe(0);
+      },
+      60000,
+    );
     it('records late posting with its reason and rebuilds only an observed unposted draft', async () => {
       const event = await capture(
         input({ occurredAt: new Date('2025-12-31T08:00:00Z') }),

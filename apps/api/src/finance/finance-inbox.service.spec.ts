@@ -33,6 +33,65 @@ const emptyOperationalDatabase = () => ({
 });
 
 describe('FinanceInboxService', () => {
+  it('places a submitted worksheet in the scoped HR payroll inbox with its frozen payable total', async () => {
+    const database = emptyOperationalDatabase();
+    database.client.financeOperationalRequest.findMany.mockResolvedValue([
+      {
+        id: 'worksheet-request',
+        hrRecordId: 'worksheet-source',
+        branchId: 'branch-a',
+        requesterId: 'hr-reviewer',
+        kind: 'PAYROLL_WORKSHEET',
+        title: 'حقوق 1405-09',
+        party: 'کارکنان شعبه',
+        description: 'جدول حقوق',
+        reference: '1405-09',
+        amount: { toString: () => '950' },
+        currencyCode: 'IRR',
+        status: 'NEW',
+        sourceVersion: 3,
+        version: 1,
+        createdAt: new Date('2026-10-27T10:00:00Z'),
+        dueAt: new Date('2026-10-27T10:00:00Z'),
+        revisions: [
+          {
+            cumulativePaid: { toString: () => '0' },
+            remainingAmount: { toString: () => '950' },
+          },
+        ],
+      },
+    ]);
+    const result = await new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      database as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    ).list(actor);
+    expect(result.items).toContainEqual(
+      expect.objectContaining({
+        source: 'HR',
+        kind: 'PAYROLL_REQUEST',
+        sourceReference: 'worksheet-request',
+        sourceContextReference: 'worksheet-source',
+        status: 'NEW',
+        amount: { amount: '950', currencyCode: 'IRR' },
+      }),
+    );
+    expect(
+      result.sources.find((source) => source.source === 'HR')?.itemCount,
+    ).toBe(1);
+    expect(
+      result.sources.find((source) => source.source === 'FINANCE')?.itemCount,
+    ).toBe(0);
+    expect(
+      database.client.financeOperationalRequest.findMany,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { branchId: { in: actor.branchIds } } }),
+    );
+  });
   it('loads every HR page, including referrals older than the first 25', async () => {
     const records = Array.from({ length: 26 }, (_, index) => ({
       id: `hr-${index}`,
@@ -207,6 +266,8 @@ describe('FinanceInboxService', () => {
           method: 'BANK_TRANSFER',
           description: 'واریز قرارداد',
           paymentReference: 'TRACK-1',
+          destinationAccountId: 'destination-account',
+          destinationAccountTitle: 'Declared title',
           dueAt: '2026-09-13T08:00:00.000Z',
           createdAt: '2026-09-12T08:00:00.000Z',
           createdByUserId: 'sales-user',
@@ -320,6 +381,14 @@ describe('FinanceInboxService', () => {
       'RESERVATIONS',
     ]);
     expect(
+      result.items.find((item) => item.source === 'SALES')
+        ?.destinationAccountId,
+    ).toBe('destination-account');
+    expect(
+      result.items.find((item) => item.source === 'SALES')
+        ?.destinationAccountTitle,
+    ).toBe('Declared title');
+    expect(
       result.items.every(({ origin }) => origin === 'PERSISTED_SOURCE'),
     ).toBe(true);
     expect(result.sources).toMatchObject([
@@ -400,7 +469,7 @@ describe('FinanceInboxService', () => {
     expect(sales.financeInbox).not.toHaveBeenCalled();
   });
 
-  it('approves a persisted Sales receipt through the Sales public service', async () => {
+  it('approves a persisted legacy Sales receipt through the Sales public service', async () => {
     const sales = {
       financeReceipt: vi.fn().mockResolvedValue({
         id: 'payment-1',
@@ -725,5 +794,78 @@ describe('FinanceInboxService', () => {
       }),
       ['branch-a'],
     );
+  });
+});
+
+describe('declared and legacy receipt accounts', () => {
+  const setup = (destinationAccountId: string | null) => {
+    const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        destinationAccountId,
+        contract: { branchId: 'branch-a' },
+      }),
+      applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
+    };
+    const findFirst = vi.fn().mockResolvedValue({ id: 'declared' });
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { client: { financeSettlementAccount: { findFirst } } } as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+    return { service, sales, findFirst };
+  };
+  const command = {
+    version: 1,
+    contractId: 'contract',
+    action: 'APPROVE',
+  } as const;
+  it('uses the saved destination when the client omits account selection', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    await service.decideReceipt('payment', command, actor);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'declared',
+        branchId: 'branch-a',
+        currencyCode: 'IRR',
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    expect(sales.applyFinancePaymentConfirmed).toHaveBeenCalledWith(
+      expect.objectContaining({ receiptAccountId: 'declared' }),
+    );
+  });
+  it('rejects replacement of a declared destination before confirmation', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    await expect(
+      service.decideReceipt(
+        'payment',
+        { ...command, accountId: 'changed' },
+        actor,
+      ),
+    ).rejects.toThrow('حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.');
+    expect(findFirst).not.toHaveBeenCalled();
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
+  });
+  it('requires an explicit account for a legacy payment', async () => {
+    const { service, sales } = setup(null);
+    await expect(
+      service.decideReceipt('payment', command, actor),
+    ).rejects.toThrow('حساب مقصد دریافت را انتخاب کنید.');
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
+  });
+  it('rejects an unavailable saved account without falling back', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    findFirst.mockResolvedValueOnce(null as never);
+    await expect(
+      service.decideReceipt('payment', command, actor),
+    ).rejects.toThrow('حساب مقصد فعال و هم‌ارز با پرداخت نیست.');
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
   });
 });

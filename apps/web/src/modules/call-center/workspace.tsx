@@ -1,5 +1,7 @@
 'use client';
-import { hasScopedCallCenterAccess } from '@nora/contracts';
+import { ScrollContinuation } from './scroll-continuation';
+import { CallCenterBranchContext } from './branch-context';
+import { RecordingDownload } from './recording-download';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +19,6 @@ import {
 } from 'react';
 import {
   Headset,
-  Plus,
   RotateCcw,
   Search,
   Eye,
@@ -25,8 +26,6 @@ import {
   SlidersHorizontal,
   Users,
   BarChart3,
-  Phone,
-  FileText,
   PhoneIncoming,
   PhoneOutgoing,
 } from 'lucide-react';
@@ -36,13 +35,13 @@ import {
   callDate,
   faNumber,
   sources,
-  operators,
   type Call,
   type CallEvent,
 } from './model';
 import { callCenterApi, CallCenterHttpError, type CallNote } from './client';
 import {
   readApi,
+  CONTACT_PAGE_SIZE,
   emptySearch,
   type SearchFilters,
   type SearchPage,
@@ -53,20 +52,22 @@ import { workflowApi, type Operator } from './workflow-client';
 import {
   WorkQueue,
   WorkflowPanel,
+  WorkflowEditor,
   requestLabels,
   taskLabels,
 } from './workflow';
-import { CallForm } from './call-form';
+import { HostedCallForm } from './call-form-host';
+import { WithoutOutcomeDialog } from './without-outcome-dialog';
+import { canCreateCallbackRequest } from './kpi-call-actions';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
-import { NextAction } from './next-action';
-import { IssabelDialer } from './issabel-dialer';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
   BUSY: 'اشغال',
   FAILED: 'ناموفق',
+  WRONG_NUMBER: 'اشتباه گرفته شده',
   UNKNOWN: 'نامشخص',
 };
 const reasonText = (e: unknown) =>
@@ -88,6 +89,7 @@ function Select({
       <NativeSearchSelect
         className={styles.control}
         aria-label={label}
+        optionLimit={Math.max(50, options.length + 1)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -103,78 +105,54 @@ function Select({
 }
 export function CallCenterWorkspace() {
   const actor = useAccessActor();
-  const [chosen, setChosen] = useState('');
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
-  useEffect(() => {
-    let active = true;
-    if (actor?.branchIds[0])
-      readApi
-        .branches(actor.branchIds[0])
-        .then((r) => {
-          if (active) setBranches(r.data);
-        })
-        .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [actor]);
-  const [hasDraft, setHasDraft] = useState(false);
   if (!actor) return <p role="status">در حال دریافت دسترسی کال سنتر…</p>;
   if (!actor.permissions.includes('customer_affairs.call_center.read'))
     return <p role="alert">دسترسی مشاهده کال سنتر ندارید.</p>;
-  const branch = actor.branchIds.includes(chosen) ? chosen : actor.branchIds[0];
+  const branch = actor.branchIds[0];
   if (!branch) return <p role="alert">شعبه مجازی در دسترس نیست.</p>;
   return (
     <>
-      <Content
-        key={`${actor.userId}:${branch}:${actor.permissions.join(',')}`}
-        branch={branch}
-        branchControl={
-          <label>
-            شعبه مجاز
-            <NativeSearchSelect
-              aria-label="شعبه مجاز کال سنتر"
-              value={branch}
-              onChange={(e) => {
-                if (
-                  !hasDraft ||
-                  window.confirm(
-                    'یادداشت ذخیره‌نشده با تغییر شعبه کنار گذاشته شود؟',
-                  )
-                )
-                  setChosen(e.target.value);
-              }}
-            >
-              {actor.branchIds.map((id, index) => (
-                <option key={id} value={id}>
-                  {branches.find((b) => b.id === id)?.name ??
-                    'شعبه ' + faNumber(index + 1)}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-        }
-        onDirty={setHasDraft}
-        actorId={actor.userId}
-        permissions={actor.permissions}
-      />
+      <CallCenterBranchContext actor={actor}>
+        {(resolvedBranch) => (
+          <Content
+            key={`${actor.userId}:${resolvedBranch}:${actor.permissions.join(',')}`}
+            branch={resolvedBranch}
+            actorId={actor.userId}
+            permissions={actor.permissions}
+          />
+        )}
+      </CallCenterBranchContext>
     </>
   );
 }
 function Content({
-  onDirty,
-  branchControl,
   branch,
   actorId,
   permissions,
 }: {
   branch: string;
-  branchControl: ReactNode;
   actorId: string;
   permissions: readonly string[];
-  onDirty: (value: boolean) => void;
 }) {
+  const [destinations, setDestinations] = useState<string[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    callCenterApi
+      .destinations(branch, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted)
+          setDestinations([...new Set(result.data.map((row) => row.label))]);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDestinations([]);
+      });
+    return () => controller.abort();
+  }, [branch]);
   const [advanced, setAdvanced] = useState(false);
+  const [completionPrevious, setCompletionPrevious] = useState<Call | null>(
+    null,
+  );
+  const [historyRevision, setHistoryRevision] = useState(0);
   const searchInput = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<SearchFilters>(emptySearch),
     [page, setPage] = useState(1),
@@ -188,14 +166,30 @@ function Content({
     [message, setMessage] = useState('');
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   useUnsavedGuard(Object.values(noteDrafts).some((v) => !!v.trim()));
-  useEffect(
-    () => onDirty(Object.values(noteDrafts).some((v) => !!v.trim())),
-    [noteDrafts, onDirty],
+  const [newRequestOpen, setNewRequestOpen] = useState(false);
+  const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState<'today' | 'week' | null>(null);
+  const [callbacksOpen, setCallbacksOpen] = useState(false);
+  const [callbackRequest, setCallbackRequest] = useState<ContactSummary | null>(
+    null,
   );
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    const refreshOutbound = () => {
+      if (page === 1) setRefresh((value) => value + 1);
+      else setMessage('تماس خروجی جدید ثبت شد؛ فهرست را تازه‌سازی کنید.');
+    };
+    window.addEventListener('call-center:outbound-received', refreshOutbound);
+    return () =>
+      window.removeEventListener(
+        'call-center:outbound-received',
+        refreshOutbound,
+      );
+  }, [page]);
+
   useEffect(() => {
     let active = true;
     readApi
@@ -209,6 +203,7 @@ function Content({
     };
   }, [branch]);
   const revision = useRef<string | undefined>(undefined);
+  const canRegisterCallbackRequest = canCreateCallbackRequest(permissions);
   const canManage = permissions.includes(
       'customer_affairs.call_center.workflow.manage',
     ),
@@ -242,6 +237,7 @@ function Content({
         .catch((e) => {
           if (!controller.signal.aborted) {
             setLoading(false);
+            setResult(null);
             setError(reasonText(e));
             if (
               e instanceof CallCenterHttpError &&
@@ -299,25 +295,35 @@ function Content({
     revision.current = undefined;
     setRefresh((v) => v + 1);
   }
-  function open(phone = '', direction: CallEvent['direction'] = 'INBOUND') {
-    setDraft({
-      id: crypto.randomUUID(),
-      phone,
-      direction,
-      occurredAt: new Date().toISOString(),
-      recordings: [],
-    });
+  async function complete(id: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await callCenterApi.get(branch, id);
+      setCompletionPrevious(data);
+      setDraft(data);
+    } catch (e) {
+      setMessage(reasonText(e));
+    } finally {
+      setBusy(false);
+    }
   }
   async function save(call: Call) {
     if (busy) return;
     setBusy(true);
     try {
       const r = await callCenterApi.create(branch, call);
+      setHistoryRevision((v) => v + 1);
+      setRefresh((v) => v + 1);
       setDraft(null);
       setMessage(
         'تماس ذخیره شد؛ برای نمایش ترتیب جدید فهرست را تازه‌سازی کنید.',
       );
-      if (selected && selected.id === r.data.contactId)
+      if (
+        selected &&
+        selected.id === r.data.contactId &&
+        (!call.completionToken || selected.latest.id === r.data.id)
+      )
         setSelected({ ...selected, latest: r.data });
     } finally {
       setBusy(false);
@@ -328,7 +334,7 @@ function Content({
     direction: 'جهت تماس',
     outcome: 'نتیجه تماس',
     source: 'منبع',
-    unit: 'واحد',
+    unit: 'وصل شده به',
     teamId: 'تیم',
     agentId: 'کارشناس',
     requestStatus: 'وضعیت درخواست',
@@ -359,7 +365,12 @@ function Content({
               NO: 'تکمیل‌شده',
             } as Record<string, string>
           )[value] ?? value);
-  const pageCount = Math.max(1, Math.ceil((result?.meta.total ?? 0) / 20));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(
+      (result?.meta.total ?? 0) / (result?.meta.pageSize ?? CONTACT_PAGE_SIZE),
+    ),
+  );
   return (
     <section dir="rtl" className={styles.workspace}>
       <header className={styles.header}>
@@ -367,27 +378,12 @@ function Content({
           <h1>
             <Headset /> کال سنتر
           </h1>
-          <p>مدیریت تماس‌ها، درخواست‌ها و پیگیری‌های مشتری</p>
         </div>
-        <button
-          className={styles.primary}
-          data-cc-focus-anchor
-          disabled={!canCreate}
-          onClick={() => open()}
-        >
-          <Plus size={18} /> ثبت تماس جدید
-        </button>
       </header>
-      <IssabelDialer
-        branchId={branch}
-        allowed={
-          canCreate &&
-          canManage &&
-          (!hasScopedCallCenterAccess(permissions) ||
-            permissions.includes('customer_affairs.call_center.outbound.own'))
-        }
-      />
       <WorkQueue
+        onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
+        onMissedCallbacks={() => setCallbacksOpen(true)}
+        onPeriod={setPeriodOpen}
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
@@ -411,16 +407,32 @@ function Content({
               />
             </label>
           </div>
-          {branchControl}
-          <Select
-            label="دامنه تماس"
-            value={filters.scope}
-            onChange={(v) => change('scope', v || 'LATEST')}
-            options={[
-              ['LATEST', 'آخرین تماس'],
-              ['ANY', 'همه تاریخچه'],
-            ]}
-          />
+          <div
+            className={styles.dateFilters}
+            role="group"
+            aria-label="محدوده و زمان"
+          >
+            <label>
+              از تاریخ (تهران)
+              <DatePicker
+                filterCalendar
+                defaultCalendarSystem="persian"
+                aria-label="از تاریخ (تهران)"
+                value={filters.from}
+                onChange={(value) => change('from', value)}
+              />
+            </label>
+            <label>
+              تا ابتدای تاریخ (تهران)
+              <DatePicker
+                filterCalendar
+                defaultCalendarSystem="persian"
+                aria-label="تا ابتدای تاریخ (تهران)"
+                value={filters.to}
+                onChange={(value) => change('to', value)}
+              />
+            </label>
+          </div>
           <button
             className={styles.clear}
             aria-expanded={advanced}
@@ -448,27 +460,6 @@ function Content({
         <div id="cc-advanced" hidden={!advanced}>
           <div className={styles.filterGroups}>
             <fieldset>
-              <legend>محدوده و زمان</legend>{' '}
-              <label>
-                از تاریخ میلادی (تهران)
-                <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="از تاریخ میلادی (تهران)"
-                  value={filters.from}
-                  onChange={(value) => change('from', value)}
-                />
-              </label>
-              <label>
-                تا ابتدای تاریخ میلادی (تهران)
-                <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="تا ابتدای تاریخ میلادی (تهران)"
-                  value={filters.to}
-                  onChange={(value) => change('to', value)}
-                />
-              </label>
-            </fieldset>
-            <fieldset>
               <legend>مشخصات تماس</legend>{' '}
               <Select
                 label="جهت تماس"
@@ -492,20 +483,10 @@ function Content({
                 options={sources.map((v) => [v, v])}
               />
               <Select
-                label="واحد ثبت‌شده تماس"
+                label="وصل شده به"
                 value={filters.unit}
                 onChange={(v) => change('unit', v)}
-                options={operators.map((v) => [v, v])}
-              />
-              <Select
-                label="روش ثبت"
-                value={filters.origin}
-                onChange={(v) => change('origin', v)}
-                options={[
-                  ['MANUAL', 'دستی'],
-                  ['TELEPHONY', 'تلفنی'],
-                  ['UNKNOWN', 'نامشخص'],
-                ]}
+                options={['نامشخص', ...destinations].map((v) => [v, v])}
               />
               <Select
                 label="تکمیل اطلاعات"
@@ -517,46 +498,8 @@ function Content({
                 ]}
               />
             </fieldset>
-            <fieldset>
-              <legend>مسئولیت و پیگیری</legend>{' '}
-              <Select
-                label="تیم فعلی ثبت‌کننده"
-                value={filters.teamId}
-                onChange={(v) => change('teamId', v)}
-                options={teams.map((t) => [t.id, t.name])}
-              />
-              <Select
-                label="کارشناس ثبت‌کننده"
-                value={filters.agentId}
-                onChange={(v) => change('agentId', v)}
-                options={agents.map((a) => [a.id, a.displayName])}
-              />
-              <Select
-                label="وضعیت درخواست"
-                value={filters.requestStatus}
-                onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestLabels)}
-              />
-              <Select
-                label="پیگیری مخاطب"
-                value={filters.followUp}
-                onChange={(v) => change('followUp', v)}
-                options={[
-                  ...Object.entries(taskLabels),
-                  ['TODAY', 'موعد امروز'],
-                  ['OVERDUE', 'عقب‌افتاده'],
-                ]}
-              />
-            </fieldset>
           </div>
         </div>
-        <p className={styles.formHint}>
-          جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
-          فیلترهای تماس روی{' '}
-          {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-          فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
-          شخص نیست.
-        </p>
         <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
           {Object.entries(filters)
             .filter(([k, v]) => v && k !== 'scope')
@@ -611,8 +554,9 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
-                      'منبع',
-                      'واحد',
+                      'جهت تماس',
+                      'منبع آشنایی',
+                      'وصل شده به',
                       'آخرین تماس',
                       'تعداد تماس',
                       'نتیجه',
@@ -624,7 +568,49 @@ function Content({
                 </thead>
                 <tbody>
                   {result?.data.map((row) => (
-                    <tr key={row.id} data-selected={selected?.id === row.id}>
+                    <tr
+                      key={row.id}
+                      data-selected={selected?.id === row.id}
+                      onClick={() => {
+                        if (
+                          !loading &&
+                          !error &&
+                          canCreate &&
+                          canManage &&
+                          !busy &&
+                          row.latest.origin !== 'SYNTHETIC'
+                        )
+                          void complete(row.latest.id);
+                      }}
+                      tabIndex={
+                        canCreate &&
+                        canManage &&
+                        !loading &&
+                        !error &&
+                        !busy &&
+                        row.latest.origin !== 'SYNTHETIC'
+                          ? 0
+                          : undefined
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.target === event.currentTarget &&
+                          (event.key === 'Enter' || event.key === ' ') &&
+                          canCreate &&
+                          canManage &&
+                          !loading &&
+                          !error &&
+                          !busy &&
+                          row.latest.origin !== 'SYNTHETIC'
+                        ) {
+                          event.preventDefault();
+                          void complete(row.latest.id);
+                        }
+                      }}
+                      style={{
+                        cursor: canCreate && canManage ? 'pointer' : undefined,
+                      }}
+                    >
                       <td data-label="نام مخاطب">
                         {row.latest.name || 'مخاطب ناشناس'}
                       </td>
@@ -638,8 +624,22 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="منبع">{row.latest.source}</td>
-                      <td data-label="واحد">{row.latest.operator}</td>
+                      <td data-label="جهت تماس">
+                        <span
+                          className={styles.badge}
+                          data-direction={row.latest.direction}
+                        >
+                          {row.latest.direction === 'INBOUND'
+                            ? 'ورودی'
+                            : 'خروجی'}
+                        </span>
+                      </td>
+                      <td data-label="منبع آشنایی">{row.latest.source}</td>
+                      <td data-label="وصل شده به">
+                        {row.latest.answerRecipient?.label ||
+                          row.latest.operator ||
+                          'نامشخص'}
+                      </td>
                       <td data-label="آخرین تماس">
                         {callDate(row.latest.occurredAt)}
                       </td>
@@ -649,7 +649,9 @@ function Content({
                           className={styles.badge}
                           data-outcome={row.latest.outcome}
                         >
-                          {outcomes[row.latest.outcome ?? 'UNKNOWN']}
+                          {row.latest.needsCompletion && !row.latest.outcome
+                            ? 'نیازمند تکمیل'
+                            : outcomes[row.latest.outcome ?? 'UNKNOWN']}
                         </span>
                       </td>
                       <td data-label="جزئیات">
@@ -657,7 +659,11 @@ function Content({
                           className={styles.view}
                           data-cc-focus-anchor
                           disabled={loading || !!error}
-                          onClick={() => setSelected(row)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setNewRequestOpen(false);
+                            setSelected(row);
+                          }}
                           aria-label={`مشاهده تاریخچه ${row.latest.name || 'مخاطب ناشناس'}`}
                         >
                           <Eye size={14} /> مشاهده
@@ -698,7 +704,16 @@ function Content({
               </button>
             </nav>
           </section>
-          <ReportPanel report={report} error={reportError} agents={agents} />
+          <ReportPanel
+            onEdit={canCreate && canManage ? complete : undefined}
+            editDisabled={busy}
+            hidden={!!draft}
+            report={report}
+            error={reportError}
+            agents={agents}
+            branch={branch}
+            filters={filters}
+          />
         </div>
         {selected && (
           <DossierFrame onClose={() => setSelected(null)}>
@@ -721,19 +736,30 @@ function Content({
                 یادداشت ثبت‌نشده این مخاطب حفظ شده است.
               </p>
             )}
-            <p className={styles.formHint}>
-              شماره تلفن به‌تنهایی تأیید هویت نیست.
-            </p>
             <button
               className={styles.followUp}
               data-cc-focus-anchor
-              disabled={!canCreate}
-              onClick={() => open(selected.latest.phone, 'OUTBOUND')}
+              disabled={
+                !canCreate ||
+                !canManage ||
+                busy ||
+                selected.latest.origin === 'SYNTHETIC'
+              }
+              onClick={() => void complete(selected.latest.id)}
             >
-              ثبت تماس پیگیری
+              ویرایش اطلاعات مخاطب
+            </button>
+            <button
+              className={styles.followUp}
+              disabled={!canManage}
+              onClick={() => setNewRequestOpen(true)}
+            >
+              درخواست جدید
             </button>
             <History
-              key={`${selected.id}:${selected.latest.id}`}
+              key={`${selected.id}:${selected.latest.id}:${historyRevision}`}
+              newRequestOpen={newRequestOpen}
+              onRequestClose={() => setNewRequestOpen(false)}
               branch={branch}
               contact={selected}
               text={noteDrafts[selected.id] ?? ''}
@@ -757,14 +783,75 @@ function Content({
         )}
       </div>
 
+      {withoutOutcomeOpen && (
+        <WithoutOutcomeDialog
+          key={`${branch}:${historyRevision}`}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setWithoutOutcomeOpen(false)}
+          onComplete={complete}
+        />
+      )}
+      {periodOpen && (
+        <WithoutOutcomeDialog
+          key={periodOpen + branch + historyRevision}
+          mode={periodOpen}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setPeriodOpen(null)}
+          onComplete={complete}
+        />
+      )}
+      {callbacksOpen && (
+        <WithoutOutcomeDialog
+          key={'callbacks:' + branch + ':' + historyRevision}
+          mode="missed-callbacks"
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft || !!callbackRequest}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setCallbacksOpen(false)}
+          onComplete={complete}
+          onRequest={
+            canRegisterCallbackRequest
+              ? (contact) => {
+                  if (!canRegisterCallbackRequest || busy) return;
+                  setCallbackRequest(contact);
+                }
+              : undefined
+          }
+        />
+      )}
+      {callbackRequest && canRegisterCallbackRequest && (
+        <WorkflowEditor
+          key={callbackRequest.id}
+          editor={{ kind: 'request' }}
+          branchId={branch}
+          contactId={callbackRequest.id}
+          contactCall={{ ...callbackRequest.latest, note: '', recordings: [] }}
+          operators={agents}
+          onClose={() => setCallbackRequest(null)}
+          onSaved={() => {
+            window.dispatchEvent(new Event('call-center:workflow-changed'));
+            setCallbackRequest(null);
+            setHistoryRevision((value) => value + 1);
+          }}
+        />
+      )}
       {draft && (
-        <CallForm
+        <HostedCallForm
+          retainOnNavigation
           branchId={branch}
           event={draft}
           previous={
-            selected?.latest.phone === draft.phone
+            completionPrevious ??
+            (selected?.latest.phone === draft.phone
               ? { ...selected.latest, note: '', recordings: [] }
-              : undefined
+              : undefined)
           }
           onSave={save}
           onClose={() => setDraft(null)}
@@ -781,7 +868,6 @@ function DossierFrame({
   children: ReactNode;
   onClose: () => void;
 }) {
-  // Keep the dossier mounted in the same surface while an editor contains a draft.
   const [compact] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -812,11 +898,21 @@ function DossierFrame({
   );
 }
 function ReportPanel({
+  onEdit,
+  editDisabled,
+  hidden,
+  branch,
+  filters,
   report,
   error,
   agents,
 }: {
+  onEdit?: ((id: string) => void) | undefined;
+  editDisabled?: boolean | undefined;
+  hidden?: boolean | undefined;
   agents: Operator[];
+  branch: string;
+  filters: SearchFilters;
   report: Report | null;
   error: string;
 }) {
@@ -828,46 +924,22 @@ function ReportPanel({
       <h2>
         <BarChart3 size={21} /> گزارش داده ثبت‌شده
       </h2>
-      <p>
-        گزارش تماس‌ها همیشه تمام تماس‌های منطبق با فیلتر و بازه را می‌شمارد؛
-        گزینه آخرین تماس فقط برای فهرست مخاطبان است.
-      </p>
-      <p>
-        {callDate(meta.from)} تا {callDate(meta.to)} · تهران · زمان تماس، پایان
-        بازه غیرشامل
-      </p>
-      <div className={styles.stats}>
-        {[
-          ['تماس ثبت‌شده', r.calls],
-          ['مخاطب تلفنی یکتا', r.contacts],
-          ['نیازمند تکمیل', r.incomplete],
-        ].map(([label, value]) => (
-          <article className={styles.stat} key={label}>
-            <span className={styles.statIcon}>
-              {label === 'تماس ثبت‌شده' ? (
-                <Phone />
-              ) : label === 'مخاطب تلفنی یکتا' ? (
-                <Users />
-              ) : (
-                <FileText />
-              )}
-            </span>
-            <span>{label}</span>
-            <strong>{faNumber(Number(value))}</strong>
-          </article>
-        ))}
-      </div>
       {r.unindexed > 0 && (
         <p role="alert">
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
         </p>
       )}
-      <ReportHighlights data={r} agents={agents} />
-
-      <p>
-        مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
-        انتظار، مدت مکالمه و تبدیل فروش هنوز داده معتبر ندارند.
-      </p>
+      <ReportHighlights
+        key={meta.asOf}
+        onEdit={onEdit}
+        editDisabled={editDisabled}
+        hidden={hidden}
+        data={r}
+        agents={agents}
+        branch={branch}
+        filters={filters}
+        meta={meta}
+      />
     </section>
   );
 }
@@ -879,7 +951,11 @@ function History({
   text,
   setText,
   onNoteSaved,
+  newRequestOpen,
+  onRequestClose,
 }: {
+  newRequestOpen: boolean;
+  onRequestClose: () => void;
   branch: string;
   contact: ContactSummary;
   actorId: string;
@@ -911,7 +987,16 @@ function History({
       .calls(branch, contact.id, callAfter, c.signal)
       .then((r) => {
         if (c.signal.aborted) return;
-        setCalls(r.data);
+        setCalls((previous) =>
+          callAfter
+            ? [
+                ...previous.filter(
+                  (item) => !r.data.some((next) => next.id === item.id),
+                ),
+                ...r.data,
+              ]
+            : r.data,
+        );
         setCallNext(r.meta.next);
         setLoading(false);
         setError('');
@@ -930,7 +1015,16 @@ function History({
       .notes(branch, contact.id, noteAfter, c.signal)
       .then((r) => {
         if (c.signal.aborted) return;
-        setNotes(r.data);
+        setNotes((previous) =>
+          noteAfter
+            ? [
+                ...previous.filter(
+                  (item) => !r.data.some((next) => next.id === item.id),
+                ),
+                ...r.data,
+              ]
+            : r.data,
+        );
         setNoteNext(r.meta.next);
         setNotesLoading(false);
         setNoteError('');
@@ -965,18 +1059,6 @@ function History({
   }
   return (
     <>
-      <NextAction
-        key={contact.id}
-        branch={branch}
-        contactId={contact.id}
-        revision={retry}
-        onOpen={() => {
-          setSection('requests');
-          sectionControls.current
-            ?.querySelector<HTMLButtonElement>('[data-section="requests"]')
-            ?.focus();
-        }}
-      />
       <div
         ref={sectionControls}
         className={styles.dossierTabs}
@@ -1036,39 +1118,52 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                  {c.note || 'بدون شرح'}
-                </p>
-                <p>
-                  زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
-                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 14,
+                    paddingBlock: 12,
+                    lineHeight: 1.9,
+                  }}
+                >
+                  <p
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {c.note || 'بدون شرح'}
+                  </p>
+                  <p>
+                    {c.direction === 'OUTBOUND'
+                      ? 'تماس‌گرفته‌شده از داخلی:'
+                      : 'وصل شده به:'}
+                    <span style={{ display: 'block', marginTop: 6 }}>
+                      {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                    </span>
+                  </p>
+                </div>
+                <RecordingDownload
+                  callId={c.id}
+                  branchId={branch}
+                  allowed={permissions.includes(
+                    'customer_affairs.call_center.recordings.read',
+                  )}
+                />
               </details>
             </li>
           ))}
         </ol>
-        <div className={styles.pagination}>
-          <button
-            disabled={!callAfter || loading}
-            onClick={() => {
-              setLoading(true);
-              setCallAfter(undefined);
-            }}
-          >
-            جدیدترین تماس‌ها
-          </button>
-          <button
-            disabled={!callNext || loading}
-            onClick={() => {
-              setLoading(true);
-              setCallAfter(callNext!);
-            }}
-          >
-            تماس‌های قدیمی‌تر
-          </button>
-        </div>
+        <ScrollContinuation
+          enabled={section === 'calls' && !!callNext && !loading && !error}
+          onMore={() => {
+            setLoading(true);
+            setCallAfter(callNext!);
+          }}
+        />
       </div>
       <div id="cc-dossier-requests" hidden={section !== 'requests'}>
         <WorkflowPanel
+          dossier
+          newRequestOpen={newRequestOpen}
+          onRequestClose={onRequestClose}
           branchId={branch}
           contactId={contact.id}
           actorId={actorId}
@@ -1108,26 +1203,15 @@ function History({
             </p>
           </details>
         ))}
-        <div className={styles.pagination}>
-          <button
-            disabled={!noteAfter || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(undefined);
-            }}
-          >
-            یادداشت‌های جدید
-          </button>
-          <button
-            disabled={!noteNext || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(noteNext!);
-            }}
-          >
-            یادداشت‌های قدیمی‌تر
-          </button>
-        </div>
+        <ScrollContinuation
+          enabled={
+            section === 'notes' && !!noteNext && !notesLoading && !noteError
+          }
+          onMore={() => {
+            setNotesLoading(true);
+            setNoteAfter(noteNext!);
+          }}
+        />
         <form className={styles.note} onSubmit={save}>
           <label htmlFor="cc-note">یادداشت جدید</label>
           <textarea

@@ -28,7 +28,6 @@ type Details = NonNullable<TourPackageInputV1['details']>;
 type Step = NonNullable<Details['itinerary']>[number];
 const prose = [
   ['summary', 'خلاصه تور'],
-  ['description', 'معرفی و توضیحات کلی تور'],
   ['requiredDocuments', 'مدارک لازم تور'],
   ['services', 'خدمات تور'],
   ['installmentTerms', 'شرایط اقساط'],

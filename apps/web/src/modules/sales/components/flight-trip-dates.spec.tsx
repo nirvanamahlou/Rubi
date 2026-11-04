@@ -9,6 +9,8 @@ const fixture = vi.hoisted(() => ({
   returning: [] as TicketOfferV1[],
   pickers: [] as DatePickerProps[],
   loaded: true,
+  roundTrip: true,
+  requireFare: true,
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -23,9 +25,9 @@ vi.mock('react', async (original) => ({
               ? JSON.stringify({
                   originId: 'origin',
                   destinationId: 'destination',
-                  roundTrip: true,
+                  roundTrip: fixture.roundTrip,
                   seats: 1,
-                  requireFare: true,
+                  requireFare: fixture.requireFare,
                 })
               : '',
             outbound: fixture.outbound,
@@ -44,6 +46,31 @@ vi.mock('@/components/ui/date-picker', () => ({
 }));
 vi.mock('../api/ticket-search', () => ({ searchTickets: vi.fn() }));
 import { searchTickets } from '../api/ticket-search';
+
+it('reports calendar changes for the exact leg without changing flight dates', () => {
+  const onChange = vi.fn();
+  const onCalendarSystemChange = vi.fn();
+  renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare={false}
+      value={{ from: '2099-10-01', to: '2099-10-03' }}
+      onChange={onChange}
+      calendarSystems={{ OUTBOUND: 'gregorian', RETURN: 'persian' }}
+      onCalendarSystemChange={onCalendarSystemChange}
+    />,
+  );
+  expect(fixture.pickers.map((picker) => picker.calendarSystem)).toEqual([
+    'gregorian',
+    'persian',
+  ]);
+  fixture.pickers[1]!.onCalendarSystemChange!('gregorian');
+  expect(onCalendarSystemChange).toHaveBeenCalledWith('RETURN', 'gregorian');
+  expect(onChange).not.toHaveBeenCalled();
+});
 const outbound: TicketOfferV1 = {
   id: 'out',
   version: 1,
@@ -80,6 +107,8 @@ beforeEach(() => {
   vi.mocked(searchTickets).mockReset();
   fixture.pickers = [];
   fixture.loaded = true;
+  fixture.roundTrip = true;
+  fixture.requireFare = true;
   fixture.outbound = [
     outbound,
     {
@@ -94,6 +123,38 @@ beforeEach(() => {
     { ...returning, id: 'late', departureAt: '2099-10-05T08:00:00Z' },
   ];
 });
+it.each([false, true])(
+  'marks unpriced inventory dates for flight-only contracts (round trip=%s)',
+  (roundTrip) => {
+    fixture.roundTrip = roundTrip;
+    fixture.requireFare = false;
+    fixture.outbound = fixture.outbound.map((offer) => ({
+      ...offer,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    }));
+    fixture.returning = fixture.returning.map((offer) => ({
+      ...offer,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    }));
+    renderToStaticMarkup(
+      <FlightTripDates
+        originId="origin"
+        destinationId="destination"
+        roundTrip={roundTrip}
+        seats={1}
+        requireFare={false}
+        value={{ from: '2099-10-01', to: '' }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(fixture.pickers[0]!.markedDates).toEqual(['2099-10-01']);
+    expect(fixture.pickers[0]!.availableDates).toBeUndefined();
+    if (roundTrip)
+      expect(fixture.pickers[1]!.markedDates).toEqual(['2099-10-03']);
+  },
+);
 it('marks only available outbound days and eligible reverse-route return dates with red dots', () => {
   const onChange = vi.fn();
   renderToStaticMarkup(
@@ -288,4 +349,32 @@ it('allows changing the suggested return to a manually chosen floating day', () 
     { from: '2099-10-01', to: '2099-10-04' },
     undefined,
   );
+});
+
+it('shows one enabled return calendar without an outbound date and keeps its chosen day', () => {
+  fixture.roundTrip = false;
+  fixture.requireFare = false;
+  const onChange = vi.fn();
+  const html = renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      primaryDirection="RETURN"
+      roundTrip={false}
+      seats={1}
+      requireFare={false}
+      value={{ from: '', to: '' }}
+      onChange={onChange}
+    />,
+  );
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]!.disabled).toBe(false);
+  expect(fixture.pickers[0]!['aria-label']).toBe('تاریخ بلیط برگشت');
+  expect(fixture.pickers[0]!.markedDates).toEqual(['2099-10-01']);
+  expect(html).not.toContain('بلیط رفت');
+  fixture.pickers[0]!.onChange?.('2099-10-01');
+  expect(onChange).toHaveBeenCalledWith({
+    from: '2099-10-01',
+    to: '2099-10-01',
+  });
 });

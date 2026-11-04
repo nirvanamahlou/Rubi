@@ -124,6 +124,8 @@ export interface MarketingCampaignViewV1 extends MarketingCampaignInputV1 {
 }
 
 export type MarketingAssetKind =
+  | 'SOURCE'
+  | 'AUDIENCE'
   | 'SEGMENT'
   | 'MESSAGE'
   | 'SCHEDULE'

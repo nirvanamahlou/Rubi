@@ -16,6 +16,14 @@ export class IamFinanceDirectory {
       orderBy: { name: 'asc' },
     });
   }
+  /** Internal document projection. The caller must authorize its saved document
+   * before supplying the owner ID. Keep historical names after branch/status changes. */
+  documentOwnerName(userId: string) {
+    return this.database.client.user.findUnique({
+      where: { id: userId },
+      select: { id: true, displayName: true },
+    });
+  }
   displayNames(userIds: string[], branchIds: string[]) {
     return this.database.client.user.findMany({
       where: {

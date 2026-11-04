@@ -1,5 +1,7 @@
 'use client';
+import { canSelfServeSalesContract } from '@nora/contracts';
 import { ContractPriceCorrection } from './contract-price-correction';
+import { PassengerCompletion } from './passenger-completion';
 import { useEffect, useRef, useState } from 'react';
 import type {
   SalesPassengerCorrectionCommandV1,
@@ -8,13 +10,11 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/overlays';
-import { useAccessPermissions } from '@/modules/iam/access-context';
+  useAccessActor,
+  useAccessPermissions,
+} from '@/modules/iam/access-context';
 import { SalesApiError, salesApi } from '../api/client';
 import { PassengerCorrectionHistory } from './passenger-correction-history';
 
@@ -32,6 +32,7 @@ function CorrectionForm({
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -80,7 +81,7 @@ function CorrectionForm({
     );
   }
   async function save() {
-    if (lock.current || loading || !version) return;
+    if (lock.current || loading || completionPending || !version) return;
     lock.current = true;
     setBusy(true);
     onPending(true);
@@ -146,12 +147,26 @@ function CorrectionForm({
   }
   return (
     <div className="grid gap-4">
-      <p className="text-sm text-muted-foreground">
-        اصلاحات فقط برای همین قرارداد ثبت می‌شوند؛ قیمت و تخصیص خدمات تغییر
-        نمی‌کند.
-      </p>
       {loading ? <p role="status">در حال دریافت مشخصات…</p> : null}
-      <fieldset disabled={loading || busy || uncertain} className="grid gap-3">
+      {!loading && rows.length === 0 && (
+        <PassengerCompletion
+          contractId={contractId}
+          onPending={(pending) => {
+            setCompletionPending(pending);
+            onPending(pending);
+          }}
+          onSaved={() => {
+            setLoading(true);
+            setMessage('اصلاح ثبت شد و به رزرواسیون اطلاع داده شد.');
+            setRevision((value) => value + 1);
+            onSaved();
+          }}
+        />
+      )}
+      <fieldset
+        disabled={loading || busy || uncertain || completionPending}
+        className="grid gap-3"
+      >
         {rows.map((row, index) => (
           <div
             key={row.customerId}
@@ -211,7 +226,7 @@ function CorrectionForm({
       {message ? <p role="status">{message}</p> : null}
       <div className="flex gap-2">
         <Button
-          disabled={loading || busy || !version}
+          disabled={loading || busy || completionPending || !version}
           onClick={() => void save()}
         >
           {busy
@@ -222,7 +237,7 @@ function CorrectionForm({
         </Button>
         <Button
           variant="outline"
-          disabled={busy || uncertain}
+          disabled={busy || uncertain || completionPending}
           onClick={() => {
             setLoading(true);
             setRevision((value) => value + 1);
@@ -247,27 +262,36 @@ function CorrectionForm({
 
 export function PassengerCorrectionButton({
   contractId,
+  ownerUserId,
+  branchId,
   status,
   onSaved,
 }: {
   contractId: string;
+  ownerUserId: string;
+  branchId: string;
   status: string;
   onSaved: () => void;
 }) {
   const permissions = useAccessPermissions();
+  const actor = useAccessActor();
+  const selfService = Boolean(
+    actor && canSelfServeSalesContract(actor, { ownerUserId, branchId }),
+  );
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   if (
     !['CONFIRMED', 'SENT_TO_RESERVATIONS', 'IN_PROGRESS', 'COMPLETED'].includes(
       status,
     ) ||
-    !permissions?.some(
-      (p) =>
-        p === 'sales.contracts.update.branch' ||
-        p === 'sales.contracts.update.own' ||
-        p === 'finance.read' ||
-        p === 'sales.contracts.read.all',
-    )
+    (!selfService &&
+      !permissions?.some(
+        (p) =>
+          p === 'sales.contracts.update.branch' ||
+          p === 'sales.contracts.update.own' ||
+          p === 'finance.read' ||
+          p === 'sales.contracts.read.all',
+      ))
   )
     return null;
   return (
@@ -287,14 +311,13 @@ export function PassengerCorrectionButton({
         }}
       >
         <DialogContent
+          aria-describedby={undefined}
           dir="rtl"
           className="max-h-[90vh] max-w-4xl overflow-y-auto"
         >
           <DialogTitle>اصلاح مشخصات مسافران قرارداد</DialogTitle>
-          <DialogDescription>
-            تاریخ تولد، مشخصات پاسپورت و توضیحات رزرواسیون
-          </DialogDescription>
           {open &&
+          !selfService &&
           !permissions?.some(
             (p) =>
               p === 'sales.contracts.update.branch' ||

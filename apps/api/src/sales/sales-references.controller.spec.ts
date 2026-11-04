@@ -26,6 +26,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { MasterDataController } from '../master-data/master-data.controller';
 import { MasterDataService } from '../master-data/master-data.service';
 import { MasterSalesDirectory } from '../master-data/master-sales-directory';
+import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { SalesReferencesController } from './sales-references.controller';
 
 describe('contract references without Master Data administration', () => {
@@ -63,6 +64,7 @@ describe('contract references without Master Data administration', () => {
         AuthGuard,
         PermissionGuard,
         MasterSalesDirectory,
+        { provide: MasterOrganizationDirectory, useValue: {} },
         { provide: MasterDataService, useValue: { list, detail } },
         {
           provide: IamService,
@@ -117,6 +119,20 @@ describe('contract references without Master Data administration', () => {
     request(app.getHttpServer())
       .get(path)
       .set('Cookie', 'nora_access=synthetic');
+  it('lets contract creators see agencies without customer or B2B directory grants', async () => {
+    const organization = { ...record, resource: 'organizations' as const };
+    list.mockResolvedValue({
+      data: [organization],
+      meta: { total: 1, page: 1, pageSize: 100 },
+    });
+    const response = await get('/sales/form-references/organizations').expect(
+      200,
+    );
+    expect(response.body.data[0]).toMatchObject({ id, attributes: {} });
+    await get('/master-data/organizations').expect(403);
+    actor.permissions = [...actor.permissions, 'ui.deny.sales.new-contract'];
+    await get('/sales/form-references/organizations').expect(403);
+  });
   it('allows a create-only manual user to choose active hotel labels and relationships, not confidential attributes', async () => {
     const response = await get('/sales/form-references/hotels?page=2').expect(
       200,

@@ -18,6 +18,14 @@ export const SALES_TICKET_AVAILABILITY_PORT = Symbol(
 );
 
 export interface SalesTicketAvailabilityPort {
+  reserveForTour?(
+    tourDepartureId: string,
+    ...args: Parameters<SalesTicketAvailabilityPort['reserve']>
+  ): ReturnType<SalesTicketAvailabilityPort['reserve']>;
+  currentSelections?(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ): Promise<SalesTicketSelectionInput[]>;
   amend?(
     tx: Prisma.TransactionClient,
     selections: readonly SalesTicketSelectionInput[],
@@ -46,7 +54,10 @@ export interface SalesTicketAvailabilityPort {
     createdAllocationIds: readonly string[];
   }>;
   release(allocationIds: readonly string[]): Promise<void>;
-  releaseContract(contractId: string): Promise<void>;
+  releaseContract(
+    contractId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -54,6 +65,27 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   constructor(
     @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
   ) {}
+  reserveForTour(
+    tourDepartureId: string,
+    ...args: Parameters<SalesTicketAvailabilityPort['reserve']>
+  ) {
+    const [selections, branchId, contractId, seatCount, totals, counts] = args;
+    return this.catalog.reserve(
+      selections,
+      branchId,
+      contractId,
+      seatCount,
+      totals,
+      counts,
+      tourDepartureId,
+    );
+  }
+  currentSelections(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ) {
+    return this.catalog.currentSelections(selections, branchId);
+  }
   amend(
     tx: Prisma.TransactionClient,
     selections: readonly SalesTicketSelectionInput[],
@@ -100,8 +132,8 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   release(allocationIds: readonly string[]) {
     return this.catalog.release(allocationIds);
   }
-  releaseContract(contractId: string) {
-    return this.catalog.releaseContract(contractId);
+  releaseContract(contractId: string, tx?: Prisma.TransactionClient) {
+    return this.catalog.releaseContract(contractId, tx);
   }
 }
 

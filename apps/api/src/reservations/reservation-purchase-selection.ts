@@ -25,6 +25,9 @@ export function purchaseSelectionSql(
       SELECT i.*, CASE WHEN jsonb_typeof(i."snapshot"->'serviceSelections') = 'array' THEN i."snapshot"->'serviceSelections' ELSE '[]'::jsonb END AS selections,
         CASE WHEN jsonb_typeof(i."snapshot"->'ticketSelections') = 'array' THEN i."snapshot"->'ticketSelections' ELSE '[]'::jsonb END AS tickets
       FROM "ReservationIntake" i WHERE i."branchId" IN (${Prisma.join(branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+        AND NOT EXISTS (SELECT 1 FROM "ReservationIntake" newer
+          WHERE newer."contractId" = i."contractId" AND newer."branchId" = i."branchId"
+            AND newer."contractVersion" > i."contractVersion")
         AND (${q.contractNumber} = '' OR strpos(i."snapshot"->>'contractNumber', ${q.contractNumber}) > 0)
     ), services AS (
       SELECT i.*, s.service FROM scoped i CROSS JOIN LATERAL (
@@ -47,7 +50,7 @@ export function purchaseSelectionSql(
         CASE WHEN s.service->>'kind' = 'HOTEL' THEN COALESCE(s.service->'metadata'->>'checkInDate', CASE WHEN s."snapshot"->'hotelSelection'->>'serviceClientKey' = s.service->>'clientKey' THEN s."snapshot"->'hotelSelection'->>'checkInDate' END) END AS "checkInAt",
         COALESCE(to_char(p."createdAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), to_char(h.at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), f."purchasedAt") AS "purchasedAt"
       FROM services s
-      LEFT JOIN LATERAL (SELECT p."createdAt", p.version, p."coveredServiceClientKeys" FROM "ReservationServicePurchase" p WHERE p."intakeId" = s."id" AND (p."serviceClientKey" = s.service->>'clientKey' OR p."coveredServiceClientKeys" ? (s.service->>'clientKey')) ORDER BY p.version DESC LIMIT 1) p ON true
+      LEFT JOIN LATERAL (SELECT p."createdAt", p.version, p."coveredServiceClientKeys" FROM "ReservationServicePurchase" p JOIN "ReservationIntake" source_intake ON source_intake."id" = p."intakeId" WHERE source_intake."contractId" = s."contractId" AND source_intake."branchId" = s."branchId" AND source_intake."contractVersion" <= s."contractVersion" AND (p."serviceClientKey" = s.service->>'clientKey' OR p."coveredServiceClientKeys" ? (s.service->>'clientKey')) ORDER BY source_intake."contractVersion" DESC, p.version DESC LIMIT 1) p ON true
       LEFT JOIN LATERAL (SELECT max(h."createdAt") AS at FROM "ReservationHotelPurchase" h WHERE h."intakeId" = s."id" AND s.service->>'kind' = 'HOTEL') h ON true
       LEFT JOIN LATERAL (SELECT ticket FROM jsonb_array_elements(s.tickets) ticket WHERE ticket->>'serviceClientKey' = s.service->>'clientKey' LIMIT 1) t ON true
       LEFT JOIN LATERAL (SELECT f.* FROM jsonb_to_recordset(${JSON.stringify(flights ?? [])}::jsonb) AS f(id text,"branchId" text,"offerId" text,"referenceId" text,registered boolean,"entryAt" text,"departureAt" text,"purchasedAt" text)

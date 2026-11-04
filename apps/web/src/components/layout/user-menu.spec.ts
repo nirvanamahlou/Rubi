@@ -23,7 +23,8 @@ describe('authenticated user menu integration', () => {
   it('shows full placeholder labels without rendering their initials', () => {
     expect(menuSource).toContain('در حال دریافت اطلاعات');
     expect(menuSource).toContain('PROFILE_USER_FALLBACK');
-    expect(menuSource).toContain("identity.status === 'ready'");
+    expect(menuSource).not.toContain('profileInitials');
+    expect(menuSource).not.toContain('initials');
     expect(menuSource).toContain('data-user-avatar-placeholder');
     expect(menuSource).toContain('refreshAuthenticatedSession(api)');
     expect(menuSource).toContain('rememberHeaderSession(');

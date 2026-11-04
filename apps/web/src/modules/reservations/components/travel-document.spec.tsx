@@ -1,11 +1,33 @@
+import type * as PublicDocumentModule from '@/modules/travel-documents/public/use-public-document-link';
+const qrState = vi.hoisted(() => ({
+  current: {
+    status: 'ready',
+    url: 'https://example.test/d/' + 'a'.repeat(32),
+    html: '',
+  } as { status: string; url: string; html: string } | undefined,
+}));
+vi.mock(
+  '@/modules/travel-documents/public/use-public-document-link',
+  async (importOriginal) => ({
+    ...(await importOriginal<typeof PublicDocumentModule>()),
+    usePublicDocumentLink: () => qrState.current,
+  }),
+);
+beforeEach(() => {
+  qrState.current = {
+    status: 'ready',
+    url: 'https://example.test/d/' + 'a'.repeat(32),
+    html: '',
+  };
+});
 import { defaultVoucherSettings } from '../model/voucher-settings';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
-import { TravelDocument } from './travel-document';
+import { TravelDocument, useTravelLogo } from './travel-document';
 import { ReservationSettingsForm } from './reservation-settings';
 const intake = {
   snapshot: {
@@ -35,10 +57,11 @@ supplier.text.broker = 'BROKER';
 intake.workflow.supplierFormSettings = supplier;
 
 describe('travel output branding and readiness', () => {
-  it('preserves edited purchase totals on reservation forms without publishing them on vouchers', () => {
+  it('preserves supplier price columns while hiding legacy totals and keeping customer vouchers price-free', () => {
     const settings = {
       ...supplier,
       hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
+      supplierFormPrices: { pp: { amount: '45.25', currencyCode: 'EUR' } },
     };
     const priced = {
       ...intake,
@@ -58,11 +81,17 @@ describe('travel output branding and readiness', () => {
       ).hotelPurchasePrices,
     ).toEqual(settings.hotelPurchasePrices);
     expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
-      '123.50 EUR',
+      '45.25 EUR',
     );
+    expect(
+      renderToStaticMarkup(<TravelDocument intake={priced} />),
+    ).not.toContain('123.50');
     expect(
       renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
     ).not.toContain('123.50 €');
+    expect(
+      renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
+    ).not.toContain('45.25');
   });
   it('places one supplier picker before the single reservation preview', () => {
     const html = renderToStaticMarkup(
@@ -76,6 +105,8 @@ describe('travel output branding and readiness', () => {
     );
     expect(html.match(/data-document-preview/g)).toHaveLength(1);
     expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+    expect(html).not.toContain('BOOKING SUMMARY');
+    expect(html).not.toContain('Reservation details');
     expect(html.indexOf('role="combobox"')).toBeLessThan(
       html.indexOf('data-document-preview'),
     );
@@ -209,7 +240,7 @@ it.each([false, true])(
     );
     expect(html).toContain('/brand/jahan-bastan-transparent.png');
     expect(html).toContain('jahanLogo');
-    expect(html).toContain('جهان باستان');
+    expect(html).toContain('Jahan Bastan');
     expect(html).not.toContain('نیایش');
     expect(html).not.toContain('niyayehseir.com');
   },
@@ -233,3 +264,75 @@ it('keeps direct download available on an issued reservation form', () => {
   expect(html).not.toContain('Country:');
   expect(html).not.toContain('subject to supplier confirmation');
 });
+
+it('waits for the canonical QR before making the saved form printable', () => {
+  qrState.current = undefined;
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain('در حال آماده‌سازی بارکد مدرک…');
+  expect(html).not.toContain('data-document-preview');
+});
+it('never prints a pending QR after publication fails', () => {
+  qrState.current = { status: 'failed', url: '', html: '' };
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain('آماده‌سازی بارکد انجام نشد');
+  expect(html).not.toContain('data-document-preview');
+});
+it('uses the ready document capability in the printed form', () => {
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain(qrState.current!.url);
+  expect(html).toContain('data-document-preview');
+});
+it('preserves offline legacy preview only when hosting is explicitly disabled', () => {
+  qrState.current = { status: 'disabled', url: '', html: '' };
+  expect(renderToStaticMarkup(<TravelDocument intake={intake} />)).toContain(
+    'data-document-preview',
+  );
+});
+
+it('suppresses ticket logo lookup without changing normal voucher/supplier logo resolution', () => {
+  function Probe({ ticket }: { ticket: boolean }) {
+    const value = useTravelLogo(
+      {
+        ...intake.workflow.branding!,
+        companyCode: 'JAHAN_BASTAN',
+        ticketWithoutLogo: true,
+        logoFileId: 'unavailable',
+      },
+      ticket,
+    );
+    return <div data-logo={value.logo} data-error={value.error} />;
+  }
+  const ticket = renderToStaticMarkup(<Probe ticket />);
+  expect(ticket).toContain('data-logo=""');
+  expect(ticket).toContain('data-error=""');
+  expect(renderToStaticMarkup(<Probe ticket={false} />)).toContain(
+    '/brand/jahan-bastan-transparent.png',
+  );
+});
+it.each([false, true])(
+  'uses the supplied original Ghestiroo logo for reservation/voucher=%s even with an old uploaded logo',
+  (voucher) => {
+    const companyIntake = structuredClone(intake);
+    companyIntake.workflow.branding = {
+      kind: 'OWN',
+      companyCode: 'GHESATI_RO',
+      referenceId: 'company',
+      name: 'قسطی رو',
+      logoFileId: 'old-logo',
+    };
+    companyIntake.workflow.voucherIssued = true;
+    const settings = defaultVoucherSettings(companyIntake, {});
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
+    settings.text.broker = 'BROKER';
+    companyIntake.workflow.voucherSettings = settings;
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={companyIntake} voucher={voucher} />,
+    );
+    expect(html).toContain('/brand/ghesati-ro.png');
+    expect(html).toContain('ghesatiLogo');
+
+    expect(html).not.toContain('نیایش');
+    expect(html).not.toContain('niyayehseir.com');
+  },
+);

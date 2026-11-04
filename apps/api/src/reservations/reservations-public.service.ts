@@ -1,3 +1,7 @@
+import type {
+  TravelWorkflowStateV1 as HotelFormWorkflowState,
+  SalesReservationRequestV1 as HotelFormSourceSnapshot,
+} from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
@@ -79,6 +83,11 @@ function present(
         latestServicePurchases.set(key, purchase);
   }
   return {
+    purchaseSnapshot: ((
+      row.workflowRevisions?.[0]?.state as unknown as
+        HotelFormWorkflowState | undefined
+    )?.outputSourceSnapshot ??
+      row.snapshot) as unknown as HotelFormSourceSnapshot,
     workflow: row.workflowRevisions?.[0]?.state ?? null,
     salesOwnerUserId: row.salesOwnerUserId,
     purchaseVersion: row.purchaseVersion,
@@ -119,6 +128,59 @@ function present(
         ...(!Array.isArray(purchase.passengerPrices) &&
         purchase.passengerPrices &&
         typeof purchase.passengerPrices === 'object' &&
+        typeof purchase.passengerPrices.hotelStayKey === 'string'
+          ? { hotelStayKey: purchase.passengerPrices.hotelStayKey }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'roomPurchase' in purchase.passengerPrices
+          ? {
+              roomPurchase: purchase.passengerPrices
+                .roomPurchase as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['roomPurchase']
+              >,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'hotelTransferCounts' in purchase.passengerPrices
+          ? {
+              hotelTransferRoundTrip:
+                (
+                  purchase.passengerPrices as {
+                    hotelTransferRoundTrip?: boolean;
+                  }
+                ).hotelTransferRoundTrip ?? false,
+              hotelTransferCounts: purchase.passengerPrices
+                .hotelTransferCounts as unknown as {
+                outbound: number;
+                returning: number;
+              },
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'roomPrices' in purchase.passengerPrices
+          ? {
+              roomPrices: purchase.passengerPrices
+                .roomPrices as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['roomPrices']
+              >,
+              hotelStayKey: (
+                purchase.passengerPrices as { hotelStayKey: string }
+              ).hotelStayKey,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
         'calculation' in purchase.passengerPrices
           ? {
               pricingCalculation: purchase.passengerPrices
@@ -130,6 +192,19 @@ function present(
               hotelSavings: hotelPurchaseSavingsEvidence(
                 purchase.passengerPrices,
               )!,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'legacyGuests' in purchase.passengerPrices
+          ? {
+              legacyGuestPrices: purchase.passengerPrices
+                .legacyGuests as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['legacyGuestPrices']
+              >,
             }
           : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
@@ -274,6 +349,42 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  private async withPurchaseHistory(
+    row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
+  ) {
+    // Intake snapshots remain immutable. Reuse original purchase IDs/payment
+    // evidence, newest contract version first; never manufacture another payable.
+    const history = await this.database.client.reservationIntake.findMany({
+      where: {
+        contractId: row.contractId,
+        branchId: row.branchId,
+        contractVersion: { lt: row.contractVersion },
+        OR: [
+          { servicePurchases: { some: {} } },
+          { hotelPurchases: { some: {} } },
+        ],
+      },
+      include: intakeInclude,
+      orderBy: [
+        { contractVersion: 'desc' },
+        { receivedAt: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+    const hotelPurchases = new Map<
+      string,
+      (typeof row.hotelPurchases)[number]
+    >();
+    for (const purchase of [row, ...history].flatMap((i) => i.hotelPurchases)) {
+      if (!hotelPurchases.has(purchase.currencyCode))
+        hotelPurchases.set(purchase.currencyCode, purchase);
+    }
+    return {
+      ...row,
+      hotelPurchases: [...hotelPurchases.values()],
+      servicePurchases: [row, ...history].flatMap((i) => i.servicePurchases),
+    };
+  }
   /** Public branch-scoped latest execution costs for the owning Sales contract. */
   async contractPurchaseContext(contractId: string, branchId: string) {
     const row = await this.database.client.reservationIntake.findFirst({
@@ -285,7 +396,7 @@ export class ReservationsPublicService {
         { id: 'asc' },
       ],
     });
-    return row ? present(row) : null;
+    return row ? present(await this.withPurchaseHistory(row)) : null;
   }
 
   async purchaseContext(id: string, branchIds: readonly string[]) {
@@ -294,7 +405,15 @@ export class ReservationsPublicService {
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
-    const result = present(row);
+    const result = present(await this.withPurchaseHistory(row));
+    if (this.tickets?.currentSelections)
+      result.snapshot = {
+        ...result.snapshot,
+        ticketSelections: await this.tickets.currentSelections(
+          result.snapshot.ticketSelections ?? [],
+          row.branchId,
+        ),
+      };
     const types = await Promise.all(
       (result.snapshot.ticketSelections ?? []).map(
         async (ticket) =>
@@ -506,6 +625,25 @@ export class ReservationsPublicService {
     );
   }
 
+  /** Finance owns payment decisions; purchase evidence must not disappear with
+   * a newer operational intake or the first page of the Reservations workspace. */
+  async listForFinance(branchIds: readonly string[]) {
+    const rows = await this.database.client.reservationIntake.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        servicePurchases: { some: {} },
+      },
+      include: intakeInclude,
+      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException(
+        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+      );
+    return rows.map(present);
+  }
+
   async list(
     branchIds: readonly string[],
     options: {
@@ -551,7 +689,26 @@ export class ReservationsPublicService {
       take: 100,
       skip: (page - 1) * 100,
     });
-    return rows.map(present);
+    const result = rows.map(present);
+    if (this.tickets?.currentSelections) {
+      for (const branchId of [...new Set(rows.map((row) => row.branchId))]) {
+        const linked = result.filter((item) => item.branchId === branchId);
+        const current = await this.tickets.currentSelections(
+          linked.flatMap((item) => item.snapshot.ticketSelections ?? []),
+          branchId,
+        );
+        let offset = 0;
+        for (const item of linked) {
+          const count = item.snapshot.ticketSelections?.length ?? 0;
+          item.snapshot = {
+            ...item.snapshot,
+            ticketSelections: current.slice(offset, offset + count),
+          };
+          offset += count;
+        }
+      }
+    }
+    return result;
   }
 
   async updateArrangement(

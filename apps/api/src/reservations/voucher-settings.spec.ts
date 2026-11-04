@@ -22,6 +22,33 @@ const settings = (): VoucherSettingsV1 => ({
   ) as VoucherSettingsV1['flags'],
   passengers: [{ id: 'p', selected: true, roomType: 'DBL', age: 'ADL' }],
 });
+it('allows empty historical supplier manifests only with trusted context, without inventing passenger IDs', () => {
+  const value = settings();
+  value.passengers = [];
+  value.text.contractPartyName = 'SYNTHETIC AGENCY';
+  const state = initialTravelWorkflow();
+  const command = {
+    note: '',
+    expectedVersion: 0,
+    action: 'SUPPLIER_FORM_SETTINGS',
+    voucherSettings: value,
+  } as const;
+  expect(() => transition(state, command, [])).toThrow();
+  expect(
+    transition(state, command, [], [], true).supplierFormSettings,
+  ).toMatchObject({
+    passengers: [],
+    text: { contractPartyName: 'SYNTHETIC AGENCY' },
+  });
+  expect(() =>
+    transition(state, { ...command, action: 'VOUCHER_SETTINGS' }, [], [], true),
+  ).toThrow();
+  expect(() => validateVoucherSettings(value, ['p'], true)).toThrow();
+  value.passengers = [
+    { id: 'foreign', selected: true, age: 'ADL', roomType: '' },
+  ];
+  expect(() => transition(state, command, [], [], true)).toThrow();
+});
 it('retains supplier form display prices exactly and rejects invalid/duplicate currencies', () => {
   const value = settings();
   value.hotelPurchasePrices = [{ amount: '120.50', currencyCode: 'EUR' }];
@@ -32,6 +59,57 @@ it('retains supplier form display prices exactly and rejects invalid/duplicate c
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
   value.hotelPurchasePrices = [{ amount: '-1', currencyCode: 'EUR' }];
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
+it('persists each supplier price column independently without summing currencies or changing old totals', () => {
+  const value = settings();
+  value.hotelPurchasePrices = [{ amount: '999', currencyCode: 'IRR' }];
+  value.supplierFormPrices = {
+    pp: { amount: '9007199254740993.25', currencyCode: 'EUR' },
+    ratio: { amount: '2.50' },
+    transferPp: { amount: '0', currencyCode: 'JPY' },
+  };
+  const result = validateVoucherSettings(value, ['p']);
+  expect(result.supplierFormPrices).toEqual(value.supplierFormPrices);
+  expect(result.hotelPurchasePrices).toEqual(value.hotelPurchasePrices);
+  expect(result.supplierFormPrices).not.toBe(value.supplierFormPrices);
+  for (const invalid of [
+    null,
+    [],
+    { total: { amount: '1', currencyCode: 'EUR' } },
+    { pp: { amount: '-1', currencyCode: 'EUR' } },
+    { pp: { amount: '1', currencyCode: 'EU' } },
+    { pp: { amount: '', currencyCode: 'EUR' } },
+  ]) {
+    value.supplierFormPrices = invalid as never;
+    expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  }
+});
+it('preserves a price table omitted by older form editors and supports explicit clearing', () => {
+  const current = initialTravelWorkflow();
+  current.supplierFormSettings = settings();
+  current.supplierFormSettings.supplierFormPrices = {
+    pp: { amount: '20', currencyCode: 'EUR' },
+  };
+  const command = {
+    action: 'SUPPLIER_FORM_SETTINGS',
+    expectedVersion: current.version,
+    voucherSettings: settings(),
+    note: '',
+  } as const;
+  expect(
+    transition(current, command, ['p']).supplierFormSettings
+      ?.supplierFormPrices,
+  ).toEqual(current.supplierFormSettings.supplierFormPrices);
+  expect(
+    transition(
+      current,
+      {
+        ...command,
+        voucherSettings: { ...settings(), supplierFormPrices: {} },
+      },
+      ['p'],
+    ).supplierFormSettings?.supplierFormPrices,
+  ).toEqual({});
 });
 it('validates settings and rejects foreign passengers, invalid dates and unselected groups', () => {
   const valid = settings();
@@ -231,4 +309,154 @@ it('preserves modern room composition and rejects invalid child ages', () => {
   value.rooms[0]!.childAges[0] = 15;
   expect(result.rooms![0]!.childAges[0]).toBe(4);
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
+
+it('preserves validated form services and room membership and rejects foreign rooms', () => {
+  const value = settings();
+  value.rooms = [
+    { ordinal: 1, roomTypeNameSnapshot: 'Double', adults: 2, childAges: [] },
+  ];
+  value.passengers[0]!.roomOrdinal = 1;
+  value.passengers[0]!.services = {
+    outboundFlight: true,
+    returnFlight: false,
+    outboundTransfer: false,
+    returnTransfer: true,
+    hotel: true,
+  };
+  expect(validateVoucherSettings(value, ['p']).passengers[0]).toMatchObject({
+    roomOrdinal: 1,
+    services: value.passengers[0]!.services,
+  });
+  value.passengers[0]!.roomOrdinal = 2;
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  value.passengers[0]!.roomOrdinal = 1;
+  (value.passengers[0]!.services as unknown as Record<string, unknown>).hotel =
+    'yes';
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
+
+it('round-trips optional transfer overrides and rejects invalid supplier IDs and flags', () => {
+  const value = settings();
+  value.brokerId = '10000000-0000-4000-8000-000000000001';
+  value.transferBrokerId = '20000000-0000-4000-8000-000000000002';
+  value.transferBrokerName = 'Transfer supplier';
+  value.transferDetailsOverride = true;
+  value.text.transferBoard = 'SPECIAL';
+  const result = validateVoucherSettings(value, ['p']);
+  expect(result).toMatchObject({
+    transferBrokerId: value.transferBrokerId,
+    transferBrokerName: 'Transfer supplier',
+    transferDetailsOverride: true,
+    text: { transferBoard: 'SPECIAL' },
+  });
+  expect(() =>
+    validateVoucherSettings({ ...value, transferBrokerId: 'invalid' }, ['p']),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings({ ...value, transferDetailsOverride: 'true' }, [
+      'p',
+    ]),
+  ).toThrow();
+});
+
+it('accepts legacy ratio currency but persists the factor without money semantics', () => {
+  const value = settings();
+  value.supplierFormPrices = { ratio: { amount: '2', currencyCode: 'USD' } };
+  expect(validateVoucherSettings(value, ['p']).supplierFormPrices).toEqual({
+    ratio: { amount: '2' },
+  });
+});
+
+it('persists validated separate transfer suppliers and return quotation while rejecting malformed modes or prices', () => {
+  const value = {
+    ...settings(),
+    brokerId: '11111111-1111-4111-8111-111111111111',
+    transferBrokerId: '22222222-2222-4222-8222-222222222222',
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: {
+      amount: '0',
+      currencyCode: 'EUR',
+      brokerId: '33333333-3333-4333-8333-333333333333',
+      brokerName: 'Return supplier',
+    },
+  };
+  const saved = validateVoucherSettings(value, ['p']);
+  expect(saved).toMatchObject({
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: value.hotelTransferReturn,
+  });
+  expect(saved.hotelTransferReturn).not.toBe(value.hotelTransferReturn);
+  for (const invalid of [
+    { ...value, hotelTransferSeparate: false },
+    { ...value, hotelTransferSplit: 'yes' },
+    {
+      ...value,
+      hotelTransferReturn: { ...value.hotelTransferReturn, amount: '-1' },
+    },
+    {
+      ...value,
+      hotelTransferReturn: {
+        ...value.hotelTransferReturn,
+        brokerId: 'foreign',
+      },
+    },
+  ])
+    expect(() => validateVoucherSettings(invalid, ['p'])).toThrow();
+});
+
+it('requires both declared transfer brokers before sending and freezes their quotation in the sent snapshot', () => {
+  const current = initialTravelWorkflow();
+  current.supplierFormSettings = {
+    ...settings(),
+    brokerId: '11111111-1111-4111-8111-111111111111',
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: { amount: '15', currencyCode: 'EUR' },
+  };
+  const command = {
+    action: 'REQUEST_SUPPLIER',
+    expectedVersion: 0,
+    note: 'Synthetic send',
+  } as const;
+  expect(() => transition(current, command, ['p'])).toThrow('کارگزار');
+  current.supplierFormSettings.transferBrokerId =
+    '22222222-2222-4222-8222-222222222222';
+  expect(() => transition(current, command, ['p'])).toThrow('کارگزار');
+  current.supplierFormSettings.hotelTransferReturn!.brokerId =
+    '33333333-3333-4333-8333-333333333333';
+  const sent = transition(current, command, ['p']);
+  expect(sent.sentSupplierFormSettings!.hotelTransferReturn).toEqual(
+    current.supplierFormSettings.hotelTransferReturn,
+  );
+  current.supplierFormSettings.hotelTransferReturn!.amount = '99';
+  expect(sent.sentSupplierFormSettings!.hotelTransferReturn!.amount).toBe('15');
+});
+
+it('persists round-trip basis, rejecting split pricing and unmatched leg populations', () => {
+  const value = {
+    ...settings(),
+    hotelTransferRoundTrip: true,
+    hotelTransferCounts: { outbound: 2, returning: 2 },
+  };
+  expect(validateVoucherSettings(value, ['p']).hotelTransferRoundTrip).toBe(
+    true,
+  );
+  expect(() =>
+    validateVoucherSettings(
+      { ...value, hotelTransferSplit: true, hotelTransferSeparate: true },
+      ['p'],
+    ),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings(
+      { ...value, hotelTransferCounts: { outbound: 2, returning: 1 } },
+      ['p'],
+    ),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings({ ...value, hotelTransferRoundTrip: 'yes' }, ['p']),
+  ).toThrow();
 });

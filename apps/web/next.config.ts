@@ -29,16 +29,35 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'Referrer-Policy', value: 'no-referrer' },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), payment=()',
           },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+        ],
+      },
+      {
+        // Only the Integrations launch document supplies its own exact-origin
+        // form policy and nonce. Preserve the existing policy everywhere else.
+        source: '/:path((?!integrations/ghestiroo-launch$).*)',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
           {
             key: 'Content-Security-Policy',
             value:
               "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+          },
+        ],
+      },
+      {
+        source: '/d/:token',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            // Keep configuration standalone: next start does not resolve TS module imports.
+            // The public-document regression checks this against the route's shared policy.
+            value:
+              "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox allow-popups",
           },
         ],
       },

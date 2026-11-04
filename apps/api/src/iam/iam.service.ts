@@ -1,4 +1,5 @@
 import { isOptionalOperationReason } from '@nora/contracts';
+import { hrCallPermissions } from './hr-call-routing';
 import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
 import type { Prisma } from '@nora/database';
 import { userDetailsRevision } from './user-details';
@@ -28,6 +29,7 @@ import {
   CALL_CENTER_SCOPED_ACCESS,
   hasScopedCallCenterAccess,
   mustScopeCallCenter,
+  completeManualAccessPrerequisites,
 } from '@nora/contracts';
 import {
   createHash,
@@ -455,21 +457,52 @@ export class IamService implements IamStepUpPort {
     }
     if (claims.type !== 'access')
       throw new UnauthorizedException('دسترسی معتبر نیست.');
+    return this.authenticateSessionReferenceV1(claims.sub, claims.sid);
+  }
+
+  /** Trusted protocol adapters only; never an unauthenticated browser endpoint. */
+  async authenticateSessionReferenceV1(
+    userId: string,
+    sessionId: string,
+    followRotation = false,
+  ): Promise<AuthenticatedActor> {
+    if (![userId, sessionId].every((value) => /^[0-9a-f-]{36}$/i.test(value)))
+      throw new UnauthorizedException('دسترسی معتبر نیست.');
     const session = await this.database.client.session.findFirst({
       where: {
-        id: claims.sid,
-        userId: claims.sub,
-        status: SessionStatus.ACTIVE,
+        id: sessionId,
+        userId,
+        status: followRotation
+          ? { in: [SessionStatus.ACTIVE, SessionStatus.ROTATED] }
+          : SessionStatus.ACTIVE,
         expiresAt: { gt: new Date() },
       },
       include: { user: { include: this.userAccessInclude() } },
     });
     if (!session || session.user.status !== UserStatus.ACTIVE)
       throw new UnauthorizedException('دسترسی معتبر نیست.');
+    if (
+      session.status === SessionStatus.ROTATED &&
+      !(await this.database.client.session.findFirst({
+        where: {
+          familyId: session.familyId,
+          userId,
+          status: SessionStatus.ACTIVE,
+          expiresAt: { gt: new Date() },
+        },
+        select: { id: true },
+      }))
+    )
+      throw new UnauthorizedException('دسترسی معتبر نیست.');
     return {
       userId: session.userId,
       sessionId: session.id,
-      permissions: this.permissionCodes(session.user),
+      permissions: await hrCallPermissions(
+        this.database,
+        session.userId,
+        session.user.branches.map(({ branchId }) => branchId),
+        this.permissionCodes(session.user),
+      ),
       branchIds: session.user.branches.map(({ branchId }) => branchId),
     };
   }
@@ -2328,7 +2361,19 @@ export class IamService implements IamStepUpPort {
       throw new BadRequestException(
         'مجوز نمایشی از کاتالوگ بخش‌ها انتخاب می‌شود.',
       );
-    for (const id of dto.screenIds) {
+    const completed = dto.manualAccessV3
+      ? completeManualAccessPrerequisites({
+          permissionCodes: permissions.map(({ code }) => code),
+          screenIds: dto.screenIds,
+          allowedControlIds: [],
+        })
+      : {
+          permissionCodes: permissions.map(({ code }) => code),
+          screenIds: dto.screenIds,
+        };
+    if (!isAdministrator)
+      this.assertPermissionCodesAssignable(completed.permissionCodes, actor);
+    for (const id of completed.screenIds) {
       if (!USER_ACCESS_SCREENS.some((s) => s.id === id))
         throw new BadRequestException('زیربخش انتخاب‌شده معتبر نیست.');
       if (
@@ -2369,8 +2414,8 @@ export class IamService implements IamStepUpPort {
     return {
       title: dto.accessTitle,
       permissionIds,
-      permissionCodes: permissions.map(({ code }) => code),
-      screenIds: dto.screenIds,
+      permissionCodes: completed.permissionCodes,
+      screenIds: completed.screenIds,
       deniedControlIds,
       managed: true,
       canAssignAll: isAdministrator,

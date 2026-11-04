@@ -2,6 +2,7 @@ import { packageTourSelectionBatch } from './selection-batch';
 import { expect, it } from 'vitest';
 import {
   buildHotelPackageCompositions,
+  buildHotelOnlyPackageCompositions,
   packageRoomCode,
   packageRoomIdentity,
 } from './room-compositions';
@@ -62,6 +63,45 @@ const input = {
     commissionPercent: '0',
   },
 };
+it('keeps footer prices out of hotel rows, including matching currency and fixed commission', () => {
+  const calculation = {
+    ...input.calculation,
+    adultFlight: { amount: '10000', currencyCode: 'IRR' },
+    childFlight: { amount: '5000', currencyCode: 'IRR' },
+    infantFlight: { amount: '900', currencyCode: 'IRR' },
+    businessUplift: { amount: '500', currencyCode: 'EUR' },
+    businessCabin: true,
+    commissionMode: 'fixed' as const,
+    commissionAmount: { amount: '700', currencyCode: 'IRR' },
+    extraSaleFields: [{ amount: '25', currencyCode: 'EUR' }],
+    flightCosts: [
+      { adultUnitCost: '99', childUnitCost: '50', currencyCode: 'IRR' },
+    ],
+  };
+  const before = JSON.stringify(calculation);
+  const prices = buildHotelOnlyPackageCompositions({ ...input, calculation });
+  expect(prices[0]?.currencyAmounts).toEqual([
+    {
+      currencyCode: 'EUR',
+      priceBasis: 'HOTEL_ONLY',
+      purchase: '200.00',
+      sale: '220.00',
+      commission: '0.00',
+      profit: '20.00',
+    },
+  ]);
+  expect(
+    buildHotelOnlyPackageCompositions({
+      ...input,
+      calculation: {
+        ...calculation,
+        commissionMode: 'percent',
+        commissionPercent: '10',
+      },
+    }),
+  ).toEqual(prices);
+  expect(JSON.stringify(calculation)).toBe(before);
+});
 it('keeps every exact room instead of replacing deluxe with the cheapest room', () => {
   const prices = buildHotelPackageCompositions(input);
   expect(prices).toHaveLength(2);
@@ -149,4 +189,45 @@ it('keeps exact rows from every matching period and retains legacy single-batch 
     ['rb', 'b'],
   ]);
   expect(packageTourSelectionBatch(grid, 'a', false)).toBe(a);
+});
+
+it('splits hotel bands at flight age boundaries and charges infant and child fares independently', () => {
+  const infantRow = {
+    ...row,
+    roomRates: [
+      {
+        ...row.roomRates[0]!,
+        occupancyRates: [
+          { ...rate, childAges: [{ min: 0, maxExclusive: 15 }] },
+        ],
+      },
+    ],
+  };
+  const rows = buildHotelPackageCompositions({
+    ...input,
+    row: infantRow,
+    calculation: {
+      ...input.calculation,
+      infantFlight: { amount: '3', currencyCode: 'EUR' },
+    },
+  });
+  expect(rows).toHaveLength(3);
+  const infant = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.maxExclusive === 2,
+  )!;
+  const child = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.min === 2,
+  )!;
+  expect(
+    infant.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('263.00');
+  expect(
+    child.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('270.00');
+  const adult = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.min === 12,
+  )!;
+  expect(
+    adult.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('280.00');
 });

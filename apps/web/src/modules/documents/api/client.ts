@@ -146,6 +146,23 @@ async function refreshNotificationsAfter<T>(operation: Promise<T>): Promise<T> {
   return result;
 }
 
+export const incomingLettersApi = {
+  options: () => request<DocumentOptionsResponseV1>('/incoming/options'),
+  list: (query: DocumentListQueryV1) =>
+    request<DocumentListResponseV1>(`/incoming?${serializeQuery(query)}`),
+  upload: (form: FormData) =>
+    refreshNotificationsAfter(
+      request<DocumentDetailResponseV1>('/incoming/upload', {
+        method: 'POST',
+        body: form,
+      }),
+    ),
+  preview: (id: string, reason?: string, signal?: AbortSignal) =>
+    requestFile(`/incoming/${encodeURIComponent(id)}/preview`, reason, signal),
+  download: (id: string) =>
+    requestFile(`/incoming/${encodeURIComponent(id)}/download`),
+};
+
 export const documentsApi = {
   list(query: DocumentListQueryV1) {
     return request<DocumentListResponseV1>(`?${serializeQuery(query)}`);

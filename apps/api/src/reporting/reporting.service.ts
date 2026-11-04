@@ -8,6 +8,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ReportingExportService } from './reporting-export.service';
+import { ReportingNativeDashboard } from './reporting-native-dashboard';
 import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   dashboardCalendarRangeStart,
@@ -98,6 +99,9 @@ export class ReportingService {
     @Optional()
     @Inject(SettingsRuntimeService)
     private readonly settings?: SettingsRuntimeService,
+    @Optional()
+    @Inject(ReportingNativeDashboard)
+    private readonly nativeDashboard?: ReportingNativeDashboard,
   ) {}
 
   private hasSalesRead(actor: ReportingActor): boolean {
@@ -220,13 +224,18 @@ export class ReportingService {
           })
         : null;
       try {
-        const facts = await this.repository.facts(query, serverBranchScope);
-        const result = buildTravelReportResult({
-          code,
-          query,
-          facts,
-          now: new Date(),
-        });
+        const native = await this.repository.nativeResult?.(code, query, actor);
+        const facts = native
+          ? []
+          : await this.repository.facts(query, serverBranchScope);
+        const result =
+          native ??
+          buildTravelReportResult({
+            code,
+            query,
+            facts,
+            now: new Date(),
+          });
         if (run)
           await this.repository.finishRun(
             String(run.id),
@@ -316,6 +325,8 @@ export class ReportingService {
     };
     for (const [source, target] of Object.entries(aliases))
       if (input[source]) filters[target] = input[source]!;
+    if (this.nativeDashboard)
+      return this.nativeDashboard.load(input, actor, filters, now);
     const serverBranchScope =
       actor.permissions.includes('reporting.manage') ||
       actor.permissions.includes('sales.contracts.read.all')
@@ -1469,16 +1480,26 @@ export class ReportingService {
     );
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    const facts = await this.repository.facts(query, serverBranchScope);
+    const native = await this.repository.nativeResult?.(
+      code,
+      query,
+      actor,
+      true,
+    );
+    const facts = native
+      ? []
+      : await this.repository.facts(query, serverBranchScope);
     return {
       report,
-      result: buildTravelReportResult({
-        code,
-        query,
-        facts,
-        now: new Date(),
-        includeAllRows: true,
-      }),
+      result:
+        native ??
+        buildTravelReportResult({
+          code,
+          query,
+          facts,
+          now: new Date(),
+          includeAllRows: true,
+        }),
     };
   }
 

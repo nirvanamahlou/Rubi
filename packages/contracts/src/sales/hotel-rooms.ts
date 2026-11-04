@@ -6,11 +6,11 @@ export function salesRoomCategories(
 ): SalesRoomCategory[] {
   return adults === 1
     ? children
-      ? ['SINGLE', 'DOUBLE_EXTRA']
+      ? ['SINGLE', 'DOUBLE', 'DOUBLE_EXTRA']
       : ['SINGLE']
     : adults === 2
       ? children
-        ? ['DOUBLE', 'DOUBLE_EXTRA']
+        ? ['DOUBLE', 'DOUBLE_EXTRA', 'FAMILY']
         : ['DOUBLE']
       : adults === 3
         ? ['TRIPLE', 'FAMILY', 'DOUBLE_EXTRA']

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { AccountingWorkflowsPanel } from './accounting-workflows-panel';
 import { ReceiptAllocationPanel } from './receipt-allocation-panel';
 import { useQuery } from '@tanstack/react-query';
 import type {
@@ -125,6 +126,12 @@ export function AccountingFinancialEvents({
       className="space-y-4 rounded-xl border p-4"
       aria-label="رویدادهای مالی و ثبت حسابداری"
     >
+      <AccountingWorkflowsPanel
+        key={book.book.id}
+        book={book}
+        run={run}
+        busy={busy}
+      />
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-bold">رویدادهای مالی و ثبت حسابداری</h3>
         <Button variant="outline" onClick={() => void query.refetch()}>

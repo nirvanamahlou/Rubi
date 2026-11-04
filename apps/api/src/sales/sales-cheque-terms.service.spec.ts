@@ -94,3 +94,74 @@ describe('persisted sale payment policy', () => {
     expect(repository.addPayment).toHaveBeenCalledOnce();
   });
 });
+it('lets a contract-area creator add a payment to their own contract without a separate payment grant', async () => {
+  const { service, repository } = setup(null);
+  const creator = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  } as AuthenticatedActor;
+  await expect(
+    service.addPayment(
+      'contract',
+      {
+        version: 1,
+        method: 'CASH',
+        amount: '1',
+        currencyCode: 'IRR',
+        dueAt: '2026-11-01T00:00:00Z',
+      },
+      creator,
+      'owner-payment',
+    ),
+  ).resolves.toBeDefined();
+  expect(repository.addPayment).toHaveBeenCalledTimes(1);
+});
+it('keeps owner/branch write restrictions for self-service payment and amendment', async () => {
+  for (const changed of [
+    { ownerUserId: 'other', branchId: 'branch' },
+    { ownerUserId: 'owner', branchId: 'other' },
+  ]) {
+    const { service, repository } = setup(null);
+    repository.findById.mockResolvedValue({
+      ...changed,
+      id: 'contract',
+      paymentTerms: null,
+    } as never);
+    const creator = {
+      ...actor,
+      permissions: ['sales.contracts.create', 'sales.contracts.read.all'],
+    } as AuthenticatedActor;
+    await expect(
+      service.addPayment(
+        'contract',
+        {
+          version: 1,
+          method: 'CASH',
+          amount: '1',
+          currencyCode: 'IRR',
+          dueAt: '2026-11-01T00:00:00Z',
+        },
+        creator,
+        'owner-payment',
+      ),
+    ).rejects.toThrow();
+    expect(repository.addPayment).not.toHaveBeenCalled();
+    const guard = service as unknown as {
+      assertUpdate(row: typeof changed, actor: AuthenticatedActor): void;
+    };
+    expect(() => guard.assertUpdate(changed, creator)).toThrow();
+  }
+  const { service } = setup(null);
+  const guard = service as unknown as {
+    assertUpdate(
+      row: { ownerUserId: string; branchId: string },
+      actor: AuthenticatedActor,
+    ): void;
+  };
+  expect(() =>
+    guard.assertUpdate({ ownerUserId: 'owner', branchId: 'branch' }, {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    } as AuthenticatedActor),
+  ).not.toThrow();
+});

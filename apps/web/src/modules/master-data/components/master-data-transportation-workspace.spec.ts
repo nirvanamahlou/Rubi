@@ -12,6 +12,16 @@ const source = readFileSync(
 ).replace(/\r\n/g, '\n');
 
 describe('transportation workspace', () => {
+  it('uses the same visible status policy for list and Excel, refreshes after save and keeps the inactive badge', () => {
+    expect(
+      source.match(
+        /\.\.\.transportStatusFilters\(resource, status, transportStatus\)/g,
+      ),
+    ).toHaveLength(2);
+    expect(source).toContain('await Promise.all([load(), loadSummary()]);');
+    expect(source).toContain(": 'غیرفعال'");
+    expect(source).toContain("setTransportStatus('all')");
+  });
   it('keeps baggage rules in the airline form without a separate section or profile route', () => {
     for (const label of [
       'ایرلاین‌ها',

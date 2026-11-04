@@ -30,17 +30,24 @@ enum AuditOutcome {
 }
 
 model User {
-  telephonyCommands      IntegrationTelephonyCommand[]
-  telephonyAudit         IntegrationTelephonyAudit[]
-  telephonyConnections   IntegrationTelephonyConnection[]
-  telephonyMappings      IntegrationTelephonyMapping[]
-  telephonyOffers        CallCenterTelephonyOffer[]
-  telephonyLeases        CallCenterTelephonyLease[]
-  telephonyClaims        CallCenterTelephonySession[]
-  receiptAllocations     SalesReceiptAllocation[]
-  accountingSourceEvents FinanceAccountingEvent[]         @relation("FinancialEventActor")
+  pettyCashEntries ProcurementPettyEntry[]
+
+  pettyCashFunds ProcurementPettyFund[]
+
+  insurancePolicyRevisions ReservationInsuranceRevision[]
+  financialWorkflows       AccountingWorkflow[]
+  telephonyCommands        IntegrationTelephonyCommand[]
+  telephonyAudit           IntegrationTelephonyAudit[]
+  telephonyConnections     IntegrationTelephonyConnection[]
+  telephonyMappings        IntegrationTelephonyMapping[]
+  telephonyOffers          CallCenterTelephonyOffer[]
+  telephonyLeases          CallCenterTelephonyLease[]
+  telephonyClaims          CallCenterTelephonySession[]
+  receiptAllocations       SalesReceiptAllocation[]
+  accountingSourceEvents   FinanceAccountingEvent[]         @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
+  callAnswerResponsibilities                       CallCenterAnswerResponsibility[]
   callCenterNotes                                  CallCenterNote[]
   callCenterOwnedContacts                          CallCenterContact[]                       @relation("CallCenterContactOwner")
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
@@ -263,6 +270,9 @@ model RolePermission {
 }
 
 model Branch {
+  pettyCashFunds ProcurementPettyFund[]
+
+  financialWorkflows   AccountingWorkflow[]
   telephonyConnections IntegrationTelephonyConnection[]
   receiptAllocations   SalesReceiptAllocation[]
   accountingEvents     FinanceAccountingEvent[]
@@ -1015,6 +1025,7 @@ model MasterCountry {
   code                  String                      @unique @db.Char(2)
   name                  String                      @db.VarChar(160)
   englishName           String?                     @db.VarChar(160)
+  gmtOffset             String?                     @db.VarChar(6)
   displayOrder          Int                         @default(0)
   isActive              Boolean                     @default(true)
   version               Int                         @default(1)
@@ -1043,6 +1054,9 @@ model MasterCountry {
 }
 
 model MasterCity {
+  salesHotelStays             SalesContractHotelStay[]
+  ticketSaleOrigins           TicketOfferSaleRoute[]      @relation("TicketSaleOrigin")
+  ticketSaleDestinations      TicketOfferSaleRoute[]      @relation("TicketSaleDestination")
   id                          String                      @id @default(uuid()) @db.Uuid
   countryId                   String                      @db.Uuid
   regionId                    String?                     @db.Uuid
@@ -1198,6 +1212,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
   procurementQuotationCurrencycodeRows ProcurementQuotation[]      @relation("ProcurementQuotationCurrencycode")
   procurementOrderCurrencycodeRows     ProcurementOrder[]          @relation("ProcurementOrderCurrencycode")
@@ -1345,6 +1360,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  accountingCode              String?                      @unique @db.VarChar(7)
   partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
   b2bOrganizationUsers        B2bOrganizationUser[]
@@ -1679,6 +1695,7 @@ model B2bAuditEvent {
 }
 
 model MasterSupplier {
+  accountingCode                     String?                                @unique @db.VarChar(7)
   payingOperationalPayments          FinanceOperationalRevision[]
   payingTicketPayments               FinanceTicketPurchasePaymentRevision[]
   payingInvoicePayments              FinanceProcurementInvoiceRevision[]
@@ -1925,7 +1942,7 @@ model MasterAirline {
   isUnderReview       Boolean                  @default(false)
   id                  String                   @id @default(uuid()) @db.Uuid
   organizationId      String?                  @unique @db.Uuid
-  code                String                   @unique @db.Char(2)
+  code                String                   @unique @db.VarChar(64)
   icaoCode            String?                  @unique @db.Char(3)
   name                String                   @db.VarChar(160)
   englishName         String?                  @db.VarChar(160)
@@ -2065,25 +2082,25 @@ model MasterManifestTemplate {
 }
 
 model MasterRailCompany {
-  isUnderReview       Boolean            @default(false)
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  countryId           String             @db.Uuid
-  code                String             @unique @db.VarChar(32)
-  name                String             @db.VarChar(160)
-  englishName         String?            @db.VarChar(160)
-  logoFileReference   String?            @db.Uuid
-  displayOrder        Int                @default(0)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  isUnderReview       Boolean             @default(false)
+  id                  String              @id @default(uuid()) @db.Uuid
+  organizationId      String?             @unique @db.Uuid
+  countryId           String              @db.Uuid
+  code                String              @unique @db.VarChar(32)
+  name                String              @db.VarChar(160)
+  englishName         String?             @db.VarChar(160)
+  logoFileReference   String?             @db.Uuid
+  displayOrder        Int                 @default(0)
+  isActive            Boolean             @default(true)
+  version             Int                 @default(1)
+  createdByUserId     String              @db.Uuid
+  updatedByUserId     String              @db.Uuid
+  deactivatedByUserId String?             @db.Uuid
+  deactivatedAt       DateTime?           @db.Timestamptz(3)
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry       @relation(fields: [countryId], references: [id], onDelete: Restrict)
 
   @@index([countryId, isActive, name])
   @@map("master_rail_companies")
@@ -2195,6 +2212,9 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  currencyId           String?                      @db.Uuid
+  currency             MasterCurrency?              @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
   cityId               String                       @db.Uuid
@@ -2246,6 +2266,7 @@ model MasterHotel {
 
   @@index([cityId, isActive, name])
   @@index([chainId, isActive, name])
+  @@index([currencyId])
   @@index([isSaleableReference, isActive, name])
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
@@ -2352,22 +2373,23 @@ model MasterMealService {
 }
 
 model MasterRoomType {
+  salesHotelStayRooms       SalesContractHotelStayRoom[]
   salesHotelRooms           SalesContractHotelRoom[]
-  id                        String                     @id @default(uuid()) @db.Uuid
-  code                      String                     @unique @db.VarChar(32)
-  name                      String                     @db.VarChar(160)
-  englishName               String?                    @db.VarChar(160)
+  id                        String                       @id @default(uuid()) @db.Uuid
+  code                      String                       @unique @db.VarChar(32)
+  name                      String                       @db.VarChar(160)
+  englishName               String?                      @db.VarChar(160)
   referenceCapacity         Int?
-  usageDescription          String?                    @db.VarChar(500)
-  displayOrder              Int                        @default(0)
-  isActive                  Boolean                    @default(true)
-  version                   Int                        @default(1)
-  createdByUserId           String                     @db.Uuid
-  updatedByUserId           String                     @db.Uuid
-  deactivatedByUserId       String?                    @db.Uuid
-  deactivatedAt             DateTime?                  @db.Timestamptz(3)
-  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  usageDescription          String?                      @db.VarChar(500)
+  displayOrder              Int                          @default(0)
+  isActive                  Boolean                      @default(true)
+  version                   Int                          @default(1)
+  createdByUserId           String                       @db.Uuid
+  updatedByUserId           String                       @db.Uuid
+  deactivatedByUserId       String?                      @db.Uuid
+  deactivatedAt             DateTime?                    @db.Timestamptz(3)
+  createdAt                 DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                     @updatedAt @db.Timestamptz(3)
   hotels                    MasterHotel[]
   hotelLinks                MasterHotelRoomType[]
   reservationHotelRoomRates ReservationHotelRoomRate[]
@@ -2544,6 +2566,7 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  accountingCode                   String?                      @unique @db.VarChar(7)
   hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
   id                               String                       @id @default(uuid()) @db.Uuid
@@ -2964,6 +2987,8 @@ enum CustomerDuplicateReviewStatus {
 
 model Customer {
   accountingDetails          AccountingDetail[]
+  customerCode               String?                      @unique @db.VarChar(7)
+  insurancePolicies          ReservationInsurancePolicy[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
@@ -3393,6 +3418,9 @@ model DocumentCategory {
 }
 
 model Document {
+  pettyRegistrations               ProcurementPettyEntry[]
+  senderName                       String?                      @map("sender_name") @db.VarChar(200)
+  isIncomingLetter                 Boolean                      @default(false) @map("is_incoming_letter")
   financeOperationalRequests       FinanceOperationalRequest[]
   id                               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   archiveCode                      String                       @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)
@@ -3485,6 +3513,7 @@ model DocumentAccessGrant {
 }
 
 model DocumentVersion {
+  pettyRegistrations ProcurementPettyEntry[]
   id                 String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId         String                     @map("document_id") @db.Uuid
   versionNumber      Int                        @map("version_number")
@@ -3592,6 +3621,9 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
+  identificationCode     String?                     @unique @map("identification_code") @db.VarChar(7)
+  jobTitleId             String?                     @map("job_title_id") @db.Uuid
+  jobTitle               HrRecord?                   @relation("HrEmployeeJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
   financePayrollRequests FinanceOperationalRequest[]
   procurementRequests    ProcurementRequest[]        @relation("ProcurementRequestRequesterEmployee")
   organizationBranchId   String?                     @map("organization_branch_id") @db.Uuid
@@ -3626,11 +3658,21 @@ model HrEmployee {
   @@unique([id, branchId])
   @@index([branchId, deletedAt, name])
   @@index([managerId])
+  @@index([jobTitleId])
   @@index([organizationBranchId, branchId])
   @@map("hr_employees")
 }
 
 model HrRecord {
+  sharedSourceId            String?                       @map("shared_source_id") @db.Uuid
+  sharedSource              HrRecord?                     @relation("HrSharedSource", fields: [sharedSourceId], references: [id], onDelete: Restrict)
+  sharedCopies              HrRecord[]                    @relation("HrSharedSource")
+  financialWorkflows        AccountingWorkflow[]          @relation("WorkflowNetPayroll")
+  grossFinancialWorkflows   AccountingWorkflow[]          @relation("WorkflowGrossPayroll")
+  jobTitleId                String?                       @map("job_title_id") @db.Uuid
+  jobTitle                  HrRecord?                     @relation("HrAssignmentJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
+  jobTitleAssignments       HrRecord[]                    @relation("HrAssignmentJobTitle")
+  jobTitleEmployees         HrEmployee[]                  @relation("HrEmployeeJobTitle")
   telephonyMappings         IntegrationTelephonyMapping[]
   userProfiles              IamUserProfile[]              @relation("IamUserOrganizationUnit")
   financeOperationalRequest FinanceOperationalRequest?
@@ -3664,10 +3706,12 @@ model HrRecord {
   leaveEntries              HrLeaveEntry[]
   notifications             HrNotification[]
 
+  @@unique([sharedSourceId, branchId])
   @@unique([id, branchId])
   @@index([branchId, section, tab, deletedAt, createdAt])
   @@index([employeeId, section, tab])
   @@index([parentId, branchId])
+  @@index([jobTitleId])
   @@index([effectiveAt, appliedAt])
   @@map("hr_records")
 }
@@ -3945,7 +3989,16 @@ enum PackagePricingRenderStatus {
   FAILED
 }
 
+model SalesContractNumberCounter {
+  id         Int @id
+  lastNumber Int @map("last_number")
+
+  @@map("sales_contract_number_counters")
+}
+
 model SalesContract {
+  insurancePolicies         ReservationInsurancePolicy[]
+  financialWorkflows        AccountingWorkflow[]
   receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
@@ -4006,7 +4059,7 @@ model SalesContractPassenger {
   contractId          String                            @map("contract_id") @db.Uuid
   customerId          String                            @map("customer_id") @db.Uuid
   displayNameSnapshot String                            @map("display_name_snapshot") @db.VarChar(200)
-  birthDate           DateTime                          @map("birth_date") @db.Date
+  birthDate           DateTime?                         @map("birth_date") @db.Date
   ageCategory         SalesPassengerAgeCategory         @map("age_category")
   createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
   contract            SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)
@@ -4090,6 +4143,7 @@ model SalesContractTicketSelection {
 }
 
 model SalesContractHotelSelection {
+  additionalStays   SalesContractHotelStay[]
   rooms             SalesContractHotelRoom[]
   id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId        String                   @unique @map("contract_id") @db.Uuid
@@ -4115,6 +4169,43 @@ model SalesContractHotelSelection {
   @@map("sales_contract_hotel_selections")
 }
 
+model SalesContractHotelStay {
+  rooms             SalesContractHotelStayRoom[]
+  id                String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotelSelectionId  String                       @map("hotel_selection_id") @db.Uuid
+  ordinal           Int
+  hotelId           String                       @map("hotel_id") @db.Uuid
+  cityId            String                       @map("city_id") @db.Uuid
+  hotelNameSnapshot String                       @map("hotel_name_snapshot") @db.VarChar(240)
+  checkInDate       DateTime                     @map("check_in_date") @db.Date
+  checkOutDate      DateTime                     @map("check_out_date") @db.Date
+  selection         SalesContractHotelSelection  @relation(fields: [hotelSelectionId], references: [id], onDelete: Cascade, map: "sales_contract_hotel_stays_selection_fkey")
+  hotel             MasterHotel                  @relation(fields: [hotelId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_hotel_fkey")
+  city              MasterCity                   @relation(fields: [cityId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_city_fkey")
+
+  @@unique([hotelSelectionId, ordinal])
+  @@index([hotelId, checkInDate])
+  @@index([cityId])
+  @@map("sales_contract_hotel_stays")
+}
+
+model SalesContractHotelStayRoom {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stayId               String                 @map("stay_id") @db.Uuid
+  ordinal              Int
+  roomTypeId           String                 @map("room_type_id") @db.Uuid
+  roomTypeNameSnapshot String                 @map("room_type_name_snapshot") @db.VarChar(240)
+  adults               Int
+  roomCategory         String?                @map("room_category") @db.VarChar(16)
+  childAges            Json                   @map("child_ages") @db.JsonB
+  stay                 SalesContractHotelStay @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  roomType             MasterRoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([stayId, ordinal])
+  @@index([roomTypeId])
+  @@map("sales_contract_hotel_stay_rooms")
+}
+
 model SalesContractPriceComponent {
   id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId   String                  @map("contract_id") @db.Uuid
@@ -4130,6 +4221,9 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
+  destinationAccountId    String?                     @map("destination_account_id") @db.Uuid
+  destinationAccountTitle String?                     @map("destination_account_title") @db.VarChar(250)
+  destinationAccount      FinanceSettlementAccount?   @relation("SalesPaymentDestinationAccount", fields: [destinationAccountId], references: [id], onDelete: Restrict, map: "sales_payment_destination_account_fk")
   allocations             SalesReceiptAllocation[]
   refunds                 SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
@@ -4224,6 +4318,8 @@ model TourPackage {
 }
 
 model TourDeparture {
+  isActive         Boolean                     @default(true)
+  salesVersion     Int                         @default(1)
   hotelRatePacks   ReservationHotelRatePack[]
   hotelRateBatches ReservationHotelRateBatch[]
   pricingDrafts    PackagePricingTourDraft[]
@@ -4250,6 +4346,7 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  saleRoutes                  TicketOfferSaleRoute[]
   originAirportId             String?                             @db.Uuid
   destinationAirportId        String?                             @db.Uuid
   originAirport               MasterAirport?                      @relation("TicketOriginAirport", fields: [originAirportId], references: [id], onDelete: Restrict)
@@ -4546,6 +4643,7 @@ model FinanceTicketPurchasePaymentRevision {
 }
 
 model ReservationIntake {
+  insurancePolicies   ReservationInsurancePolicy[]
   ticketDocuments     ReservationTicketDocument[]
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
@@ -4628,6 +4726,10 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  accountingCode             String?                                @unique @db.VarChar(7)
+  deletedAt                  DateTime?                              @db.Timestamptz(3)
+  salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
+  workflowRefunds            AccountingWorkflow[]
   bankIdentifiers            Json?
   maskedAccountNumber        String?                                @db.VarChar(40)
   maskedCardNumber           String?                                @db.VarChar(24)
@@ -5481,7 +5583,7 @@ model PackagePricingTourPublishedVersion {
   tourVersion                 Int
   sourceFingerprint           String                                 @db.VarChar(64)
   reason                      String                                 @db.VarChar(500)
-  outboundCostRevisionId      String                                 @db.Uuid
+  outboundCostRevisionId      String?                                @db.Uuid
   returnCostRevisionId        String?                                @db.Uuid
   adultFlightSale             Decimal                                @db.Decimal(24, 4)
   adultFlightSaleCurrencyCode String                                 @default("IRR") @db.VarChar(3)
@@ -5497,7 +5599,7 @@ model PackagePricingTourPublishedVersion {
   publishedByUserId           String                                 @db.Uuid
   publishedAt                 DateTime                               @default(now()) @db.Timestamptz(3)
   draft                       PackagePricingTourDraft                @relation(fields: [draftId], references: [id], onDelete: Restrict)
-  outboundCost                FinanceTicketPurchaseCostRevision      @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
+  outboundCost                FinanceTicketPurchaseCostRevision?     @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
   returnCost                  FinanceTicketPurchaseCostRevision?     @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
   publisher                   User                                   @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
   roomPrices                  PackagePricingTourPublishedRoomPrice[]
@@ -5562,6 +5664,7 @@ model MarketingCampaign {
   declaredAt             DateTime                         @default(now()) @map("declared_at") @db.Timestamptz(3)
   createdByUserId        String                           @map("created_by_user_id") @db.Uuid
   updatedByUserId        String                           @map("updated_by_user_id") @db.Uuid
+  deletedAt              DateTime?                        @map("deleted_at") @db.Timestamptz(3)
   version                Int                              @default(1)
   createdAt              DateTime                         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt              DateTime                         @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -5686,6 +5789,9 @@ model CustomerAffairsMarketingIntake {
   phoneKeyVersion  Int                @map("phone_key_version")
   phoneFingerprint String             @map("phone_fingerprint") @db.Char(64)
   phoneMasked      String             @map("phone_masked") @db.VarChar(40)
+  firstName        String?            @map("first_name") @db.VarChar(100)
+  lastName         String?            @map("last_name") @db.VarChar(100)
+  entryDate        DateTime?          @map("entry_date") @db.Timestamptz(3)
   sourceCategory   String             @map("source_category") @db.VarChar(80)
   campaignId       String?            @map("campaign_id") @db.Uuid
   status           String             @default("NEW") @db.VarChar(24)
@@ -6018,6 +6124,8 @@ model CustomerAffairsAuditEvent {
 }
 
 model ProcurementRequest {
+  pettyEntries ProcurementPettyEntry[]
+
   receiptAdjustments                        ProcurementReceiptAdjustment[]
   exportJobs                                ProcurementExportJob[]
   id                                        String                         @id @default(uuid()) @db.Uuid
@@ -7045,6 +7153,7 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
+  financialWorkflows AccountingWorkflow[]
   fxSnapshots        AccountingFxSnapshot[]
   id                 String                           @id @default(uuid()) @db.Uuid
   branchId           String                           @db.Uuid
@@ -7203,6 +7312,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
+  financialWorkflow     AccountingWorkflow?
   financialEvent        FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid
   bookId                String                           @db.Uuid
@@ -7664,6 +7774,7 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
+  financialWorkflows  AccountingWorkflow[]
   basisEventId        String?                   @db.Uuid
   basisEvent          FinanceAccountingEvent?   @relation("ReceiptAllocationBasis", fields: [basisEventId], references: [id], onDelete: Restrict)
   derivedEvents       FinanceAccountingEvent[]  @relation("ReceiptAllocationBasis")
@@ -7729,6 +7840,7 @@ model CorrespondenceLetter {
 }
 
 model CorrespondenceDelivery {
+  description String?              @db.VarChar(2000)
   id          String               @id @default(uuid()) @db.Uuid
   letterId    String               @db.Uuid
   letter      CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
@@ -7741,7 +7853,7 @@ model CorrespondenceDelivery {
   readAt      DateTime?            @db.Timestamptz(3)
   createdAt   DateTime             @default(now()) @db.Timestamptz(3)
 
-  @@unique([senderId, requestKey])
+  @@unique([senderId, requestKey, recipientId])
   @@unique([letterId, recipientId])
   @@index([recipientId, createdAt])
   @@index([letterId, recipientId])
@@ -7773,27 +7885,28 @@ model CallCenterContact {
 model CallCenterCall {
   telephonySession CallCenterTelephonySession?
 
-  searchTokens       String[]               @default([]) @map("search_tokens")
-  sourceToken        String?                @map("source_token") @db.Char(64)
-  unitToken          String?                @map("unit_token") @db.Char(64)
-  needsCompletion    Boolean?               @map("needs_completion")
-  searchVersion      Int                    @default(0) @map("search_version")
-  ticketId           String?                @map("ticket_id") @db.Uuid
-  ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
-  outcome            String?                @db.VarChar(32)
-  origin             String?                @db.VarChar(16)
-  id                 String                 @id @db.Uuid
-  contactId          String                 @map("contact_id") @db.Uuid
-  createdByUserId    String                 @map("created_by_user_id") @db.Uuid
-  direction          String                 @db.VarChar(8)
-  status             String                 @db.VarChar(40)
-  occurredAt         DateTime               @map("occurred_at") @db.Timestamptz(3)
-  encryptedPayload   String                 @map("encrypted_payload") @db.Text
-  keyVersion         Int                    @map("key_version")
-  requestFingerprint String                 @map("request_fingerprint") @db.Char(64)
-  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-  contact            CallCenterContact      @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
-  createdBy          User                   @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  searchTokens           String[]                         @default([]) @map("search_tokens")
+  sourceToken            String?                          @map("source_token") @db.Char(64)
+  unitToken              String?                          @map("unit_token") @db.Char(64)
+  needsCompletion        Boolean?                         @map("needs_completion")
+  searchVersion          Int                              @default(0) @map("search_version")
+  ticketId               String?                          @map("ticket_id") @db.Uuid
+  ticket                 CustomerAffairsTicket?           @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
+  outcome                String?                          @db.VarChar(32)
+  origin                 String?                          @db.VarChar(16)
+  id                     String                           @id @db.Uuid
+  contactId              String                           @map("contact_id") @db.Uuid
+  createdByUserId        String                           @map("created_by_user_id") @db.Uuid
+  direction              String                           @db.VarChar(8)
+  status                 String                           @db.VarChar(40)
+  occurredAt             DateTime                         @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload       String                           @map("encrypted_payload") @db.Text
+  keyVersion             Int                              @map("key_version")
+  requestFingerprint     String                           @map("request_fingerprint") @db.Char(64)
+  createdAt              DateTime                         @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact                CallCenterContact                @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy              User                             @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  answerResponsibilities CallCenterAnswerResponsibility[]
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
   @@index([ticketId], map: "cc_call_ticket_idx")
@@ -7837,6 +7950,7 @@ model IntegrationTelephonyConnection {
   mappings         IntegrationTelephonyMapping[]
   inbox            IntegrationTelephonyInbox[]
   sessions         CallCenterTelephonySession[]
+  answers          IntegrationTelephonyAnswer[]
 
   @@map("integration_telephony_connections")
 }
@@ -7859,19 +7973,21 @@ model IntegrationTelephonyMapping {
 }
 
 model IntegrationTelephonyInbox {
-  id                  String                         @id @default(uuid()) @db.Uuid
-  connectionId        String                         @db.Uuid
-  externalFingerprint String                         @db.Char(64)
-  payloadFingerprint  String                         @db.Char(64)
-  encryptedPayload    String?                        @db.Text
-  keyVersion          Int
-  receivedAt          DateTime                       @default(now()) @db.Timestamptz(3)
-  status              String                         @default("PENDING") @db.VarChar(16)
-  attempts            Int                            @default(0)
-  errorCode           String?                        @db.VarChar(32)
-  processedAt         DateTime?                      @db.Timestamptz(3)
-  connection          IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
-  dispatch            IntegrationTelephonyOutbox?
+  id                         String                           @id @default(uuid()) @db.Uuid
+  connectionId               String                           @db.Uuid
+  externalFingerprint        String                           @db.Char(64)
+  payloadFingerprint         String                           @db.Char(64)
+  encryptedPayload           String?                          @db.Text
+  keyVersion                 Int
+  receivedAt                 DateTime                         @default(now()) @db.Timestamptz(3)
+  status                     String                           @default("PENDING") @db.VarChar(16)
+  attempts                   Int                              @default(0)
+  errorCode                  String?                          @db.VarChar(32)
+  processedAt                DateTime?                        @db.Timestamptz(3)
+  connection                 IntegrationTelephonyConnection   @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  dispatch                   IntegrationTelephonyOutbox?
+  answer                     IntegrationTelephonyAnswer?
+  callAnswerResponsibilities CallCenterAnswerResponsibility[]
 
   @@unique([connectionId, externalFingerprint], map: "integration_telephony_inbox_connectionId_externalFingerprint_ke")
   @@index([status, receivedAt])
@@ -8025,4 +8141,181 @@ model IntegrationTelephonyRecordingChunk {
 
   @@id([recordingId, index])
   @@map("integration_telephony_recording_chunks")
+}
+
+model TicketOfferSaleRoute {
+  offerId       String               @db.Uuid
+  originId      String               @db.Uuid
+  destinationId String               @db.Uuid
+  offer         TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  origin        MasterCity           @relation("TicketSaleOrigin", fields: [originId], references: [id], onDelete: Restrict)
+  destination   MasterCity           @relation("TicketSaleDestination", fields: [destinationId], references: [id], onDelete: Restrict)
+
+  @@id([offerId, originId, destinationId])
+  @@index([originId, destinationId])
+  @@index([destinationId])
+}
+
+// Integrations-owned technical answer history; never an ERP user assignment.
+model IntegrationTelephonyAnswer {
+  id               String                         @id @default(uuid()) @db.Uuid
+  connectionId     String                         @db.Uuid
+  inboxId          String                         @unique @db.Uuid
+  queue            String                         @db.VarChar(100)
+  phoneFingerprint String?                        @db.Char(64)
+  answeredAt       DateTime                       @db.Timestamptz(3)
+  encryptedAnswer  String                         @db.Text
+  keyVersion       Int
+  createdAt        DateTime                       @default(now()) @db.Timestamptz(3)
+  connection       IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  inbox            IntegrationTelephonyInbox      @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+
+  @@index([connectionId, queue, phoneFingerprint, answeredAt(sort: Desc), id(sort: Desc)], map: "telephony_answer_lookup_idx")
+  @@map("integration_telephony_answers")
+}
+
+// Immutable business evidence; only journal linkage and audited cancellation can change.
+model AccountingWorkflow {
+  receiptAccountId String?                   @db.Uuid
+  receiptAccount   FinanceSettlementAccount? @relation(fields: [receiptAccountId], references: [id], onDelete: Restrict)
+  id               String                    @id @default(uuid()) @db.Uuid
+  bookId           String                    @db.Uuid
+  book             AccountingBook            @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  branchId         String                    @db.Uuid
+  branch           Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId          String                    @db.Uuid
+  actor            User                      @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  kind             String                    @db.VarChar(32)
+  businessKey      String                    @unique @db.VarChar(240)
+  contractId       String?                   @db.Uuid
+  contract         SalesContract?            @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  hrRecordId       String?                   @db.Uuid
+  hrRecord         HrRecord?                 @relation("WorkflowNetPayroll", fields: [hrRecordId], references: [id], onDelete: Restrict)
+  grossRecordId    String?                   @db.Uuid
+  grossRecord      HrRecord?                 @relation("WorkflowGrossPayroll", fields: [grossRecordId], references: [id], onDelete: Restrict)
+  sourceEventId    String?                   @db.Uuid
+  sourceEvent      FinanceAccountingEvent?   @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  amount           Decimal                   @db.Decimal(24, 4)
+  currency         String                    @db.VarChar(3)
+  occurredAt       DateTime                  @db.Timestamptz(3)
+  reference        String                    @db.VarChar(160)
+  facts            Json
+  cancelled        Boolean                   @default(false)
+  journalId        String?                   @unique @db.Uuid
+  journal          AccountingJournal?        @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@index([branchId, kind, occurredAt])
+  @@index([sourceEventId, kind])
+  @@index([contractId, kind])
+  @@index([hrRecordId, kind])
+  @@map("finance_accounting_workflows")
+}
+
+model ReservationInsurancePolicy {
+  id              String                         @id @default(uuid()) @db.Uuid
+  contractId      String                         @db.Uuid
+  intakeId        String                         @db.Uuid
+  customerId      String                         @db.Uuid
+  provider        String                         @default("NOYAN") @db.VarChar(32)
+  providerId      String?                        @db.VarChar(100)
+  policyNumber    String?                        @db.VarChar(100)
+  status          String                         @default("DRAFT") @db.VarChar(24)
+  destinationCode String                         @db.VarChar(40)
+  planCode        String                         @db.VarChar(40)
+  departureDate   DateTime                       @db.Date
+  durationDays    Int
+  amount          Decimal?                       @db.Decimal(20, 4)
+  currencyCode    String?                        @db.VarChar(3)
+  notes           String                         @default("") @db.VarChar(2000)
+  version         Int                            @default(1)
+  issuedAt        DateTime?                      @db.Timestamptz(3)
+  cancelledAt     DateTime?                      @db.Timestamptz(3)
+  createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
+  contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  intake          ReservationIntake              @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  customer        Customer                       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  revisions       ReservationInsuranceRevision[]
+
+  @@unique([contractId, customerId, provider])
+  @@unique([provider, providerId])
+  @@unique([provider, policyNumber])
+  @@index([intakeId, status, createdAt])
+  @@map("reservation_insurance_policies")
+}
+
+model ReservationInsuranceRevision {
+  id          String                     @id @default(uuid()) @db.Uuid
+  policyId    String                     @db.Uuid
+  version     Int
+  action      String                     @db.VarChar(32)
+  snapshot    Json
+  actorUserId String                     @db.Uuid
+  createdAt   DateTime                   @default(now()) @db.Timestamptz(3)
+  policy      ReservationInsurancePolicy @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  actor       User                       @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([policyId, version])
+  @@map("reservation_insurance_revisions")
+}
+
+// Customer Affairs-owned additive responsibility; only trusted answer receipts may create rows.
+model CallCenterAnswerResponsibility {
+  callId     String                    @db.Uuid
+  userId     String                    @db.Uuid
+  inboxId    String                    @db.Uuid
+  answeredAt DateTime                  @db.Timestamptz(3)
+  createdAt  DateTime                  @default(now()) @db.Timestamptz(3)
+  call       CallCenterCall            @relation(fields: [callId], references: [id], onDelete: Restrict)
+  user       User                      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  inbox      IntegrationTelephonyInbox @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+
+  @@id([callId, userId])
+  @@index([userId, callId])
+  @@index([inboxId])
+  @@map("call_center_answer_responsibilities")
+}
+
+model ProcurementPettyFund {
+  id            String                  @id @default(uuid()) @db.Uuid
+  branchId      String                  @unique @db.Uuid
+  custodianId   String                  @db.Uuid
+  currencyCode  String                  @db.VarChar(3)
+  balance       Decimal                 @db.Decimal(24, 4)
+  bankName      String                  @default("") @db.VarChar(120)
+  accountNumber String                  @default("") @db.VarChar(40)
+  iban          String                  @default("") @db.VarChar(34)
+  cardNumber    String                  @default("") @db.VarChar(20)
+  version       Int                     @default(1)
+  branch        Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  custodian     User                    @relation(fields: [custodianId], references: [id], onDelete: Restrict)
+  entries       ProcurementPettyEntry[]
+
+  @@map("procurement_petty_funds")
+}
+
+model ProcurementPettyEntry {
+  costCenter        String?              @db.VarChar(160)
+  fee               Decimal?             @db.Decimal(24, 4)
+  description       String?              @db.VarChar(2000)
+  title             String?              @db.VarChar(240)
+  occurredAt        DateTime?            @db.Timestamptz(3)
+  receiptDocumentId String?              @db.Uuid
+  receiptVersionId  String?              @db.Uuid
+  receiptDocument   Document?            @relation(fields: [receiptDocumentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  receiptVersion    DocumentVersion?     @relation(fields: [receiptVersionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  requestId         String?              @db.Uuid
+  request           ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  id                String               @id @default(uuid()) @db.Uuid
+  fundId            String               @db.Uuid
+  requestKey        String?              @unique @db.Uuid
+  amount            Decimal              @db.Decimal(24, 4)
+  actorId           String               @db.Uuid
+  createdAt         DateTime             @default(now()) @db.Timestamptz(3)
+  actor             User                 @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  fund              ProcurementPettyFund @relation(fields: [fundId], references: [id], onDelete: Restrict)
+
+  @@index([fundId, createdAt])
+  @@map("procurement_petty_entries")
 }

@@ -3,7 +3,10 @@ import { useEffect } from 'react';
 
 const approved = new WeakSet<Event>();
 /** Private drafts stay in memory; warn before reload, closing, or following a link. */
-export function useUnsavedGuard(dirty: boolean) {
+export function useUnsavedGuard(
+  dirty: boolean,
+  allowInternalNavigation = false,
+) {
   useEffect(() => {
     if (!dirty) return;
     const unload = (event: BeforeUnloadEvent) => {
@@ -28,6 +31,8 @@ export function useUnsavedGuard(dirty: boolean) {
       )
         return;
       const destination = new URL(link.href, location.href);
+      if (allowInternalNavigation && destination.origin === location.origin)
+        return;
       if (
         destination.pathname === location.pathname &&
         destination.search === location.search &&
@@ -51,5 +56,5 @@ export function useUnsavedGuard(dirty: boolean) {
       window.removeEventListener('beforeunload', unload);
       document.removeEventListener('click', navigation, true);
     };
-  }, [dirty]);
+  }, [dirty, allowInternalNavigation]);
 }

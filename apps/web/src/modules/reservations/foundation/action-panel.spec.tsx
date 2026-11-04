@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
+const registration = vi.hoisted(() => ({ registered: false }));
+vi.mock('./use-purchase-completion', () => ({
+  usePurchaseRegistration: () => registration.registered,
+}));
+afterEach(() => {
+  registration.registered = false;
+});
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   contractActionGroups,
@@ -25,6 +32,16 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
+  it('identifies a cancelled selection explicitly without labelling active contracts cancelled', () => {
+    expect(
+      renderToStaticMarkup(
+        <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
+      ),
+    ).toContain('این قرارداد باطل شده است');
+    expect(
+      renderToStaticMarkup(<ContractActionPanel request={request} />),
+    ).not.toContain('این قرارداد باطل شده است');
+  });
   it('keeps only receipt history under contract operations', () => {
     const operations = contractActionGroups.find(
       (group) => group.title === 'عملیات قرارداد',
@@ -43,7 +60,7 @@ describe('selected contract actions', () => {
 
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(15);
     for (const label of [
       'واچر',
       'فرم رزواسیون',
@@ -71,7 +88,7 @@ describe('selected contract actions', () => {
     expect(html).toContain('SYNTH-01');
     expect(html.match(/disabled=""/g)).toHaveLength(1);
     expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(13);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(14);
     expect(html).not.toContain('href="/ticket-purchases?');
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');
@@ -188,4 +205,22 @@ it('shows hotel comparison without exposing full contract profit', () => {
       />,
     ),
   ).toContain('در حال دریافت نرخ مرجع هتل');
+});
+
+it('marks registered purchases green without a form, never cancelled contracts', () => {
+  registration.registered = true;
+  const html = renderToStaticMarkup(<ContractActionPanel request={request} />);
+  expect(html).toMatch(
+    /class="[^"]*purchaseRegistered[^"]*" data-purchase-registered="true" aria-label="خرید"/,
+  );
+  expect(html.match(/data-purchase-registered="true"/g)).toHaveLength(1);
+  expect(
+    renderToStaticMarkup(
+      <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
+    ),
+  ).not.toContain('data-purchase-registered="true"');
+  registration.registered = false;
+  expect(
+    renderToStaticMarkup(<ContractActionPanel request={request} />),
+  ).not.toContain('data-purchase-registered="true"');
 });

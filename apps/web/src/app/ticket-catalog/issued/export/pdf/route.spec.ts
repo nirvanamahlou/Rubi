@@ -48,7 +48,7 @@ describe('Private issued ticket PDF route', () => {
     );
     expect(result.status).toBe(200);
     expect(vi.mocked(fetch).mock.calls[0]?.[0]).toContain(
-      '/reservations/requests/issued-tickets?issuedFrom=2026-10-01&issuedTo=2026-10-05&passenger=test',
+      '/reservations/requests/service-report?issuedFrom=2026-10-01&issuedTo=2026-10-05&passenger=test',
     );
     expect(result.headers.get('content-type')).toBe('application/pdf');
     expect(result.headers.get('content-disposition')).toContain(

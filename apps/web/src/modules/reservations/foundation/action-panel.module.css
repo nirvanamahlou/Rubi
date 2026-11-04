@@ -28,6 +28,14 @@
 .selection strong {
   font-size: 15px;
 }
+.cancelled {
+  padding: 12px;
+  border: 1px solid var(--destructive);
+  border-radius: 8px;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 8%, var(--surface));
+  font-weight: 700;
+}
 .groups {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.55fr);
@@ -247,4 +255,13 @@
   .group0 {
     grid-column: auto;
   }
+}
+
+.action.purchaseRegistered {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+.action.purchaseRegistered:hover {
+  background: #bbf7d0;
 }

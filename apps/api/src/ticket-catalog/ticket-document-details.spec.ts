@@ -34,21 +34,33 @@ function fixture() {
     economyBaggageKg: { toString: () => '20' },
     businessBaggageKg: { toString: () => '30' },
   });
-  const upsert = vi.fn().mockResolvedValue({
-    ...input,
-    id,
-    version: 1,
-    branchId: id,
-    departureAt: new Date(input.departureAt),
-    arrivalAt: new Date(input.arrivalAt),
-    fingerprint: '',
-  });
+  const upsert = vi
+    .fn()
+    .mockImplementation(
+      async ({ create }: { create: Record<string, unknown> }) => ({
+        ...create,
+        id,
+        version: 1,
+      }),
+    );
+  const tx = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    ticketPublishedOffer: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
+      upsert,
+    },
+  };
   const detail = vi.fn().mockResolvedValue({
     data: { status: 'active', attributes: { cityId: id } },
   });
   const service = new TicketPublicService(
     {
-      client: { ticketPublishedOffer: { findFirst, upsert } },
+      client: {
+        ticketPublishedOffer: { findFirst, upsert },
+        $transaction: (callback: (client: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      },
     } as unknown as DatabaseService,
     {
       ensureOfferPurchaseRequest: vi.fn(),
@@ -79,6 +91,7 @@ describe('ticket selected airport document projection', () => {
           destinationAirportId: true,
           economyBaggageKg: true,
           businessBaggageKg: true,
+          saleRoutes: { select: { originId: true, destinationId: true } },
         },
       }),
     );
@@ -118,14 +131,38 @@ describe('ticket selected airport document projection', () => {
     findFirst.mockResolvedValue(null);
     await expect(service.documentDetails(id, actor)).rejects.toThrow();
   });
-  it('validates the airport belongs to the selected city through public Master Data', async () => {
+  it('allows an active airport in another city without replacing the commercial route', async () => {
     const { service, upsert, detail } = fixture();
     detail.mockResolvedValue({
       data: { status: 'active', attributes: { cityId: 'other' } },
     });
     await expect(
       service.publish(input, actor, id, 'synthetic-key'),
+    ).resolves.toBeDefined();
+    expect(upsert).toHaveBeenCalled();
+    detail.mockResolvedValue({
+      data: { status: 'inactive', attributes: { cityId: 'other' } },
+    });
+    await expect(
+      service.publish(input, actor, id, 'another-key'),
     ).rejects.toThrow('فرودگاه');
-    expect(upsert).not.toHaveBeenCalled();
   });
+});
+
+it('allows a Sales reader the same minimal branch-scoped document projection', async () => {
+  const s = fixture();
+  await expect(
+    s.service.documentDetails(id, {
+      ...actor,
+      permissions: ['sales.contracts.read.own'],
+    }),
+  ).resolves.toBeDefined();
+  s.findFirst.mockResolvedValue(null);
+  await expect(
+    s.service.documentDetails(id, {
+      ...actor,
+      permissions: ['sales.contracts.read.own'],
+      branchIds: ['other'],
+    }),
+  ).rejects.toThrow();
 });

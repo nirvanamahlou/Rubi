@@ -1,6 +1,6 @@
 'use client';
 import peopleStyles from './sales-people-sheet.module.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { transferDirectionColumns } from './transfer-direction-columns';
 import { guestStayColumns } from './guest-stay-columns';
 import { usesRoomDrivenGuests } from '../model/contract-guest-stays';
@@ -12,18 +12,16 @@ import { Input, FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import {
   CustomerEntrySheet,
-  customersApi,
+  salesPeopleApi as customersApi,
   type CustomerCalendarMode,
   type CustomerEntryRow,
   type EntryField,
 } from '@/modules/customers/public/entry';
 import { SalesOrganizationCustomer } from './sales-organization-customer';
 import { SalesPersonSearch } from './sales-person-search';
-import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
 import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
-  salesAdditionalServices,
   salesPassengerFlightDirections,
   salesDirections,
   salesPassengerAgeLabel,
@@ -34,6 +32,7 @@ import {
 } from '../model/sales-form';
 import {
   initialSalesPeopleDraft,
+  bookedSlotCategory,
   passengerSlotKeys,
   peopleRow,
   emptyPeopleValues,
@@ -49,22 +48,21 @@ import {
 export function SalesPeopleSheet({
   state,
   refreshRevision = 0,
+  beforePassengers,
   draft: savedDraft,
   onDraftChange,
   onConfirmed,
   onBusyChange,
   onAddInfant,
   onGuestStateChange,
-  onTravelDateChange,
   onFlightDirectionsChange,
-  onToggleVisa,
   busy = false,
 }: {
-  onToggleVisa?: () => void;
   onFlightDirectionsChange?: (
     directions: NonNullable<SalesFormState['passengerFlightDirections']>,
   ) => void;
   refreshRevision?: number;
+  beforePassengers?: ReactNode;
   state: SalesFormState;
   draft: SalesPeopleDraft | null;
   onDraftChange: (draft: SalesPeopleDraft) => void;
@@ -72,14 +70,15 @@ export function SalesPeopleSheet({
   onBusyChange: (busy: boolean) => void;
   onAddInfant: () => void;
   onGuestStateChange?: (patch: Partial<SalesFormState>) => void;
-  onTravelDateChange: (value: string) => void;
   busy?: boolean;
 }) {
   const draft = normalizeSalesPeopleDraft(
     savedDraft ?? initialSalesPeopleDraft(state),
   );
-  const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
+  const showAcquaintance = draft.mode !== 'organization';
+  const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [lookup, setLookup] = useState<string | null>(null);
+  const [lookupInRow, setLookupInRow] = useState(false);
   const [clearKey, setClearKey] = useState<string | null>(null);
   const [acquaintanceMethods, setAcquaintanceMethods] = useState<
     MasterDataRecord[]
@@ -88,6 +87,7 @@ export function SalesPeopleSheet({
   const [methodsError, setMethodsError] = useState('');
   const [methodsRetry, setMethodsRetry] = useState(0);
   useEffect(() => {
+    if (!showAcquaintance) return;
     let active = true;
     loadSalesAcquaintanceMethods()
       .then((items) => {
@@ -105,7 +105,7 @@ export function SalesPeopleSheet({
     return () => {
       active = false;
     };
-  }, [methodsRetry, refreshRevision]);
+  }, [methodsRetry, refreshRevision, showAcquaintance]);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const inFlight = useRef(false);
@@ -127,7 +127,15 @@ export function SalesPeopleSheet({
         'phone',
         'email',
       ]
-    : ['firstName', 'lastName', 'nationalId', 'birthDate', 'phone', 'email'];
+    : [
+        'firstName',
+        'lastName',
+        'gender',
+        'birthDate',
+        'nationalId',
+        'phone',
+        'email',
+      ];
   const change = (next: SalesPeopleDraft) => {
     setConfirmed(false);
     setError('');
@@ -188,6 +196,14 @@ export function SalesPeopleSheet({
               detail.addresses?.find((address) => address.isPrimary)?.label ??
               '',
             postalCode: '',
+            landline:
+              detail.contacts?.find(
+                (contact) =>
+                  contact.type === 'phone' &&
+                  contact.value &&
+                  !contact.value.includes('*') &&
+                  !/^(\+98|0)?9/.test(contact.value),
+              )?.value ?? '',
           },
         };
       }
@@ -386,10 +402,13 @@ export function SalesPeopleSheet({
           </p>
           {key !== 'primary' ? (
             <p className="text-primary">
-              {salesPassengerAgeLabel(
-                row.values.birthDate,
-                salesTravelDate(state),
-              )}
+              {row.values.birthDate && !salesTravelDate(state)
+                ? '—'
+                : salesPassengerAgeLabel(
+                    row.values.birthDate,
+                    salesTravelDate(state),
+                    bookedSlotCategory(state, key),
+                  )}
             </p>
           ) : null}
           {row.person ? (
@@ -429,11 +448,33 @@ export function SalesPeopleSheet({
             size="sm"
             variant="outline"
             disabled={busy}
-            onClick={() => setLookup(key)}
+            onClick={() => {
+              setLookupInRow(true);
+              setLookup(key);
+            }}
           >
             <Search className="size-3" />
             انتخاب موجود
           </Button>
+          {lookupInRow && lookup === key ? (
+            <div
+              className="min-w-72 max-w-md"
+              aria-label="انتخاب پرونده در ردیف مسافر"
+            >
+              <SalesPersonSearch
+                purpose="passenger"
+                selectedIds={keys
+                  .filter((other) => other !== key)
+                  .flatMap((other) =>
+                    peopleRow(draft, other).person?.id
+                      ? [peopleRow(draft, other).person!.id]
+                      : [],
+                  )}
+                onCancel={() => setLookup(null)}
+                onSelect={(person) => void choose(person)}
+              />
+            </div>
+          ) : null}
           {row.person && (!row.profile || row.profile.birthDateMasked) ? (
             <Button
               type="button"
@@ -459,137 +500,9 @@ export function SalesPeopleSheet({
     };
   });
   return (
-    <section
-      className={peopleStyles.workspace}
-      aria-label="ورود یکجای مشتری و مسافران"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold">
-          {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
-          {counts.adults.toLocaleString('fa-IR')} بزرگسال،{' '}
-          {counts.children.toLocaleString('fa-IR')} کودک،{' '}
-          {counts.infants.toLocaleString('fa-IR')} نوزاد
-        </p>
-        {usesRoomDrivenGuests(state) && onGuestStateChange ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => {
-              const taken = new Set(
-                (state.flightOnlyPassengers ?? []).map((p) => p.key),
-              );
-              let n = 0;
-              while (taken.has('flight-only-' + n)) n++;
-              onDraftChange(draft);
-              setConfirmed(false);
-              onGuestStateChange({
-                flightOnlyPassengers: [
-                  ...(state.flightOnlyPassengers ?? []),
-                  { key: 'flight-only-' + n, age: 18 },
-                ],
-              });
-            }}
-          >
-            افزودن مسافر (فقط پرواز)
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={busy || counts.adults === 0}
-            onClick={() => {
-              onDraftChange(draft);
-              setConfirmed(false);
-              onAddInfant();
-            }}
-          >
-            <Plus className="size-4" />
-            افزودن نوزاد
-          </Button>
-        )}
-      </div>
-
-      {!salesTravelDate(state) ||
-      (!state.serviceKinds.includes('FLIGHT') &&
-        !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn)) ? (
-        <FormField label="تاریخ شروع سفر" required>
-          <SalesDatePicker
-            value={state.departureDate}
-            onChange={onTravelDateChange}
-            disabled={busy}
-          />
-        </FormField>
-      ) : null}
-      {error ? (
-        <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
-      ) : null}
-      {methodsLoading ? (
-        <p role="status" className="text-xs text-muted-foreground">
-          در حال دریافت نحوه‌های آشنایی…
-        </p>
-      ) : methodsError || !acquaintanceMethods.length ? (
-        <div className="flex items-center gap-2 text-sm">
-          <p role={methodsError ? 'alert' : 'status'}>
-            {methodsError ||
-              'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setMethodsLoading(true);
-              setMethodsError('');
-              setMethodsRetry((n) => n + 1);
-            }}
-          >
-            دریافت دوباره نحوه آشنایی
-          </Button>
-        </div>
-      ) : null}
-      {clearKey ? (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"
-        >
-          <span>اطلاعات این ردیف پاک شود؟ پرونده ثبت‌شده حذف نمی‌شود.</span>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setClearKey(null)}
-            >
-              انصراف
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                change(
-                  editPeopleRow(draft, clearKey, {
-                    values: emptyPeopleValues(),
-                  }),
-                );
-                setClearKey(null);
-              }}
-            >
-              تأیید پاک‌کردن
-            </Button>
-          </div>
-        </div>
-      ) : null}
+    <>
       <section
-        className={peopleStyles.buyer}
+        className={`${peopleStyles.buyer} mb-5`}
         aria-label="مشخصات مشتری طرف حساب"
       >
         <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
@@ -604,7 +517,8 @@ export function SalesPeopleSheet({
               change(
                 normalizeSalesPeopleDraft({
                   ...draft,
-                  mode: 'first-passenger',
+                  mode: state.legacyContract ? 'person' : 'first-passenger',
+                  separateCustomer: state.legacyContract || false,
                   buyerContact: {
                     name: peopleRow(draft, 'p0').person?.displayName ?? '',
                     phone: '',
@@ -668,7 +582,7 @@ export function SalesPeopleSheet({
           )
         ) : null}
 
-        {draft.mode !== 'organization' ? (
+        {!state.legacyContract && draft.mode !== 'organization' ? (
           <label className={peopleStyles.samePerson}>
             <input
               type="checkbox"
@@ -700,7 +614,11 @@ export function SalesPeopleSheet({
           </label>
         ) : null}
         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
-          <FormField label="نام مشتری" id="sales-buyer-name">
+          <FormField
+            label="نام مشتری"
+            id="sales-buyer-name"
+            required={draft.mode === 'person' && !buyerRow.person}
+          >
             <div className="relative">
               <Input
                 id="sales-buyer-name"
@@ -715,14 +633,17 @@ export function SalesPeopleSheet({
                   aria-label="جست‌وجوی نام مشتری"
                   className="absolute left-2 top-2 text-primary"
                   disabled={busy}
-                  onClick={() => setLookup(buyerKey)}
+                  onClick={() => {
+                    setLookupInRow(false);
+                    setLookup(buyerKey);
+                  }}
                 >
                   <Search className="size-5" />
                 </button>
               ) : null}
             </div>
           </FormField>
-          {lookup ? (
+          {lookup && !lookupInRow ? (
             <SalesPersonSearch
               {...(lookup === buyerKey ? { query: buyerContact.name } : {})}
               purpose={
@@ -762,34 +683,39 @@ export function SalesPeopleSheet({
               onChange={(event) => changeBuyer('address', event.target.value)}
             />
           </FormField>
-          <FormField label="نحوه آشنایی با ما" required>
-            <SalesThemedSelect
-              label="نحوه آشنایی برای کل قرارداد"
-              value={
-                draft.acquaintanceMethodId ??
-                peopleRow(draft, 'p0').values.acquaintanceMethodId ??
-                ''
-              }
-              disabled={
-                busy ||
-                methodsLoading ||
-                Boolean(methodsError) ||
-                !acquaintanceMethods.length
-              }
-              options={[
-                { value: '', label: 'انتخاب نحوه آشنایی' },
-                ...acquaintanceMethods.map((item) => ({
-                  value: item.id,
-                  label: item.name,
-                })),
-              ]}
-              onValueChange={(acquaintanceMethodId) =>
-                change(
-                  setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
-                )
-              }
-            />
-          </FormField>
+          {showAcquaintance ? (
+            <FormField label="نحوه آشنایی با ما" required>
+              <SalesThemedSelect
+                label="نحوه آشنایی برای کل قرارداد"
+                value={
+                  draft.acquaintanceMethodId ??
+                  peopleRow(draft, 'p0').values.acquaintanceMethodId ??
+                  ''
+                }
+                disabled={
+                  busy ||
+                  methodsLoading ||
+                  Boolean(methodsError) ||
+                  !acquaintanceMethods.length
+                }
+                options={[
+                  { value: '', label: 'انتخاب نحوه آشنایی' },
+                  ...acquaintanceMethods.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  })),
+                ]}
+                onValueChange={(acquaintanceMethodId) =>
+                  change(
+                    setSalesPeopleAcquaintanceMethod(
+                      draft,
+                      acquaintanceMethodId,
+                    ),
+                  )
+                }
+              />
+            </FormField>
+          ) : null}
           <FormField label="تلفن ثابت مشتری" id="sales-buyer-landline">
             <Input
               id="sales-buyer-landline"
@@ -816,142 +742,254 @@ export function SalesPeopleSheet({
           </FormField>
         </div>
       </section>
+      {beforePassengers}
+      <section
+        className={peopleStyles.workspace}
+        aria-label="ورود یکجای مشتری و مسافران"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-black">
+              {state.legacyContract
+                ? 'مشتری قرارداد قدیمی'
+                : 'مشتری و مسافران همراه'}
+            </h2>
+          </div>
+        </div>
+        {!state.legacyContract && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold">
+              {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
+              {counts.adults.toLocaleString('fa-IR')} بزرگسال،{' '}
+              {counts.children.toLocaleString('fa-IR')} کودک،{' '}
+              {counts.infants.toLocaleString('fa-IR')} نوزاد
+            </p>
+            {usesRoomDrivenGuests(state) && onGuestStateChange ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => {
+                  const taken = new Set(
+                    (state.flightOnlyPassengers ?? []).map((p) => p.key),
+                  );
+                  let n = 0;
+                  while (taken.has('flight-only-' + n)) n++;
+                  onDraftChange(draft);
+                  setConfirmed(false);
+                  onGuestStateChange({
+                    flightOnlyPassengers: [
+                      ...(state.flightOnlyPassengers ?? []),
+                      { key: 'flight-only-' + n, age: 18 },
+                    ],
+                  });
+                }}
+              >
+                افزودن مسافر (فقط پرواز)
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy || counts.adults === 0}
+                onClick={() => {
+                  onDraftChange(draft);
+                  setConfirmed(false);
+                  onAddInfant();
+                }}
+              >
+                <Plus className="size-4" />
+                افزودن نوزاد
+              </Button>
+            )}
+          </div>
+        )}
 
-      <div className={peopleStyles.extras}>
-        {(
-          Object.entries(salesAdditionalServices) as [
-            keyof typeof salesAdditionalServices,
-            string,
-          ][]
-        ).map(([role, label]) => (
-          <label
-            key={role}
-            className="flex cursor-pointer items-center gap-2 text-sm font-semibold"
+        {error ? (
+          <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
+        ) : null}
+        {showAcquaintance && methodsLoading ? (
+          <p role="status" className="text-xs text-muted-foreground">
+            در حال دریافت نحوه‌های آشنایی…
+          </p>
+        ) : showAcquaintance &&
+          (methodsError || !acquaintanceMethods.length) ? (
+          <div className="flex items-center gap-2 text-sm">
+            <p role={methodsError ? 'alert' : 'status'}>
+              {methodsError ||
+                'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setMethodsLoading(true);
+                setMethodsError('');
+                setMethodsRetry((n) => n + 1);
+              }}
+            >
+              دریافت دوباره نحوه آشنایی
+            </Button>
+          </div>
+        ) : null}
+        {clearKey ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"
           >
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={state.additionalServices?.includes(role) ?? false}
-              disabled={busy || Boolean(state.tour)}
-              onChange={() =>
-                onGuestStateChange?.({
-                  additionalServices: state.additionalServices?.includes(role)
-                    ? state.additionalServices.filter((item) => item !== role)
-                    : [...(state.additionalServices ?? []), role],
-                })
-              }
-            />
-            {label}
-          </label>
-        ))}
-        <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={state.serviceKinds.includes('VISA')}
-            disabled={busy || Boolean(state.tour)}
-            onChange={onToggleVisa}
-          />
-          ویزا
-        </label>
-      </div>
+            <span>اطلاعات این ردیف پاک شود؟ پرونده ثبت‌شده حذف نمی‌شود.</span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setClearKey(null)}
+              >
+                انصراف
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  change(
+                    editPeopleRow(draft, clearKey, {
+                      values: emptyPeopleValues(),
+                    }),
+                  );
+                  setClearKey(null);
+                }}
+              >
+                تأیید پاک‌کردن
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
-      <CustomerEntrySheet
-        topScrollbar
-        extraColumns={[
-          ...(state.serviceKinds.includes('FLIGHT')
-            ? (['OUTBOUND', 'RETURN'] as const)
-                .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
-                .map((direction) => ({
-                  key: direction,
-                  title: direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
-                  render: (row: CustomerEntryRow) => {
-                    const key = row.key.replace('sales-entry-', '');
-                    const person = peopleRow(draft, key).person;
-                    const id = person?.id ?? key;
-                    const selected = salesPassengerFlightDirections(state, id);
-                    return (
-                      <input
-                        type="checkbox"
-                        aria-label={
-                          (direction === 'OUTBOUND'
-                            ? 'بلیط رفت '
-                            : 'بلیط برگشت ') + row.label
-                        }
-                        disabled={busy}
-                        checked={selected.includes(direction)}
-                        onChange={() =>
-                          onFlightDirectionsChange?.({
-                            ...state.passengerFlightDirections,
-                            [id]: selected.includes(direction)
-                              ? selected.filter((d) => d !== direction)
-                              : [...selected, direction],
-                          })
-                        }
-                      />
-                    );
-                  },
-                }))
-            : []),
-          ...(usesRoomDrivenGuests(state) && onGuestStateChange
-            ? guestStayColumns(
+        {!state.legacyContract && (
+          <CustomerEntrySheet
+            optionalFields={[
+              'nationalId',
+              'birthDate',
+              'passportNumber',
+              'passportExpiryDate',
+              ...(!passportIdentity ? (['gender'] as const) : []),
+            ]}
+            topScrollbar
+            extraColumns={[
+              ...(state.serviceKinds.includes('FLIGHT')
+                ? (['OUTBOUND', 'RETURN'] as const)
+                    .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
+                    .map((direction) => ({
+                      key: direction,
+                      title:
+                        direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
+                      render: (row: CustomerEntryRow) => {
+                        const key = row.key.replace('sales-entry-', '');
+                        const person = peopleRow(draft, key).person;
+                        const id = person?.id ?? key;
+                        const selected = salesPassengerFlightDirections(
+                          state,
+                          id,
+                        );
+                        return (
+                          <input
+                            type="checkbox"
+                            aria-label={
+                              (direction === 'OUTBOUND'
+                                ? 'بلیط رفت '
+                                : 'بلیط برگشت ') + row.label
+                            }
+                            disabled={busy}
+                            checked={selected.includes(direction)}
+                            onChange={() =>
+                              onFlightDirectionsChange?.({
+                                ...state.passengerFlightDirections,
+                                [id]: selected.includes(direction)
+                                  ? selected.filter((d) => d !== direction)
+                                  : [...selected, direction],
+                              })
+                            }
+                          />
+                        );
+                      },
+                    }))
+                : []),
+              ...(usesRoomDrivenGuests(state) && onGuestStateChange
+                ? guestStayColumns(
+                    state,
+                    onGuestStateChange,
+                    (key) => peopleRow(draft, key).person?.id ?? key,
+                    busy,
+                  )
+                : []),
+              ...transferDirectionColumns(
                 state,
-                onGuestStateChange,
+                (patch) => onGuestStateChange?.(patch),
                 (key) => peopleRow(draft, key).person?.id ?? key,
                 busy,
-              )
-            : []),
-          ...transferDirectionColumns(
-            state,
-            (patch) => onGuestStateChange?.(patch),
-            (key) => peopleRow(draft, key).person?.id ?? key,
-            busy,
-          ),
-        ]}
-        rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
-        showPassportExpiry={passportIdentity}
-        visibleFields={visibleEntryFields}
-        columnOrder={
-          passportIdentity ? ['passportFirstName', 'passportLastName'] : []
-        }
-        columnLabels={
-          passportIdentity
-            ? {
-                passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
-                passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
-                birthDate: 'تاریخ تولد *',
-                passportNumber: 'شماره پاسپورت *',
-                passportExpiryDate: 'انقضای پاسپورت *',
-              }
-            : { birthDate: 'تاریخ تولد *' }
-        }
-        salesDatePolicy
-        calendarSwitchInBirthDateHeader
-        calendarMode={calendar}
-        onCalendarModeChange={setCalendar}
-        disabled={busy}
-      />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          disabled={busy}
-          loading={busy}
-          onClick={() => void save()}
-        >
-          <Check className="size-4" />
-          {Object.values(draft.rows).some((row) => row.reviewRequired)
-            ? 'بررسی و ادامه ثبت افراد'
-            : 'ثبت و تأیید افراد'}
-        </Button>
-      </div>
-      {confirmed ? (
-        <p
-          role="status"
-          className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700"
-        >
-          همه مسافران تأیید شدند؛ می‌توانید به مرحله بعد بروید.
-        </p>
-      ) : null}
-    </section>
+              ),
+            ]}
+            rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
+            showPassportExpiry={passportIdentity}
+            visibleFields={visibleEntryFields}
+            columnOrder={
+              passportIdentity
+                ? [
+                    'passportFirstName',
+                    'passportLastName',
+                    'gender',
+                    'birthDate',
+                    'passportNumber',
+                    'passportExpiryDate',
+                    'nationalId',
+                  ]
+                : ['firstName', 'lastName', 'gender', 'birthDate', 'nationalId']
+            }
+            columnLabels={
+              passportIdentity
+                ? {
+                    nationalId: 'کد ملی',
+                    passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
+                    passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
+                    birthDate: 'تاریخ تولد',
+                    passportNumber: 'شماره پاسپورت',
+                    passportExpiryDate: 'انقضای پاسپورت',
+                  }
+                : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد' }
+            }
+            salesDatePolicy
+            calendarSwitchInBirthDateHeader
+            calendarMode={calendar}
+            onCalendarModeChange={setCalendar}
+            disabled={busy}
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button
+            type="button"
+            disabled={busy}
+            loading={busy}
+            onClick={() => void save()}
+          >
+            <Check className="size-4" />
+            {Object.values(draft.rows).some((row) => row.reviewRequired)
+              ? 'بررسی و ادامه ثبت افراد'
+              : 'ثبت و تأیید افراد'}
+          </Button>
+        </div>
+        {confirmed ? (
+          <p
+            role="status"
+            className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700"
+          >
+            همه مسافران تأیید شدند؛ می‌توانید به مرحله بعد بروید.
+          </p>
+        ) : null}
+      </section>
+    </>
   );
 }

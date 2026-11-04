@@ -2,6 +2,105 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints the booked child band in services and prices even without a birth date', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p) =>
+        p.ageCategory === 'CHD'
+          ? { ...p, birthDate: '', childAgeBand: 'AGE_2_6' }
+          : p,
+    );
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, printReferences);
+    expect(html.match(/کودک \(<bdi dir="ltr">2-6<\/bdi>\)/g)).toHaveLength(2);
+    expect(output).toEqual(before);
+  });
+  it('retains the explicitly corrected child band when DOB implies a different band', () => {
+    const output = structuredClone(printFixture);
+    output.contract.departureDate = '2026-09-19';
+    output.contract.hotelSelection = {
+      ...output.contract.hotelSelection!,
+      checkInDate: '2026-09-21',
+    };
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p) =>
+        p.ageCategory === 'CHD'
+          ? { ...p, birthDate: '2020-09-20', childAgeBand: 'AGE_2_6' }
+          : p,
+    );
+    expect(contractPrintHtml(output, printReferences)).toContain(
+      'کودک (<bdi dir="ltr">2-6</bdi>)',
+    );
+  });
+  it('isolates outward and return routes so arrows point from origin to destination in RTL output', () => {
+    const output = structuredClone(printFixture);
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: {
+        ...printReferences.names,
+        tehran: 'TEHRAN (IKA)',
+        antalya: 'Isparta (ISE)',
+      },
+    });
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>TEHRAN (IKA)</bdi> → <bdi>Isparta (ISE)</bdi></bdi>',
+    );
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>Isparta (ISE)</bdi> → <bdi>TEHRAN (IKA)</bdi></bdi>',
+    );
+    expect(html).not.toContain(' ← ');
+    expect(output).toEqual(before);
+  });
+  it('prints saved agreed prices by currency without obsolete flight columns or stale split amounts', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail[0]!.agreedPrices = [
+      { amount: '345678', currencyCode: 'IRR' },
+      { amount: '91.25', currencyCode: 'EUR' },
+    ];
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).toContain('<th>قیمت ریالی</th><th>قیمت ارزی</th>');
+    expect(html).toContain('345,678');
+    expect(html).toContain('91.25');
+    expect(html).not.toContain('<th>مبلغ پرواز</th>');
+  });
+  it('prints each subsequent actual hotel with its own dates and escapes snapshot text', () => {
+    const output = structuredClone(printFixture);
+    output.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'hotel-two',
+        cityId: 'city-two',
+        hotelNameSnapshot: 'SECOND <HOTEL>',
+        checkInDate: '2026-10-04',
+        checkOutDate: '2026-10-08',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'room-two',
+            roomTypeNameSnapshot: 'Suite <SEA>',
+            adults: 2,
+            childAges: [4, 0],
+            roomCategory: 'DOUBLE_EXTRA',
+          },
+        ],
+      },
+    ];
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: { ...printReferences.names, 'city-two': 'City Two' },
+    });
+    expect(html).toContain('SECOND &lt;HOTEL&gt;');
+    expect(html).toContain('City Two');
+    expect(html).toContain('اقامت دوم');
+    expect(html).toContain('Suite &lt;SEA&gt;');
+    const second = html.split('data-stay="2"')[1]!.split('</section>')[0]!;
+    expect(second.match(/<table/g)).toHaveLength(2);
+    expect(second.match(/<th>شهر<\/th>/g)).toHaveLength(2);
+    expect(second).toContain('City Two');
+    expect(html).toContain('Double + 1 Extra Bed');
+    expect(output).toEqual(before);
+  });
   it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {
     const output = structuredClone(printFixture);
     output.contract.paymentTerms = {
@@ -143,6 +242,13 @@ describe('Saved contract print output', () => {
     output.company.code = 'JAHAN_BASTAN';
     const html = contractPrintHtml(output, printReferences);
     expect(html).not.toContain('021-72075000');
+    expect(html).toContain('<bdi>02172075000</bdi>');
+    const header = html.split('<header>')[1]!.split('</header>')[0]!;
+    expect(header).toContain('jahan-brand');
+    expect(header).not.toContain('جهان باستان');
+    expect(header).not.toContain('JAHAN BASTAN');
+    expect(header).not.toContain(output.company.latinName ?? 'JAHANBASTAN');
+    expect(html).toContain('max-height:19mm');
     expect(html).not.toContain('support@niyayeshseir.com');
   });
   it.each([6, 42, 100, 250])(
@@ -205,6 +311,32 @@ describe('Saved contract print output', () => {
     expect(terms).toBeLessThan(html.indexOf('<footer>'));
     expect(html).toContain('.customer-terms{font-size:8.5pt;line-height:1.35');
   });
+  it('prints a saved plain-text notice once at the bottom before signatures and escapes HTML', () => {
+    const output = structuredClone(printFixture);
+    output.contract.servicesDetail[0]!.metadata = {
+      ...output.contract.servicesDetail[0]!.metadata,
+      contractNotice: '  توافق فروش\n<script>alert(1)</script> & مهم  ',
+    };
+    const html = contractPrintHtml(output, printReferences);
+    const notice = html.indexOf('<section class="contract-notice">');
+    expect(notice).toBeGreaterThan(html.indexOf('HOTEL INFORMATION'));
+    expect(notice).toBeLessThan(html.indexOf('<tfoot>'));
+    expect(html.match(/<section class="contract-notice">/g)).toHaveLength(1);
+    expect(html).toContain(
+      'توافق فروش\n&lt;script&gt;alert(1)&lt;/script&gt; &amp; مهم',
+    );
+    expect(html).not.toContain('<script>alert(1)</script>');
+  });
+  it.each([null, '', '   ', false])(
+    'omits empty or invalid saved notice %s',
+    (notice) => {
+      const output = structuredClone(printFixture);
+      output.contract.servicesDetail[0]!.metadata = { contractNotice: notice };
+      expect(contractPrintHtml(output, printReferences)).not.toContain(
+        '<section class="contract-notice">',
+      );
+    },
+  );
   it('separates passenger IRR and foreign amounts, sums each currency and prints hotel references', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail = output.contract.passengersDetail.map(
@@ -226,7 +358,8 @@ describe('Saved contract print output', () => {
     });
     expect(html).toContain('9,007,199,254,740,995.37');
     expect(html).toContain('>50.25</bdi>');
-    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
+    expect(html).toContain('9,007,199,254,740,993.12');
+    expect(html).toContain('<th>قیمت ریالی</th><th>قیمت ارزی</th>');
     expect(html).not.toContain('کودک بدون تخت');
     expect(html).not.toContain('DBL');
     expect(html).toContain('SAMPLE HOTEL');
@@ -247,7 +380,9 @@ describe('Saved contract print output', () => {
       hotelLatinName: '<script>',
       hotelWebsite: '<img>',
     });
-    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
+    expect(html).toContain(
+      '<td class="contract-total">—</td><td><div><bdi class="money">100 ',
+    );
     expect(html).toContain('&lt;script&gt;');
     expect(html).not.toContain('<img>');
   });
@@ -265,7 +400,7 @@ describe('Saved contract print output', () => {
     expect(html).toContain('123,456,789.25');
     expect(
       html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0],
-    ).not.toContain('23,456,789.25');
+    ).toContain('23,456,789.25');
     expect(html).toContain('font-family:Arial,sans-serif!important');
     expect(html).not.toContain('قیمت تفکیکی مسافر ثبت نشده');
   });
@@ -316,7 +451,10 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('localhost');
     expect(html).toContain('نام و امضای مسافر / نماینده');
     expect(html).toContain('نام و امضای مسئول فروش');
-    expect(html).toContain('مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.');
+    expect(html).not.toContain(
+      'مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.',
+    );
+    expect(html).toContain('<th>قیمت ریالی</th>');
     expect((html.match(/<section/g) || []).length).toBe(6);
   });
   it('formats large decimals without floating point loss', () => {
@@ -345,7 +483,12 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   output.company.latinName = 'JAHAN BASTAN';
   const html = contractPrintHtml(output, printReferences);
   expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
-  expect(html).toContain('jahan-brand');
+  expect(html).toContain('header .jahan-brand{background:transparent');
+  expect(html).toContain(
+    'header .jahan-brand img{max-height:19mm;max-width:52mm;margin-bottom:0;filter:brightness(0) invert(1)}',
+  );
+  expect(html).toContain('<strong>جهان باستان</strong>');
+  expect(html).not.toContain('header .jahan-brand{background:white');
   expect(html).not.toContain('نیایش');
   expect(html).not.toContain('Nystkt.ir');
   expect(html).not.toContain('niyayeshseir.com');
@@ -379,4 +522,333 @@ it('prints aggregate passenger prices as IRR and foreign totals without inventin
   expect(html).not.toContain(
     'مبالغ ریالی و ارزی، قیمت کل خدمات هر مسافر هستند.',
   );
+});
+
+it('uses compact soft Latin names and room types, isolated rial glyphs and left-aligned stay dates', () => {
+  const out = structuredClone(printFixture);
+  out.contract.passengersDetail[0]!.displayNameSnapshot = 'SAMPLE <PASSENGER>';
+  out.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'double',
+      roomTypeNameSnapshot: 'DELUXE <ROOM>',
+      adults: 1,
+      childAges: [],
+      agreedPrice: { amount: '1000', currencyCode: 'IRR' },
+    },
+  ];
+  const before = structuredClone(out);
+  const html = contractPrintHtml(out, {
+    ...printReferences,
+    international: true,
+  });
+  expect(html).toContain(
+    'class="passenger-name"><bdi>SAMPLE &lt;PASSENGER&gt;</bdi>',
+  );
+  expect(html).toContain('class="room-type"><bdi>DELUXE &lt;ROOM&gt;');
+  expect(html).toContain(
+    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:8.5pt;font-weight:400',
+  );
+  expect(html).toContain('<span class="currency-symbol" dir="ltr">IRR</span>');
+  expect(html).toContain('font-family:Tahoma,"Segoe UI",sans-serif!important');
+  expect(html).toContain(
+    'class="stay-date-cell"><bdi class="stay-date" dir="ltr">',
+  );
+  expect(html).toContain('.stay-date-cell{text-align:left;direction:ltr}');
+  expect(out).toEqual(before);
+});
+
+it('prints actual airport endpoints only in the flight section and preserves the contract destination', () => {
+  const before = structuredClone(printFixture);
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    flightFacts: {
+      offer1: {
+        originAirport: {
+          code: 'IKA',
+          name: 'Imam Khomeini',
+          cityName: 'Tehran',
+        },
+        destinationAirport: {
+          code: 'GZP',
+          name: 'Gazipasa Airport',
+          cityName: 'Gazipasa',
+        },
+      },
+    },
+  });
+  const section =
+    html.split('FLIGHT INFORMATION')[1]?.split('HOTEL INFORMATION')[0] || '';
+  expect(section).toContain('Gazipasa (GZP)');
+  expect(section).toContain('Tehran (IKA)');
+  expect(html).toContain('مقصد:');
+  expect(printFixture).toEqual(before);
+  expect(printFixture.contract.destinationId).toBe('antalya');
+});
+
+it('reserves every printed page for approval/footer and keeps compact two-column details', () => {
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    international: true,
+  });
+  expect(html).toContain('margin:7mm 7mm 12mm');
+  expect(html).toContain('.document-pages>tfoot{display:table-footer-group}');
+  expect(html.match(/class="contract-closing"/g)).toHaveLength(1);
+  expect(html).toContain('grid-template-columns:repeat(2,minmax(0,1fr))');
+  expect(html).toContain('<div>تلفن ثابت: <bdi>—</bdi></div><div>نشانی:');
+  expect(html).toContain('ورود هتل</th>');
+  expect(html).toContain('خروج هتل</th>');
+  expect(html).not.toContain('چک‌این هتل</th>');
+  expect(html).toContain('class="flight-route"');
+  expect(html).toContain('IRR</span>');
+});
+
+it('uses the dedicated public contract capability instead of the pending QR', () => {
+  const url = 'https://example.test/d/' + 'a'.repeat(32);
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    publicDocumentUrl: url,
+  });
+  expect(html).toContain(url);
+  expect(html).toContain('data-public-document-qr');
+  expect(html).not.toContain('pending-server');
+});
+
+it('prints aggregate historical service age counts instead of empty personal passenger tables', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = [];
+  const parties = Object.fromEntries(
+    output.contract.servicesDetail.map((s) => [
+      s.clientKey,
+      { adults: 2, children: 1, infants: 1 },
+    ]),
+  );
+  output.contract.servicesDetail[0]!.metadata = {
+    legacyServicePartiesV2: JSON.stringify(parties),
+  };
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('تعداد: 4 نفر');
+  expect(html).toContain('<th>نوزاد</th>');
+  expect(html).not.toContain('class="passengers passenger-services"');
+  expect(html).not.toContain('class="passengers passenger-prices"');
+});
+
+it('renders the supplied seller safely in the header shared by preview and PDF', () => {
+  const output = {
+    ...structuredClone(printFixture),
+    ownerName: 'Actual <Seller> & Team',
+  };
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain(
+    'مسئول فروش<strong>Actual &lt;Seller&gt; &amp; Team</strong>',
+  );
+  expect(html).not.toContain('Actual <Seller>');
+});
+
+it('omits room amounts and derived shares for adults without optional birth dates', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({ ...p, birthDate: '', ageCategory: 'ADT' }),
+  );
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '100', currencyCode: 'USD' },
+    },
+  ];
+  const before = structuredClone(output);
+  expect(() => contractPrintHtml(output, printReferences)).not.toThrow();
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).not.toContain('مبلغ توافق‌شدهٔ اتاق');
+  expect(html).not.toContain('50 $');
+  expect(html).toContain('Synthetic Double');
+  expect(output).toEqual(before);
+});
+
+it('keeps historical room details printable without obsolete room amounts', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = [];
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '123.4567', currencyCode: 'USD' },
+    },
+  ];
+  const before = structuredClone(output);
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).not.toContain('123.4567');
+  expect(html).toContain('Synthetic Double');
+  expect(output).toEqual(before);
+});
+it('does not allocate a room share to a child whose birth date is absent', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({ ...p, birthDate: '' }),
+  );
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '123.4567', currencyCode: 'USD' },
+    },
+  ];
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).not.toContain('123.4567');
+  expect(html).toContain('Synthetic Double');
+  expect(html).not.toContain('61.7283');
+  expect(html).not.toContain('61.7284');
+});
+
+it('prints a whole-contract-priced historical booking with empty obsolete flight and hotel price maps', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail
+    .slice(0, 1)
+    .map((p) => {
+      delete p.agreedPrices;
+      return { ...p, birthDate: '' };
+    });
+  for (const service of output.contract.servicesDetail)
+    service.metadata = {
+      ...service.metadata,
+      contractPackagePricingVersion: 1,
+    };
+  const flight = output.contract.servicesDetail.find(
+    (s) => s.kind === 'FLIGHT',
+  )!;
+  const hotel = output.contract.servicesDetail.find((s) => s.kind === 'HOTEL')!;
+  flight.metadata = { ...flight.metadata, passengerFlightPricesV1: '{}' };
+  hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+  const before = structuredClone(output);
+  expect(() => contractPrintHtml(output, printReferences)).not.toThrow();
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123,456,789.25');
+  expect(html).toContain('HOTEL INFORMATION');
+  expect(html).toContain('class="passenger-name"');
+  expect(output).toEqual(before);
+});
+
+it('uses complete saved passenger sale prices without validating superseded hotel splits', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({
+      ...p,
+      agreedPrices: [{ amount: '123.45', currencyCode: 'USD' }],
+    }),
+  );
+  const hotel = output.contract.servicesDetail.find((s) => s.kind === 'HOTEL')!;
+  hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+  const before = structuredClone(output);
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123.45');
+  expect(html).toContain('246.9');
+  expect(output).toEqual(before);
+});
+it.each([undefined, 2])(
+  'retains strict legacy service-price parsing for unrecognized package pricing %s',
+  (version) => {
+    const output = structuredClone(printFixture);
+    for (const p of output.contract.passengersDetail) delete p.agreedPrices;
+    for (const service of output.contract.servicesDetail)
+      service.metadata = {
+        ...service.metadata,
+        ...(version === undefined
+          ? {}
+          : { contractPackagePricingVersion: version }),
+      };
+    const hotel = output.contract.servicesDetail.find(
+      (s) => s.kind === 'HOTEL',
+    )!;
+    hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+    expect(() => contractPrintHtml(output, printReferences)).toThrow(
+      'قیمت هتل هر مسافر',
+    );
+  },
+);
+
+function aggregateOnlyPrintFixture() {
+  const output = structuredClone(printFixture);
+  for (const service of output.contract.servicesDetail)
+    service.metadata = {
+      ...service.metadata,
+      contractPackagePricingVersion: 1,
+    };
+  const flight = output.contract.servicesDetail.find(
+    (s) => s.kind === 'FLIGHT',
+  )!;
+  const hotel = output.contract.servicesDetail.find((s) => s.kind === 'HOTEL')!;
+  flight.metadata = { ...flight.metadata, passengerFlightPricesV1: '{}' };
+  hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+  for (const passenger of output.contract.passengersDetail)
+    delete passenger.agreedPrices;
+  return output;
+}
+function printedPassengerPriceRows(html: string) {
+  const body = html.match(
+    /<section class="passengers passenger-prices">[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/,
+  )![1]!;
+  return [...body.matchAll(/<tr>[\s\S]*?<\/tr>/g)].map((match) => match[0]);
+}
+it('assigns whole-contract balances to the first of nine completed passengers and zero to everyone else', () => {
+  const output = aggregateOnlyPrintFixture();
+  const passenger = output.contract.passengersDetail[0]!;
+  output.contract.passengersDetail = Array.from({ length: 9 }, (_, i) => ({
+    ...passenger,
+    id: 'synthetic-row-' + i,
+    customerId: 'synthetic-person-' + i,
+    displayNameSnapshot: 'Synthetic passenger ' + (i + 1),
+    birthDate: '',
+  }));
+  const before = structuredClone(output);
+  const rows = printedPassengerPriceRows(
+    contractPrintHtml(output, printReferences),
+  );
+  expect(rows).toHaveLength(9);
+  for (const balance of output.contract.balances)
+    expect(rows[0]).toContain(contractMoney(balance.amount));
+  expect(rows[0]).not.toContain('103,456,789.25');
+  expect(rows[0]).not.toContain('999,999,999');
+  for (const row of rows.slice(1))
+    expect(row.match(/class="money">0 /g)).toHaveLength(2);
+  expect(output).toEqual(before);
+});
+it.each(['12.3456', '0'])(
+  'retains explicit individual prices %s even with a historical aggregate marker',
+  (amount) => {
+    const output = aggregateOnlyPrintFixture();
+    for (const passenger of output.contract.passengersDetail)
+      passenger.agreedPrices = [{ amount, currencyCode: 'USD' }];
+    const before = structuredClone(output);
+    const rows = printedPassengerPriceRows(
+      contractPrintHtml(output, printReferences),
+    );
+    for (const row of rows) {
+      expect(row).toContain('class="money">' + contractMoney(amount) + ' ');
+      expect(row).not.toContain('123,456,789.25');
+      expect(row).not.toContain('900.50');
+    }
+    expect(output).toEqual(before);
+  },
+);
+it('does not add an aggregate total on top of partial saved individual prices', () => {
+  const output = aggregateOnlyPrintFixture();
+  output.contract.passengersDetail[1]!.agreedPrices = [
+    { amount: '42.1234', currencyCode: 'USD' },
+  ];
+  const rows = printedPassengerPriceRows(
+    contractPrintHtml(output, printReferences),
+  );
+  expect(rows[1]).toContain('42.1234');
+  expect(rows[0]).not.toContain('123,456,789.25');
+  expect(rows[1]).not.toContain('900.50');
 });

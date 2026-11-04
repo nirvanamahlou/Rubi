@@ -37,6 +37,7 @@ const basisLabels: Record<FinanceCustomerDocumentDeliveryBasisV1, string> = {
   AFTER_RECEIPT: 'پس از تأیید این دریافت مشتری',
   FULL_SETTLEMENT: 'فقط پس از تسویه کامل قرارداد',
   MANAGER_EXCEPTION: 'استثنای مدیر',
+  RESERVATION_PERMISSION: 'با مجوز رزرواسیون',
 };
 
 const settlementLabels: Record<
@@ -105,14 +106,22 @@ export function FinanceDeliveryPanel() {
   function openDecision(row: FinanceCustomerDocumentDeliveryCandidateV1) {
     setSelected(row);
     setBasis(
-      row.delivery.basis ??
+      (row.delivery.basis === 'RESERVATION_PERMISSION' &&
+      !row.canApproveReservationDelivery &&
+      !row.delivery.approved
+        ? null
+        : row.delivery.basis) ??
         (row.settlementStatus === 'SETTLED' ||
         row.settlementStatus === 'OVERPAID'
           ? 'FULL_SETTLEMENT'
           : 'AFTER_RECEIPT'),
     );
     setReason(
-      row.delivery.approved ? 'لغو مجوز تحویل مدارک مشتری' : 'درخواست پشتیبانی',
+      row.delivery.approved
+        ? 'لغو مجوز تحویل مدارک مشتری'
+        : row.delivery.basis === 'RESERVATION_PERMISSION'
+          ? ''
+          : 'درخواست پشتیبانی',
     );
     setSecondApproverReference('');
     setExceptionExpiresAt('');
@@ -123,6 +132,10 @@ export function FinanceDeliveryPanel() {
     if (!selected || busy) return;
     if (!isOptionalOperationReason(reason)) {
       setError('دلیل عملیات معتبر نیست.');
+      return;
+    }
+    if (basis === 'RESERVATION_PERMISSION' && reason.trim().length < 5) {
+      setError('دلیل مجوز رزرواسیون باید بین ۵ تا ۵۰۰ نویسه باشد.');
       return;
     }
     setBusy(true);
@@ -195,7 +208,8 @@ export function FinanceDeliveryPanel() {
           </div>
           <div className="rounded-2xl border border-blue-200 bg-white/80 px-4 py-3 text-xs leading-5 text-muted-foreground dark:border-blue-900 dark:bg-background/50">
             مسیرهای مجاز: تأیید دریافت مشتری، تسویه کامل قرارداد، یا استثنای
-            مدیر با دلیل، تأییدکنندهٔ دوم و تاریخ انقضا.
+            مدیر با دلیل، تأییدکنندهٔ دوم و تاریخ انقضا، یا مجوز رزرواسیون با
+            دلیل.
           </div>
         </div>
       </header>
@@ -279,6 +293,16 @@ export function FinanceDeliveryPanel() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {row.customerNameSnapshot}
                 </p>
+                {row.delivery.basis ? (
+                  <p className="mt-2 text-sm font-semibold">
+                    مبنای صدور: {basisLabels[row.delivery.basis]}
+                  </p>
+                ) : null}
+                {row.delivery.reason ? (
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+                    دلیل: {row.delivery.reason}
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge
@@ -341,19 +365,26 @@ export function FinanceDeliveryPanel() {
                 <span>مبنای صدور مجوز</span>
                 <Select
                   value={basis}
-                  onValueChange={(value) =>
-                    setBasis(value as FinanceCustomerDocumentDeliveryBasisV1)
-                  }
+                  onValueChange={(value) => {
+                    setBasis(value as FinanceCustomerDocumentDeliveryBasisV1);
+                    if (value === 'RESERVATION_PERMISSION') setReason('');
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(basisLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {Object.entries(basisLabels)
+                      .filter(
+                        ([value]) =>
+                          value !== 'RESERVATION_PERMISSION' ||
+                          selected?.canApproveReservationDelivery,
+                      )
+                      .map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </label>
@@ -390,6 +421,8 @@ export function FinanceDeliveryPanel() {
             <label className="grid gap-2">
               <span>دلیل ثبت‌شونده در Audit</span>
               <Input
+                required={basis === 'RESERVATION_PERMISSION'}
+                minLength={basis === 'RESERVATION_PERMISSION' ? 5 : undefined}
                 maxLength={500}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}

@@ -14,7 +14,7 @@
   margin-bottom: 20px;
 }
 .modeBar .branchFilter {
-  margin-inline-start: auto;
+  margin-inline-start: 0;
 }
 .modeBar button[aria-pressed='true'] {
   color: white;
@@ -740,8 +740,8 @@
 .root .destinationSetup {
   max-width: none;
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(240px, 1fr);
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 12px;
   padding: 12px;
   margin-bottom: 10px;

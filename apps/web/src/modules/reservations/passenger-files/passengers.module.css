@@ -1,5 +1,7 @@
 .tableWrap {
   overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -37,4 +39,15 @@
 
 .table input {
   min-width: 130px;
+}
+
+/* Reserve room for every stacked age selector and its neighboring gender field. */
+.ageColumn {
+  min-width: 190px;
+  width: 190px;
+}
+
+.genderColumn {
+  min-width: 160px;
+  width: 160px;
 }

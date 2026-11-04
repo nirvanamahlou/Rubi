@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { loadContractPrint } from '@/modules/sales/components/contract-output';
 import styles from './contract-pdf-preview.module.css';
+import { ContractNoticeEditor } from './contract-notice-editor';
 
 export const contractPdfPath = (contractId: string) =>
   `/sales/contracts/${encodeURIComponent(contractId)}/pdf`;
@@ -28,12 +29,19 @@ export function ContractPdfPreview({
       </p>
     );
   return (
-    <ContractPrintLoader
-      key={`${contractId}:${attempt}`}
-      contractId={contractId}
-      contractNumber={contractNumber}
-      onRetry={() => setAttempt((value) => value + 1)}
-    />
+    <div className="grid w-full gap-4">
+      <ContractPrintLoader
+        key={`${contractId}:${attempt}`}
+        contractId={contractId}
+        contractNumber={contractNumber}
+        onRetry={() => setAttempt((value) => value + 1)}
+      />
+      <ContractNoticeEditor
+        key={contractId}
+        contractId={contractId}
+        onSaved={() => setAttempt((v) => v + 1)}
+      />
+    </div>
   );
 }
 

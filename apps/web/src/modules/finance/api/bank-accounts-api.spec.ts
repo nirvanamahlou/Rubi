@@ -3,6 +3,13 @@ import { apiRequest } from './finance-inbox-api';
 import { bankAccountsApi } from './bank-accounts-api';
 vi.mock('./finance-inbox-api', () => ({ apiRequest: vi.fn() }));
 describe('Finance company account client', () => {
+  it('deletes with the captured account version and bank scope', async () => {
+    await bankAccountsApi.remove('bank-id', 'account-id', 3);
+    expect(apiRequest).toHaveBeenCalledWith(
+      '/finance/banks/bank-id/accounts/account-id',
+      { method: 'DELETE', body: JSON.stringify({ expectedVersion: 3 }) },
+    );
+  });
   beforeEach(() => vi.mocked(apiRequest).mockReset().mockResolvedValue({}));
   it('lists bank-scoped pages and owner-provided options', async () => {
     await bankAccountsApi.list('bank-id', 2);

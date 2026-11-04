@@ -2,7 +2,7 @@ import type { MasterDataResource } from './index';
 
 /** Authoritative generic create/update payload keys; status workflows stay separate. */
 export const MASTER_DATA_EDITABLE_FIELDS = {
-  countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
+  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId', 'displayOrder'],
   cities: [
     'code',

@@ -5,6 +5,15 @@ import {
 } from './accounting-parity-definitions';
 
 describe('accounting parity evidence controls', () => {
+  it('does not rename the closing page to a source precondition error', () => {
+    const definition = accountingParityByRoute.get(
+      'general-ledger/year-end/closing',
+    );
+    expect(definition?.title).toBe('صدور سند بستن حساب ها');
+    expect(definition?.blockers).toContain(
+      'در دوره مالی جاری سند قطعی وجود ندارد',
+    );
+  });
   it('preserves every observed source radio control as a radio', () => {
     const expected = new Set([
       'rdbAccountGroup',
@@ -52,12 +61,12 @@ describe('accounting parity evidence controls', () => {
     ).toBe(true);
   });
   it('publishes the exact support totals used by the executable matrix', () => {
-    expect(accountingParityDefinitions).toHaveLength(91);
+    expect(accountingParityDefinitions).toHaveLength(93);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
       ),
-    ).toHaveLength(52);
+    ).toHaveLength(54);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',
