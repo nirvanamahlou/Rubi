@@ -245,7 +245,9 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
     const settle = hrFeedGuard.current.beginWrite();
     hrWrites.current = hrWrites.current
       .then(operation)
-      .then(() => undefined)
+      .then(() => {
+        window.dispatchEvent(new Event('nora:hr-server-change'));
+      })
       .catch((error: unknown) =>
         setHrError(
           error instanceof Error
