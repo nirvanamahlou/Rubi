@@ -12,6 +12,26 @@ afterEach(() => {
 });
 
 describe('Customers-owned creation from another form', () => {
+  it.each([undefined, 'ledger-branch'])(
+    'uses the supplied branch when creating from a ledger (%s)',
+    async (branchId) => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ data: { id: 'owner' } }),
+        });
+      vi.stubGlobal('fetch', fetchMock);
+      await customersApi.create(
+        { kind: 'person', displayName: 'Test owner', roles: ['customer'] },
+        branchId,
+      );
+      expect(
+        new Headers(fetchMock.mock.calls[0]![1].headers).get('x-branch-id'),
+      ).toBe(branchId ?? null);
+    },
+  );
   it.each([403, 409])(
     'preserves a create failure with status %s',
     async (status) => {
