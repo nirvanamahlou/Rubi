@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import {
+  attendanceClockTimes,
   attendanceScheduleMetrics,
   workingHoursEnd,
   resolveDeviceDirections,
@@ -4627,8 +4628,7 @@ export class HrService {
               : {}),
             reason: result.exceptions.join('، '),
             minutes: result.worked,
-            firstIn: metrics?.firstIn ?? null,
-            lastOut: metrics?.lastOut ?? null,
+            ...attendanceClockTimes(events),
             deficitMinutes: result.exceptions.length
               ? null
               : metrics?.deficitMinutes == null

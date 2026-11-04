@@ -26,6 +26,8 @@ import {
 } from './hr.validation';
 
 type DeviceSource = {
+  source?: string;
+  personnelCodes?: string[] | undefined;
   branchId: string;
   base: string;
   username: string;
@@ -152,7 +154,6 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       if (
         !secondaryBranch ||
         !secondaryBase ||
-        secondaryBranch === sources[0]!.branchId ||
         !Number.isInteger(offset) ||
         Math.abs(offset) > 1
       )
@@ -160,6 +161,12 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           'Invalid secondary attendance configuration',
         );
       sources.push({
+        source: `radan:secondary:${secondaryBranch}`,
+        personnelCodes: process.env.HR_RADAN_SECONDARY_PERSONNEL_CODES?.split(
+          ',',
+        )
+          .map((code) => digits(code).trim())
+          .filter(Boolean),
         branchId: secondaryBranch,
         base: secondaryBase,
         username: process.env.HR_RADAN_SECONDARY_USERNAME || username,
@@ -224,11 +231,19 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
     const from = new Date(isoDate(today).getTime() - 31 * 86400000)
       .toISOString()
       .slice(0, 10);
-    const source = `radan:${branchId}`;
+    const source = config.source ?? `radan:${branchId}`;
+    let skipped = 0;
     let invalid = 0;
     const punches = clockings.flatMap((p) => {
       const user = byId.get(String(p.user_id));
       const personnelCode = String(user?.profile?.personnel_id ?? '').trim();
+      if (
+        config.personnelCodes &&
+        !config.personnelCodes.includes(digits(personnelCode))
+      ) {
+        skipped++;
+        return [];
+      }
       const match = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?$/.exec(
         p.datetime ?? '',
       );
@@ -326,6 +341,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       unmatched,
       closed,
       invalid,
+      skipped,
       days: dates.size,
       sourceUsers: users.length,
       sourceClockings: clockings.length,
