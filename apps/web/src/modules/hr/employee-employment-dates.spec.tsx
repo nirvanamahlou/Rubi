@@ -89,7 +89,7 @@ it('does not revive an old expiry for an open-ended latest contract or cancelled
   expect(data.rows[0]!.slice(-3, -1)).toEqual(['—', '—']);
 });
 
-it('keeps ended employees visible in the employee list', () => {
+it('retains former employees in the dataset while the list defaults to current employees', () => {
   const store = {
     revision: 0,
     data: {
@@ -101,5 +101,6 @@ it('keeps ended employees visible in the employee list', () => {
   } as unknown as HrStore;
   expect(
     renderToStaticMarkup(<HrEmployees store={store} onProfile={() => {}} />),
-  ).toContain('Synthetic employee');
+  ).not.toContain('Synthetic employee');
+  expect(employeeDataset([employee], []).recordIds).toEqual([employee.id]);
 });
