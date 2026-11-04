@@ -3004,6 +3004,11 @@ export class HrService {
               parentId,
               row.id,
             );
+      if (
+        schema.key === 'time.checkins' &&
+        !isDeepStrictEqual(values, row.values)
+      )
+        (data as Record<string, unknown>).registrationType = 'manual';
       if (missionParent !== undefined) {
         const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
         if (referenceIndex >= 0)
@@ -4253,9 +4258,13 @@ export class HrService {
   ) {
     if (
       (row.section === 'time' &&
-        ['shift', 'workingHours', 'leave', 'calculationSettings'].includes(
-          row.tab,
-        )) ||
+        [
+          'shift',
+          'workingHours',
+          'leave',
+          'calculationSettings',
+          'checkins',
+        ].includes(row.tab)) ||
       (row.section === 'requests' && ['leave', 'radanLeave'].includes(row.tab))
     )
       await this.refreshAttendance(row.branchId, actor);
@@ -4382,7 +4391,6 @@ export class HrService {
     const shiftValues = shift ? [...(shift.values as string[])] : undefined;
     if (
       shiftValues &&
-      !shiftValues[9] &&
       ((shift?.data as HrWorkflowData)?.shiftEndDayOffset ?? 0) === 0
     )
       shiftValues[2] = workingHoursEnd(date, shiftValues[1]!, shiftValues[2]!);
@@ -4738,6 +4746,17 @@ export class HrService {
             reason: reviewExceptions.join('، '),
             minutes: result.worked,
             ...attendanceClockTimes(events),
+            registrationType: selected.length
+              ? selected.some(
+                  (r) =>
+                    r.parentId ||
+                    (r.data as Record<string, unknown>)?.registrationType ===
+                      'manual' ||
+                    !(r.data as Record<string, unknown>)?.attendanceSource,
+                )
+                ? 'manual'
+                : 'device'
+              : null,
             deficitMinutes: result.exceptions.length
               ? null
               : metrics?.deficitMinutes == null
