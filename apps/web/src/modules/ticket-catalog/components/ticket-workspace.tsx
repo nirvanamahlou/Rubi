@@ -1081,7 +1081,6 @@ function TicketCatalogWorkspace() {
     <div className="space-y-5" dir="rtl">
       <PageHeader
         title="تعریف و ظرفیت پرواز"
-        eyebrow="هواپیما • قطار • اتوبوس"
         actions={
           <Button
             onClick={() => {

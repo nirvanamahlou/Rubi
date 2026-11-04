@@ -22,6 +22,7 @@ const harness = vi.hoisted(() => ({
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
+  useId: () => 'existing-packs-test',
   useState: (initial: unknown) => {
     const index = harness.stateIndex++;
     if (!(index in harness.states))

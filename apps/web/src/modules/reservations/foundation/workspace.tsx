@@ -455,6 +455,50 @@ export function ReservationOperationsWorkspace({
                       {refreshing ? 'در حال دریافت اطلاعات…' : 'دریافت اطلاعات'}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    disabled={
+                      !available ||
+                      !names.ready ||
+                      exporting ||
+                      !!result.dateError ||
+                      !result.total
+                    }
+                    onClick={async () => {
+                      setExporting(true);
+                      setExportError('');
+                      const exportRows = reservationExportRows(
+                        result.filteredRows,
+                      );
+                      try {
+                        const { createReservationXlsx } =
+                          await import('./reservation-xlsx');
+                        const bytes = createReservationXlsx(exportRows);
+                        const url = URL.createObjectURL(
+                          new Blob([bytes], {
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                          }),
+                        );
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `reservations-${new Date().toISOString().slice(0, 10)}.xlsx`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 30000);
+                      } catch {
+                        setExportError(
+                          'خروجی اکسل آماده نشد؛ دوباره تلاش کنید.',
+                        );
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                  >
+                    {exporting
+                      ? 'آماده‌سازی اکسل…'
+                      : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
+                  </button>
                 </div>
                 <span>
                   {available
@@ -467,51 +511,11 @@ export function ReservationOperationsWorkspace({
                   {refreshError}
                 </p>
               )}
-              <div className={styles.exportBar}>
-                <button
-                  type="button"
-                  disabled={
-                    !available ||
-                    !names.ready ||
-                    exporting ||
-                    !!result.dateError ||
-                    !result.total
-                  }
-                  onClick={async () => {
-                    setExporting(true);
-                    setExportError('');
-                    const exportRows = reservationExportRows(
-                      result.filteredRows,
-                    );
-                    try {
-                      const { createReservationXlsx } =
-                        await import('./reservation-xlsx');
-                      const bytes = createReservationXlsx(exportRows);
-                      const url = URL.createObjectURL(
-                        new Blob([bytes], {
-                          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        }),
-                      );
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = `reservations-${new Date().toISOString().slice(0, 10)}.xlsx`;
-                      document.body.appendChild(link);
-                      link.click();
-                      link.remove();
-                      setTimeout(() => URL.revokeObjectURL(url), 30000);
-                    } catch {
-                      setExportError('خروجی اکسل آماده نشد؛ دوباره تلاش کنید.');
-                    } finally {
-                      setExporting(false);
-                    }
-                  }}
-                >
-                  {exporting
-                    ? 'آماده‌سازی اکسل…'
-                    : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
-                </button>
-                {exportError && <span role="alert">{exportError}</span>}
-              </div>
+              {exportError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {exportError}
+                </p>
+              )}
               <div
                 className={styles.legend}
                 aria-label="راهنمای رنگ و فیلتر وضعیت"
