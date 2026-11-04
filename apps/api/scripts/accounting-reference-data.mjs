@@ -122,9 +122,49 @@ if (mode === '--validate') {
         `Existing book differs: ${key}`,
       );
   }
-  const current = book
-    ? await request(`finance/accounting/books/${seed.book.id}`)
-    : { accounts: [], configurations: [] };
+  if (mode === '--apply' && !book)
+    await request('finance/accounting/books', {
+      ...seed.book,
+      branchId,
+      approvalPolicy: 'DUAL_CONTROL',
+    });
+  const current =
+    book || mode === '--apply'
+      ? await request(`finance/accounting/books/${seed.book.id}`)
+      : { accounts: [], configurations: [] };
+  // Preserve the source snapshot and bind its system references to this book's identities.
+  const defaults = new Map();
+  for (const item of seed.configurations) {
+    if (item.attributes.classificationNumberLength === '0')
+      item.attributes.classificationNumberLength = '6';
+    if (!['شخص', 'شرکت'].includes(item.title)) continue;
+    const existing = current.configurations.find(
+      (row) =>
+        row.kind === 'detail-types' &&
+        row.attributes.isSystem &&
+        row.title === item.title,
+    );
+    if (existing) defaults.set(item.id, existing.id);
+  }
+  const desiredTypes = seed.configurations.filter(
+    (item) => !defaults.has(item.id),
+  );
+  for (const item of desiredTypes) {
+    const parent = item.attributes.parentTypeId;
+    if (defaults.has(parent))
+      item.attributes.parentTypeId = defaults.get(parent);
+  }
+  for (const account of seed.accounts)
+    for (const level of [4, 5, 6]) {
+      const key = `detail${level}TypeIds`;
+      if (account.attributes[key])
+        account.attributes[key] = account.attributes[key].map(
+          (id) => defaults.get(id) ?? id,
+        );
+      const single = `detail${level}TypeId`;
+      if (defaults.has(account.attributes[single]))
+        account.attributes[single] = defaults.get(account.attributes[single]);
+    }
   function planned(existing, desired, label) {
     return desired.filter((item) => {
       const match = existing.find((value) => value.id === item.id);
@@ -149,7 +189,7 @@ if (mode === '--validate') {
   }
   const configurations = planned(
     current.configurations,
-    seed.configurations,
+    desiredTypes,
     'Detail type',
   );
   const accounts = planned(current.accounts, seed.accounts, 'Account').sort(
@@ -164,12 +204,6 @@ if (mode === '--validate') {
     }),
   );
   if (mode === '--apply') {
-    if (!book)
-      await request('finance/accounting/books', {
-        ...seed.book,
-        branchId,
-        approvalPolicy: 'DUAL_CONTROL',
-      });
     for (const [action, items] of [
       ['save-configuration', configurations],
       ['save-account', accounts],
@@ -182,7 +216,7 @@ if (mode === '--validate') {
     }
     const after = await request(`finance/accounting/books/${seed.book.id}`);
     assert.equal(
-      planned(after.configurations, seed.configurations, 'Detail type').length,
+      planned(after.configurations, desiredTypes, 'Detail type').length,
       0,
     );
     assert.equal(planned(after.accounts, seed.accounts, 'Account').length, 0);

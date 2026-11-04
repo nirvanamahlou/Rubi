@@ -23,7 +23,15 @@ import {
   postedReceiptBasis,
 } from './receipt-funds.public';
 import { receiptAllocationLines } from './receipt-allocation-journal';
-import { accountingFinancialEventLabels } from '@nora/contracts';
+import { accountingOwner } from '../../customers/accounting-owner.directory';
+import {
+  detailWidth,
+  detailDigits,
+  detailTypeKey,
+  nextDetailCode,
+  paddedDetailCode,
+  accountingFinancialEventLabels,
+} from '@nora/contracts';
 import {
   FINANCIAL_RULE_KIND,
   financialDate,
@@ -149,6 +157,20 @@ const without = (
 ) =>
   Object.fromEntries(
     Object.entries(input).filter(([key]) => !keys.includes(key)),
+  );
+const detailTypeRules = (attrs: ReturnType<typeof v.attributes>) =>
+  JSON.stringify(
+    canonical(
+      without(
+        {
+          parentTypeId: '',
+          defaultFirstCode: '',
+          enforceParent: false,
+          ...attrs,
+        },
+        ['notes'],
+      ),
+    ),
   );
 const journalWritableAttributes = ['auxiliaryNumber', 'descriptionEn'];
 const lineWritableAttributes = [
@@ -325,6 +347,21 @@ export class AccountingService {
           },
           active: true,
         },
+      });
+      await tx.accountingConfiguration.createMany({
+        data: ['شخص', 'شرکت'].map((title) => ({
+          bookId: id,
+          kind: 'detail-types',
+          code: 'DT-' + randomUUID(),
+          title,
+          attributes: {
+            isSystem: true,
+            classificationNumberLength: '6',
+            defaultFirstCode: '',
+            parentTypeId: '',
+            enforceParent: false,
+          },
+        })),
       });
       return created;
     });
@@ -3275,9 +3312,31 @@ export class AccountingService {
             attributes.isSystem !== true)
         )
           v.rule('عنوان و مشخصات پایه نوع تفصیلی سیستم قابل تغییر نیست.');
-        const length = Number(attributes.classificationNumberLength);
-        if (!Number.isInteger(length) || length < 0 || length > 20)
-          v.invalid('طول شماره طبقه‌بندی باید بین صفر و ۲۰ باشد.');
+        const length = detailWidth(attributes.classificationNumberLength);
+        if (!length)
+          v.invalid('طول شماره طبقه‌بندی باید عددی صحیح بین ۱ و ۲۰ باشد.');
+        attributes.classificationNumberLength = String(length);
+        const first = detailDigits(v.text(attributes.defaultFirstCode, 20));
+        if (first && !paddedDetailCode(first, length))
+          v.invalid('اولین کد پیش‌فرض با طول کد سازگار نیست.');
+        if (attributes.defaultFirstCode !== undefined)
+          attributes.defaultFirstCode = first;
+        const title = v.text(p.title, 160, true);
+        const siblings = await tx.accountingConfiguration.findMany({
+          where: { bookId, kind, id: { not: id } },
+          select: { title: true },
+        });
+        if (
+          siblings.some(
+            (row) => detailTypeKey(row.title) === detailTypeKey(title),
+          )
+        )
+          v.rule('عنوان نوع تفصیلی تکراری است.');
+        if (
+          ['شخص', 'شرکت'].includes(existing?.title ?? '') &&
+          p.active === false
+        )
+          v.rule('نوع تفصیلی پیش‌فرض باید فعال بماند.');
         const parentTypeId = v.uuid(attributes.parentTypeId, true);
         if (attributes.enforceParent === true && !parentTypeId)
           v.rule('نوع تفصیلی پدر لازم است.');
@@ -3296,10 +3355,8 @@ export class AccountingService {
         if (
           existing &&
           (await tx.accountingDetail.count({ where: { typeId: id } })) &&
-          JSON.stringify(canonical(without(attributes, ['notes']))) !==
-            JSON.stringify(
-              canonical(without(v.attributes(existing.attributes), ['notes'])),
-            )
+          detailTypeRules(attributes) !==
+            detailTypeRules(v.attributes(existing.attributes))
         )
           v.rule('قواعد نوع تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
@@ -3651,26 +3708,66 @@ export class AccountingService {
             actorName,
           ),
         );
-      let detailCode = v.text(p.code, 20);
-      if (!detailCode) {
-        const first = v.text(typeAttrs.defaultFirstCode, 20, true);
-        if (!/^\d+$/.test(first)) v.rule('اولین کد پیش‌فرض عددی لازم است.');
-        let candidate = BigInt(first);
-        let attempts = 0;
-        do {
-          detailCode = candidate.toString().padStart(first.length, '0');
-          candidate++;
-          attempts++;
-          if (detailCode.length > 20 || attempts > 10000)
-            v.rule('بازه کد پیش‌فرض تکمیل شده است.');
-        } while (
-          await tx.accountingDetail.findUnique({
-            where: { bookId_code: { bookId, code: detailCode } },
-          })
+      const width = detailWidth(typeAttrs.classificationNumberLength);
+      if (!width) v.rule('طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.');
+      const supplied = detailDigits(v.text(p.code, 20));
+      const preserveCode =
+        existing?.typeId === typeId && existing.code === supplied;
+      const codes = await tx.accountingDetail.findMany({
+        where: { bookId, typeId, id: { not: id } },
+        select: { code: true },
+      });
+      const detailCode = preserveCode
+        ? supplied
+        : supplied
+          ? paddedDetailCode(supplied, width)
+          : nextDetailCode(
+              width,
+              v.text(typeAttrs.defaultFirstCode, 20),
+              codes.map((row) => row.code),
+            );
+      if (!detailCode)
+        v.rule(
+          supplied
+            ? 'کد با طول نوع تفصیلی سازگار نیست.'
+            : 'بازه کد این نوع تفصیلی تکمیل شده است.',
         );
+      if (
+        !preserveCode &&
+        codes.some((row) => paddedDetailCode(row.code, width) === detailCode)
+      )
+        v.rule('کد در این نوع تفصیلی تکراری است.');
+      let title = v.text(p.title, 160, true);
+      let customerId: string | null = null;
+      if (['شخص', 'شرکت'].includes(detailType.title)) {
+        customerId = v.uuid(p.customerId ?? existing?.customerId, true);
+        if (customerId) {
+          const owner = await accountingOwner(
+            tx,
+            customerId,
+            book.branchId,
+            detailType.title === 'شرکت',
+          );
+          if (!owner)
+            v.rule('شخص یا شرکت انتخاب‌شده برای این دفتر معتبر نیست.');
+          title = v.text(owner.displayName, 160, true);
+        } else if (
+          !existing ||
+          existing.typeId !== typeId ||
+          existing.title !== title
+        )
+          v.rule('شخص یا شرکت را از فهرست انتخاب کنید.');
+        if (
+          existing &&
+          customerId !== existing.customerId &&
+          (await tx.accountingJournalLine.count({
+            where: {
+              OR: [{ detail4Id: id }, { detail5Id: id }, { detail6Id: id }],
+            },
+          }))
+        )
+          v.rule('مالک تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
-      if (!/^\d{1,20}$/.test(detailCode))
-        v.invalid('کد تفصیلی باید عددی باشد.');
       const currency = v.text(p.currency, 3) || null;
       if (currency && !/^[A-Z]{3}$/.test(currency))
         v.invalid('کد ارز معتبر نیست.');
@@ -3679,7 +3776,8 @@ export class AccountingService {
         typeId,
         parentId,
         code: detailCode,
-        title: v.text(p.title, 160, true),
+        title,
+        customerId,
         currency,
         attributes: json({
           ...detailAttrs,

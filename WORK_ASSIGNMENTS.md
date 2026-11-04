@@ -11174,3 +11174,10 @@ FINANCE-INBOX-LAYOUT-1104 CI recovery: all quality/build/migration checks passed
 ## UI-COPY-CLEANUP-1104 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; isolated codex/pc-a-ui-copy-cleanup-1104 from current develop. Owner explicitly authorizes44 annotated presentation changes across Sales, Dashboard, Tours/Pricing, Call Center, Hotel Rates and Ticket Purchases, then push/develop merge. Reserve only identified text nodes, affected test expectations, bounded Hotel Rates and Call Center spacing and own notes. Call Center user annotations24–34 explicitly authorize these edits under CALL-CENTER-UI-PRESERVATION; preserve all other approved UI. No business rules, API/schema, IAM, dependencies, financial data or runtime rollout changes. Prior source scopes merged/released. Preserve peer changes and record every annotation, including duplicate41/42. Final-head checks precede merge.
+
+## ACCOUNT-DETAIL-FORMS-1104 — PC-D with PC-B — LOCAL_COMPLETE
+
+Owner delegates both ledger detail editors, persistence and numbering to PC-D and PC-B. PC-D reserves the bounded Web editor, Customers drawer entry options, accounting command, shared code rule, AccountingDetail unique index, one migration, tests and these status entries. Task base origin/PC-D-Integration@f6cd1cd0f. No dependency changes.
+
+Scoped source and migration reservation released at local commit. The Customers public directory/entry facade supplies owner lookup and create/edit, existing accounting IDs remain stable. Validation and runtime status are in docs/PROJECT_STATUS.md.
+Publication 2026-11-04: owner explicitly requests task-branch push, hosted CI, PR directly to develop and merge after successful checks and review. Integrate develop@3558a65a5 and preserve its ownership notes, customer relations and translation catalogues.

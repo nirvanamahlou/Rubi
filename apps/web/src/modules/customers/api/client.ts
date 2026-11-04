@@ -180,8 +180,11 @@ export const customersApi = {
   audit(id: string) {
     return request<CustomerAuditResponse>(`/${encodeURIComponent(id)}/audit`);
   },
-  create(input: CustomerMutationRequest) {
-    return request<{ data: CustomerDetail }>('', body(input));
+  create(input: CustomerMutationRequest, branchId?: string) {
+    return request<{ data: CustomerDetail }>('', {
+      ...body(input),
+      ...(branchId ? { headers: { 'x-branch-id': branchId } } : {}),
+    });
   },
   update(id: string, input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>(`/${encodeURIComponent(id)}`, {

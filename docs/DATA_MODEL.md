@@ -1037,3 +1037,7 @@ Readonly accountingCode uses shared company sequence 3000001+ for organizations/
 ## Tour departure sales state — TOUR-TICKET-SELECTION-1103
 
 TourDeparture.isActive defaults true; salesVersion defaults1 and supplies separate stop/resume CAS. The definition version and published prices do not change on stop. Ticket public reservation locks the departure before offer capacity; status updates serialize on that same row. Floating departure seats use the newly defined FLOATING offer allocation ledger, independent of charter offers. Existing offer FKs and allocation uniqueness remain unchanged.
+
+## Detail account identity and numbering (2026-11-04)
+
+AccountingDetail retains its immutable ID. Its digit string code is unique within (bookId, typeId) and may repeat in another type. Classification width is 1–20. Automatic creation allocates the first free code from the configured start (zero if absent) under the book's command lock, counting inactive accounts. Used historical codes keep their stored spelling. New person/company details link to Customer by a restrictive nullable FK; Customers resolves the active branch-scoped owner and supplies the title. Existing details without a proven owner are never matched by name.
