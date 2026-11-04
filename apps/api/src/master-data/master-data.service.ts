@@ -1,3 +1,4 @@
+import type { Prisma } from '@nora/database';
 import type { DisplayLanguage } from '../common/i18n/language';
 import {
   FACILITY_NAME_MAX_CHARACTERS,
@@ -1354,6 +1355,118 @@ export class MasterDataService {
     return { data: await this.repository.travelServicesSummary() };
   }
 
+  /** Identity fields of a branch-authorized Customers organization profile. */
+  async ledgerCompanyIdentity(id: string) {
+    const row = await this.repository.find('organizations', id);
+    if (!row) throw new NotFoundException();
+    return {
+      id,
+      version: Number(row.version),
+      name: String(row.legalName),
+      nationalId: String(row.nationalId ?? ''),
+      economicCode: String(row.economicCode ?? ''),
+      registrationNumber: String(row.registrationNumber ?? ''),
+    };
+  }
+  async saveLedgerCompanyIdentity(
+    tx: Prisma.TransactionClient,
+    input: {
+      name: string;
+      nationalId: string;
+      economicCode: string;
+      registrationNumber: string;
+      organizationVersion?: number;
+    },
+    linkedId: string | null,
+    actor: AuthenticatedActor,
+    branch: string,
+  ) {
+    this.assertResourceControl('organizations', actor);
+    const identity = {
+      legalName: input.name,
+      nationalId: input.nationalId || null,
+      economicCode: input.economicCode || null,
+      registrationNumber: input.registrationNumber || null,
+    };
+    // A legal identifier can identify an existing master, but may never silently modify it.
+    const existing = linkedId
+      ? await tx.masterOrganization.findUnique({ where: { id: linkedId } })
+      : input.nationalId
+        ? await tx.masterOrganization.findUnique({
+            where: { nationalId: input.nationalId },
+          })
+        : null;
+    if (linkedId && !existing) throw new NotFoundException();
+    if (existing) {
+      if (!existing.isActive || existing.personType === 'NATURAL')
+        throw new ConflictException('سازمان مرجع فعال و حقوقی لازم است.');
+      if (linkedId && input.organizationVersion !== existing.version)
+        throw new ConflictException(
+          'اطلاعات شرکت تغییر کرده است؛ پرونده را دوباره باز کنید.',
+        );
+      const changes = Object.fromEntries(
+        Object.entries(identity).filter(
+          ([k, v]) => existing[k as keyof typeof identity] !== v,
+        ),
+      );
+      if (!Object.keys(changes).length)
+        return { id: existing.id, version: existing.version };
+      if (!linkedId)
+        throw new ConflictException(
+          'شناسه ملی با اطلاعات سازمان موجود مطابقت ندارد.',
+        );
+      if (!actor.permissions.includes('master_data.update'))
+        throw new ForbiddenException(
+          'ویرایش مشخصات ثبتی شرکت به مجوز ویرایش اطلاعات پایه نیاز دارد.',
+        );
+      if (input.nationalId && existing.personType !== 'LEGAL')
+        Object.assign(changes, { personType: 'LEGAL' });
+      this.assertResourceMutationAccess('organizations', changes, actor);
+      const data = await this.prepare(
+        'organizations',
+        changes,
+        actor.userId,
+        true,
+        existing.id,
+      );
+      if (data.legalName) data.displayName = data.legalName;
+      const row = await this.repository.update(
+        'organizations',
+        existing.id,
+        data,
+        existing.version,
+        actor.userId,
+        branch,
+        tx,
+      );
+      if (!row) throw new ConflictException();
+      return { id: existing.id, version: Number(row.version) };
+    }
+    if (!actor.permissions.includes('master_data.create'))
+      throw new ForbiddenException(
+        'ثبت سازمان جدید به مجوز ایجاد اطلاعات پایه نیاز دارد.',
+      );
+    const values = {
+      ...identity,
+      personType: 'LEGAL',
+      roleCodes: ['CORPORATE_CUSTOMER'],
+    };
+    this.assertResourceMutationAccess('organizations', values, actor);
+    const data = await this.prepare(
+      'organizations',
+      values,
+      actor.userId,
+      false,
+    );
+    const row = await this.repository.create(
+      'organizations',
+      data,
+      actor.userId,
+      branch,
+      tx,
+    );
+    return { id: String(row.id), version: Number(row.version) };
+  }
   async create(
     resourceValue: string,
     values: Record<string, string | number | readonly string[] | null>,

@@ -8922,3 +8922,10 @@ The ledger title picker now opens the person/company chooser. Person creation an
 
 Disposable PostgreSQL migration and service checks covered concurrent code conflicts, 0007 round trips, optional/invalid national ID, branch and sensitive-read controls, preserved notes and stale edits. A browser exercise used the actual editor and Customers service with synthetic data: chooser, 00025, address, workflow, dated note and sales classification, save-to-title, reopen, edit, and reload. The real-site archive was not exercised. Verification used local QA; no operational migration or deployment.
 Validation: 44 targeted tests passed (12 Customers/profile, 16 geographic selection controller, 16 Web/archive client/translation). API and Web production builds, typechecks, scoped lint and formatting passed.
+
+## ACCOUNTING-COMPANY-PROFILE-1104 — local implementation
+
+The title chooser opens the company editor for new and existing legal entities. Main fields, searchable ten-option company type, address table, workflow code/email, notes, archive attachments and company-specific tax choices are included. Local browser validation against a disposable PostgreSQL database verified create/select, branch-scoped picker, 00025 and 0259 round trips, editing the abbreviated name, and ten simultaneously visible choices at desktop size. No operational data or site rollout.
+
+Validation: 90 API tests including a PostgreSQL transaction rollback/no-orphan case, ID and version checks; 17 Web, Documents-client and localization checks passed. Prerequisite is the person profile commit bcffdd0fd. Deploy both additive migrations before using the new forms.
+Production API/Web builds, typechecks, scoped lint and formatting passed. Verified pre-existing person ciphertext compatibility and cross-kind rejection.

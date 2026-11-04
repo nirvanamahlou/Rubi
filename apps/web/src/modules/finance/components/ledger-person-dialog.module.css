@@ -97,3 +97,11 @@
     grid-template-columns: 7rem minmax(0, 1fr);
   }
 }
+
+/* All ten legal forms fit the reference list on desktop. */
+.panel [data-company-type] button[role='option'] {
+  min-height: 1.45rem;
+  padding-block: 0.1rem;
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+}

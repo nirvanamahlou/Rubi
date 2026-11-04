@@ -1,6 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import {
   detailDigits,
+  ledgerCompanyFields,
+  ledgerCompanyTypes,
+  type LedgerCompanyInput,
   ledgerPersonTextKeys,
   ledgerTaxKinds,
   personTitles,
@@ -103,6 +106,24 @@ export function ledgerPersonInput(raw: unknown): LedgerPersonInput {
   ] as const)
     if (fields[k] && !(choices as readonly string[]).includes(fields[k]!))
       invalid(k);
+  const { addresses, notes, taxRows } = ledgerRows(r);
+  return {
+    firstName,
+    lastName,
+    code,
+    gender: r.gender,
+    birthDate,
+    fields,
+    addresses,
+    taxRows,
+    notes,
+    ...(r.nationalId !== undefined
+      ? { nationalId: detailDigits(text(r.nationalId, 'کد ملی', 10)) }
+      : {}),
+    ...(typeof r.version === 'number' ? { version: r.version } : {}),
+  };
+}
+function ledgerRows(r: Record<string, unknown>) {
   const addresses = rows(r.addresses, 100).map((a) => {
     if (typeof a.primary !== 'boolean') return invalid('نشانی اصلی');
     return {
@@ -136,20 +157,55 @@ export function ledgerPersonInput(raw: unknown): LedgerPersonInput {
     date: date(n.date, 'تاریخ یادداشت'),
   }));
   unique(notes.map((n) => n.id));
+  return { addresses, notes, taxRows };
+}
+export function ledgerCompanyInput(raw: unknown): LedgerCompanyInput {
+  const r = object(raw),
+    name = text(r.name, 'نام شرکت', 160, true),
+    code = detailDigits(text(r.code, 'کد شرکت', 20, true));
+  if (!/^\d{1,20}$/.test(code)) invalid('کد شرکت');
+  const nationalId = detailDigits(text(r.nationalId, 'شناسه ملی شرکت', 11));
+  if (nationalId && !/^\d{11}$/.test(nationalId)) invalid('شناسه ملی شرکت');
+  const fields: LedgerCompanyInput['fields'] = {},
+    input = object(r.fields);
+  if (
+    Object.keys(input).some(
+      (k) => !ledgerCompanyFields.some((field) => field === k),
+    )
+  )
+    invalid('فیلد');
+  for (const k of ledgerCompanyFields) {
+    const v = text(input[k], k, 200);
+    if (v) fields[k] = v;
+  }
+  if (
+    fields.companyType &&
+    !ledgerCompanyTypes.some((t) => t === fields.companyType)
+  )
+    invalid('نوع شرکت');
+  date(fields.vatExpiry, 'تاریخ اعتبار گواهی ارزش افزوده');
+  email(fields.email ?? '', 'پست الکترونیک');
+  email(fields.workflowEmail ?? '', 'ایمیل');
+  const shared = ledgerRows(r);
+  if (shared.taxRows.some((t) => t.kind !== 'registered'))
+    invalid('طرف معامله مالیاتی');
+  for (const k of ['version', 'organizationVersion'])
+    if (r[k] !== undefined && (!Number.isSafeInteger(r[k]) || Number(r[k]) < 1))
+      invalid('نسخه');
   return {
-    firstName,
-    lastName,
+    name,
     code,
-    gender: r.gender,
-    birthDate,
+    nationalId,
+    registrationNumber: detailDigits(
+      text(r.registrationNumber, 'شماره ثبت', 80),
+    ),
+    economicCode: detailDigits(text(r.economicCode, 'کد اقتصادی', 80)),
     fields,
-    addresses,
-    taxRows,
-    notes,
-    ...(r.nationalId !== undefined
-      ? { nationalId: detailDigits(text(r.nationalId, 'کد ملی', 10)) }
-      : {}),
+    ...shared,
     ...(typeof r.version === 'number' ? { version: r.version } : {}),
+    ...(typeof r.organizationVersion === 'number'
+      ? { organizationVersion: r.organizationVersion }
+      : {}),
   };
 }
 export function authoredPersonNotes(

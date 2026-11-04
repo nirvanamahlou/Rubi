@@ -1,3 +1,4 @@
+import type { LedgerCompanyView, LedgerCompanyInput } from '@nora/contracts';
 import type {
   LedgerPersonInput,
   LedgerPersonView,
@@ -138,6 +139,27 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
+  ledgerCompany(id: string, branch: string) {
+    return request<{ data: LedgerCompanyView }>(
+      '/ledger-companies/' + encodeURIComponent(id),
+      { headers: { 'x-branch-id': branch } },
+    );
+  },
+  saveLedgerCompany(input: LedgerCompanyInput, branch: string, id?: string) {
+    return request<{
+      data: {
+        id: string;
+        displayName: string;
+        version: number;
+        organizationVersion: number;
+        notes: PersonNote[];
+      };
+    }>('/ledger-companies' + (id ? '/' + encodeURIComponent(id) : ''), {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'x-branch-id': branch },
+      body: JSON.stringify(input),
+    });
+  },
   ledgerPerson(id: string, branch: string) {
     return request<{ data: LedgerPersonView }>(
       '/ledger-persons/' + encodeURIComponent(id),
@@ -160,7 +182,12 @@ export const customersApi = {
   },
   selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
     return request<{
-      data: readonly { id: string; displayName: string; personCode?: string }[];
+      data: readonly {
+        id: string;
+        displayName: string;
+        personCode?: string;
+        companyCode?: string;
+      }[];
     }>(`/selections/${workflow}?${serializeCustomerListQuery(query)}`);
   },
   registrationLookup(input: CustomerRegistrationLookupRequest) {

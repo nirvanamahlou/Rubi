@@ -28,6 +28,8 @@ import {
 } from './customer-audit';
 
 export interface CustomerRow {
+  ledgerCompanyCode?: string | null;
+  ledgerCompanyEnvelope?: string | null;
   ledgerPersonCode?: string | null;
   ledgerPersonEnvelope?: string | null;
   customerCode?: string | null;
@@ -301,7 +303,9 @@ export class CustomerRepository {
       select: {
         id: true,
         displayName: true,
-        ...(!marketing ? { ledgerPersonCode: true } : {}),
+        ...(!marketing
+          ? { ledgerPersonCode: true, ledgerCompanyCode: true }
+          : {}),
         consents: {
           where: { purpose: 'MARKETING' },
           orderBy: { occurredAt: 'desc' },
@@ -318,10 +322,18 @@ export class CustomerRepository {
       .map((row) => ({
         id: row.id,
         displayName: row.displayName,
+        ...(!marketing && row.ledgerCompanyCode
+          ? { companyCode: row.ledgerCompanyCode }
+          : {}),
         ...(!marketing && row.ledgerPersonCode
           ? { personCode: row.ledgerPersonCode }
           : {}),
       }));
+  }
+  ledgerCompanyTransaction<T>(
+    action: (tx: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    return this.database.client.$transaction(action);
   }
   salesPartyKinds(ids: readonly string[]) {
     return this.database.client.customer.findMany({
@@ -699,8 +711,9 @@ export class CustomerRepository {
     actorUserId: string,
     actorBranchId: string,
     traceId?: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const before = await transaction.customer.findFirst({
         where: {
           id,
@@ -733,7 +746,10 @@ export class CustomerRepository {
         },
       });
       return row as unknown as CustomerRow;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async setStatus(

@@ -42,7 +42,8 @@ export function AccountingAttachments({
     [file, setFile] = useState<File | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const person = entityType === 'AccountingPerson';
+  const party =
+    entityType === 'AccountingPerson' || entityType === 'AccountingCompany';
   const [query, setQuery] = useState('');
   const [archiveId, setArchiveId] = useState('');
   const [reason, setReason] = useState('');
@@ -93,7 +94,7 @@ export function AccountingAttachments({
         sourceModule: 'FINANCE',
         sourceEntityType: entityType,
         sourceEntityId: recordId,
-        ...(person
+        ...(party
           ? { archiveStatus: 'ACTIVE' as const, search: query.trim() }
           : {}),
         pageSize: 100,
@@ -104,7 +105,7 @@ export function AccountingAttachments({
     options.data?.data.documentTypes.filter(
       (t) =>
         t.domain === 'FINANCE' &&
-        (person
+        (party
           ? t.defaultConfidentiality === 'INTERNAL'
           : ['PUBLIC', 'INTERNAL'].includes(t.defaultConfidentiality)) &&
         !t.requiresExpiry,
@@ -112,7 +113,7 @@ export function AccountingAttachments({
   const upload = async () => {
     setError('');
     const type =
-        record && !person ? types[0] : types.find((t) => t.id === typeId),
+        record && !party ? types[0] : types.find((t) => t.id === typeId),
       opts = options.data?.data;
     if (!type || !opts || !file || !title.trim()) {
       setError('عنوان، نوع پیوست و فایل را انتخاب کنید.');
@@ -160,7 +161,7 @@ export function AccountingAttachments({
           {list.error?.message ?? options.error?.message}
         </p>
       ) : null}
-      {person && canRead && (
+      {party && canRead && (
         <Input
           aria-label="جستجو در پیوست‌ها"
           placeholder="جستجو…"
@@ -200,7 +201,7 @@ export function AccountingAttachments({
                     </th>
                   ),
                 )}
-                {person && <th>عملیات</th>}
+                {party && <th>عملیات</th>}
               </tr>
             </thead>
             <tbody>
@@ -210,8 +211,8 @@ export function AccountingAttachments({
                   <td className="p-2">
                     <Link
                       className="text-primary underline"
-                      target={person ? '_blank' : undefined}
-                      rel={person ? 'noopener noreferrer' : undefined}
+                      target={party ? '_blank' : undefined}
+                      rel={party ? 'noopener noreferrer' : undefined}
                       href={`/documents?document=${d.id}&returnTo=${encodeURIComponent(returnTo)}`}
                     >
                       {d.currentVersion.originalFileName}
@@ -223,7 +224,7 @@ export function AccountingAttachments({
                   <td className="p-2">
                     {d.currentVersion.createdAt.slice(0, 10)}
                   </td>
-                  {person && (
+                  {party && (
                     <td className="space-x-2">
                       {d.capabilities.download &&
                         !d.requiresStepUpVerification &&
@@ -284,7 +285,7 @@ export function AccountingAttachments({
               onChange={(e) => setTitle(e.target.value)}
             />
           </FormField>
-          {!record || person ? (
+          {!record || party ? (
             <FormField label="نوع پیوست">
               <SearchCombobox
                 label="نوع پیوست"

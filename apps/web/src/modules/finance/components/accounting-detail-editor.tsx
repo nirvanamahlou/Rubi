@@ -5,16 +5,12 @@ import {
   parseSetupNotes,
 } from './accounting-setup-notes';
 import { useQuery } from '@tanstack/react-query';
-import {
-  customersApi,
-  CustomerDrawer,
-  type CustomerTab,
-  type CustomerCalendarMode,
-} from '@/modules/customers/public/entry';
+import { customersApi } from '@/modules/customers/public/entry';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { useRef, useState } from 'react';
 import styles from './accounting-detail-editor.module.css';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import { LedgerCompanyDialog } from './ledger-company-dialog';
 import { LedgerPersonDialog } from './ledger-person-dialog';
 import { DetailPicker } from './accounting-detail-picker';
 import {
@@ -94,8 +90,6 @@ export function AccountingDetailEditor({
   const [ownerPage, setOwnerPage] = useState(1);
   const [ownerDialog, setOwnerDialog] = useState<string | null>(null);
   const [newKind, setNewKind] = useState<'person' | 'organization'>('person');
-  const [customerTab, setCustomerTab] = useState<CustomerTab>('overview');
-  const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
   const focusRef = useRef<HTMLElement>(null);
   const fresh = () => {
     setManualCode(false);
@@ -146,7 +140,7 @@ export function AccountingDetailEditor({
       book.book.branchId,
       ownerDialog,
     ],
-    queryFn: () => customersApi.detail(ownerDialog!),
+    queryFn: () => customersApi.ledgerCompany(ownerDialog!, book.book.branchId),
     enabled:
       !!ownerDialog &&
       !['choose', 'new'].includes(ownerDialog) &&
@@ -188,7 +182,6 @@ export function AccountingDetailEditor({
     }
   }
   function openOwner(id: string) {
-    setCustomerTab('overview');
     if (id === 'new') {
       setNewKind(type?.title === 'شرکت' ? 'organization' : 'person');
       setOwnerDialog('choose');
@@ -494,7 +487,8 @@ export function AccountingDetailEditor({
                           id: row.id,
                           cells: [
                             row.displayName,
-                            row.personCode ??
+                            row.companyCode ??
+                              row.personCode ??
                               detailRows.find((d) => d.customerId === row.id)
                                 ?.code ??
                               '—',
@@ -655,21 +649,12 @@ export function AccountingDetailEditor({
       ) : (
         ownerDialog &&
         (!personEditor && (ownerDialog === 'new' || ownerRecord.data) ? (
-          <CustomerDrawer
+          <LedgerCompanyDialog
             key={ownerDialog}
-            mode={ownerDialog === 'new' ? 'create' : 'edit'}
-            customer={
-              ownerDialog === 'new' ? undefined : ownerRecord.data?.data
-            }
-            fixedKind="organization"
-            createBranchId={book.book.branchId}
-            activeTab={customerTab}
-            onTabChange={setCustomerTab}
-            calendarMode={calendar}
-            onCalendarModeChange={setCalendar}
-            returnFocusRef={focusRef}
+            initial={ownerDialog === 'new' ? undefined : ownerRecord.data?.data}
+            book={book}
             onClose={() => setOwnerDialog(null)}
-            onSaved={async (_, row) => adoptOwner(row, 'organization')}
+            onSelected={(row) => adoptOwner(row, 'organization')}
           />
         ) : (
           <div role="status">

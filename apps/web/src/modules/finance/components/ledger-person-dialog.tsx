@@ -9,13 +9,13 @@ import {
   type AccountingSnapshotV1,
   type LedgerPersonView,
   type LedgerPersonTextKey,
-  type LedgerTaxKind,
 } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { DatePicker } from '@/components/ui/date-picker';
 import { customersApi } from '@/modules/customers/public/entry';
 import { AccountingSetupNotes } from './accounting-setup-notes';
 import { LedgerPersonAddresses, PersonPlace } from './ledger-person-addresses';
+import { LedgerPartyTax } from './ledger-party-tax';
 import styles from './ledger-person-dialog.module.css';
 
 const tabs = [
@@ -77,12 +77,6 @@ const options: Partial<Record<Key, readonly string[]>> = {
   denomination: ['شیعه', 'سنی'],
   marital: personMarital,
   gender: ['M', 'F'],
-};
-const taxLabels: Record<LedgerTaxKind, string> = {
-  registered: 'مودی مشمول ثبت نام در نظام مالیاتی',
-  article81: 'مشمولین حقیقی ماده ۸۱ ق.م.م',
-  exempt: 'اشخاصی که ملزم به ثبت نام در نظام مالیاتی نیستند',
-  consumer: 'مصرف کننده نهایی',
 };
 const required = new Set<Key>(['code', 'firstName', 'lastName', 'gender']);
 export function LedgerPersonDialog({
@@ -330,127 +324,10 @@ export function LedgerPersonDialog({
               />
             )}
             {tab === 3 && (
-              <fieldset>
-                <legend>طرف معامله مالیاتی</legend>
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th>نوع عملیات</th>
-                      <th>نوع طرف معامله مالیاتی</th>
-                      <th>حذف</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {draft.taxRows.map((r, i) => (
-                      <tr key={i}>
-                        <td>
-                          <select
-                            aria-label="نوع عملیات"
-                            value={r.operation}
-                            onChange={(e) => {
-                              const operation = e.target.value as
-                                'purchase' | 'sale';
-                              setDraft((old) => ({
-                                ...old,
-                                taxRows: old.taxRows.map((t, n) =>
-                                  n === i
-                                    ? {
-                                        operation,
-                                        kind:
-                                          operation === 'purchase' &&
-                                          t.kind === 'consumer'
-                                            ? 'registered'
-                                            : t.kind,
-                                      }
-                                    : t,
-                                ),
-                              }));
-                            }}
-                          >
-                            {(['purchase', 'sale'] as const).map((op) => (
-                              <option
-                                key={op}
-                                value={op}
-                                disabled={draft.taxRows.some(
-                                  (t, n) => n !== i && t.operation === op,
-                                )}
-                              >
-                                {op === 'purchase' ? 'خرید' : 'فروش'}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <select
-                            aria-label="نوع طرف معامله مالیاتی"
-                            value={r.kind}
-                            onChange={(e) =>
-                              setDraft((old) => ({
-                                ...old,
-                                taxRows: old.taxRows.map((t, n) =>
-                                  n === i
-                                    ? {
-                                        ...t,
-                                        kind: e.target.value as LedgerTaxKind,
-                                      }
-                                    : t,
-                                ),
-                              }))
-                            }
-                          >
-                            {(Object.keys(taxLabels) as LedgerTaxKind[])
-                              .filter(
-                                (k) =>
-                                  r.operation === 'sale' || k !== 'consumer',
-                              )
-                              .map((k) => (
-                                <option key={k} value={k}>
-                                  {taxLabels[k]}
-                                </option>
-                              ))}
-                          </select>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            aria-label="حذف ردیف مالیاتی"
-                            onClick={() =>
-                              setDraft((old) => ({
-                                ...old,
-                                taxRows: old.taxRows.filter((_, n) => n !== i),
-                              }))
-                            }
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button
-                  type="button"
-                  disabled={draft.taxRows.length >= 2}
-                  onClick={() =>
-                    setDraft((old) => ({
-                      ...old,
-                      taxRows: [
-                        ...old.taxRows,
-                        {
-                          operation: old.taxRows.some(
-                            (r) => r.operation === 'purchase',
-                          )
-                            ? 'sale'
-                            : 'purchase',
-                          kind: 'registered',
-                        },
-                      ],
-                    }))
-                  }
-                >
-                  ＋ افزودن ردیف
-                </button>
-              </fieldset>
+              <LedgerPartyTax
+                rows={draft.taxRows}
+                onChange={(taxRows) => setDraft((old) => ({ ...old, taxRows }))}
+              />
             )}
           </fieldset>
           {error && (

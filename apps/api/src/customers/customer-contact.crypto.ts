@@ -1,4 +1,4 @@
-import type { LedgerPersonExtras } from '@nora/contracts';
+import type { LedgerCompanyExtras, LedgerPersonExtras } from '@nora/contracts';
 import {
   createCipheriv,
   createDecipheriv,
@@ -66,9 +66,19 @@ export class CustomerContactCrypto {
   }
 
   sealPerson(id: string, profile: LedgerPersonExtras): string {
+    return this.sealLedgerProfile(id, 'person', profile);
+  }
+  sealCompany(id: string, profile: LedgerCompanyExtras) {
+    return this.sealLedgerProfile(id, 'company', profile);
+  }
+  private sealLedgerProfile(
+    id: string,
+    kind: 'person' | 'company',
+    profile: LedgerPersonExtras | LedgerCompanyExtras,
+  ) {
     const iv = randomBytes(12),
       cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
-    cipher.setAAD(Buffer.from('rubi:ledger-person:v1:' + id));
+    cipher.setAAD(Buffer.from('rubi:ledger-' + kind + ':v1:' + id));
     const ciphertext = Buffer.concat([
       cipher.update(JSON.stringify(profile), 'utf8'),
       cipher.final(),
@@ -81,7 +91,23 @@ export class CustomerContactCrypto {
     ].join('.');
   }
   openPerson(id: string, envelope?: string | null): LedgerPersonExtras {
-    if (!envelope) return { fields: {}, addresses: [], notes: [], taxRows: [] };
+    return this.openLedgerProfile<LedgerPersonExtras>(id, 'person', envelope);
+  }
+  openCompany(id: string, envelope?: string | null) {
+    return this.openLedgerProfile<LedgerCompanyExtras>(id, 'company', envelope);
+  }
+  private openLedgerProfile<T extends LedgerPersonExtras | LedgerCompanyExtras>(
+    id: string,
+    kind: 'person' | 'company',
+    envelope?: string | null,
+  ): T {
+    if (!envelope)
+      return {
+        fields: {},
+        addresses: [],
+        notes: [],
+        taxRows: [],
+      } as unknown as T;
     try {
       const [version, iv, tag, ciphertext] = envelope.split('.');
       if (
@@ -96,14 +122,14 @@ export class CustomerContactCrypto {
         this.encryptionKey,
         Buffer.from(iv, 'base64'),
       );
-      decipher.setAAD(Buffer.from('rubi:ledger-person:v1:' + id));
+      decipher.setAAD(Buffer.from('rubi:ledger-' + kind + ':v1:' + id));
       decipher.setAuthTag(Buffer.from(tag, 'base64'));
       return JSON.parse(
         Buffer.concat([
           decipher.update(Buffer.from(ciphertext, 'base64')),
           decipher.final(),
         ]).toString('utf8'),
-      ) as LedgerPersonExtras;
+      ) as T;
     } catch {
       throw new InternalServerErrorException(
         'Customer profile integrity check failed.',

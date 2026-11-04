@@ -1,6 +1,9 @@
+import { MasterDataService } from '../master-data/master-data.service';
+import type { LedgerCompanyView } from '@nora/contracts';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import {
   ledgerPersonInput,
+  ledgerCompanyInput,
   authoredPersonNotes,
 } from './ledger-person.validation';
 import type { LedgerPersonView } from '@nora/contracts';
@@ -428,6 +431,9 @@ export class CustomerService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identities?: IamFinanceDirectory,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly masterData?: MasterDataService,
   ) {}
 
   /** Request-local capabilities for the owner-authorized new-contract person workflow. */
@@ -714,6 +720,170 @@ export class CustomerService {
         requestedSensitiveReadReason,
       ),
     };
+  }
+
+  async ledgerCompany(
+    id: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    const branch = branchOf(actor, branchId),
+      row = await this.repository.find(id, [branch]);
+    if (
+      !row ||
+      row.kind !== 'ORGANIZATION' ||
+      !row.isActive ||
+      !row.organizationId
+    )
+      throw new NotFoundException();
+    if (!actor.permissions.includes('customers.sensitive.read'))
+      throw new ForbiddenException();
+    const identity = await this.masterData!.ledgerCompanyIdentity(
+      row.organizationId,
+    );
+    const data: LedgerCompanyView = {
+      ...this.contactCrypto.openCompany(id, row.ledgerCompanyEnvelope),
+      id,
+      version: row.version,
+      organizationVersion: identity.version,
+      code: row.ledgerCompanyCode ?? '',
+      name: identity.name,
+      nationalId: identity.nationalId,
+      registrationNumber: identity.registrationNumber,
+      economicCode: identity.economicCode,
+    };
+    await this.repository.auditSensitiveRead(
+      id,
+      actor.userId,
+      branch,
+      'data-correction',
+      traceId,
+      ['ledgerCompanyProfile', 'organizationIdentity'],
+    );
+    return { data };
+  }
+  async saveLedgerCompany(
+    raw: unknown,
+    branchId: string,
+    actor: AuthenticatedActor,
+    editId?: string,
+    traceId?: string,
+  ) {
+    const input = ledgerCompanyInput(raw),
+      branch = branchOf(actor, branchId),
+      id = editId ?? randomUUID();
+    const existing = editId ? await this.repository.find(id, [branch]) : null;
+    if (
+      editId &&
+      (!existing ||
+        existing.kind !== 'ORGANIZATION' ||
+        !existing.isActive ||
+        !existing.organizationId)
+    )
+      throw new NotFoundException();
+    if (editId && !actor.permissions.includes('customers.sensitive.read'))
+      throw new ForbiddenException();
+    if (existing && input.version !== existing.version) throw conflict();
+    const old = this.contactCrypto.openCompany(
+      id,
+      existing?.ledgerCompanyEnvelope,
+    );
+    const author =
+      input.notes.length && this.identities
+        ? (await this.identities.displayNames([actor.userId], [branch]))[0]
+            ?.displayName
+        : undefined;
+    const notes = authoredPersonNotes(
+      input.notes,
+      old.notes,
+      author ?? actor.userId,
+    );
+    const data = {
+      displayName: input.name,
+      ledgerCompanyCode: input.code,
+      ledgerCompanyEnvelope: this.contactCrypto.sealCompany(id, {
+        fields: input.fields,
+        addresses: input.addresses,
+        taxRows: input.taxRows,
+        notes,
+      }),
+    };
+    try {
+      return await this.repository.ledgerCompanyTransaction(async (tx) => {
+        const org = await this.masterData!.saveLedgerCompanyIdentity(
+          tx,
+          input,
+          existing?.organizationId ?? null,
+          actor,
+          branch,
+        );
+        const mutation: CustomerMutationRequest = {
+          kind: 'organization',
+          organizationId: org.id,
+          displayName: input.name,
+          roles: ['customer'],
+        };
+        this.assertMutationFields(
+          mutation,
+          actor,
+          existing ? this.mutationSnapshot(existing, []) : undefined,
+        );
+        if (
+          !existing &&
+          (await tx.customer.findFirst({
+            where: {
+              organizationId: org.id,
+              ownerBranchId: branch,
+              mergedIntoId: null,
+            },
+            select: { id: true },
+          }))
+        )
+          throw new ConflictException(
+            'پرونده این شرکت در شعبه موجود است؛ آن را از فهرست انتخاب کنید.',
+          );
+        const row = existing
+          ? await this.repository.update(
+              id,
+              [branch],
+              data,
+              existing.version,
+              actor.userId,
+              branch,
+              traceId,
+              tx,
+            )
+          : await this.repository.create(
+              {
+                ...data,
+                id,
+                kind: 'ORGANIZATION',
+                organizationId: org.id,
+                isCustomer: true,
+                isPassenger: false,
+              },
+              actor.userId,
+              branch,
+              traceId,
+              tx,
+            );
+        if (!row) throw conflict();
+        return {
+          data: {
+            id: row.id,
+            displayName: row.displayName,
+            version: row.version,
+            organizationVersion: org.version,
+            notes,
+          },
+        };
+      });
+    } catch (e) {
+      if (prismaCode(e) === 'P2002')
+        throw new ConflictException('کد شرکت یا مشخصات ثبتی تکراری است.');
+      throw e;
+    }
   }
 
   async ledgerPerson(
