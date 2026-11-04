@@ -31,7 +31,7 @@ describe('Editable site API settings and selected-site transport', () => {
     },
   );
   it('keeps credential writes in the protected body and carries site/branch on every native request', async () => {
-    const calls: { url: string; init?: RequestInit }[] = [];
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string, init?: RequestInit) => {
