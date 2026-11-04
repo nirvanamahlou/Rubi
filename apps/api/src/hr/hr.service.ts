@@ -1,3 +1,5 @@
+import { attendanceFrom } from './hr-attendance-range';
+import { approvedLeaveCoverage } from './hr-attendance-leave';
 import { isDeepStrictEqual } from 'node:util';
 import {
   attendanceClockTimes,
@@ -2699,10 +2701,9 @@ export class HrService {
         return { id: row.id };
       },
     );
-    return this.recordDto(
-      await this.record(this.database.client, result.id, actor),
-      actor,
-    );
+    const saved = await this.record(this.database.client, result.id, actor);
+    await this.refreshAttendanceForRecord(saved, actor);
+    return this.recordDto(saved, actor);
   }
   async updateRecord(id: string, body: unknown, actor: AuthenticatedActor) {
     const input = validate.object(body, [
@@ -2724,7 +2725,7 @@ export class HrService {
           (await this.record(this.database.client, id, actor)).branchId,
         )
       : undefined;
-    return this.transaction(async (tx) => {
+    const saved = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
@@ -3206,6 +3207,8 @@ export class HrService {
         actor,
       );
     });
+    await this.refreshAttendanceForRecord(saved, actor);
+    return saved;
   }
   async contractState(
     id: string,
@@ -3330,8 +3333,10 @@ export class HrService {
   }
   async deleteRecord(id: string, expected: unknown, actor: AuthenticatedActor) {
     const v = validate.version(Number(expected));
-    return this.transaction(async (tx) => {
+    let affected: RecordRow | undefined;
+    const result = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      affected = row;
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
@@ -3451,6 +3456,8 @@ export class HrService {
       );
       return { id, deleted: true };
     });
+    if (affected) await this.refreshAttendanceForRecord(affected, actor);
+    return result;
   }
   private async effects(
     tx: Tx,
@@ -4229,6 +4236,7 @@ export class HrService {
         return { ids };
       },
     );
+    await this.refreshAttendance(branchId, actor);
     return Promise.all(
       result.ids.map(async (id) =>
         this.recordDto(
@@ -4239,6 +4247,51 @@ export class HrService {
     );
   }
 
+  private async refreshAttendanceForRecord(
+    row: { section: string; tab: string; branchId: string },
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      (row.section === 'time' &&
+        ['shift', 'workingHours', 'leave', 'calculationSettings'].includes(
+          row.tab,
+        )) ||
+      (row.section === 'requests' && ['leave', 'radanLeave'].includes(row.tab))
+    )
+      await this.refreshAttendance(row.branchId, actor);
+  }
+  private async refreshAttendance(branchId: string, actor: AuthenticatedActor) {
+    if (!this.has(actor, 'hr.manage')) return;
+    const today = validate.localClockParts(new Date()).date;
+    const from = attendanceFrom(
+      new Date(Date.parse(today) - 366 * 86400000).toISOString().slice(0, 10),
+    );
+    const rows = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId,
+        section: 'time',
+        tab: { in: ['attendance', 'checkins'] },
+        deletedAt: null,
+        AND: [
+          { values: { path: ['1'], gte: from } },
+          { values: { path: ['1'], lte: today } },
+        ],
+      },
+      select: { values: true },
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+    for (const date of [
+      ...new Set(rows.map((r) => (r.values as string[])[1]!)),
+    ].sort())
+      await this.processAttendance(
+        { branchId, date },
+        randomUUID(),
+        actor,
+        true,
+      );
+  }
   private async assertOpenPeriod(tx: Tx, branchId: string, date: string) {
     validate.isoDate(date);
     const closed = await tx.hrRecord.findMany({
@@ -4437,6 +4490,8 @@ export class HrService {
     const input = validate.object(body, ['branchId', 'date']);
     const date = validate.isoDate(input.date).toISOString().slice(0, 10),
       branchId = this.branch(actor, input.branchId);
+    if (deviceOnly && date < attendanceFrom(date))
+      return { processed: 0, exceptions: 0, date };
     return this.command(
       actor,
       key,
@@ -4539,11 +4594,51 @@ export class HrService {
                   shiftStart,
                   shiftEnd,
                   Number(validate.digits(shiftValues?.[3] ?? '0')) || 0,
-                  shiftValues?.[9]
-                    ? shiftEnd
-                    : validate.localClockToUtc(date, '17:30'),
+                  validate.localClockToUtc(date, '17:30'),
                 )
               : null;
+          const leave =
+            shiftStart && shiftEnd
+              ? approvedLeaveCoverage(
+                  events,
+                  shiftStart,
+                  shiftEnd,
+                  source
+                    .filter(
+                      (r) =>
+                        r.employeeId === employee.id &&
+                        ['leave', 'radanLeave'].includes(r.tab) &&
+                        validate.APPROVED.has(r.status),
+                    )
+                    .map((r) => {
+                      const v = r.values as string[],
+                        d = r.data as HrWorkflowData;
+                      return [
+                        Date.parse(d.startsAt ?? `${v[2]}T00:00:00+03:30`),
+                        Date.parse(d.endsAt ?? `${v[3]}T23:59:59+03:30`),
+                      ] as [number, number];
+                    })
+                    .filter(
+                      ([a, b]) => Number.isFinite(a) && Number.isFinite(b),
+                    ),
+                )
+              : null;
+          if (metrics && leave) {
+            if (metrics.lateMinutes !== null)
+              metrics.lateMinutes = Math.max(
+                0,
+                metrics.lateMinutes - leave.lateCredit,
+              );
+            if (metrics.earlyMinutes !== null)
+              metrics.earlyMinutes = Math.max(
+                0,
+                metrics.earlyMinutes - leave.earlyCredit,
+              );
+            if (!events.length && shiftEnd!.getTime() <= Date.now())
+              metrics.deficitMinutes = Math.floor(
+                (shiftEnd!.getTime() - shiftStart!.getTime()) / 60000,
+              );
+          }
           const late =
             metrics?.lateMinutes == null ? '—' : String(metrics.lateMinutes);
           const early =
@@ -4613,17 +4708,25 @@ export class HrService {
             late,
             early,
           ];
-          const status = !selected.length
-            ? shift?.tab !== 'shift'
-              ? 'عدم روزکاری'
-              : shiftEnd && shiftEnd.getTime() > Date.now()
-                ? 'در انتظار تردد'
-                : 'غایب'
-            : result.exceptions.length
-              ? 'نیازمند بررسی'
-              : result.worked
-                ? 'حاضر'
-                : 'غایب';
+          const ongoing = Boolean(shiftEnd && shiftEnd.getTime() > Date.now());
+          const reviewExceptions = result.exceptions.filter(
+            (e) => !(ongoing && e === 'خروج ثبت نشده'),
+          );
+          const status =
+            !selected.length && leave?.fullDay
+              ? 'مرخصی'
+              : !selected.length
+                ? !shift
+                  ? 'عدم روزکاری'
+                  : shiftEnd && shiftEnd.getTime() > Date.now()
+                    ? 'در انتظار تردد'
+                    : 'غایب'
+                : reviewExceptions.length
+                  ? 'نیازمند بررسی'
+                  : result.worked ||
+                      (ongoing && events.some((e) => e.kind === 'ورود'))
+                    ? 'حاضر'
+                    : 'غایب';
           const calculatedData = {
             ...(settings
               ? {
@@ -4632,7 +4735,7 @@ export class HrService {
                   calculationMetrics,
                 }
               : {}),
-            reason: result.exceptions.join('، '),
+            reason: reviewExceptions.join('، '),
             minutes: result.worked,
             ...attendanceClockTimes(events),
             deficitMinutes: result.exceptions.length
@@ -4642,13 +4745,16 @@ export class HrService {
                 : Math.max(
                     0,
                     metrics.deficitMinutes -
-                      Math.floor(calculationMetrics?.creditedMinutes ?? 0),
+                      Math.max(
+                        leave?.creditMinutes ?? 0,
+                        Math.floor(calculationMetrics?.creditedMinutes ?? 0),
+                      ),
                   ),
             workedMinutes: result.worked,
             lateMinutes: late === '—' ? null : Number(late),
             earlyMinutes: early === '—' ? null : Number(early),
             overtimeMinutes: overtime,
-            exceptionCodes: result.exceptions,
+            exceptionCodes: reviewExceptions,
           };
           if (
             existing &&
@@ -6133,7 +6239,7 @@ export class HrService {
       throw new BadRequestException(
         'بازه و جایگاه‌های سازمانی معتبر انتخاب کنید.',
       );
-    return this.command(
+    const result = await this.command(
       actor,
       key,
       { operation: 'shift.assign-template', id, input },
@@ -6254,6 +6360,9 @@ export class HrService {
         return { ids };
       },
     );
+    const template = await this.record(this.database.client, id, actor);
+    await this.refreshAttendance(template.branchId, actor);
+    return result;
   }
 
   private async setEmployeeGroup(
