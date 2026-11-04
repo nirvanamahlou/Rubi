@@ -15,59 +15,6 @@ export interface NoteDraft {
 export const WORKBENCH_NOTE_FAVORITES_CHANGED =
   'nora:workbench:note-favorites-changed';
 
-export const noteTemplates: NoteDraft[] = [
-  {
-    id: 'template-meeting',
-    title: 'نکات جلسه فروش سازمانی',
-    body: 'پیشنهاد خدمات سفر پاییز آماده شود.\nنیازهای تیم منابع انسانی مشتری بررسی شود.',
-    folder: 'جلسات',
-    tags: 'فروش، پیگیری',
-    items: [],
-    pinned: false,
-    updatedAt: null,
-    template: true,
-  },
-  {
-    id: 'template-daily',
-    title: 'چک‌لیست روزانه من',
-    body: '',
-    folder: 'شخصی',
-    tags: 'روزانه',
-    items: [
-      'مرور درخواست‌های عقب‌افتاده',
-      'بررسی پاسخ‌های واحد مالی',
-      'هماهنگی با تیم رزرواسیون',
-    ].map((text) => ({ text, done: false })),
-    pinned: false,
-    updatedAt: null,
-    template: true,
-  },
-  {
-    id: 'template-idea',
-    title: 'ایده بهبود تحویل پرونده',
-    body: 'اطلاعات ناقص قرارداد در یک چک‌لیست مشخص شود تا پیگیری آسان‌تر باشد.',
-    folder: 'ایده‌ها',
-    tags: 'فرایند',
-    items: [],
-    pinned: false,
-    updatedAt: null,
-    template: true,
-  },
-];
-
-export function notesWithTemplates(saved: NoteDraft[]): NoteDraft[] {
-  return [
-    ...structuredClone(noteTemplates).filter(
-      (template) =>
-        !saved.some(
-          (note) =>
-            note.title === template.title && note.folder === template.folder,
-        ),
-    ),
-    ...saved,
-  ];
-}
-
 export function filterNoteDrafts(
   notes: NoteDraft[],
   search: string,
