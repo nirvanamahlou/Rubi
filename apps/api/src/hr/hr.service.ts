@@ -8,6 +8,7 @@ import {
 } from './hr-device-attendance.domain';
 import {
   HR_WEEKDAYS,
+  hrShiftWeekdays,
   hrShiftMatchesDate,
   isHrSharedResource,
   hrBranchKey,
@@ -2213,8 +2214,13 @@ export class HrService {
       }
     }
     if (schema.key === 'time.shift' && values[9]) {
-      if (!(HR_WEEKDAYS as readonly string[]).includes(values[9]))
+      const days = hrShiftWeekdays(values[9]);
+      if (
+        days.length > 7 ||
+        days.some((day) => !(HR_WEEKDAYS as readonly string[]).includes(day))
+      )
         throw new BadRequestException('روز هفته معتبر انتخاب کنید.');
+      values[9] = [...new Set(days)].join('، ');
       if (parentId)
         throw new BadRequestException('شیفت هفتگی به الگوی تقویم وابسته نیست.');
       if (!values[1] || !values[2] || values[1] === values[2])
