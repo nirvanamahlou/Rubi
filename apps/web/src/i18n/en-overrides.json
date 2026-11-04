@@ -4950,5 +4950,10 @@
   "مرز عمومی رزرو تور متصل نیست.": "The tour reservation service is unavailable.",
   "توقف فروش": "Stop sales",
   "فعال‌سازی": "Activate",
-  "ظرفیت بلیت شناور مستقل از ظرفیت چارتر است.": "Floating flight capacity is independent of charter capacity."
+  "ظرفیت بلیت شناور مستقل از ظرفیت چارتر است.": "Floating flight capacity is independent of charter capacity.",
+  "حداقل یک روز هفته انتخاب کنید.": "Select at least one weekday.",
+  "روزهای هفته": "Weekdays",
+  "حاضر با تأخیر": "Present, late arrival",
+  "حاضر با تأخیر و خروج زودهنگام": "Present, late arrival and early departure",
+  "حاضر با خروج زودهنگام": "Present, early departure"
 }
