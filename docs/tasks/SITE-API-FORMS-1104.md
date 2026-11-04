@@ -50,3 +50,34 @@ form save, workbook preview/apply/export and SSO availability) without cross-sit
 fallback. Existing callers without systemId preserve their private primary-file
 behavior. Primary SSO is offered for a selected site only when the server policy's
 primary connection and selected connection still identify the same producer.
+
+Validation:37 API checks (including15 new security/routing cases and existing
+Ghestiroo/Niyayesh/SSO regressions),70 Web and3 English checks pass. Scoped lint,
+format and translation synchronization pass. Initial local API typecheck hit its
+default2GiB heap; full isolated3GiB server typecheck passed. Web exact-optional
+props and test request fixture were corrected. All8 hosted quality/full-test/
+production-build/PostgreSQL checks passed on aaff2d389; no gate was bypassed.
+
+Full server API/Web typechecks/builds passed in bounded containers under the common
+deployment lock. API/Web-only activation preserves1202 API and2004 Web/Contracts
+source files outside owned scope, all other containers, environment and mounts.
+19 runtime source file copies and49 locale entries match the final source; secure
+storage is configured/writable and API/Web healthy. Temporary1GiB build memory
+was safely removed. Activation waited for all8 hosted checks; no runtime credential,
+IAM policy, schema or business record was changed during acceptance.
+
+Live owner-session acceptance: all3 selected sites show editable origin/client/
+system/organization/environment/key-ID and masked secret fields. Changing a field
+enables save; the test button stays unavailable before saved configuration. API
+collapse/reopen preserves draft, switching site discards it without cross-site
+leakage. All synthetic drafts were cleared; no save/test with fabricated production
+credentials. GH bundle/native hotel editor remains available. Desktop1451x797
+and default narrow viewport have no horizontal overflow or browser errors; viewport
+reset and original user tab left on the ready Jahan Bastan API form. Screenshot:
+site-api-forms-1104.png in the current chat's visualization directory.
+
+The real three upstream services are not claimed connected: operators must enter
+their actual ERP v1 credentials and obtain a successful signed capabilities test.
+Final documentation head must pass all8 checks before authorized PR1362 develop
+merge. Runtime source remains byte-equivalent; reservation releases on verified
+merge. No main release is included.
