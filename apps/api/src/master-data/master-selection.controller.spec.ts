@@ -192,6 +192,18 @@ describe('consumer-scoped reference selection', () => {
       'currencies',
     ],
     [
+      'accounting',
+      'finance.account.manage',
+      'ui.screen.finance.home',
+      'cities',
+    ],
+    [
+      'accounting',
+      'finance.account.manage',
+      'ui.screen.finance.home',
+      'regions',
+    ],
+    [
       'marketing',
       'marketing.read',
       'ui.screen.marketing.home',

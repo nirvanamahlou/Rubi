@@ -1041,3 +1041,13 @@ TourDeparture.isActive defaults true; salesVersion defaults1 and supplies separa
 ## Detail account identity and numbering (2026-11-04)
 
 AccountingDetail retains its immutable ID. Its digit string code is unique within (bookId, typeId) and may repeat in another type. Classification width is 1–20. Automatic creation allocates the first free code from the configured start (zero if absent) under the book's command lock, counting inactive accounts. Used historical codes keep their stored spelling. New person/company details link to Customer by a restrictive nullable FK; Customers resolves the active branch-scoped owner and supplies the title. Existing details without a proven owner are never matched by name.
+
+## Accounting person profile (2026-11-04)
+
+Customers owns the branch-unique, manually entered ledgerPersonCode (1–20 digits, preserved as text). This code is distinct from the generated CRM customerCode and the type-specific ledger detail account code. Customer identity, names, gender, birth date and protected national ID remain canonical. The accounting person form stores its optional descriptive fields, geographic display snapshots, address rows, workflow metadata, server-authored notes and purchase/sale tax counterparty classifications in an authenticated encrypted envelope bound to the customer UUID. Additional fields are nullable for existing people. The company workflow keeps its existing customer entry. Documents owns the separate file archive and grants.
+
+## Accounting company profile (2026-11-04)
+
+Organizations used as ledger owners keep their required Customer.organizationId FK to MasterOrganization. Legal name, national ID, economic code and registration number use the organization record. The branch-local accounting company code is a digit string, unique per owning branch and separate from both generated CRM codes and account detail codes. Optional accounting fields, address snapshots, tax rows, workflow metadata and notes use authenticated encryption bound to the company customer UUID. Documents owns the attachment files. Company types follow the ten observed legal forms; purchase and sale each accept only the registered-taxpayer classification.
+
+The Customers command checks branch and version, and delegates identity creation or changes to Master Data in the same transaction. Creating a new organization or changing shared registration fields requires the corresponding Master Data permission and field controls. An existing active legal entity matched by national ID is reused only when supplied identity fields agree; conflicting information must be reconciled. A failure creating/updating the customer rolls back the organization write.

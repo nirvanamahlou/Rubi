@@ -8922,3 +8922,17 @@ TRAVEL-UI-ANNOTATIONS-1104 — PC-B — ACTIVE: owner authorizes nine annotated 
 TRAVEL-UI-ANNOTATIONS-1104 implemented: all nine annotations addressed;78 focused checks pass (75 in initial run plus3 saved-pack harness checks after adding the newly used useId). Scoped ESLint passed. TypeScript/final hosted gates precede authorized merge. Presentation-only changes; full evidence in docs/tasks/TRAVEL-UI-ANNOTATIONS-1104.md.
 
 TRAVEL-UI-ANNOTATIONS-1104 CI recovery: required quality/build/database gates passed. Full suite found one existing ticket render assertion requiring the exact eyebrow the owner removed; updated that assertion without dropping coverage or controls. All7 render checks pass. Full Web TypeScript passes with current-source contracts, scoped lint passes, total85 focused checks across runs. All final-head hosted checks remain required before merge.
+
+## ACCOUNTING-PERSON-PROFILE-1104 — local implementation
+
+The ledger title picker now opens the person/company chooser. Person creation and row editing use the main form, address grid, workflow code/email, notes and attachments, and tax counterparty rows observed in Rahkaran. Requires person code, first and last names and gender. Title and national ID are optional. Edits use branch-scoped customer identity and version; sensitive reads are permission checked and audited. Notes retain creation and change metadata. Appendix files use the authorized finance archive after saving the person. Each tax operation can occur once and only sales accepts final consumer.
+
+Disposable PostgreSQL migration and service checks covered concurrent code conflicts, 0007 round trips, optional/invalid national ID, branch and sensitive-read controls, preserved notes and stale edits. A browser exercise used the actual editor and Customers service with synthetic data: chooser, 00025, address, workflow, dated note and sales classification, save-to-title, reopen, edit, and reload. The real-site archive was not exercised. Verification used local QA; no operational migration or deployment.
+Validation: 44 targeted tests passed (12 Customers/profile, 16 geographic selection controller, 16 Web/archive client/translation). API and Web production builds, typechecks, scoped lint and formatting passed.
+
+## ACCOUNTING-COMPANY-PROFILE-1104 — local implementation
+
+The title chooser opens the company editor for new and existing legal entities. Main fields, searchable ten-option company type, address table, workflow code/email, notes, archive attachments and company-specific tax choices are included. Local browser validation against a disposable PostgreSQL database verified create/select, branch-scoped picker, 00025 and 0259 round trips, editing the abbreviated name, and ten simultaneously visible choices at desktop size. No operational data or site rollout.
+
+Validation: 90 API tests including a PostgreSQL transaction rollback/no-orphan case, ID and version checks; 17 Web, Documents-client and localization checks passed. Prerequisite is the person profile commit bcffdd0fd. Deploy both additive migrations before using the new forms.
+Production API/Web builds, typechecks, scoped lint and formatting passed. Verified pre-existing person ciphertext compatibility and cross-kind rejection.

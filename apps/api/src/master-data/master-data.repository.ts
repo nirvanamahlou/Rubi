@@ -1338,8 +1338,9 @@ export class MasterDataRepository {
     data: Record<string, unknown>,
     actorUserId: string,
     actorBranchId: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const createData = { ...data };
       const dossier = createData.partnerDossier as
         Record<string, unknown> | undefined;
@@ -1413,7 +1414,10 @@ export class MasterDataRepository {
         },
       });
       return row;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async update(
@@ -1423,8 +1427,9 @@ export class MasterDataRepository {
     expectedVersion: number,
     actorUserId: string,
     actorBranchId: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const model = delegate(transaction, resource);
       const writeData = { ...data };
       const dossier = writeData.partnerDossier as
@@ -1497,7 +1502,10 @@ export class MasterDataRepository {
         },
       });
       return row;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async remove(

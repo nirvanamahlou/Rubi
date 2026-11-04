@@ -11187,3 +11187,16 @@ TRAVEL-UI-ANNOTATIONS-1104 — PC-B — ACTIVE: owner authorizes nine annotated 
 TRAVEL-UI-ANNOTATIONS-1104 implemented: all nine annotations addressed;78 focused checks pass (75 in initial run plus3 saved-pack harness checks after adding the newly used useId). Scoped ESLint passed. TypeScript/final hosted gates precede authorized merge. Presentation-only changes; full evidence in docs/tasks/TRAVEL-UI-ANNOTATIONS-1104.md.
 
 TRAVEL-UI-ANNOTATIONS-1104 CI recovery: required quality/build/database gates passed. Full suite found one existing ticket render assertion requiring the exact eyebrow the owner removed; updated that assertion without dropping coverage or controls. All7 render checks pass. Full Web TypeScript passes with current-source contracts, scoped lint passes, total85 focused checks across runs. All final-head hosted checks remain required before merge.
+
+## ACCOUNTING-PERSON-PROFILE-1104 — PC-D / PC-B — LOCAL_COMPLETE
+
+Reserve the title picker and Customers-owned accounting person workflow, one additive migration for branch-unique person code and protected profile, scoped contracts, tests, and documentation. Branch starts at PC-D-Integration and fast-forwards develop for merged prerequisite PR1378. No shared dependency changes.
+
+Includes the four observed person tabs, address grid, geographic lookup and existing Documents archive link. Validation and handoff in docs/PROJECT_STATUS.md. Bounded reservations released with local commit.
+
+## ACCOUNTING-COMPANY-PROFILE-1104 — PC-D / PC-B — LOCAL_COMPLETE
+
+Reserve the company title picker, Customers ledger company command and public organization reference contract, one additive Customer migration, and company form, tests and docs. Branch starts from PC-D-Integration then fast-forwards local person prerequisite bcffdd0fd. No lockfile or operational DB changes.
+
+Scoped reservations released at local commit. The company profile uses the shared person/company chooser and document/geo bindings with an independent company title code and tax policy.
+Publication: owner requests push, hosted CI, PR to develop, and ordinary merge after review and passing PR checks for the stacked person and company profiles. Latest develop integration preserves peer records.
