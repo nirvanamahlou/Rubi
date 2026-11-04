@@ -8858,3 +8858,9 @@ Sales country dropdowns pin Iran first and Turkey second using ISO2/ISO3 identif
 2026-11-04 PC-B HOTEL-IMPORT-PRINT-1104: fixed legitimate Excel printerSettings relative-part rejection.77 parser tests plus an ephemeral actual-file read pass; scoped lint passes. No owner workbook content or business data changed. Pending runtime build/health and hosted validation.
 
 2026-11-04 PC-B FINANCE-INBOX-COPY-1104: applied six owner annotations to Finance requests presentation: overview initially open; remove filter heading, visible search label, list helper and manual-create entry; separate follow-up from export actions. Search retains an accessible label and handlers/permissions are unchanged. Four existing presentation/filter checks and scoped ESLint pass. No API, schema or operational data changes. Required final-head CI gates precede authorized develop merge.
+
+## CONTRACT-RECEIPT-1104 — PC-B — VALIDATING
+
+Read-only production audit found no RECEIPT document type or PROCUREMENT_FINANCE category; existing Sales contract/branch authorization is not the cause. Added an insert-only reference migration using restrictive PDF/JPEG/PNG, 25 MiB and RESTRICTED defaults. Existing IDs, configured policies and disabled rows remain unchanged. PostgreSQL regression covers empty/partial installations and replay/customization preservation; included in hosted database gate. No application/IAM/schema changes. Targeted reference activation and final-head checks/authorized develop merge pending.
+
+CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay/custom-policy regression passes; database build/typecheck, scoped ESLint, formatting and five CI-policy checks pass. Initial cold Docker startup exceeded the default five-second test budget; database readiness and a bounded integration-test timeout resolved it. No production records have yet changed. Exact-head hosted quality/tests/migrations/build gates precede merge.
