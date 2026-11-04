@@ -18,8 +18,6 @@ import { NoteEditor } from './note-editor';
 import { WorkbenchDailyAssistant } from './workbench-daily-assistant';
 import {
   filterNoteDrafts,
-  noteTemplates,
-  notesWithTemplates,
   WORKBENCH_NOTE_FAVORITES_CHANGED,
   type NoteDraft,
 } from './note-drafts';
@@ -51,9 +49,12 @@ export function WorkbenchNotes({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [notes, setNotes] = useState<NoteDraft[]>(() =>
-    structuredClone(noteTemplates),
-  );
+  const [notes, setNotes] = useState<NoteDraft[]>([]);
+  const loadGeneration = useRef(0);
+  const invalidate = useCallback(() => {
+    loadGeneration.current++;
+  }, []);
+  const [deletingId, setDeletingId] = useState<string>();
   const pendingNotes = useRef(new Set<string>());
   const [folders, setFolders] = useState(['شخصی', 'جلسات', 'ایده‌ها']);
   const [search, setSearch] = useState('');
@@ -68,26 +69,32 @@ export function WorkbenchNotes({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     setLoading(true);
     setError('');
     try {
       const response = await workbenchPersonalApi.notes();
-      setNotes(notesWithTemplates(response.data.map(storedNote)));
+      if (generation !== loadGeneration.current) return;
+      setNotes(response.data.map(storedNote));
       setFolders(response.folders);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : 'دریافت یادداشت‌ها انجام نشد.',
-      );
+      if (generation === loadGeneration.current)
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'دریافت یادداشت‌ها انجام نشد.',
+        );
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
   }, [setError, setFolders, setLoading, setNotes]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+    return () => {
+      window.clearTimeout(timer);
+      invalidate();
+    };
+  }, [load, invalidate]);
   const shown = filterNoteDrafts(notes, search, folder, from, to);
   function edit(note: NoteDraft) {
     setEditing(note);
@@ -124,6 +131,27 @@ export function WorkbenchNotes({
       pendingNotes.current.delete(id);
     }
   }
+  async function remove(note: NoteDraft) {
+    if (pendingNotes.current.has(note.id)) return;
+    pendingNotes.current.add(note.id);
+    setDeletingId(note.id);
+    setError('');
+    try {
+      await workbenchPersonalApi.deleteNote(note.id);
+      loadGeneration.current++;
+      setLoading(false);
+      setNotes((current) => current.filter((row) => row.id !== note.id));
+      setRemoved(note);
+      window.dispatchEvent(new Event(WORKBENCH_NOTE_FAVORITES_CHANGED));
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'حذف یادداشت انجام نشد.',
+      );
+    } finally {
+      pendingNotes.current.delete(note.id);
+      setDeletingId(undefined);
+    }
+  }
   function closeEditor(value: boolean) {
     onOpenChange(value);
     if (!value) {
@@ -153,7 +181,7 @@ export function WorkbenchNotes({
           </Button>
           <Button
             variant="outline"
-            disabled={loading}
+            disabled={loading || Boolean(deletingId)}
             onClick={() => void load()}
           >
             <RefreshCw className="size-4" />
@@ -301,6 +329,7 @@ export function WorkbenchNotes({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={deletingId === note.id}
                     onClick={() => edit(note)}
                   >
                     ویرایش
@@ -309,23 +338,8 @@ export function WorkbenchNotes({
                     size="sm"
                     variant="outline"
                     className="border-rose-200 text-rose-700 dark:text-rose-300"
-                    onClick={() => {
-                      setRemoved(note);
-                      setNotes((current) =>
-                        current.filter((row) => row.id !== note.id),
-                      );
-                      if (!note.template)
-                        void workbenchPersonalApi
-                          .deleteNote(note.id)
-                          .catch((reason) => {
-                            setError(
-                              reason instanceof Error
-                                ? reason.message
-                                : 'حذف یادداشت انجام نشد.',
-                            );
-                            void load();
-                          });
-                    }}
+                    disabled={Boolean(deletingId)}
+                    onClick={() => void remove(note)}
                   >
                     حذف
                   </Button>
@@ -347,18 +361,19 @@ export function WorkbenchNotes({
               onClick={() => {
                 const candidate = removed;
                 setRemoved(undefined);
-                if (candidate.template) {
-                  setNotes((current) => [...current, candidate]);
-                  return;
-                }
                 void workbenchPersonalApi
                   .createNote(noteInput(candidate))
-                  .then((response) =>
+                  .then((response) => {
+                    loadGeneration.current++;
+                    setLoading(false);
                     setNotes((current) => [
                       ...current,
                       storedNote(response.data),
-                    ]),
-                  )
+                    ]);
+                    window.dispatchEvent(
+                      new Event(WORKBENCH_NOTE_FAVORITES_CHANGED),
+                    );
+                  })
                   .catch((reason) => {
                     setError(
                       reason instanceof Error
@@ -404,6 +419,7 @@ export function WorkbenchNotes({
               );
               setNotes((current) => [...current, storedNote(response.data)]);
             }
+            window.dispatchEvent(new Event(WORKBENCH_NOTE_FAVORITES_CHANGED));
             closeEditor(false);
           } catch (reason) {
             setError(

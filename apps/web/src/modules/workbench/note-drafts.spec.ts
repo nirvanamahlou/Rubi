@@ -1,17 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { notesWithTemplates, noteTemplates } from './note-drafts';
+import { filterNoteDrafts, type NoteDraft } from './note-drafts';
 
-describe('saved notes and starter templates', () => {
-  it('replaces a starter card with its persisted starred copy after reload', () => {
-    const saved = {
-      ...noteTemplates[0]!,
-      id: 'saved-note',
-      template: false,
-      pinned: true,
-      version: 1,
-    };
-    const shown = notesWithTemplates([saved]);
-    expect(shown.filter((note) => note.title === saved.title)).toEqual([saved]);
-    expect(shown).toHaveLength(noteTemplates.length);
+const saved: NoteDraft = {
+  id: 'saved-note',
+  title: 'ایده بهبود تحویل پرونده',
+  body: 'متن شخصی ذخیره‌شده',
+  folder: 'ایده‌ها',
+  tags: '',
+  items: [],
+  pinned: true,
+  updatedAt: '2026-11-04T08:00:00Z',
+  template: false,
+  version: 1,
+};
+
+describe('personal note listing', () => {
+  it('preserves a saved note even when its title matches a former example', () => {
+    expect(filterNoteDrafts([saved], '', '', '', '')).toEqual([saved]);
+  });
+  it('keeps an empty server list empty after deletion', () => {
+    expect(filterNoteDrafts([], '', '', '', '')).toEqual([]);
   });
 });
