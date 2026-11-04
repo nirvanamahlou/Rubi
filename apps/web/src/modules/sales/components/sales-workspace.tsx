@@ -446,11 +446,11 @@ export function SalesWorkspace() {
             {exportNotice}
           </p>
         ) : null}
-        <p className="mt-3 text-xs text-muted-foreground">
-          {dateFilterApplied
-            ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
-            : 'بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.'}
-        </p>
+        {dateFilterApplied ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.
+          </p>
+        ) : null}
       </section>
       {!loading && !error && contracts.length === 0 ? (
         <EmptyState

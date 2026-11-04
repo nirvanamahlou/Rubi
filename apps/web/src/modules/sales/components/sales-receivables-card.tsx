@@ -284,14 +284,6 @@ export function SalesReceivablesCard({
           </p>
         ) : (
           <>
-            <p className="mb-2 text-xs text-muted-foreground">
-              {query.dateBasis === 'TRAVEL'
-                ? 'بر اساس تاریخ سفر'
-                : 'بر اساس تاریخ قرارداد'}
-              {query.from || query.to
-                ? ` · ${query.from ?? '…'} — ${query.to ?? '…'}`
-                : ' · همه تاریخ‌ها'}
-            </p>
             <div className="flex flex-wrap gap-2">
               {data?.balances.length ? (
                 data.balances.map((balance) => (

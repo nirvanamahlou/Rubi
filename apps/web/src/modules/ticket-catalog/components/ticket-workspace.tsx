@@ -1150,6 +1150,7 @@ function TicketCatalogWorkspace() {
         }}
       >
         <DialogContent
+          aria-describedby={undefined}
           dir="rtl"
           className={`${formStyles.dialog} ${(form?.mode === 'create' && !form.initial) || form?.mode === 'edit' ? formStyles.scheduleDialog : 'max-w-4xl'} start-auto! left-1/2!`}
         >
@@ -1160,11 +1161,11 @@ function TicketCatalogWorkspace() {
                 ? 'ویرایش بلیط'
                 : 'تعریف بلیط جدید'}
           </DialogTitle>
-          <DialogDescription>
-            {form?.mode === 'view'
-              ? 'اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیط را مشاهده کنید.'
-              : 'اطلاعات مسیر، ظرفیت و نرخ خرید را کامل کنید.'}
-          </DialogDescription>
+          {form?.mode === 'view' ? (
+            <DialogDescription>
+              اطلاعات کامل مسیر، زمان، ظرفیت و نرخ این بلیط را مشاهده کنید.
+            </DialogDescription>
+          ) : null}
           {form ? (
             <div className="mt-5">
               {form.mode === 'view' && form.product ? (

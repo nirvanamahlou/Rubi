@@ -38,7 +38,6 @@ describe('ticket price workspace', () => {
     const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
     for (const text of [
       'قیمت گذاری پرواز',
-      'کمیسیون ۱۰۰٪ به معنی عدم نمایش است',
       'مبدأ',
       'مقصد سفر',
       'نوع بلیت',
