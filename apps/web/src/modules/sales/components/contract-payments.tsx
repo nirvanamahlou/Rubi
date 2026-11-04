@@ -42,6 +42,7 @@ import {
   validateSalesCurrencySelection,
 } from './sales-currency-select';
 import { calculateContractPaymentShare } from '../model/contract-payment-share';
+import { paymentDestinationIsValid } from '../model/payment-destination';
 
 const empty: SalesPaymentInput = {
   amount: '',
@@ -50,16 +51,19 @@ const empty: SalesPaymentInput = {
   dueAt: '',
 };
 export function ContractPaymentAccountSelect({
+  method,
   accounts,
   currencyCode,
   value,
   onChange,
 }: {
+  method?: SalesPaymentMethod;
   accounts: readonly SalesPaymentAccountV1[];
   currencyCode: string;
   value: string;
   onChange: (value: string) => void;
 }) {
+  if (method === 'CASH') return null;
   const eligible = accounts.filter(
     (account) => account.currencyCode === currencyCode,
   );
@@ -308,14 +312,12 @@ export function ContractPayments({
       active = false;
     };
   }, [id, adding, accountsRetry]);
-  const validAccount =
-    !accountsLoading &&
-    !accountsError &&
-    accounts.some(
-      (account) =>
-        account.id === payment.destinationAccountId &&
-        account.currencyCode === payment.currencyCode,
-    );
+  const validAccount = paymentDestinationIsValid(
+    payment,
+    accounts,
+    accountsLoading,
+    accountsError,
+  );
   useEffect(() => {
     let active = true;
     void loadPaymentCurrencies()
@@ -400,6 +402,10 @@ export function ContractPayments({
       );
       const input = {
         ...payment,
+        destinationAccountId:
+          payment.method === 'CASH'
+            ? null
+            : (payment.destinationAccountId ?? null),
         dueAt: new Date(payment.dueAt).toISOString(),
         version: contract.version,
       };
@@ -731,6 +737,10 @@ export function ContractPayments({
                       setPayment({
                         ...payment,
                         check: null,
+                        destinationAccountId:
+                          method === 'CASH'
+                            ? null
+                            : (payment.destinationAccountId ?? null),
                         method: method as SalesPaymentMethod,
                       })
                     }
@@ -799,7 +809,7 @@ export function ContractPayments({
                     }
                   />
                 </FormField>
-                {accountsLoading ? (
+                {payment.method === 'CASH' ? null : accountsLoading ? (
                   <p role="status">در حال دریافت حساب‌های مقصد…</p>
                 ) : accountsError ? (
                   <div>
@@ -818,6 +828,7 @@ export function ContractPayments({
                   </div>
                 ) : (
                   <ContractPaymentAccountSelect
+                    method={payment.method}
                     accounts={accounts}
                     currencyCode={payment.currencyCode}
                     value={payment.destinationAccountId ?? ''}

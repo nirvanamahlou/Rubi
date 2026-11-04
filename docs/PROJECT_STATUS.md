@@ -8888,6 +8888,12 @@ CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay
 
 2026-11-04 PC-B FINANCE-PUBLISH-1104: owner explicitly requests publishing and merging all completed Finance changes, including the bounded implementation in PR1345. Integrate latest develop in clean voucher-source-1104 worktree; preserve both work logs and translation additions. This supersedes the previous draft-only publication hold, not the documented incomplete full-GL parity. No additional voucher-type implementation, source data import, migration or production deployment in this publication. Final-head hosted quality/tests/build/migration checks must all pass before merge. Finance inbox changes already merged separately in PR1365.
 
+## CASH-PAYMENT-ACCOUNT-1104 — PC-A — VALIDATING
+
+Cash contract payment entry no longer requires the bank-account selector or a successful account-directory lookup. Switching to cash clears the prior selection and submission sends a null destination; other methods retain matching-currency account validation. Existing API accepts accountless entries and still queues Finance confirmation with audit/idempotency intact. Added Web regression for cash/missing/loading/failed account lookup and all noncash methods, plus API persistence regression. No schema, migration, grants or production financial writes. Hosted exact-head quality/tests/build gates precede authorized develop merge.
+
+CASH-PAYMENT-ACCOUNT-1104 validation: 15 focused Web and 10 API/Finance regressions, scoped lint and full Web TypeScript passed. Exact-optional nullable account payload normalized to null. Final-head hosted build/quality/tests/database gates remain mandatory before merge; no runtime rollout.
+
 
 FINANCE-INBOX-LAYOUT-1104 — PC-B — ACTIVE: owner requests six inbox presentation changes and authorizes push/develop merge. Branch codex/pc-b-finance-inbox-layout-1104 from develop74ad64ab2. Reserve finance-inbox-live-workspace, bounded optional PDF visibility in finance-export-actions, existing presentation checks and own notes. Remove the overview disclosure label/control while keeping its contents visible, account helper and follow-up panel; move Excel to request-list header and pagination to its footer; hide only inbox PDF action, preserve shared history/receipt exports and all request/filter/payment/access behavior. No API/schema/dependency/operational data or deployment changes.
 

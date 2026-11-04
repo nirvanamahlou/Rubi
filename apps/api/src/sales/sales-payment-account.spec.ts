@@ -100,3 +100,51 @@ describe('Sales payment destination', () => {
     expect(tx.salesContractPaymentEntry.create).toHaveBeenCalledTimes(1);
   });
 });
+
+it('registers cash without a bank account and keeps Finance confirmation separate', async () => {
+  const cash = {
+    ...input,
+    method: 'CASH' as const,
+    destinationAccountId: null,
+  };
+  expect(() => validateSalesPayment(cash)).not.toThrow();
+  const tx = {
+    salesContractPaymentEntry: {
+      findUnique: vi.fn(async () => null),
+      create: vi.fn(async (value: { data: Record<string, unknown> }) => value),
+    },
+    salesContract: { updateMany: vi.fn(async () => ({ count: 1 })) },
+    financeSettlementAccount: { findFirst: vi.fn() },
+    salesContractAuditEvent: { create: vi.fn(async () => ({})) },
+  };
+  const repository = new SalesRepository({
+    client: {
+      $transaction: async (run: (tx: unknown) => unknown) => run(tx),
+    },
+  } as never);
+  expect(
+    await repository.addPayment(
+      'contract',
+      cash,
+      'cash-key',
+      'cash-fingerprint',
+      {
+        userId: 'owner',
+        branchId: 'branch',
+      },
+    ),
+  ).toBe('created');
+  expect(tx.financeSettlementAccount.findFirst).not.toHaveBeenCalled();
+  expect(
+    tx.salesContractPaymentEntry.create.mock.calls[0]![0].data,
+  ).toMatchObject({
+    method: 'CASH',
+    amount: '100',
+    status: 'PENDING_FINANCE_CONFIRMATION',
+  });
+  expect(
+    tx.salesContractPaymentEntry.create.mock.calls[0]![0].data
+      .destinationAccountId,
+  ).toBeUndefined();
+  expect(tx.salesContractAuditEvent.create).toHaveBeenCalledTimes(1);
+});
