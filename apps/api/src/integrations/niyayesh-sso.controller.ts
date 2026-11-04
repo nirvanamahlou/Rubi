@@ -24,8 +24,12 @@ export class NiyayeshSsoController {
   @Get('access')
   @UseGuards(AuthGuard, PermissionGuard)
   @Header('Cache-Control', 'private, no-store')
-  access(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {
-    return this.service.access(r.actor, branch);
+  access(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') systemId?: string,
+  ) {
+    return this.service.access(r.actor, branch, systemId);
   }
   @Post('session')
   @Public()

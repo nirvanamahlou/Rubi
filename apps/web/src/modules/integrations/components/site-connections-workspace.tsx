@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type {
   IntegrationRegistryV1,
   IntegrationSystemConfigV1,
@@ -8,17 +8,9 @@ import type {
 import { Cable, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
-import {
-  Alert,
-  Badge,
-  Card,
-  EmptyState,
-  Skeleton,
-} from '@/components/ui/surfaces';
-import { integrationsApi } from '../api/client';
+import { Alert, Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { catalogueSystems } from '../model';
 import { isGhestirooSystem } from '../system-connector';
-import { matchesNativeSite } from '../site-connections-model';
 import {
   GhestirooConnection,
   type GhestirooConnectionState,
@@ -26,6 +18,7 @@ import {
 import { GhestirooWorkspace } from './ghestiroo-workspace';
 import { NiyayeshData } from './niyayesh-data';
 import { SitePresence } from './site-presence';
+import { SiteApiConnection } from './site-api-connection';
 import styles from './site-connections-workspace.module.css';
 
 type SelectedProps = {
@@ -89,16 +82,26 @@ export function SelectedSiteConnection(props: SelectedProps) {
   return isGhestirooSystem(props.system, props.registry) ? (
     <GhestirooSelectedSite {...props} />
   ) : (
+    <NiyayeshSelectedSite {...props} />
+  );
+}
+
+function NiyayeshSelectedSite(props: SelectedProps) {
+  const [revision, setRevision] = useState(0);
+  return (
     <SiteConnectionLayout
       {...props}
+      revision={revision}
       api={
-        <NiyayeshApiConnection
+        <SiteApiConnection
           branchId={props.registry.branchId}
           system={props.system}
+          onSaved={() => setRevision((value) => value + 1)}
         />
       }
       services={
         <NiyayeshData
+          key={`${props.system.id}:${revision}`}
           branchId={props.registry.branchId}
           expectedSystemId={props.system.id}
           servicesOnly
@@ -208,78 +211,5 @@ function GhestirooSelectedSite(props: SelectedProps) {
       }
       services={services}
     />
-  );
-}
-
-function NiyayeshApiConnection({
-  branchId,
-  system,
-}: {
-  branchId: string;
-  system: IntegrationSystemConfigV1;
-}) {
-  const [status, setStatus] = useState<Awaited<
-    ReturnType<typeof integrationsApi.niyayeshStatus>
-  > | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [revision, setRevision] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
-      await Promise.resolve();
-      if (controller.signal.aborted) return;
-      setLoading(true);
-      setError('');
-      setStatus(null);
-      try {
-        const value = await integrationsApi.niyayeshStatus(
-          branchId,
-          controller.signal,
-        );
-        if (!controller.signal.aborted) setStatus(value);
-      } catch (cause) {
-        if (!controller.signal.aborted)
-          setError(
-            cause instanceof Error ? cause.message : 'خواندن اتصال انجام نشد.',
-          );
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [branchId, system.id, revision]);
-  const connected =
-    matchesNativeSite(status, system.id) && status?.state === 'CONNECTED';
-  return (
-    <Card className="grid gap-4 p-5">
-      <h2 className="text-lg font-bold">اتصال API {system.name}</h2>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={loading}
-        onClick={() => setRevision((value) => value + 1)}
-      >
-        بررسی اتصال
-      </Button>
-      {loading ? (
-        <Skeleton className="h-20" />
-      ) : error ? (
-        <Alert
-          tone="error"
-          title="خواندن اتصال انجام نشد"
-          description={error}
-        />
-      ) : connected ? (
-        <div className="flex flex-wrap gap-3">
-          <Badge>اتصال API تأیید شد</Badge>
-          <Badge>{status.environment}</Badge>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          اتصال API این سایت هنوز تنظیم نشده است.
-        </p>
-      )}
-    </Card>
   );
 }
