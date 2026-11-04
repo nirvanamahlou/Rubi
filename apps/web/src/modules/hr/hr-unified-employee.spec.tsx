@@ -192,3 +192,21 @@ describe('unified employee form and complete details', () => {
     expect(html).toContain('0012');
   });
 });
+
+it('keeps status editable in the unified employee edit form', () => {
+  const html = renderToStaticMarkup(
+    <NewEmployeeForm
+      initialValue={employeeFormValue(employee, store())}
+      lockAssignment
+      existingPersonnelCodes={[]}
+      managerOptions={[]}
+      onCancel={() => {}}
+      onSubmit={() => {}}
+    />,
+  );
+  const statusInput = html.match(
+    /<input[^>]*id="hr-new-employee-status"[^>]*>/,
+  )?.[0];
+  expect(statusInput).toBeDefined();
+  expect(statusInput).not.toMatch(/\sdisabled(?:=|\s|\/?>)/);
+});
