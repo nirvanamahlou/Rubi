@@ -543,6 +543,7 @@ function Content({
                 <RotateCcw size={16} /> تازه‌سازی فهرست
               </button>
             </div>
+
             <div className={styles.tableScroll}>
               <table
                 className={`${styles.table} ${styles.contactTable} ${styles.centeredTable}`}
@@ -781,6 +782,7 @@ function Content({
           </DossierFrame>
         )}
       </div>
+
       {withoutOutcomeOpen && (
         <WithoutOutcomeDialog
           key={`${branch}:${historyRevision}`}

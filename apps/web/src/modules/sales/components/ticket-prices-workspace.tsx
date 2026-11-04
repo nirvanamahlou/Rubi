@@ -691,6 +691,7 @@ export function TicketPricesWorkspace() {
       />
       {error ? <Alert tone="error" title={error} /> : null}
       {notice ? <Alert title={notice} /> : null}
+
       <section
         aria-label="خلاصه قیمت‌گذاری بلیط‌ها"
         className="grid gap-3 sm:grid-cols-3"

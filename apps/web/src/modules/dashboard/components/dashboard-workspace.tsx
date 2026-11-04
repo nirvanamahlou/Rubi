@@ -1417,6 +1417,7 @@ function KpiDefinitionPanel({
               </Button>
             </DrawerClose>
           </header>
+
           <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
             <section aria-labelledby="kpi-business-definition-title">
               <h3
@@ -1437,6 +1438,7 @@ function KpiDefinitionPanel({
                 </span>
               </p>
             </section>
+
             {definition.currency === 'required' && metric ? (
               <section aria-labelledby="kpi-exact-value-title">
                 <h3
@@ -1458,6 +1460,7 @@ function KpiDefinitionPanel({
                 </div>
               </section>
             ) : null}
+
             <section
               aria-labelledby="kpi-calculation-title"
               className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-4"
@@ -1470,6 +1473,7 @@ function KpiDefinitionPanel({
               </h3>
               <p className="mt-2 leading-7">{definition.rule}</p>
             </section>
+
             <section aria-labelledby="kpi-calculation-features-title">
               <h3
                 className="text-sm font-black text-foreground"
@@ -1501,6 +1505,7 @@ function KpiDefinitionPanel({
                 })}
               </ul>
             </section>
+
             <section
               aria-labelledby="kpi-exclusions-title"
               className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
@@ -1516,6 +1521,7 @@ function KpiDefinitionPanel({
               </p>
             </section>
           </div>
+
           <footer className="border-t border-border bg-surface p-4">
             {report ? (
               <Button
@@ -2788,6 +2794,7 @@ function VisualDetailsPanel({
               </Button>
             </DrawerClose>
           </header>
+
           <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
             <section aria-labelledby={`visual-purpose-${visualId}`}>
               <h3
@@ -2808,6 +2815,7 @@ function VisualDetailsPanel({
                 </p>
               ) : null}
             </section>
+
             <section
               aria-labelledby={`visual-display-rule-${visualId}`}
               className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-4"
@@ -2826,6 +2834,7 @@ function VisualDetailsPanel({
                   : ''}
               </p>
             </section>
+
             <section aria-labelledby={`visual-sources-${visualId}`}>
               <h3
                 className="text-sm font-black text-foreground"
@@ -2857,6 +2866,7 @@ function VisualDetailsPanel({
                 })}
               </ul>
             </section>
+
             <section
               aria-labelledby={`visual-limitations-${visualId}`}
               className="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/30"
@@ -2877,6 +2887,7 @@ function VisualDetailsPanel({
               </p>
             </section>
           </div>
+
           <footer className="border-t border-border bg-surface p-4">
             {reportCode ? (
               <Button
@@ -3302,6 +3313,7 @@ function DashboardSidebar({
           )}
         </Button>
       </div>
+
       {collapsed ? (
         <div className="space-y-2 border-b border-border p-2">
           <Button
@@ -3362,6 +3374,7 @@ function DashboardSidebar({
           </button>
         </div>
       )}
+
       {activePanel === 'workspace' ? (
         <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
           {dashboardNavigation
@@ -3423,6 +3436,7 @@ function DashboardSidebar({
                       </button>
                     ) : null}
                   </div>
+
                   {hasChildren && expanded && !collapsed ? (
                     <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
                       {item.children?.map((child) => {
@@ -3453,6 +3467,7 @@ function DashboardSidebar({
             })}
         </nav>
       ) : null}
+
       {activePanel === 'filters' ? (
         <section
           aria-label={collapsed ? activeFiltersTitle : undefined}
@@ -3502,6 +3517,7 @@ function DashboardSidebar({
                   {activeFiltersTitle}
                 </h3>
               </div>
+
               <div className="mt-4 space-y-3">
                 <div>
                   <div className="grid gap-3">
@@ -3556,6 +3572,7 @@ function DashboardSidebar({
                     </p>
                   ) : null}
                 </div>
+
                 <FormField id="dashboard-range" label="بازه زمانی">
                   <Select
                     value={filters.range}
@@ -3589,6 +3606,7 @@ function DashboardSidebar({
                     </SelectContent>
                   </Select>
                 </FormField>
+
                 <div className="space-y-3 rounded-xl bg-muted/30 p-3">
                   {[
                     ...(dashboardPageFilterKeys[activePageId] ?? []).filter(
@@ -3622,6 +3640,7 @@ function DashboardSidebar({
                     </p>
                   ) : null}
                 </div>
+
                 <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
                   <Button onClick={onFiltersReset} size="sm" variant="outline">
                     <RotateCcw aria-hidden="true" className="size-4" />
@@ -3888,6 +3907,7 @@ export function DashboardWorkspace() {
           onPageSelect={selectPage}
           onRefresh={refreshDashboard}
         />
+
         {assistantPage ? (
           <ExecutiveWorkspace view={assistantPage} />
         ) : (
@@ -3962,6 +3982,7 @@ export function DashboardWorkspace() {
                     </p>
                   </div>
                 </header>
+
                 {activePageKpis.length > 0 ? (
                   <div
                     className={cn(
@@ -3995,6 +4016,7 @@ export function DashboardWorkspace() {
                     نشده است.
                   </p>
                 )}
+
                 {activePage.visualizations.length ? (
                   <div className="grid items-stretch gap-3 xl:grid-cols-2">
                     {activePage.visualizations.map((visualization, index) => (
@@ -4024,6 +4046,7 @@ export function DashboardWorkspace() {
                 ) : null}
               </div>
             </section>
+
             {selectedKpi ? (
               <KpiDefinitionPanel
                 definition={selectedKpi}
@@ -4032,6 +4055,7 @@ export function DashboardWorkspace() {
                 onOpenReportConfiguration={openReportConfiguration}
               />
             ) : null}
+
             {reportConfigurationState ? (
               <ReportingWorkspace
                 configurationOnly

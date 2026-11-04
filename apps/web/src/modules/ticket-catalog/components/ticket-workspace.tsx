@@ -1110,6 +1110,7 @@ function TicketCatalogWorkspace() {
         refreshing={publishedRefreshing}
         onRefresh={() => void refreshPublishedOffers(true)}
       />
+
       <Dialog
         open={Boolean(offerForm)}
         onOpenChange={(open) => {
@@ -1372,6 +1373,7 @@ function TicketCatalogWorkspace() {
           </Button>
         </DialogContent>
       </Dialog>
+
       <Dialog
         open={Boolean(statusChange)}
         onOpenChange={(open) => {
