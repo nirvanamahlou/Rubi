@@ -152,9 +152,6 @@ export function ReservationFloatingFlightPurchase({
           />
         </FormField>
       </div>
-      <p className="text-xs text-muted-foreground">
-        هزینه خرید پرواز برای مسافران همین قرارداد.
-      </p>
       <PurchaseFxRate
         purchaseRoot={purchaseRoot}
         currencyCode={currency?.id ?? ''}

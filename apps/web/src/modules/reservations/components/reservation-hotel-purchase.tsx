@@ -558,9 +558,6 @@ export function LegacyReservationHotelPurchase({
         <h3 className="font-bold">
           درخواست خرید قرارداد {request.snapshot.contractNumber}
         </h3>
-        <p className="text-xs text-muted-foreground">
-          هتل و ترانسفرهای این قرارداد با یک ثبت به مالی ارسال می‌شوند.
-        </p>
       </div>
       {request.snapshot.serviceSelections
         .filter((service) => !purchaseRoot && service.kind === 'INSURANCE')
