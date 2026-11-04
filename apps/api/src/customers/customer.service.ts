@@ -1,4 +1,10 @@
-import { createHash } from 'node:crypto';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
+import {
+  ledgerPersonInput,
+  authoredPersonNotes,
+} from './ledger-person.validation';
+import type { LedgerPersonView } from '@nora/contracts';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   canViewRoute,
   hasSalesContractSelfService,
@@ -14,6 +20,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type {
@@ -418,6 +425,9 @@ export class CustomerService {
     private readonly contactCrypto: CustomerContactCrypto,
     @Inject(CustomerNationalIdProtector)
     private readonly nationalIdProtector: CustomerNationalIdProtector,
+    @Optional()
+    @Inject(IamFinanceDirectory)
+    private readonly identities?: IamFinanceDirectory,
   ) {}
 
   /** Request-local capabilities for the owner-authorized new-contract person workflow. */
@@ -704,6 +714,182 @@ export class CustomerService {
         requestedSensitiveReadReason,
       ),
     };
+  }
+
+  async ledgerPerson(
+    id: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    const branch = branchOf(actor, branchId);
+    const row = await this.repository.find(id, [branch]);
+    if (!row || row.kind !== 'PERSON' || !row.isActive)
+      throw new NotFoundException();
+    if (!actor.permissions.includes('customers.sensitive.read'))
+      throw new ForbiddenException();
+    const extras = this.contactCrypto.openPerson(id, row.ledgerPersonEnvelope);
+    if (!row.ledgerPersonEnvelope) {
+      for (const c of row.contacts ?? []) {
+        const key =
+          c.type === 'EMAIL'
+            ? 'email'
+            : c.label?.includes('همراه')
+              ? 'mobile'
+              : 'telephone';
+        if (!extras.fields[key] || c.isPrimary)
+          extras.fields[key] = this.contactCrypto.decrypt(c) ?? '';
+      }
+      if (row.nationalityCode) extras.fields.nationality = row.nationalityCode;
+    }
+    const data: LedgerPersonView = {
+      ...extras,
+      id,
+      version: row.version,
+      code: row.ledgerPersonCode ?? '',
+      firstName: row.firstName ?? '',
+      lastName: row.lastName ?? '',
+      gender: row.gender === 'F' || row.gender === 'M' ? row.gender : '',
+      birthDate: row.birthDate?.toISOString().slice(0, 10) ?? '',
+      nationalId: this.nationalIdProtector.decrypt(row) ?? '',
+    };
+    await this.repository.auditSensitiveRead(
+      id,
+      actor.userId,
+      branch,
+      'data-correction',
+      traceId,
+      ['ledgerPersonProfile', 'birthDate', 'nationalId'],
+    );
+    return { data };
+  }
+  async saveLedgerPerson(
+    raw: unknown,
+    branchId: string,
+    actor: AuthenticatedActor,
+    editId?: string,
+    traceId?: string,
+  ) {
+    const input = ledgerPersonInput(raw),
+      branch = branchOf(actor, branchId),
+      id = editId ?? randomUUID();
+    const existing = editId
+      ? await this.repository.find(editId, [branch])
+      : null;
+    if (
+      editId &&
+      (!existing || existing.kind !== 'PERSON' || !existing.isActive)
+    )
+      throw new NotFoundException();
+    if (editId && !actor.permissions.includes('customers.sensitive.read'))
+      throw new ForbiddenException();
+    if (existing && input.version !== existing.version) throw conflict();
+    const displayName = input.firstName + ' ' + input.lastName;
+    const changes = {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      displayName,
+      gender: input.gender,
+      birthDate: input.birthDate || null,
+      ...(input.nationalId !== undefined
+        ? { nationalId: input.nationalId || null }
+        : {}),
+    };
+    const mutation: CustomerMutationRequest = {
+      ...changes,
+      kind: 'person',
+      roles: existing
+        ? [
+            ...(existing.isCustomer ? ['customer' as const] : []),
+            ...(existing.isPassenger ? ['passenger' as const] : []),
+          ]
+        : ['customer'],
+    };
+    this.assertMutationFields(
+      mutation,
+      actor,
+      existing ? this.mutationSnapshot(existing, ['nationalId']) : undefined,
+    );
+    const protectedId = input.nationalId
+      ? this.nationalIdProtector.protect(input.nationalId)
+      : {};
+    const old = this.contactCrypto.openPerson(
+      id,
+      existing?.ledgerPersonEnvelope,
+    );
+    const author =
+      input.notes.length && this.identities
+        ? (await this.identities.displayNames([actor.userId], [branch]))[0]
+            ?.displayName
+        : undefined;
+    const profile = {
+      fields: input.fields,
+      addresses: input.addresses,
+      taxRows: input.taxRows,
+      notes: authoredPersonNotes(
+        input.notes,
+        old.notes,
+        author ?? actor.userId,
+      ),
+    };
+    const data = {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      displayName,
+      gender: input.gender,
+      birthDate: input.birthDate
+        ? new Date(input.birthDate + 'T00:00:00Z')
+        : null,
+      ...(input.nationalId === ''
+        ? {
+            nationalIdEncrypted: null,
+            nationalIdIv: null,
+            nationalIdAuthTag: null,
+            nationalIdKeyVersion: null,
+            nationalIdMasked: null,
+            nationalIdFingerprint: null,
+          }
+        : protectedId),
+      ledgerPersonCode: input.code,
+      ledgerPersonEnvelope: this.contactCrypto.sealPerson(id, profile),
+    };
+    try {
+      const saved = existing
+        ? await this.repository.update(
+            id,
+            [branch],
+            data,
+            existing.version,
+            actor.userId,
+            branch,
+            traceId,
+          )
+        : await this.repository.create(
+            {
+              ...data,
+              id,
+              kind: 'PERSON',
+              isCustomer: true,
+              isPassenger: false,
+            },
+            actor.userId,
+            branch,
+            traceId,
+          );
+      if (!saved) throw conflict();
+      return {
+        data: {
+          id: saved.id,
+          displayName: saved.displayName,
+          version: saved.version,
+          notes: profile.notes,
+        },
+      };
+    } catch (e) {
+      if (prismaCode(e) === 'P2002')
+        throw new ConflictException('کد شخص یا کد ملی قبلاً ثبت شده است.');
+      throw e;
+    }
   }
 
   async registrationLookup(

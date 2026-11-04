@@ -1041,3 +1041,7 @@ TourDeparture.isActive defaults true; salesVersion defaults1 and supplies separa
 ## Detail account identity and numbering (2026-11-04)
 
 AccountingDetail retains its immutable ID. Its digit string code is unique within (bookId, typeId) and may repeat in another type. Classification width is 1–20. Automatic creation allocates the first free code from the configured start (zero if absent) under the book's command lock, counting inactive accounts. Used historical codes keep their stored spelling. New person/company details link to Customer by a restrictive nullable FK; Customers resolves the active branch-scoped owner and supplies the title. Existing details without a proven owner are never matched by name.
+
+## Accounting person profile (2026-11-04)
+
+Customers owns the branch-unique, manually entered ledgerPersonCode (1–20 digits, preserved as text). This code is distinct from the generated CRM customerCode and the type-specific ledger detail account code. Customer identity, names, gender, birth date and protected national ID remain canonical. The accounting person form stores its optional descriptive fields, geographic display snapshots, address rows, workflow metadata, server-authored notes and purchase/sale tax counterparty classifications in an authenticated encrypted envelope bound to the customer UUID. Additional fields are nullable for existing people. The company workflow keeps its existing customer entry. Documents owns the separate file archive and grants.

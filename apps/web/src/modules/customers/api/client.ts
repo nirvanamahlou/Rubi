@@ -1,3 +1,8 @@
+import type {
+  LedgerPersonInput,
+  LedgerPersonView,
+  PersonNote,
+} from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   BranchReference,
@@ -133,10 +138,30 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
-  selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
-    return request<{ data: readonly { id: string; displayName: string }[] }>(
-      `/selections/${workflow}?${serializeCustomerListQuery(query)}`,
+  ledgerPerson(id: string, branch: string) {
+    return request<{ data: LedgerPersonView }>(
+      '/ledger-persons/' + encodeURIComponent(id),
+      { headers: { 'x-branch-id': branch } },
     );
+  },
+  saveLedgerPerson(input: LedgerPersonInput, branch: string, id?: string) {
+    return request<{
+      data: {
+        id: string;
+        displayName: string;
+        version: number;
+        notes: PersonNote[];
+      };
+    }>('/ledger-persons' + (id ? '/' + encodeURIComponent(id) : ''), {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'x-branch-id': branch },
+      body: JSON.stringify(input),
+    });
+  },
+  selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
+    return request<{
+      data: readonly { id: string; displayName: string; personCode?: string }[];
+    }>(`/selections/${workflow}?${serializeCustomerListQuery(query)}`);
   },
   registrationLookup(input: CustomerRegistrationLookupRequest) {
     return request<{ data: CustomerDetail | null }>(

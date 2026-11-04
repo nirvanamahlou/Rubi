@@ -11181,3 +11181,9 @@ Owner delegates both ledger detail editors, persistence and numbering to PC-D an
 
 Scoped source and migration reservation released at local commit. The Customers public directory/entry facade supplies owner lookup and create/edit, existing accounting IDs remain stable. Validation and runtime status are in docs/PROJECT_STATUS.md.
 Publication 2026-11-04: owner explicitly requests task-branch push, hosted CI, PR directly to develop and merge after successful checks and review. Integrate develop@3558a65a5 and preserve its ownership notes, customer relations and translation catalogues.
+
+## ACCOUNTING-PERSON-PROFILE-1104 — PC-D / PC-B — LOCAL_COMPLETE
+
+Reserve the title picker and Customers-owned accounting person workflow, one additive migration for branch-unique person code and protected profile, scoped contracts, tests, and documentation. Branch starts at PC-D-Integration and fast-forwards develop for merged prerequisite PR1378. No shared dependency changes.
+
+Includes the four observed person tabs, address grid, geographic lookup and existing Documents archive link. Validation and handoff in docs/PROJECT_STATUS.md. Bounded reservations released with local commit.

@@ -2986,6 +2986,8 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  ledgerPersonCode           String?                      @db.VarChar(20)
+  ledgerPersonEnvelope       String?                      @db.Text
   accountingDetails          AccountingDetail[]
   customerCode               String?                      @unique @db.VarChar(7)
   insurancePolicies          ReservationInsurancePolicy[]
@@ -3049,6 +3051,7 @@ model Customer {
   customerAffairsLeads       CustomerAffairsLead[]
   customerAffairsTickets     CustomerAffairsTicket[]
 
+  @@unique([ownerBranchId, ledgerPersonCode])
   @@index([ownerBranchId, isActive, updatedAt])
   @@index([displayName])
   @@index([organizationId])

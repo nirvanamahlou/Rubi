@@ -14,6 +14,8 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { useRef, useState } from 'react';
 import styles from './accounting-detail-editor.module.css';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import { LedgerPersonDialog } from './ledger-person-dialog';
 import { DetailPicker } from './accounting-detail-picker';
 import {
   detailDigits,
@@ -91,6 +93,7 @@ export function AccountingDetailEditor({
   const [manualCode, setManualCode] = useState(false);
   const [ownerPage, setOwnerPage] = useState(1);
   const [ownerDialog, setOwnerDialog] = useState<string | null>(null);
+  const [newKind, setNewKind] = useState<'person' | 'organization'>('person');
   const [customerTab, setCustomerTab] = useState<CustomerTab>('overview');
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
   const focusRef = useRef<HTMLElement>(null);
@@ -126,6 +129,16 @@ export function AccountingDetailEditor({
         )
       : null;
   const displayCode = suggesting ? (suggestedCode ?? '') : draft.code;
+  const personEditor =
+    ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص';
+  const profile = useQuery({
+    queryKey: ['ledger-person', book.book.branchId, ownerDialog],
+    queryFn: () => customersApi.ledgerPerson(ownerDialog!, book.book.branchId),
+    enabled:
+      !!ownerDialog && !['choose', 'new'].includes(ownerDialog) && personEditor,
+    gcTime: 0,
+    retry: false,
+  });
   const ownerRecord = useQuery({
     queryKey: [
       'accounting',
@@ -134,7 +147,10 @@ export function AccountingDetailEditor({
       ownerDialog,
     ],
     queryFn: () => customersApi.detail(ownerDialog!),
-    enabled: !!ownerDialog && ownerDialog !== 'new',
+    enabled:
+      !!ownerDialog &&
+      !['choose', 'new'].includes(ownerDialog) &&
+      !personEditor,
     staleTime: 0,
     gcTime: 0,
   });
@@ -173,7 +189,10 @@ export function AccountingDetailEditor({
   }
   function openOwner(id: string) {
     setCustomerTab('overview');
-    setOwnerDialog(id);
+    if (id === 'new') {
+      setNewKind(type?.title === 'شرکت' ? 'organization' : 'person');
+      setOwnerDialog('choose');
+    } else setOwnerDialog(id);
   }
   function selectType(typeId: string) {
     if (typeId === draft.typeId) return;
@@ -191,6 +210,23 @@ export function AccountingDetailEditor({
       title: '',
       customerId: '',
     }));
+  }
+  function adoptOwner(
+    customer: { id: string; displayName: string },
+    kind: 'person' | 'organization',
+  ) {
+    const target = types.find(
+      (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
+    );
+    if (!target) return;
+    if (target.id !== draft.typeId) selectType(target.id);
+    setDraft((old) => ({
+      ...old,
+      title: customer.displayName,
+      customerId: customer.id,
+    }));
+    setOwnerDialog(null);
+    void people.refetch();
   }
   const currencies = useQuery({
     queryKey: ['accounting', 'currencies'],
@@ -458,8 +494,10 @@ export function AccountingDetailEditor({
                           id: row.id,
                           cells: [
                             row.displayName,
-                            detailRows.find((d) => d.customerId === row.id)
-                              ?.code ?? '—',
+                            row.personCode ??
+                              detailRows.find((d) => d.customerId === row.id)
+                                ?.code ??
+                              '—',
                             type!.title,
                           ],
                         }))
@@ -567,15 +605,63 @@ export function AccountingDetailEditor({
         </div>
         <AccountingSaveButtons busy={busy} />
       </form>
-      {ownerDialog &&
-        (ownerDialog === 'new' || ownerRecord.data ? (
+      {ownerDialog === 'choose' ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setOwnerDialog(null);
+          }}
+        >
+          <DialogContent
+            dir="rtl"
+            aria-describedby={undefined}
+            className="max-w-sm"
+          >
+            <DialogTitle>انتخاب شخص یا شرکت</DialogTitle>
+            <fieldset className="grid gap-3">
+              <legend>مایل به افزودن شخص هستید یا شرکت؟</legend>
+              {(['person', 'organization'] as const).map((k) => (
+                <label key={k}>
+                  <input
+                    type="radio"
+                    name="new-owner-kind"
+                    checked={newKind === k}
+                    onChange={() => setNewKind(k)}
+                  />{' '}
+                  {k === 'person' ? 'شخص' : 'شرکت'}
+                </label>
+              ))}
+            </fieldset>
+            <div className="flex gap-4">
+              <button type="button" onClick={() => setOwnerDialog('new')}>
+                تأیید
+              </button>
+              <button type="button" onClick={() => setOwnerDialog(null)}>
+                انصراف
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : ownerDialog &&
+        personEditor &&
+        (ownerDialog === 'new' || profile.data) ? (
+        <LedgerPersonDialog
+          key={ownerDialog}
+          initial={ownerDialog === 'new' ? undefined : profile.data?.data}
+          book={book}
+          onClose={() => setOwnerDialog(null)}
+          onSelected={(row) => adoptOwner(row, 'person')}
+        />
+      ) : (
+        ownerDialog &&
+        (!personEditor && (ownerDialog === 'new' || ownerRecord.data) ? (
           <CustomerDrawer
             key={ownerDialog}
             mode={ownerDialog === 'new' ? 'create' : 'edit'}
             customer={
               ownerDialog === 'new' ? undefined : ownerRecord.data?.data
             }
-            fixedKind={type?.title === 'شرکت' ? 'organization' : 'person'}
+            fixedKind="organization"
             createBranchId={book.book.branchId}
             activeTab={customerTab}
             onTabChange={setCustomerTab}
@@ -583,24 +669,19 @@ export function AccountingDetailEditor({
             onCalendarModeChange={setCalendar}
             returnFocusRef={focusRef}
             onClose={() => setOwnerDialog(null)}
-            onSaved={async (_, customer) => {
-              setDraft((old) => ({
-                ...old,
-                title: customer.displayName,
-                customerId: customer.id,
-              }));
-              setOwnerDialog(null);
-              await people.refetch();
-            }}
+            onSaved={async (_, row) => adoptOwner(row, 'organization')}
           />
         ) : (
           <div role="status">
-            {ownerRecord.error?.message ?? 'در حال دریافت…'}{' '}
+            {profile.error?.message ??
+              ownerRecord.error?.message ??
+              'در حال دریافت…'}{' '}
             <button type="button" onClick={() => setOwnerDialog(null)}>
               بستن
             </button>
           </div>
-        ))}
+        ))
+      )}
     </section>
   );
 }

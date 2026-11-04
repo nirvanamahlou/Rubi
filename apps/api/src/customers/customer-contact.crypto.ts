@@ -1,3 +1,4 @@
+import type { LedgerPersonExtras } from '@nora/contracts';
 import {
   createCipheriv,
   createDecipheriv,
@@ -62,6 +63,52 @@ export class CustomerContactCrypto {
     this.encryptionKeyVersion = config.getOrThrow<number>(
       'CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION',
     );
+  }
+
+  sealPerson(id: string, profile: LedgerPersonExtras): string {
+    const iv = randomBytes(12),
+      cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
+    cipher.setAAD(Buffer.from('rubi:ledger-person:v1:' + id));
+    const ciphertext = Buffer.concat([
+      cipher.update(JSON.stringify(profile), 'utf8'),
+      cipher.final(),
+    ]);
+    return [
+      String(this.encryptionKeyVersion),
+      iv.toString('base64'),
+      cipher.getAuthTag().toString('base64'),
+      ciphertext.toString('base64'),
+    ].join('.');
+  }
+  openPerson(id: string, envelope?: string | null): LedgerPersonExtras {
+    if (!envelope) return { fields: {}, addresses: [], notes: [], taxRows: [] };
+    try {
+      const [version, iv, tag, ciphertext] = envelope.split('.');
+      if (
+        Number(version) !== this.encryptionKeyVersion ||
+        !iv ||
+        !tag ||
+        !ciphertext
+      )
+        throw new Error();
+      const decipher = createDecipheriv(
+        'aes-256-gcm',
+        this.encryptionKey,
+        Buffer.from(iv, 'base64'),
+      );
+      decipher.setAAD(Buffer.from('rubi:ledger-person:v1:' + id));
+      decipher.setAuthTag(Buffer.from(tag, 'base64'));
+      return JSON.parse(
+        Buffer.concat([
+          decipher.update(Buffer.from(ciphertext, 'base64')),
+          decipher.final(),
+        ]).toString('utf8'),
+      ) as LedgerPersonExtras;
+    } catch {
+      throw new InternalServerErrorException(
+        'Customer profile integrity check failed.',
+      );
+    }
   }
 
   fingerprint(normalizedValue: string): string {

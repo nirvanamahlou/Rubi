@@ -28,6 +28,8 @@ import {
 } from './customer-audit';
 
 export interface CustomerRow {
+  ledgerPersonCode?: string | null;
+  ledgerPersonEnvelope?: string | null;
   customerCode?: string | null;
   id: string;
   kind: CustomerKind;
@@ -299,6 +301,7 @@ export class CustomerRepository {
       select: {
         id: true,
         displayName: true,
+        ...(!marketing ? { ledgerPersonCode: true } : {}),
         consents: {
           where: { purpose: 'MARKETING' },
           orderBy: { occurredAt: 'desc' },
@@ -312,7 +315,13 @@ export class CustomerRepository {
     });
     return rows
       .filter((row) => !marketing || row.consents[0]?.status === 'GRANTED')
-      .map((row) => ({ id: row.id, displayName: row.displayName }));
+      .map((row) => ({
+        id: row.id,
+        displayName: row.displayName,
+        ...(!marketing && row.ledgerPersonCode
+          ? { personCode: row.ledgerPersonCode }
+          : {}),
+      }));
   }
   salesPartyKinds(ids: readonly string[]) {
     return this.database.client.customer.findMany({
@@ -1185,6 +1194,7 @@ export class CustomerRepository {
     actorBranchId: string,
     reason: string,
     traceId?: string,
+    fields: string[] = ['birthDate', 'contacts.value'],
   ) {
     await this.database.client.customerAuditEvent.create({
       data: {
@@ -1197,7 +1207,7 @@ export class CustomerRepository {
         reason: controlledAuditReason(reason),
         afterSnapshot: json({
           customerId,
-          fields: ['birthDate', 'contacts.value'],
+          fields,
           outcome: 'displayed',
         }),
         traceId: traceId ?? null,

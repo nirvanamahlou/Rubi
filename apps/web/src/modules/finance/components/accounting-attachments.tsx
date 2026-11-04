@@ -42,13 +42,50 @@ export function AccountingAttachments({
     [file, setFile] = useState<File | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const person = entityType === 'AccountingPerson';
+  const [query, setQuery] = useState('');
+  const [archiveId, setArchiveId] = useState('');
+  const [reason, setReason] = useState('');
+  async function downloadFile(id: string, name: string) {
+    setError('');
+    try {
+      const { blob } = await documentsApi.download(id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = name;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'دریافت فایل ناموفق بود.');
+    }
+  }
+  async function archiveFile() {
+    const row = list.data?.data.find((d) => d.id === archiveId);
+    if (!row || !reason.trim()) return;
+    setBusy(true);
+    setError('');
+    try {
+      await documentsApi.archive(row.id, {
+        reason: reason.trim(),
+        version: row.version,
+      });
+      setArchiveId('');
+      setReason('');
+      await list.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'بایگانی پیوست ناموفق بود.');
+    } finally {
+      setBusy(false);
+    }
+  }
   const options = useQuery({
     queryKey: ['accounting', 'attachment-options'],
     queryFn: documentsApi.options,
     enabled: canUpload,
   });
   const list = useQuery({
-    queryKey: ['accounting', 'attachments', book.book.id, recordId],
+    queryKey: ['accounting', 'attachments', book.book.id, recordId, query],
     queryFn: () =>
       documentsApi.list({
         domain: 'FINANCE',
@@ -56,6 +93,9 @@ export function AccountingAttachments({
         sourceModule: 'FINANCE',
         sourceEntityType: entityType,
         sourceEntityId: recordId,
+        ...(person
+          ? { archiveStatus: 'ACTIVE' as const, search: query.trim() }
+          : {}),
         pageSize: 100,
       }),
     enabled: canRead,
@@ -64,12 +104,15 @@ export function AccountingAttachments({
     options.data?.data.documentTypes.filter(
       (t) =>
         t.domain === 'FINANCE' &&
-        ['PUBLIC', 'INTERNAL'].includes(t.defaultConfidentiality) &&
+        (person
+          ? t.defaultConfidentiality === 'INTERNAL'
+          : ['PUBLIC', 'INTERNAL'].includes(t.defaultConfidentiality)) &&
         !t.requiresExpiry,
     ) ?? [];
   const upload = async () => {
     setError('');
-    const type = record ? types[0] : types.find((t) => t.id === typeId),
+    const type =
+        record && !person ? types[0] : types.find((t) => t.id === typeId),
       opts = options.data?.data;
     if (!type || !opts || !file || !title.trim()) {
       setError('عنوان، نوع پیوست و فایل را انتخاب کنید.');
@@ -117,6 +160,34 @@ export function AccountingAttachments({
           {list.error?.message ?? options.error?.message}
         </p>
       ) : null}
+      {person && canRead && (
+        <Input
+          aria-label="جستجو در پیوست‌ها"
+          placeholder="جستجو…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      )}
+      {archiveId && (
+        <div className="flex gap-2">
+          <Input
+            aria-label="دلیل بایگانی"
+            placeholder="دلیل بایگانی"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <button
+            type="button"
+            disabled={busy || !reason.trim()}
+            onClick={() => void archiveFile()}
+          >
+            تأیید بایگانی
+          </button>
+          <button type="button" onClick={() => setArchiveId('')}>
+            انصراف
+          </button>
+        </div>
+      )}
       {record ? (
         <div className="overflow-auto">
           <table className="w-full text-xs">
@@ -129,6 +200,7 @@ export function AccountingAttachments({
                     </th>
                   ),
                 )}
+                {person && <th>عملیات</th>}
               </tr>
             </thead>
             <tbody>
@@ -138,6 +210,8 @@ export function AccountingAttachments({
                   <td className="p-2">
                     <Link
                       className="text-primary underline"
+                      target={person ? '_blank' : undefined}
+                      rel={person ? 'noopener noreferrer' : undefined}
                       href={`/documents?document=${d.id}&returnTo=${encodeURIComponent(returnTo)}`}
                     >
                       {d.currentVersion.originalFileName}
@@ -149,6 +223,36 @@ export function AccountingAttachments({
                   <td className="p-2">
                     {d.currentVersion.createdAt.slice(0, 10)}
                   </td>
+                  {person && (
+                    <td className="space-x-2">
+                      {d.capabilities.download &&
+                        !d.requiresStepUpVerification &&
+                        !d.requiresConfidentialAccessCode && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void downloadFile(
+                                d.id,
+                                d.currentVersion.originalFileName,
+                              )
+                            }
+                          >
+                            دریافت فایل
+                          </button>
+                        )}
+                      {d.capabilities.archive && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setArchiveId(d.id);
+                            setReason('');
+                          }}
+                        >
+                          بایگانی
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -180,7 +284,7 @@ export function AccountingAttachments({
               onChange={(e) => setTitle(e.target.value)}
             />
           </FormField>
-          {!record ? (
+          {!record || person ? (
             <FormField label="نوع پیوست">
               <SearchCombobox
                 label="نوع پیوست"
