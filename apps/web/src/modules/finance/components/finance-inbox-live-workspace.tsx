@@ -41,7 +41,6 @@ import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceExportActions } from './finance-export-actions';
 import { FinancePayrollActions } from './finance-payroll-actions';
 import { FinanceFollowupPanel } from './finance-followup-panel';
-import { FinanceRequestCreate } from './finance-request-create';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
@@ -834,7 +833,7 @@ export function FinanceInboxLiveWorkspace() {
         </div>
       </Card>
 
-      <details className={styles.summary}>
+      <details open className={styles.summary}>
         <summary className="cursor-pointer px-5 py-3 text-sm font-semibold">
           نمای کلی عملیات مالی
         </summary>
@@ -991,15 +990,6 @@ export function FinanceInboxLiveWorkspace() {
 
       <Card className={`${styles.filters} p-5`}>
         <PartyReceipts onChanged={() => setRevision((value) => value + 1)} />
-        <FinanceRequestCreate
-          onCreated={() => setRevision((value) => value + 1)}
-        />
-        <div className="mb-4 flex items-center gap-2">
-          <ListFilter className="size-4 text-primary" />
-          <div>
-            <h3 className="text-sm font-black">فیلتر و جست‌وجوی کارتابل</h3>
-          </div>
-        </div>
         <div className={styles.filterGrid}>
           <label className="grid gap-1 text-xs text-muted-foreground">
             مرتب‌سازی بر اساس
@@ -1044,10 +1034,7 @@ export function FinanceInboxLiveWorkspace() {
             </p>
           ) : null}
           <div className={styles.searchField}>
-            <label
-              htmlFor="finance-inbox-search"
-              className="text-xs font-semibold text-muted-foreground"
-            >
+            <label htmlFor="finance-inbox-search" className="sr-only">
               جست‌وجوی درخواست
             </label>
             <div className="relative">
@@ -1212,24 +1199,26 @@ export function FinanceInboxLiveWorkspace() {
           disabled={loading || !!error}
           query={{ ...inboxQuery, scope: 'INBOX' }}
         />
-        <FinanceFollowupPanel
-          showSavedViews={false}
-          query={inboxQuery}
-          onApply={(value) => {
-            setSortBy(value.sortBy ?? 'createdAt');
-            setSortDirection(value.sortDirection ?? 'desc');
-            setSearch(value.search ?? '');
-            setSource(value.source ?? 'ALL');
-            setCategory(value.category ?? 'ALL');
-            setStatus(value.status ?? 'ALL');
-            setCurrencyCode(value.currencyCode ?? '');
-            setMinAmount(value.minAmount ?? '');
-            setMaxAmount(value.maxAmount ?? '');
-            setFromDate(value.fromDate ?? '');
-            setToDate(value.toDate ?? '');
-            setPage(1);
-          }}
-        />
+        <div className="mt-6">
+          <FinanceFollowupPanel
+            showSavedViews={false}
+            query={inboxQuery}
+            onApply={(value) => {
+              setSortBy(value.sortBy ?? 'createdAt');
+              setSortDirection(value.sortDirection ?? 'desc');
+              setSearch(value.search ?? '');
+              setSource(value.source ?? 'ALL');
+              setCategory(value.category ?? 'ALL');
+              setStatus(value.status ?? 'ALL');
+              setCurrencyCode(value.currencyCode ?? '');
+              setMinAmount(value.minAmount ?? '');
+              setMaxAmount(value.maxAmount ?? '');
+              setFromDate(value.fromDate ?? '');
+              setToDate(value.toDate ?? '');
+              setPage(1);
+            }}
+          />
+        </div>
       </Card>
 
       {error ? (
@@ -1257,9 +1246,6 @@ export function FinanceInboxLiveWorkspace() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-4">
               <div>
                 <h3 className="font-bold">فهرست درخواست‌ها</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  برای مشاهده فرم و رسیدگی، روی درخواست کلیک کنید.
-                </p>
               </div>
               <Badge className="px-3 py-1">
                 {items.length.toLocaleString('fa-IR')} درخواست

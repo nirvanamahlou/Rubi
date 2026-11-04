@@ -75,6 +75,64 @@ describe.skipIf(process.env.HR_WEEKLY_SHIFTS_DATABASE_TEST !== '1')(
       };
       return { reader, input, staff };
     }
+    it('saves and edits multiple weekdays, applies each day and rejects any overlapping selection', async () => {
+      const { reader, input } = await fixture();
+      const rows = await service.assignWeeklyShift(
+        { ...input, weekday: 'یکشنبه، دوشنبه' },
+        randomUUID(),
+        reader,
+      );
+      expect(rows.every((r) => r.values[9] === 'یکشنبه، دوشنبه')).toBe(true);
+      for (const date of ['2026-11-01', '2026-11-02']) {
+        await service.processAttendance(
+          { branchId: input.branchId, date },
+          randomUUID(),
+          reader,
+          true,
+        );
+        const daily = await database.client.hrRecord.findMany({
+          where: {
+            branchId: input.branchId,
+            tab: 'attendance',
+            values: { path: ['1'], equals: date },
+          },
+        });
+        expect(daily).toHaveLength(2);
+        expect(daily.every((r) => r.status === 'غایب')).toBe(true);
+      }
+      await expect(
+        service.assignWeeklyShift(
+          { ...input, weekday: 'دوشنبه، سه‌شنبه' },
+          randomUUID(),
+          reader,
+        ),
+      ).rejects.toThrow();
+      const values = [...rows[0]!.values];
+      values[9] = 'شنبه، چهارشنبه';
+      expect(
+        (
+          await service.updateRecord(
+            rows[0]!.id,
+            { version: rows[0]!.version, values },
+            reader,
+          )
+        ).values[9],
+      ).toBe('شنبه، چهارشنبه');
+      await expect(
+        service.assignWeeklyShift(
+          { ...input, weekday: 'شنبه، invalid' },
+          randomUUID(),
+          reader,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.assignWeeklyShift(
+          { ...input, weekday: '' },
+          randomUUID(),
+          reader,
+        ),
+      ).rejects.toThrow();
+    });
     it('assigns every selected employee atomically, replays once and rejects foreign staff', async () => {
       const { reader, input } = await fixture();
       const key = randomUUID();

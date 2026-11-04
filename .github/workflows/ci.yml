@@ -200,6 +200,11 @@ jobs:
       - name: Confirm migration status
         run: pnpm --filter @nora/database exec prisma migrate status --schema prisma/schema.prisma
 
+      - name: Prove contract receipt reference repair preserves existing policies
+        env:
+          CONTRACT_RECEIPT_POSTGRES_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/contract-receipt-references-postgres.spec.ts
+
       - name: Prove seed repeatability
         run: |
           pnpm --filter @nora/database db:seed
