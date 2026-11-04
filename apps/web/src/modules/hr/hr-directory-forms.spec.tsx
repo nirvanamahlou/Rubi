@@ -26,7 +26,7 @@ const employee = {
   position: 'سمت',
 };
 describe('cross-module form reference values', () => {
-  it('keeps the branch editable while employment status remains locked in employee correction', () => {
+  it('keeps branch and employment status editable in employee correction', () => {
     const html = renderToStaticMarkup(
       <NewEmployeeForm
         existingPersonnelCodes={[]}
@@ -40,9 +40,9 @@ describe('cross-module form reference values', () => {
     const branch = html.match(/<select[^>]*name="branch"[^>]*>/)?.[0];
     expect(branch).toBeDefined();
     expect(branch).not.toMatch(/disabled/);
-    expect(html.match(/<select[^>]*name="status"[^>]*>/)?.[0]).toMatch(
-      /disabled/,
-    );
+    const status = html.match(/<select[^>]*name="status"[^>]*>/)?.[0];
+    expect(status).toBeDefined();
+    expect(status).not.toMatch(/disabled/);
   });
   it('deduplicates company names and exposes Headquarters once with all organizational references', () => {
     const data = {
