@@ -130,3 +130,7 @@ Reporting فقط در Work Item مستقل PC-C و تغییر قرارداد م�
 مرز مالکیت داده و dependencyهای مجاز در
 [MODULE_BOUNDARIES.md](MODULE_BOUNDARIES.md) و روش رزرو و تحویل در
 [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) تعریف شده است.
+
+## 2026-11-04 — تعریف نوع و حساب تفصیلی
+
+مالکیت مشترک PC-B و PC-D برای این دو فرم و منطق ذخیره و شماره‌گذاری آن‌ها طبق دستور مالک ثبت شد. هر تغییر رزرو مستقل می‌خواهد.

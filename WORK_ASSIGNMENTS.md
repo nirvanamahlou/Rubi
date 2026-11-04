@@ -8703,3 +8703,9 @@ FLIGHT-LOAD-TIME-ROUTE-1021 scope correction from owner: ALL entered departure/a
 Validation:208 Ticket Catalog tests pass (one pre-existing skip), including Tehran clock round trip with foreign airport metadata, exact forward/reverse same-day separation, complete route requirement and hiding stale load after clearing an endpoint. Scoped lint passes. Optimized65-route Web build/TypeScript pass after explicitly typing normalized state as ProductInput; initial readonly-inference finding fixed. No gate weakened, schema/dependency changes or timestamp backfill. Owner-requested69 pre-today Tehran server offers archived through existing TicketPublicService.archiveBatch under revalidated active demo permissions/session, after verified encrypted database backup; all candidates unblocked and contract/allocation history retained. Source reservation releases at publication; exact-head CI precedes authorized merge and server rollout.
 
 FLIGHT-LOAD-TIME-ROUTE-1021 reserves one additive English help-label override and derived catalogue synchronization; no unrelated translation changes. CI correctly detected the missing translation; fix required before merge, no gate skipped.
+
+## ACCOUNT-DETAIL-FORMS-1104 — PC-D with PC-B — LOCAL_COMPLETE
+
+Owner delegates both ledger detail editors, persistence and numbering to PC-D and PC-B. PC-D reserves the bounded Web editor, Customers drawer entry options, accounting command, shared code rule, AccountingDetail unique index, one migration, tests and these status entries. Task base origin/PC-D-Integration@f6cd1cd0f. No dependency changes.
+
+Scoped source and migration reservation released at local commit. The Customers public directory/entry facade supplies owner lookup and create/edit, existing accounting IDs remain stable. Validation and runtime status are in docs/PROJECT_STATUS.md.

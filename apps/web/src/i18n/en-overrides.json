@@ -3924,5 +3924,19 @@
   "کودک (2-6)": "Child (2-6)",
   "کودک (6-12)": "Child (6-12)",
   "کودک (12-18)": "Child (12-18)",
-  "ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.": "Outbound and return times use Tehran time. Min and Max specify the permitted return interval in days. The default Max is one day longer than the return interval and can be changed."
+  "ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.": "Outbound and return times use Tehran time. Min and Max specify the permitted return interval in days. The default Max is one day longer than the return interval and can be changed.",
+  "طول شماره طبقه‌بندی باید عددی صحیح بین ۱ و ۲۰ باشد.": "Classification number length must be an integer from 1 to 20.",
+  "اولین کد پیش‌فرض با طول کد سازگار نیست.": "The default first code does not fit the configured width.",
+  "عنوان نوع تفصیلی تکراری است.": "This detail type title already exists.",
+  "نوع تفصیلی پیش‌فرض باید فعال بماند.": "The default detail type must remain active.",
+  "طول شماره طبقه‌بندی نوع تفصیلی معتبر نیست.": "This detail type has an invalid classification number length.",
+  "کد با طول نوع تفصیلی سازگار نیست.": "The code does not fit the detail type width.",
+  "بازه کد این نوع تفصیلی تکمیل شده است.": "All available codes for this detail type are in use.",
+  "کد در این نوع تفصیلی تکراری است.": "This code already exists in the selected detail type.",
+  "شخص یا شرکت انتخاب‌شده برای این دفتر معتبر نیست.": "The selected person or company is unavailable for this ledger.",
+  "شخص یا شرکت را از فهرست انتخاب کنید.": "Select a person or company from the list.",
+  "مالک تفصیلی استفاده‌شده قابل تغییر نیست.": "The owner of a detail used in a journal cannot be changed.",
+  "، باز کردن فهرست": ", open list",
+  "موردی یافت نشد.": "No matches found.",
+  "＋ ایجاد": "+ Create"
 }

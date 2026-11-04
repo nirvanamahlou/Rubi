@@ -1,0 +1,57 @@
+.panel {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+  border-radius: 0.35rem;
+  padding: 0.85rem;
+  --label-width: 6.75rem;
+}
+
+.columns {
+  display: grid;
+  gap: 1rem;
+  margin-block-end: 0.6rem;
+}
+
+.columns > div {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.columns > div > div,
+.panel > div:last-child:not(.columns) {
+  display: grid;
+  grid-template-columns: var(--label-width) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.panel label {
+  font-size: 0.8rem;
+}
+.panel.panel input:not([type='checkbox']),
+.panel.panel button[role='combobox'] {
+  min-height: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.25rem;
+}
+.panel.panel textarea {
+  min-height: 3.5rem;
+}
+.panel [data-detail-options] {
+  top: 100%;
+  inset-inline: auto 0;
+}
+
+@container (min-width: 45rem) {
+  .typeColumns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .accountColumns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .accountColumns {
+    --label-width: clamp(4rem, 7.5cqi, 6.75rem);
+  }
+}

@@ -2963,6 +2963,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  accountingDetails          AccountingDetail[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
@@ -7164,6 +7165,8 @@ model AccountingAccount {
 }
 
 model AccountingDetail {
+  customerId              String?                        @db.Uuid
+  customer                Customer?                      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   statements              AccountingStatement[]
   sourceMappings4         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail4")
   sourceMappings5         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail5")
@@ -7194,7 +7197,7 @@ model AccountingDetail {
   templateLines5          AccountingTemplateLine[]       @relation("AccountingTemplateDetail5")
   templateLines6          AccountingTemplateLine[]       @relation("AccountingTemplateDetail6")
 
-  @@unique([bookId, code])
+  @@unique([bookId, typeId, code])
   @@unique([id, bookId])
   @@map("accounting_details")
 }

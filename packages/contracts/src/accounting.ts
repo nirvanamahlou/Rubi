@@ -99,6 +99,7 @@ export interface AccountingAccountV1 extends AccountingRecord {
   permanent: boolean;
 }
 export interface AccountingDetailV1 extends AccountingRecord {
+  customerId?: string | null;
   typeId: string;
   parentId: string | null;
   currency: string | null;

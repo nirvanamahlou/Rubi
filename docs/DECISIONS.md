@@ -582,3 +582,7 @@ Owner explicitly replaces mandatory hotel/flight membership equality with per-le
 ## ISSABEL-ADAPTER-1020 — bounded recording storage
 
 Owner explicitly requests saved call audio without ERP playback. For this initial integration, actual audio is stored as authenticated encrypted32KiB chunks in Integration-owned PostgreSQL tables, rather than exposing an external recording URL or claiming that metadata is an audio backup. This is a bounded exception to general Documents/S3 file storage:20MiB WAV maximum, approved retention required, explicit byte/hash finalization and private PBX uploader. No cross-module Documents table access. Reassess storage/backup volume with measured call traffic before Production. AMI UserEvent hooks express verified PBX facts; generic channel Hangup/IVR Up is insufficient evidence of linked-call completion/human answer. Actual installed-version hook compatibility and reconciliation remain live-acceptance requirements, not assumptions.
+
+## ACCOUNT-DETAIL-FORMS-1104 — Independent codes for each detail type
+
+The owner sets classification width to 1–20 and requires leading zeroes in the code. Replace ledger-wide code uniqueness with uniqueness per ledger and detail type; journal references keep using IDs. Use six digits for the two built-in types in new books. Migrate zero/unset widths to at least six, expanding to fit existing codes or the default starting code. The migration stops on colliding normalized type names rather than choosing which historical records to combine. PC-B and PC-D share this bounded scope.

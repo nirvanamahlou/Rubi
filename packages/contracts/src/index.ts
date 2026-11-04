@@ -42,5 +42,6 @@ export type {
 } from './correspondence';
 
 export * from './telephony';
+export * from './accounting-detail-code';
 
 export * from './sales/passenger-hotel-stays';
