@@ -389,7 +389,7 @@ export function InternalLetterInbox() {
           if (!value) setForward(null);
         }}
         forward
-        onSubmit={async (recipient, status) => {
+        onSubmit={async (recipient, status, description) => {
           if (!forward) return;
           await internalLetters.forward(
             forward.id,
@@ -397,6 +397,7 @@ export function InternalLetterInbox() {
             recipient,
             status,
             forwardKey,
+            description,
           );
           refresh();
         }}
@@ -420,6 +421,14 @@ export function InternalLetterInbox() {
               : 'مشاهده نامه داخلی'}
           </DialogTitle>
           <DialogDescription>نامه و سربرگ</DialogDescription>
+          {selected?.record.delivery.description && (
+            <div className="mt-4 rounded-xl border bg-muted/40 p-4">
+              <h3 className="font-semibold">توضیحات بازارسال</h3>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm">
+                {selected.record.delivery.description}
+              </p>
+            </div>
+          )}
           {selected && (
             <div className="mt-6">
               <OutgoingLetterWorkspace

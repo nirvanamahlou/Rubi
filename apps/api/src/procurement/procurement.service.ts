@@ -1,3 +1,4 @@
+import { validatePettyReceipt } from './procurement.registrations';
 import {
   registerPettyCash,
   listPettyRegistrations,
@@ -187,11 +188,18 @@ export class ProcurementService {
       'accountNumber',
       'iban',
       'cardNumber',
+      'receipt',
     ]);
     if (input.currencyCode)
       await this.master.assertCurrency(String(input.currencyCode));
+    const receipt = await validatePettyReceipt(
+      input.receipt,
+      v.uuid(input.branchId),
+      actor,
+      this.documents,
+    );
     return this.database.client.$transaction((tx) =>
-      savePettyFund(tx, input, actor),
+      savePettyFund(tx, input, actor, receipt),
     );
   }
   private require(

@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
+import { strFromU8, unzipSync } from 'fflate';
+import { ReportingExportService } from './reporting-export.service';
+import type { LocalDocumentStorage } from '../documents/documents.storage';
+import type { DatabaseService } from '../database/database.service';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import { readSalesReportingProjection } from '../sales/sales-reporting.public';
 import { nativeSalesReport } from './reporting-native-sales';
 import { ReportingService } from './reporting.service';
-import type { ReportingRepository } from './reporting.repository';
+import { ReportingRepository } from './reporting.repository';
 
 const actor = {
   userId: 'user',
@@ -61,6 +65,7 @@ function fixture() {
   ]);
   const client = {
     salesContract: { findMany },
+    reservationIntake: { findMany: vi.fn().mockResolvedValue([]) },
     branch: {
       findMany: vi.fn().mockResolvedValue([{ id: 'branch', name: 'مرکزی' }]),
     },
@@ -163,7 +168,7 @@ describe('native Sales report source and shared preview/export path', () => {
       true,
     );
     expect(preview.rows).toHaveLength(1);
-    expect(exported.rows).toHaveLength(2);
+    expect(exported.rows).toHaveLength(1);
     expect(
       exported.totalsByCurrency.map((row) => [
         row.currencyCode,
@@ -179,7 +184,10 @@ describe('native Sales report source and shared preview/export path', () => {
     );
     expect(exported.columns[0]?.label).toBe('شعبه');
     expect(preview.totalsByCurrency).toEqual(exported.totalsByCurrency);
-    expect(exported.filterSnapshot.grain).toBe('CONTRACT_CURRENCY');
+    expect(exported.filterSnapshot.grain).toBe('CONTRACT');
+    expect(exported.rows[0]?.orderCount).toBe(1);
+    expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال - 20 $');
+    expect(exported.columns.map((c) => c.key)).not.toContain('currencyCode');
   });
   it('refuses a complete-looking money report for unpriced contracts', async () => {
     const { client, findMany } = fixture();
@@ -203,5 +211,148 @@ describe('native Sales report source and shared preview/export path', () => {
     const result = await service.preview('sales_by_organization', query, actor);
     expect(result.rows[0]?.salesAmount).toBe('900');
     expect(facts).not.toHaveBeenCalled();
+  });
+  it('counts two multi-currency contracts once, preserves precision and exports the combined column', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      {
+        ...one,
+        id: 'two',
+        _count: { passengers: 2 },
+        priceComponents: [
+          {
+            type: 'BASE',
+            title: 'خدمت',
+            amount: new Prisma.Decimal('9007199254740993.1234'),
+            currencyCode: 'EUR',
+          },
+        ],
+      },
+    ]);
+    const r = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      query,
+      actor,
+      true,
+    );
+    expect(r.total).toBe(1);
+    expect(r.rows[0]?.orderCount).toBe(2);
+    expect(r.rows[0]?.passengerCount).toBe(5);
+    expect(r.rows[0]?.sourceValues?.salesAmount).toBe(
+      '900 ریال - 9007199254740993.1234 € - 20 $',
+    );
+    const workbook = unzipSync(
+      new Uint8Array(
+        new ReportingExportService({} as LocalDocumentStorage).build(
+          'XLSX',
+          r,
+          'گزارش فروش',
+        ).buffer,
+      ),
+    );
+    const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('900 ریال - 9007199254740993.1234 € - 20 $');
+    expect(r.columns.map((c) => c.key)).toEqual([
+      'primaryDimension',
+      'secondaryDimension',
+      'orderCount',
+      'passengerCount',
+      'salesAmount',
+    ]);
+  });
+  it('re-reads operational cancellation and reopen on each preview and keeps cancelled money out of pipeline totals', async () => {
+    const { client } = fixture();
+    const intake = vi.mocked(client.reservationIntake.findMany);
+    expect(
+      (await nativeSalesReport(client, 'sales_by_organization', query, actor))
+        .rows,
+    ).toHaveLength(1);
+    intake.mockResolvedValue([
+      {
+        contractId: 'one',
+        workflowRevisions: [
+          { state: { supplierStatus: 'CANCELLED' }, createdAt: new Date() },
+        ],
+      },
+    ] as never);
+    const cancelled = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      query,
+      actor,
+    );
+    expect(cancelled.rows).toHaveLength(0);
+    expect(cancelled.totalsByCurrency).toHaveLength(0);
+    const pipeline = await nativeSalesReport(
+      client,
+      'sales_contract_pipeline',
+      query,
+      actor,
+      true,
+    );
+    expect(pipeline.rows.every((r) => r.primaryDimension === 'CANCELLED')).toBe(
+      true,
+    );
+    expect(pipeline.totalsByCurrency).toHaveLength(0);
+    intake.mockResolvedValue([
+      {
+        contractId: 'one',
+        workflowRevisions: [
+          { state: { supplierStatus: 'NEW' }, createdAt: new Date() },
+        ],
+      },
+    ] as never);
+    expect(
+      (await nativeSalesReport(client, 'sales_by_organization', query, actor))
+        .rows,
+    ).toHaveLength(1);
+  });
+
+  it('uses a new read-only repeatable-read snapshot for each native request', async () => {
+    const { client } = fixture();
+    const execute = vi.fn();
+    const transaction = vi.fn(
+      async (fn: (tx: unknown) => unknown, options: unknown) => {
+        expect(options).toBeDefined();
+        return fn({ ...client, $executeRawUnsafe: execute });
+      },
+    );
+    const repository = new ReportingRepository({
+      client: { $transaction: transaction },
+    } as unknown as DatabaseService);
+    await repository.nativeResult('sales_by_organization', query, actor);
+    await repository.nativeResult('sales_by_organization', query, actor, true);
+    expect(transaction).toHaveBeenCalledTimes(2);
+    expect(transaction.mock.calls[0]?.[1]).toMatchObject({
+      isolationLevel: 'RepeatableRead',
+    });
+    expect(execute).toHaveBeenCalledWith('SET TRANSACTION READ ONLY');
+  });
+  it('applies effective cancelled status before checking prices of unrelated unpriced drafts', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      { ...one, id: 'draft', status: 'DRAFT', priceComponents: [] },
+    ]);
+    vi.mocked(client.reservationIntake.findMany).mockResolvedValue([
+      {
+        contractId: 'one',
+        workflowRevisions: [
+          { state: { supplierStatus: 'CANCELLED' }, createdAt: new Date() },
+        ],
+      },
+    ] as never);
+    const result = await readSalesReportingProjection(
+      client,
+      actor,
+      { filters: { status: 'CANCELLED' } },
+      true,
+    );
+    expect(new Set(result.map((r) => r.id))).toEqual(new Set(['one']));
+    expect(result.every((r) => r.status === 'CANCELLED')).toBe(true);
   });
 });

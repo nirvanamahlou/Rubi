@@ -1,4 +1,5 @@
 'use client';
+import { WeeklyShiftForm } from './weekly-shift-form';
 import { isHrSharedResource } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -73,6 +74,12 @@ interface HrRecordFormProps {
 }
 
 export function HrRecordForm(props: HrRecordFormProps) {
+  if (
+    props.target.source.section === 'time' &&
+    props.target.source.tab === 'shift' &&
+    (!props.target.record || props.target.record.values[9])
+  )
+    return <WeeklyShiftForm {...props} />;
   return props.target.organizationNode ? (
     <HrNodePicker {...props} />
   ) : (

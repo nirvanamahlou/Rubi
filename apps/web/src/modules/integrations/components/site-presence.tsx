@@ -63,11 +63,13 @@ export function SitePresence({
   siteId,
   siteName,
   connector = 'niyayesh',
+  embedded = false,
 }: {
   branchId: string;
   siteId: string;
   siteName: string;
   connector?: 'niyayesh' | 'ghestiroo';
+  embedded?: boolean;
 }) {
   const [snapshot, setSnapshot] = useState<SitePresenceV1 | null>(null);
   const [state, setState] = useState<
@@ -150,34 +152,36 @@ export function SitePresence({
     : '';
   return (
     <Card className={styles.panel}>
-      <header className={styles.header}>
-        <div>
-          <h3>
-            <Activity aria-hidden="true" />
-            حضور زنده در {siteName}
-          </h3>
-          <p>حضور مرورگرها در بخش‌های سایت · مستقل از بازهٔ گزارش</p>
-        </div>
-        <div className={styles.actions}>
-          <Badge>
-            {state === 'active'
-              ? 'متصل'
-              : state === 'loading'
-                ? 'دریافت…'
-                : state === 'disabled'
-                  ? 'نیازمند راه‌اندازی'
-                  : 'ارتباط قطع'}
-          </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label="به‌روزرسانی حضور زنده"
-            onClick={() => setRevision((n) => n + 1)}
-          >
-            <RefreshCw className="size-4" />
-          </Button>
-        </div>
-      </header>
+      {!embedded ? (
+        <header className={styles.header}>
+          <div>
+            <h3>
+              <Activity aria-hidden="true" />
+              حضور زنده در {siteName}
+            </h3>
+            <p>حضور مرورگرها در بخش‌های سایت · مستقل از بازهٔ گزارش</p>
+          </div>
+          <div className={styles.actions}>
+            <Badge>
+              {state === 'active'
+                ? 'متصل'
+                : state === 'loading'
+                  ? 'دریافت…'
+                  : state === 'disabled'
+                    ? 'نیازمند راه‌اندازی'
+                    : 'ارتباط قطع'}
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="به‌روزرسانی حضور زنده"
+              onClick={() => setRevision((n) => n + 1)}
+            >
+              <RefreshCw className="size-4" />
+            </Button>
+          </div>
+        </header>
+      ) : null}
       {data ? (
         <>
           <div className={styles.summary}>

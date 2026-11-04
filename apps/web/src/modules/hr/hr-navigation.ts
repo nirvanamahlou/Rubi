@@ -71,9 +71,9 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       'shifts',
       'شیفت‌بندی',
       [
-        source('time', 'shiftTemplates', 'تعریف شیفت', 'تعریف شیفت'),
+        source('time', 'shift', 'تعریف شیفت', 'تعریف شیفت'),
+        source('time', 'shiftTemplates', 'الگوهای شیفت', 'افزودن الگوی شیفت'),
         source('time', 'templateDays', 'تقویم سالانه شیفت', 'ثبت روز تقویم'),
-        source('time', 'shift', 'انتساب شیفت', 'انتساب شیفت'),
       ],
       'جزئیات شیفت',
     ),

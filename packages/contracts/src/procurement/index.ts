@@ -217,6 +217,9 @@ export type ProcurementSupplierInboundEventV1 = {
 };
 
 export interface ProcurementPettyRegistrationV1 {
+  costCenter?: string;
+  fee?: string;
+  description?: string;
   id: string;
   title: string;
   occurredAt: string;
@@ -227,6 +230,9 @@ export interface ProcurementPettyRegistrationV1 {
   receiptVersionId: string | null;
 }
 export interface ProcurementPettyRegistrationInputV1 {
+  costCenter?: string;
+  fee?: string;
+  description?: string;
   id: string;
   branchId: string;
   title: string;

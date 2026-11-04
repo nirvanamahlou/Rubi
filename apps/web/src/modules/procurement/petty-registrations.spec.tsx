@@ -32,6 +32,9 @@ describe('Petty registrations list', () => {
       {
         id: 'entry-a',
         title: 'Expense receipt',
+        costCenter: 'Operations',
+        fee: '12.5',
+        description: 'Expense details',
         occurredAt: '2026-11-03T00:00:00.000Z',
         amount: '12345678901234567890.1234',
         currencyCode: 'IRR',
@@ -41,6 +44,9 @@ describe('Petty registrations list', () => {
       },
     ]);
     expect(html).toContain('Expense receipt');
+    expect(html).toContain('Operations');
+    expect(html).toContain('Expense details');
+    expect(html).toContain('۱۲٫۵');
     expect(html).toContain('۱۲٬۳۴۵٬۶۷۸٬۹۰۱٬۲۳۴٬۵۶۷٬۸۹۰٫۱۲۳۴');
     expect(html).toContain('/documents?document=doc-a');
     expect(html).toContain('registration-filter-from-date');

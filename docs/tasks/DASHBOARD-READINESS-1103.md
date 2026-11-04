@@ -4,7 +4,7 @@ PC-C; base60e18a750. Owner authorizes production readiness review, supported wid
 
 ## Read-only evidence — 2026-11-03
 
-- Entire public schema profiled:316 tables,3985 columns,712 FKs,1197 indexes. Counts and SQL/catalog definitions retained privately in F:/ERP-Backups/Rubi/dashboard-{schema-audit,structure,quality}-1103.*. No passenger, contact, credential or monetary value printed.
+- Application-accessible operational schema profiled:316 tables,3985 columns,712 FKs,1197 indexes. Database-owner metadata review additionally includes the restricted migration table:317 public tables and3993 columns total;209 completed migrations,0 incomplete. Counts and SQL/catalog definitions retained privately in F:/ERP-Backups/Rubi/dashboard-{schema-audit,structure,quality}-1103.*. No passenger, contact, credential or monetary value printed.
 -353 contracts,399 reservation intakes,328 purchase rows,1263 customer identities,19 HR employees,849 HR records and153 calls exist. These records do not automatically satisfy each KPI definition.
 - All4 payment entries remain PENDING_FINANCE_CONFIRMATION. No confirmed receipt or missing confirmed-account violation. No automatic approvals performed.
 - Accounting books/journals/lines, approved Finance cost revisions, operational finance requests, automation tasks, Customer Affairs leads and reporting_travel_facts have0 rows. Missing approved cost is not zero.
@@ -142,10 +142,10 @@ READY means current broad diagnostic scope; it is not universal user authorizati
 | Visual | supplier-action-queue | صف تعهدات تأمین‌کننده | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_supplier_payment_queue_facts_v1, reporting_reservation_delivery_readiness_facts_v1 |
 | Visual | hotel-rate-comparison | مقایسه نرخ خرید هتل | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_hotel_rate_comparison_facts_v1 |
 | Visual | treasury-flow | گردش خزانه | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_payment_facts, reporting_journal_balance_facts |
-| Visual | finance-profit-trend | روند درآمد و سود | CANDIDATE_PARTIAL_SOURCE_AWARE | reporting_contract_service_facts, reporting_journal_balance_facts |
+| Visual | finance-profit-trend | روند درآمد و سود | READY_PARTIAL_SOURCE_AWARE | reporting_contract_service_facts, reporting_journal_balance_facts |
 | Visual | counterparty-exposure | ریسک طرف‌حساب‌ها | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_counterparty_balance_facts_v1 |
 | Visual | due-checks-queue | اولویت چک‌ها | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | approved_finance_check_projection |
-| Visual | customer-growth-overview | روند جذب تا سفارش | CANDIDATE_PARTIAL_SOURCE_AWARE | reporting_customer_affairs_lead_facts_v1, reporting.travel.facts.v1 |
+| Visual | customer-growth-overview | روند جذب تا سفارش | READY_PARTIAL_SOURCE_AWARE | reporting_customer_affairs_lead_facts_v1, reporting.travel.facts.v1 |
 | Visual | customer-source-quality | کیفیت منابع جذب | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting.travel.facts.v1 |
 | Visual | customer-trust-guardrails | رضایت و کیفیت خدمت | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_customer_consent_facts_v1, reporting_support_ticket_facts_v1, reporting_customer_satisfaction_facts_v1 |
 | Visual | crm-funnel | قیف CRM | OWNER_PUBLIC_SOURCE_OR_SCOPE_REQUIRED | reporting_customer_affairs_lead_facts_v1, reporting_sales_contract_pipeline_facts_v1 |
@@ -214,3 +214,7 @@ READY means current broad diagnostic scope; it is not universal user authorizati
 ## Verification update
 
 All90 Reporting API tests and51 Dashboard/translation Web tests pass (1 existing Web skip); scoped lint passes. In-memory candidate using the real production public modules exposes12 chart IDs while preserving the11 KPI IDs; no business-data write. Hosted CI found optional unavailableMetrics access in two new test assertions; corrected to optional access without altering runtime behavior. Final-head CI and production publication remain pending.
+
+## Production release and summary follow-up
+
+PR1335 merged c4767dbd8bbd85720cb2176ea29faee1ea661851 after all8 source checks; all4 merge checks also passed. Dashboard-only API/Web overlay activated from c7a3de6df3a37102c6949f9f2f758711282757d9; existing mobile Workbench changes preserved. Fresh encrypted backup verified off-server; unrelated source/configuration/mounts and Worker image preserved. All11 post-release SQL reconciliations pass. Actual authenticated browser response has all3 growth series and the rendered graph has3 polylines. Browser acceptance found the existing screen-reader summary and expandable data table only described the first series; DASHBOARD-SERIES-SUMMARY-1103 fixes that omission before final acceptance.54 Dashboard/translation tests pass (1 existing skip), including rendered multi-series columns, signed/zero values, incomplete series cells and scalar fallback; scoped lint passes. Final-head CI and bounded follow-up publication pending.

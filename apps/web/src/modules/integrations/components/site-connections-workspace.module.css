@@ -1,0 +1,52 @@
+.siteSelector {
+  padding: 16px;
+}
+.siteSelector label {
+  display: grid;
+  gap: 8px;
+  width: min(360px, 100%);
+  font-size: 13px;
+  font-weight: 600;
+}
+.apiDisclosure {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.apiDisclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+.apiDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.apiDisclosure > summary > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.apiDisclosure > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 16px;
+}
+.chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.apiDisclosure[open] > summary .chevron {
+  transform: rotate(180deg);
+}
+.apiBody {
+  padding: 0 12px 12px;
+}

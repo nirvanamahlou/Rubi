@@ -24,10 +24,12 @@ const workflows: Record<string, { title: string; help: string }> = {
 
 export function NiyayeshWorkbooks({
   branchId,
+  systemId,
   available,
   onApplied,
 }: {
   branchId: string;
+  systemId?: string;
   available: { kind: string; canApply: boolean }[];
   onApplied: () => void;
 }) {
@@ -35,8 +37,9 @@ export function NiyayeshWorkbooks({
     <div className="grid gap-5">
       {available.map((w) => (
         <Workbook
-          key={`${branchId}:${w.kind}`}
+          key={`${branchId}:${systemId}:${w.kind}`}
           branchId={branchId}
+          {...(systemId ? { systemId } : {})}
           kind={w.kind}
           canApply={w.canApply}
           onApplied={onApplied}
@@ -48,11 +51,13 @@ export function NiyayeshWorkbooks({
 
 function Workbook({
   branchId,
+  systemId,
   kind,
   canApply,
   onApplied,
 }: {
   branchId: string;
+  systemId?: string;
   kind: string;
   canApply: boolean;
   onApplied: () => void;
@@ -74,7 +79,15 @@ function Workbook({
     if (kind !== 'tour-prices') return;
     const control = new AbortController();
     void integrationsApi
-      .niyayeshResources(branchId, 'tours', cursor, control.signal)
+      .niyayeshResources(
+        branchId,
+        'tours',
+        cursor,
+        control.signal,
+        undefined,
+        undefined,
+        systemId,
+      )
       .then((page) => {
         setTours((old) => [
           ...(cursor ? old : []),
@@ -92,7 +105,7 @@ function Workbook({
           setError(e instanceof Error ? e.message : 'دریافت تور انجام نشد.');
       });
     return () => control.abort();
-  }, [branchId, kind, cursor]);
+  }, [branchId, systemId, kind, cursor]);
   if (!info) return null;
   function reset() {
     setResult(null);
@@ -113,6 +126,7 @@ function Workbook({
         apply,
         tourId || undefined,
         apply ? (result?.proof ?? undefined) : undefined,
+        systemId,
       );
       setResult(data);
       if (!apply) setCommand(crypto.randomUUID());
@@ -128,8 +142,8 @@ function Workbook({
     setError('');
     try {
       const data = exportCity
-        ? await integrationsApi.niyayeshHotelExport(branchId, city)
-        : await integrationsApi.niyayeshTemplate(branchId, kind);
+        ? await integrationsApi.niyayeshHotelExport(branchId, city, systemId)
+        : await integrationsApi.niyayeshTemplate(branchId, kind, systemId);
       const blob = new Blob(
         [Uint8Array.from(atob(data.content), (c) => c.charCodeAt(0))],
         {

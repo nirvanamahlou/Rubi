@@ -89,12 +89,14 @@ export function SiteVisits({
   siteName,
   loading,
   state,
+  compact = false,
 }: {
   report: SiteReport | null;
   label: string;
   siteName: string;
   loading: boolean;
   state?: SiteReportResult['state'] | undefined;
+  compact?: boolean;
 }) {
   const empty = loading
     ? 'در حال دریافت…'
@@ -106,48 +108,10 @@ export function SiteVisits({
   const days = report?.visits.daily ?? [];
   const visitsAvailable = report && report.visits.available !== false;
   const max = Math.max(1, ...days.map((day) => day.views));
-  return (
-    <Card className={styles.visits}>
-      <header className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.siteIcon}>
-            <Globe2 aria-hidden="true" />
-          </span>
-          <div>
-            <h3>بازدید {siteName}</h3>
-            <p>{label}</p>
-          </div>
-        </div>
-        <span className={styles.unit}>بازه انتخاب‌شده</span>
-      </header>
-      <div className={styles.metrics} aria-busy={loading}>
-        <div className={styles.metric}>
-          <span className={styles.metricIcon}>
-            <UsersRound aria-hidden="true" />
-          </span>
-          <div>
-            <span title="شناسه ناشناس مرورگر؛ معادل تعداد قطعی اشخاص نیست">
-              بازدیدکننده یکتا <small>(مرورگر)</small>
-            </span>
-            <strong>
-              {visitsAvailable
-                ? reportCount(report.visits.uniqueBrowsers)
-                : '—'}
-            </strong>
-          </div>
-        </div>
-        <div className={styles.metric}>
-          <span className={styles.metricIcon}>
-            <Eye aria-hidden="true" />
-          </span>
-          <div>
-            <span>بازدید صفحه</span>
-            <strong>
-              {visitsAvailable ? reportCount(report.visits.pageViews) : '—'}
-            </strong>
-          </div>
-        </div>
-      </div>
+  const HistoryContainer = compact ? 'div' : 'details';
+  const HistoryHeading = compact ? 'p' : 'summary';
+  const history = (
+    <>
       {report?.visits.coverageFrom ? (
         <p className={styles.empty}>
           ثبت بازدید از{' '}
@@ -164,11 +128,11 @@ export function SiteVisits({
             : empty}
         </p>
       ) : days.length ? (
-        <details className={styles.daily}>
-          <summary>
+        <HistoryContainer className={styles.daily}>
+          <HistoryHeading>
             جزئیات روزانه{' '}
             <span>{days.length.toLocaleString('fa-IR')} روز دارای بازدید</span>
-          </summary>
+          </HistoryHeading>
           <div className={styles.tableWrap}>
             <table>
               <thead>
@@ -206,9 +170,61 @@ export function SiteVisits({
               </tbody>
             </table>
           </div>
-        </details>
+        </HistoryContainer>
       ) : (
         <p className={styles.empty}>در این بازه بازدیدی ثبت نشده است.</p>
+      )}
+    </>
+  );
+  return (
+    <Card className={`${styles.visits} ${compact ? styles.compact : ''}`}>
+      <header className={styles.header}>
+        <div className={styles.title}>
+          <span className={styles.siteIcon}>
+            <Globe2 aria-hidden="true" />
+          </span>
+          <div>
+            <h3>{compact ? siteName : <>بازدید {siteName}</>}</h3>
+            {!compact ? <p>{label}</p> : null}
+          </div>
+        </div>
+        {!compact ? <span className={styles.unit}>بازه انتخاب‌شده</span> : null}
+      </header>
+      <div className={styles.metrics} aria-busy={loading}>
+        <div className={styles.metric}>
+          <span className={styles.metricIcon}>
+            <UsersRound aria-hidden="true" />
+          </span>
+          <div>
+            <span title="شناسه ناشناس مرورگر؛ معادل تعداد قطعی اشخاص نیست">
+              بازدیدکننده یکتا <small>(مرورگر)</small>
+            </span>
+            <strong>
+              {visitsAvailable
+                ? reportCount(report.visits.uniqueBrowsers)
+                : '—'}
+            </strong>
+          </div>
+        </div>
+        <div className={styles.metric}>
+          <span className={styles.metricIcon}>
+            <Eye aria-hidden="true" />
+          </span>
+          <div>
+            <span>بازدید صفحه</span>
+            <strong>
+              {visitsAvailable ? reportCount(report.visits.pageViews) : '—'}
+            </strong>
+          </div>
+        </div>
+      </div>
+      {compact && visitsAvailable ? (
+        <details className={styles.compactDetails}>
+          <summary>جزئیات بازدید</summary>
+          {history}
+        </details>
+      ) : (
+        history
       )}
     </Card>
   );

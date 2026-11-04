@@ -50,8 +50,19 @@ describe('employee attendance table', () => {
       'خروج',
       'تأخیر',
       'خروج زودهنگام',
+      'کسری کار',
+      'اضافه‌کاری',
+      'وضعیت',
     ]);
-    expect(data.rows[0]?.slice(2)).toEqual(['09:05', '16:50', '5', '10']);
+    expect(data.rows[0]?.slice(2)).toEqual([
+      '09:05',
+      '16:50',
+      '5',
+      '10',
+      '—',
+      '—',
+      'حاضر با تأخیر و خروج زودهنگام',
+    ]);
     expect(data.recordIds).toEqual([day.id]);
     expect(data.rows[0]?.[1]).toBe('یکشنبه');
   });
@@ -64,7 +75,7 @@ describe('employee attendance table', () => {
   });
 });
 
-it('uses calculated server times for device punches and keeps the eight time-section columns', () => {
+it('uses calculated server times for device punches and includes attendance status in the time-section columns', () => {
   const day = record('attendance', ['worker', '2026-11-01', '', '', '5', '0']);
   day.data = {
     firstIn: '2026-11-01T05:50:00.000Z',
@@ -84,9 +95,19 @@ it('uses calculated server times for device punches and keeps the eight time-sec
     'خروج',
     'تأخیر',
     'خروج زودهنگام',
+    'کسری کار',
     'اضافه‌کاری',
+    'وضعیت',
   ]);
-  expect(data.rows[0]!.slice(4)).toEqual(['09:20', '17:30', '5', '0', '30']);
+  expect(data.rows[0]!.slice(4)).toEqual([
+    '09:20',
+    '17:30',
+    '5',
+    '0',
+    '—',
+    '30',
+    'حاضر با تأخیر',
+  ]);
 });
 
 it('orders employee work dates newest first without changing row identities or input', () => {
@@ -140,7 +161,7 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ],
   );
   expect(data.recordIds).toEqual([first.id, second.id]);
-  expect(data.rows.map((row) => [row[0], row[1], row.at(-1)])).toEqual([
+  expect(data.rows.map((row) => [row[0], row[1], row.at(-2)])).toEqual([
     ['001', 'first', '12'],
     ['002', 'second', '34'],
   ]);

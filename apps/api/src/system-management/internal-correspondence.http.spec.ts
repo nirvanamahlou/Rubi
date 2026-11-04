@@ -54,7 +54,7 @@ describe('internal correspondence HTTP access', () => {
     expect(list).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
   });
-  it('enforces explicit screen denial on recipients and inbox', async () => {
+  it('allows correspondence for every authenticated user, including previously denied profiles', async () => {
     for (const path of [
       '/correspondence/v1/internal',
       '/correspondence/v1/internal/users',
@@ -62,8 +62,8 @@ describe('internal correspondence HTTP access', () => {
       await request(app.getHttpServer())
         .get(path)
         .set('Cookie', 'nora_access=denied')
-        .expect(403);
-    expect(list).not.toHaveBeenCalled();
+        .expect(200);
+    expect(list).toHaveBeenCalled();
   });
   it('uses the authenticated actor instead of a client-supplied identity', async () => {
     await request(app.getHttpServer())

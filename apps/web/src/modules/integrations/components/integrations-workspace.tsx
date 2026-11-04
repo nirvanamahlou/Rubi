@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   canViewScreen,
-  canViewIntegrationSection,
   visibleIntegrationSections,
   type AuthenticatedActor,
   type BranchReference,
-  type IntegrationExistingAdapterV1,
   type IntegrationRegistryV1,
   type IntegrationRegistryWriteV1,
   type IntegrationSystemConfigV1,
@@ -16,7 +14,6 @@ import {
   Activity,
   ArrowLeft,
   Building2,
-  Cable,
   ChevronLeft,
   Globe2,
   Plus,
@@ -46,9 +43,10 @@ import {
 import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
-import { ConnectionReadiness } from './connection-readiness';
-import { NiyayeshData } from './niyayesh-data';
-import { GhestirooConnection } from './ghestiroo-connection';
+import {
+  SiteConnectionsWorkspace,
+  SelectedSiteConnection,
+} from './site-connections-workspace';
 import { isGhestirooSystem } from '../system-connector';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
@@ -101,7 +99,6 @@ export function IntegrationWorkspaceBody({
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [branchId, setBranchId] = useState('');
   const [data, setData] = useState<IntegrationRegistryV1 | null>(null);
-  const [adapters, setAdapters] = useState<IntegrationExistingAdapterV1[]>([]);
   const allowedSections = visibleIntegrationSections(actor.permissions);
   const [section, setSection] = useState<IntegrationSection>(
     () => allowedSections[0] ?? 'brands',
@@ -121,10 +118,6 @@ export function IntegrationWorkspaceBody({
   const loadSequence = useRef(0);
 
   const authorizedBranchIds = actor.branchIds.join(',');
-  const canReadAdapters = canViewIntegrationSection(
-    actor.permissions,
-    'connections',
-  );
   useEffect(() => {
     let active = true;
     void integrationsApi
@@ -153,15 +146,9 @@ export function IntegrationWorkspaceBody({
       setLoading(true);
       setError('');
       try {
-        const [registry, adapters] = await Promise.all([
-          integrationsApi.read(branchId, signal, section),
-          canReadAdapters
-            ? integrationsApi.adapters(signal)
-            : Promise.resolve([]),
-        ]);
+        const registry = await integrationsApi.read(branchId, signal, section);
         if (signal?.aborted || sequence !== loadSequence.current) return;
         setData(registry);
-        setAdapters(adapters);
       } catch (cause) {
         if (!signal?.aborted && sequence === loadSequence.current)
           setError(errorMessage(cause));
@@ -170,7 +157,7 @@ export function IntegrationWorkspaceBody({
           setLoading(false);
       }
     },
-    [branchId, section, canReadAdapters],
+    [branchId, section],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -357,9 +344,6 @@ export function IntegrationWorkspaceBody({
             />
           ) : (
             <>
-              {section === 'connections' ? (
-                <NiyayeshData key={branchId} branchId={branchId} />
-              ) : null}
               {section === 'overview' ? (
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -396,34 +380,6 @@ export function IntegrationWorkspaceBody({
                       </button>
                     ))}
                   </div>
-                  <Card className="grid gap-4 p-5 sm:grid-cols-2">
-                    <div>
-                      <h2 className="font-bold">عملیات منتظر اقدام</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        وضعیت واقعی اتصال و کارتابل هر سایت در گزارش همان سایت
-                        نمایش داده می‌شود.
-                      </p>
-                      <Button
-                        variant="outline"
-                        className="mt-3"
-                        type="button"
-                        disabled={!allowedSections.includes('connections')}
-                        onClick={() => changeSection('connections')}
-                      >
-                        بررسی اتصال‌ها
-                      </Button>
-                    </div>
-                    <div>
-                      <h2 className="font-bold">روند و مقایسه عملکرد</h2>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        گزارش هر سایت از منبع مستقل خودش خوانده می‌شود؛ سایت و
-                        بازه را در بخش گزارش انتخاب کنید.
-                      </p>
-                      <Badge className="mt-3">
-                        آکادمی از فروش مستقیم سفر جداست
-                      </Badge>
-                    </div>
-                  </Card>
                 </>
               ) : null}
               {(section === 'brands' ||
@@ -595,37 +551,11 @@ export function IntegrationWorkspaceBody({
                 </>
               ) : null}
               {section === 'connections' ? (
-                <>
-                  <GhestirooConnection
-                    registry={data}
-                    key={branchId}
-                    branchId={branchId}
-                    userId={actor.userId}
-                  />
-                  <ConnectionReadiness />
-                  <h2 className="text-lg font-bold">مسیرهای تخصصی موجود</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {adapters.map((adapter) => (
-                      <Card key={adapter.code} className="p-5">
-                        <Cable className="mb-3 size-6 text-primary" />
-                        <h2 className="font-bold">{adapter.title}</h2>
-                        <Badge className="mt-3">
-                          مسیر موجود؛ اتصال زنده تأیید نشده
-                        </Badge>
-                        <p className="mt-3 text-sm text-muted-foreground">
-                          {adapter.owner === 'Integrations'
-                            ? 'ارسال سفارش و دریافت پیام امضاشده تأمین‌کننده'
-                            : 'ثبت تیکت و استعلام وضعیت از سایت‌ها'}
-                        </p>
-                      </Card>
-                    ))}
-                  </div>
-                  <SystemList
-                    data={data}
-                    onOpen={setSelectedSystem}
-                    listedOnly={listedOnly}
-                  />
-                </>
+                <SiteConnectionsWorkspace
+                  key={branchId}
+                  registry={data}
+                  userId={actor.userId}
+                />
               ) : null}
               {section === 'events' ? (
                 <EmptyState
@@ -905,15 +835,14 @@ export function SystemDetail({
             </Button>
           ))}
       </nav>
-      {ghestiroo && ['connection', 'data', 'health'].includes(area) ? (
-        <GhestirooConnection
-          registry={data}
+      {['connection', 'data'].includes(area) ||
+      (ghestiroo && area === 'health') ? (
+        <SelectedSiteConnection
           key={`${branchId}:${system.id}`}
-          branchId={branchId}
+          registry={data}
+          system={system}
           userId={userId}
         />
-      ) : area === 'data' ? (
-        <NiyayeshData branchId={branchId} expectedSystemId={system.id} />
       ) : area === 'settings' ? (
         <>
           <div className="flex flex-wrap gap-2">

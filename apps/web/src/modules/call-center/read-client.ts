@@ -92,6 +92,7 @@ export interface ActivityDetail {
   actorId: string;
   metric: string;
   rows: {
+    callId?: string;
     at: string | null;
     kind: string;
     result: string;

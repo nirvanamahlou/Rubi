@@ -1,11 +1,20 @@
+import { attendanceFrom } from './hr-attendance-range';
+import { approvedLeaveCoverage } from './hr-attendance-leave';
 import { isDeepStrictEqual } from 'node:util';
 import {
+  attendanceClockTimes,
   attendanceScheduleMetrics,
   workingHoursEnd,
   resolveDeviceDirections,
   deviceRecordId,
 } from './hr-device-attendance.domain';
-import { isHrSharedResource, hrBranchKey } from '@nora/contracts';
+import {
+  HR_WEEKDAYS,
+  hrShiftWeekdays,
+  hrShiftMatchesDate,
+  isHrSharedResource,
+  hrBranchKey,
+} from '@nora/contracts';
 import { buildDashboardCharts, dashboardPeriods } from './hr-dashboard.domain';
 import { configuredAttendance } from './hr-attendance-settings';
 import { readPayslipWorkbook } from './hr-payslip-import';
@@ -2113,6 +2122,7 @@ export class HrService {
     branchId: string,
     data: HrWorkflowData,
     parentId?: string | null,
+    recordId?: string,
   ) {
     const submitted = Array.isArray(input) ? [...input] : input;
     const canonicalEmployeeColumn = schema.columns.indexOf('کارمند');
@@ -2203,6 +2213,52 @@ export class HrService {
         data.startsAt = values[1] + 'T00:00:00.000Z';
         data.endsAt = values[2] + 'T23:59:59.999Z';
         delete data.minutes;
+      }
+    }
+    if (schema.key === 'time.shift' && values[9]) {
+      const days = hrShiftWeekdays(values[9]);
+      if (
+        days.length > 7 ||
+        days.some((day) => !(HR_WEEKDAYS as readonly string[]).includes(day))
+      )
+        throw new BadRequestException('روز هفته معتبر انتخاب کنید.');
+      values[9] = [...new Set(days)].join('، ');
+      if (parentId)
+        throw new BadRequestException('شیفت هفتگی به الگوی تقویم وابسته نیست.');
+      if (!values[1] || !values[2] || values[1] === values[2])
+        throw new BadRequestException('ساعت شروع و پایان معتبر انتخاب کنید.');
+      validate.isoDate(values[7]);
+      validate.isoDate(values[8]);
+      if (Date.parse(values[8]!) - Date.parse(values[7]!) > 366 * 86400000)
+        throw new BadRequestException('بازه شیفت حداکثر یک سال است.');
+      await this.assertShiftPeriod(tx, branchId, values);
+      const existing = await tx.hrRecord.findMany({
+        where: {
+          branchId,
+          employeeId: employee!.id,
+          section: 'time',
+          tab: 'shift',
+          status: 'فعال',
+          deletedAt: null,
+          ...(recordId ? { id: { not: recordId } } : {}),
+        },
+      });
+      for (
+        let time = Date.parse(values[7]!);
+        time <= Date.parse(values[8]!);
+        time += 86400000
+      ) {
+        const date = new Date(time).toISOString().slice(0, 10);
+        if (
+          hrShiftMatchesDate(values, date) &&
+          existing.some(
+            (row) =>
+              hrShiftMatchesDate(row.values as string[], date) &&
+              (!(row.data as HrWorkflowData).templateSchedule ||
+                Boolean((row.data as HrWorkflowData).templateSchedule![date])),
+          )
+        )
+          throw new ConflictException('کارمند در روز انتخابی شیفت فعال دارد.');
       }
     }
     if (schema.key === 'time.shift' && parentId) {
@@ -2645,10 +2701,9 @@ export class HrService {
         return { id: row.id };
       },
     );
-    return this.recordDto(
-      await this.record(this.database.client, result.id, actor),
-      actor,
-    );
+    const saved = await this.record(this.database.client, result.id, actor);
+    await this.refreshAttendanceForRecord(saved, actor);
+    return this.recordDto(saved, actor);
   }
   async updateRecord(id: string, body: unknown, actor: AuthenticatedActor) {
     const input = validate.object(body, [
@@ -2670,7 +2725,7 @@ export class HrService {
           (await this.record(this.database.client, id, actor)).branchId,
         )
       : undefined;
-    return this.transaction(async (tx) => {
+    const saved = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
@@ -2734,6 +2789,8 @@ export class HrService {
             : null;
         }
       }
+      if (schema.key === 'time.shift')
+        await this.assertShiftPeriod(tx, row.branchId, row.values as string[]);
       if (schema.key === 'time.checkins') {
         if (row.parentId)
           throw new ConflictException('تردد اصلاحی مصوب تغییرپذیر نیست.');
@@ -2945,6 +3002,7 @@ export class HrService {
               row.branchId,
               data,
               parentId,
+              row.id,
             );
       if (missionParent !== undefined) {
         const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
@@ -3149,6 +3207,8 @@ export class HrService {
         actor,
       );
     });
+    await this.refreshAttendanceForRecord(saved, actor);
+    return saved;
   }
   async contractState(
     id: string,
@@ -3273,8 +3333,10 @@ export class HrService {
   }
   async deleteRecord(id: string, expected: unknown, actor: AuthenticatedActor) {
     const v = validate.version(Number(expected));
-    return this.transaction(async (tx) => {
+    let affected: RecordRow | undefined;
+    const result = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      affected = row;
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
@@ -3343,6 +3405,8 @@ export class HrService {
         (await this.companyDependants(tx, row.id))
       )
         throw new ConflictException('شعبه سازمانی دارای رکورد وابسته است.');
+      if (schema.key === 'time.shift')
+        await this.assertShiftPeriod(tx, row.branchId, row.values as string[]);
       if (schema.key === 'time.checkins') {
         if (row.parentId)
           throw new ConflictException('تردد اصلاحی مصوب تغییرپذیر نیست.');
@@ -3392,6 +3456,8 @@ export class HrService {
       );
       return { id, deleted: true };
     });
+    if (affected) await this.refreshAttendanceForRecord(affected, actor);
+    return result;
   }
   private async effects(
     tx: Tx,
@@ -4063,6 +4129,169 @@ export class HrService {
       },
     );
   }
+  private async assertShiftPeriod(tx: Tx, branchId: string, values: string[]) {
+    if (!values[7] || !values[8]) return;
+    const closed = await tx.hrRecord.findMany({
+      where: {
+        branchId,
+        section: 'time',
+        tab: 'periods',
+        status: 'بسته‌شده',
+        deletedAt: null,
+      },
+    });
+    if (
+      closed.some((r) => {
+        const v = r.values as string[];
+        return v[1]! <= values[8]! && v[2]! >= values[7]!;
+      })
+    )
+      throw new ConflictException(
+        'بازه شیفت با دوره کارکرد بسته‌شده هم‌پوشانی دارد.',
+      );
+  }
+
+  async assignWeeklyShift(
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'hr.manage');
+    const input = validate.object(body, [
+      'branchId',
+      'employeeIds',
+      'title',
+      'weekday',
+      'start',
+      'end',
+      'from',
+      'to',
+    ]);
+    const branchId = this.branch(actor, input.branchId);
+    if (
+      !Array.isArray(input.employeeIds) ||
+      !input.employeeIds.length ||
+      input.employeeIds.length > 100
+    )
+      throw new BadRequestException('بین ۱ تا ۱۰۰ کارمند انتخاب کنید.');
+    const employeeIds = [
+      ...new Set(input.employeeIds.map((id) => validate.uuid(id))),
+    ].sort();
+    const base = [
+      validate.text(input.title, 'عنوان شیفت', 160),
+      input.start,
+      input.end,
+      '0',
+      '0',
+      '',
+      '',
+      input.from,
+      input.to,
+      input.weekday,
+    ];
+    if (!input.weekday) throw new BadRequestException('روز هفته الزامی است.');
+    const result = await this.command(
+      actor,
+      key,
+      { operation: 'shift.assign-weekly', input },
+      async (tx) => {
+        const ids: string[] = [];
+        for (const id of employeeIds) {
+          const employee = await this.employee(tx, id, actor);
+          if (employee.branchId !== branchId || employee.status !== 'فعال')
+            throw new BadRequestException('کارمند فعال همان شعبه انتخاب کنید.');
+          const data: HrWorkflowData = {};
+          const values = await this.values(
+            tx,
+            getHrResource('time', 'shift')!,
+            base,
+            employee,
+            branchId,
+            data,
+          );
+          const row = await tx.hrRecord.create({
+            data: {
+              branchId,
+              employeeId: id,
+              section: 'time',
+              tab: 'shift',
+              code: `HR-SHF-${randomUUID().slice(0, 16)}`,
+              values,
+              searchText: values.join(' '),
+              status: 'فعال',
+              effectiveAt: validate.isoDate(values[7]),
+              data: json(data),
+            },
+          });
+          ids.push(row.id);
+          await this.audit(
+            tx,
+            actor,
+            { branchId, employeeId: id, recordId: row.id },
+            'shift.assign-weekly',
+            { values },
+            1,
+          );
+        }
+        return { ids };
+      },
+    );
+    await this.refreshAttendance(branchId, actor);
+    return Promise.all(
+      result.ids.map(async (id) =>
+        this.recordDto(
+          await this.record(this.database.client, id, actor),
+          actor,
+        ),
+      ),
+    );
+  }
+
+  private async refreshAttendanceForRecord(
+    row: { section: string; tab: string; branchId: string },
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      (row.section === 'time' &&
+        ['shift', 'workingHours', 'leave', 'calculationSettings'].includes(
+          row.tab,
+        )) ||
+      (row.section === 'requests' && ['leave', 'radanLeave'].includes(row.tab))
+    )
+      await this.refreshAttendance(row.branchId, actor);
+  }
+  private async refreshAttendance(branchId: string, actor: AuthenticatedActor) {
+    if (!this.has(actor, 'hr.manage')) return;
+    const today = validate.localClockParts(new Date()).date;
+    const from = attendanceFrom(
+      new Date(Date.parse(today) - 366 * 86400000).toISOString().slice(0, 10),
+    );
+    const rows = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId,
+        section: 'time',
+        tab: { in: ['attendance', 'checkins'] },
+        deletedAt: null,
+        AND: [
+          { values: { path: ['1'], gte: from } },
+          { values: { path: ['1'], lte: today } },
+        ],
+      },
+      select: { values: true },
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+    for (const date of [
+      ...new Set(rows.map((r) => (r.values as string[])[1]!)),
+    ].sort())
+      await this.processAttendance(
+        { branchId, date },
+        randomUUID(),
+        actor,
+        true,
+      );
+  }
   private async assertOpenPeriod(tx: Tx, branchId: string, date: string) {
     validate.isoDate(date);
     const closed = await tx.hrRecord.findMany({
@@ -4095,8 +4324,7 @@ export class HrService {
       return (
         row.tab === 'shift' &&
         row.employeeId === employeeId &&
-        values[7]! <= date &&
-        values[8]! >= date &&
+        hrShiftMatchesDate(values, date) &&
         row.status === 'فعال'
       );
     });
@@ -4122,7 +4350,14 @@ export class HrService {
         };
       }
     }
-    if (!shift) {
+    const hasWeeklySchedule = source.some(
+      (row) =>
+        row.tab === 'shift' &&
+        row.employeeId === employeeId &&
+        row.status === 'فعال' &&
+        Boolean((row.values as string[])[9]),
+    );
+    if (!shift && !hasWeeklySchedule) {
       const hours = source.filter(
         (row) => row.tab === 'workingHours' && row.status === 'فعال',
       );
@@ -4147,6 +4382,7 @@ export class HrService {
     const shiftValues = shift ? [...(shift.values as string[])] : undefined;
     if (
       shiftValues &&
+      !shiftValues[9] &&
       ((shift?.data as HrWorkflowData)?.shiftEndDayOffset ?? 0) === 0
     )
       shiftValues[2] = workingHoursEnd(date, shiftValues[1]!, shiftValues[2]!);
@@ -4254,6 +4490,8 @@ export class HrService {
     const input = validate.object(body, ['branchId', 'date']);
     const date = validate.isoDate(input.date).toISOString().slice(0, 10),
       branchId = this.branch(actor, input.branchId);
+    if (deviceOnly && date < attendanceFrom(date))
+      return { processed: 0, exceptions: 0, date };
     return this.command(
       actor,
       key,
@@ -4264,7 +4502,13 @@ export class HrService {
         reconcileEmptyEmployeeIds,
       },
       async (tx) => {
-        await this.assertOpenPeriod(tx, branchId, date);
+        try {
+          await this.assertOpenPeriod(tx, branchId, date);
+        } catch (error) {
+          if (deviceOnly && error instanceof ConflictException)
+            return { processed: 0, exceptions: 0, date };
+          throw error;
+        }
         const employees = await tx.hrEmployee.findMany({
           where: {
             branchId,
@@ -4343,50 +4587,6 @@ export class HrService {
             result,
             selected,
           } = this.attendanceView(source, employee.id, date);
-          if (
-            deviceOnly &&
-            !selected.length &&
-            !reconcileEmptyEmployeeIds.includes(employee.id)
-          )
-            continue;
-          if (
-            deviceOnly &&
-            !selected.length &&
-            reconcileEmptyEmployeeIds.includes(employee.id)
-          ) {
-            const stale = await tx.hrRecord.findMany({
-              where: {
-                branchId,
-                employeeId: employee.id,
-                section: 'time',
-                tab: 'attendance',
-                deletedAt: null,
-                values: { path: ['1'], equals: date },
-              },
-              take: 1000,
-            });
-            for (const row of stale) {
-              const data = (row.data ?? {}) as Record<string, unknown>;
-              if (
-                !Object.hasOwn(data, 'firstIn') ||
-                !Object.hasOwn(data, 'workedMinutes')
-              )
-                continue;
-              await tx.hrRecord.update({
-                where: { id: row.id },
-                data: { deletedAt: new Date(), version: { increment: 1 } },
-              });
-              await this.audit(
-                tx,
-                actor,
-                { branchId, employeeId: employee.id, recordId: row.id },
-                'attendance.reconcile',
-                { reason: 'source-date-corrected', date },
-                row.version + 1,
-              );
-            }
-            continue;
-          }
           const metrics =
             shiftStart && shiftEnd
               ? attendanceScheduleMetrics(
@@ -4397,6 +4597,48 @@ export class HrService {
                   validate.localClockToUtc(date, '17:30'),
                 )
               : null;
+          const leave =
+            shiftStart && shiftEnd
+              ? approvedLeaveCoverage(
+                  events,
+                  shiftStart,
+                  shiftEnd,
+                  source
+                    .filter(
+                      (r) =>
+                        r.employeeId === employee.id &&
+                        ['leave', 'radanLeave'].includes(r.tab) &&
+                        validate.APPROVED.has(r.status),
+                    )
+                    .map((r) => {
+                      const v = r.values as string[],
+                        d = r.data as HrWorkflowData;
+                      return [
+                        Date.parse(d.startsAt ?? `${v[2]}T00:00:00+03:30`),
+                        Date.parse(d.endsAt ?? `${v[3]}T23:59:59+03:30`),
+                      ] as [number, number];
+                    })
+                    .filter(
+                      ([a, b]) => Number.isFinite(a) && Number.isFinite(b),
+                    ),
+                )
+              : null;
+          if (metrics && leave) {
+            if (metrics.lateMinutes !== null)
+              metrics.lateMinutes = Math.max(
+                0,
+                metrics.lateMinutes - leave.lateCredit,
+              );
+            if (metrics.earlyMinutes !== null)
+              metrics.earlyMinutes = Math.max(
+                0,
+                metrics.earlyMinutes - leave.earlyCredit,
+              );
+            if (!events.length && shiftEnd!.getTime() <= Date.now())
+              metrics.deficitMinutes = Math.floor(
+                (shiftEnd!.getTime() - shiftStart!.getTime()) / 60000,
+              );
+          }
           const late =
             metrics?.lateMinutes == null ? '—' : String(metrics.lateMinutes);
           const early =
@@ -4404,7 +4646,7 @@ export class HrService {
           let overtime: number | null = result.exceptions.length
             ? null
             : (metrics?.overtimeMinutes ?? null);
-          if (!shiftStart || !shiftEnd)
+          if ((!shiftStart || !shiftEnd) && selected.length)
             result.exceptions.push('شیفت مصوب تعیین نشده');
           let calculationMetrics: Record<string, number> | undefined;
           if (settings && shiftStart && shiftEnd && overtime !== null) {
@@ -4451,6 +4693,7 @@ export class HrService {
               section: 'time',
               tab: 'attendance',
               deletedAt: null,
+              values: { path: ['1'], equals: date },
             },
             take: 1000,
           });
@@ -4465,11 +4708,25 @@ export class HrService {
             late,
             early,
           ];
-          const status = result.exceptions.length
-            ? 'نیازمند بررسی'
-            : result.worked
-              ? 'حاضر'
-              : 'غایب';
+          const ongoing = Boolean(shiftEnd && shiftEnd.getTime() > Date.now());
+          const reviewExceptions = result.exceptions.filter(
+            (e) => !(ongoing && e === 'خروج ثبت نشده'),
+          );
+          const status =
+            !selected.length && leave?.fullDay
+              ? 'مرخصی'
+              : !selected.length
+                ? !shift
+                  ? 'عدم روزکاری'
+                  : shiftEnd && shiftEnd.getTime() > Date.now()
+                    ? 'در انتظار تردد'
+                    : 'غایب'
+                : reviewExceptions.length
+                  ? 'نیازمند بررسی'
+                  : result.worked ||
+                      (ongoing && events.some((e) => e.kind === 'ورود'))
+                    ? 'حاضر'
+                    : 'غایب';
           const calculatedData = {
             ...(settings
               ? {
@@ -4478,10 +4735,9 @@ export class HrService {
                   calculationMetrics,
                 }
               : {}),
-            reason: result.exceptions.join('، '),
+            reason: reviewExceptions.join('، '),
             minutes: result.worked,
-            firstIn: metrics?.firstIn ?? null,
-            lastOut: metrics?.lastOut ?? null,
+            ...attendanceClockTimes(events),
             deficitMinutes: result.exceptions.length
               ? null
               : metrics?.deficitMinutes == null
@@ -4489,13 +4745,16 @@ export class HrService {
                 : Math.max(
                     0,
                     metrics.deficitMinutes -
-                      Math.floor(calculationMetrics?.creditedMinutes ?? 0),
+                      Math.max(
+                        leave?.creditMinutes ?? 0,
+                        Math.floor(calculationMetrics?.creditedMinutes ?? 0),
+                      ),
                   ),
             workedMinutes: result.worked,
             lateMinutes: late === '—' ? null : Number(late),
             earlyMinutes: early === '—' ? null : Number(early),
             overtimeMinutes: overtime,
-            exceptionCodes: result.exceptions,
+            exceptionCodes: reviewExceptions,
           };
           if (
             existing &&
@@ -5980,7 +6239,7 @@ export class HrService {
       throw new BadRequestException(
         'بازه و جایگاه‌های سازمانی معتبر انتخاب کنید.',
       );
-    return this.command(
+    const result = await this.command(
       actor,
       key,
       { operation: 'shift.assign-template', id, input },
@@ -6101,6 +6360,9 @@ export class HrService {
         return { ids };
       },
     );
+    const template = await this.record(this.database.client, id, actor);
+    await this.refreshAttendance(template.branchId, actor);
+    return result;
   }
 
   private async setEmployeeGroup(

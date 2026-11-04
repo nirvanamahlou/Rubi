@@ -17,6 +17,7 @@ import {
   NiyayeshUpstreamError,
   type NiyayeshConnection,
 } from './niyayesh.client';
+import { SiteConnectionStore } from './site-connection.store';
 
 export const NIYAYESH_RESOURCES = {
   countries: 'کشورها',
@@ -39,6 +40,7 @@ export const NIYAYESH_RESOURCES = {
 
 @Injectable()
 export class NiyayeshService {
+  readonly siteConnections = new SiteConnectionStore();
   readonly editors = [
     'tours',
     'hotels',
@@ -64,13 +66,14 @@ export class NiyayeshService {
     branch: string,
     resource: string,
     id?: string,
+    systemId?: string,
   ) {
     if (
       !this.canEdit(actor, resource) ||
       (id !== undefined && !/^[1-9]\d{0,14}$/.test(id))
     )
       throw new ForbiddenException('مجوز مدیریت این بخش سایت را ندارید.');
-    const binding = await this.binding(actor, branch);
+    const binding = await this.binding(actor, branch, 'connections', systemId);
     if (!binding || !binding.user.resources.includes(resource))
       throw new ForbiddenException();
     const path = `/api/v1/integration/catalogue/${resource}`;
@@ -99,6 +102,7 @@ export class NiyayeshService {
     branch: string,
     resource: string,
     input: unknown,
+    systemId?: string,
   ) {
     if (!this.canEdit(actor, resource))
       throw new ForbiddenException('مجوز مدیریت این بخش سایت را ندارید.');
@@ -124,7 +128,7 @@ export class NiyayeshService {
       !canViewScreen(actor.permissions, 'integrations.niyayesh.publish')
     )
       throw new ForbiddenException('مجوز انتشار در سایت را ندارید.');
-    const binding = await this.binding(actor, branch);
+    const binding = await this.binding(actor, branch, 'connections', systemId);
     if (!binding || !binding.user.resources.includes(resource))
       throw new ForbiddenException();
     return this.read(
@@ -228,11 +232,16 @@ export class NiyayeshService {
       environment: binding.config.local ? 'LOCAL' : binding.config.environment,
     };
   }
-  async hotelExport(actor: AuthenticatedActor, branch: string, city: string) {
+  async hotelExport(
+    actor: AuthenticatedActor,
+    branch: string,
+    city: string,
+    systemId?: string,
+  ) {
     if (typeof city !== 'string' || !city.trim() || city.length > 120)
       throw new BadRequestException('شهر را انتخاب کنید.');
     if (!this.canImport(actor, 'hotels')) throw new ForbiddenException();
-    const binding = await this.binding(actor, branch);
+    const binding = await this.binding(actor, branch, 'connections', systemId);
     if (!binding || !binding.user.resources.includes('hotels'))
       throw new ForbiddenException();
     return this.read(
@@ -241,8 +250,12 @@ export class NiyayeshService {
       `/api/v1/integration/workbooks/hotels/export?city=${encodeURIComponent(city.trim())}`,
     );
   }
-  async dashboard(actor: AuthenticatedActor, branch: string) {
-    const binding = await this.binding(actor, branch);
+  async dashboard(
+    actor: AuthenticatedActor,
+    branch: string,
+    systemId?: string,
+  ) {
+    const binding = await this.binding(actor, branch, 'connections', systemId);
     if (!binding) return { state: 'NOT_CONFIGURED', metrics: [], imports: [] };
     const { config, user } = binding;
     const data = (await this.read(
@@ -302,11 +315,12 @@ export class NiyayeshService {
     tourId?: string,
     proof?: string,
     command?: string,
+    systemId?: string,
   ) {
     const target = this.importTarget(kind);
     if (!this.canImport(actor, kind))
       throw new ForbiddenException('مجوز ورود فایل این بخش را ندارید.');
-    const binding = await this.binding(actor, branch);
+    const binding = await this.binding(actor, branch, 'connections', systemId);
     if (!binding || !binding.user.resources.includes(target))
       throw new ForbiddenException('حساب یا منبع مجاز نیست.');
     const path = `/api/v1/integration/workbooks/${kind}`;
@@ -338,7 +352,13 @@ export class NiyayeshService {
     });
   }
   // Reload local server configuration for every request: revocation is immediate.
-  async configuration(systemId?: string) {
+  async configuration(systemId?: string, branch?: string) {
+    if (systemId !== undefined && !/^[a-zA-Z0-9-]{1,80}$/.test(systemId))
+      throw new BadRequestException('شناسه سایت معتبر نیست.');
+    if (systemId && branch && this.siteConnections.ready()) {
+      const saved = await this.siteConnections.read(branch, systemId);
+      if (saved) return saved;
+    }
     const file = process.env.NIYAYESH_CONNECTION_FILE;
     if (!file) return null;
     let config: NiyayeshConnection;
@@ -397,7 +417,7 @@ export class NiyayeshService {
       !canViewIntegrationSection(actor.permissions, section)
     )
       throw new ForbiddenException('مجوز مشاهده اتصال یا شعبه را ندارید.');
-    const config = await this.configuration(systemId);
+    const config = await this.configuration(systemId, branch);
     if (!config) {
       if (systemId)
         throw new NotFoundException('اتصال گزارش این سایت تنظیم نشده است.');
@@ -462,9 +482,20 @@ export class NiyayeshService {
       );
     }
   }
-  async status(actor: AuthenticatedActor, branch: string) {
-    const binding = await this.binding(actor, branch);
-    if (!binding) return { state: 'NOT_CONFIGURED', resources: [] };
+  async status(actor: AuthenticatedActor, branch: string, systemId?: string) {
+    let binding: Awaited<ReturnType<NiyayeshService['binding']>>;
+    try {
+      binding = await this.binding(actor, branch, 'connections', systemId);
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) throw error;
+      binding = null;
+    }
+    if (!binding)
+      return {
+        state: 'NOT_CONFIGURED',
+        registrySystemId: systemId,
+        resources: [],
+      };
     const { config, user } = binding;
     const capabilities = (await this.read(
       config,
@@ -526,7 +557,7 @@ export class NiyayeshService {
       actor,
       branch,
       reportMetric ? 'brands' : 'connections',
-      reportMetric ? systemId : undefined,
+      systemId,
     );
     if (!binding)
       throw new ServiceUnavailableException('اتصال تنظیم نشده است.');

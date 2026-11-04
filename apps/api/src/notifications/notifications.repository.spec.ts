@@ -20,7 +20,15 @@ describe('NotificationsRepository recipient scoping', () => {
     await repository.listForRecipient('user-a', 20);
 
     expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { recipientUserId: 'user-a' } }),
+      expect.objectContaining({
+        where: { recipientUserId: 'user-a' },
+        orderBy: [
+          { readAt: { sort: 'asc', nulls: 'first' } },
+          { occurredAt: 'desc' },
+          { id: 'desc' },
+        ],
+        take: 20,
+      }),
     );
     expect(count).toHaveBeenCalledWith({
       where: { recipientUserId: 'user-a', readAt: null },

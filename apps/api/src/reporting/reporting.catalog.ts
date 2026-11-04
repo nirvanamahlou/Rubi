@@ -1,4 +1,5 @@
 import type { ReportingGrain } from './reporting.contracts';
+import { OPERATIONAL_REPORTS } from './reporting-native-operational';
 
 export interface ReportingCatalogEntryV1 {
   code: string;
@@ -50,14 +51,14 @@ function readyPublicProjection(
   };
 }
 
-export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
+const baseCatalog: readonly ReportingCatalogEntryV1[] = [
   readyPublicProjection(
     'sales_by_organization',
     'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
-    'CONTRACT_CURRENCY',
+    'CONTRACT',
     'reporting.sales.read',
     'sales.reporting.contract-currency.v1',
-    3,
+    4,
   ),
   readyPublicProjection(
     'sales_by_service_route',
@@ -200,3 +201,157 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
     'reporting_export_audit_facts_v1',
   ),
 ];
+
+const operationalTitles: Readonly<Record<string, string>> = {
+  cancellations_refunds:
+    'قراردادهای ایجادشده که اکنون باطل‌اند چه تعداد و چه مبلغی دارند؟',
+  purchase_by_supplier: 'مبلغ خرید ثبت‌شده خدمات نزد هر تأمین‌کننده چقدر است؟',
+  tickets_manifest: 'برای کدام قراردادها مدرک داخلی مسافر صادر شده است؟',
+  hr_performance: 'حضور و وضعیت ثبت کارکرد کارکنان هر واحد چگونه است؟',
+  export_audit: 'چه خروجی‌هایی توسط حساب من ایجاد شده و وضعیت آن‌ها چیست؟',
+  reservation_delivery_readiness:
+    'کدام پرونده‌ها وارد رزرواسیون شده‌اند و چند مسافر مدرک دارند؟',
+  reservation_cycle_time:
+    'از دریافت پرونده تا اولین صدور مدرک چند دقیقه گذشته است؟',
+  hotel_rate_comparison: 'نرخ پایه ثبت‌شده هتل‌ها در هر بازه چقدر است؟',
+};
+
+const additionalCatalog = [
+  pending(
+    'agency_contract_risk',
+    'کدام قراردادهای آژانس‌ها نیازمند پیگیری هستند؟',
+    'AGENCY',
+    'reporting.b2b.read',
+    'reporting_agency_contract_risk_facts_v1',
+  ),
+  pending(
+    'ticket_capacity',
+    'ظرفیت کل، تخصیص‌یافته و باقی‌مانده هر پرواز چقدر است؟',
+    'TICKET',
+    'reporting.tickets.read',
+    'reporting_ticket_capacity_facts_v1',
+  ),
+  pending(
+    'supplier_payment_queue',
+    'کدام تعهدات تأمین‌کنندگان در صف پرداخت هستند؟',
+    'PURCHASE',
+    'reporting.finance.read',
+    'reporting_supplier_payment_queue_facts_v1',
+  ),
+  pending(
+    'reservation_delivery_readiness',
+    operationalTitles.reservation_delivery_readiness!,
+    'RESERVATION',
+    'reporting.reservations.read',
+    'reporting_delivery_readiness_facts_v1',
+  ),
+  pending(
+    'lead_pipeline',
+    'سرنخ‌ها در کدام مرحله متوقف شده‌اند؟',
+    'LEAD',
+    'reporting.customer_affairs.read',
+    'reporting_lead_pipeline_facts_v1',
+  ),
+  pending(
+    'customer_satisfaction',
+    'رضایت مشتریان در هر خدمت چگونه است؟',
+    'TICKET_SUPPORT',
+    'reporting.customer_affairs.read',
+    'reporting_customer_satisfaction_facts_v1',
+  ),
+  pending(
+    'customer_consent_coverage',
+    'پوشش رضایت معتبر مشتریان چقدر است؟',
+    'CUSTOMER',
+    'reporting.customers.read',
+    'reporting_customer_consent_facts_v1',
+  ),
+  pending(
+    'document_compliance',
+    'اسناد مجاز چه وضعیت تکمیل، اعتبار و اسکن دارند؟',
+    'EXPORT_RUN',
+    'reporting.audit.read',
+    'reporting_document_compliance_facts_v1',
+  ),
+  pending(
+    'hr_record_expiry',
+    'کدام مدارک و قراردادهای کارکنان نزدیک انقضا هستند؟',
+    'EMPLOYEE',
+    'reporting.hr.read',
+    'reporting_hr_record_expiry_facts_v1',
+  ),
+  pending(
+    'workbench_due_actions',
+    'کدام کارهای پیگیری در موعد مقرر انجام نشده‌اند؟',
+    'TICKET_SUPPORT',
+    'reporting.read',
+    'reporting_workbench_due_actions_facts_v1',
+  ),
+  pending(
+    'hotel_rate_comparison',
+    operationalTitles.hotel_rate_comparison!,
+    'RESERVATION',
+    'reporting.reservations.read',
+    'reporting_hotel_rate_facts_v1',
+  ),
+  pending(
+    'future_travel_commitments',
+    'تعهدات سفرهای آینده و وصول آن‌ها چقدر است؟',
+    'CONTRACT_CURRENCY',
+    'reporting.finance.read',
+    'reporting_future_travel_facts_v1',
+  ),
+  pending(
+    'customer_payment_aging',
+    'کدام دریافتنی‌های مشتریان از سررسید گذشته‌اند؟',
+    'PAYMENT',
+    'reporting.finance.read',
+    'reporting_payment_aging_facts_v1',
+  ),
+  pending(
+    'reservation_cycle_time',
+    operationalTitles.reservation_cycle_time!,
+    'RESERVATION',
+    'reporting.reservations.read',
+    'reporting_reservation_cycle_facts_v1',
+  ),
+  pending(
+    'manifest_finance_exclusions',
+    'کدام مسافران از مانیفست مالی مستثنا شده‌اند؟',
+    'PASSENGER',
+    'reporting.finance.read',
+    'reporting_manifest_exclusion_facts_v1',
+  ),
+  pending(
+    'customer_portfolio_growth',
+    'تعداد مشتریان ثبت‌شده در هر دوره چگونه تغییر کرده است؟',
+    'CUSTOMER',
+    'reporting.customers.read',
+    'reporting_customer_growth_facts_v1',
+  ),
+];
+
+export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
+  ...baseCatalog,
+  ...additionalCatalog,
+].map((entry) => {
+  const source = Object.hasOwn(OPERATIONAL_REPORTS, entry.code)
+    ? OPERATIONAL_REPORTS[entry.code]
+    : undefined;
+  if (source)
+    return {
+      ...entry,
+      title: operationalTitles[entry.code] ?? entry.title,
+      producerStatus: 'READY',
+      approvedView: source.projection,
+      grain: source.grain,
+    };
+  // A demo/staging table is never an operational producer.
+  if (entry.approvedView === 'reporting.travel.facts.v1')
+    return {
+      ...entry,
+      producerStatus: 'PENDING_CONNECTION',
+      approvedView: `reporting_${entry.code}_facts_v1`,
+    };
+  return entry;
+});

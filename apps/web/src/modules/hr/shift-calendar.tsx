@@ -1,4 +1,5 @@
 'use client';
+import { HR_WEEKDAYS, hrShiftWeekdays } from '@nora/contracts';
 import { useMemo, useState } from 'react';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { persianDateToIso } from './hr-dates';
@@ -47,6 +48,7 @@ export function ShiftCalendar({ shifts }: { shifts: HrPreviewDataset }) {
           title: read('عنوان شیفت'),
           start: read('ساعت شروع'),
           end: read('ساعت پایان'),
+          weekday: read('روز هفته'),
         };
       }),
     [shifts],
@@ -94,7 +96,13 @@ export function ShiftCalendar({ shifts }: { shifts: HrPreviewDataset }) {
             const date = toIsoDate(currentDate);
             const records = shiftsByDate.filter(
               (row) =>
-                row.from <= date && row.to >= date && row.status !== 'غیرفعال',
+                row.from <= date &&
+                row.to >= date &&
+                row.status !== 'غیرفعال' &&
+                (!row.weekday ||
+                  hrShiftWeekdays(row.weekday).includes(
+                    HR_WEEKDAYS[new Date(`${date}T12:00:00Z`).getUTCDay()]!,
+                  )),
             );
             return (
               <div key={date} className={ui.shiftDay}>

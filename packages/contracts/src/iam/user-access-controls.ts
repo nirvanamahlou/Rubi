@@ -185,6 +185,7 @@ export function hasAccessControl(
   permissions: readonly string[],
   controlId: string,
 ): boolean {
+  if (controlId === 'correspondence.home') return true;
   if (permissions.includes(MANUAL_ACCESS_VERSION))
     return (
       !permissions.includes(denyPermission(controlId)) &&

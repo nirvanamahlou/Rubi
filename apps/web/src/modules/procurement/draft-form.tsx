@@ -709,7 +709,7 @@ export function DraftForm({
         )}
         <fieldset
           disabled={busy || uploadingReceipt}
-          className="min-w-0 space-y-5 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-5"
+          className="min-w-0 space-y-6 rounded-2xl border border-blue-200/70 bg-surface p-4 shadow-sm dark:border-blue-400/20 sm:p-6"
         >
           <legend className="mb-4 w-full border-b border-primary/15 pb-3 text-base font-bold text-foreground">
             <span className="flex items-center gap-3">
@@ -719,7 +719,7 @@ export function DraftForm({
               اطلاعات درخواست
             </span>
           </legend>
-          <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid items-start gap-x-5 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
             {text('title', 'عنوان درخواست', false, true, 300)}
             <FormField id="proc-branch" label="شعبه">
               <ProcurementSelect
@@ -868,7 +868,7 @@ export function DraftForm({
               {savedChoice('category', 'دسته خرید', true)}
             </div>
           </div>
-          <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid items-start gap-x-5 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
             <FormField id="proc-deliveryLocation" label="محل تحویل">
               <ProcurementSelect
                 id="proc-deliveryLocation"
@@ -930,7 +930,7 @@ export function DraftForm({
         </fieldset>
         <fieldset
           disabled={busy || uploadingReceipt}
-          className="min-w-0 space-y-4 rounded-2xl border border-violet-200/70 bg-gradient-to-b from-violet-500/5 via-surface to-surface p-4 dark:border-violet-400/25 sm:p-6"
+          className="min-w-0 space-y-5 rounded-2xl border border-violet-200/70 bg-surface p-4 shadow-sm dark:border-violet-400/25 sm:p-6"
         >
           <legend className="mb-5 w-full border-b border-violet-200/70 pb-4 text-base font-bold text-foreground dark:border-violet-400/25">
             <span className="flex items-center gap-3">
@@ -1096,7 +1096,7 @@ export function DraftForm({
             }}
           />
         </fieldset>
-        <div className="flex flex-wrap gap-3 border-t border-border pt-5">
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-border bg-surface/95 p-4 shadow-sm backdrop-blur">
           <Button type="submit" loading={busy} disabled={uploadingReceipt}>
             ذخیره پیش‌نویس
           </Button>

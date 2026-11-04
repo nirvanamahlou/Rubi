@@ -1,3 +1,4 @@
+export * from './weekly-shifts';
 export * from './radan-completion';
 export * from './radan-fields';
 export * from './resource-registry';

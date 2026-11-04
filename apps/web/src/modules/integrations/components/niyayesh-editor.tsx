@@ -471,9 +471,11 @@ function LookupField({
 
 export function NiyayeshEditor({
   branchId,
+  systemId,
   onSaved,
 }: {
   branchId: string;
+  systemId?: string;
   onSaved: () => void;
 }) {
   const [resource, setResource] = useState('tours');
@@ -505,6 +507,7 @@ export function NiyayeshEditor({
           resource,
           id || undefined,
           control.signal,
+          systemId,
         );
         const start = (
           loaded.record
@@ -539,6 +542,9 @@ export function NiyayeshEditor({
                 target,
                 after,
                 control.signal,
+                undefined,
+                undefined,
+                systemId,
               );
               result[target].push(
                 ...data.items
@@ -566,11 +572,19 @@ export function NiyayeshEditor({
       }
     })();
     return () => control.abort();
-  }, [branchId, resource, id, revision]);
+  }, [branchId, systemId, resource, id, revision]);
   useEffect(() => {
     const control = new AbortController();
     void integrationsApi
-      .niyayeshResources(branchId, resource, next, control.signal)
+      .niyayeshResources(
+        branchId,
+        resource,
+        next,
+        control.signal,
+        undefined,
+        undefined,
+        systemId,
+      )
       .then((page) => {
         setRecords((old) => [
           ...(next ? old : []),
@@ -586,7 +600,7 @@ export function NiyayeshEditor({
       })
       .catch(() => {});
     return () => control.abort();
-  }, [branchId, resource, next, revision]);
+  }, [branchId, systemId, resource, next, revision]);
   async function save() {
     if (!contract) return;
     const payload = catalogueChanges(value, original);
@@ -604,6 +618,7 @@ export function NiyayeshEditor({
         payload,
         command,
         contract.record ?? undefined,
+        systemId,
       );
       setNotice('اطلاعات در سایت نیایش ثبت شد.');
       onSaved();

@@ -836,7 +836,9 @@ function validateExportInput(input: ExportInput): MasterDataResource {
     throw new BadRequestException('وضعیت فیلتر خروجی معتبر نیست.');
   if (
     input.filters.sortBy !== undefined &&
-    !['name', 'code', 'updatedAt'].includes(String(input.filters.sortBy))
+    !['displayOrder', 'name', 'code', 'updatedAt'].includes(
+      String(input.filters.sortBy),
+    )
   )
     throw new BadRequestException('مرتب‌سازی خروجی معتبر نیست.');
   for (const field of [
@@ -992,7 +994,8 @@ function exportQuery(input: ExportInput): MasterDataListQuery {
     search:
       typeof input.filters.search === 'string' ? input.filters.search : '',
     status: (input.filters.status ?? 'all') as MasterDataListQuery['status'],
-    sortBy: (input.filters.sortBy ?? 'name') as MasterDataListQuery['sortBy'],
+    sortBy: (input.filters.sortBy ??
+      'displayOrder') as MasterDataListQuery['sortBy'],
     sortDirection: (input.filters.sortDirection ??
       'asc') as MasterDataListQuery['sortDirection'],
     ...(typeof input.filters.countryId === 'string'

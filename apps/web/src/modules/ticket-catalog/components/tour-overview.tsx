@@ -47,8 +47,10 @@ export function TourOverview({
   onDelete,
   onSelect,
   onRepeat,
+  onToggleDeparture,
   definitionMode = false,
 }: {
+  onToggleDeparture?: (item: TourDepartureV1) => void;
   definitionMode?: boolean;
   packages: TourPackageV1[];
   departures: TourDepartureV1[];
@@ -237,6 +239,15 @@ export function TourOverview({
                   )}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
+                  {onToggleDeparture && (
+                    <Button
+                      disabled={busy}
+                      variant="outline"
+                      onClick={() => onToggleDeparture(item)}
+                    >
+                      {item.isActive === false ? 'فعال‌سازی' : 'توقف فروش'}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     disabled={busy}

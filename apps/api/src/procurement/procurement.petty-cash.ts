@@ -73,6 +73,10 @@ export async function savePettyFund(
   tx: Tx,
   input: Record<string, unknown>,
   actor: AuthenticatedActor,
+  receipt: {
+    receiptDocumentId: string | null;
+    receiptVersionId: string | null;
+  } = { receiptDocumentId: null, receiptVersionId: null },
 ) {
   const branchId = v.uuid(input.branchId);
   requireRule(
@@ -143,8 +147,14 @@ export async function savePettyFund(
     : await tx.procurementPettyFund.create({
         data: { ...data, branchId, custodianId: actor.userId },
       });
+  requireRule(
+    !receipt.receiptDocumentId || data.balance.gt(prior?.balance ?? 0),
+    'VALIDATION_ERROR',
+    'فیش شارژ فقط برای افزایش موجودی قابل ثبت است.',
+  );
   await tx.procurementPettyEntry.create({
     data: {
+      ...receipt,
       fundId: fund.id,
       actorId: actor.userId,
       amount: data.balance.sub(prior?.balance ?? 0),

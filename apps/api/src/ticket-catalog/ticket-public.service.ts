@@ -2248,6 +2248,7 @@ export class TicketPublicService {
       Record<string, { amount: string; currencyCode: string }>
     >,
     counts?: Readonly<Record<string, number>>,
+    tourDepartureId?: string,
   ) {
     if (
       counts &&
@@ -2292,6 +2293,26 @@ export class TicketPublicService {
       throw new BadRequestException('برای هر جهت فقط یک بلیت قابل رزرو است.');
 
     return this.database.client.$transaction(async (transaction) => {
+      if (tourDepartureId) {
+        await transaction.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TourDeparture" WHERE "id" = ${tourDepartureId}::uuid FOR UPDATE`,
+        );
+        const departure = await transaction.tourDeparture.findFirst({
+          where: { id: tourDepartureId, branchId, isActive: true },
+        });
+        const expected = departure
+          ? [
+              departure.outboundOfferId,
+              ...(departure.returnOfferId ? [departure.returnOfferId] : []),
+            ]
+          : [];
+        if (
+          !departure ||
+          selections.length !== expected.length ||
+          selections.some((s) => !expected.includes(s.offerId))
+        )
+          throw new ConflictException('فروش این نوبت متوقف شده است.');
+      }
       const offerIds = [
         ...new Set(selections.map(({ offerId }) => offerId)),
       ].sort();

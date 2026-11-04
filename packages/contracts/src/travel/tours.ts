@@ -62,6 +62,8 @@ export interface TourDepartureInputV1 {
 }
 
 export interface TourDepartureV1 extends TourDepartureInputV1 {
+  isActive?: boolean;
+  salesVersion?: number;
   id: string;
   version: number;
   branchId: string;

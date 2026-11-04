@@ -713,6 +713,9 @@ function Content({
             </nav>
           </section>
           <ReportPanel
+            onEdit={canCreate && canManage ? complete : undefined}
+            editDisabled={busy}
+            hidden={!!draft}
             report={report}
             error={reportError}
             agents={agents}
@@ -903,12 +906,18 @@ function DossierFrame({
   );
 }
 function ReportPanel({
+  onEdit,
+  editDisabled,
+  hidden,
   branch,
   filters,
   report,
   error,
   agents,
 }: {
+  onEdit?: ((id: string) => void) | undefined;
+  editDisabled?: boolean | undefined;
+  hidden?: boolean | undefined;
   agents: Operator[];
   branch: string;
   filters: SearchFilters;
@@ -938,6 +947,9 @@ function ReportPanel({
       )}
       <ReportHighlights
         key={meta.asOf}
+        onEdit={onEdit}
+        editDisabled={editDisabled}
+        hidden={hidden}
         data={r}
         agents={agents}
         branch={branch}
