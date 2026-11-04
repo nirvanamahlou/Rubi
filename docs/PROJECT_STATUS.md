@@ -8891,3 +8891,5 @@ CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay
 ## CASH-PAYMENT-ACCOUNT-1104 — PC-A — VALIDATING
 
 Cash contract payment entry no longer requires the bank-account selector or a successful account-directory lookup. Switching to cash clears the prior selection and submission sends a null destination; other methods retain matching-currency account validation. Existing API accepts accountless entries and still queues Finance confirmation with audit/idempotency intact. Added Web regression for cash/missing/loading/failed account lookup and all noncash methods, plus API persistence regression. No schema, migration, grants or production financial writes. Hosted exact-head quality/tests/build gates precede authorized develop merge.
+
+CASH-PAYMENT-ACCOUNT-1104 validation: 15 focused Web and 10 API/Finance regressions, scoped lint and full Web TypeScript passed. Exact-optional nullable account payload normalized to null. Final-head hosted build/quality/tests/database gates remain mandatory before merge; no runtime rollout.

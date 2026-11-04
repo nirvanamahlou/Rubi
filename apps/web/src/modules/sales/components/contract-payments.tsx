@@ -403,7 +403,9 @@ export function ContractPayments({
       const input = {
         ...payment,
         destinationAccountId:
-          payment.method === 'CASH' ? null : payment.destinationAccountId,
+          payment.method === 'CASH'
+            ? null
+            : (payment.destinationAccountId ?? null),
         dueAt: new Date(payment.dueAt).toISOString(),
         version: contract.version,
       };
@@ -738,7 +740,7 @@ export function ContractPayments({
                         destinationAccountId:
                           method === 'CASH'
                             ? null
-                            : payment.destinationAccountId,
+                            : (payment.destinationAccountId ?? null),
                         method: method as SalesPaymentMethod,
                       })
                     }
