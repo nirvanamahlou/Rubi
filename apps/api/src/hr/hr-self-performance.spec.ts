@@ -343,3 +343,68 @@ describe('HR self performance public projection', () => {
     }
   });
 });
+
+it('returns newest-first own history with stored metrics and registration provenance', async () => {
+  const f = fixture();
+  f.client.hrRecord.findMany.mockImplementation(async (q) =>
+    q.where.tab === 'attendance'
+      ? [
+          {
+            values: ['User', '2026-11-02'],
+            status: 'حاضر',
+            data: {
+              firstIn: '2026-11-02T05:46:00Z',
+              lastOut: '2026-11-02T13:30:00Z',
+              lateMinutes: 1,
+              deficitMinutes: 1,
+              overtimeMinutes: 0,
+              registrationType: 'manual',
+            },
+          },
+          {
+            values: ['User', '2026-11-03'],
+            status: 'حاضر',
+            data: {
+              firstIn: '2026-11-03T05:45:00Z',
+              lastOut: null,
+              lateMinutes: 0,
+              deficitMinutes: null,
+              overtimeMinutes: null,
+              registrationType: 'device',
+            },
+          },
+          {
+            values: ['User', '2026-11-03'],
+            status: 'حاضر',
+            data: { lateMinutes: 999 },
+          },
+        ]
+      : [],
+  );
+  const result = await f.service.get(actor, 30);
+  expect(result.attendanceHistory).toEqual([
+    {
+      date: '2026-11-03',
+      firstIn: '09:15',
+      lastOut: null,
+      lateMinutes: 0,
+      deficitMinutes: null,
+      overtimeMinutes: null,
+      registrationType: 'device',
+    },
+    {
+      date: '2026-11-02',
+      firstIn: '09:16',
+      lastOut: '17:00',
+      lateMinutes: 1,
+      deficitMinutes: 1,
+      overtimeMinutes: 0,
+      registrationType: 'manual',
+    },
+  ]);
+  const query = f.client.hrRecord.findMany.mock.calls.find(
+    ([q]) => q.where.tab === 'attendance',
+  )![0];
+  expect(query.where.employeeId).toBe('employee');
+  expect(query.where.employee.userId).toBe('self');
+});

@@ -408,12 +408,22 @@ function AccountingSecondaryNavigation({
                       const sectionId = `${group.id}:${section.title}`;
                       const sectionClosed = closedSections.includes(sectionId);
                       const directItems = section.items.filter(
-                        (item) => !item.href.includes('/lists/'),
+                        (item) =>
+                          !item.href.includes('/lists/') &&
+                          !item.href.includes('/legal-reports/'),
                       );
-                      const listItems = section.items.filter((item) =>
-                        item.href.includes('/lists/'),
+                      const listItems = section.items.filter(
+                        (item) =>
+                          item.href.includes('/lists/') &&
+                          !item.href.includes('/legal-reports/'),
                       );
                       const listClosed = closedLists.includes(sectionId);
+                      const legalItems = section.items.filter((item) =>
+                        item.href.includes('/legal-reports/'),
+                      );
+                      const legalClosed = closedLists.includes(
+                        sectionId + ':legal',
+                      );
                       const renderItem = (item: AccountingNavigationItem) => {
                         const ItemIcon = item.icon;
                         const active =
@@ -459,7 +469,64 @@ function AccountingSecondaryNavigation({
                           </button>
                           {!sectionClosed ? (
                             <div className="space-y-1 ps-1">
-                              {directItems.map(renderItem)}
+                              {directItems
+                                .filter(
+                                  (item) =>
+                                    !item.href.endsWith('/legal-reports'),
+                                )
+                                .map(renderItem)}
+                              {legalItems.length > 0 && (
+                                <div className="space-y-1">
+                                  <button
+                                    type="button"
+                                    aria-expanded={!legalClosed}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-start text-xs"
+                                    onClick={() =>
+                                      toggleList(sectionId + ':legal')
+                                    }
+                                  >
+                                    <ScrollText className="size-4" />
+                                    <span className="flex-1">
+                                      گزارش‌های قانونی
+                                    </span>
+                                    {legalClosed ? (
+                                      <ChevronDown className="size-3" />
+                                    ) : (
+                                      <ChevronUp className="size-3" />
+                                    )}
+                                  </button>
+                                  {!legalClosed && (
+                                    <div className="space-y-1 border-s ps-2">
+                                      {legalItems
+                                        .filter(
+                                          (item) =>
+                                            !item.href.includes('/lists/'),
+                                        )
+                                        .map(renderItem)}
+                                      {legalItems.some((item) =>
+                                        item.href.includes('/lists/'),
+                                      ) && (
+                                        <details
+                                          open={pathname.includes(
+                                            '/legal-reports/lists/',
+                                          )}
+                                        >
+                                          <summary className="cursor-pointer px-3 py-1 text-xs">
+                                            فهرست ها
+                                          </summary>
+                                          <div className="border-s ps-2">
+                                            {legalItems
+                                              .filter((item) =>
+                                                item.href.includes('/lists/'),
+                                              )
+                                              .map(renderItem)}
+                                          </div>
+                                        </details>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               {listItems.length ? (
                                 <div className="space-y-1">
                                   <button
@@ -541,10 +608,21 @@ function AccountingNavigationWorkspaceContent() {
 
   return (
     <main
-      className={cn('space-y-5 p-1 sm:p-2', styles.workspace)}
+      className={cn(
+        'space-y-5 p-1 sm:p-2',
+        styles.workspace,
+        pathname.startsWith('/finance/accounting/general-ledger') &&
+          styles.sourceLayout,
+      )}
       data-accounting-workspace
     >
-      <header className={styles.hero}>
+      <header
+        className={
+          pathname.startsWith('/finance/accounting/general-ledger')
+            ? 'sr-only'
+            : styles.hero
+        }
+      >
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className="relative flex flex-col gap-6 px-6 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="flex items-center gap-4">
@@ -592,9 +670,10 @@ function AccountingNavigationWorkspaceContent() {
             )}
           >
             <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
-              {pathname !== '/finance/accounting/dashboard' && (
-                <AccountingPageKpis pathname={pathname} />
-              )}
+              {pathname !== '/finance/accounting/dashboard' &&
+                !pathname.startsWith('/finance/accounting/general-ledger') && (
+                  <AccountingPageKpis pathname={pathname} />
+                )}
               <AccountingWorkspace key={pathname} pathname={pathname} />
             </Suspense>
           </div>

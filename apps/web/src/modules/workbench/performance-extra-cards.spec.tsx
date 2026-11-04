@@ -46,3 +46,37 @@ it('renders measured own work deficit', () => {
   const html = renderToStaticMarkup(<PerformanceExtraCards hr={hr} />);
   expect(html).toContain('۱ ساعت و ۱۵ دقیقه');
 });
+
+it('renders a read-only daily attendance table with source and unknown values', async () => {
+  const { AttendanceHistory } = await import('./workbench-performance');
+  const html = renderToStaticMarkup(
+    <AttendanceHistory
+      rows={[
+        {
+          date: '2026-10-29',
+          firstIn: '09:15',
+          lastOut: '14:00',
+          registrationType: 'device',
+          lateMinutes: 0,
+          overtimeMinutes: null,
+          deficitMinutes: 0,
+        },
+        {
+          date: '2026-10-28',
+          firstIn: '09:20',
+          lastOut: null,
+          registrationType: 'manual',
+          lateMinutes: 5,
+          overtimeMinutes: null,
+          deficitMinutes: null,
+        },
+      ]}
+    />,
+  );
+  expect(html).toContain('پنجشنبه');
+  expect(html).toContain('انگشت');
+  expect(html).toContain('دستی');
+  expect(html).toContain('14:00');
+  expect(html).toContain('کسری کار');
+  expect(html).not.toMatch(/<input|<button|contenteditable/i);
+});

@@ -94,22 +94,26 @@ export class AccountingController {
     return new StreamableFile(
       accountingXlsx(
         displayText('تراز حساب‌ها', language),
-        [
-          'کد',
-          'حساب',
-          'مانده اول دوره',
-          'بدهکار',
-          'بستانکار',
-          'مانده پایان',
-        ].map((label) => displayText(label, language)),
-        report.rows.map((r) => [
-          r.code,
-          r.title,
-          r.opening,
-          r.debit,
-          r.credit,
-          r.balance,
-        ]),
+        (
+          report.table?.headers ?? [
+            'کد',
+            'حساب',
+            'مانده اول دوره',
+            'بدهکار',
+            'بستانکار',
+            'مانده پایان',
+          ]
+        ).map((label) => displayText(label, language)),
+        report.table
+          ? [...report.table.rows.map((row) => row.values), report.table.totals]
+          : report.rows.map((r) => [
+              r.code,
+              r.title,
+              r.opening,
+              r.debit,
+              r.credit,
+              r.balance,
+            ]),
         language === 'fa',
       ),
       {

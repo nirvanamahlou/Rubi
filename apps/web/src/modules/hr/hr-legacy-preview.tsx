@@ -3112,6 +3112,7 @@ export function HrLegacyPreviewWorkspace({
     const name = `${value.firstName} ${value.lastName}`.trim();
     const statusTone: Record<NewEmployeeFormValue['status'], BadgeTone> = {
       فعال: 'success',
+      غیرفعال: 'neutral',
       'در حال تکمیل': 'warning',
       تعلیق‌شده: 'neutral',
     };

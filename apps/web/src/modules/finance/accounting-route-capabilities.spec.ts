@@ -10,7 +10,7 @@ describe('accounting capability scopes', () => {
   it('records every source route without conflating storage and execution', () => {
     expect(
       accountingParityDefinitions.map(accountingRouteCapabilities),
-    ).toHaveLength(91);
+    ).toHaveLength(93);
     expect(capabilities('taxpayer-system/settings')).toMatchObject({
       storage: true,
       execution: false,

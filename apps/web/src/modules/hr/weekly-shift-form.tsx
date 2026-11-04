@@ -1,6 +1,10 @@
 'use client';
 import { useRef, useState } from 'react';
-import { HR_WEEKDAYS, type HrRecordDto } from '@nora/contracts';
+import {
+  HR_WEEKDAYS,
+  hrShiftWeekdays,
+  type HrRecordDto,
+} from '@nora/contracts';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +40,9 @@ export function WeeklyShiftForm({
       '',
   );
   const [title, setTitle] = useState(record?.values[0] ?? '');
-  const [weekday, setWeekday] = useState(record?.values[9] ?? 'شنبه');
+  const [weekdays, setWeekdays] = useState(() =>
+    hrShiftWeekdays(record?.values[9] ?? 'شنبه'),
+  );
   const [start, setStart] = useState(record?.values[1] ?? '');
   const [end, setEnd] = useState(record?.values[2] ?? '');
   const [from, setFrom] = useState(record?.values[7] ?? '');
@@ -79,6 +85,11 @@ export function WeeklyShiftForm({
             try {
               if (!employeeIds.length)
                 throw new Error('حداقل یک کارمند انتخاب کنید.');
+              if (!weekdays.length)
+                throw new Error('حداقل یک روز هفته انتخاب کنید.');
+              const weekday = [HR_WEEKDAYS[6], ...HR_WEEKDAYS.slice(0, 6)]
+                .filter((day) => weekdays.includes(day))
+                .join('، ');
               const input = {
                 branchId,
                 title,
@@ -154,17 +165,30 @@ export function WeeklyShiftForm({
                 onChange={(e) => setTitle(e.target.value)}
               />
             </label>
-            <label className={ui.field}>
-              روز هفته
-              <NativeSearchSelect
-                value={weekday}
-                onChange={(e) => setWeekday(e.target.value)}
-              >
+            <fieldset className="min-w-0 space-y-2">
+              <legend>روزهای هفته</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[HR_WEEKDAYS[6], ...HR_WEEKDAYS.slice(0, 6)].map((day) => (
-                  <option key={day}>{day}</option>
+                  <label
+                    key={day}
+                    className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={weekdays.includes(day)}
+                      onChange={(e) =>
+                        setWeekdays((days) =>
+                          e.target.checked
+                            ? [...days, day]
+                            : days.filter((d) => d !== day),
+                        )
+                      }
+                    />
+                    {day}
+                  </label>
                 ))}
-              </NativeSearchSelect>
-            </label>
+              </div>
+            </fieldset>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={ui.field}>
                 ساعت شروع

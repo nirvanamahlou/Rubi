@@ -283,6 +283,7 @@ export function WorkbenchPerformance() {
               )}
             </Card>
           </div>
+          {linked && <AttendanceHistory rows={hr?.attendanceHistory ?? []} />}
           {!!hr?.leaveBalances.length && (
             <Card className="space-y-4 p-6">
               <h3 className="text-lg font-bold">مانده مرخصی</h3>
@@ -711,5 +712,98 @@ function Metric({
         {value}
       </strong>
     </div>
+  );
+}
+
+export function AttendanceHistory({
+  rows,
+}: {
+  rows: NonNullable<WorkbenchHrPerformanceV1['attendanceHistory']>;
+}) {
+  return (
+    <Card className="min-w-0 overflow-hidden" aria-label="سوابق تردد من">
+      <div className="flex items-center justify-between border-b p-4">
+        <h3 className="font-bold">سوابق تردد من</h3>
+        <span className="text-xs text-muted-foreground">
+          {number(rows.length)} روز
+        </span>
+      </div>
+      <div
+        className="max-h-[480px] overflow-auto"
+        tabIndex={0}
+        role="region"
+        aria-label="جدول تردد روزانه"
+      >
+        <table className="w-full min-w-[760px] text-right text-sm">
+          <thead className="sticky top-0 bg-muted">
+            <tr>
+              {[
+                'تاریخ',
+                'روز',
+                'ورود',
+                'خروج',
+                'نوع ثبت',
+                'تأخیر (دقیقه)',
+                'اضافه‌کاری (دقیقه)',
+                'کسری کار (دقیقه)',
+              ].map((label) => (
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                  key={label}
+                >
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.date} className="border-t hover:bg-muted/40">
+                <td className="whitespace-nowrap px-4 py-3">
+                  {date(row.date)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  {new Intl.DateTimeFormat('fa-IR', {
+                    weekday: 'long',
+                    timeZone: 'Asia/Tehran',
+                  }).format(new Date(`${row.date}T12:00:00Z`))}
+                </td>
+                <td className="px-4 py-3">
+                  <span dir="ltr">{row.firstIn ?? '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span dir="ltr">{row.lastOut ?? '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  {row.registrationType === 'device'
+                    ? 'انگشت'
+                    : row.registrationType === 'manual'
+                      ? 'دستی'
+                      : '—'}
+                </td>
+                {[row.lateMinutes, row.overtimeMinutes, row.deficitMinutes].map(
+                  (value, i) => (
+                    <td className="px-4 py-3" key={i}>
+                      {number(value ?? undefined)}
+                    </td>
+                  ),
+                )}
+              </tr>
+            ))}
+            {!rows.length && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="p-8 text-center text-muted-foreground"
+                >
+                  ترددی در این بازه ثبت نشده است.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

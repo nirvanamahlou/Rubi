@@ -15,6 +15,8 @@ import { IntegrationRegistryController } from './integration-registry.controller
 import { IntegrationRegistryService } from './integration-registry.service';
 import { NiyayeshController } from './niyayesh.controller';
 import { NiyayeshService } from './niyayesh.service';
+import { SiteConnectionController } from './site-connection.controller';
+import { SiteConnectionService } from './site-connection.service';
 import { NiyayeshSsoService } from './niyayesh-sso.service';
 import { NiyayeshSsoController } from './niyayesh-sso.controller';
 import { GhestirooService } from './ghestiroo.service';
@@ -51,6 +53,7 @@ import {
     IntegrationsController,
     IntegrationRegistryController,
     NiyayeshController,
+    SiteConnectionController,
     NiyayeshSsoController,
   ],
   providers: [
@@ -65,6 +68,7 @@ import {
     ProcurementSupplierIntegrationService,
     IntegrationRegistryService,
     NiyayeshService,
+    SiteConnectionService,
     NiyayeshSsoService,
   ],
 })

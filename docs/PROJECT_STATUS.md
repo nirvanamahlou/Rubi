@@ -6,6 +6,10 @@ COMPUTER_ID=PC-B; branch codex/pc-b-notification-clear-counter-1104. Owner autho
 
 COMPUTER_ID=PC-B; branch codex/pc-b-notes-delete-1104. Owner identifies the undeletable idea card as a built-in starter note and authorizes fix, push and develop merge. Reserve Workbench notes draft/list and favorites synchronization, focused regressions and own status notes. Stop automatically recreating sample cards as personal records; preserve all server-saved notes, including notes sharing a former sample title. Delete reports success only after the owner-scoped API succeeds; invalidate stale reads and synchronize favorites after delete/restore/save. No schema, grants, dependencies or production data deletion/deployment. Preserve all peer Accounting/hotel-import edits. Source freezes on push and reservation releases on verified merge. Validation:88 Workbench Web tests and scoped lint passed. A rendering regression proves the notebook no longer recreates the three built-in example cards on mount; persisted notes with matching titles remain intact. Final-head hosted quality/types, production build, tests and PostgreSQL gates precede merge.
 
+Integration gate repair: reserve exactly five English override entries for weekday and attendance labels introduced by upstream shift PRs1369/1371; full-suite translation inventory exposed these missing labels after integration. No HR runtime or permission change.
+
+Integration test repair reserves only hr-device-import.spec.ts and Issabel native-events.spec.ts: cover both absence with general working hours and non-working days without a schedule under upstream PR1371; collect mock TCP peer errors and ignore only expected ECONNRESET during explicit teardown, still failing unexpected errors. No HR or telephony runtime changes.
+
 ## MESSAGE-REQUEST-BELL-1104 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-message-request-bell-1104. Owner authorizes recipient message/request bell notifications, distinct unread colors, yellow unread bell, push and develop merge. Reserve global notification-center presentation/polling/count and new leaf presentation regression, Notifications repository unread ordering and focused test; own status notes only. Existing transactional Messaging and Workbench Request producers and recipient/route authorization stay authoritative. No schema, grants, dependencies or production deployment. Preserve unrelated Accounting and hotel-import edits. Source freezes on push and reservation releases on verified merge. Validation:46 focused API tests and15 Web tests plus scoped lint passed; local API build and all final-head hosted gates precede merge. Server unread total includes items beyond the20-row feed; polling is10 seconds while visible with no overlapping reads. Unread message/request rows use distinct blue/violet colors and icons; yellow bell resets after read actions.
@@ -8659,6 +8663,31 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-API-FORMS-1104 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+Add editable API settings and separate save/test actions for all three other
+listed sites in the common selected-site disclosure. Adapter-owned AES-GCM
+credentials, branch/site binding, atomic version CAS, write-only secret retention
+and purpose-separated persistent storage fallback. All native service/report/
+workbook operations now accept the selected site ID; legacy primary file remains
+compatible. SSO availability cannot launch a different selected producer.
+37 API and70 Web/3 English regressions pass; full types/production builds, live
+form acceptance and all final CI checks gate authorized develop merge. No
+migration/dependency/IAM grants/producer code or operational-data writes.
+Full server API/Web types and production builds pass; all8 hosted gates succeeded
+on aaff2d389 after fixing exact-optional Web props/test fixture types. Local API
+default heap was insufficient; isolated server/hosted checks passed without
+skipping any gate. Live owner-session forms are editable for all3 sites; drafts
+survive collapse and reset on site change. Secret is empty/masked, save responds
+to editing, test requires saved configuration and GH/native continuity remains.
+Desktop/narrow views show no overflow/browser errors. API/Web activation preserves
+1202 API and2004 Web/Contracts outside-scope files, other service IDs/env/mounts.
+Temporary memory removed; health, secure storage readiness/writability,19 runtime
+file copies and49 locale keys verified. No credentials/native records saved in
+production acceptance. Actual upstream connection still requires each site's
+real ERP v1 credentials. Final documentation head requires the same8 gates before
+PR1362 develop merge. Details: tasks/SITE-API-FORMS-1104.md.
+
 ## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 Connections now has one top selector for the four listed websites and one shared
@@ -8767,6 +8796,9 @@ GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA2
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
 
+## LEDGER-SOURCE-PARITY-1103 — PC-B — IN_PROGRESS
+Fresh read-only source observations confirm chart-first navigation without a form-mode selector. Removed unbound form preview, GL KPI/hero additions and compacted the tree; automatic authorized-book resolution prefers active main book. Reference data validates (222 accounts,26 detail types), but production data activation is not established. Scoped tests pass; broader suite timeout passed on isolated rerun. Host memory blocked remaining lint/type/build; local route responds200 after bounded source copy. Full GL comparison is ongoing; no production deployment or complete-parity claim. See tasks/LEDGER-SOURCE-PARITY-1103.md.
+
 
 
 
@@ -8815,6 +8847,15 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
 
+
+### LEDGER-SOURCE-PARITY-1103 — ادامه تطبیق، تکمیل‌نشده
+
+فرم معرفی کدینگ استاندارد با ذخیره نسخه‌دار و اعتبارسنجی اضافه شد؛ زیرمنوی قانونی و چیدمان فشرده دفتر کل اصلاح شد. کل دفتر کل هنوز تطبیق کامل ندارد. نگاشت/فرمول/صحت‌سنجی/گزارش استاندارد و فیلترهای باقی‌مانده گزارش‌ها ادامه کار هستند. PR1345 نباید پیش از تکمیل و آزمون نهایی مرج شود. جزئیات و حدود مشاهده منبع در docs/tasks/LEDGER-SOURCE-PARITY-1103.md ثبت است.
+
+2026-11-03 PC-B LEDGER-SOURCE-PARITY-1103: fiscal-year list and persisted named filters updated on rubi3100; scoped tests pass, runtime API build/health pass. Full GL/legal/report parity remains incomplete; PR1345 stays draft. No production data changes. Details: docs/tasks/LEDGER-SOURCE-PARITY-1103.md.
+
+2026-11-03 PC-B: trial balance2/4/6/8 structures now retain gross prior turnover, selected balance filters and matching Excel.10 targeted API checks and5 route/translation checks pass; runtime API build passes. Full GL source parity is still incomplete; PR1345 remains draft.
+
 ## DASHBOARD-SERIES-SUMMARY-1103 — PC-C
 
 PR1335 and its merge checks passed; first source-backed Dashboard release is healthy with12 native charts and11 KPI IDs under diagnostic scope. Full metadata:316 operational tables plus restricted migration table (317/3993 columns total),209 completed migrations. Browser follow-up fixes all-series accessible descriptions and expandable tables;54 Web/translation checks pass with1 existing skip. Final CI and follow-up rollout pending; no schema/API/IAM/data/dependency changes.
@@ -8837,3 +8878,16 @@ HOTEL-RATES-BACK-1103 validation complete: all7 focused tests, scoped ESLint, fu
 ## COUNTRY-PRIORITY-1103 — PC-A — READY_FOR_CI
 
 Sales country dropdowns pin Iran first and Turkey second using ISO2/ISO3 identifiers with normalized legacy-name fallback. Other countries retain their input order, as do non-country references. No selected ID or source record changes. Standalone Node checks pass for ordering, aliases, legacy names, stable input and non-country lists. Existing themed combobox regressions cover the new helper; full lint/type/test/build gates precede the owner-authorized develop merge. No API, schema, dependency, operational data or deployment changes.
+
+2026-11-04 PC-B HOTEL-IMPORT-PRINT-1104: fixed legitimate Excel printerSettings relative-part rejection.77 parser tests plus an ephemeral actual-file read pass; scoped lint passes. No owner workbook content or business data changed. Pending runtime build/health and hosted validation.
+
+2026-11-04 PC-B FINANCE-INBOX-COPY-1104: applied six owner annotations to Finance requests presentation: overview initially open; remove filter heading, visible search label, list helper and manual-create entry; separate follow-up from export actions. Search retains an accessible label and handlers/permissions are unchanged. Four existing presentation/filter checks and scoped ESLint pass. No API, schema or operational data changes. Required final-head CI gates precede authorized develop merge.
+
+## CONTRACT-RECEIPT-1104 — PC-B — VALIDATING
+
+Read-only production audit found no RECEIPT document type or PROCUREMENT_FINANCE category; existing Sales contract/branch authorization is not the cause. Added an insert-only reference migration using restrictive PDF/JPEG/PNG, 25 MiB and RESTRICTED defaults. Existing IDs, configured policies and disabled rows remain unchanged. PostgreSQL regression covers empty/partial installations and replay/customization preservation; included in hosted database gate. No application/IAM/schema changes. Targeted reference activation and final-head checks/authorized develop merge pending.
+
+CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay/custom-policy regression passes; database build/typecheck, scoped ESLint, formatting and five CI-policy checks pass. Initial cold Docker startup exceeded the default five-second test budget; database readiness and a bounded integration-test timeout resolved it. No production records have yet changed. Exact-head hosted quality/tests/migrations/build gates precede merge.
+
+
+2026-11-04 PC-B FINANCE-PUBLISH-1104: owner explicitly requests publishing and merging all completed Finance changes, including the bounded implementation in PR1345. Integrate latest develop in clean voucher-source-1104 worktree; preserve both work logs and translation additions. This supersedes the previous draft-only publication hold, not the documented incomplete full-GL parity. No additional voucher-type implementation, source data import, migration or production deployment in this publication. Final-head hosted quality/tests/build/migration checks must all pass before merge. Finance inbox changes already merged separately in PR1365.

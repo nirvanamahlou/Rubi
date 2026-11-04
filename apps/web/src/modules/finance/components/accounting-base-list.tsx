@@ -24,6 +24,8 @@ import {
   ChevronsRight,
   ChevronsLeft,
   ExternalLink,
+  Save,
+  FolderOpen,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { AccountingBookV1, AccountingSnapshotV1 } from '@nora/contracts';
@@ -57,6 +59,12 @@ import {
   type ListField,
   type FilterOperator,
 } from '../accounting-list-filters';
+
+import {
+  columnOperators,
+  matchesColumn,
+  type ColumnOperator,
+} from '../accounting-column-filter';
 
 const emptyFilter = (): FilterGroup => ({
   type: 'group',
@@ -198,9 +206,13 @@ export function GroupEditor({
     });
   return (
     <div
+      data-filter-group
       className={`space-y-3 rounded-xl border p-3 ${depth ? 'border-s-4 border-primary/20 bg-primary/5' : 'bg-surface'}`}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        data-filter-group-heading
+        className="flex flex-wrap items-center gap-2"
+      >
         <span className="text-xs font-bold text-muted-foreground">
           {group.scope === 'allocations'
             ? 'دوره‌های مالی دفتر کل جاری'
@@ -251,7 +263,7 @@ export function GroupEditor({
           disabled={limit}
           onChange={(event) => append(event.target.value)}
         >
-          <option value="">＋ افزودن شرط یا شاخه</option>
+          <option value="">＋</option>
           <optgroup label="فیلدها">
             {fields
               .filter((field) => !field.relation)
@@ -281,196 +293,203 @@ export function GroupEditor({
         </select>
       </div>
       {group.children.length === 0 && (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        <p
+          data-filter-empty
+          className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+        >
           هنوز شرطی اضافه نشده است؛ همه رکوردها نمایش داده می‌شوند.
         </p>
       )}
-      {group.children.map((child) => (
-        <div key={child.id} className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            {child.type === 'group' ? (
-              <GroupEditor
-                group={child}
-                fields={fields}
-                depth={depth + 1}
-                limit={limit}
-                onChange={(next) => update(child.id, next)}
-              />
-            ) : (
-              (() => {
-                const field = fields.find((item) => item.key === child.field)!;
-                const available = operators.filter((operator) =>
-                  field.type === 'boolean'
-                    ? ['equals', 'not-equals'].includes(operator.value)
-                    : field.type === 'date'
-                      ? [
-                          'equals',
-                          'not-equals',
-                          'before',
-                          'after',
-                          'empty',
-                          'not-empty',
-                        ].includes(operator.value)
-                      : !['before', 'after'].includes(operator.value),
-                );
-                return (
-                  <div className="grid gap-2 rounded-lg bg-muted/30 p-2 sm:grid-cols-2 xl:grid-cols-4">
-                    <select
-                      aria-label="فیلد شرط"
-                      className={selectClass}
-                      value={child.field}
-                      onChange={(event) => {
-                        const nextField = fields.find(
-                          (item) => item.key === event.target.value,
-                        )!;
-                        update(child.id, {
-                          ...child,
-                          field: nextField.key,
-                          operator:
-                            nextField.type === 'text'
-                              ? ('contains' as const)
-                              : ('equals' as const),
-                          value: nextField.type === 'boolean' ? 'true' : '',
-                        });
-                      }}
-                    >
-                      <optgroup label="اطلاعات اصلی">
-                        {fields
-                          .filter((item) => !item.relation)
-                          .map((item) => (
-                            <option key={item.key} value={item.key}>
-                              {item.label}
-                            </option>
-                          ))}
-                      </optgroup>
-                      {fields.some((item) => item.relation) && (
-                        <optgroup label="دوره‌های مالی دفتر کل جاری">
+      <div data-filter-branches>
+        {group.children.map((child) => (
+          <div key={child.id} className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              {child.type === 'group' ? (
+                <GroupEditor
+                  group={child}
+                  fields={fields}
+                  depth={depth + 1}
+                  limit={limit}
+                  onChange={(next) => update(child.id, next)}
+                />
+              ) : (
+                (() => {
+                  const field = fields.find(
+                    (item) => item.key === child.field,
+                  )!;
+                  const available = operators.filter((operator) =>
+                    field.type === 'boolean'
+                      ? ['equals', 'not-equals'].includes(operator.value)
+                      : field.type === 'date'
+                        ? [
+                            'equals',
+                            'not-equals',
+                            'before',
+                            'after',
+                            'empty',
+                            'not-empty',
+                          ].includes(operator.value)
+                        : !['before', 'after'].includes(operator.value),
+                  );
+                  return (
+                    <div className="grid gap-2 rounded-lg bg-muted/30 p-2 sm:grid-cols-2 xl:grid-cols-4">
+                      <select
+                        aria-label="فیلد شرط"
+                        className={selectClass}
+                        value={child.field}
+                        onChange={(event) => {
+                          const nextField = fields.find(
+                            (item) => item.key === event.target.value,
+                          )!;
+                          update(child.id, {
+                            ...child,
+                            field: nextField.key,
+                            operator:
+                              nextField.type === 'text'
+                                ? ('contains' as const)
+                                : ('equals' as const),
+                            value: nextField.type === 'boolean' ? 'true' : '',
+                          });
+                        }}
+                      >
+                        <optgroup label="اطلاعات اصلی">
                           {fields
-                            .filter((item) => item.relation)
+                            .filter((item) => !item.relation)
                             .map((item) => (
                               <option key={item.key} value={item.key}>
                                 {item.label}
                               </option>
                             ))}
                         </optgroup>
-                      )}
-                    </select>
-                    {field.relation && (
-                      <select
-                        aria-label="شرط تخصیص‌های دفتر کل"
-                        className={selectClass}
-                        value={child.relationMode}
-                        onChange={(event) =>
-                          update(child.id, {
-                            ...child,
-                            relationMode: event.target
-                              .value as FilterGroup['mode'],
-                          })
-                        }
-                      >
-                        {filterModes.map((mode) => (
-                          <option key={mode.value} value={mode.value}>
-                            {mode.label}
-                          </option>
-                        ))}
+                        {fields.some((item) => item.relation) && (
+                          <optgroup label="دوره‌های مالی دفتر کل جاری">
+                            {fields
+                              .filter((item) => item.relation)
+                              .map((item) => (
+                                <option key={item.key} value={item.key}>
+                                  {item.label}
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
                       </select>
-                    )}
-                    <select
-                      aria-label="عملگر شرط"
-                      className={selectClass}
-                      value={child.operator}
-                      onChange={(event) =>
-                        update(child.id, {
-                          ...child,
-                          operator: event.target.value as FilterOperator,
-                        })
-                      }
-                    >
-                      {available.map((operator) => (
-                        <option key={operator.value} value={operator.value}>
-                          {operator.label}
-                        </option>
-                      ))}
-                    </select>
-                    {!['empty', 'not-empty'].includes(child.operator) &&
-                      (field.type === 'boolean' ? (
+                      {field.relation && (
                         <select
-                          aria-label="مقدار شرط"
+                          aria-label="شرط تخصیص‌های دفتر کل"
                           className={selectClass}
-                          value={child.value}
+                          value={child.relationMode}
                           onChange={(event) =>
                             update(child.id, {
                               ...child,
-                              value: event.target.value,
+                              relationMode: event.target
+                                .value as FilterGroup['mode'],
                             })
                           }
                         >
-                          <option key="true" value="true">
-                            بله
-                          </option>
-                          <option key="false" value="false">
-                            خیر
-                          </option>
+                          {filterModes.map((mode) => (
+                            <option key={mode.value} value={mode.value}>
+                              {mode.label}
+                            </option>
+                          ))}
                         </select>
-                      ) : field.type === 'date' ? (
-                        <DatePicker
-                          id={`filter-${child.id}`}
-                          aria-label="مقدار تاریخ شرط"
-                          value={child.value}
-                          onChange={(value) =>
-                            update(child.id, { ...child, value })
-                          }
-                        />
-                      ) : (
-                        <Input
-                          aria-label="مقدار شرط"
-                          className="h-10"
-                          value={child.value}
-                          placeholder="مقدار مورد نظر…"
-                          maxLength={2000}
-                          onChange={(event) =>
-                            update(child.id, {
-                              ...child,
-                              value: event.target.value,
-                            })
-                          }
-                        />
-                      ))}
-                  </div>
-                );
-              })()
-            )}
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={
-                  child.type === 'group' ? 'حذف گروه شرط‌ها' : 'حذف شرط'
-                }
-                aria-keyshortcuts="Delete"
-                onClick={() => remove(child.id)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Delete') {
-                    event.preventDefault();
-                    remove(child.id);
+                      )}
+                      <select
+                        aria-label="عملگر شرط"
+                        className={selectClass}
+                        value={child.operator}
+                        onChange={(event) =>
+                          update(child.id, {
+                            ...child,
+                            operator: event.target.value as FilterOperator,
+                          })
+                        }
+                      >
+                        {available.map((operator) => (
+                          <option key={operator.value} value={operator.value}>
+                            {operator.label}
+                          </option>
+                        ))}
+                      </select>
+                      {!['empty', 'not-empty'].includes(child.operator) &&
+                        (field.type === 'boolean' ? (
+                          <select
+                            aria-label="مقدار شرط"
+                            className={selectClass}
+                            value={child.value}
+                            onChange={(event) =>
+                              update(child.id, {
+                                ...child,
+                                value: event.target.value,
+                              })
+                            }
+                          >
+                            <option key="true" value="true">
+                              بله
+                            </option>
+                            <option key="false" value="false">
+                              خیر
+                            </option>
+                          </select>
+                        ) : field.type === 'date' ? (
+                          <DatePicker
+                            id={`filter-${child.id}`}
+                            aria-label="مقدار تاریخ شرط"
+                            value={child.value}
+                            onChange={(value) =>
+                              update(child.id, { ...child, value })
+                            }
+                          />
+                        ) : (
+                          <Input
+                            aria-label="مقدار شرط"
+                            className="h-10"
+                            value={child.value}
+                            placeholder="مقدار مورد نظر…"
+                            maxLength={2000}
+                            onChange={(event) =>
+                              update(child.id, {
+                                ...child,
+                                value: event.target.value,
+                              })
+                            }
+                          />
+                        ))}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={
+                    child.type === 'group' ? 'حذف گروه شرط‌ها' : 'حذف شرط'
                   }
-                }}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              حذف {child.type === 'group' ? 'گروه' : 'شرط'} · Delete هنگام تمرکز
-              روی این دکمه
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      ))}
+                  aria-keyshortcuts="Delete"
+                  onClick={() => remove(child.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Delete') {
+                      event.preventDefault();
+                      remove(child.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                حذف {child.type === 'group' ? 'گروه' : 'شرط'} · Delete هنگام
+                تمرکز روی این دکمه
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        ))}
+      </div>
       {depth > 0 && (
-        <div className="flex gap-2">
+        <div data-filter-extra-actions className="flex gap-2">
           <IconAction
             label="افزودن شرط به این گروه"
             shortcut="Enter"
@@ -531,19 +550,32 @@ export function AccountingBaseList({
   ) => Promise<unknown>;
 }) {
   const router = useRouter();
-  const compactList = kind === 'ledgers' || kind === 'voucher-types';
+  const compactList = true;
   const [draft, setDraft] = useState<FilterGroup>(emptyFilter);
   const [applied, setApplied] = useState<FilterGroup>(emptyFilter);
   const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState('title');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {},
   );
-  const [showFilters, setShowFilters] = useState(!compactList);
+  const [columnModes, setColumnModes] = useState<
+    Record<string, ColumnOperator>
+  >({});
+  const [showFilters, setShowFilters] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [listOpen, setListOpen] = useState(false);
   const [bottomListOpen, setBottomListOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [savedFilterId, setSavedFilterId] = useState('');
+  const [filterName, setFilterName] = useState('');
+  const savedFilters = snapshot.configurations.filter(
+    (item) =>
+      item.kind === 'accounting-list-filters' &&
+      item.attributes.listKind === kind,
+  );
+  const savedFilter = savedFilters.find((item) => item.id === savedFilterId);
   const [countRequested, setCountRequested] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(compactList ? 50 : 25);
@@ -552,60 +584,83 @@ export function AccountingBaseList({
   const fields = listFields(kind);
   const records = listRecords(kind, snapshot, books);
   const columns =
-    kind === 'ledgers'
-      ? [
-          { key: 'code', label: 'کد', type: 'text' },
-          { key: 'title', label: 'عنوان', type: 'text' },
-          { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
-          {
-            key: 'allowsPosting',
-            label: 'امکان صدور سند حسابداری در دفتر کل',
-            type: 'boolean',
-          },
-          { key: 'active', label: 'وضعیت', type: 'boolean' },
-        ]
-      : kind === 'voucher-types'
+    kind === 'coding-standards'
+      ? fields
+      : kind === 'ledgers'
         ? [
+            { key: 'code', label: 'کد', type: 'text' },
             { key: 'title', label: 'عنوان', type: 'text' },
-            { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+            { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
+            {
+              key: 'allowsPosting',
+              label: 'امکان صدور سند حسابداری در دفتر کل',
+              type: 'boolean',
+            },
+            { key: 'active', label: 'وضعیت', type: 'boolean' },
           ]
-        : fields
-            .filter((field) =>
-              ['code', 'title', 'titleEn', 'description', 'active'].includes(
-                field.key,
-              ),
-            )
-            .sort(
-              (a, b) =>
-                ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                  a.key,
-                ) -
-                ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                  b.key,
-                ),
-            );
+        : kind === 'voucher-types'
+          ? [
+              { key: 'title', label: 'عنوان', type: 'text' },
+              { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+            ]
+          : kind === 'fiscal-years'
+            ? [{ key: 'title', label: 'عنوان', type: 'text' }]
+            : fields
+                .filter((field) =>
+                  [
+                    'code',
+                    'title',
+                    'titleEn',
+                    'description',
+                    'active',
+                  ].includes(field.key),
+                )
+                .sort(
+                  (a, b) =>
+                    [
+                      'code',
+                      'title',
+                      'titleEn',
+                      'description',
+                      'active',
+                    ].indexOf(a.key) -
+                    [
+                      'code',
+                      'title',
+                      'titleEn',
+                      'description',
+                      'active',
+                    ].indexOf(b.key),
+                );
   const filtered = filterRecords(
     records,
     {
       type: 'group',
       id: 'combined',
       mode: 'all',
-      children: [
-        applied,
-        ...columns
-          .filter((column) => columnFilters[column.key])
-          .map((column): FilterRule => ({
-            ...newRule(),
-            id: `column-${column.key}`,
-            field: column.key,
-            operator: column.type === 'boolean' ? 'equals' : 'contains',
-            value: columnFilters[column.key]!,
-          })),
-      ],
+      children: [applied],
     },
     fields,
     search,
-  );
+  )
+    .filter((record) =>
+      columns.every((column) =>
+        matchesColumn(
+          record,
+          column.key,
+          columnModes[column.key] ??
+            (column.type === 'boolean' ? 'equals' : 'contains'),
+          columnFilters[column.key] ?? '',
+        ),
+      ),
+    )
+    .sort(
+      (a, b) =>
+        (sortDirection === 'asc' ? 1 : -1) *
+        (a.values[sortKey] ?? '').localeCompare(b.values[sortKey] ?? '', 'fa', {
+          numeric: true,
+        }),
+    );
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const actualPage = Math.min(page, pages);
   const visible = filtered.slice(
@@ -626,18 +681,82 @@ export function AccountingBaseList({
   const definition = accountingLists.find((list) => list.kind === kind)!;
   const dirty = JSON.stringify(applied) !== JSON.stringify(draft);
   const presetRule = applied.children[0];
-  const presetValue = Object.values(columnFilters).some(Boolean)
-    ? 'custom'
-    : applied.children.length === 0
-      ? 'all'
-      : applied.mode === 'all' &&
-          applied.children.length === 1 &&
-          presetRule?.type === 'rule' &&
-          presetRule.field === 'active' &&
-          presetRule.operator === 'equals'
-        ? presetRule.value
-        : 'custom';
+  const presetValue =
+    Object.values(columnFilters).some(Boolean) ||
+    Object.values(columnModes).some((mode) =>
+      ['null', 'not-null', 'empty', 'not-empty'].includes(mode),
+    )
+      ? 'custom'
+      : applied.children.length === 0
+        ? 'all'
+        : applied.mode === 'all' &&
+            applied.children.length === 1 &&
+            presetRule?.type === 'rule' &&
+            presetRule.field === 'active' &&
+            presetRule.operator === 'equals'
+          ? presetRule.value
+          : 'custom';
   const locked = busy || reloading;
+  const loadFilter = () => {
+    if (!savedFilter) return;
+    try {
+      const tree = JSON.parse(
+        String(savedFilter.attributes.filter),
+      ) as FilterGroup;
+      if (
+        tree.type !== 'group' ||
+        !Array.isArray(tree.children) ||
+        nodeCount(tree) > 32
+      )
+        throw new Error('Invalid filter');
+      setDraft(tree);
+      setFilterName(savedFilter.title);
+      setShowFilters(true);
+      setMessage('فیلتر بارگذاری شد.');
+    } catch {
+      setMessage('فیلتر ذخیره‌شده معتبر نیست.');
+    }
+  };
+  const saveFilter = async () => {
+    if (locked || !filterName.trim()) return;
+    if (incompleteFilter(draft)) {
+      setMessage('مقدار شرط‌ها را کامل کنید.');
+      return;
+    }
+    const existing =
+      savedFilter?.title === filterName.trim() ? savedFilter : undefined;
+    const id = existing?.id ?? crypto.randomUUID();
+    const result = await run(
+      'save-configuration',
+      {
+        id,
+        kind: 'accounting-list-filters',
+        code: existing?.code ?? id,
+        title: filterName.trim(),
+        active: true,
+        attributes: { listKind: kind, filter: JSON.stringify(draft) },
+      },
+      existing?.version,
+    );
+    if (result) {
+      setSavedFilterId(id);
+      setMessage('فیلتر ذخیره شد.');
+    }
+  };
+  const deleteFilter = async () => {
+    if (locked || !savedFilter || !window.confirm('فیلتر ذخیره‌شده حذف شود؟'))
+      return;
+    const result = await run(
+      'delete-base-record',
+      { entity: 'configuration', id: savedFilter.id },
+      savedFilter.version,
+    );
+    if (result) {
+      setSavedFilterId('');
+      setFilterName('');
+      setMessage('فیلتر از فهرست حذف شد.');
+    }
+  };
   const apply = () => {
     if (incompleteFilter(draft)) {
       setMessage(
@@ -655,6 +774,7 @@ export function AccountingBaseList({
     setApplied(emptyFilter());
     setSearch('');
     setColumnFilters({});
+    setColumnModes({});
     setSelected([]);
     setPage(1);
     setMessage('فیلترها پاک شدند.');
@@ -730,6 +850,9 @@ export function AccountingBaseList({
       KeyG: addGroup,
       KeyO: openDefinition,
       KeyQ: () => searchRef.current?.focus(),
+      KeyU: loadFilter,
+      KeyY: () => void saveFilter(),
+      KeyJ: () => void deleteFilter(),
       Home: () => setPage(1),
       End: () => setPage(pages),
       ArrowRight: () => {
@@ -771,6 +894,7 @@ export function AccountingBaseList({
     setSearch('');
     setPage(1);
     setColumnFilters({});
+    setColumnModes({});
     setMessage('فهرست انتخاب شد.');
   };
   const renderListToolbar = (bottom = false) => (
@@ -865,9 +989,14 @@ export function AccountingBaseList({
   );
   return (
     <section
-      dir="rtl"
+      style={{ direction: 'rtl' }}
       aria-label={definition.title}
       data-accounting-list
+      data-source-grid-list={
+        kind === 'fiscal-years' || kind === 'coding-standards'
+          ? 'true'
+          : undefined
+      }
       className={`overflow-hidden border bg-surface ${compactList ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
@@ -914,6 +1043,7 @@ export function AccountingBaseList({
         </Button>
       ))}
       <header
+        data-list-heading
         className={`flex flex-wrap items-center justify-between gap-3 border-b ${compactList ? 'p-2' : 'p-4'}`}
       >
         <div>
@@ -961,12 +1091,16 @@ export function AccountingBaseList({
           }
         >
           <option value="all">{definition.allTitle}</option>
-          <option key="true" value="true">
-            فقط فعال‌ها
-          </option>
-          <option key="false" value="false">
-            فقط غیرفعال‌ها
-          </option>
+          {kind !== 'fiscal-years' && kind !== 'coding-standards' && (
+            <>
+              <option key="true" value="true">
+                فقط فعال‌ها
+              </option>
+              <option key="false" value="false">
+                فقط غیرفعال‌ها
+              </option>
+            </>
+          )}
           <option value="custom" disabled>
             فیلتر سفارشی
           </option>
@@ -1048,9 +1182,64 @@ export function AccountingBaseList({
               </IconAction>
             </div>
           </div>
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            aria-label="فیلترهای ذخیره‌شده"
+          >
+            <select
+              className={selectClass}
+              aria-label="فیلتر ذخیره‌شده"
+              value={savedFilterId}
+              onChange={(event) => setSavedFilterId(event.target.value)}
+            >
+              <option value="">انتخاب فیلتر</option>
+              {savedFilters.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+            </select>
+            <IconAction
+              label="بارگذاری فیلتر"
+              shortcut="Alt+Shift+U"
+              disabled={locked || !savedFilter}
+              onClick={loadFilter}
+            >
+              <FolderOpen className="size-4" />
+            </IconAction>
+            <IconAction
+              label="حذف از لیست فیلترها"
+              shortcut="Alt+Shift+J"
+              disabled={locked || !savedFilter}
+              onClick={() => void deleteFilter()}
+            >
+              <Trash2 className="size-4" />
+            </IconAction>
+            <Input
+              aria-label="نام فیلتر"
+              maxLength={160}
+              value={filterName}
+              onChange={(event) => setFilterName(event.target.value)}
+              className="max-w-64"
+            />
+            <IconAction
+              label="ذخیره فیلتر"
+              shortcut="Alt+Shift+Y"
+              disabled={locked || !filterName.trim()}
+              onClick={() => void saveFilter()}
+            >
+              <Save className="size-4" />
+            </IconAction>
+          </div>
           <GroupEditor
             group={draft}
-            fields={fields}
+            fields={
+              kind === 'fiscal-years'
+                ? fields.filter(
+                    (field) => !['code', 'active'].includes(field.key),
+                  )
+                : fields
+            }
             limit={nodeCount(draft) >= 32}
             onChange={setDraft}
           />
@@ -1064,7 +1253,10 @@ export function AccountingBaseList({
       <div
         className={`flex flex-wrap items-center gap-2 text-sm ${compactList ? 'px-2 py-1 text-xs' : 'p-4'}`}
       >
-        <span className="rounded-lg bg-muted px-3 py-1.5">
+        <span
+          data-list-result-count
+          className="rounded-lg bg-muted px-3 py-1.5"
+        >
           {filtered.length.toLocaleString('fa-IR')} نتیجه
         </span>
         {countRequested && (
@@ -1123,7 +1315,20 @@ export function AccountingBaseList({
                   scope="col"
                   className={`px-4 py-3 font-semibold text-muted-foreground ${kind === 'voucher-types' ? (key === 'title' ? 'w-[72%]' : 'w-[28%]') : ''}`}
                 >
-                  {label}
+                  <button
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() => {
+                      setSortKey(key);
+                      setSortDirection(
+                        sortKey === key && sortDirection === 'asc'
+                          ? 'desc'
+                          : 'asc',
+                      );
+                    }}
+                  >
+                    {label}
+                  </button>
                 </th>
               ))}
             </tr>
@@ -1133,16 +1338,85 @@ export function AccountingBaseList({
                 {columns.map((column) => (
                   <th key={column.key} className="px-2 pb-3">
                     <div className="flex items-center gap-1 rounded-lg border border-input bg-surface px-2">
-                      <Filter
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                      <DropdownMenu>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="shrink-0 rounded p-1 hover:bg-muted"
+                                aria-label={`عملگر فیلتر ${column.label}`}
+                              >
+                                <Filter
+                                  className="size-3.5"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {
+                              columnOperators.find(
+                                ([value]) =>
+                                  value ===
+                                  (columnModes[column.key] ??
+                                    (column.type === 'boolean'
+                                      ? 'equals'
+                                      : 'contains')),
+                              )?.[1]
+                            }
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent
+                          align="start"
+                          style={{ direction: 'rtl' }}
+                          className="text-right"
+                        >
+                          {columnOperators
+                            .filter(
+                              ([value]) =>
+                                column.type !== 'boolean' ||
+                                ['none', 'equals', 'not-equals'].includes(
+                                  value,
+                                ),
+                            )
+                            .map(([value, label]) => (
+                              <DropdownMenuItem
+                                className="min-h-0 py-1 text-xs"
+                                key={value}
+                                onSelect={() => {
+                                  setColumnModes({
+                                    ...columnModes,
+                                    [column.key]: value,
+                                  });
+                                  if (value === 'none')
+                                    setColumnFilters({
+                                      ...columnFilters,
+                                      [column.key]: '',
+                                    });
+                                  setSelected([]);
+                                  setPage(1);
+                                }}
+                              >
+                                {label}
+                              </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       {column.type === 'boolean' ? (
                         <select
                           aria-label={`فیلتر ${column.label}`}
                           className="h-9 min-w-0 w-full bg-transparent text-sm font-normal"
                           value={columnFilters[column.key] ?? ''}
                           onChange={(event) => {
+                            if (columnModes[column.key] === 'none')
+                              setColumnModes({
+                                ...columnModes,
+                                [column.key]:
+                                  column.type === 'boolean'
+                                    ? 'equals'
+                                    : 'contains',
+                              });
                             setColumnFilters({
                               ...columnFilters,
                               [column.key]: event.target.value,
@@ -1167,6 +1441,14 @@ export function AccountingBaseList({
                           className="h-9 border-0 bg-transparent font-normal shadow-none"
                           value={columnFilters[column.key] ?? ''}
                           onChange={(event) => {
+                            if (columnModes[column.key] === 'none')
+                              setColumnModes({
+                                ...columnModes,
+                                [column.key]:
+                                  column.type === 'boolean'
+                                    ? 'equals'
+                                    : 'contains',
+                              });
                             setColumnFilters({
                               ...columnFilters,
                               [column.key]: event.target.value,
@@ -1186,9 +1468,18 @@ export function AccountingBaseList({
             {visible.map((record) => (
               <tr
                 key={record.id}
-                aria-selected={
-                  selectionMode ? selectedIds.includes(record.id) : undefined
+                onClick={() => {
+                  if (!selectionMode) setSelected([record.id]);
+                }}
+                onDoubleClick={
+                  kind === 'fiscal-years' || kind === 'coding-standards'
+                    ? () =>
+                        router.push(
+                          `${definitionRoute(kind)}?bookId=${snapshot.book.id}&recordId=${record.id}`,
+                        )
+                    : undefined
                 }
+                aria-selected={selectedIds.includes(record.id)}
                 className={`border-b transition-colors hover:bg-muted/25 ${kind === 'voucher-types' ? 'even:bg-muted/15' : ''} ${selectedIds.includes(record.id) ? 'bg-primary/5' : ''}`}
               >
                 {selectionMode && (
@@ -1221,7 +1512,7 @@ export function AccountingBaseList({
                       </span>
                     </td>
                   ))}
-                {kind !== 'voucher-types' && (
+                {kind === 'ledgers' && (
                   <td className="px-4 py-4">
                     <span
                       className={`rounded-full px-2 py-1 text-xs ${record.values.active === 'true' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}`}

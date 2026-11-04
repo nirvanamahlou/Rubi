@@ -1,3 +1,7 @@
+import { fiscalYearAttributes } from './accounting.fiscal-year';
+import { listFilterAttributes } from './accounting-list-filter';
+import { trialBalanceTable } from './accounting.trial-balance';
+import { codingStandardAttributes } from './accounting.coding-standard';
 import {
   SALES_CONTRACT_EVENT,
   hasPendingSalesContractAccounting,
@@ -159,6 +163,8 @@ const resetApprovalAttributes = (value: unknown) =>
     'warnings',
   ]);
 const kinds = [
+  'coding-standards',
+  'accounting-list-filters',
   'approval-policies',
   'fiscal-years',
   'voucher-types',
@@ -1691,6 +1697,8 @@ export class AccountingService {
             'detail-types',
             'allocation-templates',
             'account-mappings',
+            'coding-standards',
+            'accounting-list-filters',
           ].includes(row.kind))
       )
         v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
@@ -3214,7 +3222,23 @@ export class AccountingService {
         this.version(existing.version, expected);
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
-      const attributes = v.attributes(p.attributes);
+      let attributes = v.attributes(p.attributes);
+      if (kind === 'accounting-list-filters')
+        attributes = listFilterAttributes(attributes);
+      if (kind === 'coding-standards') {
+        attributes = codingStandardAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+        );
+        attributes.notes = JSON.stringify(
+          setupNotes(
+            attributes.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
+        v.attributes(attributes);
+      }
       if (kind === 'detail-types' && attributes.notes !== undefined)
         attributes.notes = JSON.stringify(
           setupNotes(
@@ -3235,8 +3259,12 @@ export class AccountingService {
           v.rule('حد بالای تأیید باید بزرگ‌تر از حد پایین باشد.');
       }
 
-      if (kind === 'fiscal-years' && Object.keys(attributes).length)
-        v.invalid('بازه سال مالی فقط در تخصیص سال به دفتر ثبت می‌شود.');
+      if (kind === 'fiscal-years')
+        attributes = fiscalYearAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+          actorName,
+        );
       if (kind === 'detail-types') {
         if (
           existing &&
@@ -6105,6 +6133,8 @@ export class AccountingService {
           title: a.title,
           level: a.level,
           opening: DecimalValue.zero(),
+          priorDebit: DecimalValue.zero(),
+          priorCredit: DecimalValue.zero(),
           debit: DecimalValue.zero(),
           credit: DecimalValue.zero(),
         },
@@ -6112,10 +6142,13 @@ export class AccountingService {
     );
     for (const row of openingRows) {
       const a = row.accountId ? map.get(row.accountId) : null;
-      if (a)
+      if (a) {
+        a.priorDebit = DecimalValue.parse(row._sum.debit?.toString() ?? '0');
+        a.priorCredit = DecimalValue.parse(row._sum.credit?.toString() ?? '0');
         a.opening = DecimalValue.parse(
           row._sum.debit?.toString() ?? '0',
         ).subtract(DecimalValue.parse(row._sum.credit?.toString() ?? '0'));
+      }
     }
     let debit = DecimalValue.zero(),
       credit = DecimalValue.zero();
@@ -6135,6 +6168,8 @@ export class AccountingService {
           parent = account.parentId ? map.get(account.parentId) : null;
         if (own && parent) {
           parent.opening = parent.opening.add(own.opening);
+          parent.priorDebit = parent.priorDebit.add(own.priorDebit);
+          parent.priorCredit = parent.priorCredit.add(own.priorCredit);
           parent.debit = parent.debit.add(own.debit);
           parent.credit = parent.credit.add(own.credit);
         }
@@ -6149,6 +6184,8 @@ export class AccountingService {
         code: a.code,
         title: a.title,
         opening: a.opening.toString(),
+        priorDebit: a.priorDebit.toString(),
+        priorCredit: a.priorCredit.toString(),
         debit: a.debit.toString(),
         credit: a.credit.toString(),
         balance: a.opening.add(a.debit).subtract(a.credit).toString(),
@@ -6166,6 +6203,7 @@ export class AccountingService {
       rows,
       debit: (groupMembers ? selectedDebit : debit).toString(),
       credit: (groupMembers ? selectedCredit : credit).toString(),
+      table: trialBalanceTable(rows, query.structure, query.balanceType),
     };
   }
   async analyticalReport(

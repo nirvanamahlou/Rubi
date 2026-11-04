@@ -290,12 +290,21 @@ export interface AccountingReportRowV1 {
   debit: string;
   credit: string;
   balance: string;
+  /** Gross movement before the selected range; never inferred from net opening. */
+  priorDebit?: string;
+  priorCredit?: string;
 }
 export interface AccountingReportV1 {
   generatedAt: string;
   rows: AccountingReportRowV1[];
   debit: string;
   credit: string;
+  table?: {
+    structure: string;
+    headers: string[];
+    rows: { accountId: string; values: string[] }[];
+    totals: string[];
+  };
 }
 export interface AccountingTurnoverV1 {
   opening: string;

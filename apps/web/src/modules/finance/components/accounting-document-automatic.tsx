@@ -7,7 +7,7 @@ import type {
 } from '@nora/contracts';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 import Link from '@/i18n/link';
-import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import { FormField, Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DocumentIconAction } from './accounting-document-filter';
@@ -94,7 +94,12 @@ export function AccountingDocumentAutomatic({
         className="flex flex-wrap gap-2 border-b pb-3 text-xs"
         aria-label="مراحل صدور سند اتوماتیک"
       >
-        {['شرح', 'مشخصات سند', 'پیش نمایش سند', 'پایان'].map((label, index) => (
+        {[
+          'شرح راهبر',
+          'انتخاب الگوی سند اتوماتیک',
+          'پیش نمایش سند',
+          'پایان عملیات',
+        ].map((label, index) => (
           <li
             key={label}
             aria-current={step === index ? 'step' : undefined}
@@ -141,7 +146,7 @@ export function AccountingDocumentAutomatic({
             />
           </FormField>
           <FormField label="شرح">
-            <Textarea
+            <Input
               value={head.description}
               onChange={(event) => set('description', event.target.value)}
               disabled={busy}

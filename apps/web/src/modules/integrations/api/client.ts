@@ -1,5 +1,7 @@
 import type {
   BranchReference,
+  SiteConnectionInputV1,
+  SiteConnectionStatusV1,
   IntegrationExistingAdapterV1,
   IntegrationRegistryV1,
   IntegrationRegistryWriteV1,
@@ -74,6 +76,33 @@ export interface GhestirooStatus {
   lastRenewedAt?: string;
   renewalState?: 'active' | 'pending' | 'retrying' | 'expired';
 }
+const siteBranchQuery = (branchId: string, systemId?: string) =>
+  `${branchQuery(branchId)}${systemId ? `&systemId=${encodeURIComponent(systemId)}` : ''}`;
+export const siteConnectionApi = {
+  status: (branch: string, site: string, signal?: AbortSignal) =>
+    request<SiteConnectionStatusV1>(
+      `/sites/${encodeURIComponent(site)}/connection${branchQuery(branch)}`,
+      signal ? { signal } : {},
+    ),
+  save: (branch: string, site: string, input: SiteConnectionInputV1) =>
+    request<SiteConnectionStatusV1>(
+      `/sites/${encodeURIComponent(site)}/connection${branchQuery(branch)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+        headers: { 'X-Nora-Site-Connection': '1' },
+      },
+    ),
+  test: (branch: string, site: string) =>
+    request<{
+      state: string;
+      checkedAt?: string;
+      resources: { code: string; title: string }[];
+    }>(`/sites/${encodeURIComponent(site)}/test${branchQuery(branch)}`, {
+      method: 'POST',
+      headers: { 'X-Nora-Site-Connection': '1' },
+    }),
+};
 export const ghestirooApi = {
   workspace: (
     branch: string,
@@ -202,9 +231,10 @@ export const integrationsApi = {
     resource: string,
     id?: string,
     signal?: AbortSignal,
+    systemId?: string,
   ) =>
     request<EditorContract>(
-      `/niyayesh/catalogue/${encodeURIComponent(resource)}${branchQuery(branchId)}${id ? `&id=${encodeURIComponent(id)}` : ''}`,
+      `/niyayesh/catalogue/${encodeURIComponent(resource)}${siteBranchQuery(branchId, systemId)}${id ? `&id=${encodeURIComponent(id)}` : ''}`,
       signal ? { signal } : {},
     ),
   niyayeshSave: (
@@ -213,9 +243,10 @@ export const integrationsApi = {
     value: Record<string, unknown>,
     command: string,
     record?: { externalId: string; version: number },
+    systemId?: string,
   ) =>
     request<Record<string, unknown>>(
-      `/niyayesh/catalogue/${encodeURIComponent(resource)}${branchQuery(branchId)}`,
+      `/niyayesh/catalogue/${encodeURIComponent(resource)}${siteBranchQuery(branchId, systemId)}`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -227,11 +258,15 @@ export const integrationsApi = {
         }),
       },
     ),
-  niyayeshHotelExport: (branchId: string, city: string) =>
+  niyayeshHotelExport: (branchId: string, city: string, systemId?: string) =>
     request<{ filename: string; content: string }>(
-      `/niyayesh/workbooks/hotels/export${branchQuery(branchId)}&city=${encodeURIComponent(city)}`,
+      `/niyayesh/workbooks/hotels/export${siteBranchQuery(branchId, systemId)}&city=${encodeURIComponent(city)}`,
     ),
-  niyayeshDashboard: (branchId: string, signal?: AbortSignal) =>
+  niyayeshDashboard: (
+    branchId: string,
+    signal?: AbortSignal,
+    systemId?: string,
+  ) =>
     request<{
       state: string;
       environment?: string;
@@ -245,10 +280,13 @@ export const integrationsApi = {
         state: string;
       }[];
       imports: { kind: string; canApply: boolean }[];
-    }>(`/niyayesh/dashboard${branchQuery(branchId)}`, signal ? { signal } : {}),
-  niyayeshTemplate: (branchId: string, kind: string) =>
+    }>(
+      `/niyayesh/dashboard${siteBranchQuery(branchId, systemId)}`,
+      signal ? { signal } : {},
+    ),
+  niyayeshTemplate: (branchId: string, kind: string, systemId?: string) =>
     request<{ filename: string; content: string }>(
-      `/niyayesh/workbooks/${encodeURIComponent(kind)}/template${branchQuery(branchId)}`,
+      `/niyayesh/workbooks/${encodeURIComponent(kind)}/template${siteBranchQuery(branchId, systemId)}`,
     ),
   niyayeshWorkbook: (
     branchId: string,
@@ -258,11 +296,13 @@ export const integrationsApi = {
     apply: boolean,
     tourId?: string,
     proof?: string,
+    systemId?: string,
   ) => {
     const form = new FormData();
     form.append('file', file);
     const query = new URLSearchParams({
       branchId,
+      ...(systemId ? { systemId } : {}),
       command,
       apply: String(apply),
       ...(tourId ? { tourId } : {}),
@@ -283,16 +323,20 @@ export const integrationsApi = {
       headers: { 'X-Nora-Workbook': '1' },
     });
   },
-  ssoAccess: (branchId: string, signal?: AbortSignal) =>
+  ssoAccess: (branchId: string, signal?: AbortSignal, systemId?: string) =>
     request<{ enabled: boolean; launchUrl?: string; noraOrigin?: string }>(
-      `/niyayesh/sso/access${branchQuery(branchId)}`,
+      `/niyayesh/sso/access${siteBranchQuery(branchId, systemId)}`,
       signal ? { signal } : {},
     ),
-  launchSso: async (branchId: string) => {
+  launchSso: async (branchId: string, systemId?: string) => {
     const base = getPublicApiBaseUrl();
     if (!base || !(await refreshAuthenticatedSession(base)))
       throw new IntegrationsApiError('دوباره وارد نورا شوید.', 401);
-    const access = await integrationsApi.ssoAccess(branchId);
+    const access = await integrationsApi.ssoAccess(
+      branchId,
+      undefined,
+      systemId,
+    );
     if (!access.enabled || !access.launchUrl)
       throw new IntegrationsApiError('ورود شخصی برای شما فعال نیست.', 403);
     if (access.noraOrigin && access.noraOrigin !== window.location.origin) {
@@ -303,14 +347,17 @@ export const integrationsApi = {
     }
     window.location.assign(access.launchUrl);
   },
-  niyayeshStatus: (branchId: string, signal?: AbortSignal) =>
+  niyayeshStatus: (branchId: string, signal?: AbortSignal, systemId?: string) =>
     request<{
       registrySystemId?: string;
       state: string;
       environment?: string;
       checkedAt?: string;
       resources: { code: string; title: string }[];
-    }>(`/niyayesh/status${branchQuery(branchId)}`, signal ? { signal } : {}),
+    }>(
+      `/niyayesh/status${siteBranchQuery(branchId, systemId)}`,
+      signal ? { signal } : {},
+    ),
   niyayeshResources: (
     branchId: string,
     resource: string,
@@ -318,6 +365,7 @@ export const integrationsApi = {
     signal?: AbortSignal,
     metric?: string,
     report?: { metric: string; from: string; to: string; systemId?: string },
+    systemId?: string,
   ) =>
     request<{
       schemaVersion: number;
@@ -330,7 +378,7 @@ export const integrationsApi = {
       nextId: number;
       hasMore: boolean;
     }>(
-      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}${report.systemId ? `&systemId=${encodeURIComponent(report.systemId)}` : ''}` : ''}`,
+      `/niyayesh/resources${siteBranchQuery(branchId, systemId ?? report?.systemId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}` : ''}`,
       signal ? { signal } : {},
     ),
   async branches(): Promise<BranchReference[]> {
