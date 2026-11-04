@@ -675,7 +675,6 @@ export function TourPricingWorkspace() {
       </Dialog>
       {notice ? <Alert title="وضعیت قیمت‌گذاری" description={notice} /> : null}
       <TourWorkspace mode="departures" compact />
-
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -754,18 +753,11 @@ export function TourPricingWorkspace() {
           </div>
         ) : null}
       </Card>
-
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
           <Hotel className="size-5 text-primary" />
           <h2 className="text-lg font-black">۳ · قیمت خرید هتل‌های تور</h2>
         </div>
-        {!tourId ? (
-          <p className="text-sm text-muted-foreground">
-            نوبت تور را انتخاب کنید تا جدول خرید هتل‌های همان تور و بازه نمایش
-            داده شود.
-          </p>
-        ) : null}
         {loadingCosts ? <Skeleton className="h-40" /> : null}
         {costError ? (
           <ErrorState title="جدول خرید در دسترس نیست" description={costError} />
@@ -866,7 +858,6 @@ export function TourPricingWorkspace() {
           </>
         ) : null}
       </Card>
-
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
           <Banknote className="size-5 text-primary" />

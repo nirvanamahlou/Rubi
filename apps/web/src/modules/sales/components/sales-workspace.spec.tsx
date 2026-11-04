@@ -304,7 +304,7 @@ describe('sales dashboard loading', () => {
     );
     expect(html).toContain('از تاریخ مانده قابل دریافت');
     expect(html).toContain('تا تاریخ مانده قابل دریافت');
-    expect(html).toContain(
+    expect(html).not.toContain(
       'بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.',
     );
     expect(html).not.toContain('اولین قرارداد سفر را ثبت کنید');

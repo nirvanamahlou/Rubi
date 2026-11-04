@@ -31,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/overlays';
 import { salesApi } from '../api/client';
@@ -484,15 +483,13 @@ export function ContractPayments({
       }}
     >
       <DialogContent
+        aria-describedby={undefined}
         dir="rtl"
         className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-3xl"
       >
         <DialogTitle className="pe-10">
           پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
         </DialogTitle>
-        <DialogDescription>
-          سوابق پرداخت، سررسید اقساط و رسیدهای همین قرارداد
-        </DialogDescription>
         {contract?.isFloating &&
           (selfService ||
             actor?.permissions.includes('sales.payments.create')) && (
@@ -537,10 +534,6 @@ export function ContractPayments({
           >
             پیدا کردن قرارداد
           </Button>
-          <p className="w-full text-xs text-muted-foreground">
-            جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این
-            قرارداد؛ نتیجه در فهرست اصلی نمایش داده می‌شود.
-          </p>
         </form>
         {!contract && !error ? (
           <p role="status">در حال دریافت پرداخت‌ها…</p>
@@ -612,9 +605,6 @@ export function ContractPayments({
                 <PaymentDocuments contract={contract} paymentId={entry.id} />
               </div>
             ))}
-        <p className="text-sm text-muted-foreground">
-          افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
-        </p>
         <Dialog
           open={adding}
           onOpenChange={(open) => {
@@ -644,15 +634,13 @@ export function ContractPayments({
             </Button>
           </DialogTrigger>
           <DialogContent
+            aria-describedby={undefined}
             dir="rtl"
             className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-2xl"
           >
             <DialogTitle className="pe-10">
               افزودن پرداخت · {contract?.contractNumber}
             </DialogTitle>
-            <DialogDescription>
-              اطلاعات پرداخت را ثبت کنید و رسید آن را همین‌جا پیوست کنید.
-            </DialogDescription>
             {error ? <Alert tone="error" title={error} /> : null}
             {savedPaymentId ? (
               <p role="status" className="rounded-xl bg-primary/10 p-3">
@@ -879,11 +867,7 @@ export function ContractPayments({
                     paymentId={savedPaymentId}
                     expanded
                   />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    رسید همین پرداخت را پیوست کنید.
-                  </p>
-                )}
+                ) : null}
               </div>
               {!savedPaymentId ? (
                 <Button

@@ -105,17 +105,19 @@
   accent-color: var(--primary);
 }
 .hotelSelector {
+  max-width: none;
   min-width: 0;
   width: 100%;
   grid-template-columns: minmax(0, 1fr);
 }
 .hotelSelector .field {
+  max-width: none;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
 }
 .hotelSelector .hotelChoices {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
   align-content: start;
   gap: 4px;
   min-width: 0;

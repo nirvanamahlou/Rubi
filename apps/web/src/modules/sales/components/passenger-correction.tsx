@@ -10,12 +10,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import {
   useAccessActor,
   useAccessPermissions,
@@ -152,10 +147,6 @@ function CorrectionForm({
   }
   return (
     <div className="grid gap-4">
-      <p className="text-sm text-muted-foreground">
-        اصلاحات فقط برای همین قرارداد ثبت می‌شوند؛ قیمت و تخصیص خدمات تغییر
-        نمی‌کند.
-      </p>
       {loading ? <p role="status">در حال دریافت مشخصات…</p> : null}
       {!loading && rows.length === 0 && (
         <PassengerCompletion
@@ -320,13 +311,11 @@ export function PassengerCorrectionButton({
         }}
       >
         <DialogContent
+          aria-describedby={undefined}
           dir="rtl"
           className="max-h-[90vh] max-w-4xl overflow-y-auto"
         >
           <DialogTitle>اصلاح مشخصات مسافران قرارداد</DialogTitle>
-          <DialogDescription>
-            تاریخ تولد، مشخصات پاسپورت و توضیحات رزرواسیون
-          </DialogDescription>
           {open &&
           !selfService &&
           !permissions?.some(

@@ -689,13 +689,8 @@ export function TicketPricesWorkspace() {
           </div>
         }
       />
-      <p className="text-sm text-muted-foreground">
-        کمیسیون ۱۰۰٪ به معنی عدم نمایش است؛ بلیت و قیمت آن برای آن مقصد فروش
-        ارسال نمی‌شود.
-      </p>
       {error ? <Alert tone="error" title={error} /> : null}
       {notice ? <Alert title={notice} /> : null}
-
       <section
         aria-label="خلاصه قیمت‌گذاری بلیط‌ها"
         className="grid gap-3 sm:grid-cols-3"

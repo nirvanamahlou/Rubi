@@ -378,7 +378,6 @@ function Content({
           <h1>
             <Headset /> کال سنتر
           </h1>
-          <p>مدیریت تماس‌ها، درخواست‌ها و پیگیری‌های مشتری</p>
         </div>
       </header>
       <WorkQueue
@@ -501,13 +500,6 @@ function Content({
             </fieldset>
           </div>
         </div>
-        <p className={styles.formHint}>
-          جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
-          فیلترهای تماس روی{' '}
-          {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-          این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک
-          شخص نیست.
-        </p>
         <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
           {Object.entries(filters)
             .filter(([k, v]) => v && k !== 'scope')
@@ -551,7 +543,6 @@ function Content({
                 <RotateCcw size={16} /> تازه‌سازی فهرست
               </button>
             </div>
-
             <div className={styles.tableScroll}>
               <table
                 className={`${styles.table} ${styles.contactTable} ${styles.centeredTable}`}
@@ -790,7 +781,6 @@ function Content({
           </DossierFrame>
         )}
       </div>
-
       {withoutOutcomeOpen && (
         <WithoutOutcomeDialog
           key={`${branch}:${historyRevision}`}
@@ -932,14 +922,6 @@ function ReportPanel({
       <h2>
         <BarChart3 size={21} /> گزارش داده ثبت‌شده
       </h2>
-      <p>
-        گزارش تماس‌ها همیشه تمام تماس‌های منطبق با فیلتر و بازه را می‌شمارد؛
-        گزینه آخرین تماس فقط برای فهرست مخاطبان است.
-      </p>
-      <p>
-        {callDate(meta.from)} تا {callDate(meta.to)} · تهران · زمان تماس، پایان
-        بازه غیرشامل
-      </p>
       {r.unindexed > 0 && (
         <p role="alert">
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
@@ -956,11 +938,6 @@ function ReportPanel({
         filters={filters}
         meta={meta}
       />
-
-      <p>
-        مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
-        انتظار، مدت مکالمه و تبدیل فروش هنوز داده معتبر ندارند.
-      </p>
     </section>
   );
 }

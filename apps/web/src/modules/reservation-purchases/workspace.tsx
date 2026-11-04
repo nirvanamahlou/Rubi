@@ -249,7 +249,6 @@ function PurchaseHub() {
     <section className="space-y-6">
       <PageHeader
         title="خرید و تأمین"
-        eyebrow="خرید خدمات قراردادهای رزرواسیون"
         actions={
           <Button variant="outline" onClick={() => setRevision((v) => v + 1)}>
             <RefreshCw className="size-4" />
@@ -277,9 +276,6 @@ function PurchaseHub() {
       {canRead && (
         <section aria-label="داشبورد خرید خدمات" className="space-y-3">
           <h2 className="text-lg font-bold">داشبورد خرید خدمات</h2>
-          <p className="text-xs text-muted-foreground">
-            آمار همه وضعیت‌ها در دسته، جست‌وجو و بازه انتخاب‌شده
-          </p>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {(
               [

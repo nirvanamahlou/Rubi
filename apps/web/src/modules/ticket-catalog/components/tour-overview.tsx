@@ -88,31 +88,27 @@ export function TourOverview({
             label: 'تورهای تعریف‌شده',
             value: packages.length,
             icon: Layers,
-            hint: 'بسته‌های خدمات در دسترس',
             color: 'text-blue-700 bg-blue-50',
           },
           {
             label: 'تورهای در حال برگزاری',
             value: metrics.current,
             icon: MapPin,
-            hint: 'بر اساس بازه برگزاری امروز',
             color: 'text-emerald-700 bg-emerald-50',
           },
           {
             label: 'نوبت‌های پیش‌رو',
             value: metrics.upcoming,
             icon: CalendarDays,
-            hint: 'سفرهای بعد از امروز',
             color: 'text-violet-700 bg-violet-50',
           },
           {
             label: 'نوبت‌های دارای ظرفیت',
             value: metrics.available,
             icon: Plane,
-            hint: 'نوبت‌های آینده با صندلی باقی‌مانده',
             color: 'text-amber-700 bg-amber-50',
           },
-        ].map(({ label, value, icon: Icon, hint, color }) => (
+        ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label} className="p-5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm text-muted-foreground">{label}</span>
@@ -123,7 +119,6 @@ export function TourOverview({
             <p className="mt-3 text-3xl font-bold">
               {loading ? '—' : number(value)}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
           </Card>
         ))}
       </div>
@@ -131,9 +126,6 @@ export function TourOverview({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold">تورهای جاری و پیش‌رو</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              برنامه سفر و ظرفیت باقی‌مانده هر نوبت
-            </p>
           </div>
           <div className="relative w-full sm:w-72">
             <Search
@@ -359,10 +351,6 @@ export function TourOverview({
               : 'برای شروع، اولین تور خود را تعریف کنید.'}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
-          شاخص‌ها مربوط به تورهای قابل مشاهده حساب شما هستند؛ ظرفیت هر نوبت از
-          موجودی مشترک بلیت‌ها خوانده می‌شود.
-        </p>
       </Card>
     </div>
   );

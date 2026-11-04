@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { readApi, type CallKpis } from './read-client';
-import { callDate, faNumber } from './model';
+import { faNumber } from './model';
 import styles from './workflow.module.css';
 
 const cards = [
-  ['today', 'تعداد تماس امروز', 'از ابتدای امروز تا اکنون'],
-  ['week', 'تعداد تماس هفته', 'از شنبه تا اکنون'],
-  ['withoutOutcome', 'تماس‌های بدون نتیجه', 'نتیجه ثبت‌نشده · همه سوابق'],
-  [
-    'needsFollowUp',
-    'تماس‌های ازدست‌رفته نیازمند تماس مجدد',
-    'شماره‌های یکتا · بدون مکالمه موفق بعدی',
-  ],
+  ['today', 'تعداد تماس امروز'],
+  ['week', 'تعداد تماس هفته'],
+  ['withoutOutcome', 'تماس‌های بدون نتیجه'],
+  ['needsFollowUp', 'تماس‌های ازدست‌رفته نیازمند تماس مجدد'],
 ] as const;
 
 export function CallKpiCards({
@@ -70,7 +66,7 @@ export function CallKpiCards({
   return (
     <section aria-label="آمار تماس‌ها" aria-busy={loading}>
       <div className={styles.actionCards}>
-        {cards.map(([key, label, description]) => (
+        {cards.map(([key, label]) => (
           <article
             key={key}
             aria-label={label}
@@ -111,14 +107,9 @@ export function CallKpiCards({
             <strong>
               {loading ? '…' : data ? faNumber(data.data[key]) : '—'}
             </strong>
-            <small>{description}</small>
           </article>
         ))}
       </div>
-      <p className={styles.kpiScope}>
-        شعبه انتخاب‌شده · زمان تهران · مستقل از فیلترهای فهرست
-        {data && !loading && <> · {callDate(data.meta.asOf)}</>}
-      </p>
       {error && (
         <p role="alert">
           {error}{' '}
