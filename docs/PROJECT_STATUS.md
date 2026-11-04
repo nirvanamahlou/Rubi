@@ -8825,3 +8825,5 @@ HOTEL-RATES-BACK-1103 validation complete: all7 focused tests, scoped ESLint, fu
 ## COUNTRY-PRIORITY-1103 — PC-A — READY_FOR_CI
 
 Sales country dropdowns pin Iran first and Turkey second using ISO2/ISO3 identifiers with normalized legacy-name fallback. Other countries retain their input order, as do non-country references. No selected ID or source record changes. Standalone Node checks pass for ordering, aliases, legacy names, stable input and non-country lists. Existing themed combobox regressions cover the new helper; full lint/type/test/build gates precede the owner-authorized develop merge. No API, schema, dependency, operational data or deployment changes.
+
+2026-11-04 PC-B HOTEL-IMPORT-PRINT-1104: fixed legitimate Excel printerSettings relative-part rejection.77 parser tests plus an ephemeral actual-file read pass; scoped lint passes. No owner workbook content or business data changed. Pending runtime build/health and hosted validation.
