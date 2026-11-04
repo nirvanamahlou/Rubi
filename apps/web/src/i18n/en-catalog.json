@@ -17669,5 +17669,8 @@
   "جدول تردد روزانه": "Daily attendance table",
   "سوابق تردد من": "My attendance history",
   "کسری کار (دقیقه)": "Work deficit (minutes)",
-  "نوع ثبت": "Entry type"
+  "نوع ثبت": "Entry type",
+  "کارکنان سابق": "Former employees",
+  "کارکنان فعلی": "Current employees",
+  "وضعیت کارمند معتبر نیست.": "The employee status is invalid."
 }

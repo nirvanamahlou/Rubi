@@ -29,5 +29,10 @@ it('keeps contract search and compact filters without removed controls', () => {
   ]) {
     expect(html).not.toContain(removed);
   }
-  expect(html).toContain('<details');
+  expect(html).not.toContain('نمای کلی عملیات مالی');
+  expect(html).not.toContain('برای ثبت دریافت و پرداخت');
+  expect(html).not.toContain('مدیر پیگیری هر شعبه');
+  expect(html.indexOf('فهرست درخواست‌ها')).toBeLessThan(
+    html.indexOf('صفحه قبل'),
+  );
 });
