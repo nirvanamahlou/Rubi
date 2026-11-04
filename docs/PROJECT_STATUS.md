@@ -8647,6 +8647,19 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-API-FORMS-1104 — PC-D — VALIDATING
+
+Add editable API settings and separate save/test actions for all three other
+listed sites in the common selected-site disclosure. Adapter-owned AES-GCM
+credentials, branch/site binding, atomic version CAS, write-only secret retention
+and purpose-separated persistent storage fallback. All native service/report/
+workbook operations now accept the selected site ID; legacy primary file remains
+compatible. SSO availability cannot launch a different selected producer.
+37 API and70 Web/3 English regressions pass; full types/production builds, live
+form acceptance and all final CI checks gate authorized develop merge. No
+migration/dependency/IAM grants/producer code or operational-data writes.
+Details: tasks/SITE-API-FORMS-1104.md.
+
 ## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 Connections now has one top selector for the four listed websites and one shared

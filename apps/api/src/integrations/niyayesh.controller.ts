@@ -54,8 +54,9 @@ export class NiyayeshController {
     @Param('resource') resource: string,
     @Query('branchId') branch: string,
     @Query('id') id?: string,
+    @Query('systemId') systemId?: string,
   ) {
-    return this.service.editor(r.actor, branch, resource, id);
+    return this.service.editor(r.actor, branch, resource, id, systemId);
   }
   @Post('catalogue/:resource')
   @Header('Cache-Control', 'private, no-store')
@@ -64,12 +65,14 @@ export class NiyayeshController {
     @Param('resource') resource: string,
     @Query('branchId') branch: string,
     @Body() input: unknown,
+    @Query('systemId') systemId?: string,
   ) {
     const data = await this.service.saveCatalogue(
       r.actor,
       branch,
       resource,
       input,
+      systemId,
     );
     await this.iam.recordSelfActivity(
       r.actor,
@@ -81,8 +84,12 @@ export class NiyayeshController {
   }
   @Get('dashboard')
   @Header('Cache-Control', 'private, no-store')
-  dashboard(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {
-    return this.service.dashboard(r.actor, branch);
+  dashboard(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') systemId?: string,
+  ) {
+    return this.service.dashboard(r.actor, branch, systemId);
   }
   @Get('workbooks/hotels/export')
   @Header('Cache-Control', 'private, no-store')
@@ -90,8 +97,9 @@ export class NiyayeshController {
     @Req() r: AuthenticatedRequest,
     @Query('branchId') branch: string,
     @Query('city') city: string,
+    @Query('systemId') systemId?: string,
   ) {
-    return this.service.hotelExport(r.actor, branch, city);
+    return this.service.hotelExport(r.actor, branch, city, systemId);
   }
   @Get('workbooks/:kind/template')
   @Header('Cache-Control', 'private, no-store')
@@ -99,8 +107,19 @@ export class NiyayeshController {
     @Req() r: AuthenticatedRequest,
     @Param('kind') kind: string,
     @Query('branchId') branch: string,
+    @Query('systemId') systemId?: string,
   ) {
-    return this.service.workbook(r.actor, branch, kind);
+    return this.service.workbook(
+      r.actor,
+      branch,
+      kind,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      systemId,
+    );
   }
   @Post('workbooks/:kind')
   @Header('Cache-Control', 'private, no-store')
@@ -118,6 +137,7 @@ export class NiyayeshController {
     @Query('tourId') tourId?: string,
     @Query('proof') proof?: string,
     @Query('command') command?: string,
+    @Query('systemId') systemId?: string,
   ) {
     if (
       r.headers['x-nora-workbook'] !== '1' ||
@@ -134,6 +154,7 @@ export class NiyayeshController {
       tourId,
       proof,
       command,
+      systemId,
     );
     await this.iam.recordSelfActivity(
       r.actor,
@@ -147,8 +168,12 @@ export class NiyayeshController {
   }
   @Get('status')
   @Header('Cache-Control', 'private, no-store')
-  status(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {
-    return this.service.status(r.actor, branch);
+  status(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') systemId?: string,
+  ) {
+    return this.service.status(r.actor, branch, systemId);
   }
   @Get('resources')
   @Header('Cache-Control', 'private, no-store')
