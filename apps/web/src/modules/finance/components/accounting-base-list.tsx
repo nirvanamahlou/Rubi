@@ -989,7 +989,7 @@ export function AccountingBaseList({
   );
   return (
     <section
-      dir="rtl"
+      style={{ direction: 'rtl' }}
       aria-label={definition.title}
       data-accounting-list
       data-source-grid-list={
@@ -1369,7 +1369,7 @@ export function AccountingBaseList({
                         </Tooltip>
                         <DropdownMenuContent
                           align="start"
-                          dir="rtl"
+                          style={{ direction: 'rtl' }}
                           className="text-right"
                         >
                           {columnOperators

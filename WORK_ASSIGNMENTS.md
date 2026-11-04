@@ -11011,3 +11011,5 @@ LEDGER-SOURCE-PARITY-1103 compatible report scope extension: reserve Finance-own
 LEDGER-SOURCE-PARITY-1103 translation scope: own new accounting labels in en-catalog and generated catalogs; no unrelated catalog edits. Trial balance gross columns/selected-table Excel covered by10 API tests;5 coverage/route tests pass after repairing prior CI omissions. Full source parity remains in progress.
 
 LEDGER-SOURCE-PARITY-1103: source column-filter menu implemented (15 observed operators, including null/empty distinction);17 targeted Web/translation checks, typecheck and scoped lint pass. Runtime3100 menu verified and APIhealth200. PR remains draft pending full parity.
+
+FISCAL-FORM-PARITY-1104 PC-B: reserve fiscal-year definition branch in accounting-workspace, bounded fiscal notes validation in Accounting service, own tests/evidence. Source observed read-only via browser fallback: REA requires CDP endpoint unavailable in IAB. Preserve existing draft values, permissions and storage versions; no migration/data seed.

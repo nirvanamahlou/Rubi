@@ -1,3 +1,4 @@
+import { fiscalYearAttributes } from './accounting.fiscal-year';
 import { listFilterAttributes } from './accounting-list-filter';
 import { trialBalanceTable } from './accounting.trial-balance';
 import { codingStandardAttributes } from './accounting.coding-standard';
@@ -3258,8 +3259,12 @@ export class AccountingService {
           v.rule('حد بالای تأیید باید بزرگ‌تر از حد پایین باشد.');
       }
 
-      if (kind === 'fiscal-years' && Object.keys(attributes).length)
-        v.invalid('بازه سال مالی فقط در تخصیص سال به دفتر ثبت می‌شود.');
+      if (kind === 'fiscal-years')
+        attributes = fiscalYearAttributes(
+          attributes,
+          existing ? v.attributes(existing.attributes) : undefined,
+          actorName,
+        );
       if (kind === 'detail-types') {
         if (
           existing &&
