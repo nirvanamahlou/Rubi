@@ -11154,3 +11154,7 @@ COMPUTER_ID=PC-B; branch codex/pc-b-contract-receipt-1104 from develop5fbee12be.
 Bounded CI workflow reservation: add one PostgreSQL migration regression step; retain every existing gate.
 
 2026-11-04 PC-B FINANCE-PUBLISH-1104: owner explicitly requests publishing and merging all completed Finance changes, including the bounded implementation in PR1345. Integrate latest develop in clean voucher-source-1104 worktree; preserve both work logs and translation additions. This supersedes the previous draft-only publication hold, not the documented incomplete full-GL parity. No additional voucher-type implementation, source data import, migration or production deployment in this publication. Final-head hosted quality/tests/build/migration checks must all pass before merge. Finance inbox changes already merged separately in PR1365.
+
+## CASH-PAYMENT-ACCOUNT-1104 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; isolated branch codex/pc-a-cash-payment-account-1104 from develop74ad64ab2. Owner requests cash contract payment registration without a required destination account. Reserve contract-payments UI, leaf destination validation and focused Web/API regressions, own notes. Existing API already accepts null account; retain Finance confirmation and payment audit/idempotency. Cash clears prior bank selection and does not depend on account loading/availability; other methods remain unchanged. No schema, permissions, dependencies or production financial writes. Source follows the session-authorized push/develop merge workflow after all checks.

@@ -27,6 +27,19 @@ import { PaymentDocuments } from './payment-documents';
 import { printFixture } from '../model/contract-print.fixture';
 
 describe('saved contract payment currency control', () => {
+  it('does not render a required bank account for cash without available accounts', () => {
+    expect(
+      renderToStaticMarkup(
+        <ContractPaymentAccountSelect
+          method="CASH"
+          accounts={[]}
+          currencyCode="EUR"
+          value=""
+          onChange={() => undefined}
+        />,
+      ),
+    ).toBe('');
+  });
   it('shows a required searchable destination using only accounts matching the payment currency', () => {
     const html = renderToStaticMarkup(
       <ContractPaymentAccountSelect
