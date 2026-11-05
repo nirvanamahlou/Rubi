@@ -11359,3 +11359,7 @@ HR-MISSION-ATTENDANCE-1105 scope clarification: existing petty registrations are
 ## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
 
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
+
+## FINANCE-DIALOG-CLEANUP-1105 — PC-A — READY_FOR_CI
+
+User authorizes removal of selected request history/source identifier and FX summary spacing, push and green-gate develop merge. Reserve finance-inbox-live-workspace.tsx only and task/status notes. Prior same-owner Finance scopes are merged/frozen. UI only; no transactions, API, schema, dependencies or deployment.
