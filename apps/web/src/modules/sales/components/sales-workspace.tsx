@@ -542,7 +542,7 @@ export function SalesWorkspace() {
                   >
                     <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
-                      <span className="max-w-40 truncate font-semibold text-foreground">
+                      <span className="inline-block max-w-40 truncate align-middle font-semibold text-foreground">
                         {contract.customerNameSnapshot}
                       </span>
                     </td>
