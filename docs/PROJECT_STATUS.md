@@ -1,3 +1,7 @@
+## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
+
+Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
+
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
 Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
