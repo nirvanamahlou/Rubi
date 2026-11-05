@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { HotelRatePacksWorkspace } from './packs-workspace';
+import { PackHotelCopy } from './pack-hotel-copy';
 import styles from './rates.module.css';
 import { OccupancyBulkPanel } from './occupancy-bulk-panel';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
@@ -126,6 +127,29 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+it('checks copied hotels in the same selector and opens their existing manual pricing panels', async () => {
+  const tree = await settle();
+  const copy = tree.find((node) => node.type === PackHotelCopy)!;
+  expect(copy.props.cityId).toBe('city');
+  expect(copy.props.availableHotelIds).toEqual(['hotel', 'second']);
+  (copy.props.onCopy as (ids: string[]) => void)(['hotel', 'second']);
+  const selector = nodes(render()).find(
+    (node) => node.type === ManualHotelSelector,
+  )!;
+  expect(
+    (selector.props.rows as { selected: boolean; base: string }[]).map(
+      (row) => [row.selected, row.base],
+    ),
+  ).toEqual([
+    [true, '1'],
+    [true, '1'],
+  ]);
+  const panel = nodes(render()).find((node) => node.type === ManualHotelPanel)!;
+  expect(
+    (panel.props.rows as { selected: boolean }[]).filter((row) => row.selected),
+  ).toHaveLength(2);
+  expect(savedRequests).toHaveLength(0);
 });
 it('starts with only the manual workflow without the saved-pack browser', async () => {
   const tree = await settle();

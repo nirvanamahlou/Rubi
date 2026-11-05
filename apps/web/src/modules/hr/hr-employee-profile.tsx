@@ -147,11 +147,24 @@ export function HrEmployeeProfile({
   const realSource: HrSource = mapped
     ? { ...source, section: mapped[0], tab: mapped[1] }
     : source;
-  const selected = records.filter((item) =>
+  const matchingRecords = records.filter((item) =>
     source.tab === 'leave'
       ? isEmployeeLeave(item)
       : item.section === realSource.section && item.tab === realSource.tab,
   );
+  const selected =
+    realSource.section === 'employee' && realSource.tab === 'assignment'
+      ? [...matchingRecords]
+          .sort(
+            (a, b) =>
+              (b.effectiveAt ?? b.createdAt).localeCompare(
+                a.effectiveAt ?? a.createdAt,
+              ) ||
+              b.createdAt.localeCompare(a.createdAt) ||
+              b.id.localeCompare(a.id),
+          )
+          .slice(0, 1)
+      : matchingRecords;
   const data =
     source.tab === 'summary'
       ? {

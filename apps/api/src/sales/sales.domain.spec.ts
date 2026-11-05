@@ -126,6 +126,29 @@ it('keeps composite hotel stays ordered with explicit independent dates and no d
   };
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input.priceComponents).toEqual(draft.priceComponents);
+  const journeyInput = structuredClone(input);
+  journeyInput.hotelSelection!.additionalStays![0]!.checkInDate = '2026-10-06';
+  const journey = {
+    fromHotelId: input.hotelSelection.hotelId,
+    toHotelId: input.hotelSelection.additionalStays![0]!.hotelId,
+    mode: 'BUS',
+    departureDate: '2026-10-06',
+    arrivalDate: '2026-10-06',
+    departureTime: '09:00',
+    arrivalTime: '13:00',
+  };
+  journeyInput.services[0]!.metadata = {
+    hotelJourneysV1: JSON.stringify([journey]),
+  };
+  expect(() => validateSalesContract(journeyInput)).not.toThrow();
+  journeyInput.services[0]!.metadata = {
+    hotelJourneysV1: JSON.stringify([{ ...journey, departureTime: '' }]),
+  };
+  expect(() => validateSalesContract(journeyInput)).toThrow('جابه‌جایی');
+  journeyInput.services[0]!.metadata = {
+    hotelJourneysV1: JSON.stringify([{ ...journey, toHotelId: 'wrong' }]),
+  };
+  expect(() => validateSalesContract(journeyInput)).toThrow('ترتیب');
   const stay = input.hotelSelection.additionalStays![0]!;
   stay.rooms = [
     {

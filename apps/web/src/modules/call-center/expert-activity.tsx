@@ -6,6 +6,7 @@ import {
   type Report,
   type SearchFilters,
   type ExpertMetric,
+  type ExpertRow,
   type ActivityDetail,
 } from './read-client';
 import { faNumber } from './model';
@@ -32,6 +33,48 @@ const labels: Record<string, string> = {
   COMPLETE: 'تکمیل‌شده',
   INCOMPLETE: 'نیازمند تکمیل',
 };
+export function expertActivityTotals(rows: ExpertRow[]) {
+  const totals = rows.reduce(
+    (sum, row) => ({
+      inboundAnswered: sum.inboundAnswered + row.inboundAnswered,
+      outboundAttempts: sum.outboundAttempts + row.outboundAttempts,
+      outboundConnected: sum.outboundConnected + row.outboundConnected,
+      uniqueContacts: sum.uniqueContacts + row.uniqueContacts,
+      open: sum.open + row.open,
+      overdue: sum.overdue + row.overdue,
+      total: sum.total + row.total,
+      incomplete: sum.incomplete + row.incomplete,
+    }),
+    {
+      inboundAnswered: 0,
+      outboundAttempts: 0,
+      outboundConnected: 0,
+      uniqueContacts: 0,
+      open: 0,
+      overdue: 0,
+      total: 0,
+      incomplete: 0,
+    },
+  );
+  return {
+    ...totals,
+    completionRate:
+      totals.total > 0
+        ? (totals.total - totals.incomplete) / totals.total
+        : null,
+  };
+}
+
+function completionText({
+  total,
+  incomplete,
+  completionRate,
+}: Pick<ExpertRow, 'total' | 'incomplete' | 'completionRate'>) {
+  return completionRate === null
+    ? '—'
+    : `${faNumber(Math.round(completionRate * 100))}٪ (${faNumber(total - incomplete)} از ${faNumber(total)})`;
+}
+
 export function ExpertActivity({
   data,
   branch,
@@ -102,6 +145,7 @@ export function ExpertActivity({
     return () => abort.abort();
   }, [selected, branch, filters, meta, page, requestKey]);
   const report = data.expertActivity;
+  const totals = expertActivityTotals(report?.rows ?? []);
   return (
     <>
       <p className={styles.formHint}>
@@ -137,9 +181,7 @@ export function ExpertActivity({
                       metric === 'completion' ? row.total : row[metric];
                     const text =
                       metric === 'completion'
-                        ? row.completionRate === null
-                          ? '—'
-                          : `${faNumber(Math.round(row.completionRate * 100))}٪ (${faNumber(row.total - row.incomplete)} از ${faNumber(row.total)})`
+                        ? completionText(row)
                         : faNumber(count);
                     return (
                       <td key={metric}>
@@ -162,6 +204,18 @@ export function ExpertActivity({
                 </tr>
               ))}
             </tbody>
+            <tfoot className={activityStyles.totals}>
+              <tr>
+                <th scope="row">جمع کل</th>
+                {columns.map(([metric]) => (
+                  <td key={metric}>
+                    {metric === 'completion'
+                      ? completionText(totals)
+                      : faNumber(totals[metric])}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

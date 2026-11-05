@@ -1,5 +1,6 @@
 'use client';
 
+import { masterDataApi } from '../api/client';
 import type { MasterDataRecord } from '@nora/contracts';
 import { FileSpreadsheet, Save } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
@@ -25,7 +26,7 @@ function initialValue(record: MasterDataRecord | undefined, key: string) {
 
 function templateName(file: File) {
   return file.name
-    .replace(/\.xlsx$/i, '')
+    .replace(/\.xls[xm]$/i, '')
     .trim()
     .slice(0, 160);
 }
@@ -52,11 +53,14 @@ export function MasterDataManifestTemplateForm({
     initialValue(record, 'destinationCityId'),
   );
   const [file, setFile] = useState<File | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [detected, setDetected] = useState('');
+  const selectionVersion = useRef(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
   const readonly = mode === 'view';
-  const disabled = readonly || saving;
+  const disabled = readonly || saving || preparing;
   const hasSavedFile = Boolean(initialValue(record, 'fileReferenceId'));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -192,7 +196,7 @@ export function MasterDataManifestTemplateForm({
           description={
             hasSavedFile
               ? 'فایل فعلی در اسناد ثبت شده است؛ برای جایگزینی، فایل جدید انتخاب کنید.'
-              : 'فایل اصلی بدون تغییر در اسناد و با نوع MANIFEST ذخیره می‌شود.'
+              : 'فایل قالب پس از بررسی و تبدیل به XLSX در اسناد ذخیره می‌شود.'
           }
           {...(errors.file ? { error: errors.file } : {})}
         >
@@ -204,20 +208,56 @@ export function MasterDataManifestTemplateForm({
             />
           ) : (
             <Input
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12"
               aria-invalid={Boolean(errors.file)}
               disabled={saving}
               id="manifest-file"
               onChange={(event) => {
                 const selected = event.target.files?.[0] ?? null;
-                setFile(selected);
+                const version = ++selectionVersion.current;
+                setFile(null);
+                setDetected('');
                 setErrors((current) => ({ ...current, file: '' }));
+                if (!selected) {
+                  setPreparing(false);
+                  return;
+                }
+                setPreparing(true);
+                void masterDataApi
+                  .prepareManifestTemplate(selected)
+                  .then((result) => {
+                    if (selectionVersion.current !== version) return;
+                    setFile(result.file);
+                    setDetected(
+                      result.sheetName + ' · ' + result.columns.join(' / '),
+                    );
+                  })
+                  .catch((error) => {
+                    if (selectionVersion.current === version)
+                      setErrors((current) => ({
+                        ...current,
+                        file:
+                          error instanceof Error
+                            ? error.message
+                            : 'MANIFEST_TEMPLATE_INVALID',
+                      }));
+                  })
+                  .finally(() => {
+                    if (selectionVersion.current === version)
+                      setPreparing(false);
+                  });
               }}
               required={!hasSavedFile}
               type="file"
             />
           )}
         </FormField>
+        {preparing ? <p role="status">در حال بررسی قالب…</p> : null}
+        {detected ? (
+          <p dir="ltr" className="text-sm text-muted-foreground">
+            {detected}
+          </p>
+        ) : null}
         {file ? (
           <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm">
             <FileSpreadsheet
@@ -244,7 +284,7 @@ export function MasterDataManifestTemplateForm({
             بستن
           </Button>
           {!readonly ? (
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving} disabled={preparing}>
               <Save aria-hidden="true" className="size-4" />
               ذخیره قالب
             </Button>

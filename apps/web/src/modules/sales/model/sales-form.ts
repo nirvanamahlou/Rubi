@@ -1,4 +1,9 @@
 import { enforceSalesHotelCapacity } from '@nora/contracts';
+import { HOTEL_JOURNEYS, type HotelJourneyV1 } from '@nora/contracts';
+import {
+  selectedHotelJourneys,
+  salesHotelJourneyError,
+} from './hotel-journeys';
 import { withCompositeGuests } from './composite-guests';
 import {
   salesHotelGuestAges,
@@ -221,10 +226,12 @@ export interface SalesFormState {
   };
   hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
+    journeys?: HotelJourneyV1[];
     floatingPurchase?: boolean;
     multiHotel?: boolean;
     cityId?: string;
     additionalStays?: Array<{
+      countryId?: string;
       rooms?: Array<
         Omit<
           Pick<
@@ -1295,6 +1302,7 @@ export function salesHotelRoomTypes(
 
 export function salesHotelValid(state: SalesFormState): boolean {
   state = withCompositeGuests(state);
+  if (salesHotelJourneyError(state)) return false;
   if (state.hotel.multiHotel && !state.hotel.additionalStays?.length)
     return false;
   let previousOut = state.hotel.checkOut;
@@ -1516,6 +1524,8 @@ export function salesPayload(
   aggregateLegacy = false,
 ): SalesContractCreateRequest {
   state = withCompositeGuests(state);
+  const journeyError = salesHotelJourneyError(state);
+  if (journeyError) throw new Error(journeyError);
   if (state.legacyContract) {
     const plain = {
       ...state,
@@ -1713,7 +1723,16 @@ export function salesPayload(
                 metadata: {
                   ...state.serviceDetails?.[kind],
                   ...(kind === 'HOTEL'
-                    ? { dateCalendarSystem: salesHotelCalendarSystem(state) }
+                    ? {
+                        dateCalendarSystem: salesHotelCalendarSystem(state),
+                        ...(selectedHotelJourneys(state).length
+                          ? {
+                              [HOTEL_JOURNEYS]: JSON.stringify(
+                                selectedHotelJourneys(state),
+                              ),
+                            }
+                          : {}),
+                      }
                     : {}),
                   ...(kind === 'VISA' && state.visaComposition
                     ? {
@@ -2200,7 +2219,8 @@ export function salesPayload(
             ...(state.hotel.additionalStays?.length
               ? {
                   additionalStays: state.hotel.additionalStays.map((stay) => {
-                    const { rooms, ...details } = stay;
+                    const { rooms, countryId, ...details } = stay;
+                    void countryId;
                     return {
                       ...details,
                       ...(rooms

@@ -113,6 +113,43 @@ describe('optional employee case workflows', () => {
     },
   );
 
+  it('shows only the latest cooperation assignment without changing stored history', () => {
+    captured.records = [
+      ['older', '2026-10-01', '2026-10-01'],
+      ['current', '2026-11-01', '2026-11-02'],
+      ['previous', '2026-11-01', '2026-11-01'],
+    ].map(
+      ([id, effectiveAt, createdAt]) =>
+        ({
+          id,
+          code: `ASSIGNMENT-${id}`,
+          employeeId: employee.id,
+          section: 'employee',
+          tab: 'assignment',
+          effectiveAt,
+          createdAt,
+          columns: getHrResource('employee', 'assignment')!.columns,
+          values: ['Branch', 'Operations', 'Analyst', '', effectiveAt],
+          data: {},
+          version: 1,
+          status: 'فعال',
+        }) as HrRecordDto,
+    );
+    const html = renderToStaticMarkup(
+      <HrEmployeeProfile
+        employee={employee}
+        initialTab="assignment"
+        store={store}
+        onForm={vi.fn()}
+        onSelect={() => {}}
+      />,
+    );
+    expect(html).toContain('ASSIGNMENT-current');
+    expect(html).not.toContain('ASSIGNMENT-older');
+    expect(html).not.toContain('ASSIGNMENT-previous');
+    expect(captured.records).toHaveLength(3);
+  });
+
   it('keeps edits bound to the employee and the existing record version', () => {
     const record = {
       id: 'promotion-a',

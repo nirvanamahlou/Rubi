@@ -75,6 +75,7 @@ it('shows complete names once, actual services and individual hotel dates, with 
     />,
   );
   expect(html).toContain('قیمت کل خدمات هر مسافر');
+  expect(html).toContain('کودک (6-12)');
   expect(html).toContain('خدمات');
   expect(html).toContain('قیمت ریالی');
   expect(html).toContain('قیمت ارزی');

@@ -306,6 +306,30 @@ export const masterDataApi = {
       { method: 'DELETE', body: JSON.stringify({ version: input.version }) },
     );
   },
+  async prepareManifestTemplate(file: File) {
+    const form = new FormData();
+    form.set('file', file);
+    const result = await request<{
+      data: {
+        fileName: string;
+        contentBase64: string;
+        sheetName: string;
+        columns: string[];
+        ageCodes: string;
+      };
+    }>('/manifest-template-files/prepare', { method: 'POST', body: form });
+    const bytes = Uint8Array.from(atob(result.data.contentBase64), (c) =>
+      c.charCodeAt(0),
+    );
+    return {
+      file: new File([bytes], result.data.fileName, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+      sheetName: result.data.sheetName,
+      columns: result.data.columns,
+      ageCodes: result.data.ageCodes,
+    };
+  },
   async uploadManifestTemplateFile(input: {
     file: File;
     recordId: string;
