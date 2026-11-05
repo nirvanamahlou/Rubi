@@ -1,3 +1,4 @@
+import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { attendanceFrom } from './hr-attendance-range';
 import { approvedLeaveCoverage } from './hr-attendance-leave';
 import { isDeepStrictEqual } from 'node:util';
@@ -2459,6 +2460,110 @@ export class HrService {
       });
     }
   }
+  /** Public transactional port; Customer Affairs owns the request, HR owns leave effects. */
+  async approveWorkbenchLeave(
+    tx: Tx,
+    requestId: string,
+    branchId: string,
+    senderId: string,
+    leave: WorkbenchLeaveInputV1,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'hr.manage');
+    this.branch(actor, branchId);
+    const employee = await tx.hrEmployee.findFirst({
+      where: {
+        userId: senderId,
+        branchId,
+        deletedAt: null,
+        status: 'فعال',
+      },
+    });
+    if (!employee)
+      throw new BadRequestException(
+        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
+      );
+    await tx.$queryRaw`SELECT id FROM hr_employees WHERE id=${employee.id}::uuid FOR UPDATE`;
+    const schema = getHrResource('requests', 'radanLeave')!;
+    await this.approve(tx, schema, actor, employee);
+    const data: HrWorkflowData = {
+      reason: `${leave.reason}${leave.substitute ? ` / جانشین احتمالی: ${leave.substitute}` : ''}`,
+    };
+    const values = await this.values(
+      tx,
+      schema,
+      [
+        employee.name,
+        'استحقاقی',
+        leave.from,
+        leave.to,
+        leave.mode,
+        leave.startTime ?? '',
+        leave.endTime ?? '',
+        'خیر',
+      ],
+      employee,
+      branchId,
+      data,
+    );
+    await this.attachRadanRoute(tx, schema, branchId, employee, values, data);
+    if (data.approvalRoute?.length)
+      throw new ConflictException(
+        'برای این کارمند روند چندمرحله‌ای مرخصی تعریف شده است؛ درخواست را از روند مصوب ثبت کنید.',
+      );
+    const row = await tx.hrRecord.create({
+      data: {
+        branchId,
+        employeeId: employee.id,
+        section: 'requests',
+        tab: 'radanLeave',
+        code: `WB-${requestId}`,
+        values,
+        searchText: values.join(' '),
+        data: json(data),
+        status: 'تأییدشده',
+      },
+    });
+    await this.effects(tx, row, schema, actor, employee);
+    await this.audit(
+      tx,
+      actor,
+      { branchId, employeeId: employee.id, recordId: row.id },
+      'record.approve',
+      {
+        sourceRequestId: requestId,
+        reason: leave.reason,
+        substitute: leave.substitute,
+      },
+      1,
+      'در انتظار تأیید',
+      'تأییدشده',
+    );
+    return row.id;
+  }
+
+  async reconcileWorkbenchLeave(
+    branchId: string,
+    leave: WorkbenchLeaveInputV1,
+    actor: AuthenticatedActor,
+  ) {
+    const today = validate.localClockParts(new Date()).date;
+    for (
+      let at = Date.parse(leave.from);
+      at <= Date.parse(leave.to);
+      at += 86400000
+    ) {
+      const date = new Date(at).toISOString().slice(0, 10);
+      if (date > today) continue;
+      await this.processAttendance(
+        { branchId, date },
+        randomUUID(),
+        actor,
+        true,
+      );
+    }
+  }
+
   async createRecord(body: unknown, key: unknown, actor: AuthenticatedActor) {
     this.readable(actor);
     const input = validate.object(body, recordKeys);
@@ -3559,7 +3664,9 @@ export class HrService {
           new Intl.DateTimeFormat('en-u-ca-persian', {
             year: 'numeric',
             timeZone: 'UTC',
-          }).format(d),
+          })
+            .formatToParts(d)
+            .find((part) => part.type === 'year')!.value,
         );
       const year = yearOf(from);
       if (year !== yearOf(to) || to.getTime() - from.getTime() > 366 * 86400000)
@@ -4633,6 +4740,11 @@ export class HrService {
                 )
               : null;
           if (metrics && leave) {
+            if (!events.length && leave.fullDay) {
+              metrics.lateMinutes = 0;
+              metrics.earlyMinutes = 0;
+              metrics.deficitMinutes = 0;
+            }
             if (metrics.lateMinutes !== null)
               metrics.lateMinutes = Math.max(
                 0,
@@ -4643,7 +4755,11 @@ export class HrService {
                 0,
                 metrics.earlyMinutes - leave.earlyCredit,
               );
-            if (!events.length && shiftEnd!.getTime() <= Date.now())
+            if (
+              !events.length &&
+              !leave.fullDay &&
+              shiftEnd!.getTime() <= Date.now()
+            )
               metrics.deficitMinutes = Math.floor(
                 (shiftEnd!.getTime() - shiftStart!.getTime()) / 60000,
               );

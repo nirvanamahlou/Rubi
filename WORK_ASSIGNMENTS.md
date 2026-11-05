@@ -11220,3 +11220,7 @@ NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items r
 COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-notifications-1105 from develop03dba84cb. Owner explicitly requests suppression of repeated generic bell notifications caused by Call Center KPI refresh. Reserve only central change-notifications.ts and its focused spec, plus own status/task notes. Classify the six existing POST read endpoints as reads; preserve genuine create/edit notifications, request/response behavior and all server notifications. PC-B notification-clear-persistence reserves notification-center and its regression only; those files remain untouched. No API/schema/dependency/IAM/data deletion or unrelated UI changes.
 
 CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-client tests passed; scoped ESLint passed. No UI/request changes; source scope freezes on push. Full Web build/types and CI remain separate gates. Production not yet changed.
+
+## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
+
+Owner authorizes recipient repair, leave template, unified HR inbox and review, push and develop merge. Reserve HR/Customer Affairs/IAM request directory and Workbench request UI/contracts/tests only. Additive leave payload ships producer and consumers together. Preserve branch/account guards, native HR approval/balance rules, atomicity and audit. No migration, dependency changes, production writes or deployment. Reserve bounded English labels and generated API/legacy translation catalogues for these new controls.

@@ -15,6 +15,9 @@ describe('CustomerAffairsService workbenchRequests', () => {
       workbenchRequests: vi.fn().mockResolvedValue([
         {
           id: 'request-1',
+          createdAt: new Date('2026-11-05'),
+          timeline: [],
+          version: 1,
           trackingNumber: 'CA-T-1',
           subject: 'درخواست مرخصی',
           description: 'لطفاً مرخصی روز دوشنبه بررسی شود.',
@@ -53,6 +56,9 @@ describe('CustomerAffairsService workbenchRequests', () => {
       hrWorkbenchRequests: vi.fn().mockResolvedValue([
         {
           id: 'request-1',
+          createdAt: new Date('2026-11-05'),
+          timeline: [],
+          version: 1,
           trackingNumber: 'CA-T-1',
           subject: 'نیاز پرسنلی',
           description: 'شرح درخواست',
@@ -79,7 +85,10 @@ describe('CustomerAffairsService workbenchRequests', () => {
       directory as never,
     );
     const result = await service.hrWorkbenchRequests(actor);
-    expect(repository.hrWorkbenchRequests).toHaveBeenCalledWith(['branch-1']);
+    expect(repository.hrWorkbenchRequests).toHaveBeenCalledWith(
+      ['branch-1'],
+      actor.userId,
+    );
     expect(result.data[0]?.description).toBe('شرح درخواست');
     directory.workbenchFeedbackRecipientUserIds.mockResolvedValue([]);
     await expect(service.hrWorkbenchRequests(actor)).resolves.toEqual({
