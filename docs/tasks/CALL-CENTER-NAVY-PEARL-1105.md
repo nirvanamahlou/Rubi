@@ -1,7 +1,13 @@
-## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
+## CALL-CENTER-NAVY-PEARL-1105 — PC-C — MERGED_AND_DEPLOYED
 
 Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
 
 Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
 
-Release is not yet activated. Runtime evidence will be recorded after verified deployment. Source reservation releases after merge; preserve the underlying business behavior and later peer updates.
+Release activated and verified; see the receipt below.
+
+Verified production release (2026-11-05): PR #1403 merged to develop as 14539e34ede3ed2b7b6db86104c2dad0fe9155db after all eight push/PR gates succeeded on aa98e37754db80476d86eb93d051753a70a02bae. Three additional post-merge gates succeeded; its full-test run was superseded by a newer develop push (the two required source-head full suites already passed).
+
+Production image: rubi-production:call-center-navy-pearl-1105. The release overlays fourteen reviewed Web files onto the latest live callback-capability release and preserves peer source. Optimized server build, 117 tests in 28 files and the loopback canary passed. An encrypted server-only backup was verified at /opt/rubi/backups/before-call-center-navy-pearl-1105-1793867477. Activation verified Web health, all source hashes, new/previous assets, Worker authentication, AMI connectivity and recording timer. No migrations were applied; unrelated service identities, mounts and environment hashes were unchanged. Runtime receipt: /opt/rubi/call-center-navy-pearl-1105/verified.json.
+
+Authenticated browser verification confirms the navy sidebar, pearl surfaces, illustrated icons and readable header; no console errors. The completion helper text is absent, its pager is centered and page two loads correctly. Source reservation is released; preserve later peer updates. No business data was edited during visual checks.

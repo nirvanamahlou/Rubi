@@ -1,6 +1,8 @@
-## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
+## CALL-CENTER-NAVY-PEARL-1105 — PC-C — MERGED_AND_DEPLOYED
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-navy-pearl-1105 from develop ca44d23da. User explicitly approves the Navy/Pearl illustrated-icon reference, implementation, develop PR, merge only after every final-head check and production publication. Reserve Call Center presentation (workspace/workflow/kpis/report/chart/expert dialog), new reusable illustration component, and bounded route-scoped app-shell/leaf CSS changes, own regression/task/status and bounded Web-only release script. Earlier UI-COPY-CLEANUP source is already contained in develop; preserve all approved copy/structure/actions/permissions. Include this chat's prior completion-pagination change. No API/schema/dependency/data changes. Shell styling/icon substitution applies only to the Call Center route. Release must snapshot current live Web, preserve peer overlays and all non-Web services, lock, verify backup/candidate/CI and rollback on failed health or asset checks.
+
+Deployment verified: PR1403 merged after eight green gates; Web image call-center-navy-pearl-1105 activated with117 server tests, canary, encrypted backup and runtime/source/asset/AMI checks. No migrations or unrelated service changes. Reservation released. See docs/tasks/CALL-CENTER-NAVY-PEARL-1105.md.
 
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 

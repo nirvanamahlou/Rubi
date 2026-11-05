@@ -1,8 +1,10 @@
-## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
+## CALL-CENTER-NAVY-PEARL-1105 — PC-C — MERGED_AND_DEPLOYED
 
 Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
 
 Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
+
+Deployment verified: PR1403 merged after eight green gates; Web image call-center-navy-pearl-1105 activated with117 server tests, canary, encrypted backup and runtime/source/asset/AMI checks. No migrations or unrelated service changes. Reservation released. See docs/tasks/CALL-CENTER-NAVY-PEARL-1105.md.
 
 ## THREE-PANELS-RELEASE-1103 — PC-C
 
