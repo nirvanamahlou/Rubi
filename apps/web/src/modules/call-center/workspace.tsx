@@ -17,18 +17,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import {
-  Headset,
-  RotateCcw,
-  Search,
-  Eye,
-  X,
-  SlidersHorizontal,
-  Users,
-  BarChart3,
-  PhoneIncoming,
-  PhoneOutgoing,
-} from 'lucide-react';
+import { Eye, X, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
@@ -62,6 +51,7 @@ import { canCreateCallbackRequest } from './kpi-call-actions';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
+import { IllustrationIcon } from '@/components/ui/illustration-icon';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -376,7 +366,7 @@ function Content({
       <header className={styles.header}>
         <div>
           <h1>
-            <Headset /> کال سنتر
+            <IllustrationIcon kind="headset" size={36} /> کال سنتر
           </h1>
         </div>
       </header>
@@ -394,7 +384,7 @@ function Content({
           <div className={styles.searchField}>
             <span>جست‌وجوی مخاطب</span>{' '}
             <label className={styles.search}>
-              <Search size={18} />
+              <IllustrationIcon kind="search" size={22} />
               <input
                 ref={searchInput}
                 type="search"
@@ -439,7 +429,7 @@ function Content({
             aria-controls="cc-advanced"
             onClick={() => setAdvanced((v) => !v)}
           >
-            <SlidersHorizontal size={16} />
+            <IllustrationIcon kind="filter" size={22} />
             {advanced ? 'بستن فیلترها' : 'فیلترهای پیشرفته'}
             {Object.entries(filters).filter(
               ([key, value]) => value && !['query', 'scope'].includes(key),
@@ -454,7 +444,7 @@ function Content({
               reload();
             }}
           >
-            <RotateCcw size={16} /> پاک کردن فیلترها
+            <IllustrationIcon kind="refresh" size={22} /> پاک کردن فیلترها
           </button>
         </div>
         <div id="cc-advanced" hidden={!advanced}>
@@ -532,7 +522,7 @@ function Content({
           <section className={styles.panel} aria-busy={loading}>
             <div className={styles.panelHeading}>
               <h2>
-                <Users size={19} /> فهرست مخاطبان
+                <IllustrationIcon kind="people" size={28} /> فهرست مخاطبان
               </h2>
               <p>
                 {result
@@ -540,7 +530,7 @@ function Content({
                   : 'هنوز داده‌ای دریافت نشده است.'}
               </p>
               <button className={styles.clear} onClick={reload}>
-                <RotateCcw size={16} /> تازه‌سازی فهرست
+                <IllustrationIcon kind="refresh" size={22} /> تازه‌سازی فهرست
               </button>
             </div>
 
@@ -922,7 +912,7 @@ function ReportPanel({
   return (
     <section className={`${styles.panel} ${styles.reportPanel}`}>
       <h2>
-        <BarChart3 size={21} /> گزارش داده ثبت‌شده
+        <IllustrationIcon kind="chart" size={28} /> گزارش داده ثبت‌شده
       </h2>
       {r.unindexed > 0 && (
         <p role="alert">

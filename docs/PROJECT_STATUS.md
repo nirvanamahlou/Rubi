@@ -1,3 +1,9 @@
+## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
+
+Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
+
+Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
+
 ## THREE-PANELS-RELEASE-1103 — PC-C
 
 Owner authorizes a bounded server release of approved Call Center, Dashboard and Reports work. CallForm explicitly exposes every source and outcome choice rather than silently truncating to five; default behavior of the shared selector remains unchanged elsewhere.17 popup/selector regressions and scoped lint pass. Release will preserve current unrelated production source/settings, validate required public reporting adapters, build and test a candidate, verify encrypted server-only backup and deploy under the existing lock with rollback and Worker/API/AMI checks. No IAM grants, schema/migrations, dependency or business-data writes are included.
