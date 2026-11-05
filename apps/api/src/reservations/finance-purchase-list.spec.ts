@@ -62,3 +62,27 @@ it('fails explicitly instead of truncating an oversized financial source', async
     } as never);
   await expect(service.listForFinance(['branch'])).rejects.toThrow();
 });
+
+it('exposes one final contract purchase as a pending Finance payable without expanding it into services', async () => {
+  const item = row(1);
+  item.servicePurchases[0] = {
+    ...item.servicePurchases[0]!,
+    serviceClientKey: 'contract-total-purchase',
+    coveredServiceClientKeys: ['contract-total-purchase', 'flight', 'hotel'],
+    serviceKind: 'OTHER',
+    serviceTitleSnapshot: 'Contract total purchase',
+    amount: { toString: () => '123.45' },
+  };
+  const service = new ReservationsPublicService({
+    client: {
+      reservationIntake: { findMany: vi.fn().mockResolvedValue([item]) },
+    },
+  } as never);
+  const result = await service.listForFinance(['branch']);
+  expect(result[0]?.servicePurchases).toHaveLength(1);
+  expect(result[0]?.servicePurchases?.[0]).toMatchObject({
+    serviceClientKey: 'contract-total-purchase',
+    amount: '123.45',
+    finance: { status: 'PENDING', paidAmount: '0', remainingAmount: '123.45' },
+  });
+});
