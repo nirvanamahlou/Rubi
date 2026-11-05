@@ -72,7 +72,19 @@ function present(
     string,
     (typeof row.servicePurchases)[number]
   >();
+  const totalPurchase = row.servicePurchases.find(
+    (p) => p.serviceClientKey === 'contract-total-purchase',
+  );
   for (const purchase of row.servicePurchases) {
+    if (purchase.serviceClientKey === 'contract-total-purchase') {
+      if (
+        totalPurchase?.batchId
+          ? purchase.batchId === totalPurchase.batchId
+          : purchase.id === totalPurchase?.id
+      )
+        latestServicePurchases.set('total:' + purchase.currencyCode, purchase);
+      continue;
+    }
     const covered = Array.isArray(purchase.coveredServiceClientKeys)
       ? purchase.coveredServiceClientKeys.filter(
           (key): key is string => typeof key === 'string',

@@ -81,6 +81,9 @@ export function purchaseDraftContext(
         amount: row.amount,
         currencyCode: row.currencyCode,
         passengerPrices: [],
+        ...(row.totalPassengerPrices
+          ? { totalPassengerPrices: row.totalPassengerPrices }
+          : {}),
         actorUserId: 'draft',
         createdAt: '2000-01-01T00:00:00Z',
         ...(purchase.path === 'purchase-batches' &&
