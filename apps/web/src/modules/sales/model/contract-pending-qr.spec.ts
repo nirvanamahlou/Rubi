@@ -34,7 +34,7 @@ describe('Pending contract footer QR', () => {
     expect(html).toContain(
       'direction:rtl;align-items:center;justify-content:space-between',
     );
-    expect(footer).toContain('Nystkt.ir');
+    expect(footer).toContain('niyayeshseir.com');
     expect(footer).toContain('021-72075000');
     expect(footer).toContain('support@niyayeshseir.com');
     expect(html).toContain('بدون قبض رسید صندوق');
