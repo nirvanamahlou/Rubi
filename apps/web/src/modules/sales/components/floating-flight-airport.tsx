@@ -56,12 +56,16 @@ export function FloatingFlightAirport({
   workflow = 'sales',
   value,
   onChange,
+  label = 'فرودگاه مقصد',
+  preferredId,
 }: {
   cityId: string;
   countryId: string;
   workflow?: 'sales' | 'reservations';
   value: SalesFlightAirportV1 | undefined;
   onChange: (airport: SalesFlightAirportV1 | undefined) => void;
+  label?: string;
+  preferredId?: string | undefined;
 }) {
   const [result, setResult] = useState<{
     countryId: string;
@@ -95,15 +99,20 @@ export function FloatingFlightAirport({
     [result, countryId],
   );
   useEffect(() => {
-    if (rows[0] && (!value || value.countryId !== countryId))
-      onChange(preferredFloatingAirport(rows, cityId));
+    const preferred = rows.find((airport) => airport.id === preferredId);
+    if (preferred && value?.id !== preferred.id) onChange(preferred);
+    else if (rows[0] && (!value || value.countryId !== countryId))
+      onChange(
+        rows.find((airport) => airport.id === preferredId) ??
+          preferredFloatingAirport(rows, cityId),
+      );
     else if (ready && value && value.countryId !== countryId)
       onChange(undefined);
-  }, [rows, value, cityId, countryId, onChange, ready]);
+  }, [rows, value, cityId, countryId, onChange, ready, preferredId]);
   return (
     <div className="grid gap-2">
       <SearchCombobox
-        label="فرودگاه مقصد"
+        label={label}
         value={value?.countryId === countryId ? value.id : ''}
         selectedLabel={
           value?.countryId === countryId
@@ -112,7 +121,12 @@ export function FloatingFlightAirport({
         }
         placeholder="جست‌وجو و انتخاب…"
         loading={!ready && !!countryId}
-        disabled={!countryId || !ready || !rows.length}
+        disabled={
+          !countryId ||
+          !ready ||
+          !rows.length ||
+          !!rows.find((airport) => airport.id === preferredId)
+        }
         options={rows.map((airport) => ({
           value: airport.id,
           label: `${airport.name} · ${airport.code}`,

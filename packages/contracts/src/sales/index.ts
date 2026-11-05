@@ -8,6 +8,7 @@ import type { SalesPaymentTerms } from './cheque-terms';
 export * from './pricing';
 export * from './cheque-terms';
 export * from './contract-flights';
+export * from './hotel-journeys';
 export const SALES_API_PREFIX = '/api/v1/sales' as const;
 
 export const SALES_PERMISSION_CODES = [

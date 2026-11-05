@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import {
   salesHotelRoomSummary,
   type SalesHotelSelectionInput,
@@ -28,22 +29,35 @@ export function updateAdditionalAmendmentStay(
 export function AmendmentAdditionalHotelStays({
   hotel,
   hotels,
+  countries = [],
+  cities = [],
   roomTypes,
   currencies,
   onChange,
 }: {
   hotel: SalesHotelSelectionInput;
   hotels: readonly MasterDataRecord[];
+  countries?: readonly MasterDataRecord[];
+  cities?: readonly MasterDataRecord[];
   roomTypes: readonly MasterDataRecord[];
   currencies: readonly SalesCurrency[];
   onChange: (hotel: SalesHotelSelectionInput) => void;
 }) {
+  const [countryChoices, setCountryChoices] = useState<Record<number, string>>(
+    {},
+  );
   return (
     <>
       {hotel.additionalStays?.map((stay, index) => {
         const change = (patch: Partial<SalesHotelStayInput>) =>
           onChange(updateAdditionalAmendmentStay(hotel, index, patch));
         const rooms = stay.rooms ?? [];
+        const countryId =
+          countryChoices[index] ??
+          String(
+            cities.find((c) => c.id === stay.cityId)?.attributes.countryId ??
+              '',
+          );
         const selection: SalesHotelSelectionInput = {
           ...stay,
           serviceClientKey: hotel.serviceClientKey,
@@ -61,12 +75,56 @@ export function AmendmentAdditionalHotelStays({
               اقامت {index + 2} · {stay.hotelNameSnapshot}
             </legend>
             <SearchableReference
+              label="کشور اقامت بعدی"
+              value={countryId}
+              options={countries}
+              onChange={(countryId) => {
+                setCountryChoices((current) => ({
+                  ...current,
+                  [index]: countryId,
+                }));
+                change({
+                  cityId: '',
+                  hotelId: '',
+                  hotelNameSnapshot: '',
+                  rooms: rooms.map((r) => ({
+                    ...r,
+                    roomTypeId: '',
+                    roomTypeNameSnapshot: '',
+                  })),
+                });
+              }}
+            />
+            <SearchableReference
+              label="شهر اقامت بعدی"
+              value={stay.cityId}
+              options={cities.filter(
+                (c) => c.attributes.countryId === countryId,
+              )}
+              disabled={!countryId}
+              onChange={(cityId) =>
+                change({
+                  cityId,
+                  hotelId: '',
+                  hotelNameSnapshot: '',
+                  rooms: rooms.map((r) => ({
+                    ...r,
+                    roomTypeId: '',
+                    roomTypeNameSnapshot: '',
+                  })),
+                })
+              }
+            />
+            <SearchableReference
               label="هتل"
               value={stay.hotelId}
-              options={hotels}
+              options={hotels.filter(
+                (h) => !!stay.cityId && h.attributes.cityId === stay.cityId,
+              )}
+              disabled={!stay.cityId}
               onChange={(hotelId) => {
                 const selected = hotels.find((item) => item.id === hotelId);
-                if (selected)
+                if (selected && selected.attributes.cityId === stay.cityId)
                   change({
                     hotelId,
                     hotelNameSnapshot: selected.name,

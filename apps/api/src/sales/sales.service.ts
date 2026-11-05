@@ -24,6 +24,7 @@ import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
 import { assertFloatingFlightAirports } from './floating-flight-airports';
+import { assertHotelJourneyAirports } from './hotel-journey-airports';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -1225,6 +1226,7 @@ export class SalesService {
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
     await assertFloatingFlightAirports(input.services, this.references);
+    await assertHotelJourneyAirports(input, this.references);
     let validatedPublishedHotelId: string | undefined;
     if (
       this.packageQuotes &&
@@ -1425,6 +1427,17 @@ export class SalesService {
       this.references,
       presentSalesContract(row, undefined, this.buyerCrypto).servicesDetail,
     );
+    const previousJourneyContract = presentSalesContract(
+      row,
+      undefined,
+      this.buyerCrypto,
+    );
+    await assertHotelJourneyAirports(input, this.references, {
+      services: previousJourneyContract.servicesDetail,
+      hotelSelection: previousJourneyContract.hotelSelection,
+      ticketSelections: previousJourneyContract.ticketSelections,
+      destinationId: previousJourneyContract.destinationId,
+    });
     let validatedPublishedHotelId: string | undefined;
     if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
       if (!this.packageQuotes)
