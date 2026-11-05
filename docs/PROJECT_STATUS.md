@@ -9019,6 +9019,8 @@ User-selected option2 replaces only call-history markers with filled green inbou
 
 CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
 
-## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
+## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — MERGED_AND_DEPLOYED
 
 Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
+
+Released via PR1422 (merge ff31d2fd9), all8 final integrated-head gates green on9529dfc0f.115 local and121 candidate tests passed; candidate build/typecheck and canary passed. Web image rubi-production:expert-activity-totals-1105 is healthy. Live sums and weighted completion verified across every returned row;390px layout contains table scrolling without page overflow. Sidebar and source-share design preserved. No migrations, data mutation or unrelated service restart. Full receipt and source-equivalence details: tasks/EXPERT-ACTIVITY-TOTALS-1105.md.
