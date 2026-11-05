@@ -10,6 +10,7 @@ import {
   reservationCells,
   reservationExportRows,
   tableFlagColumns,
+  reservationCorrectionDate,
 } from './reservation-table';
 import { createReservationXlsx } from './reservation-xlsx';
 import { unzipWorkbook } from '@/modules/organizations/model/organization-xlsx';
@@ -31,6 +32,45 @@ const row = (id: string, branchId = 'allowed'): RequestView => ({
   issues: [],
 });
 describe('reservation table and workbook', () => {
+  it('marks contract amendments and uses the latest real correction date in the table and export', () => {
+    const amended = {
+      ...row('AMENDED'),
+      amendedAt: '2026-11-05T21:00:00Z',
+      correctedAt: '2026-11-02T10:00:00Z',
+      salesCorrectionPending: false,
+    };
+    expect(reservationCells(amended).slice(12, 14)).toEqual([
+      '✓',
+      '06/11/2026',
+    ]);
+    expect(reservationExportRows([amended])[1]!.slice(12, 14)).toEqual([
+      '✓',
+      '06/11/2026',
+    ]);
+    expect(
+      reservationCorrectionDate({
+        ...amended,
+        correctedAt: '2026-11-07T10:00:00Z',
+      }),
+    ).toBe('2026-11-07T10:00:00Z');
+    const summary = {
+      ...row('SUMMARY'),
+      tableSummary: {
+        amendedAt: '2026-11-08T10:00:00Z',
+        correctedAt: null,
+      } as RequestView['tableSummary'],
+    };
+    expect(reservationCells(summary).slice(12, 14)).toEqual([
+      '✓',
+      '08/11/2026',
+    ]);
+    expect(
+      reservationCells({ ...row('UNCHANGED'), amendedAt: 'invalid' }).slice(
+        12,
+        14,
+      ),
+    ).toEqual(['—', '—']);
+  });
   it('exports all matching authorized rows rather than only the displayed page', () => {
     const rows = Array.from({ length: 125 }, (_, index) =>
       row(`DEMO-${index}`),

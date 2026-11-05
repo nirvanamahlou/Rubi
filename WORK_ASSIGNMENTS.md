@@ -11268,3 +11268,9 @@ Owner authorizes payment evidence in the selected Sales receipt request and remo
 ## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
 
 Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
+
+## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
+
+Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitly selects generated option2: green inbound/blue outbound filled handset, pale rounded tile and white directional arrow in a circular badge, in call-history timeline only. Reserve leaf call-history-icon.tsx and bounded workspace.tsx/workspace.module.css timeline integration, own task/status notes. Latest Navy/Pearl source is merged/frozen in PR1403; preserve its styling and all history data, actions, permissions and responsive layout. No API/schema/dependency or server deployment changes. Validate the real small-size RTL presentation and affected Web checks; publish under existing workflow.
+
+CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.

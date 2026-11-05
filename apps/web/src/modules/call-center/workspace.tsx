@@ -17,7 +17,8 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import { Eye, X, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { Eye, X } from 'lucide-react';
+import { CallHistoryIcon } from './call-history-icon';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
@@ -1088,11 +1089,7 @@ function History({
           {calls.map((c) => (
             <li key={c.id}>
               <span className={styles.timelineIcon}>
-                {c.direction === 'INBOUND' ? (
-                  <PhoneIncoming size={15} />
-                ) : (
-                  <PhoneOutgoing size={15} />
-                )}
+                <CallHistoryIcon direction={c.direction} />
               </span>
               <h3>{c.subject}</h3>
               <time dateTime={c.occurredAt}>{callDate(c.occurredAt)}</time>
