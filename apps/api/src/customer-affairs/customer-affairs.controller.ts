@@ -50,6 +50,7 @@ import {
   TicketTransitionDto,
   TimelineDto,
   WorkbenchRequestDto,
+  WorkbenchReviewDto,
 } from './customer-affairs.dto';
 import { CustomerAffairsService } from './customer-affairs.service';
 import { customerAffairsXlsx } from './customer-affairs-xlsx';
@@ -506,6 +507,21 @@ export class CustomerAffairsController {
   @Header('Cache-Control', 'private, no-store')
   workbenchRequests(@Req() req: AuthenticatedRequest) {
     return this.service.workbenchRequests(req.actor);
+  }
+  @Patch('workbench/hr-requests/:id')
+  reviewHrWorkbenchRequest(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: WorkbenchReviewDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.reviewHrWorkbenchRequest(id, dto, req.actor);
+  }
+  @Delete('workbench/hr-requests/:id')
+  removeHrWorkbenchRequest(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.removeHrWorkbenchRequest(id, req.actor);
   }
   @Get('workbench/hr-requests')
   @Header('Cache-Control', 'private, no-store')

@@ -8942,3 +8942,7 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+## HR-WORKBENCH-REQUESTS-1105
+
+Workbench recipients include active HR employee unit membership through linked active internal IAM accounts, retaining branch checks and transactional revalidation. HR inbox integrates directed Workbench requests with review/delete actions; sender sees approved/rejected/revision decisions. Structured daily/hourly leave uses the native HR approval/balance/overlap/closed-period rules in the same database transaction, then reconciles attendance. Employee leave view includes legacy and Workbench leave; full-day approved leave has zero late/early/deficit and leave status. Native Jalali year extraction uses date parts. No schema/dependency or production changes. Verification: targeted API/UI tests and isolated PostgreSQL approval/replay/rollback/attendance tests passed. Web production build passed; final-head checks precede merge.

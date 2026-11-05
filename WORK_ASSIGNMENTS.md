@@ -11206,3 +11206,7 @@ Scoped reservations released at local commit. The company profile uses the share
 Publication: owner requests push, hosted CI, PR to develop, and ordinary merge after review and passing PR checks for the stacked person and company profiles. Latest develop integration preserves peer records.
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
+
+Owner authorizes recipient repair, leave template, unified HR inbox and review, push and develop merge. Reserve HR/Customer Affairs/IAM request directory and Workbench request UI/contracts/tests only. Additive leave payload ships producer and consumers together. Preserve branch/account guards, native HR approval/balance rules, atomicity and audit. No migration, dependency changes, production writes or deployment. Reserve bounded English labels and generated API/legacy translation catalogues for these new controls.

@@ -1,3 +1,4 @@
+import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   CustomerAffairsDashboard,
@@ -171,10 +172,25 @@ export const customerAffairsApi = {
     ),
   workbenchRequests: () =>
     request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
+  reviewHrWorkbenchRequest: (id: string, version: number, status: string) =>
+    request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ version, status }),
+    }),
+  removeHrWorkbenchRequest: (id: string) =>
+    request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
   hrWorkbenchRequests: () =>
     request<{
       data: Array<{
         id: string;
+        version: number;
+        branchId: string;
+        createdAt: string;
+        senderId: string;
+        senderName: string;
+        leave: WorkbenchLeaveInputV1 | null;
         trackingNumber: string;
         subject: string;
         description: string;

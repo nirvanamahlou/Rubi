@@ -17,7 +17,7 @@ describe('shouldShowWorkbenchRequestStatus', () => {
   });
 
   it('renders request statuses in Persian', () => {
-    expect(workbenchRequestStatusLabel('NEW')).toBe('جدید');
+    expect(workbenchRequestStatusLabel('NEW')).toBe('در انتظار تأیید');
     expect(workbenchRequestStatusLabel('in_progress')).toBe('در حال پیگیری');
     expect(workbenchRequestStatusLabel('UNKNOWN')).toBe('تعیین نشده');
   });
