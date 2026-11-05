@@ -303,6 +303,7 @@ describe('FinanceInboxService', () => {
           servicePurchases: [
             {
               id: 'purchase-1',
+              actorUserId: 'purchase-author',
               version: 3,
               serviceTitle: 'بلیط رفت',
               supplierName: 'کارگزار واقعی',
@@ -356,6 +357,11 @@ describe('FinanceInboxService', () => {
       ]),
       listFinanceCorrections: vi.fn().mockResolvedValue([]),
     };
+    const displayNames = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'purchase-author', displayName: 'Synthetic requester' },
+      ]);
     const result = await new FinanceInboxService(
       sales,
       hr,
@@ -373,7 +379,16 @@ describe('FinanceInboxService', () => {
       } as never,
       procurement as never,
       emptyTicketCosts() as never,
+      { displayNames } as never,
     ).list(actor);
+    expect(
+      result.items.find((item) => item.source === 'RESERVATIONS')
+        ?.requesterDisplaySnapshot,
+    ).toBe('Synthetic requester');
+    expect(displayNames).toHaveBeenCalledWith(
+      ['purchase-author'],
+      ['branch-a'],
+    );
     expect(result.items.map(({ source }) => source)).toEqual([
       'SALES',
       'HR',

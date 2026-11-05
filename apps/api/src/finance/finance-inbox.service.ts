@@ -280,7 +280,16 @@ export class FinanceInboxService {
     const names = new Map(
       (
         (await this.identity?.displayNames(
-          payrollRows.map((row) => row.requesterId),
+          [
+            ...new Set([
+              ...payrollRows.map((row) => row.requesterId),
+              ...reservationItems
+                .flatMap(({ purchases }) =>
+                  purchases.map((purchase) => purchase.actorUserId),
+                )
+                .filter(Boolean),
+            ]),
+          ],
           actor.branchIds,
         )) ?? []
       ).map((user) => [user.id, user.displayName]),
@@ -440,7 +449,14 @@ export class FinanceInboxService {
                 : 'READY_FOR_PAYMENT',
             dueAt: null,
             createdAt: first.createdAt,
-            requesterDisplaySnapshot: null,
+            requesterDisplaySnapshot:
+              [
+                ...new Set(
+                  purchases
+                    .map((purchase) => names.get(purchase.actorUserId))
+                    .filter(Boolean),
+                ),
+              ].join('، ') || null,
             branchReference: intake.branchId,
             sourceVersion: first.finance.version,
             origin: 'PERSISTED_SOURCE',

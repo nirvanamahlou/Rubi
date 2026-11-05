@@ -11363,3 +11363,7 @@ PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User reques
 ## FINANCE-DIALOG-CLEANUP-1105 — PC-A — READY_FOR_CI
 
 User authorizes removal of selected request history/source identifier and FX summary spacing, push and green-gate develop merge. Reserve finance-inbox-live-workspace.tsx only and task/status notes. Prior same-owner Finance scopes are merged/frozen. UI only; no transactions, API, schema, dependencies or deployment.
+
+## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
+
+User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
