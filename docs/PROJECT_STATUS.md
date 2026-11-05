@@ -1,3 +1,7 @@
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
 
 User explicitly corrects the prior design scope: the shared sidebar, header and application shell must keep their normal appearance when Call Center is selected. Remove its route-dependent shell palette/icon substitutions; keep the illustrated Navy/Pearl palette on the Call Center workspace and its dossier portal only. Preserve navigation, permissions, history-icon updates, pagination and all operational data behavior. Source starts from develop de9729ea2.

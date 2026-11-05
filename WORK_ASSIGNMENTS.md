@@ -1,3 +1,7 @@
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.
