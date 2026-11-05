@@ -1,4 +1,3 @@
-import { callbackManagers } from './call-center-answer-policy';
 import {
   BadRequestException,
   ForbiddenException,
@@ -240,16 +239,18 @@ export class IamCallCenterDirectory {
       },
     });
     if (!account) throw new ForbiddenException();
+    // Callback triage and broad Call Center read grants do not authorize
+    // cross-department assignment. Only the verified executive account does.
     const global =
-      callbackManagers().includes(actor.userId) ||
-      approvedGlobal ||
-      (!answeredCallAccess() &&
-        new Set(
-          (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean),
-        ).has(account.username));
+      account.username === 'danial' &&
+      (approvedGlobal ||
+        (!answeredCallAccess() &&
+          new Set(
+            (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean),
+          ).has(account.username)));
     const unitId = account.profile?.organizationUnitId;
     const team =
       actor.permissions.includes(
