@@ -371,3 +371,52 @@ it('avoids a rounded departure share when a single seat consumes part of the poo
     )?.amount,
   ).toBe('0.3333');
 });
+
+it('includes every currency of a total passenger purchase without adding company flight costs twice', () => {
+  const total = {
+    ...intake,
+    servicePurchases: [
+      {
+        ...purchase(
+          'total-irr',
+          [
+            'contract-total-purchase',
+            'flight',
+            'hotel',
+            'transfer-out',
+            'transfer-back',
+            'insurance',
+          ],
+          '200',
+          'IRR',
+        ),
+        serviceClientKey: 'contract-total-purchase',
+      },
+      {
+        ...purchase(
+          'total-usd',
+          [
+            'contract-total-purchase',
+            'flight',
+            'hotel',
+            'transfer-out',
+            'transfer-back',
+            'insurance',
+          ],
+          '25',
+          'USD',
+        ),
+        serviceClientKey: 'contract-total-purchase',
+      },
+    ],
+  } as unknown as ReservationIntakeV1;
+  const result = contractProfit(contract, total, [ticket]);
+  expect(result.costs.map((p) => [p.currencyCode, p.amount])).toEqual([
+    ['IRR', '200'],
+    ['USD', '25'],
+  ]);
+  expect(result.missingServiceKeys).toEqual([]);
+  expect(
+    result.totals.find((p) => p.currencyCode === 'USD')?.purchaseAmount,
+  ).toBe('25');
+});
