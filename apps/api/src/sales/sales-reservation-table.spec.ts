@@ -5,6 +5,7 @@ const decimal = (n: string) => new Prisma.Decimal(n);
 function setup() {
   const record = {
     id: 'c',
+    destinationId: 'canonical-destination',
     version: 5,
     status: 'CANCELLED',
     cancelledAt: new Date('2026-09-30T10:00:00Z'),
@@ -88,6 +89,7 @@ it('reads completed name-only passengers without manufacturing ages or crashing'
     branchIds: ['b'],
   } as never);
   expect(result.get('c')).toMatchObject({
+    destinationId: 'canonical-destination',
     passengerCount: 3,
     passengerNames: ['SYNTHETIC ADULT'],
     adults: 1,

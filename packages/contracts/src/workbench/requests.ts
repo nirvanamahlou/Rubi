@@ -1,3 +1,13 @@
+export interface WorkbenchLeaveInputV1 {
+  from: string;
+  to: string;
+  mode: 'روزانه' | 'ساعتی';
+  startTime?: string;
+  endTime?: string;
+  reason: string;
+  substitute?: string;
+}
+
 export interface WorkbenchRequestInputV1 {
   subject: string;
   description: string;
@@ -5,6 +15,7 @@ export interface WorkbenchRequestInputV1 {
   organizationUnitId: string;
   executionOwnerUserId: string;
   reference?: string;
+  leave?: WorkbenchLeaveInputV1;
 }
 
 export interface WorkbenchRequestOptionsV1 {

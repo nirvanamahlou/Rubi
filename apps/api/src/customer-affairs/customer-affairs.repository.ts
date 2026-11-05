@@ -501,12 +501,36 @@ export class CustomerAffairsRepository {
     });
   }
 
-  hrWorkbenchRequests(branchIds: string[]) {
+  async removeHrWorkbenchRequest(id: string, userId: string) {
+    await this.database.client.customerAffairsTimeline.upsert({
+      where: { deliveryKey: `hr-remove:${id}:${userId}` },
+      update: {},
+      create: {
+        ticketId: id,
+        type: 'WORKBENCH_HR_REMOVED',
+        summary: 'حذف از کارتابل منابع انسانی',
+        actorUserId: userId,
+        deliveryKey: `hr-remove:${id}:${userId}`,
+        documentVersionIds: [],
+      },
+    });
+    return { data: { id } };
+  }
+  hrWorkbenchRequests(branchIds: string[], userId: string) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         branchId: { in: branchIds },
-        category: { startsWith: 'WORKBENCH_', not: 'WORKBENCH_INTERNAL' },
-        executionUnit: { in: ['منابع انسانی', 'سرمایه انسانی', 'اداری'] },
+        category: { startsWith: 'WORKBENCH_' },
+        OR: ['منابع انسانی', 'سرمایه انسانی', 'اداری'].map((name) => ({
+          executionUnit: { contains: name },
+        })),
+        timeline: {
+          none: { type: 'WORKBENCH_HR_REMOVED', actorUserId: userId },
+        },
+      },
+      include: {
+        createdBy: { select: { displayName: true } },
+        timeline: { where: { type: 'WORKBENCH_LEAVE' } },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       take: 200,

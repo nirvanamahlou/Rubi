@@ -1,4 +1,5 @@
 'use client';
+import { roomChildCounts } from '../model/reservation-form';
 import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { SupplierPriceTable } from './supplier-price-table';
 import { reservationHotelStays } from '@nora/contracts';
@@ -380,7 +381,8 @@ export function ReservationFormSheet({
                                   'ROOM',
                                   'ROOM TYPE',
                                   'ADULTS',
-                                  'CHILD AGES',
+                                  'CHILDREN 2-6',
+                                  'CHILDREN 6-12',
                                   'GUESTS',
                                 ].map((t) => (
                                   <th key={t}>{t}</th>
@@ -395,7 +397,12 @@ export function ReservationFormSheet({
                                     <td>{r.ordinal}</td>
                                     <td dir="auto">{r.roomType}</td>
                                     <td>{r.adults}</td>
-                                    <td>{r.childAges.join(', ') || '-'}</td>
+                                    <td>
+                                      {roomChildCounts(r.childAges).twoToSix}
+                                    </td>
+                                    <td>
+                                      {roomChildCounts(r.childAges).sixToTwelve}
+                                    </td>
                                     <td>{r.adults + r.childAges.length}</td>
                                   </tr>
                                 ))}
@@ -658,11 +665,16 @@ export function ReservationFormSheet({
           <table className={styles.table}>
             <thead>
               <tr>
-                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'].map(
-                  (t) => (
-                    <th key={t}>{t}</th>
-                  ),
-                )}
+                {[
+                  'ROOM',
+                  'ROOM TYPE',
+                  'ADULTS',
+                  'CHILDREN 2-6',
+                  'CHILDREN 6-12',
+                  'GUESTS',
+                ].map((t) => (
+                  <th key={t}>{t}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -671,7 +683,8 @@ export function ReservationFormSheet({
                   <td>{r.ordinal}</td>
                   <td dir="auto">{r.roomType}</td>
                   <td>{r.adults}</td>
-                  <td>{r.childAges.join(', ') || '-'}</td>
+                  <td>{roomChildCounts(r.childAges).twoToSix}</td>
+                  <td>{roomChildCounts(r.childAges).sixToTwelve}</td>
                   <td>{r.adults + r.childAges.length}</td>
                 </tr>
               ))}

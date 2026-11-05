@@ -132,11 +132,29 @@ export class IamWorkbenchRequestDirectory {
     if (!operator) throw new ForbiddenException('شعبه در محدوده دسترسی نیست.');
     const units = await this.units.list(branchId, tx);
     if (!units.length) return { units: [] };
+    const members = callCenter ? [] : await this.units.members(branchId, tx);
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',
         b2bOrganizationUser: null,
-        profile: { organizationUnitId: { in: units.map((unit) => unit.id) } },
+        OR: [
+          {
+            profile: {
+              organizationUnitId: { in: units.map((unit) => unit.id) },
+            },
+          },
+          ...(members.length
+            ? [
+                {
+                  id: {
+                    in: members.flatMap((member) =>
+                      member.userId ? [member.userId] : [],
+                    ),
+                  },
+                },
+              ]
+            : []),
+        ],
         branches: { some: { branchId, branch: { isActive: true } } },
       },
       select: {
@@ -151,7 +169,14 @@ export class IamWorkbenchRequestDirectory {
       units: units.map((unit) => ({
         ...unit,
         users: users
-          .filter((user) => user.profile?.organizationUnitId === unit.id)
+          .filter(
+            (user) =>
+              user.profile?.organizationUnitId === unit.id ||
+              members.some(
+                (member) =>
+                  member.userId === user.id && member.unit.trim() === unit.name,
+              ),
+          )
           .map(({ id, displayName, username }) => ({
             id,
             displayName,
@@ -174,6 +199,7 @@ export class IamWorkbenchRequestDirectory {
     await tx.$queryRaw`SELECT user_id FROM iam_user_profiles WHERE user_id = ${recipientId}::uuid FOR SHARE`;
     await tx.$queryRaw`SELECT "userId" FROM iam_user_branches WHERE "userId" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) AND "branchId" = ${branchId}::uuid ORDER BY "userId" FOR SHARE`;
     await this.units.lock(tx, unitId);
+    await this.units.lockEmployee(tx, recipientId, branchId);
     const options = await this.options(actor, branchId, tx);
     const unit = options.units.find((item) => item.id === unitId);
     const recipient = unit?.users.find((user) => user.id === recipientId);

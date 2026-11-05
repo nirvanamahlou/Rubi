@@ -7,6 +7,7 @@ import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { describe, expect, it } from 'vitest';
 import {
   reservationFormData,
+  roomChildCounts,
   isAggregateReservationForm,
   reservationRoomAppendices,
   reservationPassengerPages,
@@ -402,4 +403,31 @@ it('prints saved flight details when only one of two passengers has transfer', (
   expect(
     reservationPdfHtml(intake, {}, 'data:image/png;base64,AA==', ''),
   ).not.toContain('FLIGHT INFORMATION');
+});
+
+it('counts child room bands without counting infants twice at the six-year boundary', () => {
+  expect(roomChildCounts([0, 1, 2, 5, 6, 11, 12])).toEqual({
+    twoToSix: 2,
+    sixToTwelve: 2,
+  });
+  expect(roomChildCounts([])).toEqual({ twoToSix: 0, sixToTwelve: 0 });
+});
+it('prints separate child-count columns for every supplier room', () => {
+  const value = structuredClone(input);
+  value.snapshot.hotelSelection!.rooms = Array.from({ length: 20 }, (_, i) => ({
+    ordinal: i + 1,
+    roomTypeId: 'r',
+    roomTypeNameSnapshot: 'Sample room',
+    adults: 2,
+    childAges: [2, 5, 6],
+  }));
+  const html = reservationPdfHtml(value, {}, 'data:image/png;base64,AA==', '');
+  expect(html).not.toContain('CHILD AGES');
+  expect(html).toContain('CHILDREN 2-6');
+  expect(html).toContain('CHILDREN 6-12');
+  expect(
+    html.match(
+      /<td[^>]*>2<\/td>\s*<td[^>]*>2<\/td>\s*<td[^>]*>1<\/td>\s*<td[^>]*>5<\/td>/g,
+    ),
+  ).toHaveLength(20);
 });
