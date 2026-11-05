@@ -1,5 +1,4 @@
 'use client';
-import { ReservationPurchaseDialog } from '@/modules/reservations/components/reservation-hotel-purchase';
 import {
   paymentReceiptsApi,
   type PaymentReceiptEntry,
@@ -490,19 +489,6 @@ export function ContractPayments({
         <DialogTitle className="pe-10">
           پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
         </DialogTitle>
-        {contract?.isFloating &&
-          (selfService ||
-            actor?.permissions.includes('sales.payments.create')) && (
-            <section className="grid gap-3 rounded-xl border p-3">
-              <h3 className="font-bold">خرید قرارداد شناوری</h3>
-              <ReservationPurchaseDialog
-                key={contract.id}
-                id={contract.id}
-                salesContractId={contract.id}
-                onSaved={onSaved}
-              />
-            </section>
-          )}
         {error ? <Alert tone="error" title={error} /> : null}
         {contract?.balances.map((balance) => (
           <p key={balance.currencyCode}>
