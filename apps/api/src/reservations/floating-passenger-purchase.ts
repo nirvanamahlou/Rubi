@@ -66,7 +66,12 @@ export function floatingPassengerPurchaseGroups(
         const group = groups.get(code!) ?? {
           currencyCode: code!,
           amount: '0',
-          passengerPrices: [],
+          passengerPrices: [] as {
+            customerId: string;
+            passengerName: string;
+            unitAmount: string;
+            totalAmount: string;
+          }[],
         };
         group.amount = moneyDecimal(moneyUnits(group.amount) + units);
         moneyUnits(group.amount);
