@@ -1,6 +1,8 @@
-## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
+## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — MERGED_AND_DEPLOYED
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.
+
+Verified release: PR1411 merged as957ff424813d785cba270847a89ded323cbca499 after all eight source-head checks passed. Local lint/format/typecheck/Web build and116 tests passed. Server build,116 tests, canary, encrypted backup and activation verification passed. Desktop sidebar computed styles exactly match Workbench; mobile has no page overflow and retains all nine standard navigation groups, with no illustrated sidebar icons. Panel keeps16 illustrations. No console errors, migrations or unrelated service changes. Reservation released.
 
 ## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
 
