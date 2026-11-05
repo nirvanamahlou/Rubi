@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
 import { ReservationContractEditor } from '../components/reservation-contract-editor';
 import type { RequestView, ViewAccess } from './model';
+import { reservationCorrectionDate } from './reservation-table';
 export function ContractTableAction({
   row,
   cancel,
@@ -27,7 +28,7 @@ export function ContractTableAction({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const checked = Boolean(
-    cancel ? row.tableSummary?.cancelledAt : row.tableSummary?.correctedAt,
+    cancel ? row.tableSummary?.cancelledAt : reservationCorrectionDate(row),
   );
   const allowed = cancel
     ? access.permissions.includes('sales.contracts.cancel')
