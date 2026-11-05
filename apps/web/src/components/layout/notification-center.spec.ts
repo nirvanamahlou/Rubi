@@ -179,6 +179,38 @@ describe('retained audit acknowledgements', () => {
       notificationStorage('user-b', 'audit:user-b').readAuditReadTimes().size,
     ).toBe(0);
   });
+  it('clears evicted acknowledged events without hiding unread events after reload', () => {
+    browser();
+    const stored = notificationStorage('user-a:old-scope', 'audit:user-a');
+    const [acknowledged] = mergeMasterDataFeed([], [auditEvent]);
+    stored.writeStoredNotifications([
+      { ...acknowledged!, readAt: '2026-11-04T08:00:00Z' },
+    ]);
+    const unread = Array.from({ length: 60 }, (_, i) => ({
+      id: `local-${i}`,
+      title: 'change',
+      description: 'change',
+      href: '/workbench',
+      occurredAt: '2026-11-04T09:00:00Z',
+      readAt: null,
+    }));
+    stored.writeStoredNotifications(unread);
+    expect(stored.readStoredNotifications()).not.toContainEqual(
+      expect.objectContaining({ id: acknowledged!.id }),
+    );
+    expect(stored.clearReadNotifications()).toEqual(unread);
+    const reloaded = notificationStorage('user-a:new-scope', 'audit:user-a');
+    expect(
+      mergeMasterDataFeed(
+        [],
+        [auditEvent, { ...auditEvent, id: 'unread' }],
+        reloaded.readDismissedAuditIds(),
+        reloaded.readAuditReadTimes(),
+      ),
+    ).toEqual([
+      expect.objectContaining({ id: 'master-data:unread', readAt: null }),
+    ]);
+  });
   it('migrates old scoped dismissals so clearing remains effective after scope changes', () => {
     const values = browser();
     values.set(

@@ -8936,3 +8936,6 @@ The title chooser opens the company editor for new and existing legal entities. 
 
 Validation: 90 API tests including a PostgreSQL transaction rollback/no-orphan case, ID and version checks; 17 Web, Documents-client and localization checks passed. Prerequisite is the person profile commit bcffdd0fd. Deploy both additive migrations before using the new forms.
 Production API/Web builds, typechecks, scoped lint and formatting passed. Verified pre-existing person ciphertext compatibility and cross-kind rejection.
+
+
+NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.

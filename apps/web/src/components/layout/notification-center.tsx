@@ -166,6 +166,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
     readAuditReadTimes,
     readStoredNotifications,
     writeStoredNotifications,
+    clearReadNotifications,
   } = useMemo(
     () =>
       notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY, AUDIT_STATE_KEY),
@@ -187,6 +188,8 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [clearError, setClearError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
   const [refreshingMasterData, setRefreshingMasterData] = useState(false);
   const apiBaseUrl = getPublicApiBaseUrl();
 
@@ -489,23 +492,29 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   }
 
   function clearRead() {
-    const dismissed = readDismissedAuditIds();
-    for (const item of readStoredNotifications()) {
-      if (item.readAt && item.id.startsWith('master-data:'))
-        dismissed.add(item.id);
-    }
+    setClearError(null);
     try {
-      window.localStorage.setItem(
-        DISMISSED_AUDIT_KEY,
-        JSON.stringify([...dismissed]),
-      );
+      setLocalItems(clearReadNotifications());
     } catch {
-      setServerError('ذخیره حذف اعلان در مرورگر انجام نشد.');
-      return;
+      setClearError('ذخیره حذف اعلان در مرورگر انجام نشد.');
     }
-    updateLocalItems((current) => current.filter((item) => !item.readAt));
-    setServerItems((current) => current.filter((item) => !item.isRead));
-    writeServer(() => notificationsApi.clearRead());
+    setClearing(true);
+    writeServer(async () => {
+      try {
+        await notificationsApi.clearRead();
+        setServerItems((current) => current.filter((item) => !item.isRead));
+      } catch (error) {
+        setClearError(
+          (previous) =>
+            previous ??
+            (error instanceof Error
+              ? error.message
+              : 'ثبت تغییر اعلان ناموفق بود.'),
+        );
+      } finally {
+        setClearing(false);
+      }
+    });
   }
 
   const hasRead = notifications.some((notification) => notification.isRead);
@@ -706,10 +715,20 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
           </p>
         ) : null}
 
+        {clearError ? (
+          <p
+            role="alert"
+            className="border-t border-border px-3 py-2 text-xs text-destructive"
+          >
+            {clearError}
+          </p>
+        ) : null}
+
         {hasRead ? (
           <div className="border-t border-border p-2">
             <Button
               className="w-full"
+              disabled={clearing}
               onClick={clearRead}
               size="sm"
               type="button"
@@ -821,10 +840,34 @@ export function notificationStorage(
     return limited;
   }
 
+  function clearReadNotifications() {
+    const current = readStoredNotifications();
+    const dismissed = readDismissedAuditIds();
+    // The visible cache is capped; older acknowledged audit events can be
+    // returned by the next poll even when they are no longer in that cache.
+    for (const id of readAuditReadTimes().keys()) dismissed.add(id);
+    for (const item of current) {
+      if (item.readAt && item.id.startsWith('master-data:'))
+        dismissed.add(item.id);
+    }
+    window.localStorage.setItem(
+      DISMISSED_AUDIT_KEY,
+      JSON.stringify([...dismissed]),
+    );
+    const unread = current.filter((item) => !item.readAt);
+    window.localStorage.setItem(
+      CHANGE_NOTIFICATIONS_STORAGE_KEY,
+      JSON.stringify(unread),
+    );
+    window.dispatchEvent(new Event(CHANGE_NOTIFICATIONS_EVENT));
+    return unread;
+  }
+
   return {
     readDismissedAuditIds,
     readAuditReadTimes,
     readStoredNotifications,
     writeStoredNotifications,
+    clearReadNotifications,
   };
 }
