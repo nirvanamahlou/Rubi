@@ -14,7 +14,7 @@ const h = vi.hoisted(() => ({
     calendarSystem: string;
     onChange: (value: string) => void;
   }[],
-  hotels: [] as { onChange: (id: string) => void }[],
+  hotels: [] as { label: string; onChange: (id: string) => void }[],
   rooms: [] as {
     hotel: SalesHotelSelectionInput;
     onChange: (hotel: SalesHotelSelectionInput) => void;
@@ -152,7 +152,12 @@ it('changes another hotel and its room composition without copying primary hotel
   const hotel = fixture();
   const changed = vi.fn();
   render(hotel, changed);
-  h.hotels[0]!.onChange('replacement');
+  h.hotels
+    .find((c) => c.label === 'شهر اقامت بعدی')!
+    .onChange('replacement-city');
+  expect(changed.mock.lastCall![0].additionalStays[0].hotelId).toBe('');
+  render(changed.mock.lastCall![0], changed);
+  h.hotels.find((c) => c.label === 'هتل')!.onChange('replacement');
   expect(changed.mock.lastCall![0].additionalStays[0]).toMatchObject({
     hotelId: 'replacement',
     cityId: 'replacement-city',
