@@ -1,4 +1,5 @@
 import { localizeDocumentHtml } from '@/i18n/document';
+import { renderPdfWithSmallOverflowFit } from '@/lib/pdf-overflow-fit';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, rm, stat } from 'node:fs/promises';
@@ -83,7 +84,7 @@ export async function renderReservationPdf(
     directory = await mkdtemp(join(tmpdir(), 'nora-reservation-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
-    await writeFile(input, html, { mode: 0o600 });
+    const profile = join(directory, 'profile');
     // Isolated profile, no authentication cookies, no inherited database/document secrets.
     const env: NodeJS.ProcessEnv = { NODE_ENV: 'production' };
     for (const name of [
@@ -96,42 +97,56 @@ export async function renderReservationPdf(
       'LANG',
     ])
       if (process.env[name]) env[name] = process.env[name];
-    await run(
-      chrome,
-      [
-        '--headless',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--host-resolver-rules=MAP * ~NOTFOUND',
-        '--user-data-dir=' + join(directory, 'profile'),
-        '--no-pdf-header-footer',
-        '--print-to-pdf=' + result,
-        pathToFileURL(input).href,
-      ],
-      { env, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 },
+    return await renderPdfWithSmallOverflowFit(
+      html,
+      async (candidate) => {
+        await writeFile(input, candidate, { mode: 0o600 });
+        await rm(result, { force: true });
+        await run(
+          chrome,
+          [
+            '--headless',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-sync',
+            '--host-resolver-rules=MAP * ~NOTFOUND',
+            '--user-data-dir=' + profile,
+            '--no-pdf-header-footer',
+            '--print-to-pdf=' + result,
+            pathToFileURL(input).href,
+          ],
+          { env, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 },
+        );
+        // Chrome may return before its child finishes writing the PDF on Windows.
+        const deadline = Date.now() + 10_000;
+        let previousSize = -1;
+        while (Date.now() < deadline) {
+          const size = await stat(result)
+            .then((entry) => entry.size)
+            .catch(() => 0);
+          if (size > 0 && size === previousSize) break;
+          previousSize = size;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        const bytes = await readFile(result);
+        if (
+          bytes.subarray(0, 5).toString() !== '%PDF-' ||
+          bytes.length > 20_000_000
+        )
+          throw new Error('PDF_INVALID');
+        return bytes;
+      },
+      voucher
+        ? Math.max(
+            1,
+            html.match(/<article\b[^>]*data-reservation-form-page/g)?.length ??
+              1,
+          )
+        : 1,
     );
-    // Chrome may return before its child finishes writing the PDF on Windows.
-    const deadline = Date.now() + 10_000;
-    let previousSize = -1;
-    while (Date.now() < deadline) {
-      const size = await stat(result)
-        .then((entry) => entry.size)
-        .catch(() => 0);
-      if (size > 0 && size === previousSize) break;
-      previousSize = size;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    const bytes = await readFile(result);
-    if (
-      bytes.subarray(0, 5).toString() !== '%PDF-' ||
-      bytes.length > 20_000_000
-    )
-      throw new Error('PDF_INVALID');
-    return bytes;
   } finally {
     active--;
     // Only the exact private directory created by this invocation may be removed.
