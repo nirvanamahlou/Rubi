@@ -8993,3 +8993,8 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 ## FINANCE-REQUEST-ATTACHMENTS-1105
 
 Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
+
+
+## HR-REVIEW-MESSAGE-ALERTS-1105
+
+HR request review has an accessible action icon, a responsive structured dialog and no redundant request navigation. Ordinary employee organization edits correct the latest assignment in place; the cooperation panel shows the latest record while historical data and audited changes remain stored. All local notification read/dismissal IDs persist per user across feed/scope refreshes. New authorized messaging notifications show a dismissible preview at the viewport bottom-right and open their exact conversation; initial, old, seen and read messages do not replay. No schema migration, operational record deletion or deployment. Validation: 59 targeted Web tests and two isolated real PostgreSQL scenarios passed; API/Web production builds, type checks and scoped lint passed. The first PostgreSQL attempt timed out in Docker; a clean rerun passed. Hosted gates required before authorized develop merge.

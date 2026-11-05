@@ -11264,3 +11264,7 @@ Owner authorizes four helper-text removals, group details/edit dialog redesign a
 ## FINANCE-REQUEST-ATTACHMENTS-1105 — PC-A
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
+
+## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
+
+Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
