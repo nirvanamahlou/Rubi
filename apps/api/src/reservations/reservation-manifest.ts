@@ -1,3 +1,7 @@
+import {
+  buildTemplateManifest,
+  templateManifestWarnings,
+} from '../common/manifest/workbook-template';
 import { addManifestWarnings, manifestWarningCount } from './manifest-warnings';
 import { PassengerCorrectionService } from '../sales/corrections/passenger-correction.service';
 import {
@@ -22,7 +26,6 @@ import {
 import { manifestJourneys, type ManifestJourney } from './manifest-journeys';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import type {
   AuthenticatedActor,
   CustomerDetail,
@@ -64,6 +67,16 @@ export interface IranAirtourManifestRow {
   birthCountry: string;
   passportExpiryDate: string;
   cabinClass: string;
+  flightNumber?: string;
+  flightDate?: string;
+  airline?: string;
+  contractNumber?: string;
+  roomType?: string;
+  roomCategory?: string;
+  roomNumber?: string;
+  hotelName?: string;
+  checkIn?: string;
+  checkOut?: string;
 }
 
 export interface ReservationManifestBatchInput {
@@ -94,29 +107,6 @@ function tehranDay(value: string) {
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-const xml = (value: string) =>
-  Array.from(value)
-    .filter((character) => {
-      const code = character.codePointAt(0)!;
-      return (
-        code === 9 ||
-        code === 10 ||
-        code === 13 ||
-        (code >= 32 && code <= 0xd7ff) ||
-        (code >= 0xe000 && code <= 0xfffd) ||
-        code >= 0x10000
-      );
-    })
-    .join('')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-
-const cell = (column: string, row: number, value: string, style: number) =>
-  `<x:c r="${column}${row}" s="${style}" t="inlineStr"><x:is><x:t xml:space="preserve">${xml(value)}</x:t></x:is></x:c>`;
-
 export function buildIranAirtourManifest(
   template: Uint8Array,
   passengers: readonly IranAirtourManifestRow[],
@@ -125,80 +115,12 @@ export function buildIranAirtourManifest(
     throw new BadRequestException('مسافری برای ساخت MANIFEST وجود ندارد.');
   if (passengers.length > 61)
     throw new BadRequestException('این قالب حداکثر ۶۱ مسافر را می‌پذیرد.');
-  const files = unzipSync(template);
-  const path = 'xl/worksheets/sheet1.xml';
-  let sheet = strFromU8(files[path]!);
-  passengers.forEach((passenger, index) => {
-    const row = index + 2;
-    const values = [
-      passenger.firstName,
-      passenger.lastName,
-      passenger.gender,
-      passenger.passengerType,
-      passenger.birthDate.replaceAll('-', '/'),
-      passenger.nationalId,
-      passenger.nationality,
-      passenger.passportNumber,
-      passenger.passportIssuingCountry,
-      passenger.birthCountry,
-      passenger.passportExpiryDate.replaceAll('-', '/'),
-      passenger.cabinClass,
-    ];
-    const columns = 'ABCDEFGHIJKL'.split('');
-    const cells = values
-      .map((value, column) =>
-        cell(
-          columns[column]!,
-          row,
-          value,
-          column === 1
-            ? 13
-            : column === 11
-              ? 17
-              : column === 8 || column === 9
-                ? 14
-                : 12,
-        ),
-      )
-      .join('');
-    const rowPattern = new RegExp(
-      `<x:row r="${row}"([^>]*)>[\\s\\S]*?<\\/x:row>`,
-    );
-    if (!rowPattern.test(sheet))
-      throw new Error(`Template row ${row} is missing`);
-    sheet = sheet.replace(rowPattern, `<x:row r="${row}"$1>${cells}</x:row>`);
-  });
-  files[path] = strToU8(sheet);
+  const warnings = templateManifestWarnings(template, passengers);
   return addManifestWarnings(
-    zipSync(files, { level: 6 }),
-    [
-      'First name',
-      'Last name',
-      'Gender',
-      'Passenger type',
-      'Birth date',
-      'National ID',
-      'Nationality',
-      'Passport number',
-      'Passport issuing country',
-      'Birth country',
-      'Passport expiry',
-      'Cabin class',
-    ],
-    passengers.map((p) => [
-      p.firstName,
-      p.lastName,
-      p.gender,
-      p.passengerType,
-      p.birthDate,
-      p.nationalId,
-      p.nationality,
-      p.passportNumber,
-      p.passportIssuingCountry,
-      p.birthCountry,
-      p.passportExpiryDate,
-      p.cabinClass,
-    ]),
+    buildTemplateManifest(template, passengers),
+    warnings.labels,
+    warnings.rows,
+    warnings.firstDataRow,
   );
 }
 
@@ -549,7 +471,36 @@ export class ReservationManifestService {
         });
       const override = intake.workflow.ageOverrides[customerId];
       const age = override ?? assignments.get(customerId)?.ageCategory;
+      const personRoom = intake.workflow.supplierFormSettings?.passengers.find(
+        (p) => p.id === customerId,
+      );
+      const roomId = personRoom?.roomOrdinal;
+      const rooms = intake.snapshot.hotelSelection?.rooms ?? [];
+      const room = roomId
+        ? rooms.find((r) => r.ordinal === roomId)
+        : rooms.length === 1
+          ? rooms[0]
+          : undefined;
       passengers.push({
+        flightNumber: flight.serviceNumberSnapshot,
+        flightDate: tehranDay(flight.departureAt),
+        airline: flight.carrierNameSnapshot,
+        contractNumber: intake.snapshot.contractNumber,
+        roomType: room?.roomTypeNameSnapshot ?? personRoom?.roomType ?? '',
+        roomCategory: room?.roomCategory
+          ? {
+              SINGLE: 'SGL',
+              DOUBLE: 'DBL',
+              DOUBLE_EXTRA: 'DBL+EX',
+              TRIPLE: 'TPL',
+              FAMILY: 'FAMILY',
+            }[room.roomCategory]
+          : '',
+        roomNumber: room ? String(room.ordinal) : '',
+        hotelName: intake.snapshot.hotelSelection?.hotelNameSnapshot ?? '',
+        checkIn: intake.snapshot.hotelSelection?.checkInDate ?? '',
+        checkOut: intake.snapshot.hotelSelection?.checkOutDate ?? '',
+
         firstName: required(customer, 'passportFirstName', 'نام لاتین پاسپورت'),
         lastName: required(
           customer,
@@ -769,12 +720,6 @@ export class ReservationManifestService {
     let passengerCount: number;
     if (template) {
       const rows: IranAirtourManifestRow[] = [];
-      for (const row of selected) {
-        const intake = await this.workflow.detail(row.id, actor.branchIds);
-        rows.push(
-          ...(await this.passengerRows(intake, actor, traceId, offerId)),
-        );
-      }
       const file = await this.documents!.readManifestTemplateReference(
         template.fileReferenceId,
         actor,
@@ -782,7 +727,14 @@ export class ReservationManifestService {
       const chunks: Buffer[] = [];
       for await (const chunk of file.stream)
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      bytes = buildIranAirtourManifest(Buffer.concat(chunks), rows);
+      const templateBytes = Buffer.concat(chunks);
+      for (const row of selected) {
+        const intake = await this.workflow.detail(row.id, actor.branchIds);
+        rows.push(
+          ...(await this.passengerRows(intake, actor, traceId, offerId)),
+        );
+      }
+      bytes = buildIranAirtourManifest(templateBytes, rows);
       passengerCount = rows.length;
     } else {
       const [origin, destination] = await Promise.all([

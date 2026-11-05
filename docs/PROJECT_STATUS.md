@@ -4,6 +4,11 @@ Shared Workbench/employee leave fields now support annual/sick types, hourly int
 
 Legacy annual policy values remain compatible until explicitly saved in the new monthly form; no automatic conversion of annual allowances or operational data seed. New monthly policies also guard legacy submission paths. Evidence is branch/owner bound, restricted, scanned through Documents and downloaded only via an authorized request/record association. No schema or dependency changes. Validation includes focused API/domain/privacy tests, a real PostgreSQL substitute-to-HR approval and attendance/quota test, Web HR/Workbench tests, contracts tests, lint/typechecks/builds. User authorizes push/develop merge and local3100 only; no production deployment.
 
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
 Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
