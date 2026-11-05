@@ -616,7 +616,7 @@ export function WorkQueue({
   useEffect(() => {
     const openQueue = () => {
       setCollapsed(false);
-      setView('ALL');
+      setView('MINE');
       setPage(1);
       setQueueFilters({ teamId: '', agentId: '', requestStatus: '' });
       queueHeading.current?.scrollIntoView({ block: 'start' });
