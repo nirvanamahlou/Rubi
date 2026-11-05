@@ -1,5 +1,9 @@
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 
+## CALLBACK-RESOLUTION-1105 — PC-C — SOURCE_READY
+
+COMPUTER_ID=PC-C. Owner authorizes fixing completed callback triage and misleading disconnect labels. Scoped callback resolution/helper, COMPLETE_CALL/SAVE audit snapshots and recipient hydration corrections preserve PBX facts, answer/access rights and approved UI. Both exact production examples reproduce the defect; the read-only candidate clears both and preserves recorded operators.28 focused tests, lint/full API build and all eight hosted checks passed on bb9cadd9f. Integration preserves newer peer IAM owner-unit changes. No schema or historical data mutation. Source reservation freezes on publication. See docs/tasks/CALLBACK-RESOLUTION-1105.md.
+
 COMPUTER_ID=PC-C; branch codex/pc-c-three-panels-release-1103 from develop6dbafb7fe. Owner authorizes production publication of approved Call Center, Dashboard and Reports changes. Reserve bounded CallForm source/outcome option visibility and regression, own release docs/script, candidate verification and locked backup/build/canary/activation. Candidate overlays only these modules and required public reporting ports/translations on actual current live source; preserve other source, IAM grants, data, mounts and peer changes. No schema/dependency changes or unrelated develop migration. Refresh current runtime snapshot after lock acquisition; fail on concurrent changes. Existing call-center/reporting/dashboard source reservations are merged/frozen.
 
 ## NOTIFICATION-CLEAR-COUNTER-1104 — PC-B — READY_FOR_CI
@@ -268,6 +272,12 @@ COMPUTER_ID=PC-A; codex/pc-a-tour-periods-grid-1103 from develop13ff82d55. Owner
 TOUR-PERIODS-GRID-1103 extends its bounded existing public PackageTourPricingService saleCatalog producer and synthetic regression: paused/deleted periods return no new-sale options, including hotel-only published selection, while historical detail remains readable. No other Pricing behavior changes.
 
 TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, lifecycle authorization/CAS/audit and published-sale regressions pass.249 surrounding Web checks and230 API checks pass; missing sparse-checkout CLI helper was materialized and rechecked successfully. Scoped lint, API4GiB typecheck and API build pass. Web production build passed. Canonical upstream tour-ticket selection integrated without duplicate lifecycle state; 38 updated targeted checks pass, including transactional audit, terminal deletion and existing status protocol. Final integrated checks follow. One additive lifecycle migration; no production migration or deployment. Existing translation keys remain unchanged; generated catalogues synchronize already-published peer entries. Exact-head hosted quality/test/build/PostgreSQL gates precede authorized develop merge. Source freezes on push and releases on successful merge.
+
+## SHARED-BROKER-FORM-1105 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; codex/pc-a-shared-broker-form-1105 from develop1caf96d8. Owner requests one shared-broker reservation editor and one consolidated supplier PDF containing every hotel and its purchase quotation, then develop merge. Reserve Reservations reservation-settings, shared-hotel supplier presentation/model, reservation-form-sheet/PDF HTML, scoped tests and translation/status notes. Preserve existing per-hotel quotations, historical sent snapshots and scoped/versioned workflow commands; no schema, migration, permission, dependency or production rollout. Saving the one editor orchestrates existing public commands with current CAS and reports any partial saved revision before retry; sending occurs only after every quotation is saved. PDF preview and download use the same consolidated data model. No active overlapping Reservations form writer found in current published assignments.
+
+SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTURE output vocabulary in place of OUTBOUND/RETURN. Reserve only supplier-form output label projection, price-table labels and corresponding render regression; stored enums and routing are unchanged. Existing sent quotation selection stays immutable. Synthetic combined PDF visually verified; all final-head hosted gates precede authorized develop merge. Scope freezes on push and releases on verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -11234,3 +11244,7 @@ CALL-CENTER-OWNER-UNIT-SCOPE-1105 CI follow-up: reserve only the retained-missed
 ## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
 
 Owner authorizes recipient repair, leave template, unified HR inbox and review, push and develop merge. Reserve HR/Customer Affairs/IAM request directory and Workbench request UI/contracts/tests only. Additive leave payload ships producer and consumers together. Preserve branch/account guards, native HR approval/balance rules, atomicity and audit. No migration, dependency changes, production writes or deployment. Reserve bounded English labels and generated API/legacy translation catalogues for these new controls.
+
+## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105 — PC-A — ACTIVE
+
+Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.

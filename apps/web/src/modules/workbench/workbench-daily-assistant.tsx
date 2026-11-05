@@ -130,10 +130,6 @@ export function WorkbenchDailyAssistant({
             <h2 className="text-lg font-bold">
               یادداشت‌های هوش مصنوعی برای شما
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              پیگیری‌های پیشنهادی از یادآورها، تقویم و کارهای خرید واگذارشده به
-              شما؛ هر روز به‌روز می‌شود.
-            </p>
           </div>
         </div>
         <Button

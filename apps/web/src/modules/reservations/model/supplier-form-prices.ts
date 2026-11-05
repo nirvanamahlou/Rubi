@@ -167,9 +167,9 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
     if (intake.supplierDocumentKind !== 'HOTEL')
       rows.push([
         settings.hotelTransferRoundTrip ? 'TRANSFER ROUND TRIP' : 'TRANSFER',
-        'OUTBOUND: ' +
+        'ARRIVAL: ' +
           transferCounts.outbound +
-          ' / RETURN: ' +
+          ' / DEPARTURE: ' +
           transferCounts.returning,
         trf ? trf.amount + ' ' + trf.currencyCode : '-',
         String(count),
@@ -195,7 +195,7 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
     headers: [
       'Hotel P.P',
       'Ratio',
-      `Transfer P.P (OUTBOUND: ${counts.outbound ?? '-'} / RETURN: ${counts.returning ?? '-'})`,
+      `Transfer P.P (ARRIVAL: ${counts.outbound ?? '-'} / DEPARTURE: ${counts.returning ?? '-'})`,
     ],
     values: supplierPriceColumns.map(({ key }) =>
       prices?.[key]

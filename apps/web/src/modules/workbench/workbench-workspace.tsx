@@ -522,9 +522,7 @@ export function WorkbenchWorkspace() {
               <TabsContent value="activity">
                 <Card className="p-5">
                   <h2 className="font-bold mb-2">فعالیت‌های ثبت‌شده شما</h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    آخرین عملیات موفقی که با حساب شما در CRM ثبت شده‌اند.
-                  </p>
+
                   <ActivityFeed resource={home.activity} />
                 </Card>
               </TabsContent>
