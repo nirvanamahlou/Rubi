@@ -1,3 +1,17 @@
+## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
+
+Responsible experts saving a result for an explicitly linked real call, including unanswered calls, create a durable review receipt. Pending receipts appear with a followed-up badge in the request creator-manager's My Work queue. Saving that manager's decision acknowledges only the displayed receipt set, retaining assignment, history and expert access; newer distinct follow-ups can requeue. Repeatable-read snapshots, receipt-set tokens, row locks and command idempotence protect concurrent edits. Exact-request review access does not grant access to unrelated contact history. The editor displays name/phone separately and a subject only from the saved related follow-up, and removes the visible technical helper.
+
+Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 19 helper cases, 7 UI cases, 3 translation checks and 5 CI policy checks passed. Twenty new PostgreSQL cases exercise real SAVE entrypoints, concurrent decisions and the creator-manager access boundary; 87 existing affected regression cases also pass. Tests exposed and now cover an existing WRONG_NUMBER check-constraint mismatch, corrected in a separate migration retaining all previous values. Both migrations applied with all 222 migrations in isolated PostgreSQL 18 and require application before a future API rollout. No production settings, records, grants or services changed. Final integrated CI checks precede the authorized develop merge.
+
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
+
+Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
 
 User explicitly corrects the prior design scope: the shared sidebar, header and application shell must keep their normal appearance when Call Center is selected. Remove its route-dependent shell palette/icon substitutions; keep the illustrated Navy/Pearl palette on the Call Center workspace and its dossier portal only. Preserve navigation, permissions, history-icon updates, pagination and all operational data behavior. Source starts from develop de9729ea2.
@@ -9000,6 +9014,11 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 
 Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
 
+
+## HR-REVIEW-MESSAGE-ALERTS-1105
+
+HR request review has an accessible action icon, a responsive structured dialog and no redundant request navigation. Ordinary employee organization edits correct the latest assignment in place; the cooperation panel shows the latest record while historical data and audited changes remain stored. All local notification read/dismissal IDs persist per user across feed/scope refreshes. New authorized messaging notifications show a dismissible preview at the viewport bottom-right and open their exact conversation; initial, old, seen and read messages do not replay. No schema migration, operational record deletion or deployment. Validation: 59 targeted Web tests and two isolated real PostgreSQL scenarios passed; API/Web production builds, type checks and scoped lint passed. The first PostgreSQL attempt timed out in Docker; a clean rerun passed. Hosted gates required before authorized develop merge.
+
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 
 User-selected option2 replaces only call-history markers with filled green inbound/blue outbound handsets, pale rounded tiles and white directional arrow badges. Native SVGs remain sharp at36px; existing direction text and all data/actions/permissions remain unchanged. Light/dark RTL visual review,16 existing focused tests and scoped lint pass. No API/schema/dependency/server changes. Full Web types/build and all final-head hosted checks gate the standing authorized develop merge. Details: tasks/CALL-HISTORY-ICONS-1105.md.
@@ -9011,3 +9030,11 @@ CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67
 Owner confirms only the first Finance-confirmed paid contract establishes a new customer; delayed payment belongs to its approval period. Fixed scope-local history that could classify a repeat buyer as new after changing branch/agent. Current candidate contracts remain authorized; Sales internally checks candidate-only earlier company purchase existence and returns aggregate observations. Canonical buyer identity and lead-conversion behavior are preserved. No schema, dependency, business-data write or deployment.
 
 Validation:48 focused Sales/Lead/Reporting/calendar tests,7 migrated PostgreSQL cohort regressions,5 CI-policy tests, scoped ESLint/Prettier, full API TypeScript and production build pass. Fresh local dependencies/generated client were isolated to this worktree. Existing220 migrations applied only to the disposable QA database; no migration added. Added the opt-in PostgreSQL source test to existing hosted CI. Read-only production audit found no Finance-confirmed Sales receipt; pending/rejected receipts correctly yield zero paid new customers. The native Finance paths were traced and confirmed to persist approved receipts in this Sales source. See docs/tasks/DASHBOARDS-FIRST-PURCHASE-1105.md. Hosted CI/review and deployment remain outstanding.
+
+## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
+
+Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
+
+## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
+
+Implement the selected02 Layered Duotone reference only for Call Center KPI cards, with blue vector silhouettes, pale highlight layers and soft shadows. Increase icon/value gap and retain every current card action and actual server value. Source base ff31d2fd9; affected tests, build/types, responsive visual review and all hosted gates precede authorized bounded Web release. No shared sidebar/icon, API/schema/migration/dependency changes.

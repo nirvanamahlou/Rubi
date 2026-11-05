@@ -5,7 +5,7 @@ import {
   type ReservationIntakeV1,
   type ReservationServicePurchaseInputV1,
 } from '@nora/contracts';
-import { ReservationFloatingFlightPurchase } from './reservation-floating-flight-purchase';
+import { FloatingPassengerPurchase } from './floating-passenger-purchase';
 export function FloatingPurchaseChoice({
   request,
   purchaseRoot,
@@ -71,11 +71,10 @@ export function FloatingPurchaseChoice({
         </p>
       )}
       {effective ? (
-        <ReservationFloatingFlightPurchase
+        <FloatingPassengerPurchase
           key={
             CONTRACT_TOTAL_PURCHASE_KEY + ':' + (request.purchaseVersion ?? 0)
           }
-          wholeContract
           request={request}
           purchaseRoot={purchaseRoot}
           onSaved={onSaved}

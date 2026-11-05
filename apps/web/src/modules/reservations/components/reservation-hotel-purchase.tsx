@@ -266,7 +266,7 @@ export function ReservationHotelPurchase(props: {
     !props.purchaseRoot &&
     isFloatingSalesContract(props.request.snapshot.serviceSelections)
   )
-    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
+    return <p>خرید شناوری از دکمه خرید در بخش فروش ثبت می‌شود.</p>;
   const request = {
     ...props.request,
     snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
@@ -901,7 +901,7 @@ export function ReservationPurchaseDialog({
     category !== 'INSURANCE' &&
     isFloatingSalesContract(request.snapshot.serviceSelections)
   )
-    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
+    return <p>خرید شناوری از دکمه خرید در بخش فروش ثبت می‌شود.</p>;
   const content = request ? (
     <>
       {readOnly ? (

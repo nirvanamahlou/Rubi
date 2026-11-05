@@ -6,6 +6,12 @@ import { AmendmentPassengerMembership } from './amendment-passenger-membership';
 import { changeAmendmentMembership } from './amendment-membership';
 import { AmendmentHotelRooms } from './amendment-hotel-rooms';
 import { AmendmentAdditionalHotelStays } from './amendment-additional-hotel-stays';
+import { AmendmentHotelJourneys } from './amendment-hotel-journeys';
+import {
+  HOTEL_JOURNEYS,
+  readHotelJourneys,
+  retainHotelJourneyRoutes,
+} from '@nora/contracts';
 import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
 import { PassengerServiceEditor } from './passenger-service-editor';
 import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
@@ -170,6 +176,13 @@ export function ReservationSalesAmendment({
     if (hotel) {
       const nextHotel = { ...hotel, ...v };
       const stays = readPassengerHotelStays(draft.services, nextHotel);
+      const journeys = retainHotelJourneyRoutes(
+        readHotelJourneys(draft.services),
+        [
+          nextHotel.hotelId,
+          ...(nextHotel.additionalStays ?? []).map((s) => s.hotelId),
+        ],
+      );
       patch({
         hotelSelection: nextHotel,
         services: draft.services.map((s) =>
@@ -178,14 +191,21 @@ export function ReservationSalesAmendment({
                 ...s,
                 ...(v.hotelId ? { referenceId: v.hotelId } : {}),
                 titleSnapshot: v.hotelNameSnapshot ?? s.titleSnapshot,
-                ...(stays
-                  ? {
-                      metadata: {
-                        ...s.metadata,
-                        passengerHotelStaysV1: JSON.stringify(stays),
-                      },
-                    }
-                  : {}),
+                metadata: (() => {
+                  const metadata: Record<
+                    string,
+                    string | number | boolean | null
+                  > = {
+                    ...s.metadata,
+                    ...(stays
+                      ? { passengerHotelStaysV1: JSON.stringify(stays) }
+                      : {}),
+                  };
+                  if (journeys.length)
+                    metadata[HOTEL_JOURNEYS] = JSON.stringify(journeys);
+                  else delete metadata[HOTEL_JOURNEYS];
+                  return metadata;
+                })(),
               }
             : s,
         ),
@@ -498,7 +518,10 @@ export function ReservationSalesAmendment({
               <div className="md:col-span-3">
                 <AmendmentAdditionalHotelStays
                   hotel={hotel}
+                  destinationCityId={draft.destinationId}
                   hotels={refs.hotels ?? []}
+                  cities={refs.cities ?? []}
+                  countries={refs.countries ?? []}
                   roomTypes={refs['room-types'] ?? []}
                   currencies={(refs.currencies ?? []).map((c) => ({
                     code: c.code ?? '',
@@ -508,6 +531,11 @@ export function ReservationSalesAmendment({
                   onChange={(next) =>
                     changeHotel({ additionalStays: next.additionalStays ?? [] })
                   }
+                />
+                <AmendmentHotelJourneys
+                  draft={draft}
+                  refs={refs}
+                  onChange={patch}
                 />
               </div>
             </div>

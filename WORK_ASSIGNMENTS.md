@@ -1,3 +1,25 @@
+## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
+
+Narrow CI lease: append only the new request-review PostgreSQL spec to the existing Call Center database-gate command in .github/workflows/ci.yml. Existing jobs, guards and checks remain unchanged. Prior workflow reservations are merged/released; no concurrent workflow edit appears in the current develop delta.
+
+Implementation and independent access/concurrency review complete. Local validation passed: 107 PostgreSQL integration/regression cases, 19 helper cases, 7 UI cases, 3 translation checks, 5 CI policy checks, API/Web TypeScript and builds, scoped lint and Prisma validation. Both additive/corrective migrations applied successfully in isolated PostgreSQL 18. Reservations remain through integrated CI and authorized develop merge; no production deployment.
+
+Translation lease: add only this feature's eleven visible labels/errors to Web en-overrides.json and mirror the two API errors into the offline API catalogue. Preserve peer translation additions when integrating current develop; no shared translation runtime changes.
+
+Migration lease extension: isolated PostgreSQL validation found that the existing call outcome constraint rejects the already-supported WRONG_NUMBER DTO value. Reserve a second, separate correction migration accepting the same five outcome values as the public contract; preserve all existing outcomes and reject every other value. Also reserve the existing workflow regression assertion for the narrowed contactSummary response, replacing its obsolete full-contact-count expectation.
+
+Data model documentation lease: append only the owned CallCenterRequestReview contract to the existing Customer Affairs section of docs/DATA_MODEL.md; no peer model edits.
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff4248. User confirms that saving any related call result (including no answer) by the responsible expert queues review for the request creator; the creator's decision clears pending review without deleting history. Reserve Call Center workflow queue/list/save, completion and telephony SAVE hooks, bounded access predicates, dedicated review service/tests, workflow client/editor/queue presentation and own notes. Sole temporary schema/migration lease: one additive CallCenterRequestReview receipt model and inverse FK relations; no dependency/lockfile changes. Complete ownership scan found no unreleased schema lease; earlier migration owners are merged/released. Peer alert PR1397 notify/hash handler and MINE PR1407 default/order remain untouched; Navy/Pearl shell correction is merged PR1411. Producer=Customer Affairs review service; consumers=Call Center queue/editor; additive optional review metadata and expectedReviewToken input, no status/assignee mutation from call saves. No production publication in this work item.
+
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-source-share-legend-1105 from develop 9f71ecf5e. User explicitly requests matching the supplied source-share reference: multicolor donut at left, total in the center, readable source/count/percentage legend at right. Reserve only source-share-chart.tsx/.module.css/.spec.tsx, own task/status notes and a bounded Web release script. Preserve the real report denominator, every positive source including unknown, current aggregation/filters, shared sidebar and other Call Center presentation. No schema, migrations, API, dependencies or grants. Existing chat authorization covers develop PR, merge after green checks and bounded server publication. Prior PANEL-SCOPE source merged in PR1411; its production receipt is on bb1c93f98. Read-only ownership audit found no competing active source-share writer.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.
@@ -11269,6 +11291,10 @@ Owner authorizes four helper-text removals, group details/edit dialog redesign a
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
 
+## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
+
+Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
+
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 
 Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitly selects generated option2: green inbound/blue outbound filled handset, pale rounded tile and white directional arrow in a circular badge, in call-history timeline only. Reserve leaf call-history-icon.tsx and bounded workspace.tsx/workspace.module.css timeline integration, own task/status notes. Latest Navy/Pearl source is merged/frozen in PR1403; preserve its styling and all history data, actions, permissions and responsive layout. No API/schema/dependency or server deployment changes. Validate the real small-size RTL presentation and affected Web checks; publish under existing workflow.
@@ -11282,3 +11308,11 @@ COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-first-contract-1105 from develop95
 DASHBOARD-FIRST-PURCHASE-1105 bounded CI reservation: add only an opt-in PostgreSQL regression step in .github/workflows/ci.yml after workspace package builds; preserve all existing gates. CONTRACT-RECEIPT-1104 prior step is merged/frozen. Source scope includes the new synthetic Sales cohort integration spec.
 
 DASHBOARD-FIRST-PURCHASE-1105 validation:55 focused application tests (including7 real PostgreSQL cases),5 CI-policy checks, scoped lint/format, full API types/build passed. No production writes or deployment. Bounded source/CI lease freezes on push; hosted checks and review remain gates.
+
+## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-expert-activity-totals-1105 from develop e58613d1e. User explicitly requests a blue grand-total footer at the end of the expert-performance table, matching the supplied reference. Reserve expert-activity.tsx/.module.css and report-highlights.spec.tsx, own task/status notes and bounded Web release helper. Sum all returned authorized expert rows, with completion calculated from summed complete/total counts rather than averaging percentages. Preserve all columns, row drilldowns, current report filters, unattributed warning, sidebar, source-share chart and KPI designs. No API, schema, migrations, permissions or dependencies. Existing chat authorization covers develop PR, green-gate merge and bounded server publication. Source-share previous release completed via PR1415; receipt4c372604f. Ownership review confirmed all returned rows are complete and no competing expert-table writer exists.
+
+## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-duotone-1105 from develop ff31d2fd9. User explicitly selects02 Layered Duotone blue KPI illustrations: handset, calendar, handset with circular cross, and callback arrows, plus clearer icon/value spacing. Reserve Call Center kpis.tsx, KPI-only rules in workflow.module.css, new kpi-icon.tsx and own task/status/release helper. Existing chat approval covers develop PR, merge after all gates and bounded Web deployment. Preserve labels, server counts, loading/error state, keyboard actions, responsive cards, sidebar and approved rest of panel. No shared icon-system, API, schema, dependency, permissions or operational data changes. Earlier expert totals/source-share work is merged and released; current target ownership reviewed before editing.
