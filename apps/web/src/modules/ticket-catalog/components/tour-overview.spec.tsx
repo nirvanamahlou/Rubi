@@ -123,3 +123,25 @@ describe('tour overview', () => {
     expect(html).not.toContain('اولین تور');
   });
 });
+
+it('groups multiple periods under one tour heading with compact lifecycle actions', () => {
+  const html = renderToStaticMarkup(
+    <TourOverview
+      packages={[]}
+      departures={[
+        departure('2099-01-01', '2099-01-05'),
+        departure('2099-02-01', '2099-02-05'),
+      ]}
+      cities={[]}
+      loading={false}
+      busy={false}
+      onEdit={() => {}}
+      onSelect={() => {}}
+      onRepeat={() => {}}
+      onPeriodStatus={() => {}}
+    />,
+  );
+  expect(html.match(/<h4[^>]*>تور آنتالیا<\/h4>/g)).toHaveLength(1);
+  expect(html.match(/توقف بازه/g)).toHaveLength(2);
+  expect(html.match(/حذف بازه/g)?.length).toBeGreaterThanOrEqual(2);
+});

@@ -89,6 +89,7 @@ function departureView(row: DepartureRow): TourDepartureV1 {
   const returning = row.returnOffer ? offerView(row.returnOffer) : undefined;
   return {
     isActive: row.isActive !== false,
+    isDeleted: row.isDeleted === true,
     salesVersion: row.salesVersion ?? 1,
     id: row.id,
     version: row.version,
@@ -192,7 +193,7 @@ export class TourPublicService {
     });
     if (!row)
       throw new BadRequestException('نوبت تور در شعبه قرارداد یافت نشد.');
-    if (row.isActive === false)
+    if (row.isActive === false || row.isDeleted === true)
       throw new ConflictException('فروش این نوبت متوقف شده است.');
     const tour = departureView(row);
     if (
@@ -254,11 +255,14 @@ export class TourPublicService {
         );
     }
   }
-  async departures(actor: AuthenticatedActor) {
-    if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
+  async departures(actor: AuthenticatedActor, management = false) {
+    if (management) this.authorize(actor, true);
+    else if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: actor.branchIds },
+        isDeleted: false,
+        ...(management ? {} : { isActive: true }),
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
       include: included,
@@ -273,6 +277,8 @@ export class TourPublicService {
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: [...branchIds] },
+        isDeleted: false,
+        isActive: true,
         endsOn: { gte: new Date(new Date().toISOString().slice(0, 10)) },
       },
       include: included,
@@ -489,28 +495,58 @@ export class TourPublicService {
     branchId?: string,
   ) {
     this.authorize(actor, true, branchId);
-    const input = raw as { isActive?: unknown; expectedVersion?: unknown };
+    const input = raw as {
+      isActive?: unknown;
+      expectedVersion?: unknown;
+      isDeleted?: unknown;
+    };
     if (
       !branchId ||
       !input ||
+      typeof input !== 'object' ||
+      Object.keys(input).some(
+        (key) => !['isActive', 'expectedVersion', 'isDeleted'].includes(key),
+      ) ||
       typeof input.isActive !== 'boolean' ||
       !Number.isInteger(input.expectedVersion) ||
-      Number(input.expectedVersion) < 1
+      Number(input.expectedVersion) < 1 ||
+      Number(input.expectedVersion) > 2147483646 ||
+      (input.isDeleted !== undefined &&
+        (input.isDeleted !== true || input.isActive))
     )
       throw new BadRequestException('اطلاعات معتبر نیست.');
-    const changed = await this.database.client.tourDeparture.updateMany({
-      where: { id, branchId, salesVersion: Number(input.expectedVersion) },
-      data: { isActive: input.isActive, salesVersion: { increment: 1 } },
+    const expectedVersion = Number(input.expectedVersion);
+    const isActive = input.isActive;
+    const isDeleted = input.isDeleted === true;
+    return this.database.client.$transaction(async (tx) => {
+      const row = await tx.tourDeparture.findFirst({ where: { id, branchId } });
+      if (!row || row.isDeleted || row.salesVersion !== expectedVersion)
+        throw new ConflictException('نسخه تغییر کرده است.');
+      const changed = await tx.tourDeparture.updateMany({
+        where: {
+          id,
+          branchId,
+          salesVersion: expectedVersion,
+          isDeleted: false,
+        },
+        data: {
+          isActive,
+          ...(isDeleted ? { isDeleted: true } : {}),
+          salesVersion: { increment: 1 },
+        },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('نسخه تغییر کرده است.');
+      await tx.tourDepartureLifecycleRevision.create({
+        data: {
+          departureId: id,
+          version: expectedVersion + 1,
+          status: isDeleted ? 'DELETED' : isActive ? 'ACTIVE' : 'PAUSED',
+          actorUserId: actor.userId,
+        },
+      });
+      return { data: { id, isActive, salesVersion: expectedVersion + 1 } };
     });
-    if (changed.count !== 1)
-      throw new ConflictException('نسخه تغییر کرده است.');
-    return {
-      data: {
-        id,
-        isActive: input.isActive,
-        salesVersion: Number(input.expectedVersion) + 1,
-      },
-    };
   }
 
   async createDeparture(

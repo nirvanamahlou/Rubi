@@ -274,9 +274,9 @@ export function CallForm({
                     onChange={() => setDirty(true)}
                     aria-label="منبع آشنایی"
                     className={styles.control}
-                    optionLimit={50}
                     disabled={busy}
                     name="source"
+                    optionLimit={sources.length}
                     defaultValue={completing ? previous?.source : 'نامشخص'}
                   >
                     {sources.map((source) => (
@@ -328,6 +328,7 @@ export function CallForm({
                   <NativeSearchSelect
                     onChange={() => setDirty(true)}
                     name="outcome"
+                    optionLimit={Object.keys(outcomeLabels).length + 1}
                     aria-label="نتیجه تماس"
                     required
                     className={styles.control}

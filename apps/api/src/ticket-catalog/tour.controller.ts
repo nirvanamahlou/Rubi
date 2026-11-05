@@ -9,6 +9,9 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Query,
+  DefaultValuePipe,
+  ParseBoolPipe,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -25,8 +28,14 @@ export class TourController {
   @Get('packages') packages(@Req() req: AuthenticatedRequest) {
     return this.service.packages(req.actor);
   }
-  @Get('departures') departures(@Req() req: AuthenticatedRequest) {
-    return this.service.departures(req.actor);
+  @Get('departures') departures(
+    @Req() req: AuthenticatedRequest,
+    @Query('management', new DefaultValuePipe(false), new ParseBoolPipe())
+    management = false,
+  ) {
+    return management
+      ? this.service.departures(req.actor, true)
+      : this.service.departures(req.actor);
   }
   @Delete('packages/:id') deletePackage(
     @Param('id', new ParseUUIDPipe()) id: string,

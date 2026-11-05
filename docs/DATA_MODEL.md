@@ -1034,6 +1034,10 @@ HrRecord.sharedSourceId is a nullable restrictive self-FK. A common source has o
 
 Readonly accountingCode uses shared company sequence 3000001+ for organizations/suppliers/brokers and separate BANK account sequence 5000001+. Linked roles share one identity; promotion preserves its code. Backfill sorts earliest creation time, then stable ID/kind. Database triggers prevent recoding and sequences never cycle. Nonbank accounts remain null. This is separate from business code and ledger mappings. Migration: 20261102120000_partner_accounting_codes.
 
+## TOUR-PERIODS-GRID-1103 lifecycle
+
+TourDeparture travel facts remain immutable. Reuse canonical isActive/salesVersion (default true/version1) for stop/resume CAS; add only isDeleted=false and restrictive FK TourDepartureLifecycleRevision audit rows. Deletion is terminal and forces isActive=false. Catalog owns lifecycle writes; Sales validates availability through its existing public boundary; Pricing lists active periods while historical detail remains readable.
+
 ## Tour departure sales state — TOUR-TICKET-SELECTION-1103
 
 TourDeparture.isActive defaults true; salesVersion defaults1 and supplies separate stop/resume CAS. The definition version and published prices do not change on stop. Ticket public reservation locks the departure before offer capacity; status updates serialize on that same row. Floating departure seats use the newly defined FLOATING offer allocation ledger, independent of charter offers. Existing offer FKs and allocation uniqueness remain unchanged.

@@ -16,7 +16,22 @@ describe('departure sales status', () => {
       const updateMany = vi.fn().mockResolvedValue({ count: 1 });
       const service = Object.assign(
         Object.create(TourPublicService.prototype),
-        { database: { client: { tourDeparture: { updateMany } } } },
+        {
+          database: {
+            client: {
+              $transaction: async (cb: (tx: unknown) => unknown) =>
+                cb({
+                  tourDeparture: {
+                    updateMany,
+                    findFirst: vi
+                      .fn()
+                      .mockResolvedValue({ salesVersion: 3, isDeleted: false }),
+                  },
+                  tourDepartureLifecycleRevision: { create: vi.fn() },
+                }),
+            },
+          },
+        },
       ) as TourPublicService;
       await service.setDepartureStatus(
         id,
@@ -25,7 +40,7 @@ describe('departure sales status', () => {
         branch,
       );
       expect(updateMany).toHaveBeenCalledWith({
-        where: { id, branchId: branch, salesVersion: 3 },
+        where: { id, branchId: branch, salesVersion: 3, isDeleted: false },
         data: { isActive, salesVersion: { increment: 1 } },
       });
     },
@@ -33,7 +48,20 @@ describe('departure sales status', () => {
   it('rejects wrong-branch users and stale switches', async () => {
     const updateMany = vi.fn().mockResolvedValue({ count: 0 });
     const service = Object.assign(Object.create(TourPublicService.prototype), {
-      database: { client: { tourDeparture: { updateMany } } },
+      database: {
+        client: {
+          $transaction: async (cb: (tx: unknown) => unknown) =>
+            cb({
+              tourDeparture: {
+                updateMany,
+                findFirst: vi
+                  .fn()
+                  .mockResolvedValue({ salesVersion: 1, isDeleted: false }),
+              },
+              tourDepartureLifecycleRevision: { create: vi.fn() },
+            }),
+        },
+      },
     }) as TourPublicService;
     await expect(
       service.setDepartureStatus(
