@@ -315,14 +315,12 @@ it('projects successful operational, contract and party amendments independently
 
 it('reads only request-scoped canonical contact and sale totals, with permission-gated debt', async () => {
   const s = setup();
-  const findFirst = vi
-    .fn()
-    .mockResolvedValue({
-      ...s.record,
-      customerNameSnapshot: 'Contract party',
-      buyerContact: { encrypted: 'sealed' },
-      originId: 'origin',
-    });
+  const findFirst = vi.fn().mockResolvedValue({
+    ...s.record,
+    customerNameSnapshot: 'Contract party',
+    buyerContact: { encrypted: 'sealed' },
+    originId: 'origin',
+  });
   const buyerContact = {
     name: 'Contract party',
     phone: 'SYNTHETIC-PHONE',
