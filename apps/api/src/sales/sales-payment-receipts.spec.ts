@@ -250,3 +250,32 @@ it('keeps cross-branch read-all receipt uploads on the contract branch with an e
     {},
   );
 });
+it('allows Finance to read payment evidence only in its branch without granting upload or contract access', async () => {
+  const s = setup();
+  const finance = {
+    ...actor,
+    permissions: ['finance.read'],
+  } as AuthenticatedActor;
+  await s.service.list('contract', 'payment', finance);
+  await s.service.download('contract', 'payment', 'document', finance, {});
+  expect(s.documents.download).toHaveBeenCalled();
+  await expect(
+    s.service.upload('contract', 'payment', file, finance, {}),
+  ).rejects.toThrow();
+  await expect(s.service.entries('contract', finance)).rejects.toThrow();
+  await expect(
+    s.service.list('contract', 'wrong-payment', finance),
+  ).rejects.toThrow();
+  await expect(
+    s.service.list('contract', 'payment', { ...finance, branchIds: ['other'] }),
+  ).rejects.toThrow();
+  await expect(
+    s.service.download(
+      'contract',
+      'payment',
+      'document',
+      { ...finance, branchIds: [] },
+      {},
+    ),
+  ).rejects.toThrow();
+});

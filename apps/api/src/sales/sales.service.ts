@@ -1135,10 +1135,17 @@ export class SalesService {
     id: string,
     actor: AuthenticatedActor,
     paymentId?: string,
+    financeRead = false,
   ) {
     const row = await this.repository.findById(id);
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
-    this.assertRead(row, actor);
+    if (!(
+      financeRead &&
+      paymentId &&
+      has(actor, 'finance.read') &&
+      actor.branchIds.includes(row.branchId)
+    ))
+      this.assertRead(row, actor);
     if (paymentId && !row.payments.some((p) => p.id === paymentId))
       throw new NotFoundException('پرداخت متعلق به این قرارداد نیست.');
     return {

@@ -47,8 +47,14 @@ export class SalesPaymentReceiptsService {
     id: string,
     paymentId: string,
     actor: AuthenticatedActor,
+    financeRead = false,
   ) {
-    const scope = await this.sales.paymentReceiptScope(id, actor, paymentId);
+    const scope = await this.sales.paymentReceiptScope(
+      id,
+      actor,
+      paymentId,
+      financeRead,
+    );
     // Request-local capabilities: source IDs and branch are fixed after Sales authorization.
     const scoped: AuthenticatedActor = {
       ...actor,
@@ -93,7 +99,7 @@ export class SalesPaymentReceiptsService {
     actor: AuthenticatedActor,
     page = 1,
   ) {
-    const c = await this.context(id, paymentId, actor);
+    const c = await this.context(id, paymentId, actor, true);
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException('صفحه معتبر نیست.');
     return this.documents.list(
@@ -162,7 +168,7 @@ export class SalesPaymentReceiptsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ) {
-    const c = await this.context(id, paymentId, actor);
+    const c = await this.context(id, paymentId, actor, true);
     return this.documents.download(
       documentId,
       c.actor,
