@@ -98,6 +98,10 @@ async function request<T>(
       code,
     );
   }
+  if (path.startsWith('/tour-drafts?')) {
+    const text = await response.text();
+    return (text.trim() ? JSON.parse(text) : null) as T;
+  }
   return response.json() as Promise<T>;
 }
 
