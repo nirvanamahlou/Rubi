@@ -1,3 +1,7 @@
+## FINANCE-DIALOG-CLEANUP-1105 — PC-A — READY_FOR_CI
+
+Removed payment-history panels and the internal source UUID row from the Finance request dialog. Added responsive vertical spacing below its FX summary. Existing payment actions, evidence and history data remain intact. UI-only change; no API, migration or deployment. Scoped lint, existing presentation/receipt/FX tests and Web type checks validate the change; full hosted build/test gates precede merge.
+
 ## HR-MISSION-ATTENDANCE-1105 — PC-A — READY_FOR_CI
 
 Payroll/profile cleanup, restricted manual attendance and mission/petty registration integration. See [handoff](tasks/HR-MISSION-ATTENDANCE-1105.md). No migration or deployment. Exact manual-editor IAM identity must be configured at release.

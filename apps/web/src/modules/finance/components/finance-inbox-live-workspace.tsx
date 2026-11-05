@@ -38,7 +38,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isActionablePayment } from '../model/inbox-filters';
 import { paymentWithReceipt } from '../model/payment-with-receipt';
-import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceExportActions } from './finance-export-actions';
 import { FinancePayrollActions } from './finance-payroll-actions';
 import type {
@@ -1312,7 +1311,11 @@ export function FinanceInboxLiveWorkspace() {
             <DialogContent dir="rtl" className={styles.requestDialog}>
               <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
               <DialogDescription>{selected.title}</DialogDescription>
-              <PurchaseFxSummary entries={selected.purchaseFx} />
+              {selected.purchaseFx?.length ? (
+                <div className="pb-4 pt-2 leading-6">
+                  <PurchaseFxSummary entries={selected.purchaseFx} />
+                </div>
+              ) : null}
               {canPay && (
                 <PurchaseFxCaptures
                   entries={selected.purchaseFx}
@@ -1407,7 +1410,6 @@ export function FinanceInboxLiveWorkspace() {
                     </div>
                   ) : null}
                   {[
-                    ['شماره منبع', selected.sourceReference],
                     ['قرارداد', selected.contractReference ?? '—'],
                     ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
                     ['مبلغ', money(selected)],
@@ -1555,25 +1557,8 @@ export function FinanceInboxLiveWorkspace() {
                           ثبت پرداخت فاکتور خرید
                         </Button>
                       ) : null}
-                      {selected.kind === 'PAYMENT_REQUEST' ? (
-                        <FinanceHistoryPanel
-                          requestId={selected.sourceReference}
-                          source="INVOICE"
-                          compact
-                        />
-                      ) : null}
                     </div>
                   ) : null}
-                  {selected.reservationPurchase
-                    ? selected.reservationPurchase.lines.map((line) => (
-                        <FinanceHistoryPanel
-                          key={line.purchaseId}
-                          requestId={line.purchaseId}
-                          source="RESERVATIONS"
-                          compact
-                        />
-                      ))
-                    : null}
                   {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
                     selected.kind,
                   ) ? (
@@ -1622,15 +1607,6 @@ export function FinanceInboxLiveWorkspace() {
                     </div>
                   ) : null}
                   {selected.kind === 'PAYMENT_REQUEST' &&
-                  selected.source === 'RESERVATIONS' &&
-                  !selected.reservationPurchase ? (
-                    <FinanceHistoryPanel
-                      requestId={selected.sourceReference}
-                      source="RESERVATIONS"
-                      compact
-                    />
-                  ) : null}
-                  {selected.kind === 'PAYMENT_REQUEST' &&
                   selected.source === 'PURCHASES' &&
                   selected.ticketPurchase ? (
                     <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
@@ -1640,11 +1616,6 @@ export function FinanceInboxLiveWorkspace() {
                       >
                         <WalletCards className="size-4" /> ثبت پرداخت خرید بلیت
                       </Button>
-                      <FinanceHistoryPanel
-                        requestId={selected.sourceReference}
-                        source="TICKET"
-                        compact
-                      />
                     </div>
                   ) : null}
                 </div>
