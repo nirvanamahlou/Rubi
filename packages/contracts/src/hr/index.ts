@@ -66,6 +66,17 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  missionExpense?: {
+    amount: string;
+    title: string;
+    costCenter: string;
+    fee: string;
+    description: string;
+    referToPetty: boolean;
+    receipt?: { id: string; versionId: string };
+  };
+  pettyRegistrationId?: string;
+
   /** Shared reference applicability; membership is captured and enforced by the server. */
   allBranches?: boolean;
   /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
@@ -209,6 +220,7 @@ export interface HrBootstrapDto {
   employees: HrEmployeeDto[];
   records: HrRecordDto[];
   capabilities: {
+    manualAttendance?: boolean;
     read: boolean;
     write: boolean;
     approve: boolean;

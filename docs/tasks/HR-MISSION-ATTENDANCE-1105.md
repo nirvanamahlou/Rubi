@@ -1,0 +1,7 @@
+# HR mission and attendance — 2026-11-05
+
+Requested payroll/profile/time UI cleanup, empty employment-order dialog, employee tab ordering and protected manual attendance editing are implemented. Missions now carry departure/return timestamps and evidence, and approved coverage uses the shared attendance engine. Optional petty registration uses Procurement's public transaction port: branch scope, custodian/manager, evidence, sufficient balance and idempotence remain enforced. Posted missions cannot be mutated/deleted through HR.
+
+Manual edits require both hr.manage and an exact IAM UUID configured in HR_MANUAL_ATTENDANCE_USER_ID. Unset configuration denies all manual edits. Release operator must bind this to the verified account `nima` (display name نیما نادری), never a display-name comparison or a general HR role. Device punches remain intact; audited correction punches take precedence on recomputation. No production deployment or environment changes were requested in this task.
+
+No schema migration, dependency changes or production business-data writes. Validation: 249 API HR unit cases and 222 Web HR cases pass; API and Web production builds pass. All 49 real PostgreSQL cases pass. Coverage tests transactional debit, retries, insufficient balance rollback, unauthorized edits, optimistic versions, mission coverage and device resync preservation. Integration fixtures now scope counts to their branch and select attendance by date rather than relying on newest-row order; present charts are newest-first.

@@ -106,6 +106,7 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   const [branch, setBranch] = useState('');
@@ -607,7 +608,17 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
           </HrPanel>
         </>
       ) : (
-        <HrPanel title="تنظیمات حقوق" actions={createButton}>
+        <HrPanel
+          title="تنظیمات حقوق"
+          actions={
+            <>
+              {createButton}
+              <HrButton onClick={() => setOrderOpen(true)}>
+                حکم کارگزینی
+              </HrButton>
+            </>
+          }
+        >
           <div
             className={styles.listFilters}
             role="search"
@@ -899,6 +910,11 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
               باز کردن جدول حقوق
             </HrButton>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
+        <DialogContent dir="rtl" aria-describedby={undefined}>
+          <DialogTitle>حکم کارگزینی</DialogTitle>
         </DialogContent>
       </Dialog>
       <Dialog open={ratesOpen} onOpenChange={setRatesOpen}>

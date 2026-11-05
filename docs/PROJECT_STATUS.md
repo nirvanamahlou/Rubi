@@ -1,3 +1,7 @@
+## HR-MISSION-ATTENDANCE-1105 — PC-A — READY_FOR_CI
+
+Payroll/profile cleanup, restricted manual attendance and mission/petty registration integration. See [handoff](tasks/HR-MISSION-ATTENDANCE-1105.md). No migration or deployment. Exact manual-editor IAM identity must be configured at release.
+
 
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
 

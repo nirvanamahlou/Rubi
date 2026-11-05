@@ -1,4 +1,5 @@
 'use client';
+import { HrMissionForm } from './hr-mission-form';
 import { HrLeaveForm } from './hr-leave-form';
 import { WeeklyShiftForm } from './weekly-shift-form';
 import { isHrSharedResource } from '@nora/contracts';
@@ -75,6 +76,11 @@ interface HrRecordFormProps {
 }
 
 export function HrRecordForm(props: HrRecordFormProps) {
+  if (
+    props.target.source.section === 'expenses' &&
+    props.target.source.tab === 'mission'
+  )
+    return <HrMissionForm {...props} />;
   if (
     ['time.leave', 'requests.leave', 'requests.radanLeave'].includes(
       `${props.target.source.section}.${props.target.source.tab}`,

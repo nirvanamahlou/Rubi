@@ -14,7 +14,6 @@ import { useHrStore } from './hr-store';
 import { hrRequest } from './hr-api';
 import { HrButton, HrLoading } from './hr-controls';
 import { HrHub } from './hr-hub';
-import { HrPayrollPaymentTable } from './hr-payroll-payment-table';
 import type { HrFormTarget } from './hr-record-form';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
@@ -219,7 +218,6 @@ export function HrLiveWorkspace({
           ))}
         </div>
       ) : null}
-      {section === 'payroll' ? <HrPayrollPaymentTable data={data} /> : null}
       {section === 'reports' ? (
         <HrReportsWorkspace store={store} tab={tab} />
       ) : section === 'surveys' ? (

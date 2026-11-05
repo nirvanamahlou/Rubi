@@ -1,3 +1,4 @@
+import { ProcurementMissionPort } from '../procurement/procurement-mission.module';
 import { dashboardPeriods } from './hr-dashboard.domain';
 import { revealHrValues, protectHrValues } from './hr-private-values';
 import { getHrResource } from '@nora/contracts';
@@ -23,7 +24,15 @@ import {
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import { hash } from 'argon2';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import type { DatabaseService } from '../database/database.service';
 import { DocumentsService } from '../documents/documents.service';
@@ -200,6 +209,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             directory,
           ),
           directory,
+          new ProcurementMissionPort(database, {} as DocumentsService),
         );
         await client.branch.createMany({
           data: [
@@ -256,12 +266,193 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       },
       process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 180000 : 60000,
     );
+    beforeEach(() => {
+      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', admin.userId);
+    });
     afterAll(async () => {
+      vi.unstubAllEnvs();
       if (app) await app.close();
       if (client) await client.$disconnect();
       if (created && /^nora_hr_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     }, 60000);
+    it('posts mission costs atomically once and preserves authorized manual attendance corrections', async () => {
+      const branchId = randomUUID();
+      await client.branch.create({
+        data: { id: branchId, code: branchId, name: 'Synthetic mission' },
+      });
+      const manager = (
+        await actor('mission_manager', HR_PERMISSION_CODES, [branchId])
+      ).actor;
+      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
+      const employee = await service.createEmployee(
+        employeeInput('Synthetic mission employee', { branchId }),
+        key(),
+        manager,
+      );
+      await client.procurementPettyFund.create({
+        data: {
+          branchId,
+          custodianId: manager.userId,
+          currencyCode: 'IRR',
+          balance: '1000',
+        },
+      });
+      const date = '2026-11-03';
+      await service.createRecord(
+        {
+          section: 'time',
+          tab: 'shift',
+          branchId,
+          employeeId: employee.id,
+          status: 'فعال',
+          values: [
+            'Synthetic',
+            '09:15',
+            '17:00',
+            '0',
+            '8',
+            'Synthetic',
+            employee.name,
+            date,
+            date,
+          ],
+        },
+        key(),
+        manager,
+      );
+      const input = {
+        section: 'expenses',
+        tab: 'mission',
+        branchId,
+        employeeId: employee.id,
+        status: 'تأییدشده',
+        values: [
+          employee.name,
+          'Synthetic',
+          date,
+          date,
+          'Synthetic purpose',
+          '—',
+        ],
+        data: {
+          startsAt: `${date}T05:45:00.000Z`,
+          endsAt: `${date}T13:30:00.000Z`,
+          missionExpense: {
+            amount: '250',
+            title: 'Synthetic mission',
+            costCenter: 'Synthetic',
+            fee: '0',
+            description: 'Synthetic',
+            referToPetty: true,
+          },
+        },
+      };
+      const command = key();
+      const record = await service.createRecord(input, command, manager);
+      expect((await service.createRecord(input, command, manager)).id).toBe(
+        record.id,
+      );
+      expect(
+        await client.procurementPettyEntry.count({ where: { id: record.id } }),
+      ).toBe(1);
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('750');
+      await service.processAttendance({ branchId, date }, key(), manager);
+      const day = await client.hrRecord.findFirstOrThrow({
+        where: {
+          employeeId: employee.id,
+          tab: 'attendance',
+          values: { path: ['1'], equals: date },
+        },
+      });
+      expect(day.status).toBe('مأموریت');
+      expect(day.data).toMatchObject({
+        deficitMinutes: 0,
+        lateMinutes: 0,
+        earlyMinutes: 0,
+      });
+      await expect(
+        service.updateRecord(
+          record.id,
+          { version: record.version, values: input.values },
+          manager,
+        ),
+      ).rejects.toThrow('تنخواه');
+      const count = await client.hrRecord.count({
+        where: { employeeId: employee.id, tab: 'mission' },
+      });
+      await expect(
+        service.createRecord(
+          {
+            ...input,
+            data: {
+              ...input.data,
+              missionExpense: { ...input.data.missionExpense, amount: '900' },
+            },
+          },
+          key(),
+          manager,
+        ),
+      ).rejects.toThrow();
+      expect(
+        await client.hrRecord.count({
+          where: { employeeId: employee.id, tab: 'mission' },
+        }),
+      ).toBe(count);
+      const other = { ...manager, userId: admin.userId };
+      await expect(
+        service.editAttendance(
+          day.id,
+          {
+            version: day.version,
+            arrival: '09:30',
+            departure: '17:00',
+            reason: 'Synthetic',
+          },
+          key(),
+          other,
+        ),
+      ).rejects.toThrow('ویرایش دستی');
+      const corrected = await service.editAttendance(
+        day.id,
+        {
+          version: day.version,
+          arrival: '09:30',
+          departure: '17:00',
+          reason: 'Synthetic',
+        },
+        key(),
+        manager,
+      );
+      expect(corrected.data.registrationType).toBe('manual');
+      await service.processAttendance({ branchId, date }, key(), manager, true);
+      expect(
+        (await client.hrRecord.findUniqueOrThrow({ where: { id: day.id } }))
+          .data,
+      ).toMatchObject({
+        registrationType: 'manual',
+        firstIn: `${date}T06:00:00.000Z`,
+      });
+      await expect(
+        service.editAttendance(
+          day.id,
+          {
+            version: day.version,
+            arrival: '10:00',
+            departure: '17:00',
+            reason: 'Stale',
+          },
+          key(),
+          manager,
+        ),
+      ).rejects.toThrow('نسخه');
+    });
     it('enforces monthly leave deadlines, substitute consent and hourly attendance in one persisted workflow', async () => {
       const branchId = randomUUID();
       await client.branch.create({
@@ -274,6 +465,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const manager = (
         await actor('leave_manager', HR_PERMISSION_CODES, [branchId])
       ).actor;
+      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
       const owner = (await actor('leave_owner', ['hr.self'], [branchId])).actor;
       const substitute = (
         await actor('leave_substitute', ['hr.self'], [branchId])
@@ -520,7 +712,9 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       employee = responses[0]!;
       expect(responses[1]?.id).toBe(employee.id);
       expect(employee.id).toMatch(/^[a-f0-9-]{36}$/);
-      expect(await client.hrEmployee.count()).toBe(1);
+      expect(
+        await client.hrEmployee.count({ where: { branchId: branchA } }),
+      ).toBe(1);
       expect(
         await client.hrRecord.count({
           where: { employeeId: employee.id, tab: 'assignment' },
@@ -1108,15 +1302,20 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       expect(processed.exceptions).toBe(0);
       const record = (
         await service.listRecords(
-          { branchId: branchB, section: 'time', tab: 'attendance' },
+          {
+            branchId: branchB,
+            section: 'time',
+            tab: 'attendance',
+            employeeId: night.id,
+          },
           admin,
         )
-      ).items[0]!;
+      ).items.find((item) => item.values[1] === '2026-09-01')!;
       expect(record.values.slice(3)).toEqual(['7:40', '10', '10']);
       expect(record.data.workedMinutes).toBe(460);
       await expect(
         service.closeAttendance(
-          { branchId: branchB, from: '2026-09-01', to: '2026-09-02' },
+          { branchId: branchB, from: '2026-09-01', to: '2026-09-03' },
           key(),
           admin,
         ),
@@ -3809,14 +4008,14 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         expect(
           result.body.charts
             .find((c: { id: string }) => c.id === 'present')
-            .points.at(-1).value,
+            .points.at(0).value,
         ).toBe(2);
         const scoped = await service.dashboardCharts(
           { unit: 'Chart unit' },
           { ...admin, branchIds: [branchA] },
         );
         expect(
-          scoped.charts.find((c) => c.id === 'present')?.points.at(-1)?.value,
+          scoped.charts.find((c) => c.id === 'present')?.points.at(0)?.value,
         ).toBe(1);
         expect(
           scoped.charts

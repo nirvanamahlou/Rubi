@@ -61,6 +61,7 @@ describe('live payroll settings entry', () => {
   it('starts with no injected employees, periods, sample salaries or bank accounts', () => {
     const html = renderToStaticMarkup(<HrPayrollWorksheet data={data} />);
     expect(html).toContain('افزودن حقوق');
+    expect(html).toContain('حکم کارگزینی');
     expect(html).toContain('تنظیمات حقوق');
     expect(html).not.toContain('DEMO-');
     expect(html).not.toContain('کارمند نمونه');

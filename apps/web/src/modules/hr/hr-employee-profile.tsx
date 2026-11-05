@@ -3,11 +3,11 @@ import {
   employeeLeaveDataset,
   isEmployeeLeave,
 } from './employee-leave-dataset';
+import { HrAttendanceEditor } from './hr-attendance-editor';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useRouteAccess } from '@/modules/iam/access-context';
 
 import Image from '@/i18n/image';
-import { DatePicker } from '@/components/ui/date-picker';
 import { useEffect, useRef, useState } from 'react';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import { getHrResource } from '@nora/contracts';
@@ -31,7 +31,7 @@ import {
 import { HrAudit } from './hr-audit';
 import { HrLeaveGrant } from './hr-leave-grant';
 import { HrEmployeeEditor } from './hr-employees';
-import { hrApi, hrRequest } from './hr-api';
+import { hrRequest } from './hr-api';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
@@ -95,12 +95,12 @@ export function HrEmployeeProfile({
     balances: LeaveBalances;
   }>();
   const [photo, setPhoto] = useState('');
-  const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
+  const [attendanceEdit, setAttendanceEdit] = useState<HrRecordDto | null>(
+    null,
+  );
   const [removing, setRemoving] = useState<HrRecordDto | null>(null);
   const [range, setRange] = useState({ from: '', to: '' });
-  const [uploading, setUploading] = useState(false);
-  const [photoExpiry, setPhotoExpiry] = useState('');
   const photoUrl = useRef('');
   const timeline = useHrEmployeeRecords(employee.id, store.revision, range);
   const records = timeline.records ?? [];
@@ -211,6 +211,16 @@ export function HrEmployeeProfile({
     return <p role="alert">دسترسی به زیربخش‌های این صفحه فعال نیست.</p>;
   return (
     <div className={ui.spaced}>
+      {attendanceEdit && store.data!.capabilities.manualAttendance ? (
+        <HrAttendanceEditor
+          record={attendanceEdit}
+          onClose={() => setAttendanceEdit(null)}
+          onSaved={async () => {
+            await store.mutated();
+            timeline.retry();
+          }}
+        />
+      ) : null}
       <HrPanel title="پرونده شخصی کارمند">
         <div className={ui.profileHead}>
           {photo ? (
@@ -238,71 +248,10 @@ export function HrEmployeeProfile({
               <HrButton onClick={() => setEditing(true)}>
                 ویرایش مشخصات
               </HrButton>
-              <details className={ui.profilePhoto}>
-                <summary>تغییر عکس پروفایل</summary>
-                <div>
-                  <label className={ui.field}>
-                    اعتبار عکس در بایگانی
-                    <DatePicker
-                      value={photoExpiry}
-                      onChange={setPhotoExpiry}
-                      aria-label="اعتبار عکس در بایگانی"
-                    />
-                  </label>
-                  <label className={ui.field}>
-                    عکس پروفایل
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      disabled={uploading}
-                      onChange={async (event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = '';
-                        if (!file) return;
-                        if (file.size > 5 * 1024 * 1024) {
-                          setError('اندازه عکس باید کمتر از ۵ مگابایت باشد.');
-                          return;
-                        }
-                        setUploading(true);
-                        try {
-                          const { archiveHrFile } =
-                            await import('./hr-file-archive');
-                          const document = await archiveHrFile({
-                            file,
-                            branchId: employee.branchId,
-                            employeeId: employee.id,
-                            entityId: employee.id,
-                            title: `عکس پروفایل ${employee.name}`,
-                            validUntil: photoExpiry || undefined,
-                          });
-                          await hrApi.employees.update(employee.id, {
-                            version: employee.version,
-                            photoDocumentId: document.id,
-                          });
-                          await store.mutated();
-                        } catch (e) {
-                          setError(
-                            e instanceof Error
-                              ? e.message
-                              : 'بارگذاری عکس انجام نشد.',
-                          );
-                        } finally {
-                          setUploading(false);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              </details>
             </div>
           ) : null}
         </div>
       </HrPanel>
-      {error ? (
-        <p role="alert" className={ui.error}>
-          {error}
-        </p>
-      ) : null}
       <HrTabs
         items={groups}
         value={group.id}
@@ -410,6 +359,27 @@ export function HrEmployeeProfile({
           <HrTable
             data={data}
             showSelection={source.tab !== 'attendance'}
+            {...(source.tab === 'attendance' &&
+            store.data!.capabilities.manualAttendance
+              ? {
+                  onEdit: (index: number) => {
+                    const rows = records
+                      .filter(
+                        (r) =>
+                          r.section === 'time' &&
+                          r.tab === 'attendance' &&
+                          !r.deletedAt,
+                      )
+                      .sort(
+                        (a, b) =>
+                          (b.values[1] ?? '').localeCompare(
+                            a.values[1] ?? '',
+                          ) || a.id.localeCompare(b.id),
+                      );
+                    setAttendanceEdit(rows[index] ?? null);
+                  },
+                }
+              : {})}
             {...rowSelection}
             {...(needsHrDetail(
               realSource.section,

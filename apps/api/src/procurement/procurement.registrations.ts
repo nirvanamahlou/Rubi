@@ -31,6 +31,7 @@ export async function registerPettyCash(
   documents: DocumentsService,
   body: unknown,
   actor: AuthenticatedActor,
+  transaction?: Prisma.TransactionClient,
 ) {
   const input = v.object(body, [
     'id',
@@ -74,79 +75,79 @@ export async function registerPettyCash(
     actor,
     documents,
   );
-  return database.client.$transaction(
-    async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`petty-registration:${id}`}, 0))::text`;
-      const fund = await tx.procurementPettyFund.findUnique({
-        where: { branchId },
-      });
+  const write = async (tx: Prisma.TransactionClient) => {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`petty-registration:${id}`}, 0))::text`;
+    const fund = await tx.procurementPettyFund.findUnique({
+      where: { branchId },
+    });
+    requireRule(
+      Boolean(fund),
+      'INVALID_STATE',
+      'ابتدا حساب تنخواه این شعبه را تنظیم کنید.',
+    );
+    requireRule(
+      fund!.custodianId === actor.userId ||
+        actor.permissions.includes('procurement.assign'),
+      'FORBIDDEN',
+      'فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.',
+    );
+    const prior = await tx.procurementPettyEntry.findUnique({
+      where: { id },
+      include: { fund: true },
+    });
+    if (prior) {
       requireRule(
-        Boolean(fund),
-        'INVALID_STATE',
-        'ابتدا حساب تنخواه این شعبه را تنظیم کنید.',
+        prior.actorId === actor.userId &&
+          prior.fundId === fund!.id &&
+          (prior.costCenter ?? '') === costCenter &&
+          (prior.description ?? '') === description &&
+          (prior.fee ?? new Prisma.Decimal(0)).equals(fee) &&
+          prior.title === title &&
+          prior.occurredAt?.toISOString() === occurredAt &&
+          prior.amount.negated().equals(amount) &&
+          prior.receiptDocumentId === receiptDocumentId &&
+          prior.receiptVersionId === receiptVersionId,
+        'IDEMPOTENCY_CONFLICT',
+        'این کلید قبلاً برای ورودی دیگری استفاده شده است.',
       );
-      requireRule(
-        fund!.custodianId === actor.userId ||
-          actor.permissions.includes('procurement.assign'),
-        'FORBIDDEN',
-        'فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.',
-      );
-      const prior = await tx.procurementPettyEntry.findUnique({
-        where: { id },
-        include: { fund: true },
-      });
-      if (prior) {
-        requireRule(
-          prior.actorId === actor.userId &&
-            prior.fundId === fund!.id &&
-            (prior.costCenter ?? '') === costCenter &&
-            (prior.description ?? '') === description &&
-            (prior.fee ?? new Prisma.Decimal(0)).equals(fee) &&
-            prior.title === title &&
-            prior.occurredAt?.toISOString() === occurredAt &&
-            prior.amount.negated().equals(amount) &&
-            prior.receiptDocumentId === receiptDocumentId &&
-            prior.receiptVersionId === receiptVersionId,
-          'IDEMPOTENCY_CONFLICT',
-          'این کلید قبلاً برای ورودی دیگری استفاده شده است.',
-        );
-        return dto(prior);
-      }
-      const value = new Prisma.Decimal(amount);
-      const changed = await tx.procurementPettyFund.updateMany({
-        where: {
-          id: fund!.id,
-          version: fund!.version,
-          balance: { gte: value },
+      return dto(prior);
+    }
+    const value = new Prisma.Decimal(amount);
+    const changed = await tx.procurementPettyFund.updateMany({
+      where: {
+        id: fund!.id,
+        version: fund!.version,
+        balance: { gte: value },
+      },
+      data: { balance: { decrement: value }, version: { increment: 1 } },
+    });
+    requireRule(
+      changed.count === 1,
+      'CONCURRENT_MODIFICATION',
+      'موجودی کافی نیست یا تنخواه هم‌زمان تغییر کرده است؛ دوباره بررسی کنید.',
+    );
+    return dto(
+      await tx.procurementPettyEntry.create({
+        data: {
+          id,
+          fundId: fund!.id,
+          actorId: actor.userId,
+          amount: value.negated(),
+          title,
+          costCenter: costCenter || null,
+          description: description || null,
+          fee: new Prisma.Decimal(fee),
+          occurredAt: new Date(occurredAt),
+          receiptDocumentId,
+          receiptVersionId,
         },
-        data: { balance: { decrement: value }, version: { increment: 1 } },
-      });
-      requireRule(
-        changed.count === 1,
-        'CONCURRENT_MODIFICATION',
-        'موجودی کافی نیست یا تنخواه هم‌زمان تغییر کرده است؛ دوباره بررسی کنید.',
-      );
-      return dto(
-        await tx.procurementPettyEntry.create({
-          data: {
-            id,
-            fundId: fund!.id,
-            actorId: actor.userId,
-            amount: value.negated(),
-            title,
-            costCenter: costCenter || null,
-            description: description || null,
-            fee: new Prisma.Decimal(fee),
-            occurredAt: new Date(occurredAt),
-            receiptDocumentId,
-            receiptVersionId,
-          },
-          include: { fund: true },
-        }),
-      );
-    },
-    { timeout: 30000 },
-  );
+        include: { fund: true },
+      }),
+    );
+  };
+  return transaction
+    ? write(transaction)
+    : database.client.$transaction(write, { timeout: 30000 });
 }
 export async function listPettyRegistrations(
   database: DatabaseService,

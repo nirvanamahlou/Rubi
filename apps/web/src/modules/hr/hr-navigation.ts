@@ -234,7 +234,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       'missions',
       'مأموریت‌ها',
       [
-        source('expenses', 'mission', 'مأموریت‌ها', 'درخواست مأموریت'),
+        source('expenses', 'mission', 'مأموریت‌ها', 'ماموریت'),
         source('expenses', 'travel', 'برنامه سفر', 'ثبت برنامه سفر'),
         source('expenses', 'advances', 'مساعده مأموریت', 'درخواست مساعده'),
         source('expenses', 'claims', 'هزینه‌ها و رسیدها', 'ثبت هزینه'),
@@ -267,7 +267,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
   ],
 };
 
-export const employeeGroups: readonly HrGroup[] = [
+const unorderedEmployeeGroups: readonly HrGroup[] = [
   group('identity', 'مشخصات', [
     source('employee', 'summary', 'مشخصات فردی'),
     source('employee', 'identity', 'اطلاعات هویتی'),
@@ -314,6 +314,31 @@ export const employeeGroups: readonly HrGroup[] = [
     source('employee', 'audit', 'تاریخچه', '', true),
   ]),
 ];
+
+export const employeeGroups: readonly HrGroup[] = [
+  'identity',
+  'time',
+  'leaves',
+  'employment',
+  'exit',
+  'contracts',
+  'pay',
+  'requests',
+  'changes',
+  'assets',
+  'development',
+  'history',
+]
+  .flatMap((id) => unorderedEmployeeGroups.filter((item) => item.id === id))
+  .map((item) => ({
+    ...item,
+    label:
+      item.id === 'pay'
+        ? 'حقوق و پرداخت'
+        : item.id === 'assets'
+          ? 'تجهیزات'
+          : item.label,
+  }));
 
 export function resolveHrGroup(groups: readonly HrGroup[], tab?: string) {
   return (

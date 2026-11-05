@@ -90,6 +90,7 @@ export function resource(section: unknown, tab: unknown): HrResourceDefinition {
 export function workflowData(value: unknown): HrWorkflowData {
   if (value === undefined) return {};
   const data = object(value, [
+    'missionExpense',
     'substituteUserId',
     'leaveAttachmentIds',
     'allBranches',
@@ -106,6 +107,30 @@ export function workflowData(value: unknown): HrWorkflowData {
     'currency',
     'reason',
   ]);
+  if (data.missionExpense !== undefined) {
+    const m = object(data.missionExpense, [
+      'amount',
+      'title',
+      'costCenter',
+      'fee',
+      'description',
+      'referToPetty',
+      'receipt',
+    ]);
+    for (const k of ['amount', 'fee'])
+      if (!/^\d{1,20}(\.\d{1,4})?$/.test(String(m[k])))
+        throw new BadRequestException('مبلغ معتبر نیست.');
+    text(m.title, 'عنوان', 240);
+    text(m.costCenter, 'مرکز هزینه', 160, true);
+    text(m.description, 'شرح', 2000, true);
+    if (typeof m.referToPetty !== 'boolean')
+      throw new BadRequestException('ارجاع معتبر نیست.');
+    if (m.receipt !== undefined) {
+      const r = object(m.receipt, ['id', 'versionId']);
+      uuid(r.id);
+      uuid(r.versionId);
+    }
+  }
   if (data.allBranches !== undefined && typeof data.allBranches !== 'boolean')
     throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const key of [

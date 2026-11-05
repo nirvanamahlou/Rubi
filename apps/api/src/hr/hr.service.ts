@@ -1,3 +1,5 @@
+import { canEditAttendance } from './hr-manual-attendance-policy';
+import { ProcurementMissionPort } from '../procurement/procurement-mission.module';
 import type { UploadedDocumentFile } from '../documents/documents.service';
 import {
   leavePolicyValues,
@@ -51,6 +53,7 @@ import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 
 import {
+  Optional,
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -151,6 +154,9 @@ export class HrService {
     @Inject(IamService) private readonly iam: IamService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
     @Inject(HrDirectoryService) private readonly directory: HrDirectoryService,
+    @Optional()
+    @Inject(ProcurementMissionPort)
+    private readonly missionPetty?: ProcurementMissionPort,
   ) {}
 
   private expenseMission(
@@ -732,6 +738,7 @@ export class HrService {
         .map(({ id, name, code }) => ({ id, name, code })),
       capabilities: {
         read: true,
+        manualAttendance: canEditAttendance(actor),
         write: this.has(actor, 'hr.manage'),
         approve: this.has(actor, 'hr.approve'),
         sensitive: this.has(actor, 'hr.sensitive'),
@@ -2118,6 +2125,11 @@ export class HrService {
     actor: AuthenticatedActor,
     employee?: Employee | null,
   ) {
+    if (
+      ['time.checkins', 'time.corrections'].includes(schema.key) &&
+      !canEditAttendance(actor)
+    )
+      throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
     if (schema.readOnly || systemResources.has(schema.key))
       throw new ForbiddenException('این رکورد توسط گردش عملیاتی تولید می‌شود.');
     if (schema.sensitive) this.require(actor, 'hr.sensitive');
@@ -2212,6 +2224,18 @@ export class HrService {
           );
         values[3] = `${start.time} تا ${end.time}${end.date !== date ? ' (روز بعد)' : ''}`;
       }
+    }
+    if (
+      ['expenses.mission', 'time.mission'].includes(schema.key) &&
+      (data.startsAt || data.endsAt || data.missionExpense)
+    ) {
+      if (
+        !data.startsAt ||
+        !data.endsAt ||
+        validate.localClockParts(new Date(data.startsAt)).date !== values[2] ||
+        validate.localClockParts(new Date(data.endsAt)).date !== values[3]
+      )
+        throw new BadRequestException('ساعت و تاریخ مأموریت باید یکسان باشند.');
     }
     if (['requests.radanLeave', 'requests.radanMission'].includes(schema.key)) {
       const hourly = values[4] === 'ساعتی';
@@ -2852,6 +2876,8 @@ export class HrService {
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
     this.chartCoordinates(schema, data);
+    if (data.missionExpense && schema.key !== 'expenses.mission')
+      throw new BadRequestException('هزینه فقط برای مأموریت مجاز است.');
     const networkPassword = this.devicePassword(
       input.privateData,
       schema,
@@ -3006,6 +3032,15 @@ export class HrService {
           if (data.substituteUserId) data.substituteStatus = 'PENDING';
         }
 
+        if (data.missionExpense?.receipt) {
+          if (!this.missionPetty)
+            throw new ConflictException('سرویس مدارک در دسترس نیست.');
+          await this.missionPetty.validateReceipt(
+            data.missionExpense.receipt,
+            branchId,
+            actor,
+          );
+        }
         const state = validate.status(input.status, schema.approval);
         if (data.approvalRoute?.length && validate.APPROVED.has(state))
           throw new BadRequestException(
@@ -3086,6 +3121,43 @@ export class HrService {
             data: { employeeId: created.id },
           });
         }
+        if (
+          schema.key === 'expenses.mission' &&
+          data.missionExpense?.referToPetty
+        ) {
+          if (!validate.APPROVED.has(state))
+            throw new BadRequestException(
+              'ارجاع به تنخواه نیازمند مأموریت تأییدشده است.',
+            );
+          if (!this.missionPetty)
+            throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+          const expense = data.missionExpense;
+          const posted = await this.missionPetty.register(
+            tx,
+            {
+              id: row.id,
+              branchId,
+              title: expense.title,
+              occurredAt: data.startsAt,
+              amount: expense.amount,
+              costCenter: expense.costCenter,
+              fee: expense.fee,
+              description: expense.description,
+              ...(expense.receipt ? { receipt: expense.receipt } : {}),
+            },
+            actor,
+          );
+          await tx.hrRecord.update({
+            where: { id: row.id },
+            data: {
+              data: json({
+                ...data,
+                pettyRegistrationId: posted.id,
+                currency: posted.currencyCode,
+              }),
+            },
+          });
+        }
         await this.amounts(tx, row, schema, values, data);
         if (schema.approval && validate.APPROVED.has(state))
           await this.effects(tx, row, schema, actor, employee);
@@ -3134,12 +3206,35 @@ export class HrService {
       : undefined;
     const saved = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      if ((row.data as HrWorkflowData).pettyRegistrationId)
+        throw new ConflictException(
+          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
+        );
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
         const fresh = await this.record(tx, id, actor);
         if (fresh.version !== row.version)
           throw new ConflictException('نسخه رکورد تغییر کرده است.');
+      }
+      if (providedData?.missionExpense) {
+        if (
+          row.section !== 'expenses' ||
+          row.tab !== 'mission' ||
+          providedData.missionExpense.referToPetty
+        )
+          throw new BadRequestException(
+            'ارجاع هزینه تنها هنگام ثبت مأموریت مجاز است.',
+          );
+        if (providedData.missionExpense.receipt) {
+          if (!this.missionPetty)
+            throw new ConflictException('سرویس مدارک در دسترس نیست.');
+          await this.missionPetty.validateReceipt(
+            providedData.missionExpense.receipt,
+            row.branchId,
+            actor,
+          );
+        }
       }
       if (row.version !== expected)
         throw new ConflictException('رکورد توسط کاربر دیگری تغییر کرده است.');
@@ -3723,6 +3818,10 @@ export class HrService {
       { operation: 'contract.state', id, input },
       async (tx) => {
         const row = await this.record(tx, id, actor);
+        if ((row.data as HrWorkflowData).pettyRegistrationId)
+          throw new ConflictException(
+            'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
+          );
         if (row.version !== version)
           throw new ConflictException('نسخه قرارداد تغییر کرده است.');
         const schema = validate.resource(row.section, row.tab);
@@ -3796,6 +3895,10 @@ export class HrService {
     let affected: RecordRow | undefined;
     const result = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      if ((row.data as HrWorkflowData).pettyRegistrationId)
+        throw new ConflictException(
+          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
+        );
       affected = row;
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
@@ -4284,6 +4387,10 @@ export class HrService {
         throw new ConflictException('قرارداد فعال هم‌پوشان وجود دارد.');
     }
     if (['time.corrections', 'requests.attendance'].includes(schema.key)) {
+      if (!canEditAttendance(actor))
+        throw new ForbiddenException(
+          'ویرایش دستی تردد برای این حساب مجاز نیست.',
+        );
       if (!employee || !data.startsAt || !data.endsAt)
         throw new BadRequestException(
           'اصلاح حضور نیازمند زمان شروع و پایان UTC معتبر است.',
@@ -4806,8 +4913,12 @@ export class HrService {
           'leave',
           'calculationSettings',
           'checkins',
+          'corrections',
+          'mission',
         ].includes(row.tab)) ||
-      (row.section === 'requests' && ['leave', 'radanLeave'].includes(row.tab))
+      (row.section === 'expenses' && row.tab === 'mission') ||
+      (row.section === 'requests' &&
+        ['leave', 'radanLeave', 'radanMission', 'attendance'].includes(row.tab))
     )
       await this.refreshAttendance(row.branchId, actor);
   }
@@ -5029,6 +5140,111 @@ export class HrService {
       selected,
     };
   }
+  async editAttendance(
+    id: string,
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    if (!canEditAttendance(actor))
+      throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
+    const input = validate.object(body, [
+      'version',
+      'arrival',
+      'departure',
+      'reason',
+    ]);
+    const version = validate.version(input.version),
+      reason = validate.text(input.reason, 'دلیل', 500);
+    const result = await this.command(
+      actor,
+      key,
+      { operation: 'attendance.manual', id, input },
+      async (tx) => {
+        const attendance = await this.record(tx, validate.uuid(id), actor);
+        if (
+          attendance.section !== 'time' ||
+          attendance.tab !== 'attendance' ||
+          !attendance.employeeId
+        )
+          throw new BadRequestException('رکورد کارکرد معتبر نیست.');
+        const date = (attendance.values as string[])[1]!;
+        await this.assertOpenPeriod(tx, attendance.branchId, date);
+        const start = validate.localClockToUtc(
+          date,
+          validate.text(input.arrival, 'ورود', 5),
+        );
+        const end = validate.localClockToUtc(
+          date,
+          validate.text(input.departure, 'خروج', 5),
+        );
+        if (end <= start)
+          throw new BadRequestException('خروج باید پس از ورود باشد.');
+        const changed = await tx.hrRecord.updateMany({
+          where: { id: attendance.id, version, deletedAt: null },
+          data: { version: { increment: 1 } },
+        });
+        if (changed.count !== 1)
+          throw new ConflictException('نسخه کارکرد تغییر کرده است.');
+        const employee = await this.employee(tx, attendance.employeeId, actor);
+        const correction = await tx.hrRecord.create({
+          data: {
+            branchId: attendance.branchId,
+            employeeId: employee.id,
+            section: 'time',
+            tab: 'corrections',
+            code: `HR-COR-${randomUUID()}`,
+            status: 'تأییدشده',
+            effectiveAt: validate.isoDate(date),
+            values: [
+              employee.name,
+              date,
+              '',
+              `${input.arrival} تا ${input.departure}`,
+              reason,
+              actor.userId,
+            ],
+            data: {
+              startsAt: start.toISOString(),
+              endsAt: end.toISOString(),
+              reason,
+            },
+            searchText: employee.name,
+          },
+        });
+        await this.effects(
+          tx,
+          correction,
+          validate.resource('time', 'corrections'),
+          actor,
+          employee,
+        );
+        await this.audit(
+          tx,
+          actor,
+          {
+            branchId: attendance.branchId,
+            employeeId: employee.id,
+            recordId: correction.id,
+          },
+          'attendance.manual',
+          {
+            attendanceId: id,
+            arrival: input.arrival,
+            departure: input.departure,
+            reason,
+          },
+          1,
+        );
+        return { branchId: attendance.branchId, date };
+      },
+    );
+    await this.processAttendance(result, randomUUID(), actor);
+    return this.recordDto(
+      await this.record(this.database.client, id, actor),
+      actor,
+    );
+  }
   async processAttendance(
     body: unknown,
     key: unknown,
@@ -5113,6 +5329,10 @@ export class HrService {
                 ],
               },
               {
+                section: 'expenses',
+                tab: 'mission',
+              },
+              {
                 section: 'requests',
                 tab: { in: ['radanLeave', 'radanMission', 'leave'] },
               },
@@ -5157,7 +5377,12 @@ export class HrService {
                     .filter(
                       (r) =>
                         r.employeeId === employee.id &&
-                        ['leave', 'radanLeave'].includes(r.tab) &&
+                        [
+                          'leave',
+                          'radanLeave',
+                          'mission',
+                          'radanMission',
+                        ].includes(r.tab) &&
                         validate.APPROVED.has(r.status),
                     )
                     .map((r) => {
@@ -5280,11 +5505,29 @@ export class HrService {
               (r.values as string[])[2]! <= date &&
               (r.values as string[])[3]! >= date,
           );
+          const missionDay = source.some(
+            (r) =>
+              r.employeeId === employee.id &&
+              ['mission', 'radanMission'].includes(r.tab) &&
+              validate.APPROVED.has(r.status) &&
+              (r.values as string[])[2]! <= date &&
+              (r.values as string[])[3]! >= date &&
+              shiftStart &&
+              shiftEnd &&
+              Date.parse(
+                (r.data as HrWorkflowData).startsAt ?? `${date}T00:00:00+03:30`,
+              ) < shiftEnd.getTime() &&
+              Date.parse(
+                (r.data as HrWorkflowData).endsAt ?? `${date}T23:59:59+03:30`,
+              ) > shiftStart.getTime(),
+          );
           const status =
             leave && leave.leaveMinutes > 0
-              ? hourlyLeave
-                ? 'مرخصی ساعتی'
-                : 'مرخصی'
+              ? missionDay
+                ? 'مأموریت'
+                : hourlyLeave
+                  ? 'مرخصی ساعتی'
+                  : 'مرخصی'
               : !selected.length
                 ? !shift
                   ? 'عدم روزکاری'

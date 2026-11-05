@@ -508,42 +508,47 @@ function AccessibleHrSection({
               </NativeSearchSelect>
             </label>
           ) : null}
-          <HrButton
-            onClick={() => {
-              window.localStorage.setItem(
-                `nora.hr.filters.${source.section}.${source.tab}`,
-                JSON.stringify({
-                  status,
-                  branchId,
-                  from: range.from,
-                  to: range.to,
-                  expiry,
-                }),
-              );
-              setNotice('فیلتر این بخش ذخیره شد.');
-            }}
-          >
-            ذخیره فیلتر
-          </HrButton>
-          <HrButton
-            onClick={() => {
-              const saved = parseSavedHrFilter(
-                window.localStorage.getItem(
-                  `nora.hr.filters.${source.section}.${source.tab}`,
-                ),
-                companies.map((item) => item.id),
-              );
-              if (saved) {
-                setStatus(saved.status);
-                setBranchId(saved.branchId);
-                setRange({ from: saved.from, to: saved.to });
-                setExpiry(saved.expiry);
-                setPage(1);
-              } else setNotice('فیلتر ذخیره‌شده‌ای برای این بخش وجود ندارد.');
-            }}
-          >
-            فیلتر ذخیره‌شده
-          </HrButton>
+          {section !== 'time' ? (
+            <>
+              <HrButton
+                onClick={() => {
+                  window.localStorage.setItem(
+                    `nora.hr.filters.${source.section}.${source.tab}`,
+                    JSON.stringify({
+                      status,
+                      branchId,
+                      from: range.from,
+                      to: range.to,
+                      expiry,
+                    }),
+                  );
+                  setNotice('فیلتر این بخش ذخیره شد.');
+                }}
+              >
+                ذخیره فیلتر
+              </HrButton>
+              <HrButton
+                onClick={() => {
+                  const saved = parseSavedHrFilter(
+                    window.localStorage.getItem(
+                      `nora.hr.filters.${source.section}.${source.tab}`,
+                    ),
+                    companies.map((item) => item.id),
+                  );
+                  if (saved) {
+                    setStatus(saved.status);
+                    setBranchId(saved.branchId);
+                    setRange({ from: saved.from, to: saved.to });
+                    setExpiry(saved.expiry);
+                    setPage(1);
+                  } else
+                    setNotice('فیلتر ذخیره‌شده‌ای برای این بخش وجود ندارد.');
+                }}
+              >
+                فیلتر ذخیره‌شده
+              </HrButton>
+            </>
+          ) : null}
           <HrButton
             onClick={() => {
               setQuery('');
