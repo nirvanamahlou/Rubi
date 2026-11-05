@@ -11260,3 +11260,10 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 ## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105 — PC-A — ACTIVE
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
+
+
+## CALL-QUEUE-MINE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; base develop14539e34e; branch codex/pc-c-call-queue-mine-1105. User explicitly requests swapping global queue My work/All tabs and making My work the default. Reserve only WorkQueue default/tab order in workflow.tsx and own status notes. Preserve contact dossier defaults, backend MINE authorization, counts and other filters. Own prior alert task1397 is source-frozen; its queue navigation reset must preserve this newer default during integration. No schema/API/dependency/data change.
+
+CALL-QUEUE-MINE-1105 validation: six existing workflow/layout tests and scoped lint pass; diff is limited to three queue UI lines plus notes. Source reservation releases on commit. Own frozen alert PR1397 gets a one-line MINE navigation compatibility follow-up under this newer owner instruction. Full hosted CI remains required before release.

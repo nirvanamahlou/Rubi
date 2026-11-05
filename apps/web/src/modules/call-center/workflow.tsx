@@ -601,7 +601,7 @@ export function WorkQueue({
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
-  const [view, setView] = useState('ALL'),
+  const [view, setView] = useState('MINE'),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0);
   const [data, setData] = useState<Awaited<
@@ -700,10 +700,10 @@ export function WorkQueue({
             >
               {(
                 [
-                  ['ALL', 'همه درخواست‌ها'],
+                  ['MINE', 'کارهای من'],
                   ['OPEN', 'درخواست‌های باز'],
                   ['CLOSED', 'درخواست‌های بسته‌شده'],
-                  ['MINE', 'کارهای من'],
+                  ['ALL', 'همه درخواست‌ها'],
                 ] as const
               ).map(([value, label]) => (
                 <button
