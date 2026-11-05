@@ -26,9 +26,11 @@ import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
   ReservationIntakeV1,
+  ReservationContractDetailsV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
+  contractDetails?: ReservationContractDetailsV1;
   workflow: TravelWorkflowStateV1;
   supplierFormUseSent?: boolean;
   supplierHotelSourceSnapshot?: ReservationFormIntake['snapshot'];

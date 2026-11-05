@@ -17672,5 +17672,8 @@
   "نوع ثبت": "Entry type",
   "کارکنان سابق": "Former employees",
   "کارکنان فعلی": "Current employees",
-  "وضعیت کارمند معتبر نیست.": "The employee status is invalid."
+  "وضعیت کارمند معتبر نیست.": "The employee status is invalid.",
+  "· بزرگسال": "· Adults",
+  "· سن کودکان": "· Child ages",
+  "نیازمند مجوز مشاهده مالی": "Financial viewing permission required"
 }

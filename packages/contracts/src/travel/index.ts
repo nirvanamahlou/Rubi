@@ -2,7 +2,7 @@ export * from './hotel-savings';
 export * from './legacy-purchase-guests';
 export * from './ticket-flight-output';
 import type { HotelPurchaseSavingsV1 } from './hotel-savings';
-import type { SalesReservationRequestV1 } from '../sales';
+import type { SalesReservationRequestV1, SalesBuyerContactV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
@@ -527,6 +527,21 @@ export interface ReservationTableFlagV1 {
   updatedByUserId: string;
   actorName?: string | null | undefined;
 }
+/** Current, request-scoped Sales data for Reservations general details only. */
+export interface ReservationContractDetailsV1 {
+  customerName: string;
+  buyerContact: SalesBuyerContactV1 | null;
+  originId: string;
+  destinationId: string;
+  contractVersion: number;
+  totals: readonly {
+    currencyCode: string;
+    amount: string;
+    discount: string;
+    outstanding: string | null;
+  }[];
+}
+
 export interface ReservationTableSummaryV1 {
   /** Current Sales route, including contracts without inventory ticket selections. */
   destinationId?: string | undefined;
