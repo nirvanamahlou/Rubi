@@ -5,7 +5,6 @@ import {
   Pencil,
   Plane,
   Layers,
-  ArrowLeft,
   Search,
   Trash2,
 } from 'lucide-react';
@@ -34,7 +33,12 @@ export function tourMetrics(departures: TourDepartureV1[], today: string) {
   return {
     current: current.length,
     upcoming: upcoming.length,
-    available: upcoming.filter((item) => item.remainingCapacity > 0).length,
+    available: upcoming.filter(
+      (item) =>
+        item.remainingCapacity > 0 &&
+        item.isActive !== false &&
+        !item.isDeleted,
+    ).length,
   };
 }
 export function TourOverview({
@@ -47,10 +51,12 @@ export function TourOverview({
   onDelete,
   onSelect,
   onRepeat,
-  onToggleDeparture,
+  onPeriodStatus,
   definitionMode = false,
 }: {
-  onToggleDeparture?: (item: TourDepartureV1) => void;
+  onPeriodStatus?:
+    | ((item: TourDepartureV1, status: 'ACTIVE' | 'PAUSED' | 'DELETED') => void)
+    | undefined;
   definitionMode?: boolean;
   packages: TourPackageV1[];
   departures: TourDepartureV1[];
@@ -160,114 +166,153 @@ export function TourOverview({
             </Button>
           ))}
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {visible.map((item) => {
-            const ongoing = item.startsOn <= today;
-            const capacity = Math.min(
-              item.outbound.totalCapacity,
-              item.returning?.totalCapacity ?? item.outbound.totalCapacity,
-            );
-            const remaining = Math.max(
-              0,
-              Math.min(capacity, item.remainingCapacity),
-            );
-            return (
-              <article
-                key={item.id}
-                className="rounded-2xl border bg-gradient-to-bl from-primary/5 to-background p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h4 className="font-bold">{item.package.name}</h4>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${ongoing ? 'bg-emerald-50 text-emerald-700' : remaining ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}
-                  >
-                    {ongoing
-                      ? 'در حال برگزاری'
-                      : remaining
-                        ? 'پیش‌رو'
-                        : 'بدون ظرفیت فروش'}
-                  </span>
-                </div>
-                <p className="mt-3 flex items-center gap-2 text-sm">
-                  <MapPin aria-hidden size={16} />
-                  {city(item.package.originId)}
-                  <ArrowLeft aria-hidden size={14} />
-                  {city(item.package.destinationId)}
-                </p>
-                <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                  <CalendarDays aria-hidden size={16} />
-                  {tourDate(item.startsOn)} تا {tourDate(item.endsOn)}
-                </p>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {item.outbound.carrierName} · {item.outbound.serviceNumber}
-                  {item.returning ? ` / ${item.returning.serviceNumber}` : ''}
-                </p>
-                <div className="mt-4 border-t pt-4">
-                  <div className="flex justify-between gap-2 text-sm">
-                    <span>ظرفیت باقی‌مانده</span>
-                    <b>
-                      {number(remaining)} از {number(capacity)} صندلی
-                    </b>
-                  </div>
-                  <div
-                    role="progressbar"
-                    aria-label={`ظرفیت باقی‌مانده ${item.package.name}`}
-                    aria-valuemin={0}
-                    aria-valuemax={capacity || 1}
-                    aria-valuenow={remaining}
-                    className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10"
-                  >
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: `${capacity ? (remaining / capacity) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                  {ongoing && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      فروش بلیت رفت پس از حرکت بسته است.
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {onToggleDeparture && (
+        <div className="space-y-3">
+          {[...new Set(visible.map((item) => item.packageId))].map(
+            (packageId) => {
+              const periods = visible.filter(
+                (item) => item.packageId === packageId,
+              );
+              const pack = periods[0]!.package;
+              return (
+                <section
+                  key={packageId}
+                  className="overflow-hidden rounded-xl border"
+                >
+                  <header className="flex flex-wrap items-center justify-between gap-2 bg-primary/5 px-4 py-3">
+                    <div>
+                      <h4 className="font-bold">{pack.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {city(pack.originId)} ← {city(pack.destinationId)}
+                      </p>
+                    </div>
                     <Button
-                      disabled={busy}
                       variant="outline"
-                      onClick={() => onToggleDeparture(item)}
+                      disabled={busy}
+                      onClick={() => onEdit(pack)}
                     >
-                      {item.isActive === false ? 'فعال‌سازی' : 'توقف فروش'}
+                      ویرایش تور
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() => onEdit(item.package)}
-                  >
-                    <Pencil aria-hidden size={15} />
-                    ویرایش تور
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() => onRepeat(item)}
-                  >
-                    {definitionMode
-                      ? 'مدیریت نوبت و قیمت'
-                      : 'تکرار برای هفته بعد'}
-                  </Button>
-                  <Button asChild variant="outline">
-                    <a
-                      href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}
-                    >
-                      هتل‌های این بازه
-                    </a>
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
+                  </header>
+                  <div className="divide-y">
+                    {periods.map((item) => {
+                      const capacity = Math.min(
+                        item.outbound.totalCapacity,
+                        item.returning?.totalCapacity ??
+                          item.outbound.totalCapacity,
+                      );
+                      const remaining = Math.max(
+                        0,
+                        Math.min(capacity, item.remainingCapacity),
+                      );
+                      return (
+                        <article
+                          key={item.id}
+                          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"
+                        >
+                          <div className="min-w-56 space-y-1">
+                            <p>
+                              {tourDate(item.startsOn)} تا{' '}
+                              {tourDate(item.endsOn)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.outbound.carrierName} ·{' '}
+                              {item.outbound.serviceNumber}
+                              {item.returning
+                                ? ` / ${item.returning.serviceNumber}`
+                                : ''}
+                            </p>
+                          </div>
+                          <div className="min-w-32 text-xs">
+                            <p>
+                              {item.isActive === false
+                                ? 'متوقف'
+                                : item.startsOn <= today
+                                  ? 'در حال برگزاری'
+                                  : remaining
+                                    ? 'پیش‌رو'
+                                    : 'بدون ظرفیت فروش'}
+                            </p>
+                            <p>
+                              {number(remaining)} از {number(capacity)} صندلی
+                            </p>
+                            <div
+                              role="progressbar"
+                              aria-label={`ظرفیت باقی‌مانده ${pack.name}`}
+                              aria-valuemin={0}
+                              aria-valuemax={capacity || 1}
+                              aria-valuenow={remaining}
+                              className="mt-1 h-1 overflow-hidden rounded bg-primary/10"
+                            >
+                              <div
+                                className="h-full bg-primary"
+                                style={{
+                                  width: `${capacity ? (remaining / capacity) * 100 : 0}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() => onRepeat(item)}
+                            >
+                              {definitionMode
+                                ? 'مدیریت نوبت و قیمت'
+                                : 'تکرار برای هفته بعد'}
+                            </Button>
+                            <Button asChild variant="outline">
+                              <a
+                                href={`/reservations/hotel-rates?tourDepartureId=${encodeURIComponent(item.id)}`}
+                              >
+                                هتل‌های این بازه
+                              </a>
+                            </Button>
+                            {onPeriodStatus && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    onPeriodStatus(
+                                      item,
+                                      item.isActive === false
+                                        ? 'ACTIVE'
+                                        : 'PAUSED',
+                                    )
+                                  }
+                                >
+                                  {item.isActive === false
+                                    ? 'فعال‌سازی بازه'
+                                    : 'توقف بازه'}
+                                </Button>
+                                <ConfirmDialog
+                                  trigger={
+                                    <Button
+                                      variant="destructive"
+                                      disabled={busy}
+                                    >
+                                      حذف بازه
+                                    </Button>
+                                  }
+                                  title="حذف بازه"
+                                  description="این بازه از انتخاب‌های جدید حذف می‌شود؛ سوابق قراردادها و قیمت‌های قبلی حفظ می‌شوند."
+                                  destructive
+                                  onConfirm={() =>
+                                    onPeriodStatus(item, 'DELETED')
+                                  }
+                                />
+                              </>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            },
+          )}
         </div>
         {loading && (
           <p

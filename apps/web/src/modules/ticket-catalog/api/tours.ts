@@ -80,7 +80,10 @@ export const toursApi = {
       { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
     ),
   packages: () => request<{ data: TourPackageV1[] }>('/tours/packages'),
-  departures: () => request<{ data: TourDepartureV1[] }>('/tours/departures'),
+  departures: (management = false) =>
+    request<{ data: TourDepartureV1[] }>(
+      '/tours/departures' + (management ? '?management=true' : ''),
+    ),
   createPackage: (input: TourPackageInputV1, branch: string, key: string) =>
     request<{ data: TourPackageV1 }>(
       '/tours/packages',
@@ -119,11 +122,16 @@ export const toursApi = {
     isActive: boolean,
     expectedVersion: number,
     branch: string,
+    isDeleted?: true,
   ) =>
     request('/tours/departures/' + encodeURIComponent(id) + '/status', {
       method: 'PATCH',
       headers: { 'x-branch-id': branch },
-      body: JSON.stringify({ isActive, expectedVersion }),
+      body: JSON.stringify({
+        isActive,
+        expectedVersion,
+        ...(isDeleted ? { isDeleted } : {}),
+      }),
     }),
   offers: async (
     originId: string,

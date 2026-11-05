@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('keeps international flight dates in day month year order inside RTL output', () => {
+    const html = contractPrintHtml(printFixture, {
+      ...printReferences,
+      international: true,
+    });
+    expect(html).toContain('<td><bdi dir="ltr">19 September 2026</bdi></td>');
+    expect(html).toContain('<td><bdi dir="ltr">26 September 2026</bdi></td>');
+  });
   it('prints the booked child band in services and prices even without a birth date', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail = output.contract.passengersDetail.map(

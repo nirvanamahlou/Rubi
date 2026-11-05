@@ -139,12 +139,28 @@ export function HotelStayPurchase({
       p.serviceClientKey === returnKey &&
       (p.coveredServiceClientKeys?.length ?? 1) === 1,
   );
+  const initialCounts = contractHotelTransferCounts(request.snapshot, stayKey);
+  const defaultRoundTrip =
+    quote.hotelTransferRoundTrip ?? !request.workflow?.supplierFormSettings;
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    hotelTransferRoundTrip: defaultRoundTrip,
     hotelTransferCounts:
-      quote.hotelTransferRoundTrip && quote.hotelTransferCounts
+      request.workflow?.supplierFormSettings?.hotelTransferRoundTrip &&
+      quote.hotelTransferCounts
         ? { ...quote.hotelTransferCounts }
-        : contractHotelTransferCounts(request.snapshot, stayKey),
+        : defaultRoundTrip
+          ? {
+              outbound: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+              returning: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+            }
+          : initialCounts,
     ...(transfer
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
@@ -313,9 +329,10 @@ export function HotelStayPurchase({
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
         );
-      const separate =
-        draft.hotelTransferSeparate ??
-        Boolean(draft.transferBrokerId && draft.transferBrokerId !== broker.id);
+      const separate = Boolean(
+        draft.hotelTransferSplit ||
+        (draft.transferBrokerId && draft.transferBrokerId !== broker.id),
+      );
       const groups = draft.hotelTransferSplit
         ? [[outboundKey], [returnKey!]]
         : [transferKeys];
@@ -463,6 +480,7 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        hotelBroker={broker}
         purchaseRoot={purchaseRoot}
         requestId={request.id}
         canSplitTransfers={transferKeys.length > 1}

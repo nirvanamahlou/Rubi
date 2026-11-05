@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   SalesContractCreateRequest,
@@ -39,6 +39,16 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       branchIds: [branchId],
       permissions: ['ticket_catalog.read', 'ticket_catalog.manage'],
     };
+    beforeAll(async () => {
+      await client.user.create({
+        data: {
+          id: actor.userId,
+          username: `tour-lifecycle-${actor.userId}`,
+          displayName: 'Synthetic tour actor',
+          passwordHash: 'not-a-login-hash',
+        },
+      });
+    });
     const definition = {
       name: 'Synthetic tour',
       originId: randomUUID(),
