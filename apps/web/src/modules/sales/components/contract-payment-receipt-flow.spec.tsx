@@ -218,6 +218,9 @@ it('selects a receipt before saving and attaches it only to the newly saved paym
   expect(h.upload.mock.invocationCallOrder[0]).toBeGreaterThan(
     h.add.mock.invocationCallOrder[0]!,
   );
+  expect(render().some((p) => p.open === false && p.onOpenChange)).toBe(true);
+  expect(render().some((p) => p.paymentId === 'payment')).toBe(false);
+  expect(h.upload).toHaveBeenCalledOnce();
 });
 it('keeps an optional receipt optional and never uploads when payment creation fails', async () => {
   await ready();
@@ -244,6 +247,7 @@ it('preserves the saved payment and receipt on a definite upload failure without
   const receipt = render().find((p) => p.initialFile === file)!;
   expect(receipt.paymentId).toBe('payment');
   expect(receipt.initialUnknown).toBe(false);
+  expect(render().some((p) => p.open === true && p.onOpenChange)).toBe(true);
   submit();
   await Promise.resolve();
   expect(h.add).toHaveBeenCalledOnce();
@@ -276,4 +280,5 @@ it('does not require a file and allows receipt controls for contract viewers wit
   await vi.waitFor(() => expect(h.saved).toHaveBeenCalledOnce());
   expect(h.add).toHaveBeenCalledOnce();
   expect(h.upload).not.toHaveBeenCalled();
+  expect(render().some((p) => p.open === false && p.onOpenChange)).toBe(true);
 });

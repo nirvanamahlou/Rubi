@@ -423,6 +423,7 @@ export function ContractPayments({
       );
       if (added) {
         setSavedPaymentId(added.id);
+        let receiptComplete = !receiptFile;
         if (receiptFile) {
           let submitted = false;
           try {
@@ -433,6 +434,7 @@ export function ContractPayments({
             submitted = true;
             await paymentReceiptsApi.upload(id, added.id, form);
             setReceiptFile(null);
+            receiptComplete = true;
           } catch (reason) {
             setError(
               reason instanceof Error
@@ -450,6 +452,7 @@ export function ContractPayments({
             );
           }
         }
+        if (receiptComplete) setAdding(false);
       }
       onSaved();
     } catch (reason) {
@@ -858,7 +861,7 @@ export function ContractPayments({
                 </div>
               </fieldset>
               <div className="md:col-span-2">
-                {savedPaymentId && contract && !busy ? (
+                {adding && savedPaymentId && contract && !busy ? (
                   <PaymentDocuments
                     initialFile={receiptFile}
                     initialUnknown={receiptUnknown}
