@@ -43,6 +43,7 @@ function fixture(paid = '100', kind = 'FLIGHT') {
     financeOperationalRequest: { findMany: vi.fn().mockResolvedValue([]) },
     reservationIntake: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     reservationServicePurchase: {
+      findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 'purchase', version: 1 }),
     },
     auditEvent: { create: vi.fn().mockResolvedValue({}) },
