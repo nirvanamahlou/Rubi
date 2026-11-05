@@ -21,6 +21,7 @@ export async function enrichContractHotels(
       const city = cityId
         ? await read('cities', cityId).catch(() => undefined)
         : undefined;
+      if (city?.name && stay.cityId) refs.names[stay.cityId] = city.name;
       const english = (value: unknown) =>
         typeof value === 'string' && value.trim() ? value.trim() : undefined;
       const cityName =
