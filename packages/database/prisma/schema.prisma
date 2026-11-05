@@ -48,6 +48,8 @@ model User {
   accountingSourceEvents   FinanceAccountingEvent[]         @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
+  callCenterFollowupsCompleted                     CallCenterRequestReview[]                 @relation("CallCenterFollowupCompletedBy")
+  callCenterFollowupsReviewed                      CallCenterRequestReview[]                 @relation("CallCenterFollowupReviewedBy")
   callAnswerResponsibilities                       CallCenterAnswerResponsibility[]
   callCenterNotes                                  CallCenterNote[]
   callCenterOwnedContacts                          CallCenterContact[]                       @relation("CallCenterContactOwner")
@@ -5905,6 +5907,7 @@ model CustomerAffairsTicket {
   callCenterPayload       String?                           @map("call_center_payload") @db.Text
   callCenterKeyVersion    Int?                              @map("call_center_key_version")
   callCenterCalls         CallCenterCall[]
+  callCenterReviews       CallCenterRequestReview[]
   id                      String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   trackingNumber          String                            @unique @map("tracking_number") @db.VarChar(32)
   branchId                String                            @map("branch_id") @db.Uuid
@@ -7929,6 +7932,7 @@ model CallCenterCall {
   contact                CallCenterContact                @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
   createdBy              User                             @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
   answerResponsibilities CallCenterAnswerResponsibility[]
+  requestReviews         CallCenterRequestReview[]
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
   @@index([ticketId], map: "cc_call_ticket_idx")
@@ -7936,6 +7940,25 @@ model CallCenterCall {
   @@index([createdAt, id], map: "cc_call_registered_idx")
   @@index([occurredAt, direction, outcome], map: "cc_call_report_idx")
   @@map("customer_affairs_calls")
+}
+
+model CallCenterRequestReview {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId          String                @map("ticket_id") @db.Uuid
+  callId            String                @map("call_id") @db.Uuid
+  completedByUserId String                @map("completed_by_user_id") @db.Uuid
+  completedAt       DateTime              @default(now()) @map("completed_at") @db.Timestamptz(3)
+  reviewedAt        DateTime?             @map("reviewed_at") @db.Timestamptz(3)
+  reviewedByUserId  String?               @map("reviewed_by_user_id") @db.Uuid
+  ticket            CustomerAffairsTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_request_review_ticket_fk")
+  call              CallCenterCall        @relation(fields: [callId], references: [id], onDelete: Restrict, map: "cc_request_review_call_fk")
+  completedBy       User                  @relation("CallCenterFollowupCompletedBy", fields: [completedByUserId], references: [id], onDelete: Restrict, map: "cc_request_review_completed_by_fk")
+  reviewedBy        User?                 @relation("CallCenterFollowupReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: Restrict, map: "cc_request_review_reviewed_by_fk")
+
+  @@unique([ticketId, callId], map: "cc_request_review_ticket_call_key")
+  @@index([ticketId, reviewedAt, completedAt, id], map: "cc_request_review_pending_idx")
+  @@index([callId], map: "cc_request_review_call_idx")
+  @@map("call_center_request_reviews")
 }
 
 model CallCenterNote {

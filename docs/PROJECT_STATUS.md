@@ -1,3 +1,9 @@
+## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
+
+Responsible experts saving a result for an explicitly linked real call, including unanswered calls, create a durable review receipt. Pending receipts appear with a followed-up badge in the request creator-manager's My Work queue. Saving that manager's decision acknowledges only the displayed receipt set, retaining assignment, history and expert access; newer distinct follow-ups can requeue. Repeatable-read snapshots, receipt-set tokens, row locks and command idempotence protect concurrent edits. Exact-request review access does not grant access to unrelated contact history. The editor displays name/phone separately and a subject only from the saved related follow-up, and removes the visible technical helper.
+
+Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 19 helper cases, 7 UI cases, 3 translation checks and 5 CI policy checks passed. Twenty new PostgreSQL cases exercise real SAVE entrypoints, concurrent decisions and the creator-manager access boundary; 87 existing affected regression cases also pass. Tests exposed and now cover an existing WRONG_NUMBER check-constraint mismatch, corrected in a separate migration retaining all previous values. Both migrations applied with all 222 migrations in isolated PostgreSQL 18 and require application before a future API rollout. No production settings, records, grants or services changed. Final integrated CI checks precede the authorized develop merge.
+
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.

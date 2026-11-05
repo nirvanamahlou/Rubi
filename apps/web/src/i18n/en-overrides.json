@@ -5162,5 +5162,16 @@
   "قیمت خرید همه مسافران را بدون تکرار وارد کنید.": "Enter purchase prices for all passengers without duplicates.",
   "کلید ثبت برای اطلاعات دیگری استفاده شده است.": "This submission key was used for different data.",
   "کودک — سن ثبت نشده": "Child - age not recorded",
-  "مسافر، ارز یا مبلغ خرید معتبر نیست.": "Invalid passenger, purchase currency or amount."
+  "مسافر، ارز یا مبلغ خرید معتبر نیست.": "Invalid passenger, purchase currency or amount.",
+  "اطلاعات اقدام و نتیجهٔ پیگیری": "Follow-up action and outcome details",
+  "اطلاعات مخاطب، درخواست و مسئول رسیدگی": "Contact, request and assigned agent details",
+  "این پنجره را ببندید و درخواست را دوباره باز کنید؛ پس از بررسی آخرین پیگیری‌ها، تصمیم را ثبت کنید.": "Close this dialog and reopen the request. Review the latest follow-ups before saving your decision.",
+  "بررسی پیگیری توسط مدیر": "Manager follow-up review",
+  "بررسی پیگیری فقط برای مدیر ایجادکنندهٔ درخواست مجاز است.": "Only the manager who created the request can review its follow-up.",
+  "پیگیری شده": "Followed up",
+  "پیگیری‌های درخواست تغییر کرده است؛ پنجره را دوباره باز کنید و پس از بررسی نتیجهٔ جدید، تصمیم را ثبت کنید.": "The request follow-ups have changed. Reopen the dialog and review the new outcome before saving your decision.",
+  "ثبت تصمیم": "Save decision",
+  "ثبت نتیجهٔ تماس": "Call result recorded",
+  "موضوع تماس:": "Call subject:",
+  "نام مخاطب:": "Contact name:"
 }

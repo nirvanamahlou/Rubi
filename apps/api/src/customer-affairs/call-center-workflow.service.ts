@@ -16,6 +16,7 @@ import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
+import { pendingReviewToken } from './call-center-request-review';
 import type {
   CallCenterFollowUpDto,
   CallCenterRequestDto,
@@ -244,8 +245,8 @@ export class CallCenterWorkflowService
   ) {
     const branchId = this.scope(actor, branch, true);
     return this.db.client.$transaction(async (tx) => {
-      await this.lock(tx, input.ticketId);
       await tx.$queryRaw`SELECT id FROM customer_affairs_calls WHERE id = ${callId}::uuid FOR UPDATE`;
+      await this.lock(tx, input.ticketId);
       const call = await tx.callCenterCall.findFirst({
         where: { id: callId, contact: { branchId } },
       });
@@ -362,6 +363,10 @@ export class CallCenterWorkflowService
         ? {
             OR: [
               { executionOwnerUserId: actor.userId },
+              {
+                createdByUserId: actor.userId,
+                callCenterReviews: { some: { reviewedAt: null } },
+              },
               this.tasks.requestPredicate(
                 branchIds,
                 value,
@@ -415,6 +420,11 @@ export class CallCenterWorkflowService
           include: {
             executionOwner: { select: { displayName: true } },
             branch: { select: { name: true } },
+            callCenterReviews: {
+              where: { reviewedAt: null },
+              select: { id: true },
+              take: 1,
+            },
           },
         });
         const deadlines = await this.tasks.deadlines(
@@ -440,6 +450,7 @@ export class CallCenterWorkflowService
             ownerName: row.executionOwner?.displayName ?? null,
             status: row.status,
             priority: row.priority,
+            pendingReview: row.callCenterReviews.length > 0,
             createdAt: row.createdAt.toISOString(),
           })),
           meta: { total, page, pageSize: 50, counts, asOf: now.toISOString() },
@@ -514,155 +525,226 @@ export class CallCenterWorkflowService
     openOnly = false,
   ) {
     const branchId = this.scope(actor, branch);
-    return this.db.client.$transaction(async (tx) => {
-      await this.contact(tx, contactId, branchId);
-      if (this.access.scoped(actor))
-        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
-      const rows = await tx.customerAffairsTicket.findMany({
-        where: {
-          ...(this.access.scoped(actor)
-            ? await this.access.requestWhere(actor, branchId, tx)
-            : {}),
+    return this.db.client.$transaction(
+      async (tx) => {
+        await this.contact(tx, contactId, branchId);
+        if (this.access.scoped(actor)) {
+          if (requestId) {
+            const allowed = await this.access.request(
+              actor,
+              branchId,
+              requestId,
+              tx,
+            );
+            if (allowed.callCenterContactId !== contactId)
+              throw new NotFoundException();
+          } else {
+            await this.access.contact(
+              actor,
+              branchId,
+              contactId,
+              'workflow',
+              tx,
+            );
+          }
+        }
+        const rows = await tx.customerAffairsTicket.findMany({
+          where: {
+            ...(this.access.scoped(actor)
+              ? await this.access.requestWhere(actor, branchId, tx)
+              : {}),
+            branchId,
+            callCenterContactId: contactId,
+            category: CATEGORY,
+            ...(requestId ? { id: requestId } : {}),
+            ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
+          },
+          include: {
+            executionOwner: { select: { displayName: true } },
+            callCenterReviews: {
+              orderBy: [{ completedAt: 'desc' }, { id: 'desc' }],
+              take: 1,
+              include: { call: true },
+            },
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          skip: (page - 1) * 10,
+          take: 10,
+        });
+        const taskResult = await this.tasks.pages(
+          tx,
           branchId,
-          callCenterContactId: contactId,
-          category: CATEGORY,
-          ...(requestId ? { id: requestId } : {}),
-          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
-        },
-        include: { executionOwner: { select: { displayName: true } } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        skip: (page - 1) * 10,
-        take: 10,
-      });
-      const taskResult = await this.tasks.pages(
-        tx,
-        branchId,
-        rows.map((row) => row.id),
-        taskPage,
-        this.access.scoped(actor)
-          ? await this.access.users(actor, branchId, 'workflow', tx)
-          : null,
-      );
-      const tasks = taskResult.rows;
-      const total = await tx.customerAffairsTicket.count({
-        where: {
-          ...(this.access.scoped(actor)
-            ? await this.access.requestWhere(actor, branchId, tx)
-            : {}),
-          branchId,
-          callCenterContactId: contactId,
-          category: CATEGORY,
-          ...(requestId ? { id: requestId } : {}),
-          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
-        },
-      });
-      const history = await tx.customerAffairsAuditEvent.findMany({
-        where: {
-          branchId,
-          entityId: { in: rows.map((row) => row.id) },
-          entityType: 'CALL_CENTER_REQUEST',
-        },
-        orderBy: { occurredAt: 'desc' },
-        take: 100,
-      });
-      return {
-        meta: {
-          page,
+          rows.map((row) => row.id),
           taskPage,
-          total,
-          hasMoreTasks: taskResult.hasMore,
-          ...(requestId
-            ? {
-                contactCallCount: await tx.callCenterCall.count({
-                  where: { contactId },
+          this.access.scoped(actor)
+            ? await this.access.users(actor, branchId, 'workflow', tx)
+            : null,
+        );
+        const tasks = taskResult.rows;
+        const total = await tx.customerAffairsTicket.count({
+          where: {
+            ...(this.access.scoped(actor)
+              ? await this.access.requestWhere(actor, branchId, tx)
+              : {}),
+            branchId,
+            callCenterContactId: contactId,
+            category: CATEGORY,
+            ...(requestId ? { id: requestId } : {}),
+            ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
+          },
+        });
+        const history = await tx.customerAffairsAuditEvent.findMany({
+          where: {
+            branchId,
+            entityId: { in: rows.map((row) => row.id) },
+            entityType: 'CALL_CENTER_REQUEST',
+          },
+          orderBy: { occurredAt: 'desc' },
+          take: 100,
+        });
+        const pending = await tx.callCenterRequestReview.findMany({
+          where: {
+            ticketId: { in: rows.map((row) => row.id) },
+            reviewedAt: null,
+          },
+          select: { id: true, ticketId: true },
+        });
+        const reviewer = await this.access.canReviewCreatedRequest(
+          actor,
+          branchId,
+          tx,
+        );
+        // Only return the minimal contact header, not unrelated calls or their subjects.
+        const contactCall = rows.length
+          ? await tx.callCenterCall.findFirst({
+              where: { contactId },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+            })
+          : null;
+        const contactDetail = contactCall
+          ? this.crypto.decrypt<{ name?: string; phone?: string }>(
+              contactCall.encryptedPayload,
+              contactCall.keyVersion,
+              `call:${contactCall.id}:${contactId}`,
+            )
+          : null;
+        return {
+          meta: {
+            page,
+            taskPage,
+            total,
+            hasMoreTasks: taskResult.hasMore,
+          },
+          data: await Promise.all(
+            rows.map(async (row) => ({
+              canEditManagement:
+                (reviewer &&
+                  row.createdByUserId === actor.userId &&
+                  pending.some((receipt) => receipt.ticketId === row.id)) ||
+                (await this.access.canManageCallback(
+                  actor,
+                  branchId,
+                  contactId,
+                  tx,
+                )) ||
+                (await this.directory.canManageRequest(
+                  actor,
+                  branchId,
+                  row.executionOwnerUserId ?? row.createdByUserId,
+                  tx,
+                )),
+              contactSummary: {
+                name: contactDetail?.name ?? '',
+                phone: contactDetail?.phone ?? '',
+              },
+              review: {
+                pending: pending.some((receipt) => receipt.ticketId === row.id),
+                token:
+                  pendingReviewToken(
+                    pending.filter((receipt) => receipt.ticketId === row.id),
+                  ) ?? undefined,
+                canReview: reviewer && row.createdByUserId === actor.userId,
+                completedAt:
+                  row.callCenterReviews[0]?.completedAt.toISOString(),
+                subject: row.callCenterReviews[0]
+                  ? this.crypto.decrypt<{ subject?: string }>(
+                      row.callCenterReviews[0].call.encryptedPayload,
+                      row.callCenterReviews[0].call.keyVersion,
+                      `call:${row.callCenterReviews[0].callId}:${contactId}`,
+                    ).subject
+                  : undefined,
+              },
+              id: row.id,
+              version: row.version,
+              customerId: actor.permissions.includes('customers.read')
+                ? row.customerId
+                : null,
+              title: this.crypto.decrypt<{ title: string; reason: string }>(
+                row.callCenterPayload!,
+                row.callCenterKeyVersion!,
+                `request:${row.id}:${contactId}`,
+              ).title,
+              privateHistory:
+                this.crypto.decrypt<{ history?: unknown[] }>(
+                  row.callCenterPayload!,
+                  row.callCenterKeyVersion!,
+                  `request:${row.id}:${contactId}`,
+                ).history ?? [],
+              reason: this.crypto.decrypt<{ reason: string }>(
+                row.callCenterPayload!,
+                row.callCenterKeyVersion!,
+                `request:${row.id}:${contactId}`,
+              ).reason,
+              result:
+                this.crypto.decrypt<{ result?: string }>(
+                  row.callCenterPayload!,
+                  row.callCenterKeyVersion!,
+                  `request:${row.id}:${contactId}`,
+                ).result ?? '',
+              status: row.status,
+              priority: row.priority,
+              ownerId: row.executionOwnerUserId,
+              ownerName: row.executionOwner?.displayName ?? null,
+              createdAt: row.createdAt.toISOString(),
+              followUps: tasks
+                .filter((task) => task.sourceReference === row.id)
+                .map((task) => {
+                  const payload = task.payload as {
+                    version: number;
+                    encrypted: string;
+                    keyVersion: number;
+                    history?: unknown[];
+                  };
+                  return {
+                    id: task.id,
+                    version: payload.version,
+                    ownerId: task.assigneeUserId,
+                    dueAt: task.dueAt!.toISOString(),
+                    status: task.status,
+                    ...this.crypto.decrypt<TaskPrivate>(
+                      payload.encrypted,
+                      payload.keyVersion,
+                      `followup:${task.id}:${row.id}`,
+                    ),
+                    history: payload.history ?? [],
+                  };
                 }),
-              }
-            : {}),
-        },
-        data: await Promise.all(
-          rows.map(async (row) => ({
-            canEditManagement:
-              (await this.access.canManageCallback(
-                actor,
-                branchId,
-                contactId,
-                tx,
-              )) ||
-              (await this.directory.canManageRequest(
-                actor,
-                branchId,
-                row.executionOwnerUserId ?? row.createdByUserId,
-                tx,
-              )),
-            id: row.id,
-            version: row.version,
-            customerId: actor.permissions.includes('customers.read')
-              ? row.customerId
-              : null,
-            title: this.crypto.decrypt<{ title: string; reason: string }>(
-              row.callCenterPayload!,
-              row.callCenterKeyVersion!,
-              `request:${row.id}:${contactId}`,
-            ).title,
-            privateHistory:
-              this.crypto.decrypt<{ history?: unknown[] }>(
-                row.callCenterPayload!,
-                row.callCenterKeyVersion!,
-                `request:${row.id}:${contactId}`,
-              ).history ?? [],
-            reason: this.crypto.decrypt<{ reason: string }>(
-              row.callCenterPayload!,
-              row.callCenterKeyVersion!,
-              `request:${row.id}:${contactId}`,
-            ).reason,
-            result:
-              this.crypto.decrypt<{ result?: string }>(
-                row.callCenterPayload!,
-                row.callCenterKeyVersion!,
-                `request:${row.id}:${contactId}`,
-              ).result ?? '',
-            status: row.status,
-            priority: row.priority,
-            ownerId: row.executionOwnerUserId,
-            ownerName: row.executionOwner?.displayName ?? null,
-            createdAt: row.createdAt.toISOString(),
-            followUps: tasks
-              .filter((task) => task.sourceReference === row.id)
-              .map((task) => {
-                const payload = task.payload as {
-                  version: number;
-                  encrypted: string;
-                  keyVersion: number;
-                  history?: unknown[];
-                };
-                return {
-                  id: task.id,
-                  version: payload.version,
-                  ownerId: task.assigneeUserId,
-                  dueAt: task.dueAt!.toISOString(),
-                  status: task.status,
-                  ...this.crypto.decrypt<TaskPrivate>(
-                    payload.encrypted,
-                    payload.keyVersion,
-                    `followup:${task.id}:${row.id}`,
-                  ),
-                  history: payload.history ?? [],
-                };
-              }),
-            history: history
-              .filter((event) => event.entityId === row.id)
-              .map((event) => ({
-                id: event.id,
-                action: event.action,
-                at: event.occurredAt.toISOString(),
-                actorId: event.actorUserId,
-                version: event.version,
-                changes: event.afterSnapshot,
-              })),
-          })),
-        ),
-      };
-    });
+              history: history
+                .filter((event) => event.entityId === row.id)
+                .map((event) => ({
+                  id: event.id,
+                  action: event.action,
+                  at: event.occurredAt.toISOString(),
+                  actorId: event.actorUserId,
+                  version: event.version,
+                  changes: event.afterSnapshot,
+                })),
+            })),
+          ),
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
   async saveRequest(
     actor: AuthenticatedActor,
@@ -680,11 +762,25 @@ export class CallCenterWorkflowService
     await this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
       if (this.access.scoped(actor)) {
-        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
         if (input.expectedVersion === 0 && !input.ownerId)
           input = { ...input, ownerId: actor.userId };
       }
       await this.lock(tx, input.id);
+      const current = await tx.customerAffairsTicket.findFirst({
+        where: { id: input.id },
+      });
+      if (this.access.scoped(actor)) {
+        if (current) await this.access.request(actor, branchId, current.id, tx);
+        else
+          await this.access.contact(actor, branchId, contactId, 'workflow', tx);
+      }
+      if (
+        current &&
+        (current.branchId !== branchId ||
+          current.callCenterContactId !== contactId ||
+          current.category !== CATEGORY)
+      )
+        throw new NotFoundException();
       if (
         !(await this.command(tx, actor, branchId, input.commandId, input.id, {
           contactId,
@@ -695,22 +791,35 @@ export class CallCenterWorkflowService
       // Preserve the original command fingerprint for retries from older clients.
       // NEW no longer represents a separate operational request state.
       if (input.status === 'NEW') input = { ...input, status: 'IN_PROGRESS' };
-      const current = await tx.customerAffairsTicket.findFirst({
-        where: { id: input.id },
-      });
-      if (current && this.access.scoped(actor))
-        await this.access.request(actor, branchId, current.id, tx);
-      if (
-        current &&
-        (current.branchId !== branchId ||
-          current.callCenterContactId !== contactId ||
-          current.category !== CATEGORY)
-      )
-        throw new NotFoundException();
       if ((current?.version ?? 0) !== input.expectedVersion)
         throw new ConflictException(
           'درخواست تغییر کرده است؛ اطلاعات را دوباره دریافت کنید.',
         );
+
+      // The ticket lock serializes a decision with newly completed related calls.
+      // Older clients without a review token may edit, but never consume reviews.
+      const pending = input.expectedReviewToken
+        ? await tx.callCenterRequestReview.findMany({
+            where: { ticketId: input.id, reviewedAt: null },
+            select: { id: true },
+          })
+        : [];
+      let reviewing = false;
+      if (input.expectedReviewToken) {
+        if (
+          !current ||
+          current.createdByUserId !== actor.userId ||
+          !(await this.access.canReviewCreatedRequest(actor, branchId, tx))
+        )
+          throw new ForbiddenException(
+            'بررسی پیگیری فقط برای مدیر ایجادکنندهٔ درخواست مجاز است.',
+          );
+        if (pendingReviewToken(pending) !== input.expectedReviewToken)
+          throw new ConflictException(
+            'پیگیری‌های درخواست تغییر کرده است؛ پنجره را دوباره باز کنید و پس از بررسی نتیجهٔ جدید، تصمیم را ثبت کنید.',
+          );
+        reviewing = true;
+      }
 
       if (current) {
         const saved = this.crypto.decrypt<{ title: string }>(
@@ -730,6 +839,7 @@ export class CallCenterWorkflowService
                 !['IN_PROGRESS', 'WAITING_CUSTOMER'].includes(
                   input.status,
                 )))) &&
+          !reviewing &&
           !(await this.access.canManageCallback(
             actor,
             branchId,
@@ -875,6 +985,28 @@ export class CallCenterWorkflowService
           previousStatus: current?.status ?? null,
         },
       );
+      if (reviewing) {
+        await tx.callCenterRequestReview.updateMany({
+          where: {
+            ticketId: input.id,
+            id: { in: pending.map((receipt) => receipt.id) },
+            reviewedAt: null,
+          },
+          data: { reviewedAt: now, reviewedByUserId: actor.userId },
+        });
+        await this.audit(
+          tx,
+          actor.userId,
+          branchId,
+          input.id,
+          'REQUEST_FOLLOWUP_REVIEWED',
+          (current?.version ?? 0) + 1,
+          {
+            reviewIds: pending.map((receipt) => receipt.id),
+            status: input.status,
+          },
+        );
+      }
       if (input.ownerId && current?.executionOwnerUserId !== input.ownerId)
         await this.notify(
           tx,
@@ -895,7 +1027,14 @@ export class CallCenterWorkflowService
           );
       }
     });
-    return this.list(actor, branchId, contactId);
+    return this.list(
+      actor,
+      branchId,
+      contactId,
+      1,
+      1,
+      input.expectedVersion > 0 ? input.id : undefined,
+    );
   }
   async followUp(
     actor: AuthenticatedActor,

@@ -7485,5 +7485,7 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "بررسی پیگیری فقط برای مدیر ایجادکنندهٔ درخواست مجاز است.": "Only the manager who created the request can review its follow-up.",
+  "پیگیری‌های درخواست تغییر کرده است؛ پنجره را دوباره باز کنید و پس از بررسی نتیجهٔ جدید، تصمیم را ثبت کنید.": "The request follow-ups have changed. Reopen the dialog and review the new outcome before saving your decision."
 }
