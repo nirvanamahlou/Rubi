@@ -44,7 +44,7 @@ export function WithoutOutcomeDialog({
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState<Awaited<
-    ReturnType<typeof readApi.withoutOutcome>
+    ReturnType<typeof readApi.missedCallbacks>
   > | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -196,6 +196,9 @@ export function WithoutOutcomeDialog({
                         callCount={callCount}
                         canComplete={canComplete}
                         onComplete={onComplete}
+                        canCreateRequest={
+                          result?.meta.canCreateRequest === true
+                        }
                         onRequest={onRequest}
                       />
                     </td>

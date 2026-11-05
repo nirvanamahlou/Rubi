@@ -5,13 +5,6 @@ import styles from './without-outcome-dialog.module.css';
 export type KpiCallMode =
   'without-outcome' | 'missed-callbacks' | 'today' | 'week';
 
-export function canCreateCallbackRequest(permissions: readonly string[]) {
-  return (
-    permissions.includes('customer_affairs.call_center.workflow.manage') &&
-    permissions.includes('customer_affairs.call_center.workflow.manage.team')
-  );
-}
-
 export function KpiCallActions({
   mode,
   call,
@@ -19,12 +12,14 @@ export function KpiCallActions({
   canComplete,
   onComplete,
   onRequest,
+  canCreateRequest = false,
 }: {
   mode: KpiCallMode;
   call: ContactSummary['latest'];
   callCount: number;
   canComplete: boolean;
   onComplete: (id: string) => Promise<void>;
+  canCreateRequest?: boolean;
   onRequest?: ((contact: ContactSummary) => void) | undefined;
 }) {
   return (
@@ -36,17 +31,20 @@ export function KpiCallActions({
       >
         ویرایش اطلاعات تماس
       </button>
-      {mode === 'missed-callbacks' && onRequest && call.contactId && (
-        <button
-          type="button"
-          onClick={() => {
-            if (call.contactId)
-              onRequest({ id: call.contactId, latest: call, callCount });
-          }}
-        >
-          ثبت درخواست
-        </button>
-      )}
+      {mode === 'missed-callbacks' &&
+        canCreateRequest &&
+        onRequest &&
+        call.contactId && (
+          <button
+            type="button"
+            onClick={() => {
+              if (call.contactId)
+                onRequest({ id: call.contactId, latest: call, callCount });
+            }}
+          >
+            ثبت درخواست
+          </button>
+        )}
     </div>
   );
 }
