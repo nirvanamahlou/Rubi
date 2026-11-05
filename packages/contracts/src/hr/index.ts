@@ -86,6 +86,10 @@ export interface HrWorkflowData {
   allowanceDays?: string;
   currency?: string;
   reason?: string;
+  substituteUserId?: string | null | undefined;
+  leaveAttachmentIds?: string[] | undefined;
+  /** Server-managed consent; generic commands cannot set it. */
+  substituteStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
   /** Server-derived attendance output; commands cannot supply these fields. */
   shiftEndDayOffset?: number;
   attendanceBeforeHours?: number;

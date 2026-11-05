@@ -2,6 +2,22 @@ import { expect, it } from 'vitest';
 import { approvedLeaveCoverage } from './hr-attendance-leave';
 import { localClockToUtc } from './hr.validation';
 const at = (time: string) => localClockToUtc('2026-11-03', time);
+it('credits an approved hourly departure only for its covered interval', () => {
+  const events = [
+    { kind: 'ورود', at: at('09:15') },
+    { kind: 'خروج', at: at('14:00') },
+  ];
+  expect(
+    approvedLeaveCoverage(events, at('09:15'), at('17:00'), [
+      [at('14:00').getTime(), at('17:00').getTime()],
+    ]),
+  ).toMatchObject({ earlyCredit: 180, creditMinutes: 180, fullDay: false });
+  expect(
+    approvedLeaveCoverage(events, at('09:15'), at('17:00'), [
+      [at('15:00').getTime(), at('17:00').getTime()],
+    ]),
+  ).toMatchObject({ earlyCredit: 120, creditMinutes: 120 });
+});
 it('credits only approved intervals outside worked time, without counting overlaps twice', () => {
   const result = approvedLeaveCoverage(
     [

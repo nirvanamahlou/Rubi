@@ -1125,6 +1125,14 @@ export class CustomerAffairsService {
           throw new BadRequestException(
             'درخواست مرخصی باید به واحد منابع انسانی ارسال شود.',
           );
+        if (workbenchAssignment?.leave)
+          await this.hr!.validateWorkbenchLeaveSubmission(
+            tx,
+            branchId,
+            actor.userId,
+            workbenchAssignment.leave,
+            actor,
+          );
         const row = await tx.customerAffairsTicket.create({
           data: {
             ...this.ticketData(input),
@@ -1160,6 +1168,18 @@ export class CustomerAffairsService {
               documentVersionIds: [],
             },
           });
+        if (workbenchAssignment?.leave?.substituteUserId)
+          await tx.customerAffairsTimeline.create({
+            data: {
+              ticketId: row.id,
+              type: 'WORKBENCH_SUBSTITUTE',
+              outcome: 'PENDING',
+              summary: workbenchAssignment.leave.substituteUserId,
+              actorUserId: actor.userId,
+              deliveryKey: `leave-substitute:${row.id}:${workbenchAssignment.leave.substituteUserId}`,
+              documentVersionIds: [],
+            },
+          });
         if (siteOrigin)
           await tx.customerAffairsSiteTicket.create({
             data: { ...siteOrigin, ticketId: row.id, fingerprint: hash },
@@ -1186,6 +1206,9 @@ export class CustomerAffairsService {
         await this.notifications.createWithinTransaction(tx, {
           recipientUserIds: [
             owner,
+            ...(workbenchAssignment?.leave?.substituteUserId
+              ? [workbenchAssignment.leave.substituteUserId]
+              : []),
             ...(row.executionOwnerUserId ? [row.executionOwnerUserId] : []),
           ],
           actorUserId: actor.userId,
@@ -2274,10 +2297,20 @@ export class CustomerAffairsService {
     requestedBranch?: string,
   ) {
     return {
-      data: await this.requestDirectory!.options(
-        actor,
-        branchScope(actor, requestedBranch),
-      ),
+      data: {
+        ...(await this.requestDirectory!.options(
+          actor,
+          branchScope(actor, requestedBranch),
+        )),
+        substituteUsers: this.hr
+          ? (
+              await this.hr.leaveOptions(
+                branchScope(actor, requestedBranch),
+                actor,
+              )
+            ).users
+          : [],
+      },
     };
   }
   removeWorkbenchRequest(id: string, actor: AuthenticatedActor) {
@@ -2296,25 +2329,36 @@ export class CustomerAffairsService {
       actor.branchIds,
     );
     return {
-      data: rows.map((row) => ({
-        id: row.id,
-        trackingNumber: row.trackingNumber,
-        subject: row.subject,
-        description: row.description,
-        destinationUnit: row.executionUnit,
-        status: workbenchReviewStatus(row),
-        priority: row.priority,
-        nextActionAt: row.nextActionAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-        direction:
-          row.createdByUserId === actor.userId
-            ? row.executionOwnerUserId === actor.userId
-              ? 'self'
-              : 'outgoing'
-            : 'incoming',
-        senderName: row.createdBy?.displayName ?? '',
-        recipientName: row.executionOwner?.displayName ?? null,
-      })),
+      data: [
+        ...rows.map((row): WorkbenchRequestItemV1 => ({
+          id: row.id,
+          version: row.version,
+          substituteStatus: row.timeline?.find(
+            (e) => e.type === 'WORKBENCH_SUBSTITUTE',
+          )?.outcome as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined,
+          substituteReview: row.timeline?.some(
+            (e) =>
+              e.type === 'WORKBENCH_SUBSTITUTE' && e.summary === actor.userId,
+          ),
+          trackingNumber: row.trackingNumber,
+          subject: row.subject,
+          description: row.description,
+          destinationUnit: row.executionUnit,
+          status: workbenchReviewStatus(row),
+          priority: row.priority,
+          nextActionAt: row.nextActionAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+          direction:
+            row.createdByUserId === actor.userId
+              ? row.executionOwnerUserId === actor.userId
+                ? 'self'
+                : 'outgoing'
+              : 'incoming',
+          senderName: row.createdBy?.displayName ?? '',
+          recipientName: row.executionOwner?.displayName ?? null,
+        })),
+        ...(this.hr ? await this.hr.leaveSubstituteRequests(actor) : []),
+      ],
     };
   }
   async hrWorkbenchRequests(actor: AuthenticatedActor) {
@@ -2342,6 +2386,9 @@ export class CustomerAffairsService {
       data: rows.map((row) => ({
         id: row.id,
         version: row.version,
+        substituteStatus: row.timeline.find(
+          (e) => e.type === 'WORKBENCH_SUBSTITUTE',
+        )?.outcome,
         createdAt: row.createdAt.toISOString(),
         senderName: row.createdBy?.displayName ?? '',
         senderId: row.createdByUserId,
@@ -2402,6 +2449,17 @@ export class CustomerAffairsService {
         throw conflict();
       if (!['APPROVED', 'REJECTED', 'NEEDS_REVISION'].includes(input.status))
         throw new BadRequestException();
+      if (
+        input.status === 'APPROVED' &&
+        leave?.substituteUserId &&
+        !row.timeline.some(
+          (e) =>
+            e.type === 'WORKBENCH_SUBSTITUTE' &&
+            e.summary === leave.substituteUserId &&
+            e.outcome === 'APPROVED',
+        )
+      )
+        throw new ConflictException('ابتدا جانشین باید درخواست را تأیید کند.');
       if (input.status === 'APPROVED' && leave) {
         validateWorkbenchLeave(leave);
         await this.hr!.approveWorkbenchLeave(
@@ -2470,6 +2528,88 @@ export class CustomerAffairsService {
         actor,
       );
     return { data: { id, status: input.status } };
+  }
+  async reviewLeaveSubstitute(
+    id: string,
+    input: { version: number; status: string },
+    actor: AuthenticatedActor,
+  ) {
+    if (!['APPROVED', 'REJECTED'].includes(input.status))
+      throw new BadRequestException();
+    await this.repository.transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${id}::uuid FOR UPDATE`;
+      const row = await tx.customerAffairsTicket.findFirst({
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          category: { startsWith: 'WORKBENCH_' },
+        },
+        include: { timeline: true },
+      });
+      const invite = row?.timeline.find(
+        (e) => e.type === 'WORKBENCH_SUBSTITUTE' && e.summary === actor.userId,
+      );
+      if (!row || !invite || row.createdByUserId === actor.userId)
+        throw new NotFoundException();
+      if (invite.outcome === input.status) return;
+      if (
+        row.version !== input.version ||
+        invite.outcome !== 'PENDING' ||
+        ['APPROVED', 'REJECTED'].includes(workbenchReviewStatus(row))
+      )
+        throw conflict();
+      await tx.customerAffairsTimeline.update({
+        where: { id: invite.id },
+        data: { outcome: input.status },
+      });
+      await tx.customerAffairsTimeline.create({
+        data: {
+          ticketId: id,
+          type: 'WORKBENCH_SUBSTITUTE_REVIEW',
+          summary: input.status,
+          outcome: input.status,
+          actorUserId: actor.userId,
+          documentVersionIds: [],
+        },
+      });
+      await tx.customerAffairsTicket.update({
+        where: { id },
+        data: { version: { increment: 1 }, updatedByUserId: actor.userId },
+      });
+      await this.notifications.createWithinTransaction(tx, {
+        recipientUserIds: [
+          row.createdByUserId,
+          ...(row.executionOwnerUserId ? [row.executionOwnerUserId] : []),
+        ],
+        actorUserId: actor.userId,
+        sourceModule: 'customer-affairs',
+        eventType: 'ticket.updated',
+        title: 'پاسخ جانشین مرخصی',
+        message: row.subject,
+        entityType: 'customer-affairs-ticket',
+        entityId: id,
+        href: `/workbench?tab=requests&request=${id}`,
+      });
+    });
+    return { data: { id, status: input.status } };
+  }
+  async hrLeaveEvidence(
+    id: string,
+    documentId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('hr.manage'))
+      throw new ForbiddenException();
+    const row = (await this.hrWorkbenchRequests(actor)).data.find(
+      (r) => r.id === id,
+    );
+    if (!row?.leave?.attachmentIds?.includes(documentId))
+      throw new NotFoundException();
+    return this.documents.downloadLeaveEvidence(
+      documentId,
+      row.branchId,
+      actor,
+    );
   }
   async removeHrWorkbenchRequest(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('hr.manage'))

@@ -317,9 +317,8 @@ export function ExpertActivity({
                     >
                       قبلی
                     </button>
-                    <span>
-                      {faNumber(page)} /{' '}
-                      {faNumber(Math.max(1, Math.ceil(detail.total / 20)))}
+                    <span dir="ltr">
+                      {page} / {Math.max(1, Math.ceil(detail.total / 20))}
                     </span>
                     <button
                       type="button"

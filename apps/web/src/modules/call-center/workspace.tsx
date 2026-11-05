@@ -53,6 +53,7 @@ import styles from './workspace.module.css';
 import appearance from './panel-appearance.module.css';
 import { ReportHighlights } from './report-highlights';
 import { IllustrationIcon } from '@/components/ui/illustration-icon';
+import { CallCenterTitleIcon } from './title-icon';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -366,7 +367,7 @@ function Content({
       <header className={styles.header}>
         <div>
           <h1>
-            <IllustrationIcon kind="headset" size={36} /> کال سنتر
+            <CallCenterTitleIcon /> کال سنتر
           </h1>
         </div>
       </header>

@@ -1,4 +1,5 @@
 'use client';
+import { LeaveEvidenceList } from './leave-evidence-list';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { useEffect, useState } from 'react';
@@ -267,6 +268,25 @@ export function HrRecordDetail({
               totalLabel: '',
             }}
           />
+        ) : null}
+        <LeaveEvidenceList
+          ids={record.data.leaveAttachmentIds ?? []}
+          path={`/hr/records/${record.id}/leave-evidence`}
+        />
+        {record.data.substituteStatus ? (
+          <p className="rounded-xl border p-3 text-sm">
+            جانشینی:{' '}
+            {record.data.substituteStatus === 'APPROVED'
+              ? 'تأییدشده'
+              : record.data.substituteStatus === 'REJECTED'
+                ? 'ردشده'
+                : 'در انتظار پاسخ'}
+          </p>
+        ) : null}
+        {record.tab === 'radanLeave' && record.data.reason ? (
+          <p className="whitespace-pre-wrap rounded-xl bg-primary/5 p-4 text-sm">
+            {record.data.reason}
+          </p>
         ) : null}
         <dl className={ui.properties}>
           {record.data.documentId &&

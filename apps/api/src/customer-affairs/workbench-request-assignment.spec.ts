@@ -340,6 +340,11 @@ describe('Workbench request assignment and delivery', () => {
           OR: [
             { createdByUserId: recipientId },
             { executionOwnerUserId: recipientId },
+            {
+              timeline: {
+                some: { type: 'WORKBENCH_SUBSTITUTE', summary: recipientId },
+              },
+            },
           ],
           branchId: { in: actor.branchIds },
           category: { startsWith: 'WORKBENCH_' },

@@ -6,6 +6,8 @@ export function isHrRequestUnit(name?: string | null) {
   );
 }
 export function validateWorkbenchLeave(leave: WorkbenchLeaveInputV1) {
+  if (leave.leaveType && !['استحقاقی', 'استعلاجی'].includes(leave.leaveType))
+    throw new BadRequestException('نوع مرخصی معتبر نیست.');
   const date = /^\d{4}-\d{2}-\d{2}$/;
   if (
     !date.test(leave.from) ||

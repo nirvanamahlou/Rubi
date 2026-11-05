@@ -2,10 +2,13 @@ export interface WorkbenchLeaveInputV1 {
   from: string;
   to: string;
   mode: 'روزانه' | 'ساعتی';
-  startTime?: string;
-  endTime?: string;
+  startTime?: string | undefined;
+  endTime?: string | undefined;
   reason: string;
-  substitute?: string;
+  substitute?: string | undefined;
+  substituteUserId?: string | undefined;
+  leaveType?: 'استحقاقی' | 'استعلاجی' | undefined;
+  attachmentIds?: string[] | undefined;
 }
 
 export interface WorkbenchRequestInputV1 {
@@ -14,11 +17,13 @@ export interface WorkbenchRequestInputV1 {
   priority: 'NORMAL' | 'HIGH' | 'URGENT';
   organizationUnitId: string;
   executionOwnerUserId: string;
-  reference?: string;
-  leave?: WorkbenchLeaveInputV1;
+  reference?: string | undefined;
+  leave?: WorkbenchLeaveInputV1 | undefined;
 }
 
 export interface WorkbenchRequestOptionsV1 {
+  substituteUsers?:
+    Array<{ id: string; displayName: string; username: string }> | undefined;
   units: Array<{
     id: string;
     name: string;
@@ -39,4 +44,9 @@ export interface WorkbenchRequestItemV1 {
   direction: 'incoming' | 'outgoing' | 'self';
   senderName: string;
   recipientName: string | null;
+  version?: number | undefined;
+  substituteStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  substituteReview?: boolean | undefined;
+  leave?: WorkbenchLeaveInputV1 | undefined;
+  source?: 'workbench' | 'hr' | undefined;
 }

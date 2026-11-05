@@ -172,6 +172,11 @@ export const customerAffairsApi = {
     ),
   workbenchRequests: () =>
     request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
+  reviewLeaveSubstitute: (id: string, version: number, status: string) =>
+    request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
+      method: 'PATCH',
+      body: JSON.stringify({ version, status }),
+    }),
   reviewHrWorkbenchRequest: (id: string, version: number, status: string) =>
     request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
       method: 'PATCH',
@@ -191,6 +196,7 @@ export const customerAffairsApi = {
         senderId: string;
         senderName: string;
         leave: WorkbenchLeaveInputV1 | null;
+        substituteStatus?: string;
         trackingNumber: string;
         subject: string;
         description: string;
