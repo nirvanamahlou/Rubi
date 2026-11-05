@@ -17,7 +17,9 @@ The shared Navy/Pearl illustrations and all other panels are unchanged.
 Validation: actual component markup and module CSS were reviewed in a 280 px RTL
 history panel on light and dark backgrounds, including full-size and enlarged
 icons. Sixteen existing Call Center history/model/recording/appearance checks and
-scoped ESLint passed. Full Web typecheck/build and hosted checks gate publication.
+scoped ESLint, full Web TypeScript and the 67-route production build passed.
+Implementation commit: 09cf21034. PR: https://github.com/nirvanamahlou/Rubi/pull/1409.
+All final-head hosted checks remain required before develop merge.
 No implementation-mirroring test was added for this presentation-only change.
 
 No API, schema, migration, dependencies, stored records or server deployment changes.
