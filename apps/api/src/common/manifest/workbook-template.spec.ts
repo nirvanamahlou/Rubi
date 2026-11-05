@@ -150,6 +150,7 @@ it('refuses unknown or ambiguous layouts rather than silently writing to unrelat
 it('normalizes XLSM content to ordinary XLSX without macros, while preserving worksheet styling', () => {
   const source = template(['NAME', 'LAST NAME', 'AGE']);
   const normalized = normalizeManifestTemplate(source);
+  expect(normalizeManifestTemplate(source).bytes).toEqual(normalized.bytes);
   const files = unzipSync(normalized.bytes);
   expect(normalized.sheetName).toBe('Passengers');
   expect(files['xl/vbaProject.bin']).toBeUndefined();

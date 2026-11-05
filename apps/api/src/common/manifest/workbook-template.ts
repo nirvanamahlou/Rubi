@@ -421,7 +421,10 @@ export function normalizeManifestTemplate(bytes: Uint8Array) {
     files[p] = strToU8(value);
   }
   return {
-    bytes: zipSync(files, { level: 6 }),
+    bytes: zipSync(files, {
+      level: 6,
+      mtime: new Date('1980-01-02T00:00:00Z'),
+    }),
     sheetName: layout.sheetName,
     columns: layout.columns.map((c) => c.field),
     headers: layout.columns.map((c) => c.header.split(/\r?\n/)[0] ?? c.header),

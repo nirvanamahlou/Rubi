@@ -662,20 +662,18 @@ describe('master data browser client', () => {
 
 it('prepares XLSM manifests before the standard XLSX document upload', async () => {
   process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
-  const fetcher = vi
-    .fn()
-    .mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          fileName: 'sample.xlsx',
-          contentBase64: 'U0FNUExF',
-          sheetName: 'Pax List',
-          columns: ['NAME', 'PAX TYPE'],
-          ageCodes: 'long',
-        },
-      }),
-    });
+  const fetcher = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      data: {
+        fileName: 'sample.xlsx',
+        contentBase64: 'U0FNUExF',
+        sheetName: 'Pax List',
+        columns: ['NAME', 'PAX TYPE'],
+        ageCodes: 'long',
+      },
+    }),
+  });
   vi.stubGlobal('fetch', fetcher);
   const file = new File(['source'], 'sample.xlsm', {
     type: 'application/vnd.ms-excel.sheet.macroEnabled.12',
