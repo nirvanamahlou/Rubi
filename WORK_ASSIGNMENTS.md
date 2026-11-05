@@ -1,3 +1,17 @@
+## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
+
+Narrow CI lease: append only the new request-review PostgreSQL spec to the existing Call Center database-gate command in .github/workflows/ci.yml. Existing jobs, guards and checks remain unchanged. Prior workflow reservations are merged/released; no concurrent workflow edit appears in the current develop delta.
+
+Implementation and independent access/concurrency review complete. Local validation passed: 107 PostgreSQL integration/regression cases, 19 helper cases, 7 UI cases, 3 translation checks, 5 CI policy checks, API/Web TypeScript and builds, scoped lint and Prisma validation. Both additive/corrective migrations applied successfully in isolated PostgreSQL 18. Reservations remain through integrated CI and authorized develop merge; no production deployment.
+
+Translation lease: add only this feature's eleven visible labels/errors to Web en-overrides.json and mirror the two API errors into the offline API catalogue. Preserve peer translation additions when integrating current develop; no shared translation runtime changes.
+
+Migration lease extension: isolated PostgreSQL validation found that the existing call outcome constraint rejects the already-supported WRONG_NUMBER DTO value. Reserve a second, separate correction migration accepting the same five outcome values as the public contract; preserve all existing outcomes and reject every other value. Also reserve the existing workflow regression assertion for the narrowed contactSummary response, replacing its obsolete full-contact-count expectation.
+
+Data model documentation lease: append only the owned CallCenterRequestReview contract to the existing Customer Affairs section of docs/DATA_MODEL.md; no peer model edits.
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff4248. User confirms that saving any related call result (including no answer) by the responsible expert queues review for the request creator; the creator's decision clears pending review without deleting history. Reserve Call Center workflow queue/list/save, completion and telephony SAVE hooks, bounded access predicates, dedicated review service/tests, workflow client/editor/queue presentation and own notes. Sole temporary schema/migration lease: one additive CallCenterRequestReview receipt model and inverse FK relations; no dependency/lockfile changes. Complete ownership scan found no unreleased schema lease; earlier migration owners are merged/released. Peer alert PR1397 notify/hash handler and MINE PR1407 default/order remain untouched; Navy/Pearl shell correction is merged PR1411. Producer=Customer Affairs review service; consumers=Call Center queue/editor; additive optional review metadata and expectedReviewToken input, no status/assignee mutation from call saves. No production publication in this work item.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.

@@ -54,7 +54,44 @@
   cursor: pointer;
 }
 .editorContact {
+  display: grid;
+  gap: 8px;
   margin-block-end: 16px;
+  line-height: 1.8;
+}
+.editorContact > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.editorContact dt {
+  font-weight: 600;
+}
+.editorContact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.queueRow .queueTitle {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  white-space: normal;
+}
+.queueTitle > span:first-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reviewTag {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 9px;
+  color: #087957;
+  background: #dff7ed;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
 }
 .form fieldset {
   display: grid;

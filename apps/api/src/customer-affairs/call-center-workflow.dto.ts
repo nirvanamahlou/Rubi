@@ -42,6 +42,10 @@ export class CallCenterRequestDto {
   @IsUUID('4') commandId!: string;
   @IsUUID('4') id!: string;
   @IsInt() @Min(0) expectedVersion!: number;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-f0-9]{64}$/)
+  expectedReviewToken?: string;
   @IsString() @Length(1, 160) title!: string;
   // NEW is a legacy input alias; the service persists IN_PROGRESS instead.
   @IsIn(['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'CLOSED']) status =

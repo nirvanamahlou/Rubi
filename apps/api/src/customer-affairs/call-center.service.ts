@@ -1,6 +1,7 @@
 import { callbackManagers, missedInbound } from './callback-triage';
 import type { CallAnswerRecipient } from '../hr/hr-call-answer-directory';
 import { callSearchMetadata } from './call-center-search';
+import { recordCallRequestReview } from './call-center-request-review';
 import {
   BadRequestException,
   ConflictException,
@@ -505,6 +506,12 @@ export class CallCenterService {
             completed: !metadata.needsCompletion,
             version: { increment: 1 },
           },
+        });
+        await recordCallRequestReview(tx, {
+          branchId,
+          actorUserId: actor.userId,
+          call: saved,
+          synthetic: existing.telephonySession?.synthetic,
         });
         await tx.customerAffairsAuditEvent.create({
           data: {
