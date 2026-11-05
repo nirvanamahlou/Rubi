@@ -1,3 +1,22 @@
+tfoot.totals th,
+tfoot.totals td {
+  position: sticky;
+  top: auto;
+  bottom: 0;
+  z-index: 2;
+  background: color-mix(
+    in srgb,
+    var(--cc-blue, #1459f5) 14%,
+    var(--surface, #fff)
+  );
+  color: var(--cc-ink, #152442);
+  border-bottom: 0;
+  box-shadow: 0 -1px 0 var(--cc-border, #dce6f7);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* The dialog portal does not inherit the contact workspace's tokens or type. */
 .pagination {
   --cc-border: var(--border, #e2e9f2);

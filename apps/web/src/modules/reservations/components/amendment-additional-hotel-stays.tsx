@@ -28,6 +28,7 @@ export function updateAdditionalAmendmentStay(
 
 export function AmendmentAdditionalHotelStays({
   hotel,
+  destinationCityId = hotel.cityId,
   hotels,
   countries = [],
   cities = [],
@@ -36,6 +37,7 @@ export function AmendmentAdditionalHotelStays({
   onChange,
 }: {
   hotel: SalesHotelSelectionInput;
+  destinationCityId?: string;
   hotels: readonly MasterDataRecord[];
   countries?: readonly MasterDataRecord[];
   cities?: readonly MasterDataRecord[];
@@ -56,6 +58,8 @@ export function AmendmentAdditionalHotelStays({
           countryChoices[index] ??
           String(
             cities.find((c) => c.id === stay.cityId)?.attributes.countryId ??
+              cities.find((c) => c.id === destinationCityId)?.attributes
+                .countryId ??
               '',
           );
         const selection: SalesHotelSelectionInput = {
