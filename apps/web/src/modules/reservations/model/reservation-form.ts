@@ -417,3 +417,11 @@ export function reservationRoomAppendices(
     (_, i) => rooms.slice(4 + i * 12, 4 + (i + 1) * 12),
   );
 }
+
+/** Room children by the contract age bands; infants remain in the guest total. */
+export function roomChildCounts(ages: readonly number[]) {
+  return {
+    twoToSix: ages.filter((age) => age >= 2 && age < 6).length,
+    sixToTwelve: ages.filter((age) => age >= 6 && age < 12).length,
+  };
+}
