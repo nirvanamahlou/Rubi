@@ -141,8 +141,10 @@ export function HotelStayPurchase({
   );
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    hotelTransferRoundTrip: quote.hotelTransferRoundTrip ?? true,
     hotelTransferCounts:
-      quote.hotelTransferRoundTrip && quote.hotelTransferCounts
+      request.workflow?.supplierFormSettings?.hotelTransferRoundTrip &&
+      quote.hotelTransferCounts
         ? { ...quote.hotelTransferCounts }
         : contractHotelTransferCounts(request.snapshot, stayKey),
     ...(transfer
@@ -313,9 +315,10 @@ export function HotelStayPurchase({
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
         );
-      const separate =
-        draft.hotelTransferSeparate ??
-        Boolean(draft.transferBrokerId && draft.transferBrokerId !== broker.id);
+      const separate = Boolean(
+        draft.hotelTransferSplit ||
+        (draft.transferBrokerId && draft.transferBrokerId !== broker.id),
+      );
       const groups = draft.hotelTransferSplit
         ? [[outboundKey], [returnKey!]]
         : [transferKeys];
@@ -463,6 +466,7 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        hotelBroker={broker}
         purchaseRoot={purchaseRoot}
         requestId={request.id}
         canSplitTransfers={transferKeys.length > 1}
