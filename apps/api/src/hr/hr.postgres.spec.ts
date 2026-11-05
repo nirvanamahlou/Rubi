@@ -2954,8 +2954,36 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const before = await client.hrRecord.count({
         where: { employeeId: target.id, tab: 'assignment' },
       });
+      const resaved = await service.updateEmployee(
+        target.id,
+        {
+          version: target.version,
+          jobTitleId: title.id,
+          position: target.position,
+          unit: target.unit,
+          grade: target.grade,
+          managerId: target.managerId,
+          branchId: target.branchId,
+          organizationBranchId: target.organizationBranchId,
+          name: 'Synthetic edited display name',
+        },
+        admin,
+      );
+      expect(
+        await client.hrRecord.count({
+          where: { employeeId: target.id, tab: 'assignment' },
+        }),
+      ).toBe(before);
+      expect(
+        await client.hrAuditEvent.count({
+          where: {
+            employeeId: target.id,
+            action: 'employee.assignment.correct',
+          },
+        }),
+      ).toBe(0);
       const input = {
-        version: target.version,
+        version: resaved.version,
         unit: unit.values[0],
         grade: 'مدیر',
         managerId: employee.id,

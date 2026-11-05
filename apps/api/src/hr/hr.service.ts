@@ -1848,24 +1848,19 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
-      const assignmentChanged =
-        input.jobTitleId !== undefined ||
+      const current = await tx.hrEmployee.findUniqueOrThrow({ where: { id } });
+      const assignmentChanged = (
         [
+          'jobTitleId',
           'branchId',
           'organizationBranchId',
           'unit',
           'position',
           'grade',
           'managerId',
-        ].some(
-          (key) =>
-            input[key] !== undefined &&
-            input[key] !== existing[key as keyof Employee],
-        );
+        ] as const
+      ).some((key) => current[key] !== existing[key]);
       if (assignmentChanged) {
-        const current = await tx.hrEmployee.findUniqueOrThrow({
-          where: { id },
-        });
         const effectiveAt = new Date();
         const assignment = await tx.hrRecord.create({
           data: {
