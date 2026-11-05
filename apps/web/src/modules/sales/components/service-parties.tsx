@@ -328,7 +328,9 @@ export function ServiceParties({
                     hotel: {
                       ...state.hotel,
                       multiHotel: e.target.checked,
-                      ...(e.target.checked ? {} : { additionalStays: [] }),
+                      ...(e.target.checked
+                        ? {}
+                        : { additionalStays: [], journeys: [] }),
                     },
                   })
                 }

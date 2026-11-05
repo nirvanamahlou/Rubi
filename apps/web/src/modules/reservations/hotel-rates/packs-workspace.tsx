@@ -24,6 +24,8 @@ import { retimeManualRates } from './manual-coefficients';
 import { OccupancyRateEditor } from './occupancy-import-panel';
 import { OccupancyBulkPanel } from './occupancy-bulk-panel';
 import { registerRoomTypeForHotel } from './room-type-registration';
+import { PackHotelCopy } from './pack-hotel-copy';
+import { selectCopiedHotels } from './pack-hotel-copy-model';
 
 type RoomTypeOption = Option & { code?: string };
 type HotelOption = Option & {
@@ -963,6 +965,33 @@ export function HotelRatePacksWorkspace({
           />
           {inputMode === 'manual' && (
             <div className={styles.destinationHotel}>
+              <PackHotelCopy
+                key={`${branch}:${cityId}:${editing?.id ?? ''}`}
+                branchId={branch}
+                cityId={cityId}
+                currentPackId={editing?.id}
+                availableHotelIds={rows
+                  .filter((row) => row.inCityList)
+                  .map((row) => row.hotel.id)}
+                disabled={
+                  busy || opening || browserLocked || hotelLoading || !canWrite
+                }
+                onCopy={(hotelIds) => {
+                  const added = hotelIds.filter((id) =>
+                    rows.some(
+                      (row) =>
+                        row.hotel.id === id && row.inCityList && !row.selected,
+                    ),
+                  );
+                  setRows((current) => selectCopiedHotels(current, hotelIds));
+                  setManualValidity((current) => ({
+                    ...current,
+                    ...Object.fromEntries(added.map((id) => [id, false])),
+                  }));
+                  setManualHotelId(hotelIds[0] ?? '');
+                  pending.current = null;
+                }}
+              />
               {hotelLoading ? (
                 <p role="status">در حال دریافت هتل‌های شهر…</p>
               ) : cityId ? (

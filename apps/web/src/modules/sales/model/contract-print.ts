@@ -1,4 +1,6 @@
 import { readLegacyServiceParties } from '@nora/contracts';
+import { readHotelJourneys } from '@nora/contracts';
+import { contractHotelJourneyHtml } from './contract-hotel-journey';
 import type { TicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import { readPassengerTotalPrices } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
@@ -231,6 +233,24 @@ export function contractPrintHtml(
     .join('');
   const contractPartyName = c.customerNameSnapshot;
   const hotel = c.hotelSelection;
+  const hotelJourneys = readHotelJourneys(c.servicesDetail);
+  const hotelStays = hotel ? [hotel, ...(hotel.additionalStays ?? [])] : [];
+  const journeyHtml = (fromId: string, toId: string | null) => {
+    const leg = hotelJourneys.find(
+      (j) => j.fromHotelId === fromId && j.toHotelId === toId,
+    );
+    const label = (id: string) => {
+      const stay = hotelStays.find((s) => s.hotelId === id);
+      return (
+        (refs.hotels?.[id]?.name ?? stay?.hotelNameSnapshot ?? '') +
+        ' · ' +
+        name(stay?.cityId)
+      );
+    };
+    return leg
+      ? contractHotelJourneyHtml(leg, label(fromId), toId ? label(toId) : '')
+      : '';
+  };
   const destinationCities = hotel?.additionalStays?.length
     ? [
         ...new Set(
@@ -573,7 +593,7 @@ ${
   `
 }
 <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
-  ${hotel ? [hotel, ...(hotel.additionalStays ?? [])].map(hotelSection).join('') : '<section>هتل در این قرارداد انتخاب نشده است.</section>'}
+  ${hotel ? hotelStays.map((stay, index) => (index > 0 ? journeyHtml(hotelStays[index - 1]!.hotelId, stay.hotelId) : '') + hotelSection(stay, index)).join('') + journeyHtml(hotelStays.at(-1)!.hotelId, null) : '<section>هتل در این قرارداد انتخاب نشده است.</section>'}
   ${contractNotice ? `<section class="contract-notice"><h3>یادداشت قرارداد <span dir="ltr">NOTICE</span></h3><p>${e(contractNotice)}</p></section>` : ''}
 </td></tr></tbody><tfoot><tr><td class="document-footer">  <div class="contract-closing"><section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
   <div class="customer-terms">

@@ -1,3 +1,7 @@
+## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-source-share-legend-1105 from develop 9f71ecf5e. User explicitly requests matching the supplied source-share reference: multicolor donut at left, total in the center, readable source/count/percentage legend at right. Reserve only source-share-chart.tsx/.module.css/.spec.tsx, own task/status notes and a bounded Web release script. Preserve the real report denominator, every positive source including unknown, current aggregation/filters, shared sidebar and other Call Center presentation. No schema, migrations, API, dependencies or grants. Existing chat authorization covers develop PR, merge after green checks and bounded server publication. Prior PANEL-SCOPE source merged in PR1411; its production receipt is on bb1c93f98. Read-only ownership audit found no competing active source-share writer.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.

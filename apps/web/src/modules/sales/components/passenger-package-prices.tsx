@@ -6,8 +6,8 @@ import {
   salesTravelDate,
   salesHotelGuestIds,
   salesPassengerFlightDirections,
-  salesPassengerAgeLabel,
 } from '../model/sales-form';
+import { passengerPricingAgeLabel } from '../model/passenger-pricing-age';
 
 import { moneyDecimal, moneyUnits, type SalesMoney } from '@nora/contracts';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
@@ -132,13 +132,7 @@ export function PassengerPackagePrices({
                       </span>
                     )}
                   </th>
-                  <td className="p-2">
-                    {salesPassengerAgeLabel(
-                      p.birthDate,
-                      salesTravelDate(state),
-                      p.ageCategory,
-                    )}
-                  </td>
+                  <td className="p-2">{passengerPricingAgeLabel(state, p)}</td>
                   <td className="min-w-40 p-2">
                     <MoneyInput
                       aria-label={'قیمت ریالی ' + p.displayName}

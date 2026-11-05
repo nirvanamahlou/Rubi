@@ -78,7 +78,7 @@ it('shows editable hotel currency amounts and the age as the second column', () 
     />,
   );
   expect(html).toContain('قیمت ارزی Guest');
-  expect(html).toContain('کودک');
+  expect(html).toContain('کودک (6-12)');
   const heads = [...html.matchAll(/<th[^>]*>(.*?)<\/th>/g)].map((m) => m[1]);
   expect(heads[1]).toBe('رده سنی');
   expect(html).not.toContain('سهم ارزی اتاق');
