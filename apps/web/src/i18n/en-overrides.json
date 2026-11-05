@@ -5077,5 +5077,15 @@
   "مرخصی تأییدشده": "Approved leave",
   "میزان عدم حضور": "Absence duration",
   "نتیجه رسیدگی درخواست": "Request review result",
-  "نوع مدت مرخصی": "Leave duration type"
+  "نوع مدت مرخصی": "Leave duration type",
+  "برای این قرارداد خرید ثبت شده است؛ قیمت کل و خرید تفکیکی را هم‌زمان ثبت نکنید.": "A purchase has already been recorded for this contract. Do not combine total and itemized costs.",
+  "خرید کل قرارداد": "Total contract purchase",
+  "قیمت کل خرید قرارداد": "Total contract purchase cost",
+  "ثبت قیمت کل خرید": "Save total purchase cost",
+  "روش ثبت خرید": "Purchase entry method",
+  "به تفکیک خدمات": "By service",
+  "قیمت کل": "Total price",
+  "قیمت کل و خرید تفکیکی هم‌زمان ثبت نمی‌شوند.": "Total and itemized purchase costs cannot be combined.",
+  "ارز خرید": "Purchase currency",
+  "هزینه خرید بلیط": "Ticket purchase cost"
 }

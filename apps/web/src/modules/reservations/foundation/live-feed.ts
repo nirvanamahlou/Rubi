@@ -21,6 +21,7 @@ const flagSchema = z.object({
   actorName: z.string().nullable().optional(),
 });
 const summarySchema = z.object({
+  destinationId: id.optional(),
   passengerNames: z.array(z.string().max(500)).max(1000).optional(),
   createdAt: instant,
   contractVersion: z.number().int().positive(),
@@ -80,6 +81,8 @@ const snapshotSchema = z.object({
       z.object({
         departureAt: instant,
         carrierNameSnapshot: z.string().max(200),
+        direction: z.enum(['OUTBOUND', 'RETURN']).optional(),
+        originId: id.optional(),
         destinationId: id,
       }),
     )
@@ -369,8 +372,13 @@ export function decodeIntake(
         createdAt: snapshot.createdAt,
         receivedAt: row.receivedAt,
         destinationId:
+          row.tableSummary?.destinationId ??
           snapshot.hotelSelection?.cityId ??
-          snapshot.ticketSelections?.[0]?.destinationId,
+          snapshot.ticketSelections?.find((t) => t.direction === 'OUTBOUND')
+            ?.destinationId ??
+          snapshot.ticketSelections?.find((t) => t.direction === 'RETURN')
+            ?.originId ??
+          snapshot.ticketSelections?.find((t) => !t.direction)?.destinationId,
         checkIn: snapshot.hotelSelection?.checkInDate,
         checkOut: snapshot.hotelSelection?.checkOutDate,
         roomCount:
