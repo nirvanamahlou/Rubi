@@ -8942,3 +8942,9 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+## CALLBACK-REQUEST-CAPABILITY-1105
+
+The missed-callback Register Request action was hidden when browser session permissions differed from the effective CallCenterActorGuard permissions (including approved global accounts). The missed-callback response now supplies additive meta.canCreateRequest; Web shows the manager action only when that value is explicitly true. Request creation continues through the existing authorized workflow editor and server write guard. No permissions, account configuration, database schema or dependencies change.
+
+Validation: four API capability tests, twelve existing IAM request-assignee tests and nine Web action tests. Local full typechecking with borrowed dependency links is not valid for this newer develop snapshot: generated contracts and Prisma types are stale; clean hosted gates are required before merge and deployment. Production deployment must preserve peer overlays and use the shared lock and verified backup.

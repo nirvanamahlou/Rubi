@@ -691,6 +691,15 @@ export class CallCenterReadService {
               counts.find((c) => c.contactId === p.contactId)?._count ?? 0,
           })),
           meta: {
+            // Use the effective actor from CallCenterActorGuard, not browser auth.
+            // Request writes still enforce their own server authorization.
+            canCreateRequest:
+              actor.permissions.includes(
+                'customer_affairs.call_center.workflow.manage',
+              ) &&
+              actor.permissions.includes(
+                'customer_affairs.call_center.workflow.manage.team',
+              ),
             total: pending.length,
             page: input.page,
             pageSize: input.pageSize,

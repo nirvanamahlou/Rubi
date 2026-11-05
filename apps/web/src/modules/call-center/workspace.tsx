@@ -58,7 +58,6 @@ import {
 } from './workflow';
 import { HostedCallForm } from './call-form-host';
 import { WithoutOutcomeDialog } from './without-outcome-dialog';
-import { canCreateCallbackRequest } from './kpi-call-actions';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
@@ -203,7 +202,6 @@ function Content({
     };
   }, [branch]);
   const revision = useRef<string | undefined>(undefined);
-  const canRegisterCallbackRequest = canCreateCallbackRequest(permissions);
   const canManage = permissions.includes(
       'customer_affairs.call_center.workflow.manage',
     ),
@@ -816,17 +814,13 @@ function Content({
           canComplete={canCreate && canManage && !busy}
           onClose={() => setCallbacksOpen(false)}
           onComplete={complete}
-          onRequest={
-            canRegisterCallbackRequest
-              ? (contact) => {
-                  if (!canRegisterCallbackRequest || busy) return;
-                  setCallbackRequest(contact);
-                }
-              : undefined
-          }
+          onRequest={(contact) => {
+            if (busy) return;
+            setCallbackRequest(contact);
+          }}
         />
       )}
-      {callbackRequest && canRegisterCallbackRequest && (
+      {callbackRequest && (
         <WorkflowEditor
           key={callbackRequest.id}
           editor={{ kind: 'request' }}
