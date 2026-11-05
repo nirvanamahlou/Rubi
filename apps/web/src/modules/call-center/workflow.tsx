@@ -6,7 +6,8 @@ import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { IllustrationIcon } from '@/components/ui/illustration-icon';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -656,6 +657,7 @@ export function WorkQueue({
       <section className={`${styles.panel} ${styles.queue}`}>
         <header>
           <h3 tabIndex={-1} ref={queueHeading}>
+            <IllustrationIcon kind="clipboard" size={28} />
             صف رسیدگی و پیگیری
           </h3>
           <button
@@ -681,7 +683,7 @@ export function WorkQueue({
               setRevision((value) => value + 1)
             )}
           >
-            <RotateCcw size={16} aria-hidden="true" />
+            <IllustrationIcon kind="refresh" size={22} />
             به‌روزرسانی
           </button>
         </header>
@@ -795,7 +797,7 @@ export function WorkQueue({
                   setLoading(true);
                 }}
               >
-                <RotateCcw size={14} aria-hidden="true" />
+                <IllustrationIcon kind="refresh" size={20} />
                 پاک کردن فیلترها
               </button>
             </div>

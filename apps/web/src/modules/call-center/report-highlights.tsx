@@ -2,7 +2,7 @@
 import { ExpertActivity } from './expert-activity';
 import { SourceShareChart } from './source-share-chart';
 import type { SearchFilters } from './read-client';
-import { BarChart3, Users } from 'lucide-react';
+import { IllustrationIcon } from '@/components/ui/illustration-icon';
 import type { Report } from './read-client';
 import type { Operator } from './workflow-client';
 import styles from './workspace.module.css';
@@ -36,7 +36,7 @@ export function ReportHighlights({
     <div className={styles.highlights}>
       <article className={`${styles.reportCard} ${styles.expertCard}`}>
         <h3>
-          <Users size={19} />
+          <IllustrationIcon kind="chart" size={28} />
           عملکرد تماس و وضعیت پیگیری کارشناسان
         </h3>
         <ExpertActivity
@@ -51,7 +51,7 @@ export function ReportHighlights({
       </article>
       <article className={styles.reportCard}>
         <h3>
-          <BarChart3 size={19} /> سهم منابع آشنایی
+          <IllustrationIcon kind="layers" size={28} /> سهم منابع آشنایی
         </h3>
         <SourceShareChart sources={sources} total={data.contacts} />
         {!sources.length && <p>داده‌ای برای منابع تماس وجود ندارد.</p>}
