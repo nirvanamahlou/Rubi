@@ -1,4 +1,5 @@
 'use client';
+import { FloatingContractPurchaseDialog } from './floating-contract-purchase-dialog';
 import { canSelfServeSalesContract } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -257,6 +258,9 @@ export function paymentReferenceSearchQuery(
 export function SalesWorkspace() {
   const contractsSearchPanel = useRef<HTMLElement>(null);
   const actor = useAccessActor();
+  const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
+    null,
+  );
   const [paymentContractId, setPaymentContractId] = useState<string | null>(
     null,
   );
@@ -612,7 +616,7 @@ export function SalesWorkspace() {
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
                     <td className="px-4 py-3 last:pl-5">
-                      <div className="grid min-w-72 grid-cols-4 gap-1.5">
+                      <div className="grid min-w-96 grid-cols-5 gap-1.5">
                         <PassengerCorrectionButton
                           contractId={contract.id}
                           ownerUserId={contract.ownerUserId}
@@ -633,6 +637,23 @@ export function SalesWorkspace() {
                           <ReceiptText className="size-3.5" />
                           پرداخت‌ها
                         </Button>
+                        {contract.isFloating &&
+                        ((actor &&
+                          canSelfServeSalesContract(actor, contract)) ||
+                          actor?.permissions.includes(
+                            'sales.payments.create',
+                          )) ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 min-w-0 px-2 text-xs"
+                            onClick={() => setPurchaseContractId(contract.id)}
+                          >
+                            خرید
+                          </Button>
+                        ) : (
+                          <span />
+                        )}
                         <ContractOutputButton
                           contractId={contract.id}
                           ownerUserId={contract.ownerUserId}
@@ -693,6 +714,13 @@ export function SalesWorkspace() {
             صفحه بعد
           </Button>
         </nav>
+      ) : null}
+      {purchaseContractId ? (
+        <FloatingContractPurchaseDialog
+          id={purchaseContractId}
+          onClose={() => setPurchaseContractId(null)}
+          onSaved={() => void load()}
+        />
       ) : null}
       {paymentContractId ? (
         <ContractPayments

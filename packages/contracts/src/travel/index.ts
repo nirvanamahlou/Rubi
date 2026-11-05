@@ -326,6 +326,7 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  totalPassengerPrices?: ReservationServicePurchaseInputV1['totalPassengerPrices'];
   roomPurchase?: {
     checkInDate: string;
     checkOutDate: string;
@@ -397,6 +398,12 @@ export interface ReservationLegacyGuestPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
+  totalPassengerPrices?: readonly {
+    customerId: string;
+    rialAmount: string;
+    foreignAmount: string;
+    currencyCode?: string;
+  }[];
   roomPrices?: readonly ReservationRoomPriceV1[];
   legacyGuestPrices?: readonly { guestIndex: number; nightlyAmount: string }[];
   purchaseRateToIrr?: string;
