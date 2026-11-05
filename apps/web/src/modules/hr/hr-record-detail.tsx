@@ -288,6 +288,39 @@ export function HrRecordDetail({
             {record.data.reason}
           </p>
         ) : null}
+        {record.data.missionExpense ? (
+          <div className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2">
+            <span>هزینه: {record.data.missionExpense.amount}</span>
+            <span>کارمزد: {record.data.missionExpense.fee}</span>
+            <span>
+              مرکز هزینه: {record.data.missionExpense.costCenter || '—'}
+            </span>
+            <span>
+              {record.data.pettyRegistrationId ? 'ثبت‌شده در تنخواه' : ''}
+            </span>
+            {record.data.missionExpense.receipt ? (
+              <HrButton
+                onClick={async () => {
+                  try {
+                    const { previewHrDocument } =
+                      await import('./hr-file-archive');
+                    setFileUrl(
+                      await previewHrDocument(
+                        `document://${record.data.missionExpense!.receipt!.id}`,
+                      ),
+                    );
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : 'نمایش فایل مجاز نیست.',
+                    );
+                  }
+                }}
+              >
+                نمایش فایل پیوست
+              </HrButton>
+            ) : null}
+          </div>
+        ) : null}
         <dl className={ui.properties}>
           {record.data.documentId &&
           !record.values.some(
@@ -324,36 +357,38 @@ export function HrRecordDetail({
               </dd>
             </div>
           ) : null}
-          {record.columns.map((label, index) => (
-            <div key={`${label}-${index}`}>
-              <dt>{hrFieldLabel(label)}</dt>
-              <dd>
-                {record.values[index]?.startsWith('document://') ? (
-                  <HrButton
-                    onClick={async () => {
-                      try {
-                        const { previewHrDocument } =
-                          await import('./hr-file-archive');
-                        setFileUrl(
-                          await previewHrDocument(record.values[index]!),
-                        );
-                      } catch (e) {
-                        setError(
-                          e instanceof Error
-                            ? e.message
-                            : 'نمایش فایل مجاز نیست.',
-                        );
-                      }
-                    }}
-                  >
-                    نمایش فایل پیوست
-                  </HrButton>
-                ) : (
-                  reportCellText(record.values[index] ?? '') || '—'
-                )}
-              </dd>
-            </div>
-          ))}
+          {record.columns.map((label, index) =>
+            record.tab === 'mission' && label === 'مسئول تأیید' ? null : (
+              <div key={`${label}-${index}`}>
+                <dt>{hrFieldLabel(label)}</dt>
+                <dd>
+                  {record.values[index]?.startsWith('document://') ? (
+                    <HrButton
+                      onClick={async () => {
+                        try {
+                          const { previewHrDocument } =
+                            await import('./hr-file-archive');
+                          setFileUrl(
+                            await previewHrDocument(record.values[index]!),
+                          );
+                        } catch (e) {
+                          setError(
+                            e instanceof Error
+                              ? e.message
+                              : 'نمایش فایل مجاز نیست.',
+                          );
+                        }
+                      }}
+                    >
+                      نمایش فایل پیوست
+                    </HrButton>
+                  ) : (
+                    reportCellText(record.values[index] ?? '') || '—'
+                  )}
+                </dd>
+              </div>
+            ),
+          )}
         </dl>
         {fileUrl ? (
           <iframe

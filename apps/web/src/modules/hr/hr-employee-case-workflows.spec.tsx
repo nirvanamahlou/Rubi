@@ -81,6 +81,46 @@ beforeEach(() => {
 });
 
 describe('optional employee case workflows', () => {
+  it('orders all employee tabs and exposes manual editing only with the server capability', () => {
+    expect(employeeGroups.map((g) => g.id)).toEqual([
+      'identity',
+      'time',
+      'leaves',
+      'employment',
+      'exit',
+      'contracts',
+      'pay',
+      'requests',
+      'changes',
+      'assets',
+      'development',
+      'history',
+    ]);
+    for (const permitted of [false, true]) {
+      captured.tables.length = 0;
+      const scoped = {
+        ...store,
+        data: {
+          ...store.data!,
+          capabilities: {
+            ...store.data!.capabilities,
+            manualAttendance: permitted,
+          },
+        },
+      };
+      const html = renderToStaticMarkup(
+        <HrEmployeeProfile
+          employee={employee}
+          initialTab="attendance"
+          store={scoped}
+          onForm={vi.fn()}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(html).not.toContain('تغییر عکس پروفایل');
+      expect(Boolean(captured.tables.at(-1)?.onEdit)).toBe(permitted);
+    }
+  });
   it.each([
     ['promotion', 'lifecycle', 'promotion'],
     ['transfer', 'lifecycle', 'transfer'],

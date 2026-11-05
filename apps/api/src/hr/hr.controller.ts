@@ -36,6 +36,15 @@ export class HrController {
     @Inject(HrRadanDeviceService)
     private readonly device?: HrRadanDeviceService,
   ) {}
+  @Post('attendance/:id/manual')
+  editAttendance(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.editAttendance(id, body, key, req.actor);
+  }
   @Get('attendance/device/status') deviceStatus(
     @Req() req: AuthenticatedRequest,
   ) {

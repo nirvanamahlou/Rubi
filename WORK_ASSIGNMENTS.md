@@ -11351,6 +11351,11 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-duotone-1105 from develop ff31d2fd9
 
 PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.
 
+## HR-MISSION-ATTENDANCE-1105 — PC-A — READY_FOR_CI
+
+Base develop16fbcf294; codex/pc-a-hr-mission-attendance-1105. Owner explicitly authorizes payroll/filter/profile UI changes, Nima-only manual attendance editing, mission time/evidence and optional petty-cash posting, push and green-gate develop merge. Reserve bounded HR frontend/API, HR contracts, IAM identity capability and Finance/Documents public mission ports and focused tests. Prior same-owner HR scopes merged/frozen. Preserve branch authorization, immutable identity restriction, raw punches/manual overrides, Decimal currency, atomic/idempotent cash posting and audit. No dependency or migration changes planned; no production deployment or live financial transactions.
+HR-MISSION-ATTENDANCE-1105 scope clarification: existing petty registrations are owned by Procurement. Reserve additive ProcurementMissionPort and optional shared transaction support in procurement.registrations only; existing fund custodian/manager, branch, evidence, balance and idempotency guards remain intact. No Finance ledger table access from HR.
+
 ## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
 
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.

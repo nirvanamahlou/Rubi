@@ -1,3 +1,4 @@
+import { ProcurementMissionModule } from '../procurement/procurement-mission.module';
 import { HrRadanDeviceService } from './hr-radan-device.service';
 import { Module } from '@nestjs/common';
 import { HrDirectoryModule } from './hr-directory.module';
@@ -15,7 +16,12 @@ import { HrPayrollWorksheetController } from './hr-payroll-worksheet.controller'
 import { HrPayrollWorksheetService } from './hr-payroll-worksheet.service';
 
 @Module({
-  imports: [IamModule, DocumentsModule, HrDirectoryModule],
+  imports: [
+    IamModule,
+    DocumentsModule,
+    HrDirectoryModule,
+    ProcurementMissionModule,
+  ],
   controllers: [
     HrController,
     HrConnectionsController,
