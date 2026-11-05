@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { contractPrintHtml, contractMoney } from './contract-print';
+import {
+  contractPrintHtml,
+  contractMoney,
+  type ContractPrintReferences,
+} from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
   it('keeps international flight dates in day month year order inside RTL output', () => {
@@ -875,7 +879,7 @@ it.each([2, 3])(
         checkOutDate: '2026-10-03',
       }),
     );
-    const refs = structuredClone(printReferences);
+    const refs: ContractPrintReferences = structuredClone(printReferences);
     refs.names.antalya = 'آنتالیا';
     refs.names['extra-city-0'] = 'استانبول';
     refs.names['extra-city-1'] = 'ازمیر';
