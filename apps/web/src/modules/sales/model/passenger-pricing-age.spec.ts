@@ -44,4 +44,12 @@ it('shows saved child bands without inventing a birth date or guessing an unknow
     passengerPricingAgeLabel(state, { ...child, childAgeBand: 'AGE_6_12' }),
   ).toBe('کودک (6-12)');
   expect(passengerPricingAgeLabel(state, child)).toBe('کودک');
+  expect(
+    passengerPricingAgeLabel(state, {
+      customerId: child.customerId,
+      displayName: child.displayName,
+      birthDate: '',
+      childAgeBand: 'AGE_2_6',
+    }),
+  ).toBe('کودک (2-6)');
 });

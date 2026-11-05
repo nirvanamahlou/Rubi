@@ -16,7 +16,7 @@ export function passengerPricingAgeLabel(
   const label = salesPassengerAgeLabel(
     passenger.birthDate,
     date,
-    passenger.ageCategory,
+    passenger.ageCategory ?? (passenger.childAgeBand ? 'CHD' : undefined),
   );
   if (label !== 'کودک') return label;
   if (passenger.childAgeBand === 'AGE_2_6') return 'کودک (2-6)';
