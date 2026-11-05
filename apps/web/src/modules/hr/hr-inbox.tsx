@@ -1,4 +1,5 @@
 'use client';
+import { LeaveEvidenceList } from './leave-evidence-list';
 import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
 import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -365,12 +366,23 @@ export function HrInbox({
                     {review.leave.mode} {review.leave.startTime}{' '}
                     {review.leave.endTime ? `تا ${review.leave.endTime}` : ''}
                   </dd>
+                  <dt>نوع مرخصی</dt>
+                  <dd>{review.leave.leaveType ?? 'استحقاقی'}</dd>
                   <dt>دلیل</dt>
                   <dd>{review.leave.reason}</dd>
                   <dt>جانشین احتمالی</dt>
-                  <dd>{review.leave.substitute || '—'}</dd>
+                  <dd>
+                    {review.leave.substitute || '—'}
+                    {review.substituteStatus
+                      ? ` · ${review.substituteStatus === 'APPROVED' ? 'تأییدشده' : review.substituteStatus === 'REJECTED' ? 'ردشده' : 'در انتظار پاسخ'}`
+                      : ''}
+                  </dd>
                 </dl>
               ) : null}
+              <LeaveEvidenceList
+                ids={review.leave?.attachmentIds ?? []}
+                path={`/customer-affairs/workbench/hr-requests/${review.id}/evidence`}
+              />
               <p className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 {workbenchRequestStatusLabel(review.status)}
               </p>

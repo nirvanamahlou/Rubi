@@ -1,3 +1,4 @@
+
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
 
 Responsible experts saving a result for an explicitly linked real call, including unanswered calls, create a durable review receipt. Pending receipts appear with a followed-up badge in the request creator-manager's My Work queue. Saving that manager's decision acknowledges only the displayed receipt set, retaining assignment, history and expert access; newer distinct follow-ups can requeue. Repeatable-read snapshots, receipt-set tokens, row locks and command idempotence protect concurrent edits. Exact-request review access does not grant access to unrelated contact history. The editor displays name/phone separately and a subject only from the saved related follow-up, and removes the visible technical helper.
@@ -23,6 +24,12 @@ Independent scope review and one boundary regression cover normal shared navigat
 Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
 
 Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
+
+## LEAVE-POLICY-SUBSTITUTE-1105 — PC-A — VALIDATED
+
+Shared Workbench/employee leave fields now support annual/sick types, hourly intervals, registered substitute selection and restricted medical evidence. Substitute consent is a separate versioned inbox decision before final HR approval. The request reference field is removed and deletion uses an outlined trash icon. Policies use monthly day/hour quotas, daily advance notice and same-day hourly cutoff in Tehran time; quota months follow the Persian calendar. Approved hourly coverage updates attendance status, early departure and deficit through the existing reconciliation path.
+
+Legacy annual policy values remain compatible until explicitly saved in the new monthly form; no automatic conversion of annual allowances or operational data seed. New monthly policies also guard legacy submission paths. Evidence is branch/owner bound, restricted, scanned through Documents and downloaded only via an authorized request/record association. No schema or dependency changes. Validation includes focused API/domain/privacy tests, a real PostgreSQL substitute-to-HR approval and attendance/quota test, Web HR/Workbench tests, contracts tests, lint/typechecks/builds. User authorizes push/develop merge and local3100 only; no production deployment.
 
 ## THREE-PANELS-RELEASE-1103 — PC-C
 

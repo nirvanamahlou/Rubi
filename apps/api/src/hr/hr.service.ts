@@ -1,4 +1,16 @@
-import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
+import type { UploadedDocumentFile } from '../documents/documents.service';
+import {
+  leavePolicyValues,
+  parseMonthlyLeavePolicy,
+  assertLeaveDeadline,
+  assertMonthlyLeaveQuota,
+  leaveUsage,
+  recordLeave,
+} from './hr-leave-policy';
+import type {
+  WorkbenchLeaveInputV1,
+  WorkbenchRequestItemV1,
+} from '@nora/contracts';
 import { attendanceFrom } from './hr-attendance-range';
 import { approvedLeaveCoverage } from './hr-attendance-leave';
 import { isDeepStrictEqual } from 'node:util';
@@ -491,6 +503,12 @@ export class HrService {
         ),
       );
     }
+    if (schema.key === 'time.leavePolicies')
+      values.splice(
+        0,
+        values.length,
+        ...leavePolicyValues(row.values as string[]),
+      );
     if (schema.key === 'employee.assignment') {
       const labels = display ?? (await this.assignmentLabels([row], actor));
       values[0] = labels.branches.get(values[0]!) ?? values[0]!;
@@ -2477,6 +2495,250 @@ export class HrService {
       });
     }
   }
+  async leaveOptions(branchId: string, actor: AuthenticatedActor) {
+    this.branch(actor, branchId);
+    const users = await this.iam.leaveSubstituteUsers(branchId);
+    if (
+      !users.some((user) => user.id === actor.userId) &&
+      !this.has(actor, 'hr.manage')
+    )
+      throw new ForbiddenException();
+    return { users };
+  }
+  async uploadLeaveEvidence(
+    branchId: string,
+    validUntil: string,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    this.branch(actor, branchId);
+    validate.isoDate(validUntil);
+    await this.leaveOptions(branchId, actor);
+    return this.documents.uploadLeaveEvidence(
+      branchId,
+      validUntil,
+      file,
+      actor,
+      {},
+    );
+  }
+  async leaveEvidence(
+    recordId: string,
+    documentId: string,
+    actor: AuthenticatedActor,
+  ) {
+    const row = await this.record(this.database.client, recordId, actor);
+    const data = row.data as HrWorkflowData;
+    if (
+      !['time.leave', 'requests.leave', 'requests.radanLeave'].includes(
+        `${row.section}.${row.tab}`,
+      ) ||
+      !data.leaveAttachmentIds?.includes(documentId)
+    )
+      throw new NotFoundException();
+    if (
+      !this.has(actor, 'hr.manage') &&
+      !(
+        row.employeeId &&
+        (await this.employee(this.database.client, row.employeeId, actor))
+          .userId === actor.userId
+      )
+    )
+      throw new ForbiddenException();
+    return this.documents.downloadLeaveEvidence(
+      documentId,
+      row.branchId,
+      actor,
+    );
+  }
+  private async monthlyLeavePolicy(tx: Tx, branchId: string, type: string) {
+    const rows = await tx.hrRecord.findMany({
+      where: {
+        branchId,
+        section: 'time',
+        tab: 'leavePolicies',
+        status: 'فعال',
+        deletedAt: null,
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    });
+    const row = rows.find(
+      (r) =>
+        (r.values as string[]).length === 7 &&
+        (r.values as string[])[0] === type,
+    );
+    return row ? parseMonthlyLeavePolicy(row.values as string[]) : null;
+  }
+  async validateWorkbenchLeaveSubmission(
+    tx: Tx,
+    branchId: string,
+    senderId: string,
+    leave: WorkbenchLeaveInputV1,
+    actor: AuthenticatedActor,
+  ) {
+    const employee = await tx.hrEmployee.findFirst({
+      where: { branchId, userId: senderId, deletedAt: null, status: 'فعال' },
+    });
+    if (!employee)
+      throw new BadRequestException(
+        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
+      );
+    await this.validateLeaveSubmission(tx, employee, leave, actor);
+  }
+  private async validateLeaveSubmission(
+    tx: Tx,
+    employee: Employee,
+    leave: WorkbenchLeaveInputV1,
+    actor: AuthenticatedActor,
+  ) {
+    validate.isoDate(leave.from);
+    validate.isoDate(leave.to);
+    if (
+      !['روزانه', 'ساعتی'].includes(leave.mode) ||
+      !['استحقاقی', 'استعلاجی'].includes(leave.leaveType ?? 'استحقاقی') ||
+      leave.reason.trim().length < 3 ||
+      leave.reason.length > 500
+    )
+      throw new BadRequestException('نوع و دلیل مرخصی را تکمیل کنید.');
+    if (
+      leave.mode === 'ساعتی' &&
+      (leave.from !== leave.to ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(leave.startTime ?? '') ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(leave.endTime ?? '') ||
+        leave.endTime! <= leave.startTime!)
+    )
+      throw new BadRequestException('ساعت شروع و پایان مرخصی معتبر نیست.');
+    if (
+      leave.to < leave.from ||
+      Date.parse(leave.to) - Date.parse(leave.from) > 30 * 86400000
+    )
+      throw new BadRequestException('بازه مرخصی معتبر نیست.');
+    const policy = await this.monthlyLeavePolicy(
+      tx,
+      employee.branchId,
+      leave.leaveType ?? 'استحقاقی',
+    );
+    if (policy) assertLeaveDeadline(leave, policy, new Date());
+    if (leave.substituteUserId) {
+      if (
+        leave.substituteUserId === employee.userId ||
+        !(await this.iam.leaveSubstituteUsers(employee.branchId, tx)).some(
+          (u) => u.id === leave.substituteUserId,
+        )
+      )
+        throw new BadRequestException(
+          'جانشین باید کاربر فعال دیگری در شعبه باشد.',
+        );
+    }
+    if (leave.attachmentIds?.length) {
+      if (leave.leaveType !== 'استعلاجی')
+        throw new BadRequestException('مدارک فقط برای مرخصی استعلاجی است.');
+      await this.documents.assertLeaveEvidence(
+        leave.attachmentIds,
+        employee.branchId,
+        actor.userId,
+      );
+    }
+  }
+
+  async leaveSubstituteRequests(
+    actor: AuthenticatedActor,
+  ): Promise<WorkbenchRequestItemV1[]> {
+    const rows = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        section: 'requests',
+        tab: 'radanLeave',
+        deletedAt: null,
+        data: { path: ['substituteUserId'], equals: actor.userId },
+      },
+      include: { employee: true },
+      orderBy: { updatedAt: 'desc' },
+      take: 200,
+    });
+    return rows
+      .filter((r) => !r.code.startsWith('WB-') && r.status !== 'پیش‌نویس')
+      .map((r) => {
+        const d = r.data as HrWorkflowData,
+          v = r.values as string[];
+        return {
+          id: r.id,
+          source: 'hr',
+          version: r.version,
+          trackingNumber: r.code,
+          subject: 'درخواست جانشینی مرخصی',
+          description: `${r.employee?.name ?? ''} · ${v[2]} — ${v[3]} · ${v[4]} ${v[5] ?? ''} ${v[6] ?? ''}`,
+          destinationUnit: 'منابع انسانی',
+          status: r.status,
+          priority: 'NORMAL',
+          nextActionAt: r.createdAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+          direction: 'incoming',
+          senderName: r.employee?.name ?? '',
+          recipientName: null,
+          substituteReview: true,
+          substituteStatus: d.substituteStatus,
+        };
+      });
+  }
+  async reviewNativeLeaveSubstitute(
+    id: string,
+    body: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    const input = validate.object(body, ['version', 'status']);
+    if (
+      !['APPROVED', 'REJECTED'].includes(String(input.status)) ||
+      !Number.isInteger(input.version)
+    )
+      throw new BadRequestException();
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM hr_records WHERE id=${id}::uuid FOR UPDATE`;
+      const row = await tx.hrRecord.findFirst({
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          section: 'requests',
+          tab: 'radanLeave',
+          deletedAt: null,
+        },
+      });
+      const data = (row?.data ?? {}) as HrWorkflowData;
+      if (
+        !row ||
+        data.substituteUserId !== actor.userId ||
+        row.code.startsWith('WB-')
+      )
+        throw new NotFoundException();
+      if (data.substituteStatus === input.status)
+        return { status: input.status };
+      if (
+        row.version !== input.version ||
+        data.substituteStatus !== 'PENDING' ||
+        !/انتظار|بررسی/.test(row.status)
+      )
+        throw new ConflictException(
+          'درخواست تغییر کرده است؛ فهرست را تازه کنید.',
+        );
+      await tx.hrRecord.update({
+        where: { id },
+        data: {
+          data: json({ ...data, substituteStatus: input.status }),
+          version: { increment: 1 },
+        },
+      });
+      await this.audit(
+        tx,
+        actor,
+        { branchId: row.branchId, employeeId: row.employeeId, recordId: id },
+        'leave.substitute',
+        { status: input.status },
+        row.version + 1,
+      );
+      return { status: input.status };
+    });
+  }
+
   /** Public transactional port; Customer Affairs owns the request, HR owns leave effects. */
   async approveWorkbenchLeave(
     tx: Tx,
@@ -2504,6 +2766,9 @@ export class HrService {
     const schema = getHrResource('requests', 'radanLeave')!;
     await this.approve(tx, schema, actor, employee);
     const data: HrWorkflowData = {
+      leaveAttachmentIds: leave.attachmentIds,
+      substituteUserId: leave.substituteUserId,
+      substituteStatus: leave.substituteUserId ? 'APPROVED' : undefined,
       reason: `${leave.reason}${leave.substitute ? ` / جانشین احتمالی: ${leave.substitute}` : ''}`,
     };
     const values = await this.values(
@@ -2511,7 +2776,7 @@ export class HrService {
       schema,
       [
         employee.name,
-        'استحقاقی',
+        leave.leaveType ?? 'استحقاقی',
         leave.from,
         leave.to,
         leave.mode,
@@ -2722,6 +2987,25 @@ export class HrService {
             values,
             data,
           );
+        if (schema.key === 'time.leavePolicies')
+          parseMonthlyLeavePolicy(values);
+        if (
+          ['time.leave', 'requests.leave'].includes(schema.key) &&
+          (await this.monthlyLeavePolicy(tx, branchId, values[1]!))
+        )
+          throw new BadRequestException(
+            'برای این سیاست، از فرم جدید مرخصی استفاده کنید.',
+          );
+        if (schema.key === 'requests.radanLeave' && employee) {
+          await this.validateLeaveSubmission(
+            tx,
+            employee,
+            recordLeave(values, data),
+            actor,
+          );
+          if (data.substituteUserId) data.substituteStatus = 'PENDING';
+        }
+
         const state = validate.status(input.status, schema.approval);
         if (data.approvalRoute?.length && validate.APPROVED.has(state))
           throw new BadRequestException(
@@ -2867,7 +3151,17 @@ export class HrService {
         throw new ConflictException(
           'حقوق تأییدشده تغییر نمی‌کند؛ پس از برگشت مالی یک درخواست اصلاح‌شده ارسال کنید.',
         );
-      const schema = validate.resource(row.section, row.tab);
+      const migrateLeave =
+        ['time.leave', 'requests.leave'].includes(
+          `${row.section}.${row.tab}`,
+        ) &&
+        Array.isArray(input.values) &&
+        input.values.length === 8 &&
+        !row.appliedAt &&
+        !validate.FINAL.has(row.status);
+      const schema = migrateLeave
+        ? validate.resource('requests', 'radanLeave')
+        : validate.resource(row.section, row.tab);
       const networkPassword = this.devicePassword(
         input.privateData,
         schema,
@@ -3127,6 +3421,43 @@ export class HrService {
               parentId,
               row.id,
             );
+      if (schema.key === 'time.leavePolicies') parseMonthlyLeavePolicy(values);
+      if (
+        ['time.leave', 'requests.leave'].includes(schema.key) &&
+        !cancel &&
+        !approvalAction &&
+        (await this.monthlyLeavePolicy(tx, row.branchId, values[1]!))
+      )
+        throw new BadRequestException(
+          'برای این سیاست، از فرم جدید مرخصی استفاده کنید.',
+        );
+      if (
+        schema.key === 'requests.radanLeave' &&
+        employee &&
+        !cancel &&
+        !approvalAction &&
+        (input.values !== undefined ||
+          providedData !== undefined ||
+          state !== row.status)
+      ) {
+        const changed =
+          !isDeepStrictEqual(values, row.values) ||
+          ['substituteUserId', 'leaveAttachmentIds', 'reason'].some(
+            (k) =>
+              !isDeepStrictEqual(
+                (data as Record<string, unknown>)[k],
+                (row.data as Record<string, unknown>)[k],
+              ),
+          );
+        await this.validateLeaveSubmission(
+          tx,
+          employee,
+          recordLeave(values, data),
+          actor,
+        );
+        if (changed)
+          data.substituteStatus = data.substituteUserId ? 'PENDING' : undefined;
+      }
       if (
         schema.key === 'time.checkins' &&
         !isDeepStrictEqual(values, row.values)
@@ -3234,6 +3565,7 @@ export class HrService {
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
         data: {
+          ...(migrateLeave ? { section: 'requests', tab: 'radanLeave' } : {}),
           parentId,
           values: persistedValues,
           searchText: privateValues ? '' : values.join(' '),
@@ -3674,6 +4006,8 @@ export class HrService {
         await this.applyJob(tx, row, employee, actor);
     }
     if (schema.key === 'requests.radanLeave' && employee) {
+      if (data.substituteUserId && data.substituteStatus !== 'APPROVED')
+        throw new ConflictException('جانشین هنوز درخواست را تأیید نکرده است.');
       const from = validate.isoDate(values[2]),
         to = validate.isoDate(values[3]);
       const yearOf = (d: Date) =>
@@ -3692,8 +4026,8 @@ export class HrService {
       const peers = await tx.hrRecord.findMany({
         where: {
           employeeId: employee.id,
-          section: 'requests',
-          tab: 'radanLeave',
+          section: { in: ['requests', 'time'] },
+          tab: { in: ['radanLeave', 'leave'] },
           status: { in: [...validate.APPROVED] },
           deletedAt: null,
           id: { not: row.id },
@@ -3701,13 +4035,11 @@ export class HrService {
       });
       if (
         peers.some((r) => {
-          const d = r.data as HrWorkflowData;
-          return (
-            d.startsAt &&
-            d.endsAt &&
-            d.startsAt < data.endsAt! &&
-            d.endsAt > data.startsAt!
-          );
+          const d = r.data as HrWorkflowData,
+            v = r.values as string[];
+          const starts = d.startsAt ?? `${v[2]}T00:00:00.000Z`,
+            ends = d.endsAt ?? `${v[3]}T23:59:59.999Z`;
+          return starts < data.endsAt! && ends > data.startsAt!;
         })
       )
         throw new ConflictException('مرخصی تأییدشده هم‌پوشان وجود دارد.');
@@ -3751,7 +4083,65 @@ export class HrService {
           } else minutes += Number(config[3]);
         }
       } else await this.assertOpenPeriod(tx, row.branchId, values[2]!);
+      const policy = await this.monthlyLeavePolicy(
+        tx,
+        row.branchId,
+        values[1]!,
+      );
+      if (policy) {
+        const leave = recordLeave(values, data);
+        assertMonthlyLeaveQuota(
+          leave,
+          policy,
+          peers
+            .filter((r) => (r.values as string[])[1] === values[1])
+            .map((r) =>
+              recordLeave(r.values as string[], r.data as HrWorkflowData),
+            ),
+        );
+        // Grant each configured month once, under the same employee advisory lock.
+        for (const period of leaveUsage(leave).keys()) {
+          const [grantYear, grantMonth] = period.split('-').map(Number);
+          const ledgers = await tx.hrRecord.findMany({
+            where: {
+              employeeId: employee.id,
+              section: 'time',
+              tab: 'minuteLedger',
+              deletedAt: null,
+              status: 'تأییدشده',
+            },
+          });
+          const exists = ledgers.some((r) => {
+            const v = r.values as string[];
+            return (
+              Number(v[1]) === grantYear &&
+              Number(v[2]) === grantMonth &&
+              v[3] === values[1] &&
+              v[4] === 'سهمیه ماهانه'
+            );
+          });
+          if (!exists) {
+            const dayMinutes = Number(config?.[3]);
+            if (policy.daily > 0 && !(dayMinutes > 0))
+              throw new ConflictException(
+                'طول روز مرخصی را در تنظیمات کارکرد ثبت کنید.',
+              );
+            await this.minuteEntry(
+              tx,
+              employee,
+              grantYear!,
+              grantMonth!,
+              values[1]!,
+              Math.round(policy.daily * (dayMinutes || 0) + policy.hourly * 60),
+              'سهمیه ماهانه',
+              null,
+              actor,
+            );
+          }
+        }
+      }
       if (
+        !policy &&
         (await this.minuteBalance(tx, employee.id, year, values[1]!)) < minutes
       )
         throw new ConflictException('مانده دقیقه‌ای مرخصی کافی نیست.');
@@ -3815,6 +4205,33 @@ export class HrService {
         throw new ConflictException(
           'مرخصی با درخواست تأییدشده دیگری هم‌پوشان است.',
         );
+      const monthlyPolicy = await this.monthlyLeavePolicy(
+        tx,
+        row.branchId,
+        type,
+      );
+      if (monthlyPolicy) {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${employee.id + ':minute-leave'}, 0))::text`;
+        const prior = await tx.hrRecord.findMany({
+          where: {
+            employeeId: employee.id,
+            deletedAt: null,
+            id: { not: row.id },
+            status: { in: [...validate.APPROVED] },
+            section: { in: ['time', 'requests'] },
+            tab: { in: ['leave', 'radanLeave'] },
+          },
+        });
+        assertMonthlyLeaveQuota(
+          recordLeave(values, data),
+          monthlyPolicy,
+          prior
+            .filter((r) => (r.values as string[])[1] === type)
+            .map((r) =>
+              recordLeave(r.values as string[], r.data as HrWorkflowData),
+            ),
+        );
+      }
       const totals = await tx.hrLeaveEntry.aggregate({
         where: { employeeId: employee.id, type, year: from.getUTCFullYear() },
         _sum: { days: true },
@@ -4854,9 +5271,20 @@ export class HrService {
           const reviewExceptions = result.exceptions.filter(
             (e) => !(ongoing && e === 'خروج ثبت نشده'),
           );
+          const hourlyLeave = source.some(
+            (r) =>
+              r.employeeId === employee.id &&
+              r.tab === 'radanLeave' &&
+              validate.APPROVED.has(r.status) &&
+              (r.values as string[])[4] === 'ساعتی' &&
+              (r.values as string[])[2]! <= date &&
+              (r.values as string[])[3]! >= date,
+          );
           const status =
-            !selected.length && leave?.fullDay
-              ? 'مرخصی'
+            leave && leave.leaveMinutes > 0
+              ? hourlyLeave
+                ? 'مرخصی ساعتی'
+                : 'مرخصی'
               : !selected.length
                 ? !shift
                   ? 'عدم روزکاری'

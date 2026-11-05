@@ -90,6 +90,8 @@ export function resource(section: unknown, tab: unknown): HrResourceDefinition {
 export function workflowData(value: unknown): HrWorkflowData {
   if (value === undefined) return {};
   const data = object(value, [
+    'substituteUserId',
+    'leaveAttachmentIds',
     'allBranches',
     'chartX',
     'chartY',
@@ -107,12 +109,16 @@ export function workflowData(value: unknown): HrWorkflowData {
   if (data.allBranches !== undefined && typeof data.allBranches !== 'boolean')
     throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const key of [
+    'substituteUserId',
     'managerId',
     'targetBranchId',
     'documentId',
     'organizationBranchId',
   ])
-    if (data[key] !== undefined && !(key === 'managerId' && data[key] === null))
+    if (
+      data[key] !== undefined &&
+      !(['managerId', 'substituteUserId'].includes(key) && data[key] === null)
+    )
       uuid(data[key], key);
   for (const key of ['startsAt', 'endsAt'])
     if (data[key] !== undefined) {
@@ -153,6 +159,14 @@ export function workflowData(value: unknown): HrWorkflowData {
       throw new BadRequestException(
         'مختصات گره باید عددی بین منفی و مثبت ۵۰۰۰ باشد.',
       );
+  }
+  if (data.leaveAttachmentIds !== undefined) {
+    if (
+      !Array.isArray(data.leaveAttachmentIds) ||
+      data.leaveAttachmentIds.length > 5
+    )
+      throw new BadRequestException('حداکثر ۵ مدرک مجاز است.');
+    data.leaveAttachmentIds.forEach((id) => uuid(id, 'مدرک مرخصی'));
   }
   if (data.reason !== undefined) text(data.reason, 'دلیل', 1000);
   return data as HrWorkflowData;

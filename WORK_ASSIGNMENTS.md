@@ -11295,6 +11295,10 @@ Owner authorizes payment evidence in the selected Sales receipt request and remo
 
 Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
 
+## LEAVE-POLICY-SUBSTITUTE-1105 — PC-A — READY_FOR_CI
+
+Base develop9f71ecf5e. Owner authorizes shared Workbench/employee leave form, monthly quotas and submission deadlines, substitute consent, sick-leave evidence, request icon/reference cleanup, attendance integration, push/develop merge and local3100. Reserve bounded HR/Workbench/Customer Affairs/IAM directory/Documents leave ports, additive contracts, UI/English translations and tests. Prior HR scopes are merged/frozen. Preserve source approvals, actor/branch guards, medical evidence confidentiality and audit; no operational seed data, schema or dependency changes planned.
+
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 
 Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitly selects generated option2: green inbound/blue outbound filled handset, pale rounded tile and white directional arrow in a circular badge, in call-history timeline only. Reserve leaf call-history-icon.tsx and bounded workspace.tsx/workspace.module.css timeline integration, own task/status notes. Latest Navy/Pearl source is merged/frozen in PR1403; preserve its styling and all history data, actions, permissions and responsive layout. No API/schema/dependency or server deployment changes. Validate the real small-size RTL presentation and affected Web checks; publish under existing workflow.
