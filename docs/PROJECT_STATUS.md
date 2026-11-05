@@ -1,3 +1,7 @@
+## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
+
+Finance reservation requests resolve persisted purchase actor IDs through the scoped IAM public directory, deduplicating names for grouped purchases. No guessed requester or source-data rewrite. Request cards expose requester and emphasize amount; details use responsive semantic fact cards, grouped FX metrics, and aligned purchase actions. Prior source-ID/history removals remain. Existing permissions, payments and evidence are preserved. Focused Finance API/UI tests, lint and type checks precede full hosted gates. No schema, dependency or deployment.
+
 ## FINANCE-DIALOG-CLEANUP-1105 — PC-A — READY_FOR_CI
 
 Removed payment-history panels and the internal source UUID row from the Finance request dialog. Added responsive vertical spacing below its FX summary. Existing payment actions, evidence and history data remain intact. UI-only change; no API, migration or deployment. Scoped lint, existing presentation/receipt/FX tests and Web type checks validate the change; full hosted build/test gates precede merge.

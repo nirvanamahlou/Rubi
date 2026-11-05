@@ -1236,14 +1236,15 @@ export function FinanceInboxLiveWorkspace() {
                       {item.title}
                     </h3>
                   </div>
-                  <p
-                    className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums text-primary"
-                    dir="ltr"
-                  >
+                  <p className={styles.requestAmount} dir="ltr">
                     {money(item)}
                   </p>
                 </div>
-                <PurchaseFxSummary entries={item.purchaseFx} />
+                {item.purchaseFx?.length ? (
+                  <div className={styles.rowFx}>
+                    <PurchaseFxSummary entries={item.purchaseFx} />
+                  </div>
+                ) : null}
                 {item.ticketPurchase ? (
                   <p className="mt-2 text-xs text-muted-foreground">
                     تعداد صندلی:{' '}
@@ -1259,11 +1260,16 @@ export function FinanceInboxLiveWorkspace() {
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                   <bdi className="break-all">
-                    {item.contractReference ?? item.sourceReference}
+                    {item.contractReference
+                      ? `قرارداد ${item.contractReference}`
+                      : ''}
                   </bdi>
                   <span>
                     {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
                   </span>
+                  {item.requesterDisplaySnapshot ? (
+                    <span>درخواست‌کننده: {item.requesterDisplaySnapshot}</span>
+                  ) : null}
                   <span>سررسید: {faDate(item.dueAt)}</span>
                   <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
                     {active ? 'در حال مشاهده' : 'بررسی درخواست'}
@@ -1310,28 +1316,19 @@ export function FinanceInboxLiveWorkspace() {
           >
             <DialogContent dir="rtl" className={styles.requestDialog}>
               <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
-              <DialogDescription>{selected.title}</DialogDescription>
-              {selected.purchaseFx?.length ? (
-                <div className="pb-4 pt-2 leading-6">
-                  <PurchaseFxSummary entries={selected.purchaseFx} />
-                </div>
-              ) : null}
-              {canPay && (
-                <PurchaseFxCaptures
-                  entries={selected.purchaseFx}
-                  onSaved={() => setRevision((v) => v + 1)}
-                />
-              )}
+              <DialogDescription className="sr-only">
+                {selected.title}
+              </DialogDescription>
               <Card
                 id="finance-request-details"
                 className="scroll-mt-24 overflow-hidden p-0"
                 aria-label="جزئیات درخواست انتخاب‌شده"
               >
-                <div className="border-b border-border bg-primary/5 p-5">
+                <div className={styles.detailHeader}>
                   <p className="mb-3 text-xs font-bold text-primary">
                     جزئیات درخواست انتخاب‌شده
                   </p>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <Badge className={sourceTone(selected.source)}>
                       {selected.source === 'PURCHASES'
                         ? selected.ticketPurchase
@@ -1346,19 +1343,36 @@ export function FinanceInboxLiveWorkspace() {
                         : 'منبع نامشخص'}
                     </span>
                   </div>
-                  <h3 className="mt-4 text-lg font-black">{selected.title}</h3>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+                    <h3 className="text-lg font-black">{selected.title}</h3>
+                    <strong dir="ltr" className={styles.requestAmount}>
+                      {money(selected)}
+                    </strong>
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {selected.description}
                   </p>
                 </div>
                 <div className="space-y-4 p-5">
+                  {selected.purchaseFx?.length ? (
+                    <div className={styles.detailFx}>
+                      <PurchaseFxSummary entries={selected.purchaseFx} />
+                    </div>
+                  ) : null}
+                  {canPay && (
+                    <PurchaseFxCaptures
+                      entries={selected.purchaseFx}
+                      onSaved={() => setRevision((v) => v + 1)}
+                    />
+                  )}
+
                   {selected.reservationPurchase ? (
                     <div className="space-y-3 rounded-xl border border-border p-3">
                       <strong className="text-sm">خریدهای این درخواست</strong>
                       {selected.reservationPurchase.lines.map((line) => (
                         <div
                           key={line.purchaseId}
-                          className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
+                          className={styles.purchaseLine}
                         >
                           <span>
                             {line.serviceTitle} · {line.supplierName}
@@ -1409,71 +1423,76 @@ export function FinanceInboxLiveWorkspace() {
                       ))}
                     </div>
                   ) : null}
-                  {[
-                    ['قرارداد', selected.contractReference ?? '—'],
-                    ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
-                    ['مبلغ', money(selected)],
-                    ...(selected.source === 'SALES' &&
-                    selected.destinationAccountId
-                      ? [
-                          [
-                            'حساب مقصد',
-                            declaredReceiptAccountLabel(selected, accounts),
-                          ],
-                        ]
-                      : []),
-                    ...(selected.ticketPurchase
-                      ? [
-                          [
-                            'تعداد صندلی',
-                            selected.ticketPurchase.seatCount?.toLocaleString(
-                              'fa-IR',
-                            ) ?? 'در انتظار تعیین مالی',
-                          ],
-                          [
-                            'قیمت خرید هر صندلی',
-                            selected.ticketPurchase.unitCost
-                              ? selected.ticketPurchase.unitCost +
-                                ' ' +
-                                (selected.amount?.currencyCode ?? '')
-                              : 'ثبت نشده',
-                          ],
-                          [
-                            'پرداخت‌های ثبت‌شده',
-                            selected.ticketPurchase.paymentCount.toLocaleString(
-                              'fa-IR',
-                            ),
-                          ],
-                        ]
-                      : []),
-                    ...(selected.settlement
-                      ? [
-                          [
-                            'پرداخت‌شده',
-                            `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
-                          ],
-                          [
-                            'مانده',
-                            `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
-                          ],
-                        ]
-                      : []),
-                    ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
-                    ['تاریخ ایجاد', faDate(selected.createdAt)],
-                    ['تاریخ سررسید', faDate(selected.dueAt)],
-                  ].map(([label, value]) => (
-                    <div
-                      className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
-                      key={label}
-                    >
-                      <span className="text-xs text-muted-foreground">
-                        {label}
-                      </span>
-                      <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
-                        {value}
-                      </strong>
-                    </div>
-                  ))}
+                  <dl className={styles.detailFacts}>
+                    {[
+                      ['قرارداد', selected.contractReference ?? '—'],
+                      [
+                        'طرف‌حساب / کارمند',
+                        selected.partyDisplaySnapshot ?? '—',
+                      ],
+                      ['مبلغ', money(selected)],
+                      ...(selected.source === 'SALES' &&
+                      selected.destinationAccountId
+                        ? [
+                            [
+                              'حساب مقصد',
+                              declaredReceiptAccountLabel(selected, accounts),
+                            ],
+                          ]
+                        : []),
+                      ...(selected.ticketPurchase
+                        ? [
+                            [
+                              'تعداد صندلی',
+                              selected.ticketPurchase.seatCount?.toLocaleString(
+                                'fa-IR',
+                              ) ?? 'در انتظار تعیین مالی',
+                            ],
+                            [
+                              'قیمت خرید هر صندلی',
+                              selected.ticketPurchase.unitCost
+                                ? selected.ticketPurchase.unitCost +
+                                  ' ' +
+                                  (selected.amount?.currencyCode ?? '')
+                                : 'ثبت نشده',
+                            ],
+                            [
+                              'پرداخت‌های ثبت‌شده',
+                              selected.ticketPurchase.paymentCount.toLocaleString(
+                                'fa-IR',
+                              ),
+                            ],
+                          ]
+                        : []),
+                      ...(selected.settlement
+                        ? [
+                            [
+                              'پرداخت‌شده',
+                              `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
+                            ],
+                            [
+                              'مانده',
+                              `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
+                            ],
+                          ]
+                        : []),
+                      [
+                        'درخواست‌کننده',
+                        selected.requesterDisplaySnapshot ?? '—',
+                      ],
+                      ['تاریخ ایجاد', faDate(selected.createdAt)],
+                      ['تاریخ سررسید', faDate(selected.dueAt)],
+                    ].map(([label, value]) => (
+                      <div className={styles.detailFact} key={label}>
+                        <dt className="text-xs text-muted-foreground">
+                          {label}
+                        </dt>
+                        <dd className="break-words text-sm font-semibold leading-6 [overflow-wrap:anywhere]">
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
                   {selected.source === 'SALES' &&
                     selected.kind === 'RECEIPT_VERIFICATION' && (
                       <FinanceRequestReceipts
