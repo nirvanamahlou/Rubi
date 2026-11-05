@@ -518,6 +518,7 @@ export function ReservationSalesAmendment({
               <div className="md:col-span-3">
                 <AmendmentAdditionalHotelStays
                   hotel={hotel}
+                  destinationCityId={draft.destinationId}
                   hotels={refs.hotels ?? []}
                   cities={refs.cities ?? []}
                   countries={refs.countries ?? []}
