@@ -1,3 +1,7 @@
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-source-share-legend-1105 from develop 9f71ecf5e. User explicitly requests matching the supplied source-share reference: multicolor donut at left, total in the center, readable source/count/percentage legend at right. Reserve only source-share-chart.tsx/.module.css/.spec.tsx, own task/status notes and a bounded Web release script. Preserve the real report denominator, every positive source including unknown, current aggregation/filters, shared sidebar and other Call Center presentation. No schema, migrations, API, dependencies or grants. Existing chat authorization covers develop PR, merge after green checks and bounded server publication. Prior PANEL-SCOPE source merged in PR1411; its production receipt is on bb1c93f98. Read-only ownership audit found no competing active source-share writer.

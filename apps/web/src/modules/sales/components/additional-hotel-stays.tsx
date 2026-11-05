@@ -4,6 +4,7 @@ import { loadContractHotels } from '../api/hotel-catalog';
 import { withCompositeGuests } from '../model/composite-guests';
 import {
   defaultSalesRoomCategory,
+  retainHotelJourneyRoutes,
   salesRoomCategories,
   salesRoomCategoryLabel,
   type SalesRoomCategory,
@@ -19,18 +20,28 @@ import {
 import { SearchableReference } from './searchable-reference';
 import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
+import { HotelJourneyEditor } from './hotel-journey-editor';
+import {
+  selectedHotelJourneys,
+  salesHotelJourneyError,
+} from '../model/hotel-journeys';
+import type { HotelJourneyV1 } from '@nora/contracts';
 
 export function AdditionalHotelStays({
   state: source,
   patch,
   hotels,
   cities = [],
+  countries = [],
+  airlines = [],
   roomTypes,
 }: {
   state: SalesFormState;
   patch: (patch: Partial<SalesFormState>) => void;
   hotels: readonly MasterDataRecord[];
   cities?: readonly MasterDataRecord[];
+  countries?: readonly MasterDataRecord[];
+  airlines?: readonly MasterDataRecord[];
   roomTypes: readonly MasterDataRecord[];
 }) {
   const state = withCompositeGuests(source);
@@ -70,11 +81,36 @@ export function AdditionalHotelStays({
   )
     return null;
   const stays = state.hotel.additionalStays ?? [];
+  const journeys = selectedHotelJourneys(state);
+  const changeJourney = (
+    fromHotelId: string,
+    value: HotelJourneyV1 | undefined,
+  ) =>
+    patch({
+      hotel: {
+        ...state.hotel,
+        journeys: [
+          ...journeys.filter((j) => j.fromHotelId !== fromHotelId),
+          ...(value ? [value] : []),
+        ],
+      },
+    });
+  const journeyError = salesHotelJourneyError(state);
+  const last = stays.at(-1);
+  const cityName = (id: string) => cities.find((c) => c.id === id)?.name ?? '';
   const save = (next: typeof stays) =>
     patch({
       hotel: withCompositeGuests({
         ...state,
-        hotel: { ...state.hotel, multiHotel: true, additionalStays: next },
+        hotel: {
+          ...state.hotel,
+          multiHotel: true,
+          additionalStays: next,
+          journeys: retainHotelJourneyRoutes(journeys, [
+            state.hotel.hotelId,
+            ...next.map((s) => s.hotelId),
+          ]),
+        },
       }).hotel,
     });
   return (
@@ -98,6 +134,20 @@ export function AdditionalHotelStays({
             stays.map((item, i) => (i === index ? { ...item, ...next } : item)),
           );
         const rooms = stay.rooms ?? [];
+        const countryId =
+          stay.countryId ||
+          String(
+            cities.find((c) => c.id === stay.cityId)?.attributes.countryId ??
+              '',
+          );
+        const previous =
+          index === 0
+            ? {
+                hotelId: state.hotel.hotelId,
+                hotelNameSnapshot: state.hotel.name,
+                cityId: state.hotel.cityId || state.destinationId,
+              }
+            : stays[index - 1]!;
         const options = salesHotelRoomTypes(
           stay.hotelId,
           availableHotels,
@@ -115,12 +165,55 @@ export function AdditionalHotelStays({
                 حذف هتل
               </Button>
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SearchableReference
+                label="کشور اقامت بعدی"
+                value={countryId}
+                options={countries}
+                onChange={(countryId) =>
+                  update({
+                    countryId,
+                    cityId: '',
+                    hotelId: '',
+                    hotelNameSnapshot: '',
+                    rooms: rooms.map((r) => ({
+                      ...r,
+                      roomTypeId: '',
+                      roomTypeNameSnapshot: '',
+                    })),
+                  })
+                }
+              />
+              <SearchableReference
+                label="شهر اقامت بعدی"
+                value={stay.cityId}
+                disabled={!countryId}
+                options={cities.filter(
+                  (c) => c.attributes.countryId === countryId,
+                )}
+                onChange={(cityId) =>
+                  update({
+                    cityId,
+                    hotelId: '',
+                    hotelNameSnapshot: '',
+                    rooms: rooms.map((r) => ({
+                      ...r,
+                      roomTypeId: '',
+                      roomTypeNameSnapshot: '',
+                    })),
+                  })
+                }
+              />
+            </div>
+            <div className="grid gap-3">
               <SearchableReference
                 label="هتل"
                 value={stay.hotelId}
+                disabled={!stay.cityId}
                 options={availableHotels.filter(
                   (h) =>
+                    !!stay.cityId &&
+                    h.attributes.cityId === stay.cityId &&
                     h.id !== state.hotel.hotelId &&
                     !stays.some(
                       (other, i) => i !== index && other.hotelId === h.id,
@@ -140,6 +233,7 @@ export function AdditionalHotelStays({
                 onChange={(id) => {
                   const hotel = availableHotels.find((h) => h.id === id);
                   if (id && !hotel) return;
+                  if (id && hotel?.attributes.cityId !== stay.cityId) return;
                   if (
                     id &&
                     (id === state.hotel.hotelId ||
@@ -190,6 +284,25 @@ export function AdditionalHotelStays({
                 </FormField>
               ))}
             </div>
+            <HotelJourneyEditor
+              value={journeys.find(
+                (j) =>
+                  j.fromHotelId === previous.hotelId &&
+                  j.toHotelId === stay.hotelId,
+              )}
+              onChange={(value) => changeJourney(previous.hotelId, value)}
+              fromHotelId={previous.hotelId}
+              toHotelId={stay.hotelId}
+              fromLabel={
+                previous.hotelNameSnapshot + ' · ' + cityName(previous.cityId)
+              }
+              toLabel={stay.hotelNameSnapshot + ' · ' + cityName(stay.cityId)}
+              originCityId={previous.cityId}
+              destinationCityId={stay.cityId}
+              cities={cities}
+              airlines={airlines}
+              defaultDate={stay.checkInDate}
+            />
             {rooms.map((room, roomIndex) => {
               const change = (next: Partial<typeof room>) =>
                 update({
@@ -302,6 +415,29 @@ export function AdditionalHotelStays({
       >
         افزودن هتل
       </Button>
+      {last?.hotelId && (
+        <HotelJourneyEditor
+          value={journeys.find(
+            (j) => j.fromHotelId === last.hotelId && j.toHotelId === null,
+          )}
+          onChange={(value) => changeJourney(last.hotelId, value)}
+          fromHotelId={last.hotelId}
+          toHotelId={null}
+          fromLabel={last.hotelNameSnapshot + ' · ' + cityName(last.cityId)}
+          toLabel="فرودگاه بلیت برگشت"
+          originCityId={last.cityId}
+          destinationCityId={state.returnOffer?.originId || state.destinationId}
+          preferredAirportId={state.returnOffer?.originAirportId ?? undefined}
+          cities={cities}
+          airlines={airlines}
+          defaultDate={last.checkOutDate}
+        />
+      )}
+      {journeyError && (
+        <p role="alert" className="text-sm text-destructive">
+          {journeyError}
+        </p>
+      )}
     </section>
   );
 }
