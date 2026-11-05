@@ -282,6 +282,9 @@ COMPUTER_ID=PC-A; codex/pc-a-tour-periods-grid-1103 from develop13ff82d55. Owner
 
 TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, lifecycle authorization/CAS/audit and published-sale regressions pass.249 surrounding Web checks and230 API checks pass; missing sparse-checkout CLI helper was materialized and rechecked successfully. Scoped lint, API4GiB typecheck and API build pass. Web production build passed. Canonical upstream tour-ticket selection integrated without duplicate lifecycle state; 38 updated targeted checks pass, including transactional audit, terminal deletion and existing status protocol. Final integrated checks follow. One additive lifecycle migration; no production migration or deployment. Existing translation keys remain unchanged; generated catalogues synchronize already-published peer entries. Exact-head hosted quality/test/build/PostgreSQL gates precede authorized develop merge. Source freezes on push and releases on successful merge.
 
+## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
+One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -8948,6 +8951,9 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+
+
 
 ## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — PC-C — IN_PROGRESS
 
