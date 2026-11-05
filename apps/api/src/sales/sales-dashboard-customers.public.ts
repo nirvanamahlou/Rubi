@@ -24,6 +24,29 @@ type LeadReferences = {
   contractIds: readonly string[];
 };
 
+// A purchase succeeds only when both the contract and a receipt are confirmed.
+// Later cancellation/refund does not erase that customer's purchase history.
+function paidContractBefore(before: Date): Prisma.SalesContractWhereInput {
+  return {
+    status: {
+      in: [
+        'CONFIRMED',
+        'SENT_TO_RESERVATIONS',
+        'IN_PROGRESS',
+        'COMPLETED',
+        'CANCELLED',
+      ],
+    },
+    confirmedAt: { not: null, lt: before },
+    payments: {
+      some: {
+        status: 'FINANCE_CONFIRMED',
+        financeConfirmedAt: { not: null, lt: before },
+      },
+    },
+  };
+}
+
 /** Sales-owned paid-purchase cohorts. HTTP aggregates contain no identities. */
 @Injectable()
 export class SalesDashboardCustomers {
@@ -36,7 +59,8 @@ export class SalesDashboardCustomers {
     const purchases = new Map<string, Date[]>();
     for (const row of rows) {
       const paid = row.payments
-        .map((payment) => payment.financeConfirmedAt!)
+        .map((payment) => payment.financeConfirmedAt)
+        .filter((at): at is Date => at !== null)
         .sort((a, b) => a.getTime() - b.getTime())[0];
       if (!paid || !row.confirmedAt) continue;
       const at = new Date(Math.max(paid.getTime(), row.confirmedAt.getTime()));
@@ -46,16 +70,32 @@ export class SalesDashboardCustomers {
         at,
       ]);
     }
-    const fresh: DashboardObservation[] = [],
-      returning: DashboardObservation[] = [];
-    for (const dates of purchases.values()) {
+    const currentPurchases = new Map<string, Date>();
+    for (const [customerId, dates] of purchases) {
       dates.sort((a, b) => a.getTime() - b.getTime());
       const current = dates.find((date) => date >= query.from);
-      if (current)
-        (dates[0]! < query.from ? returning : fresh).push({
-          at: current,
-          value: '1',
-        });
+      if (current) currentPurchases.set(customerId, current);
+    }
+    // Candidate membership remains permission/branch scoped. Only the earlier
+    // purchase-exists classification is company-wide, inside its Sales owner.
+    // Fetch no previous contract, date, owner or branch details into Reporting.
+    const priorBuyers = currentPurchases.size
+      ? await this.db.client.salesContract.groupBy({
+          by: ['customerId'],
+          where: {
+            customerId: { in: [...currentPurchases.keys()] },
+            ...paidContractBefore(query.from),
+          },
+        })
+      : [];
+    const priorCustomerIds = new Set(priorBuyers.map((row) => row.customerId));
+    const fresh: DashboardObservation[] = [],
+      returning: DashboardObservation[] = [];
+    for (const [customerId, current] of currentPurchases) {
+      (priorCustomerIds.has(customerId) ? returning : fresh).push({
+        at: current,
+        value: '1',
+      });
     }
     return {
       source,
@@ -64,13 +104,13 @@ export class SalesDashboardCustomers {
         'new-customers': {
           kind: 'count',
           aggregation:
-            'distinct first successful paid-purchase customers within authorized Sales scope; later of contract confirmation and first Finance receipt confirmation; historical paid purchases retained after cancellation',
+            'distinct authorized buyers with a successful paid purchase in window and none before it anywhere in the company; later of contract confirmation and first Finance receipt confirmation; historical paid purchases retained after cancellation',
           observations: fresh,
         },
         'returning-customers': {
           kind: 'count',
           aggregation:
-            'distinct customers with a successful purchase before window and another in window within authorized Sales scope; once per customer',
+            'distinct authorized buyers with a successful purchase in window and an earlier successful purchase anywhere in the company; once per customer',
           observations: returning,
         },
       },
@@ -144,24 +184,7 @@ export class SalesDashboardCustomers {
                 },
               ]
             : []),
-          {
-            status: {
-              in: [
-                'CONFIRMED',
-                'SENT_TO_RESERVATIONS',
-                'IN_PROGRESS',
-                'COMPLETED',
-                'CANCELLED',
-              ],
-            },
-            confirmedAt: { not: null, lt: query.to },
-            payments: {
-              some: {
-                status: 'FINANCE_CONFIRMED',
-                financeConfirmedAt: { not: null, lt: query.to },
-              },
-            },
-          },
+          paidContractBefore(query.to),
         ],
       },
       select: {
