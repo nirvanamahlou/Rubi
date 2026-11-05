@@ -13,10 +13,13 @@ export function addManifestWarnings(
   bytes: Uint8Array,
   labels: readonly string[],
   rows: readonly (readonly string[])[],
+  firstDataRow = 2,
 ) {
   const warnings = rows.flatMap((row, index) => {
     const missing = labels.filter((_, column) => !row[column]?.trim());
-    return missing.length ? [[String(index + 2), missing.join('، ')]] : [];
+    return missing.length
+      ? [[String(index + firstDataRow), missing.join('، ')]]
+      : [];
   });
   if (!warnings.length) return bytes;
   const files = unzipSync(bytes);
