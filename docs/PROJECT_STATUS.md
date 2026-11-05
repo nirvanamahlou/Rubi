@@ -1,5 +1,14 @@
 ## THREE-PANELS-RELEASE-1103 — PC-C
 
+## CALLBACK-REQUEST-CAPABILITY-1105
+
+The missed-callback Register Request action was hidden when browser session permissions differed from the effective CallCenterActorGuard permissions (including approved global accounts). The missed-callback response now supplies additive meta.canCreateRequest; Web shows the manager action only when that value is explicitly true. Request creation continues through the existing authorized workflow editor and server write guard. No permissions, account configuration, database schema or dependencies change.
+
+Validation: four API capability tests, twelve existing IAM request-assignee tests and nine Web action tests. Local full typechecking with borrowed dependency links is not valid for this newer develop snapshot: generated contracts and Prisma types are stale; clean hosted gates are required before merge and deployment. Production deployment must preserve peer overlays and use the shared lock and verified backup.
+
+Candidate overlay validation: API/Web production builds passed; 4 API and 154 Web tests passed (one pre-existing skipped test). All four gates passed for the first integrated head; repeat hosted validation after the latest develop integration. Deployment uses the existing live baseline and preserves peer overlays; no grant or schema changes.
+
+
 Owner authorizes a bounded server release of approved Call Center, Dashboard and Reports work. CallForm explicitly exposes every source and outcome choice rather than silently truncating to five; default behavior of the shared selector remains unchanged elsewhere.17 popup/selector regressions and scoped lint pass. Release will preserve current unrelated production source/settings, validate required public reporting adapters, build and test a candidate, verify encrypted server-only backup and deploy under the existing lock with rollback and Worker/API/AMI checks. No IAM grants, schema/migrations, dependency or business-data writes are included.
 ## NOTIFICATION-CLEAR-COUNTER-1104 — PC-B — READY_FOR_CI
 
@@ -8949,11 +8958,11 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
 
-## CALLBACK-REQUEST-CAPABILITY-1105
+## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — PC-C — IN_PROGRESS
 
-The missed-callback Register Request action was hidden when browser session permissions differed from the effective CallCenterActorGuard permissions (including approved global accounts). The missed-callback response now supplies additive meta.canCreateRequest; Web shows the manager action only when that value is explicitly true. Request creation continues through the existing authorized workflow editor and server write guard. No permissions, account configuration, database schema or dependencies change.
+User requests all unit managers see/select only same-unit responsible experts, while CEO Danial Altafi retains all staff. Read-only production diagnosis confirms two callback-triage accounts with unit membership were widened by requestAssignees' callbackManagers global shortcut; only one has native team-manage authority. Scope now uses exact active IAM unit plus team permission, ordinary users self-only, and the verified danial global account as the sole all-unit exception. List and new/changed assignment writes share this policy. Preserve all other call scopes and approved UI. No schema/dependency, grants, business-data or runtime changes; validation pending.
 
-Validation: four API capability tests, twelve existing IAM request-assignee tests and nine Web action tests. Local full typechecking with borrowed dependency links is not valid for this newer develop snapshot: generated contracts and Prisma types are stale; clean hosted gates are required before merge and deployment. Production deployment must preserve peer overlays and use the shared lock and verified backup.
+CALL-CENTER-OWNER-UNIT-SCOPE-1105:57 targeted checks pass (36 unit/security/HR,19 PostgreSQL access including forged cross-unit/moved-member denial,2 existing UI rendering). Scoped lint, formatting and full API TypeScript pass. API build passed; source-only push/PR proceeds under the standing DEVELOPMENT_WORKFLOW approval, and all hosted checks must pass before develop merge. No schema/dependency/IAM grant/business-data/server rollout changes.
 
 ## CALL-KPI-NOTIFICATIONS-1105 — PC-C — SOURCE_READY
 
