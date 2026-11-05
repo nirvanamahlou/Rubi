@@ -53,7 +53,12 @@ it('prints the edited room composition and child ages from the saved supplier re
     html.indexOf('ROOM QUANTITIES BY TYPE'),
   );
   expect(hotelTable).not.toContain('ROOM TYPE');
-  expect(html).toContain('4, 10');
+  expect(html).not.toContain('CHILD AGES');
+  expect(html).toContain('CHILDREN 2-6');
+  expect(html).toContain('CHILDREN 6-12');
+  expect(html.replaceAll(' dir="auto"', '')).toContain(
+    'Family Suite</td><td>2</td><td>1</td><td>1</td><td>4</td>',
+  );
   expect(html).toContain('ROOM TYPE');
   expect(html).not.toContain('undefined');
   expect(html).not.toContain('PROPOSED PURCHASE PRICE');
