@@ -139,14 +139,28 @@ export function HotelStayPurchase({
       p.serviceClientKey === returnKey &&
       (p.coveredServiceClientKeys?.length ?? 1) === 1,
   );
+  const initialCounts = contractHotelTransferCounts(request.snapshot, stayKey);
+  const defaultRoundTrip =
+    quote.hotelTransferRoundTrip ?? !request.workflow?.supplierFormSettings;
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
-    hotelTransferRoundTrip: quote.hotelTransferRoundTrip ?? true,
+    hotelTransferRoundTrip: defaultRoundTrip,
     hotelTransferCounts:
       request.workflow?.supplierFormSettings?.hotelTransferRoundTrip &&
       quote.hotelTransferCounts
         ? { ...quote.hotelTransferCounts }
-        : contractHotelTransferCounts(request.snapshot, stayKey),
+        : defaultRoundTrip
+          ? {
+              outbound: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+              returning: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+            }
+          : initialCounts,
     ...(transfer
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
