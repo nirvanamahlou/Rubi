@@ -1,0 +1,11 @@
+# CALL-PAGER-HEADSET-1105
+
+PC-C; source43f9bcdf93c206db54d8278dd10d0bd259b6a866; branch codex/pc-c-call-pager-headset-1105. User approves the supplied illustrated navy/blue headset and compact chevron pagination for queue, contacts and expert detail. Expert-detail page numbers use ASCII with explicit LTR ordering; other report numbers retain their current formatting. No API, schema, dependency, authorization or business-data changes.
+
+116 Call Center tests and scoped lint/format passed. Full Web types passed after rebuilding stale generated contracts; initial unrelated reservation export errors were generated-output drift. All8 hosted checks passed on the exact source; PR1429 merged as c185fac0e089e88dcd11f0f3d38f874548c718bd. Bounded candidate full production build/types,121 tests and canary passed. Published successfully; details below.
+
+Storage: the pre-expert backup1793873768 was downloaded to F:/DevData/Backups/Rubi/before-expert-activity-totals-1105-1793873768 and all3 encrypted files SHA256-verified/flushed before removing that server copy. Local manifest/local-archive-verified.json and server /opt/rubi/expert-activity-totals-1105/prior-backup-local-archive.json record its location. The current pre-KPI backup remains on server. No image, business record or storage guard was removed.
+
+Production image rubi-production:pager-headset-1105; marker PAGER_HEADSET_VERIFIED. Receipts /opt/rubi/pager-headset-1105/{build-verified,ci-approved,backup-verified,verified}.json; backup /opt/rubi/backups/before-pager-headset-1105-1793876310 encrypted/restoration-list/hash verified. Sources/assets, environment/mounts, worker auth/AMI/recording timer and unrelated service identities verified; no migrations. Previous image rubi-production:kpi-duotone-1105 retained for guarded rollback under deploy lock.
+
+Live verification: all3 pagers use28px buttons/10px gaps and directional chevrons. Contact next/previous and expert detail1/2 ->2/2 ->1/2 succeeded. Single-page queue controls disabled.390px dialog width358px, page client/scroll width390px, no console errors. Viewport override reset; screenshots call-center-title-live.png and call-center-pagination-live.png saved locally. Ownership released.
