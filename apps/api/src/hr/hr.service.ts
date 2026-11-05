@@ -1862,29 +1862,51 @@ export class HrService {
       ).some((key) => current[key] !== existing[key]);
       if (assignmentChanged) {
         const effectiveAt = new Date();
-        const assignment = await tx.hrRecord.create({
-          data: {
-            branchId: current.branchId,
+        const previous = await tx.hrRecord.findFirst({
+          where: {
             employeeId: id,
-            jobTitleId: current.jobTitleId,
+            branchId: current.branchId,
             section: 'employee',
             tab: 'assignment',
-            data: current.organizationBranchId
-              ? { organizationBranchId: current.organizationBranchId }
-              : {},
-            code: `HR-ASG-${randomUUID()}`,
-            values: [
-              current.branchId,
-              current.unit,
-              current.position,
-              current.managerId ?? '',
-              effectiveAt.toISOString().slice(0, 10),
-            ],
-            effectiveAt,
-            appliedAt: effectiveAt,
-            status: current.status,
+            deletedAt: null,
           },
+          orderBy: [
+            { effectiveAt: 'desc' },
+            { createdAt: 'desc' },
+            { id: 'desc' },
+          ],
         });
+        const assignmentData = {
+          branchId: current.branchId,
+          employeeId: id,
+          jobTitleId: current.jobTitleId,
+          section: 'employee',
+          tab: 'assignment',
+          data: current.organizationBranchId
+            ? { organizationBranchId: current.organizationBranchId }
+            : {},
+
+          values: [
+            current.branchId,
+            current.unit,
+            current.position,
+            current.managerId ?? '',
+            (previous?.effectiveAt ?? current.startedAt)
+              .toISOString()
+              .slice(0, 10),
+          ],
+          effectiveAt: previous?.effectiveAt ?? current.startedAt,
+          appliedAt: effectiveAt,
+          status: current.status,
+        };
+        const assignment = previous
+          ? await tx.hrRecord.update({
+              where: { id: previous.id },
+              data: { ...assignmentData, version: { increment: 1 } },
+            })
+          : await tx.hrRecord.create({
+              data: { ...assignmentData, code: `HR-ASG-${randomUUID()}` },
+            });
         await this.audit(
           tx,
           actor,

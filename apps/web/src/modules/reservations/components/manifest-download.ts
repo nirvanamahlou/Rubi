@@ -86,6 +86,7 @@ export async function requestManifestDownload(
   if (!file.size) throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
   return {
     file,
+    warnings: response.headers.get('X-Nora-Manifest-Warnings') ?? '0',
     retriedWithAll,
     contracts: response.headers.get('X-Nora-Manifest-Contracts') ?? '—',
     passengers: response.headers.get('X-Nora-Manifest-Passengers') ?? '—',

@@ -1,3 +1,5 @@
+import { recordFloatingPassengerPurchase } from './record-floating-passenger-purchase';
+import { floatingPassengerPurchaseGroups } from './floating-passenger-purchase';
 import { assertFloatingPurchaseMode } from './floating-purchase-mode';
 import { CONTRACT_TOTAL_PURCHASE_KEY } from '@nora/contracts';
 import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
@@ -112,6 +114,7 @@ export function validateServicePurchase(
           'amount',
           'currencyCode',
           'passengerPrices',
+          'totalPassengerPrices',
           'legacyGuestPrices',
           'coveredServiceClientKeys',
           'transferUnitAmount',
@@ -584,6 +587,10 @@ export class ReservationServicePurchaseService {
         version: 1 as const,
         expectedVersion: input.expectedVersion,
       };
+      if (full.totalPassengerPrices !== undefined)
+        throw new BadRequestException(
+          'خرید مسافری از مسیر خرید کل ثبت می‌شود.',
+        );
       validateServicePurchase(full, true, Boolean(stay));
       return full;
     });
@@ -1030,6 +1037,35 @@ export class ReservationServicePurchaseService {
       this.purchaseSupplier(input.supplierOrganizationId, !!salesContractId),
       this.directory.currencyReference(input.currencyCode),
     ]);
+    if (input.totalPassengerPrices !== undefined) {
+      if (
+        !total ||
+        !salesContractId ||
+        key!.length > 140 ||
+        input.passengerPrices ||
+        input.legacyGuestPrices
+      )
+        throw new BadRequestException(
+          'خرید مسافری فقط برای خرید کل شناور مجاز است.',
+        );
+      const groups = floatingPassengerPurchaseGroups(
+        snapshot,
+        input.totalPassengerPrices,
+      );
+      for (const group of groups)
+        await this.directory.currencyReference(group.currencyCode);
+      return recordFloatingPassengerPurchase(
+        this.database,
+        this.purchaseFx,
+        intake,
+        actor,
+        input,
+        key!,
+        broker,
+        groups,
+        snapshot.serviceSelections.map((s) => s.clientKey),
+      );
+    }
     const hotelPricing =
       service.kind === 'HOTEL'
         ? hotelPassengerPurchase(

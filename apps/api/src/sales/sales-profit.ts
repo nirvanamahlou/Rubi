@@ -105,6 +105,18 @@ export function contractProfit(
     const keys = purchase.coveredServiceClientKeys?.length
       ? [...purchase.coveredServiceClientKeys]
       : [purchase.serviceClientKey];
+    if (purchase.serviceClientKey === 'contract-total-purchase') {
+      validKeys.forEach((key) => covered.add(key));
+      costs.push({
+        serviceClientKeys: keys,
+        serviceTitles: ['خرید کل قرارداد'],
+        source: 'RESERVATIONS',
+        referenceId: purchase.id,
+        amount: purchase.amount,
+        currencyCode: purchase.currencyCode,
+      });
+      continue;
+    }
     if (
       keys.some(
         (key) =>

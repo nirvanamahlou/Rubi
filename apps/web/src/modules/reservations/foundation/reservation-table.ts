@@ -67,8 +67,23 @@ export function tableDate(value?: string | null) {
     day: '2-digit',
   }).format(new Date(value));
 }
+/** Use the latest recorded amendment or passenger correction in both UI and export. */
+export function reservationCorrectionDate(
+  row: RequestView,
+): string | undefined {
+  return [
+    row.tableSummary?.amendedAt,
+    row.amendedAt,
+    row.tableSummary?.correctedAt,
+    row.correctedAt,
+  ].reduce<string | undefined>((latest, value) => {
+    if (!value || !Number.isFinite(Date.parse(value))) return latest;
+    return !latest || Date.parse(value) > Date.parse(latest) ? value : latest;
+  }, undefined);
+}
 export function reservationCells(row: RequestView): string[] {
   const s = row.tableSummary;
+  const correctedAt = reservationCorrectionDate(row);
   const start = reservationDay(
     row.checkIn ?? s?.departureDate ?? row.travelDate,
   );
@@ -92,8 +107,8 @@ export function reservationCells(row: RequestView): string[] {
     number(row.roomCount),
     tick(row.hotelRequested),
     tick(row.hotelConfirmed),
-    tick(s?.correctedAt ?? row.correctedAt),
-    tableDate(s?.correctedAt ?? row.correctedAt),
+    tick(correctedAt),
+    tableDate(correctedAt),
     row.serviceTitles?.join('، ') ||
       row.services.map((k) => serviceLabels[k]).join('، ') ||
       '—',

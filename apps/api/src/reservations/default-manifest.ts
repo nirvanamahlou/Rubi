@@ -1,3 +1,4 @@
+import { addManifestWarnings } from './manifest-warnings';
 import { strToU8, zipSync } from 'fflate';
 import { BadRequestException } from '@nestjs/common';
 
@@ -127,10 +128,17 @@ export function buildDefaultManifest(
     'xl/styles.xml': `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2F5496"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
     'xl/worksheets/sheet1.xml': `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastColumn}${rows.length + 1}"/><sheetViews><sheetView workbookViewId="0" rightToLeft="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="${columns.length}" width="23" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:${lastColumn}${rows.length + 1}"/></worksheet>`,
   };
-  return zipSync(
-    Object.fromEntries(
-      Object.entries(files).map(([path, content]) => [path, strToU8(content)]),
+  return addManifestWarnings(
+    zipSync(
+      Object.fromEntries(
+        Object.entries(files).map(([path, content]) => [
+          path,
+          strToU8(content),
+        ]),
+      ),
+      { level: 6 },
     ),
-    { level: 6 },
+    columns.map(([, label]) => label),
+    rows.map((row) => columns.map(([key]) => row[key])),
   );
 }

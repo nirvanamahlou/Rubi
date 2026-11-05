@@ -1,3 +1,4 @@
+import { ManifestTemplateController } from './manifest-template.controller';
 import { Module } from '@nestjs/common';
 import { MasterSelectionController } from './master-selection.controller';
 import { MasterSelectionDirectory } from './master-selection.directory';
@@ -32,6 +33,7 @@ import {
 @Module({
   imports: [IamModule],
   controllers: [
+    ManifestTemplateController,
     MasterSelectionController,
     PartnerDossierController,
     CurrencyRateController,

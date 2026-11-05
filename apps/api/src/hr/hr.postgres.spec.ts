@@ -3024,7 +3024,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         await client.hrRecord.count({
           where: { employeeId: target.id, tab: 'assignment' },
         }),
-      ).toBe(before + 1);
+      ).toBe(before);
       const audit = await client.hrAuditEvent.findFirst({
         where: { employeeId: target.id, action: 'employee.assignment.correct' },
       });

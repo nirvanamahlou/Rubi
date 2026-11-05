@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ReportHighlights } from './report-highlights';
-import type { Report } from './read-client';
+import type { ExpertRow, Report } from './read-client';
 const data: Report['data'] = {
   calls: 0,
   contacts: 0,
@@ -121,4 +121,127 @@ it('uses contact-based source share for repeated calls', () => {
   expect(html).toContain('100 0');
   expect(html).toContain('۱۰۰٪');
   expect(html).not.toContain('۲۸');
+});
+
+describe('expert activity totals', () => {
+  const row: ExpertRow = {
+    id: 'first',
+    name: 'First synthetic expert',
+    extensions: ['101'],
+    inboundAnswered: 1,
+    outboundAttempts: 0,
+    outboundConnected: 0,
+    uniqueContacts: 1,
+    open: 2,
+    overdue: 1,
+    total: 1,
+    incomplete: 0,
+    completionRate: 1,
+    shared: true,
+  };
+  const footerText = (html: string) =>
+    html.match(/<tfoot\b[^>]*>([\s\S]*?)<\/tfoot>/)?.[1] ?? '';
+  const cells = (footer: string) =>
+    [...footer.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/g)].map((match) =>
+      match[1]!
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    );
+
+  it('sums every authorized expert row and weights completion by calls instead of averaging rates', () => {
+    const html = renderToStaticMarkup(
+      <ReportHighlights
+        data={{
+          ...data,
+          calls: 111,
+          contacts: 99,
+          expertActivity: {
+            unattributed: 80,
+            rows: [
+              row,
+              {
+                ...row,
+                id: 'second',
+                name: 'Second synthetic expert',
+                extensions: ['102'],
+                inboundAnswered: 2,
+                outboundAttempts: 7,
+                outboundConnected: 4,
+                uniqueContacts: 5,
+                open: 8,
+                overdue: 1,
+                total: 9,
+                incomplete: 9,
+                completionRate: 0,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+    const footer = footerText(html);
+    expect(footer).toMatch(/<th\b[^>]*scope="row"[^>]*>جمع کل<\/th>/);
+    expect(cells(footer)).toEqual([
+      '۳',
+      '۷',
+      '۴',
+      '۶',
+      '۱۰',
+      '۲',
+      '۱۰٪ (۱ از ۱۰)',
+    ]);
+    expect(footer).not.toContain('<button');
+    expect(footer).not.toContain('۱۱۱');
+    expect(footer).not.toContain('۸۰');
+    expect(html).toContain('تماس چندکارشناسی');
+    expect(html).toContain('بدون انتساب معتبر');
+  });
+
+  it('keeps zero-call experts in the total and shows no invented completion percentage', () => {
+    const html = renderToStaticMarkup(
+      <ReportHighlights
+        data={{
+          ...data,
+          expertActivity: {
+            unattributed: 0,
+            rows: [
+              {
+                ...row,
+                inboundAnswered: 0,
+                uniqueContacts: 0,
+                total: 0,
+                completionRate: null,
+                shared: false,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+    expect(cells(footerText(html))).toEqual([
+      '۰',
+      '۰',
+      '۰',
+      '۰',
+      '۲',
+      '۱',
+      '—',
+    ]);
+    expect(html).not.toMatch(/NaN|Infinity/);
+  });
+
+  it('does not manufacture a total when the expert report is unavailable or empty', () => {
+    const unavailable = renderToStaticMarkup(<ReportHighlights data={data} />);
+    const empty = renderToStaticMarkup(
+      <ReportHighlights
+        data={{ ...data, expertActivity: { rows: [], unattributed: 3 } }}
+      />,
+    );
+    expect(unavailable).not.toContain('<tfoot');
+    expect(empty).not.toContain('<tfoot');
+    expect(unavailable).toContain('منبع گزارش کارشناسان در دسترس نیست');
+    expect(empty).toContain('کارشناس یا فعالیت دارای انتساب معتبر');
+    expect(empty).toContain('بدون انتساب معتبر');
+  });
 });

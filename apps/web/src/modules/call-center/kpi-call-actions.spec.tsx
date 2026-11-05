@@ -1,16 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  KpiCallActions,
-  canCreateCallbackRequest,
-  type KpiCallMode,
-} from './kpi-call-actions';
+import { KpiCallActions, type KpiCallMode } from './kpi-call-actions';
 import type { ContactSummary } from './read-client';
-import {
-  CALL_CENTER_SALES_EXPERT,
-  CALL_CENTER_SALES_MANAGER,
-} from '@nora/contracts';
 
 const call: ContactSummary['latest'] = {
   id: 'missed-call',
@@ -29,20 +21,33 @@ const props = {
   call,
   callCount: 3,
   canComplete: false,
+  canCreateRequest: true,
   onComplete: vi.fn(async () => {}),
 };
 
 describe('missed callback request action', () => {
-  it('requires manager team capability in addition to general workflow permission', () => {
-    expect(canCreateCallbackRequest(CALL_CENTER_SALES_MANAGER)).toBe(true);
-    expect(canCreateCallbackRequest(CALL_CENTER_SALES_EXPERT)).toBe(false);
-    expect(
-      canCreateCallbackRequest([
-        'customer_affairs.call_center.workflow.manage.team',
-      ]),
-    ).toBe(false);
-    expect(canCreateCallbackRequest([])).toBe(false);
-  });
+  it.each([false, undefined])(
+    'fails closed for absent or denied server capability (%s)',
+    (capability) => {
+      const base = {
+        mode: props.mode,
+        call,
+        callCount: 3,
+        canComplete: false,
+        onComplete: props.onComplete,
+      };
+      const action = (
+        <KpiCallActions
+          {...base}
+          {...(capability === undefined
+            ? {}
+            : { canCreateRequest: capability })}
+          onRequest={vi.fn()}
+        />
+      );
+      expect(renderToStaticMarkup(action)).not.toContain('ثبت درخواست');
+    },
+  );
   it('allows a manager to request follow-up even without call-edit access', () => {
     const html = renderToStaticMarkup(
       <KpiCallActions {...props} onRequest={vi.fn()} />,
