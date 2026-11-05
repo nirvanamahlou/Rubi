@@ -274,6 +274,7 @@ export class SalesReservationTableService {
             row.id,
             {
               contractPartyName: row.customerNameSnapshot,
+              destinationId: row.destinationId,
               passengerNames: row.passengers.flatMap((person) =>
                 person.displayNameSnapshot?.trim()
                   ? [person.displayNameSnapshot]

@@ -45,6 +45,7 @@ it('loads each composite hotel and keeps all names when one reference fails', as
     status: 'NEW',
     issues: [],
     hotelId: 'primary',
+    destinationId: 'current-city',
     hotelName: 'FIRST / SECOND / THIRD',
     hotels: [
       { hotelId: 'primary', name: 'FIRST' },
@@ -52,12 +53,17 @@ it('loads each composite hotel and keeps all names when one reference fails', as
       { hotelId: 'third', name: 'THIRD' },
     ],
   };
-  harness.detail.mockImplementation(async (_resource: string, id: string) => {
+  harness.detail.mockImplementation(async (resource: string, id: string) => {
     if (id === 'second') throw Error('Unavailable reference');
     return {
       data: {
         attributes: {
-          englishName: id === 'primary' ? 'FIRST ENGLISH' : 'THIRD ENGLISH',
+          englishName:
+            resource === 'cities'
+              ? 'DESTINATION CITY'
+              : id === 'primary'
+                ? 'FIRST ENGLISH'
+                : 'THIRD ENGLISH',
         },
       },
     };
@@ -73,6 +79,12 @@ it('loads each composite hotel and keeps all names when one reference fails', as
     'FIRST ENGLISH / SECOND / THIRD ENGLISH',
   );
   expect(resolved.rows[0]?.hotelId).toBe('primary');
+  expect(resolved.rows[0]?.destination).toBe('DESTINATION CITY');
+  expect(harness.detail).toHaveBeenCalledWith(
+    'cities',
+    'current-city',
+    'reservations',
+  );
   for (const id of ['primary', 'second', 'third'])
     expect(harness.detail).toHaveBeenCalledWith('hotels', id, 'reservations');
   if (typeof cleanup === 'function') cleanup();
