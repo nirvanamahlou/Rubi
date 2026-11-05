@@ -17,13 +17,27 @@ const leg: HotelJourneyV1 = {
   departureTime: '23:00',
   arrivalTime: '05:00',
 };
-const hotel = {
+const hotel: SalesHotelSelectionInput = {
+  serviceClientKey: 'hotel',
   hotelId: 'one',
+  hotelNameSnapshot: 'First hotel',
+  cityId: 'first-city',
+  checkInDate: '2027-01-01',
   checkOutDate: '2027-01-03',
+  roomCount: 1,
+  roomTypeId: 'room',
+  occupancy: 2,
+  inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
   additionalStays: [
-    { hotelId: 'two', checkInDate: '2027-01-07', checkOutDate: '2027-01-09' },
+    {
+      hotelId: 'two',
+      hotelNameSnapshot: 'Second hotel',
+      cityId: 'second-city',
+      checkInDate: '2027-01-07',
+      checkOutDate: '2027-01-09',
+    },
   ],
-} as SalesHotelSelectionInput;
+};
 const airport = {
   id: '10000000-0000-4000-8000-000000000001',
   cityId: '10000000-0000-4000-8000-000000000002',
