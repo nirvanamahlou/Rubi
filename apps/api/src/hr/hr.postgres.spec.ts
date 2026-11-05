@@ -430,7 +430,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         key(),
         manager,
       );
-      expect(corrected.data.registrationType).toBe('manual');
+      expect(corrected.data).toMatchObject({ registrationType: 'manual' });
       await service.processAttendance({ branchId, date }, key(), manager, true);
       expect(
         (await client.hrRecord.findUniqueOrThrow({ where: { id: day.id } }))
