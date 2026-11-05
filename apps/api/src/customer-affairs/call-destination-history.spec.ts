@@ -12,6 +12,30 @@ const recipient = {
   shared: false,
   answeredAt: at,
 };
+it('does not replace a saved conversation employee with the initial pre-agent hangup description', async () => {
+  vi.stubEnv(
+    'CALL_CENTER_CALLBACK_MANAGER_IDS',
+    '10000000-0000-4000-8000-000000000001',
+  );
+  try {
+    const { service } = setup({
+      first: { direction: 'IN', kind: 'RINGING', occurredAt: at },
+      state: 'ENDED',
+      unanswered: true,
+    });
+    const saved = {
+      ...call,
+      direction: 'INBOUND',
+      outcome: 'ANSWERED',
+      operator: 'Sales - Synthetic Employee - 115',
+    };
+    expect(await service.hydrateDestinations('branch', [saved])).toEqual([
+      saved,
+    ]);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
 function setup(
   technical: unknown = {
     first: { direction: 'OUT', extension: '105', occurredAt: at },

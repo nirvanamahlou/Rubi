@@ -1,5 +1,9 @@
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 
+## CALLBACK-RESOLUTION-1105 — PC-C — SOURCE_READY
+
+COMPUTER_ID=PC-C. Owner authorizes fixing completed callback triage and misleading disconnect labels. Scoped callback resolution/helper, COMPLETE_CALL/SAVE audit snapshots and recipient hydration corrections preserve PBX facts, answer/access rights and approved UI. Both exact production examples reproduce the defect; the read-only candidate clears both and preserves recorded operators.28 focused tests, lint/full API build and all eight hosted checks passed on bb9cadd9f. Integration preserves newer peer IAM owner-unit changes. No schema or historical data mutation. Source reservation freezes on publication. See docs/tasks/CALLBACK-RESOLUTION-1105.md.
+
 COMPUTER_ID=PC-C; branch codex/pc-c-three-panels-release-1103 from develop6dbafb7fe. Owner authorizes production publication of approved Call Center, Dashboard and Reports changes. Reserve bounded CallForm source/outcome option visibility and regression, own release docs/script, candidate verification and locked backup/build/canary/activation. Candidate overlays only these modules and required public reporting ports/translations on actual current live source; preserve other source, IAM grants, data, mounts and peer changes. No schema/dependency changes or unrelated develop migration. Refresh current runtime snapshot after lock acquisition; fail on concurrent changes. Existing call-center/reporting/dashboard source reservations are merged/frozen.
 
 ## NOTIFICATION-CLEAR-COUNTER-1104 — PC-B — READY_FOR_CI
