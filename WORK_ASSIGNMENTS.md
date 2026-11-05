@@ -11269,6 +11269,10 @@ Owner authorizes four helper-text removals, group details/edit dialog redesign a
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
 
+## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
+
+Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
+
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 
 Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitly selects generated option2: green inbound/blue outbound filled handset, pale rounded tile and white directional arrow in a circular badge, in call-history timeline only. Reserve leaf call-history-icon.tsx and bounded workspace.tsx/workspace.module.css timeline integration, own task/status notes. Latest Navy/Pearl source is merged/frozen in PR1403; preserve its styling and all history data, actions, permissions and responsive layout. No API/schema/dependency or server deployment changes. Validate the real small-size RTL presentation and affected Web checks; publish under existing workflow.
