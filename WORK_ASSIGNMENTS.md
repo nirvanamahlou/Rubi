@@ -1,6 +1,8 @@
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 
-## CALLBACK-RESOLUTION-1105 — PC-C — SOURCE_READY
+## CALLBACK-RESOLUTION-1105 — PC-C — COMPLETE
+
+Release evidence: PR1396 merged after8/8 final-head checks; included in live develop000cd543d. Both exact examples pass live read-only callback/operator assertions and API/Worker/AMI health. Reservation released; own task document records verification.
 
 COMPUTER_ID=PC-C. Owner authorizes fixing completed callback triage and misleading disconnect labels. Scoped callback resolution/helper, COMPLETE_CALL/SAVE audit snapshots and recipient hydration corrections preserve PBX facts, answer/access rights and approved UI. Both exact production examples reproduce the defect; the read-only candidate clears both and preserves recorded operators.28 focused tests, lint/full API build and all eight hosted checks passed on bb9cadd9f. Integration preserves newer peer IAM owner-unit changes. No schema or historical data mutation. Source reservation freezes on publication. See docs/tasks/CALLBACK-RESOLUTION-1105.md.
 

@@ -16,3 +16,9 @@ Recipient hydration separately replaced the stored operator with a derived pre-a
 - An ANSWERED business record retains its saved operator instead of a contradictory derived missed-call label. No employee identity is inferred when absent. No form layout or provider technical history changes.
 
 No schema, dependency, permission or historical business-data rewrite is required. Exact sample identifiers and private diagnostics remain outside Git. Production verification and final release evidence follow validation.
+
+## Verified production release — 2026-11-05
+
+PR #1396 merged as d6e51c83b773d6db1e575b6078b5a964395a6e11 after all eight hosted checks passed on final head18c6800c7. Scoped lint, full API build and28 focused regressions passed. Independent runtime candidates corrected both exact examples in read-only database tests.
+
+Concurrent full develop release000cd543d321a59577e0dfed30dc39670e691ae6 includes this merge and activated rubi-production:develop-000cd543d-1105-api. No redundant overlay was activated. Post-activation live verification returned casesResolved=true and operatorsPreserved=true for both examples. HTTPS/login/API health, authenticated telephony Worker, latest AMI connection and recording timer passed. No historical call or PBX facts were rewritten by this task. Private identifiers/scripts remain outside Git. Browser visual verification was not performed.
