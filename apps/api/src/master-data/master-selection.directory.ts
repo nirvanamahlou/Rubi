@@ -15,6 +15,7 @@ import { MasterDataService } from './master-data.service';
 const fields: Partial<Record<MasterDataResource, readonly string[]>> = {
   countries: ['englishName', 'iso2Code'],
   cities: ['englishName', 'countryId'],
+  regions: ['countryId'],
   airports: ['englishName', 'cityId', 'iataCode', 'icaoCode', 'ianaTimezone'],
   airlines: ['englishName'],
   hotels: [
@@ -64,7 +65,7 @@ const resources: Record<string, readonly MasterDataResource[]> = {
   reservations: travel,
   customers: [...geography, 'organizations', 'acquaintance-methods'],
   organizations: [...geography, 'currencies', 'organizations'],
-  accounting: ['currencies', 'sales-channels'],
+  accounting: ['currencies', 'sales-channels', 'cities', 'regions'],
   marketing: ['organizations'],
   procurement: [
     'suppliers',

@@ -28,6 +28,8 @@ export function employeeAttendanceDataset(
       'خروج',
       'تأخیر',
       'خروج زودهنگام',
+      'کسری کار',
+      'اضافه‌کاری',
       'وضعیت',
     ],
     rows: attendance.map((record) => {
@@ -64,7 +66,21 @@ export function employeeAttendanceDataset(
           : (departures.at(-1) ?? '—'),
         record.values[4] ?? '—',
         record.values[5] ?? '—',
-        record.status,
+        record.data.deficitMinutes == null
+          ? '—'
+          : String(record.data.deficitMinutes),
+        record.data.overtimeMinutes == null
+          ? '—'
+          : String(record.data.overtimeMinutes),
+        record.status === 'حاضر'
+          ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
+            ? 'حاضر با تأخیر و خروج زودهنگام'
+            : Number(record.values[4]) > 0
+              ? 'حاضر با تأخیر'
+              : Number(record.values[5]) > 0
+                ? 'حاضر با خروج زودهنگام'
+                : 'حاضر'
+          : record.status,
       ];
     }),
   };
@@ -89,7 +105,7 @@ export function recentAttendanceDataset(
   );
   return {
     ...data,
-    columns: ['کد پرسنلی', 'کارمند', ...data.columns, 'اضافه‌کاری'],
+    columns: ['کد پرسنلی', 'کارمند', ...data.columns],
     rows: data.rows.map((row, index) => {
       const record = rows[index]!;
       const employee = employees.find((e) => e.id === record.employeeId);
@@ -97,9 +113,6 @@ export function recentAttendanceDataset(
         employee?.personnelCode ?? '—',
         employee?.name ?? record.values[0] ?? '—',
         ...row,
-        record.data.overtimeMinutes == null
-          ? '—'
-          : String(record.data.overtimeMinutes),
       ];
     }),
   };

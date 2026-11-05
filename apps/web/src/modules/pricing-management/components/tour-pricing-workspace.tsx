@@ -770,12 +770,6 @@ export function TourPricingWorkspace() {
           <Hotel className="size-5 text-primary" />
           <h2 className="text-lg font-black">۳ · قیمت خرید هتل‌های تور</h2>
         </div>
-        {!tourId ? (
-          <p className="text-sm text-muted-foreground">
-            نوبت تور را انتخاب کنید تا جدول خرید هتل‌های همان تور و بازه نمایش
-            داده شود.
-          </p>
-        ) : null}
         {loadingCosts ? <Skeleton className="h-40" /> : null}
         {costError ? (
           <ErrorState title="جدول خرید در دسترس نیست" description={costError} />

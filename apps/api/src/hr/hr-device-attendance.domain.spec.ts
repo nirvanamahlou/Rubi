@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  attendanceClockTimes,
   attendanceScheduleMetrics as metrics,
   resolveDeviceDirections as resolve,
   deviceRecordId,
@@ -14,6 +15,19 @@ const event = (time: string, kind = 'اعلام حضور') => ({
   at: at(date, time),
 });
 describe('device attendance interpretation', () => {
+  it('preserves observed clock times without any configured shift', () => {
+    expect(
+      attendanceClockTimes([event('17:05', 'خروج'), event('09:05', 'ورود')]),
+    ).toEqual({
+      firstIn: at(date, '09:05').toISOString(),
+      lastOut: at(date, '17:05').toISOString(),
+    });
+    expect(attendanceClockTimes([event('09:05', 'ورود')])).toEqual({
+      firstIn: at(date, '09:05').toISOString(),
+      lastOut: null,
+    });
+    expect(attendanceClockTimes([])).toEqual({ firstIn: null, lastOut: null });
+  });
   it('alternates neutral punches chronologically and removes exact duplicate readings', () => {
     const events = resolve([event('17:30'), event('09:20'), event('09:20')]);
     expect(events.map((e) => e.kind)).toEqual(['ورود', 'خروج']);

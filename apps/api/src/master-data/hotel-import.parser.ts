@@ -226,13 +226,22 @@ function inspectExternalRelationships(
       const escapingPath = target
         .split(/[\\/]+/)
         .some((segment) => segment === '..');
+      // Excel stores printer settings beside worksheets, using a relative
+      // package relationship. These bytes are never executed or fetched.
+      const internalPrinterSettings =
+        /^xl\/worksheets\/_rels\/[^/]+\.xml\.rels$/i.test(name) &&
+        relationshipAttribute(attributes, 'Type') ===
+          'http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings' &&
+        (!targetMode || targetMode === 'internal') &&
+        /^\.\.\/printerSettings\/[^/\\]+\.bin$/i.test(target) &&
+        Object.prototype.hasOwnProperty.call(files, `xl/${target.slice(3)}`);
       if (
         !target ||
         targetMode === 'external' ||
         externalScheme ||
         uncPath ||
         drivePath ||
-        escapingPath
+        (escapingPath && !internalPrinterSettings)
       ) {
         externalLinkCount += 1;
         entries.push(`${name}:${target || '[missing-target]'}`);
@@ -564,6 +573,7 @@ export function parseHotelImportWorkbook(input: {
         }
         return (
           /\.rels$/i.test(normalizedName) ||
+          /^xl\/printerSettings\/[^/]+\.bin$/i.test(normalizedName) ||
           /^(?:\[Content_Types\]\.xml|xl\/(?:workbook\.xml|sharedStrings\.xml|worksheets\/.+))$/i.test(
             normalizedName,
           )

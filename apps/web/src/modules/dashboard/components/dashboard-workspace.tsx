@@ -3839,52 +3839,45 @@ export function DashboardWorkspace() {
       data-dashboard-workspace
       style={{ overflowAnchor: 'none' }}
     >
-      {!assistantPage && (
-        <section aria-live="polite">
-          {query.isError ? (
-            <ErrorState
-              title="خطا در دریافت Dashboard"
-              description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
-              action={
-                <Button onClick={refreshDashboard} variant="outline">
-                  تلاش دوباره
-                </Button>
-              }
-            />
-          ) : null}
-          {query.data?.state === 'forbidden' ? (
-            <EmptyState
-              icon={LockKeyhole}
-              title="دسترسی مجاز نیست"
-              description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
-            />
-          ) : null}
-          {query.data?.state === 'empty' ? (
-            <EmptyState
-              title="داده‌ای در این دامنه نیست"
-              description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
-            />
-          ) : null}
-          {query.data?.state === 'stale' ? (
-            <Alert
-              title="داده ممکن است قدیمی باشد"
-              description={query.data.message}
-              tone="warning"
-            />
-          ) : null}
-          {query.data?.state === 'blocked' ||
-          (query.data?.state === 'ready' &&
-            (Object.keys(query.data.unavailableMetrics ?? {}).length > 0 ||
-              Object.keys(query.data.unavailableVisuals ?? {}).length > 0)) ? (
-            <Alert
-              title="وضعیت اتصال داده‌های داشبورد"
-              description={query.data.message}
-              tone="warning"
-            />
-          ) : null}
-        </section>
-      )}
-
+      {!assistantPage &&
+        (query.isError ||
+          ['forbidden', 'empty', 'stale'].includes(
+            query.data?.state ?? '',
+          )) && (
+          <section aria-live="polite">
+            {query.isError ? (
+              <ErrorState
+                title="خطا در دریافت Dashboard"
+                description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
+                action={
+                  <Button onClick={refreshDashboard} variant="outline">
+                    تلاش دوباره
+                  </Button>
+                }
+              />
+            ) : null}
+            {query.data?.state === 'forbidden' ? (
+              <EmptyState
+                icon={LockKeyhole}
+                title="دسترسی مجاز نیست"
+                description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
+              />
+            ) : null}
+            {query.data?.state === 'empty' ? (
+              <EmptyState
+                title="داده‌ای در این دامنه نیست"
+                description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
+              />
+            ) : null}
+            {query.data?.state === 'stale' ? (
+              <Alert
+                title="داده ممکن است قدیمی باشد"
+                description={query.data.message}
+                tone="warning"
+              />
+            ) : null}
+          </section>
+        )}
       <section
         aria-label="فضای صفحه‌های داشبورد"
         className={cn(

@@ -1,7 +1,7 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { rateRequest } from './controls';
 import { OccupancyRateEditor } from './occupancy-import-panel';
@@ -177,6 +177,7 @@ export function ExistingPacksBrowser({
   onLockChange: (locked: boolean) => void;
   onEdit?: (id: string) => void;
 }) {
+  const fieldId = useId();
   const [packs, setPacks] = useState<PackSummary[]>([]);
   const [cityId, setCityId] = useState('');
   const [packId, setPackId] = useState('');
@@ -319,33 +320,41 @@ export function ExistingPacksBrowser({
           تازه‌سازی بسته‌ها
         </button>
       </div>
-      <p>
-        ابتدا شهر و سپس بازهٔ بسته را انتخاب کنید؛ هتل‌ها و قیمت‌های ثبت‌شدهٔ
-        همان بسته نمایش داده می‌شوند.
-      </p>
       {loading && <p role="status">در حال دریافت فهرست کامل بسته‌ها…</p>}
       {!loading && !packs.length && !error && (
         <p>در این شعبه هنوز بسته‌ای ثبت نشده است.</p>
       )}
-      <SearchCombobox
-        label="شهر بسته‌های موجود"
-        value={cityId}
-        options={packCities(packs)}
-        disabled={busy || loading}
-        onValueChange={(id) =>
-          navigate(() => {
-            setCityId(id);
-            setPackId('');
-          })
-        }
-      />
-      <SearchCombobox
-        label="تاریخ بسته‌های شهر"
-        value={packId}
-        options={packsForCity(packs, cityId)}
-        disabled={busy || loading || !cityId}
-        onValueChange={(id) => navigate(() => setPackId(id))}
-      />
+      <div className="grid gap-2">
+        <label htmlFor={`${fieldId}-city`} className="text-sm font-semibold">
+          شهر
+        </label>
+        <SearchCombobox
+          id={`${fieldId}-city`}
+          label="شهر بسته‌های موجود"
+          value={cityId}
+          options={packCities(packs)}
+          disabled={busy || loading}
+          onValueChange={(id) =>
+            navigate(() => {
+              setCityId(id);
+              setPackId('');
+            })
+          }
+        />
+      </div>
+      <div className="grid gap-2">
+        <label htmlFor={`${fieldId}-pack`} className="text-sm font-semibold">
+          بسته
+        </label>
+        <SearchCombobox
+          id={`${fieldId}-pack`}
+          label="تاریخ بسته‌های شهر"
+          value={packId}
+          options={packsForCity(packs, cityId)}
+          disabled={busy || loading || !cityId}
+          onValueChange={(id) => navigate(() => setPackId(id))}
+        />
+      </div>
       {detailLoading && <p role="status">در حال دریافت هتل‌های بسته…</p>}
       {opened && (
         <>

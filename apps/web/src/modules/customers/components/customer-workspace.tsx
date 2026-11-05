@@ -143,7 +143,7 @@ const emptyMetrics: CustomerListMetrics = {
 type RequestState =
   'loading' | 'ready' | 'error' | 'unauthorized' | 'forbidden';
 type FormMode = 'create' | 'view' | 'edit';
-type CustomerTab =
+export type CustomerTab =
   | 'overview'
   | 'dossier'
   | 'contacts'
@@ -280,6 +280,8 @@ function emptyCompanionDraft(): NewCompanionDraft {
 export function CustomerDrawer({
   mode,
   customer: initialCustomer,
+  fixedKind,
+  createBranchId,
   activeTab,
   onTabChange,
   onClose,
@@ -290,7 +292,9 @@ export function CustomerDrawer({
   onCalendarModeChange,
 }: {
   mode: FormMode;
-  customer?: CustomerDetail;
+  customer?: CustomerDetail | undefined;
+  fixedKind?: CustomerMutationRequest['kind'];
+  createBranchId?: string;
   activeTab: CustomerTab;
   onTabChange: (tab: CustomerTab) => void;
   onClose: () => void;
@@ -300,9 +304,10 @@ export function CustomerDrawer({
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
 }) {
-  const [draft, setDraft] = useState<CustomerMutationRequest>(() =>
-    customerDraft(initialCustomer),
-  );
+  const [draft, setDraft] = useState<CustomerMutationRequest>(() => ({
+    ...customerDraft(initialCustomer),
+    ...(fixedKind ? { kind: fixedKind } : {}),
+  }));
   const [customer, setCustomer] = useState<CustomerDetail | undefined>(
     initialCustomer,
   );
@@ -854,7 +859,9 @@ export function CustomerDrawer({
       let createAttempted = false;
       try {
         createAttempted = true;
-        createdCustomer = (await customersApi.create(submittedDraft)).data;
+        createdCustomer = (
+          await customersApi.create(submittedDraft, createBranchId)
+        ).data;
         if (primaryPhone.trim()) {
           createdCustomer = (
             await customersApi.addContact(createdCustomer.id, {
@@ -900,24 +907,27 @@ export function CustomerDrawer({
         for (const companion of submittedCompanions) {
           if (companion.source === 'primaryCustomer') continue;
           let createdCompanion = (
-            await customersApi.create({
-              kind: 'person',
-              firstName: companion.firstName.trim(),
-              lastName: companion.lastName.trim(),
-              displayName:
-                `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
-              nationalId: normalizeNationalId(companion.nationalId),
-              organizationId: companion.organizationId || null,
-              birthDate: companion.birthDate || null,
-              passportNumber: companion.passportNumber.trim()
-                ? companion.passportNumber
-                    .trim()
-                    .toUpperCase()
-                    .replace(/\s+/g, '')
-                : null,
-              roles: ['passenger'],
-              acquaintanceMethodId: null,
-            })
+            await customersApi.create(
+              {
+                kind: 'person',
+                firstName: companion.firstName.trim(),
+                lastName: companion.lastName.trim(),
+                displayName:
+                  `${companion.firstName.trim()} ${companion.lastName.trim()}`.trim(),
+                nationalId: normalizeNationalId(companion.nationalId),
+                organizationId: companion.organizationId || null,
+                birthDate: companion.birthDate || null,
+                passportNumber: companion.passportNumber.trim()
+                  ? companion.passportNumber
+                      .trim()
+                      .toUpperCase()
+                      .replace(/\s+/g, '')
+                  : null,
+                roles: ['passenger'],
+                acquaintanceMethodId: null,
+              },
+              createBranchId,
+            )
           ).data;
           const passengerId = createdCompanion.id;
           if (companion.phone.trim()) {
@@ -1236,11 +1246,15 @@ export function CustomerDrawer({
         }}
       >
         <DialogTitle>
-          {mode === 'create'
-            ? 'ایجاد مشتری'
-            : mode === 'edit'
-              ? `ویرایش پرونده ${customerRoleLabel(draft.roles)}`
-              : `پرونده ۳۶۰ درجه ${customerRoleLabel(draft.roles)}`}
+          {fixedKind
+            ? (mode === 'create' ? 'ایجاد' : 'ویرایش') +
+              ' ' +
+              (fixedKind === 'person' ? 'شخص' : 'شرکت')
+            : mode === 'create'
+              ? 'ایجاد مشتری'
+              : mode === 'edit'
+                ? `ویرایش پرونده ${customerRoleLabel(draft.roles)}`
+                : `پرونده ۳۶۰ درجه ${customerRoleLabel(draft.roles)}`}
         </DialogTitle>
         <DialogDescription
           className={mode === 'create' ? undefined : 'sr-only'}
@@ -1326,7 +1340,9 @@ export function CustomerDrawer({
             <div className="grid gap-3 sm:grid-cols-3">
               <FormField label="نوع پرونده">
                 <Select
-                  disabled={mode !== 'create' || newCompanions.length > 0}
+                  disabled={
+                    !!fixedKind || mode !== 'create' || newCompanions.length > 0
+                  }
                   value={draft.kind}
                   onValueChange={(value) =>
                     setDraft((current) => ({

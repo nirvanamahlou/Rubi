@@ -772,3 +772,7 @@ Owner requests period stop/delete. Immutable TourDeparture travel facts and publ
 ## TOUR-TICKET-SELECTION-1103 — floating tour capacity clarification
 
 The owner clarified that floating tours have a specified capacity and must support stopping the departure. Reuse the contract flight editor UI, but persist a newly defined FLOATING offer with its own explicit capacity and allocation ledger for the tour; it does not consume any unrelated charter offer. This differs intentionally from a contract-only flight with no stock. Existing catalog flights continue to use their existing shared ledger. Departure pause is independent of shared flight activation, so stopping one tour never disables a charter used elsewhere. Separate salesVersion prevents operational pause from invalidating immutable pricing versions.
+
+## ACCOUNT-DETAIL-FORMS-1104 — Independent codes for each detail type
+
+The owner sets classification width to 1–20 and requires leading zeroes in the code. Replace ledger-wide code uniqueness with uniqueness per ledger and detail type; journal references keep using IDs. Use six digits for the two built-in types in new books. Migrate zero/unset widths to at least six, expanding to fit existing codes or the default starting code. The migration stops on colliding normalized type names rather than choosing which historical records to combine. PC-B and PC-D share this bounded scope.

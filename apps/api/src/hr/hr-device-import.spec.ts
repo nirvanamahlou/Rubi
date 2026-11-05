@@ -225,48 +225,55 @@ it('moves a source ID once and requests recalculation of its old employee/day', 
   });
 });
 
-it('reconciles removed source punches to a non-working day when no shift is assigned', async () => {
-  const f = fixture();
-  f.records.set('daily', {
-    id: 'daily',
-    employeeId: 'employee',
-    values: ['Synthetic', '2026-11-01', 'day', '8:00', '5', '0'],
-    data: { firstIn: '2026-11-01T05:50:00Z', workedMinutes: 480 },
-    status: 'حاضر',
-    version: 1,
-  });
-  f.tx.hrRecord.findMany.mockImplementation(async (...args: unknown[]) => {
-    const q = args[0] as { where: { OR?: unknown; tab?: string } };
-    if (q.where.OR)
-      return [
-        {
-          id: 'hours',
-          tab: 'workingHours',
-          status: 'فعال',
-          values: ['day', '', '09:15', '17:00', 'همان روز', '0', '0'],
-          data: {},
-        },
-      ] as never;
-    return q.where.tab === 'attendance'
-      ? ([f.records.get('daily')] as never)
-      : [];
-  });
-  await f.hr.processAttendance(
-    { branchId: branch, date: '2026-11-01' },
-    'reconcile-key',
-    actor,
-    true,
-    ['employee'],
-  );
-  expect(f.records.get('daily')?.deletedAt).toBeUndefined();
-  expect(f.records.get('daily')?.status).toBe('عدم روزکاری');
-  expect(f.records.get('daily')?.data).toMatchObject({
-    firstIn: null,
-    lastOut: null,
-    workedMinutes: 0,
-  });
-  expect(f.tx.hrRecord.create).not.toHaveBeenCalled();
-});
+it.each([true, false])(
+  'reconciles removed source punches against the remaining work schedule (working hours=%s)',
+  async (hasWorkingHours) => {
+    const f = fixture();
+    f.records.set('daily', {
+      id: 'daily',
+      employeeId: 'employee',
+      values: ['Synthetic', '2026-11-01', 'day', '8:00', '5', '0'],
+      data: { firstIn: '2026-11-01T05:50:00Z', workedMinutes: 480 },
+      status: 'حاضر',
+      version: 1,
+    });
+    f.tx.hrRecord.findMany.mockImplementation(async (...args: unknown[]) => {
+      const q = args[0] as { where: { OR?: unknown; tab?: string } };
+      if (q.where.OR)
+        return hasWorkingHours
+          ? ([
+              {
+                id: 'hours',
+                tab: 'workingHours',
+                status: 'فعال',
+                values: ['day', '', '09:15', '17:00', 'همان روز', '0', '0'],
+                data: {},
+              },
+            ] as never)
+          : [];
+      return q.where.tab === 'attendance'
+        ? ([f.records.get('daily')] as never)
+        : [];
+    });
+    await f.hr.processAttendance(
+      { branchId: branch, date: '2026-11-01' },
+      'reconcile-key',
+      actor,
+      true,
+      ['employee'],
+    );
+    expect(f.records.get('daily')?.deletedAt).toBeUndefined();
+    expect(f.records.get('daily')?.status).toBe(
+      hasWorkingHours ? 'غایب' : 'عدم روزکاری',
+    );
+    expect(f.records.get('daily')?.data).toMatchObject({
+      firstIn: null,
+      lastOut: null,
+      workedMinutes: 0,
+    });
+    expect(f.tx.hrRecord.create).not.toHaveBeenCalled();
+  },
+);
 
 it('persists a sortable work date and repairs missing legacy dates even when metrics are unchanged', async () => {
   const f = fixture();

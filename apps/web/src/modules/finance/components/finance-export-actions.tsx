@@ -80,10 +80,12 @@ export function FinanceExportActions({
   query,
   disabled = false,
   receipt = false,
+  showPdf = true,
 }: {
   query: FinanceExportQueryV1;
   disabled?: boolean;
   receipt?: boolean;
+  showPdf?: boolean;
 }) {
   const permissions = useAccessPermissions();
   const [busy, setBusy] = useState(false),
@@ -111,18 +113,20 @@ export function FinanceExportActions({
         >
           {receipt ? 'رسید Excel' : 'خروجی Excel'}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={disabled || busy}
-          onClick={() => void download('pdf')}
-        >
-          {busy
-            ? 'در حال تهیه…'
-            : receipt
-              ? 'رسید PDF / چاپ'
-              : 'خروجی PDF / چاپ'}
-        </Button>
+        {showPdf ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={disabled || busy}
+            onClick={() => void download('pdf')}
+          >
+            {busy
+              ? 'در حال تهیه…'
+              : receipt
+                ? 'رسید PDF / چاپ'
+                : 'خروجی PDF / چاپ'}
+          </Button>
+        ) : null}
       </div>
       {error ? (
         <p role="alert" className="text-sm text-destructive">

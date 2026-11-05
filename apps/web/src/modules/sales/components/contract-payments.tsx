@@ -31,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/overlays';
 import { salesApi } from '../api/client';
@@ -42,6 +41,7 @@ import {
   validateSalesCurrencySelection,
 } from './sales-currency-select';
 import { calculateContractPaymentShare } from '../model/contract-payment-share';
+import { paymentDestinationIsValid } from '../model/payment-destination';
 
 const empty: SalesPaymentInput = {
   amount: '',
@@ -50,16 +50,19 @@ const empty: SalesPaymentInput = {
   dueAt: '',
 };
 export function ContractPaymentAccountSelect({
+  method,
   accounts,
   currencyCode,
   value,
   onChange,
 }: {
+  method?: SalesPaymentMethod;
   accounts: readonly SalesPaymentAccountV1[];
   currencyCode: string;
   value: string;
   onChange: (value: string) => void;
 }) {
+  if (method === 'CASH') return null;
   const eligible = accounts.filter(
     (account) => account.currencyCode === currencyCode,
   );
@@ -308,14 +311,12 @@ export function ContractPayments({
       active = false;
     };
   }, [id, adding, accountsRetry]);
-  const validAccount =
-    !accountsLoading &&
-    !accountsError &&
-    accounts.some(
-      (account) =>
-        account.id === payment.destinationAccountId &&
-        account.currencyCode === payment.currencyCode,
-    );
+  const validAccount = paymentDestinationIsValid(
+    payment,
+    accounts,
+    accountsLoading,
+    accountsError,
+  );
   useEffect(() => {
     let active = true;
     void loadPaymentCurrencies()
@@ -400,6 +401,10 @@ export function ContractPayments({
       );
       const input = {
         ...payment,
+        destinationAccountId:
+          payment.method === 'CASH'
+            ? null
+            : (payment.destinationAccountId ?? null),
         dueAt: new Date(payment.dueAt).toISOString(),
         version: contract.version,
       };
@@ -478,15 +483,13 @@ export function ContractPayments({
       }}
     >
       <DialogContent
+        aria-describedby={undefined}
         dir="rtl"
         className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-3xl"
       >
         <DialogTitle className="pe-10">
           پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
         </DialogTitle>
-        <DialogDescription>
-          سوابق پرداخت، سررسید اقساط و رسیدهای همین قرارداد
-        </DialogDescription>
         {contract?.isFloating &&
           (selfService ||
             actor?.permissions.includes('sales.payments.create')) && (
@@ -531,10 +534,6 @@ export function ContractPayments({
           >
             پیدا کردن قرارداد
           </Button>
-          <p className="w-full text-xs text-muted-foreground">
-            جست‌وجو بین همهٔ قراردادهای مجاز شما انجام می‌شود، نه فقط این
-            قرارداد؛ نتیجه در فهرست اصلی نمایش داده می‌شود.
-          </p>
         </form>
         {!contract && !error ? (
           <p role="status">در حال دریافت پرداخت‌ها…</p>
@@ -606,9 +605,6 @@ export function ContractPayments({
                 <PaymentDocuments contract={contract} paymentId={entry.id} />
               </div>
             ))}
-        <p className="text-sm text-muted-foreground">
-          افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
-        </p>
         <Dialog
           open={adding}
           onOpenChange={(open) => {
@@ -638,15 +634,13 @@ export function ContractPayments({
             </Button>
           </DialogTrigger>
           <DialogContent
+            aria-describedby={undefined}
             dir="rtl"
             className="grid max-h-[85dvh] gap-4 overflow-y-auto sm:max-w-2xl"
           >
             <DialogTitle className="pe-10">
               افزودن پرداخت · {contract?.contractNumber}
             </DialogTitle>
-            <DialogDescription>
-              اطلاعات پرداخت را ثبت کنید و رسید آن را همین‌جا پیوست کنید.
-            </DialogDescription>
             {error ? <Alert tone="error" title={error} /> : null}
             {savedPaymentId ? (
               <p role="status" className="rounded-xl bg-primary/10 p-3">
@@ -731,6 +725,10 @@ export function ContractPayments({
                       setPayment({
                         ...payment,
                         check: null,
+                        destinationAccountId:
+                          method === 'CASH'
+                            ? null
+                            : (payment.destinationAccountId ?? null),
                         method: method as SalesPaymentMethod,
                       })
                     }
@@ -799,7 +797,7 @@ export function ContractPayments({
                     }
                   />
                 </FormField>
-                {accountsLoading ? (
+                {payment.method === 'CASH' ? null : accountsLoading ? (
                   <p role="status">در حال دریافت حساب‌های مقصد…</p>
                 ) : accountsError ? (
                   <div>
@@ -818,6 +816,7 @@ export function ContractPayments({
                   </div>
                 ) : (
                   <ContractPaymentAccountSelect
+                    method={payment.method}
                     accounts={accounts}
                     currencyCode={payment.currencyCode}
                     value={payment.destinationAccountId ?? ''}
@@ -868,11 +867,7 @@ export function ContractPayments({
                     paymentId={savedPaymentId}
                     expanded
                   />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    رسید همین پرداخت را پیوست کنید.
-                  </p>
-                )}
+                ) : null}
               </div>
               {!savedPaymentId ? (
                 <Button

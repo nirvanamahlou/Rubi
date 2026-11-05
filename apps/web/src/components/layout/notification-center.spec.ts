@@ -2,10 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { MasterDataNotification } from '@/modules/master-data/api/client';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChangeNotification } from './change-notifications';
-import { notificationScope, mergeMasterDataFeed } from './notification-center';
+import {
+  notificationScope,
+  mergeMasterDataFeed,
+  notificationStorage,
+} from './notification-center';
 
 describe('NotificationCenter integration contract', () => {
   const source = fs.readFileSync(
@@ -122,4 +126,102 @@ it('isolates browser cache across users, branches and permission changes', () =>
       permissions: [],
     } as never),
   );
+});
+
+describe('retained audit acknowledgements', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  function browser() {
+    const values = new Map<string, string>();
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+      },
+      dispatchEvent: vi.fn(),
+    });
+    return values;
+  }
+  it('retains read state after list eviction, reload and a permission/branch switch', () => {
+    browser();
+    const stored = notificationStorage('user-a:old-scope', 'audit:user-a');
+    const read = mergeMasterDataFeed([], [auditEvent]).map((item) => ({
+      ...item,
+      readAt: '2026-11-04T08:00:00Z',
+    }));
+    stored.writeStoredNotifications(read);
+    stored.writeStoredNotifications(
+      Array.from({ length: 60 }, (_, i) => ({
+        id: `local-${i}`,
+        title: 'change',
+        description: 'change',
+        href: '/workbench',
+        occurredAt: '2026-11-04T09:00:00Z',
+        readAt: null,
+      })),
+    );
+    expect(
+      stored.readStoredNotifications().some((item) => item.id === read[0]!.id),
+    ).toBe(false);
+    const reloaded = notificationStorage('user-a:new-scope', 'audit:user-a');
+    const feed = mergeMasterDataFeed(
+      [],
+      [auditEvent, { ...auditEvent, id: 'truly-new' }],
+      reloaded.readDismissedAuditIds(),
+      reloaded.readAuditReadTimes(),
+    );
+    expect(feed.find((item) => item.id === read[0]!.id)?.readAt).toBe(
+      read[0]!.readAt,
+    );
+    expect(
+      feed.find((item) => item.id === 'master-data:truly-new')?.readAt,
+    ).toBeNull();
+    expect(
+      notificationStorage('user-b', 'audit:user-b').readAuditReadTimes().size,
+    ).toBe(0);
+  });
+  it('clears evicted acknowledged events without hiding unread events after reload', () => {
+    browser();
+    const stored = notificationStorage('user-a:old-scope', 'audit:user-a');
+    const [acknowledged] = mergeMasterDataFeed([], [auditEvent]);
+    stored.writeStoredNotifications([
+      { ...acknowledged!, readAt: '2026-11-04T08:00:00Z' },
+    ]);
+    const unread = Array.from({ length: 60 }, (_, i) => ({
+      id: `local-${i}`,
+      title: 'change',
+      description: 'change',
+      href: '/workbench',
+      occurredAt: '2026-11-04T09:00:00Z',
+      readAt: null,
+    }));
+    stored.writeStoredNotifications(unread);
+    expect(stored.readStoredNotifications()).not.toContainEqual(
+      expect.objectContaining({ id: acknowledged!.id }),
+    );
+    expect(stored.clearReadNotifications()).toEqual(unread);
+    const reloaded = notificationStorage('user-a:new-scope', 'audit:user-a');
+    expect(
+      mergeMasterDataFeed(
+        [],
+        [auditEvent, { ...auditEvent, id: 'unread' }],
+        reloaded.readDismissedAuditIds(),
+        reloaded.readAuditReadTimes(),
+      ),
+    ).toEqual([
+      expect.objectContaining({ id: 'master-data:unread', readAt: null }),
+    ]);
+  });
+  it('migrates old scoped dismissals so clearing remains effective after scope changes', () => {
+    const values = browser();
+    values.set(
+      'old-scope.dismissed-audit',
+      JSON.stringify(['master-data:audit-1']),
+    );
+    const stored = notificationStorage('old-scope', 'audit:user-a');
+    stored.writeStoredNotifications([]);
+    const reloaded = notificationStorage('new-scope', 'audit:user-a');
+    expect(
+      mergeMasterDataFeed([], [auditEvent], reloaded.readDismissedAuditIds()),
+    ).toEqual([]);
+  });
 });

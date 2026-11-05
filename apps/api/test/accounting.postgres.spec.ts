@@ -217,7 +217,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
   afterAll(async () => {
     await db?.$disconnect();
   });
-  it('persists observed detail setup, zero classification length and server-authored notes', async () => {
+  it('persists observed detail setup, fixed classification length and server-authored notes', async () => {
     const noteId = randomUUID();
     const type = await command<{ id: string; version: number }>(
       'save-configuration',
@@ -225,7 +225,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         kind: 'detail-types',
         title: 'Synthetic user type',
         attributes: {
-          classificationNumberLength: '0',
+          classificationNumberLength: '5',
           defaultFirstCode: '88000',
           notes: JSON.stringify([
             {
@@ -309,17 +309,11 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     const user = await command<{ id: string }>('save-configuration', {
       kind: 'detail-types',
       title: 'Synthetic conversion user',
-      attributes: { classificationNumberLength: '0' },
+      attributes: { classificationNumberLength: '5' },
     });
-    const system = await command<{ id: string; version: number }>(
-      'save-configuration',
-      {
-        kind: 'detail-types',
-        title: 'شخص',
-        titleEn: 'Person',
-        attributes: { classificationNumberLength: '0', isSystem: true },
-      },
-    );
+    const system = await db.accountingConfiguration.findFirstOrThrow({
+      where: { bookId, kind: 'detail-types', title: 'شخص' },
+    });
     const conversion = await command<{
       id: string;
       version: number;
@@ -361,7 +355,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
           id: system.id,
           kind: 'detail-types',
           title: 'Changed',
-          attributes: { classificationNumberLength: '0', isSystem: true },
+          attributes: { classificationNumberLength: '5', isSystem: true },
         },
         system.version,
       ),
@@ -473,7 +467,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     const localType = await command('save-configuration', {
       kind: 'detail-types',
       title: 'Synthetic mapping detail type',
-      attributes: { classificationNumberLength: '0' },
+      attributes: { classificationNumberLength: '5' },
     });
     const sourceDetail = await command('save-detail', {
       typeId: localType.id,
@@ -3312,12 +3306,69 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     await expect(command('post', { id: j.id }, j.version)).rejects.toThrow();
     await command('cancel', { id: j.id }, j.version);
   });
+  it('keeps codes independent by type, pads 20 digits, rejects duplicate titles and zero width', async () => {
+    const create = (title: string, length: string) =>
+      command('save-configuration', {
+        kind: 'detail-types',
+        title,
+        attributes: { classificationNumberLength: length },
+      });
+    await expect(create('No zero', '0')).rejects.toThrow();
+    const a = await create('تست یک', '20'),
+      b = await create('تست دوم', '20');
+    await expect(create('تست يك', '4')).rejects.toThrow();
+    const row = (typeId: unknown, title: string, code?: string) =>
+      command('save-detail', { typeId, title, code });
+    expect((await row(a.id, 'one')).code).toBe('0'.repeat(20));
+    expect((await row(b.id, 'other')).code).toBe('0'.repeat(20));
+    expect((await row(a.id, 'two', '۲')).code).toBe('2'.padStart(20, '0'));
+    expect((await row(a.id, 'gap')).code).toBe('1'.padStart(20, '0'));
+    expect((await row(a.id, 'large', '99999999999999999999')).code).toBe(
+      '99999999999999999999',
+    );
+    await expect(row(a.id, 'duplicate', '2')).rejects.toThrow();
+    const person = await db.accountingConfiguration.findFirstOrThrow({
+      where: { bookId, title: 'شخص' },
+    });
+    await expect(row(person.id, 'unlinked')).rejects.toThrow();
+    const owner = await db.customer.create({
+      data: {
+        kind: 'PERSON',
+        displayName: 'Detail owner',
+        firstName: 'Detail',
+        lastName: 'owner',
+        ownerBranchId: branchId,
+        createdByUserId: makerId,
+        updatedByUserId: makerId,
+      },
+    });
+    const linked = await command('save-detail', {
+      typeId: person.id,
+      title: 'Ignored',
+      customerId: owner.id,
+    });
+    expect(linked).toMatchObject({
+      customerId: owner.id,
+      title: owner.displayName,
+      code: '000000',
+    });
+    const company = await db.accountingConfiguration.findFirstOrThrow({
+      where: { bookId, title: 'شرکت' },
+    });
+    await expect(
+      command('save-detail', {
+        typeId: company.id,
+        title: 'Wrong kind',
+        customerId: owner.id,
+      }),
+    ).rejects.toThrow();
+  });
   it('enforces detail type classification and parent rules and allocates codes atomically', async () => {
     const root = await command('save-configuration', {
       kind: 'detail-types',
       code: '01',
       title: 'Cost centre',
-      attributes: { classificationNumberLength: '2', defaultFirstCode: '001' },
+      attributes: { classificationNumberLength: '2', defaultFirstCode: '01' },
     });
     const child = await command('save-configuration', {
       kind: 'detail-types',

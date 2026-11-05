@@ -50,6 +50,8 @@ describe('employee attendance table', () => {
       'خروج',
       'تأخیر',
       'خروج زودهنگام',
+      'کسری کار',
+      'اضافه‌کاری',
       'وضعیت',
     ]);
     expect(data.rows[0]?.slice(2)).toEqual([
@@ -57,7 +59,9 @@ describe('employee attendance table', () => {
       '16:50',
       '5',
       '10',
-      'حاضر',
+      '—',
+      '—',
+      'حاضر با تأخیر و خروج زودهنگام',
     ]);
     expect(data.recordIds).toEqual([day.id]);
     expect(data.rows[0]?.[1]).toBe('یکشنبه');
@@ -91,16 +95,18 @@ it('uses calculated server times for device punches and includes attendance stat
     'خروج',
     'تأخیر',
     'خروج زودهنگام',
-    'وضعیت',
+    'کسری کار',
     'اضافه‌کاری',
+    'وضعیت',
   ]);
   expect(data.rows[0]!.slice(4)).toEqual([
     '09:20',
     '17:30',
     '5',
     '0',
-    'حاضر',
+    '—',
     '30',
+    'حاضر با تأخیر',
   ]);
 });
 
@@ -155,7 +161,7 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ],
   );
   expect(data.recordIds).toEqual([first.id, second.id]);
-  expect(data.rows.map((row) => [row[0], row[1], row.at(-1)])).toEqual([
+  expect(data.rows.map((row) => [row[0], row[1], row.at(-2)])).toEqual([
     ['001', 'first', '12'],
     ['002', 'second', '34'],
   ]);

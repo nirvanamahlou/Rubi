@@ -188,9 +188,6 @@ export function HotelSavingsDashboard({
   return (
     <section className="space-y-3 rounded-xl border border-primary/20 bg-surface p-4">
       <h2 className="font-bold">سودآوری رزرواسیون هتل</h2>
-      <p className="text-xs text-muted-foreground">
-        نرخ خرید مرجع ثبت‌شده منهای خرید واقعی؛ تفکیک‌شده بر اساس ارز
-      </p>
       {result?.key !== key ? (
         <p role="status">در حال دریافت…</p>
       ) : result.error ? (

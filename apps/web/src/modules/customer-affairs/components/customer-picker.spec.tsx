@@ -117,7 +117,9 @@ describe('Customers and passengers picker', () => {
     expect(customersForm).toContain('setCreationOutcomeUncertain(true)');
     expect(customersForm).toContain('isUncertainCustomerCreateFailure(error)');
     expect(customersForm).toContain('بررسی فهرست مشتریان B2c');
-    expect(customersForm).toContain('customersApi.create(submittedDraft)');
+    expect(customersForm).toContain(
+      'customersApi.create(submittedDraft, createBranchId)',
+    );
     expect(customersForm).toContain('if (createSubmitting.current) return;');
     expect(customersForm).toContain('validateCustomerEntryRows');
     expect(customersForm).toContain('returnFocusRef.current?.focus()');

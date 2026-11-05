@@ -1,0 +1,107 @@
+.dialog {
+  width: min(96vw, 77rem);
+  max-width: min(96vw, 77rem) !important;
+  max-height: 93dvh;
+  overflow: auto;
+  direction: rtl;
+}
+.dialog form {
+  min-width: 0;
+}
+.tabs,
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-block: 0.75rem;
+}
+.tabs {
+  border-bottom: 1px solid var(--border);
+}
+.tabs button,
+.actions button,
+.panel button[type='button'] {
+  padding: 0.3rem 0.55rem;
+}
+.tabs [aria-selected='true'] {
+  border-bottom: 2px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+.panel {
+  border: 0;
+  min-width: 0;
+}
+.panel fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  padding: 0.6rem;
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+  margin-bottom: 0.75rem;
+}
+.panel legend {
+  font-weight: 600;
+  padding-inline: 0.4rem;
+}
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.field {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.75fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  font-size: 0.8rem;
+}
+.field b {
+  color: var(--destructive);
+}
+.panel input:not([type='checkbox']),
+.panel select,
+.field button[role='combobox'] {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--input);
+  border-radius: 0.25rem;
+  background: var(--surface);
+  padding: 0.2rem 0.45rem;
+  height: 1.85rem;
+}
+.panel td,
+.panel th {
+  padding: 0.25rem;
+  text-align: start;
+}
+.actions button {
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+}
+.actions button:first-child {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+@media (max-width: 55rem) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 38rem) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .field {
+    grid-template-columns: 7rem minmax(0, 1fr);
+  }
+}
+
+/* All ten legal forms fit the reference list on desktop. */
+.panel [data-company-type] button[role='option'] {
+  min-height: 1.45rem;
+  padding-block: 0.1rem;
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+}

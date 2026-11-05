@@ -1,6 +1,17 @@
 import { createHash } from 'node:crypto';
 
 export type AttendanceEvent = { kind: string; at: Date };
+export function attendanceClockTimes(events: AttendanceEvent[]) {
+  const sorted = [...events].sort((a, b) => a.at.getTime() - b.at.getTime());
+  return {
+    firstIn: sorted.find((e) => e.kind === 'ورود')?.at.toISOString() ?? null,
+    lastOut:
+      sorted
+        .filter((e) => e.kind === 'خروج')
+        .at(-1)
+        ?.at.toISOString() ?? null,
+  };
+}
 /** Neutral reader punches alternate only inside the already-resolved shift window.
  * Explicit directions are authoritative. Exact duplicates do not toggle direction. */
 export function resolveDeviceDirections(

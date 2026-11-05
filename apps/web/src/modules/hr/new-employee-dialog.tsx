@@ -33,7 +33,12 @@ const previewUnits = [
   'منابع انسانی',
 ] as const;
 
-export const employeeStatuses = ['فعال', 'در حال تکمیل', 'تعلیق‌شده'] as const;
+export const employeeStatuses = [
+  'فعال',
+  'غیرفعال',
+  'در حال تکمیل',
+  'تعلیق‌شده',
+] as const;
 
 export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
@@ -855,17 +860,18 @@ export function NewEmployeeForm({
             <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-status"
-              disabled={lockAssignment}
               name="status"
               onChange={(event) => update('status', event.target.value)}
               required
               value={value.status}
             >
-              {currentOptions(employeeStatuses, value.status).map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              {currentOptions(['فعال', 'غیرفعال'], value.status).map(
+                (option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ),
+              )}
             </NativeSearchSelect>
           </label>
         </div>

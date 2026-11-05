@@ -4,6 +4,10 @@ export {
   type CustomerEntryRow,
   type EntryField,
 } from '../components/customer-entry-sheet';
+export {
+  CustomerDrawer,
+  type CustomerTab,
+} from '../components/customer-workspace';
 export { CustomerCreateDialog } from '../components/customer-create-dialog';
 export {
   CustomerCalendarSwitch,

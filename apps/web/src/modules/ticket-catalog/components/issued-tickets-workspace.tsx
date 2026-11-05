@@ -145,7 +145,7 @@ export function IssuedTicketsWorkspace({
     <div className="space-y-5" dir="rtl">
       <PageHeader
         title="گزارش خدمات مسافران"
-        eyebrow="گزارش فقط‌خواندنی رزرواسیون"
+
         description="پیگیری بلیط صادرشده، قرارداد، مسافر، PNR و مسیر؛ عملیات صدور و استرداد همچنان در رزرواسیون انجام می‌شود."
       />
       {loading ? (

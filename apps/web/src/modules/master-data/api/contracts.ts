@@ -27,7 +27,9 @@ export const masterDataListQuerySchema = z.object({
   transportStatus: z.enum(['ACTIVE', 'INACTIVE', 'UNDER_REVIEW']).optional(),
   search: z.string().trim().max(100).default(''),
   status: z.enum(['all', 'active', 'inactive']).default('all'),
-  sortBy: z.enum(['name', 'code', 'updatedAt']).default('name'),
+  sortBy: z
+    .enum(['displayOrder', 'name', 'code', 'updatedAt'])
+    .default('displayOrder'),
   sortDirection: z.enum(['asc', 'desc']).default('asc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(10).max(100).default(25),

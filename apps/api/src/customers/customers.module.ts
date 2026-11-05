@@ -1,3 +1,4 @@
+import { MasterDataModule } from '../master-data/master-data.module';
 import { SalesPeopleController } from './sales-people.controller';
 import { Module } from '@nestjs/common';
 
@@ -12,7 +13,7 @@ import { CustomersController } from './customers.controller';
 import { CustomerSelectionController } from './customer-selection.controller';
 
 @Module({
-  imports: [IamModule],
+  imports: [IamModule, MasterDataModule],
   controllers: [
     SalesPeopleController,
     CustomerSelectionController,

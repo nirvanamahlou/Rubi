@@ -9,7 +9,7 @@ describe('tour package pricing workspace', () => {
     const html = renderToStaticMarkup(<TourPricingWorkspace />);
     expect(html).toContain('فروش و ارتباط با مشتری · ماژول مدیریت قیمت');
     expect(html).toContain('بازه‌های ثبت‌شدهٔ هتل‌ها');
-    expect(html).toContain('نوبت تور');
+    expect(html).toContain('نوبت برگزاری و بلیط‌ها');
     expect(html).toContain('قیمت خرید هتل‌های تور');
     expect(html).toContain('افزودن فیلد قیمت');
     expect(html).not.toContain('مبنای انتشار قیمت پکیج');

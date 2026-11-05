@@ -101,6 +101,15 @@ export type WorkbenchPerformanceSectionV1<T> =
   | { status: 'forbidden' | 'error'; message: string };
 
 export interface WorkbenchHrPerformanceV1 {
+  attendanceHistory?: {
+    date: string;
+    firstIn: string | null;
+    lastOut: string | null;
+    registrationType: 'device' | 'manual' | null;
+    lateMinutes: number | null;
+    overtimeMinutes: number | null;
+    deficitMinutes: number | null;
+  }[];
   /** Current Persian month, from reviewed HR attendance. Null means no reliable measurement. */
   monthlyAttendance?: {
     period: string;
