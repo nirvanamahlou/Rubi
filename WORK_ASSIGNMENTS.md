@@ -11207,7 +11207,6 @@ Publication: owner requests push, hosted CI, PR to develop, and ordinary merge a
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
 
-
 ## CALLBACK-REQUEST-CAPABILITY-1105 — PC-C — IN_PROGRESS
 
 Owner requests missing Register Request action fix. Base develop156e95320; branch codex/pc-c-callback-capability-1105. Reserve read-service missedCallbacks metadata, Web read-client/KPI action/dialog/workspace and targeted tests. No IAM directory/owner-selection edits: peer OWNER-UNIT-SCOPE-1105 remains separate. Additive contract: meta.canCreateRequest from effective guarded actor; Web fails closed when absent/false. Request write authorization unchanged. No grants/schema/dependencies. Scoped server release authorized after validation; preserve peer overlays and deployment lock.
