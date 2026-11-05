@@ -142,7 +142,7 @@ function fitText(page){
   const cell=el.closest('td'),style=getComputedStyle(cell),lineRatio=parseFloat(getComputedStyle(el).lineHeight)/size||1.16,note=cell.querySelector('.city-note');
   const available=rowHeight*cell.rowSpan-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-parseFloat(style.borderTopWidth)-parseFloat(style.borderBottomWidth)-(note?.offsetHeight||0);
   size=Math.max(minSize,Math.min(size,Math.floor(available/lineRatio*4)/4));el.style.fontSize=size+'px';
-  for(let n=0;n<160&&el.scrollWidth>el.clientWidth+1&&size>minSize;n++){size=Math.max(minSize,size-.25);el.style.fontSize=size+'px';}
+  for(let n=0;n<160&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>available+1)&&size>minSize;n++){size=Math.max(minSize,size-.25);el.style.fontSize=size+'px';}
  }
  for(const el of page.querySelectorAll('.title-slot,.date-slot,.duration-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot b,.value-slot small,.editor-text,.custom-header span,.thai-rate-slot,.thai-increase-slot,.thai-flight-info-slot')){let size=parseFloat(getComputedStyle(el).fontSize);for(let n=0;n<65&&(el.scrollWidth>el.clientWidth+2||el.scrollHeight>el.clientHeight+2)&&size>9;n++){size-=1;el.style.fontSize=size+'px';}}
  return [...page.querySelectorAll('.data-region')].every(item=>item.querySelector('table').getBoundingClientRect().height<=item.getBoundingClientRect().height+2)&&[...page.querySelectorAll('.date-slot,.title-slot,.stays-slot,.infant-slot,.services-slot,.notes-slot,.adjustments-slot,.value-slot,.editor-text,.custom-header span,.thai-rate-grid,.thai-increase-slot,.thai-flight-info-slot')].every(e=>e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2);
