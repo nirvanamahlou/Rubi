@@ -8948,3 +8948,7 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+
+## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
+One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.

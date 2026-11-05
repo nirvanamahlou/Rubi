@@ -1,3 +1,5 @@
+import { reservationDirectionLabel } from '../model/reservation-direction-label';
+import { sharedHotelSupplierTables } from '../model/shared-hotel-supplier-tables';
 import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { voucherPdfHtml } from './voucher-pdf-html';
@@ -68,8 +70,9 @@ export function reservationPdfHtml(
     rows: unknown[][],
     extra = '',
     different: readonly boolean[] = [],
+    widths: readonly number[] = [],
   ) =>
-    `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, rowIndex) => `<tr>${r.map((v, cellIndex) => `<td${different[rowIndex] && ['CHECK-IN', 'CHECK-OUT'].includes(heads[cellIndex] ?? '') ? ' class="differentStay"' : ''} dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    `<table class="table ${extra}">${widths.length ? `<colgroup>${widths.map((width) => `<col style="width:${width}%"/>`).join('')}</colgroup>` : ''}<thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, rowIndex) => `<tr>${r.map((v, cellIndex) => `<td${different[rowIndex] && ['CHECK-IN', 'CHECK-OUT'].includes(heads[cellIndex] ?? '') ? ' class="differentStay"' : ''} dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const roomAppendices =
     voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
@@ -119,30 +122,38 @@ export function reservationPdfHtml(
     ${
       settings?.flags.hotel === false
         ? ''
-        : (voucher ? [intake] : sharedHotelSupplierScopes(intake))
-            .map((hotelIntake) => {
-              const data = voucher
-                ? voucherFormData(hotelIntake, refs)
-                : supplierFormData(hotelIntake, refs);
-              return `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
-                [
-                  'HOTEL',
-                  'CITY',
-                  'STAR',
-                  'SERVICE',
-                  ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-                ],
-                [
+        : sharedHotelSupplierTables(intake, refs).length
+          ? sharedHotelSupplierTables(intake, refs)
+              .map(
+                (section) =>
+                  heading(section.code, section.title, section.note) +
+                  table(section.headers, section.rows, '', [], section.widths),
+              )
+              .join('')
+          : (voucher ? [intake] : sharedHotelSupplierScopes(intake))
+              .map((hotelIntake) => {
+                const data = voucher
+                  ? voucherFormData(hotelIntake, refs)
+                  : supplierFormData(hotelIntake, refs);
+                return `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
                   [
-                    data.hotel,
-                    data.destination,
-                    data.stars,
-                    data.meal,
-                    ...(!data.roomBreakdown.length ? [data.roomType] : []),
+                    'HOTEL',
+                    'CITY',
+                    'STAR',
+                    'SERVICE',
+                    ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
                   ],
-                ],
-                'hotelInformation',
-              )}
+                  [
+                    [
+                      data.hotel,
+                      data.destination,
+                      data.stars,
+                      data.meal,
+                      ...(!data.roomBreakdown.length ? [data.roomType] : []),
+                    ],
+                  ],
+                  'hotelInformation',
+                )}
     ${
       data.roomBreakdown.length
         ? table(
@@ -165,8 +176,8 @@ export function reservationPdfHtml(
     }
     <table class="table"><tbody><tr><th>CHECK-IN</th><td>${escape(data.checkIn)}</td><th>CHECK-OUT</th><td>${escape(data.checkOut)}</td></tr></tbody></table>
 ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRICES', data.hotel) + table(supplierPriceTableData(hotelIntake).headers, supplierPriceTableData(hotelIntake).rows) : ''}`;
-            })
-            .join('')
+              })
+              .join('')
     }
     ${
       intake.snapshot.serviceSelections.some((s) => s.kind === 'TRANSFER')
@@ -174,7 +185,7 @@ ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRI
           table(
             ['DIRECTION', 'AIRLINE', 'FLIGHT', 'DATE', 'TIME'],
             data.flights.map((flight) => [
-              flight.leg,
+              reservationDirectionLabel(flight.leg),
               flight.airline,
               flight.number,
               flight.date,
@@ -183,7 +194,7 @@ ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRI
           )
         : ''
     }
-    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
+    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : reservationDirectionLabel(data.transfer), data.leader, data.excursion]])}
     ${heading('05', 'PASSENGERS', 'Passenger services')}${table(
       [
         '#',
