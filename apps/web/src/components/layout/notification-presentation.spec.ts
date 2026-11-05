@@ -1,11 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareNotifications,
+  isCallCenterAssignment,
   notificationColors,
   notificationKind,
 } from './notification-presentation';
 
 describe('recipient notification presentation', () => {
+  it('identifies actionable Call Center notices without blinking for closure or unrelated events', () => {
+    const item = {
+      sourceModule: 'customer-affairs',
+      eventType: 'call-center.assigned',
+      href: '/customer-affairs/call-center#cc-follow-up-queue',
+    };
+    expect(isCallCenterAssignment(item)).toBe(true);
+    expect(notificationKind(item)).toBe('request');
+    expect(
+      isCallCenterAssignment({ ...item, eventType: 'call-center.closed' }),
+    ).toBe(false);
+    expect(isCallCenterAssignment({ ...item, sourceModule: 'documents' })).toBe(
+      false,
+    );
+  });
   it('distinguishes private/group messages from assigned requests', () => {
     expect(
       notificationKind({

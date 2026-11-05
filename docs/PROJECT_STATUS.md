@@ -1,3 +1,4 @@
+
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
 
 Responsible experts saving a result for an explicitly linked real call, including unanswered calls, create a durable review receipt. Pending receipts appear with a followed-up badge in the request creator-manager's My Work queue. Saving that manager's decision acknowledges only the displayed receipt set, retaining assignment, history and expert access; newer distinct follow-ups can requeue. Repeatable-read snapshots, receipt-set tokens, row locks and command idempotence protect concurrent edits. Exact-request review access does not grant access to unrelated contact history. The editor displays name/phone separately and a subject only from the saved related follow-up, and removes the visible technical helper.
@@ -23,6 +24,12 @@ Independent scope review and one boundary regression cover normal shared navigat
 Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
 
 Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
+
+## LEAVE-POLICY-SUBSTITUTE-1105 — PC-A — VALIDATED
+
+Shared Workbench/employee leave fields now support annual/sick types, hourly intervals, registered substitute selection and restricted medical evidence. Substitute consent is a separate versioned inbox decision before final HR approval. The request reference field is removed and deletion uses an outlined trash icon. Policies use monthly day/hour quotas, daily advance notice and same-day hourly cutoff in Tehran time; quota months follow the Persian calendar. Approved hourly coverage updates attendance status, early departure and deficit through the existing reconciliation path.
+
+Legacy annual policy values remain compatible until explicitly saved in the new monthly form; no automatic conversion of annual allowances or operational data seed. New monthly policies also guard legacy submission paths. Evidence is branch/owner bound, restricted, scanned through Documents and downloaded only via an authorized request/record association. No schema or dependency changes. Validation includes focused API/domain/privacy tests, a real PostgreSQL substitute-to-HR approval and attendance/quota test, Web HR/Workbench tests, contracts tests, lint/typechecks/builds. User authorizes push/develop merge and local3100 only; no production deployment.
 
 ## THREE-PANELS-RELEASE-1103 — PC-C
 
@@ -9000,6 +9007,13 @@ CALL-CENTER-OWNER-UNIT-SCOPE-1105:57 targeted checks pass (36 unit/security/HR,1
 
 KPI drill-down/report refresh used POST read endpoints and was misclassified by the global fetch notification tracker as a new Customer Affairs record. Exact six existing Call Center query paths now bypass generic mutation notifications (including query strings/trailing slash); real call, note and request saves retain their notifications. No notification history, API, KPI refresh, permissions or operational data is changed.38 focused tracker/feed/read-client checks and scoped lint pass; full Web type/build and publication verification pending. PC-B notification-center persistence files untouched.
 
+
+## CALL-REQUEST-ALERT-1105 — PC-C — SOURCE_READY
+
+Call Center workflow assignments/reminders now emit recipient-scoped call-center.assigned notifications with a queue anchor. Closure notices use call-center.closed, so they do not activate the alert. The bell displays a red upper-right pulse while an authorized assignment is unread; existing persistent mark-read/mark-all and stale-feed guards dismiss it. Opening the notification expands and focuses the follow-up queue and clears queue filters. Unread assignments are prioritized before bounded feed pagination. Existing legacy notices remain visible. No migration or production data changes.
+
+Validation: scoped API/Web ESLint and 56 targeted tests pass, including all 27 workflow tests against a disposable migrated PostgreSQL database (local 30s timeout; default 5s initially timed out in an existing paging test). Full local types/build attempted but blocked by stale shared workspace contract/Prisma artifacts and Next Turbopack rejecting node_modules links outside checkout. Hosted CI and production acceptance remain required. No deployment performed.
+
 ## HR-WORKBENCH-REQUESTS-1105
 
 Workbench recipients include active HR employee unit membership through linked active internal IAM accounts, retaining branch checks and transactional revalidation. HR inbox integrates directed Workbench requests with review/delete actions; sender sees approved/rejected/revision decisions. Structured daily/hourly leave uses the native HR approval/balance/overlap/closed-period rules in the same database transaction, then reconciles attendance. Employee leave view includes legacy and Workbench leave; full-day approved leave has zero late/early/deficit and leave status. Native Jalali year extraction uses date parts. No schema/dependency or production changes. Verification: targeted API/UI tests and isolated PostgreSQL approval/replay/rollback/attendance tests passed. Web production build passed; final-head checks precede merge.
@@ -9009,6 +9023,14 @@ Workbench recipients include active HR employee unit membership through linked a
 
 Removed the four owner-selected helper paragraphs in Finance inbox and Workbench notes/favorites/activity. Group details and editing now use responsive member cards, owner badges, separated edit fields, bounded scrolling and a stable action footer. Employee assignment history compares resolved persisted organizational values, so sending an unchanged jobTitleId or editing personal details no longer creates a spurious assignment; actual organizational changes retain audited history. Added a real PostgreSQL repeated-save regression. No migration, historic-record deletion, operational data writes or deployment. Scoped lint, nine existing Web behavior tests and three translation checks passed; API/Web type checks and production builds passed. Both isolated PostgreSQL scenarios passed, including unchanged title/personal edit without a new assignment and a genuine organizational correction retaining its audit/history. Hosted gates remain required before merge.
 
+
+## CALL-QUEUE-MINE-1105 — PC-C — SOURCE_READY
+
+Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
+
+## CALL-COMPLETION-1105 — PC-C — SOURCE_READY
+
+Corrected shared completion criteria: optional caller name and unknown immutable phone no longer keep an otherwise completed call incomplete. All staff use the same producer; existing report/drilldown refresh preserved. Added preview-first audited reconciliation for saved terminal historical calls and revision invalidation for filtered pages.66 targeted tests pass, including disposable PostgreSQL preservation, concurrent replay and report/filter checks. Production read-only inspection identified4 identity-only mismatches among181 flagged calls; no live data or release changed. Full CI/build and backed-up rollout with reconciliation remain required. See tasks/CALL-COMPLETION-1105.md.
 
 ## FINANCE-REQUEST-ATTACHMENTS-1105
 
@@ -9038,3 +9060,7 @@ Add the user's approved grand-total footer to the existing expert-performance ta
 ## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
 
 Implement the selected02 Layered Duotone reference only for Call Center KPI cards, with blue vector silhouettes, pale highlight layers and soft shadows. Increase icon/value gap and retain every current card action and actual server value. Source base ff31d2fd9; affected tests, build/types, responsive visual review and all hosted gates precede authorized bounded Web release. No shared sidebar/icon, API/schema/migration/dependency changes.
+
+## CALL-PAGER-HEADSET-1105 — PC-C — IN_PROGRESS
+
+PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.

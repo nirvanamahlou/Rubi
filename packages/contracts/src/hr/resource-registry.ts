@@ -140,7 +140,8 @@ export function getHrResource(
         ? 'employee'
         : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
           ? 'date'
-          : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label)
+          : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label) ||
+              label === 'مهلت ثبت ساعتی (ساعت روز مرخصی)'
             ? 'time'
             : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
                 !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
@@ -149,6 +150,7 @@ export function getHrResource(
                 ? 'decimal'
                 : 'text',
     required:
+      (key === 'time.leavePolicies' && index < 5) ||
       (index === 0 && key !== 'organization.positions') ||
       (key === 'organization.positions' && label === 'عنوان شغلی') ||
       label === 'کارمند' ||

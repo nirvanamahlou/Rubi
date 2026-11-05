@@ -245,7 +245,7 @@ export function hrReferenceOptions(
     delete options['عنوان شغلی'];
   }
   if (section === 'time' && tab === 'leavePolicies')
-    delete options['نوع مرخصی'];
+    options['نوع مرخصی'] = ['استحقاقی', 'استعلاجی'];
   return {
     ...options,
     ...HR_RADAN_COMPLETION_OPTIONS,

@@ -42,6 +42,14 @@ export class NotificationsRepository {
       const allowed = rows.filter(
         (row) => !row.href || canViewRoute(permissions, row.href),
       );
+      // Keep actionable assignments visible even beyond the bounded bell feed.
+      allowed.sort((left, right) => {
+        const urgent = (row: NotificationRow) =>
+          row.readAt === null &&
+          row.sourceModule === 'customer-affairs' &&
+          row.eventType === 'call-center.assigned';
+        return Number(urgent(right)) - Number(urgent(left));
+      });
       return {
         rows: allowed.slice(0, limit),
         unreadCount: allowed.filter((row) => row.readAt === null).length,

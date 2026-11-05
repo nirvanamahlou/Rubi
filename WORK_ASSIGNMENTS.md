@@ -1,3 +1,7 @@
+## AMIN-PR-CALL-RELEASE-1105 — PC-C — IN_PROGRESS
+
+Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
+
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
 
 Narrow CI lease: append only the new request-review PostgreSQL spec to the existing Call Center database-gate command in .github/workflows/ci.yml. Existing jobs, guards and checks remain unchanged. Prior workflow reservations are merged/released; no concurrent workflow edit appears in the current develop delta.
@@ -11277,6 +11281,14 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-notifications-1105 from develop03db
 
 CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-client tests passed; scoped ESLint passed. No UI/request changes; source scope freezes on push. Full Web build/types and CI remain separate gates. Production not yet changed.
 
+## CALL-REQUEST-ALERT-1105 — PC-C — RESERVED
+
+Owner requests recipient-only blinking red Call Center follow-up indicator, persistent assignment notifications and navigation to queue. Base developb6c7598fe; COMPUTER_ID=PC-C. Reserve Call Center workflow notification producer and queue anchor, Notifications repository bounded priority and tests, NotificationCenter indicator/navigation and presentation tests plus own notes. Prior notification persistence/presentation work is merged (4e4f16547 contained in develop) and retained. Additive event types call-center.assigned/closed distinguish actionable assignments from closure notices; same producer/consumer ship together, existing legacy followup notices stay visible. Recipient/auth/read persistence and transaction guards retained. No schema, dependency, IAM or business-data changes.
+
+CALL-REQUEST-ALERT-1105 validation: 56 targeted API/Web/PostgreSQL tests and scoped ESLint pass. Producer transaction/replay/closure assertions pass against a disposable database with all 220 migrations. Local database test timeout was raised to 30s for slow Docker storage, without changing repository test settings. Shared local dependency artifacts block full type/build verification; hosted CI is a release gate. Source reservations release on commit; no migration or production change.
+
+CALL-REQUEST-ALERT-1105 compatibility follow-up: owner subsequently requests My work as the queue default (CALL-QUEUE-MINE-1105). Reopen only the notification openQueue reset to MINE so notification navigation cannot restore the obsolete ALL default; retain all prior indicator/acknowledgement behavior.
+
 CALL-CENTER-OWNER-UNIT-SCOPE-1105 CI follow-up: reserve only the retained-missed-call request-assignment expectation in call-center-answered-access.postgres.spec.ts. The old fixture assigned another user through callback-triage membership alone; the new owner rule requires self-only ordinary accounts and native unit-manager authority. Add the denial assertion and use the already-authorized same-unit manager for the positive initial assignment, retaining all answer evidence, callback resolution, reopen and follow-up assertions. No production behavior or gate relaxation. The revised retained-callback PostgreSQL scenario passes locally with both the negative and same-unit manager positive paths.
 
 ## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
@@ -11287,6 +11299,20 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
 
+## CALL-QUEUE-MINE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; base develop14539e34e; branch codex/pc-c-call-queue-mine-1105. User explicitly requests swapping global queue My work/All tabs and making My work the default. Reserve only WorkQueue default/tab order in workflow.tsx and own status notes. Preserve contact dossier defaults, backend MINE authorization, counts and other filters. Own prior alert task1397 is source-frozen; its queue navigation reset must preserve this newer default during integration. No schema/API/dependency/data change.
+
+CALL-QUEUE-MINE-1105 validation: six existing workflow/layout tests and scoped lint pass; diff is limited to three queue UI lines plus notes. Source reservation releases on commit. Own frozen alert PR1397 gets a one-line MINE navigation compatibility follow-up under this newer owner instruction. Full hosted CI remains required before release.
+
+## CALL-COMPLETION-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-completion-1105 from develop000cd543d. Owner requests correction of completed calls incorrectly marked incomplete for every expert. Reserve shared call-search completeness criteria/tests, bounded operator-only historical completion-metadata reconciliation and tests, and expert drilldown invalidation only if required. Preserve optional caller name/unknown immutable number, technical call evidence, source/operator prerequisites, scopes, UI and workflow ownership. No schema, dependencies, other module tables, grants or guessed contact values. Previous published source leases are frozen; notification/request-directory active work does not overlap these leaf paths.
+
+CALL-COMPLETION-1105 also reserves the existing read-service revision fingerprint to include reconciliation audit events, invalidating stale paginated completion filters. Shared criteria and operator-only reconciliation preserve facts and require actual saved-call evidence; active/synthetic sessions are skipped. Production read-only diagnostic found181 flagged calls,4 identity-only mismatches with saved terminal evidence. No production mutation.
+
+CALL-COMPLETION-1105 — SOURCE_READY:66 tests pass, including real PostgreSQL optional-identity save, preview, concurrent replay, unchanged call facts, audit uniqueness and report/filter/revision consistency. Scoped lint/format pass. Full local API type/build attempted with stale shared generated dependencies; hosted full CI remains required. Source reservation releases on commit. No production changes.
+
 ## FINANCE-REQUEST-ATTACHMENTS-1105 — PC-A
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
@@ -11294,6 +11320,10 @@ Owner authorizes payment evidence in the selected Sales receipt request and remo
 ## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
 
 Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
+
+## LEAVE-POLICY-SUBSTITUTE-1105 — PC-A — READY_FOR_CI
+
+Base develop9f71ecf5e. Owner authorizes shared Workbench/employee leave form, monthly quotas and submission deadlines, substitute consent, sick-leave evidence, request icon/reference cleanup, attendance integration, push/develop merge and local3100. Reserve bounded HR/Workbench/Customer Affairs/IAM directory/Documents leave ports, additive contracts, UI/English translations and tests. Prior HR scopes are merged/frozen. Preserve source approvals, actor/branch guards, medical evidence confidentiality and audit; no operational seed data, schema or dependency changes planned.
 
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 
@@ -11316,3 +11346,7 @@ COMPUTER_ID=PC-C; branch codex/pc-c-expert-activity-totals-1105 from develop e58
 ## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-duotone-1105 from develop ff31d2fd9. User explicitly selects02 Layered Duotone blue KPI illustrations: handset, calendar, handset with circular cross, and callback arrows, plus clearer icon/value spacing. Reserve Call Center kpis.tsx, KPI-only rules in workflow.module.css, new kpi-icon.tsx and own task/status/release helper. Existing chat approval covers develop PR, merge after all gates and bounded Web deployment. Preserve labels, server counts, loading/error state, keyboard actions, responsive cards, sidebar and approved rest of panel. No shared icon-system, API, schema, dependency, permissions or operational data changes. Earlier expert totals/source-share work is merged and released; current target ownership reviewed before editing.
+
+## CALL-PAGER-HEADSET-1105 — PC-C — IN_PROGRESS
+
+PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.

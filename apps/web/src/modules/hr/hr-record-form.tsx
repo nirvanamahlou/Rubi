@@ -1,4 +1,5 @@
 'use client';
+import { HrLeaveForm } from './hr-leave-form';
 import { WeeklyShiftForm } from './weekly-shift-form';
 import { isHrSharedResource } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -74,6 +75,12 @@ interface HrRecordFormProps {
 }
 
 export function HrRecordForm(props: HrRecordFormProps) {
+  if (
+    ['time.leave', 'requests.leave', 'requests.radanLeave'].includes(
+      `${props.target.source.section}.${props.target.source.tab}`,
+    )
+  )
+    return <HrLeaveForm {...props} />;
   if (
     props.target.source.section === 'time' &&
     props.target.source.tab === 'shift' &&

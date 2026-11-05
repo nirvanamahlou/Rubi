@@ -1,4 +1,5 @@
 'use client';
+import { hrRequest } from '@/modules/hr/hr-api';
 
 import {
   Building2,
@@ -6,7 +7,7 @@ import {
   Clock3,
   FileText,
   RefreshCw,
-  Trash2,
+  Trash,
   UserRound,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -214,7 +215,7 @@ export function WorkbenchOwnRequests() {
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={removing !== null}
+                disabled={removing !== null || row.source === 'hr'}
                 aria-label={`حذف درخواست ${row.subject}`}
                 onClick={async () => {
                   setRemoving(row.id);
@@ -237,8 +238,7 @@ export function WorkbenchOwnRequests() {
                   }
                 }}
               >
-                <Trash2 className="size-4" aria-hidden="true" />
-                حذف
+                <Trash className="size-4" aria-hidden="true" />
               </Button>
               <span>موعد اقدام: {workbenchDate(row.nextActionAt)}</span>
               <Button
@@ -278,6 +278,7 @@ export function WorkbenchOwnRequests() {
                 </div>
               </div>
               <div className="space-y-5 p-6">
+                {error ? <Alert tone="error" title={error} /> : null}
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs text-muted-foreground">
                     {selected.direction === 'incoming'
@@ -306,6 +307,71 @@ export function WorkbenchOwnRequests() {
                       'شرحی برای این درخواست ثبت نشده است.'}
                   </dd>
                 </div>
+                {selected.substituteStatus ? (
+                  <div className="space-y-3 rounded-xl border p-4">
+                    <p>
+                      جانشینی:{' '}
+                      {selected.substituteStatus === 'APPROVED'
+                        ? 'تأییدشده'
+                        : selected.substituteStatus === 'REJECTED'
+                          ? 'ردشده'
+                          : 'در انتظار پاسخ'}
+                    </p>
+                    {selected.substituteReview &&
+                    selected.substituteStatus === 'PENDING' ? (
+                      <div className="flex gap-2">
+                        {(['APPROVED', 'REJECTED'] as const).map((status) => (
+                          <Button
+                            key={status}
+                            variant={
+                              status === 'APPROVED' ? 'primary' : 'outline'
+                            }
+                            disabled={removing !== null}
+                            onClick={async () => {
+                              setRemoving(selected.id);
+                              try {
+                                if (selected.source === 'hr')
+                                  await hrRequest(
+                                    `/leave-substitutes/${selected.id}`,
+                                    {
+                                      method: 'PATCH',
+                                      headers: {
+                                        'content-type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        version: selected.version,
+                                        status,
+                                      }),
+                                    },
+                                  );
+                                else
+                                  await customerAffairsApi.reviewLeaveSubstitute(
+                                    selected.id,
+                                    selected.version!,
+                                    status,
+                                  );
+                                setRefresh((r) => r + 1);
+                                setSelected(null);
+                              } catch (cause) {
+                                setError(
+                                  cause instanceof Error
+                                    ? cause.message
+                                    : 'ثبت پاسخ انجام نشد.',
+                                );
+                              } finally {
+                                setRemoving(null);
+                              }
+                            }}
+                          >
+                            {status === 'APPROVED'
+                              ? 'تأیید جانشینی'
+                              : 'رد جانشینی'}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <dl className="grid grid-cols-2 gap-3 text-muted-foreground">
                   <div className="rounded-xl bg-muted/60 p-3">
                     <dt className="text-xs">فرستنده</dt>

@@ -598,15 +598,10 @@ export function WorkQueue({
       active = false;
     };
   }, [branchId]);
-  const changeQueueFilter = (key: keyof typeof queueFilters, value: string) => {
-    setQueueFilters((current) => ({ ...current, [key]: value }));
-    setPage(1);
-    setLoading(true);
-  };
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
-  const [view, setView] = useState('ALL'),
+  const [view, setView] = useState('MINE'),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0);
   const [data, setData] = useState<Awaited<
@@ -619,6 +614,31 @@ export function WorkQueue({
       contactId: string;
       branchId: string;
     } | null>(null);
+  const changeQueueFilter = (key: keyof typeof queueFilters, value: string) => {
+    setQueueFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+    setLoading(true);
+  };
+  useEffect(() => {
+    const openQueue = () => {
+      setCollapsed(false);
+      setView('MINE');
+      setPage(1);
+      setQueueFilters({ teamId: '', agentId: '', requestStatus: '' });
+      queueHeading.current?.scrollIntoView({ block: 'start' });
+      queueHeading.current?.focus({ preventScroll: true });
+    };
+    const fromHash = () => {
+      if (window.location.hash === '#cc-follow-up-queue') openQueue();
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+    window.addEventListener('call-center:open-queue', openQueue);
+    return () => {
+      window.removeEventListener('hashchange', fromHash);
+      window.removeEventListener('call-center:open-queue', openQueue);
+    };
+  }, []);
   useEffect(() => {
     const refresh = () => {
       setLoading(true);
@@ -659,7 +679,10 @@ export function WorkQueue({
         branchId={branchId}
         revision={`${refreshKey}:${revision}`}
       />
-      <section className={`${styles.panel} ${styles.queue}`}>
+      <section
+        id="cc-follow-up-queue"
+        className={`${styles.panel} ${styles.queue}`}
+      >
         <header>
           <h3 tabIndex={-1} ref={queueHeading}>
             <IllustrationIcon kind="clipboard" size={28} />
@@ -705,10 +728,10 @@ export function WorkQueue({
             >
               {(
                 [
-                  ['ALL', 'همه درخواست‌ها'],
+                  ['MINE', 'کارهای من'],
                   ['OPEN', 'درخواست‌های باز'],
                   ['CLOSED', 'درخواست‌های بسته‌شده'],
-                  ['MINE', 'کارهای من'],
+                  ['ALL', 'همه درخواست‌ها'],
                 ] as const
               ).map(([value, label]) => (
                 <button
