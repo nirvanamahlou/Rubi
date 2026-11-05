@@ -105,14 +105,16 @@ export function ContractListNumber({
           : contract.contractNumber
       }
     >
-      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
-        <FileText className="size-3.5" />
-        <span dir="ltr">{contract.contractNumber}</span>
+      <div className="inline-flex flex-col items-start gap-1">
         {contract.isFloating && (
           <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
             شناوری
           </span>
         )}
+        <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+          <FileText className="size-3.5" />
+          <span dir="ltr">{contract.contractNumber}</span>
+        </div>
       </div>
     </td>
   );
@@ -540,14 +542,9 @@ export function SalesWorkspace() {
                   >
                     <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
-                          {contract.customerNameSnapshot.slice(0, 1)}
-                        </span>
-                        <span className="max-w-40 truncate font-semibold text-foreground">
-                          {contract.customerNameSnapshot}
-                        </span>
-                      </div>
+                      <span className="max-w-40 truncate font-semibold text-foreground">
+                        {contract.customerNameSnapshot}
+                      </span>
                     </td>
                     <td className="px-4 py-3">{contract.sellerName ?? '—'}</td>
                     <ContractListContactRouteDate contract={contract} />
