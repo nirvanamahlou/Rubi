@@ -1149,7 +1149,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         priority: 'NORMAL',
         status: 'IN_PROGRESS',
       };
-      await wf.saveRequest(actor(peer), branchId, record.contactId, input);
+      // Callback triage alone does not grant assignment to another employee.
+      await expect(
+        wf.saveRequest(actor(peer), branchId, record.contactId, input),
+      ).rejects.toThrow('خارج از محدوده');
+      await wf.saveRequest(actor(manager), branchId, record.contactId, input);
       expect(await canSee(expert, record.contactId)).toBe(true);
       expect(
         await db.customerAffairsTicket.count({
