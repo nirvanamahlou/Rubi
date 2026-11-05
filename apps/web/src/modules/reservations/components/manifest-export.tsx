@@ -201,7 +201,7 @@ export function ManifestExport() {
     setError('');
     setResult('');
     try {
-      const { file, contracts, passengers, retriedWithAll } =
+      const { file, contracts, passengers, retriedWithAll, warnings } =
         await requestManifestDownload(
           {
             offerId: ticket.offerId,
@@ -235,7 +235,12 @@ export function ManifestExport() {
           ' مسافر در قالب «' +
           ticket.template.name +
           '» آماده شد' +
-          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.'),
+          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
+          (warnings !== '0'
+            ? ' ⚠ ' +
+              warnings +
+              ' ردیف دارای ستون خالی است؛ جزئیات در برگه EMPTY CELLS فایل اکسل آمده است.'
+            : ''),
       );
     } catch (reason) {
       setError(
