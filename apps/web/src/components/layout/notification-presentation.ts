@@ -2,6 +2,15 @@ import type { NotificationItemV1 } from '@nora/contracts';
 
 export type NotificationKind = 'message' | 'request' | 'other';
 
+export function isCallCenterAssignment(
+  item: Pick<NotificationItemV1, 'sourceModule' | 'eventType'>,
+) {
+  return (
+    item.sourceModule === 'customer-affairs' &&
+    item.eventType === 'call-center.assigned'
+  );
+}
+
 export function notificationKind(
   item: Pick<NotificationItemV1, 'sourceModule' | 'eventType' | 'href'>,
 ): NotificationKind {
@@ -11,6 +20,7 @@ export function notificationKind(
   )
     return 'message';
   if (
+    isCallCenterAssignment(item) ||
     item.href?.startsWith('/workbench?tab=requests') ||
     item.eventType.startsWith('ticket.') ||
     item.eventType.startsWith('request.')

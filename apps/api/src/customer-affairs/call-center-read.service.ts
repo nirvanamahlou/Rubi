@@ -165,7 +165,10 @@ export class CallCenterReadService {
       _sum: { version: true },
     });
     const completions = await tx.customerAffairsAuditEvent.aggregate({
-      where: { branchId: branch, action: { in: ['COMPLETE_CALL', 'SAVE'] } },
+      where: {
+        branchId: branch,
+        action: { in: ['COMPLETE_CALL', 'SAVE', 'RECONCILE_CALL_COMPLETION'] },
+      },
       _count: true,
       _max: { occurredAt: true },
     });

@@ -572,6 +572,133 @@ export class DocumentsService {
    * Narrow owner-only boundary for a Workbench feedback attachment. The caller
    * cannot choose the document type, category, owner or source reference.
    */
+  async uploadLeaveEvidence(
+    branchId: string,
+    validUntil: string,
+    file: UploadedDocumentFile | undefined,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    if (
+      !file ||
+      !['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype) ||
+      file.size < 1 ||
+      file.size > 10 * 1024 * 1024
+    )
+      throw new BadRequestException(
+        'مدرک باید PDF یا تصویر و حداکثر ۱۰ مگابایت باشد.',
+      );
+    const options = await this.repository.options(
+      [branchId],
+      ['HUMAN_RESOURCES'],
+    );
+    const type = options.documentTypes.find((t) => t.code === 'HR_DOCUMENT');
+    const category =
+      options.categories.find((c) => c.code === 'GENERAL_ARCHIVE') ??
+      options.categories[0];
+    if (!type || !category)
+      throw new ConflictException('نوع سند منابع انسانی تعریف نشده است.');
+    const result = await this.upload(
+      {
+        validUntil,
+        title: 'مدرک مرخصی استعلاجی',
+        documentTypeId: type.id,
+        categoryId: category.id,
+        branchId,
+        ownerUserId: actor.userId,
+        confidentiality: 'RESTRICTED',
+        sourceModule: 'HUMAN_RESOURCES',
+        sourceEntityType: 'LeaveEvidence',
+        sourceEntityId: actor.userId,
+        sourceDisplayLabel: 'مدرک مرخصی',
+        versionNote: 'مدرک مرخصی',
+      },
+      file,
+      {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.hr.read',
+          'documents.sensitive.read',
+        ],
+      },
+      metadata,
+    );
+    return { id: result.data.id, name: file.originalname };
+  }
+
+  async assertLeaveEvidence(
+    ids: readonly string[],
+    branchId: string,
+    ownerId: string,
+  ) {
+    if (ids.length > 5 || new Set(ids).size !== ids.length)
+      throw new BadRequestException('حداکثر ۵ مدرک مجاز است.');
+    for (const id of ids) {
+      const row = await this.repository.findDetail(
+        id,
+        [branchId],
+        true,
+        ownerId,
+      );
+      if (
+        !row ||
+        row.ownerUserId !== ownerId ||
+        row.branchId !== branchId ||
+        row.sourceModule !== 'HUMAN_RESOURCES' ||
+        row.sourceEntityType !== 'LeaveEvidence' ||
+        row.sourceEntityId !== ownerId ||
+        row.confidentiality !== 'RESTRICTED' ||
+        row.deletedAt ||
+        row.archiveStatus !== 'ACTIVE'
+      )
+        throw new ForbiddenException('مدرک مرخصی متعلق به این درخواست نیست.');
+    }
+  }
+
+  /** Caller has checked the exact leave/request association and authorized HR reviewer. */
+  async downloadLeaveEvidence(
+    id: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    const row = await this.repository.findDetail(
+      id,
+      [branchId],
+      true,
+      actor.userId,
+    );
+    if (
+      !row ||
+      row.sourceModule !== 'HUMAN_RESOURCES' ||
+      row.sourceEntityType !== 'LeaveEvidence' ||
+      row.confidentiality !== 'RESTRICTED'
+    )
+      throw new NotFoundException();
+    return this.download(
+      id,
+      {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.hr.read',
+          'documents.sensitive.read',
+          'documents.file.read',
+          'documents.download',
+          'documents.sensitive.download',
+        ],
+      },
+      { sensitiveReason: 'بررسی مدرک درخواست مرخصی' },
+      {
+        sourceModule: 'HUMAN_RESOURCES',
+        sourceEntityType: 'LeaveEvidence',
+        sourceEntityId: row.sourceEntityId!,
+      },
+    );
+  }
+
   async uploadOwnWorkbenchFeedbackAttachment(
     input: {
       feedbackId: string;

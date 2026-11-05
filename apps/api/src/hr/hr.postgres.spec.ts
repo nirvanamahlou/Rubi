@@ -262,6 +262,249 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       if (created && /^nora_hr_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     }, 60000);
+    it('enforces monthly leave deadlines, substitute consent and hourly attendance in one persisted workflow', async () => {
+      const branchId = randomUUID();
+      await client.branch.create({
+        data: {
+          id: branchId,
+          code: branchId,
+          name: 'Synthetic leave policy branch',
+        },
+      });
+      const manager = (
+        await actor('leave_manager', HR_PERMISSION_CODES, [branchId])
+      ).actor;
+      const owner = (await actor('leave_owner', ['hr.self'], [branchId])).actor;
+      const substitute = (
+        await actor('leave_substitute', ['hr.self'], [branchId])
+      ).actor;
+      const person = await service.createEmployee(
+        employeeInput('Synthetic policy employee', {
+          branchId,
+          userId: owner.userId,
+        }),
+        key(),
+        manager,
+      );
+      const policy = await service.createRecord(
+        {
+          branchId,
+          section: 'time',
+          tab: 'leavePolicies',
+          values: ['استحقاقی', '2.5', '3', '1', '14:00', 'خیر', '0'],
+          status: 'فعال',
+        },
+        key(),
+        manager,
+      );
+      expect(policy.values.slice(0, 5)).toEqual([
+        'استحقاقی',
+        '2.5',
+        '3',
+        '1',
+        '14:00',
+      ]);
+      await service.createRecord(
+        {
+          branchId,
+          section: 'time',
+          tab: 'calculationSettings',
+          values: [
+            'Synthetic calculation',
+            '[]',
+            'خیر',
+            '465',
+            'خیر',
+            'خیر',
+            'بله',
+            'خیر',
+            'خیر',
+            'تردد',
+          ],
+          status: 'فعال',
+        },
+        key(),
+        manager,
+      );
+      const date = new Date(Date.now() + 5 * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      await service.createRecord(
+        {
+          branchId,
+          section: 'time',
+          tab: 'shift',
+          employeeId: person.id,
+          values: [
+            'Synthetic shift',
+            '09:15',
+            '17:00',
+            '0',
+            '8',
+            'Synthetic',
+            person.name,
+            date,
+            date,
+          ],
+          status: 'فعال',
+        },
+        key(),
+        manager,
+      );
+      for (const [clock, direction] of [
+        ['09:15', 'ورود'],
+        ['14:00', 'خروج'],
+      ])
+        await service.createRecord(
+          {
+            branchId,
+            section: 'time',
+            tab: 'checkins',
+            employeeId: person.id,
+            values: [person.name, date, clock!, direction!, 'دستی', branchId],
+            status: 'معتبر',
+          },
+          key(),
+          manager,
+        );
+      const input = {
+        branchId,
+        section: 'requests',
+        tab: 'radanLeave',
+        employeeId: person.id,
+        values: [
+          person.name,
+          'استحقاقی',
+          date,
+          date,
+          'ساعتی',
+          '14:00',
+          '17:00',
+          'خیر',
+        ],
+        status: 'در انتظار تأیید',
+        data: {
+          reason: 'Synthetic hourly leave',
+          substituteUserId: substitute.userId,
+        },
+      };
+      const submitted = await service.createRecord(input, key(), owner);
+      await expect(
+        service.updateRecord(
+          submitted.id,
+          { version: 1, status: 'تأییدشده' },
+          manager,
+        ),
+      ).rejects.toThrow('جانشین');
+      const inbox = await service.leaveSubstituteRequests(substitute);
+      expect(inbox.find((r) => r.id === submitted.id)?.substituteStatus).toBe(
+        'PENDING',
+      );
+      await expect(
+        service.reviewNativeLeaveSubstitute(
+          submitted.id,
+          { version: 1, status: 'APPROVED' },
+          owner,
+        ),
+      ).rejects.toThrow();
+      await service.reviewNativeLeaveSubstitute(
+        submitted.id,
+        { version: 1, status: 'APPROVED' },
+        substitute,
+      );
+      await service.reviewNativeLeaveSubstitute(
+        submitted.id,
+        { version: 1, status: 'APPROVED' },
+        substitute,
+      );
+      const approved = await service.updateRecord(
+        submitted.id,
+        { version: 2, status: 'تأییدشده' },
+        manager,
+      );
+      expect(approved.status).toBe('تأییدشده');
+      await service.processAttendance({ branchId, date }, key(), manager);
+      const attendance = await client.hrRecord.findFirstOrThrow({
+        where: {
+          employeeId: person.id,
+          tab: 'attendance',
+          values: { path: ['1'], equals: date },
+        },
+      });
+      expect(attendance.status).toBe('مرخصی ساعتی');
+      expect(attendance.data).toMatchObject({
+        earlyMinutes: 0,
+        deficitMinutes: 0,
+        lateMinutes: 0,
+      });
+      const ledger = await client.hrRecord.findMany({
+        where: { employeeId: person.id, tab: 'minuteLedger' },
+      });
+      expect(
+        ledger.filter((r) => (r.values as string[])[4] === 'سهمیه ماهانه'),
+      ).toHaveLength(1);
+      expect(ledger.filter((r) => r.parentId === submitted.id)).toHaveLength(1);
+      const additional = await service.createRecord(
+        {
+          ...input,
+          data: { reason: 'Quota check' },
+          values: [
+            person.name,
+            'استحقاقی',
+            date,
+            date,
+            'ساعتی',
+            '13:00',
+            '14:00',
+            'خیر',
+          ],
+        },
+        key(),
+        owner,
+      );
+      await expect(
+        service.updateRecord(
+          additional.id,
+          { version: 1, status: 'تأییدشده' },
+          manager,
+        ),
+      ).rejects.toThrow('سهمیه');
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Tehran',
+      });
+      const late = {
+        ...input,
+        data: { reason: 'Late daily leave' },
+        values: [
+          person.name,
+          'استحقاقی',
+          today,
+          today,
+          'روزانه',
+          '',
+          '',
+          'خیر',
+        ],
+      };
+      await expect(service.createRecord(late, key(), owner)).rejects.toThrow(
+        'قبل',
+      );
+      await expect(
+        service.validateWorkbenchLeaveSubmission(
+          client,
+          branchId,
+          owner.userId,
+          {
+            from: today,
+            to: today,
+            mode: 'روزانه',
+            reason: 'Late workbench leave',
+            leaveType: 'استحقاقی',
+          },
+          owner,
+        ),
+      ).rejects.toThrow('قبل');
+    }, 60000);
     it('rejects absent authentication through the real cookie guard', async () => {
       await request(app.getHttpServer())
         .get('/api/v1/hr/bootstrap')

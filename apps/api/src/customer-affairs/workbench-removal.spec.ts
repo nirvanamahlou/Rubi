@@ -43,7 +43,15 @@ describe('Workbench queries and personal removal', () => {
           id: 'ticket',
           branchId: { in: ['branch'] },
           category: { startsWith: 'WORKBENCH_' },
-          OR: [{ createdByUserId: 'user' }, { executionOwnerUserId: 'user' }],
+          OR: [
+            { createdByUserId: 'user' },
+            { executionOwnerUserId: 'user' },
+            {
+              timeline: {
+                some: { type: 'WORKBENCH_SUBSTITUTE', summary: 'user' },
+              },
+            },
+          ],
         },
       }),
     );

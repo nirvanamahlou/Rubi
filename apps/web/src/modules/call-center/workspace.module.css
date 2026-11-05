@@ -977,3 +977,54 @@
 .expertCard td:first-child {
   min-width: 150px;
 }
+
+.pagination {
+  gap: 10px;
+}
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--cc-border, #d5e1f3);
+  border-radius: 7px;
+  background: var(--surface, #fff);
+  color: var(--foreground, #243b60);
+  font: inherit;
+  font-size: 12px;
+  box-shadow: 0 2px 4px #17345b08;
+}
+.pagination button:first-child::before,
+.pagination button:last-child::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+}
+.pagination button:first-child::before {
+  transform: rotate(-45deg);
+}
+.pagination button:last-child::after {
+  transform: rotate(135deg);
+}
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pagination > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #3575ff, #1250ed);
+  color: #fff;
+  box-shadow: 0 3px 8px #2459e82b;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}

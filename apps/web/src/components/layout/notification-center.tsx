@@ -51,6 +51,7 @@ import {
 
 import {
   compareNotifications,
+  isCallCenterAssignment,
   notificationColors,
   notificationKind,
   type NotificationKind,
@@ -536,6 +537,12 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
 
   const hasRead = notifications.some((notification) => notification.isRead);
   const BellIcon = unreadCount ? BellRing : Bell;
+  const hasPendingCallRequest = serverItems.some(
+    (item) =>
+      !item.isRead &&
+      isCallCenterAssignment(item) &&
+      (!item.href || canViewRoute(actor.permissions, item.href)),
+  );
 
   return (
     <>
@@ -604,6 +611,13 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                 unreadCount > 0 && 'fill-amber-300/25 text-amber-300',
               )}
             />
+            {hasPendingCallRequest && (
+              <span
+                aria-hidden="true"
+                data-call-request-alert
+                className="pointer-events-none absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-red-600 ring-2 ring-surface motion-safe:animate-pulse"
+              />
+            )}
             {unreadCount ? (
               <span className="absolute end-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-black leading-4 text-destructive-foreground ring-2 ring-surface">
                 {unreadCount > 99 ? '+۹۹' : unreadCount.toLocaleString('fa-IR')}
@@ -682,7 +696,14 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                 >
                   <Link
                     href={notification.href}
-                    onClick={() => markRead(notification)}
+                    onClick={() => {
+                      markRead(notification);
+                      setDropdownOpen(false);
+                      if (notification.href.endsWith('#cc-follow-up-queue'))
+                        window.dispatchEvent(
+                          new Event('call-center:open-queue'),
+                        );
+                    }}
                   >
                     <span
                       className={cn(
