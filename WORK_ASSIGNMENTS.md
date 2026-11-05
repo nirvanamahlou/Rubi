@@ -11260,3 +11260,8 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 ## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105 — PC-A — ACTIVE
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
+
+
+## CALL-HISTORY-ICONS-1105 — PC-C — IN_PROGRESS
+
+Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitly selects generated option2: green inbound/blue outbound filled handset, pale rounded tile and white directional arrow in a circular badge, in call-history timeline only. Reserve leaf call-history-icon.tsx and bounded workspace.tsx/workspace.module.css timeline integration, own task/status notes. Latest Navy/Pearl source is merged/frozen in PR1403; preserve its styling and all history data, actions, permissions and responsive layout. No API/schema/dependency or server deployment changes. Validate the real small-size RTL presentation and affected Web checks; publish under existing workflow.
