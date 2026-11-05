@@ -64,14 +64,12 @@ describe('floating purchase total', () => {
     const db = {
       client: {
         reservationIntake: {
-          findUnique: vi
-            .fn()
-            .mockResolvedValue({
-              id,
-              contractId: contract,
-              branchId: 'branch',
-              snapshot,
-            }),
+          findUnique: vi.fn().mockResolvedValue({
+            id,
+            contractId: contract,
+            branchId: 'branch',
+            snapshot,
+          }),
         },
         reservationServicePurchase: {
           findUnique: vi.fn().mockResolvedValue(null),
@@ -87,13 +85,11 @@ describe('floating purchase total', () => {
       undefined,
       fx as never,
       {
-        agencyPurchaseReference: vi
-          .fn()
-          .mockResolvedValue({
-            id,
-            name: 'Synthetic agency',
-            source: 'ORGANIZATION',
-          }),
+        agencyPurchaseReference: vi.fn().mockResolvedValue({
+          id,
+          name: 'Synthetic agency',
+          source: 'ORGANIZATION',
+        }),
       } as never,
     );
     await expect(

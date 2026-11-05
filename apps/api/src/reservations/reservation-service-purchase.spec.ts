@@ -151,7 +151,10 @@ describe('service purchase validation', () => {
         reservationIntake: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         },
-        reservationServicePurchase: {create,findFirst:vi.fn().mockResolvedValue(null)},
+        reservationServicePurchase: {
+          create,
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
       };
       const database = {
         client: {
@@ -660,7 +663,10 @@ it('records transfer-only split purchases without stay dates and rejects invalid
           reservationIntake: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           },
-          reservationServicePurchase: {create,findFirst:vi.fn().mockResolvedValue(null)},
+          reservationServicePurchase: {
+            create,
+            findFirst: vi.fn().mockResolvedValue(null),
+          },
         }),
       ),
     },
@@ -765,7 +771,10 @@ it('records insurance actual cost through the same authorized, scoped CAS and id
         run({
           $queryRaw: vi.fn(),
           reservationIntake: { updateMany },
-          reservationServicePurchase: {create,findFirst:vi.fn().mockResolvedValue(null)},
+          reservationServicePurchase: {
+            create,
+            findFirst: vi.fn().mockResolvedValue(null),
+          },
         }),
       ),
     },
@@ -890,7 +899,10 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
           },
           auditEvent: { create: audit },
           reservationIntake: { updateMany },
-          reservationServicePurchase: {create,findFirst:vi.fn().mockResolvedValue(null)},
+          reservationServicePurchase: {
+            create,
+            findFirst: vi.fn().mockResolvedValue(null),
+          },
         }),
       ),
     },
@@ -1037,7 +1049,10 @@ it('single hotel purchase uses contractual nights even after different form-only
           reservationIntake: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           },
-          reservationServicePurchase: {create,findFirst:vi.fn().mockResolvedValue(null)},
+          reservationServicePurchase: {
+            create,
+            findFirst: vi.fn().mockResolvedValue(null),
+          },
         }),
       ),
     },
