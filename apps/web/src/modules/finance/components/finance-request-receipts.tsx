@@ -44,7 +44,7 @@ export function FinanceRequestReceipts({
           <div className="grid gap-3 sm:grid-cols-2">
             {query.data?.data.map((item) => (
               <Receipt
-                key={item.id}
+                key={`${item.id}:${item.currentVersion.id}:${item.currentVersion.scanStatus}:${item.capabilities.download}`}
                 item={item}
                 contractId={contractId}
                 paymentId={paymentId}
@@ -95,7 +95,6 @@ function Receipt({
     item.currentVersion.detectedMimeType,
   );
   useEffect(() => {
-    setUrl('');
     if (!allowed || !image) return;
     let active = true;
     let objectUrl = '';
