@@ -1,4 +1,6 @@
 'use client';
+import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
+import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton } from './hr-controls';
 import Link from '@/components/access-link';
@@ -41,6 +43,11 @@ export function HrInbox({
   const [employeeId, setEmployeeId] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
+  const [review, setReview] = useState<WorkbenchHrRequest | null>(null);
+  const [decision, setDecision] = useState('APPROVED');
+  const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [deleting, setDeleting] = useState<number | null>(null);
   const [workbenchItems, setWorkbenchItems] = useState<WorkbenchHrRequest[]>(
     [],
   );
@@ -96,29 +103,105 @@ export function HrInbox({
     return () => {
       active = false;
     };
-  }, [store.revision]);
+  }, [store.revision, revision]);
+  const filteredWorkbench = workbenchItems.filter(
+    (item) =>
+      (!status || workbenchRequestStatusLabel(item.status) === status) &&
+      (!employeeId ||
+        store.data!.employees.find((e) => e.id === employeeId)?.userId ===
+          item.senderId) &&
+      (!range.from || item.createdAt.slice(0, 10) >= range.from) &&
+      (!range.to || item.createdAt.slice(0, 10) <= range.to) &&
+      (!requestType ||
+        (item.leave &&
+          ['requests.leave', 'time.leave', 'requests.radanLeave'].includes(
+            requestType,
+          ))),
+  );
+  const visibleItems = items.filter((item) => !item.code.startsWith('WB-'));
+  const onReview = async () => {
+    if (!review) return;
+    setBusy(true);
+    setError('');
+    try {
+      await customerAffairsApi.reviewHrWorkbenchRequest(
+        review.id,
+        review.version,
+        decision,
+      );
+      setReview(null);
+      setRevision((n) => n + 1);
+      await store.mutated();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'ثبت نتیجه انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const openRow = (index: number) => {
+    if (index < visibleItems.length)
+      onSelect(visibleItems[index]!, sourceForRecord(visibleItems[index]!));
+    else {
+      setDecision('APPROVED');
+      setReview(filteredWorkbench[index - visibleItems.length]!);
+    }
+  };
+  const deleteRow = async () => {
+    if (deleting === null) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (deleting < visibleItems.length)
+        await store.remove(visibleItems[deleting]!);
+      else
+        await customerAffairsApi.removeHrWorkbenchRequest(
+          filteredWorkbench[deleting - visibleItems.length]!.id,
+        );
+      setDeleting(null);
+      setRevision((n) => n + 1);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'حذف انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
+  };
   const data = {
     columns: ['کد', 'نوع درخواست', 'کارمند', 'شرکت', 'تاریخ ایجاد', 'وضعیت'],
-    rows: items.map((item) => [
-      item.code,
-      item.data.requestSubtype ?? sourceForRecord(item).label,
-      store.data!.employees.find((employee) => employee.id === item.employeeId)
-        ?.name ??
-        item.values[item.columns.indexOf('کارمند')] ??
-        '—',
-      store.data!.records.find(
-        (company) => company.id === item.data.organizationBranchId,
-      )?.values[0] ||
+    rows: [
+      ...visibleItems.map((item) => [
+        item.code,
+        item.data.requestSubtype ?? sourceForRecord(item).label,
         store.data!.employees.find(
           (employee) => employee.id === item.employeeId,
-        )?.companyName ||
+        )?.name ??
+          item.values[item.columns.indexOf('کارمند')] ??
+          '—',
+        store.data!.records.find(
+          (company) => company.id === item.data.organizationBranchId,
+        )?.values[0] ||
+          store.data!.employees.find(
+            (employee) => employee.id === item.employeeId,
+          )?.companyName ||
+          store.data!.branches.find((branch) => branch.id === item.branchId)
+            ?.name ||
+          '',
+        new Date(item.createdAt).toLocaleDateString('fa-IR'),
+        item.status,
+      ]),
+      ...filteredWorkbench.map((item) => [
+        item.trackingNumber,
+        item.leave ? 'مرخصی میزکار' : item.subject,
+        item.senderName,
         store.data!.branches.find((branch) => branch.id === item.branchId)
-          ?.name ||
-        '',
-      new Date(item.createdAt).toLocaleDateString('fa-IR'),
-      item.status,
-    ]),
-    recordIds: items.map((item) => item.id),
+          ?.name ?? '',
+        new Date(item.createdAt).toLocaleDateString('fa-IR'),
+        workbenchRequestStatusLabel(item.status),
+      ]),
+    ],
+    recordIds: [
+      ...visibleItems.map((item) => item.id),
+      ...filteredWorkbench.map((item) => item.id),
+    ],
     totalLabel: '',
   };
   return (
@@ -221,6 +304,7 @@ export function HrInbox({
                 'در انتظار تأیید',
                 'تأییدشده',
                 'ردشده',
+                'نیازمند اصلاح',
                 'لغوشده',
               ].map((item) => (
                 <option key={item}>{item}</option>
@@ -236,34 +320,96 @@ export function HrInbox({
         <HrTable
           data={data}
           {...selection}
-          onOpen={(index) =>
-            onSelect(items[index]!, sourceForRecord(items[index]!))
-          }
+          onOpen={openRow}
+          {...(store.data!.capabilities.write ? { onDelete: setDeleting } : {})}
+          rowActions={(index) => (
+            <HrButton onClick={() => openRow(index)}>رسیدگی</HrButton>
+          )}
         />
       </HrPanel>
-      <HrPanel title="درخواست‌های میزکار به منابع انسانی">
-        {workbenchItems.length ? (
-          <ul className="space-y-3">
-            {workbenchItems.map((item) => (
-              <li key={item.id} className="rounded-xl border p-4">
-                <div className="flex flex-wrap justify-between gap-2 font-semibold">
-                  <span>{item.subject}</span>
-                  <span>{item.status}</span>
-                </div>
-                <p className="mt-2 whitespace-pre-wrap text-sm">
-                  {item.description}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {item.trackingNumber} ·{' '}
-                  {new Date(item.updatedAt).toLocaleDateString('fa-IR')}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>درخواستی از میزکار ثبت نشده است.</p>
-        )}
-      </HrPanel>
+      <Dialog
+        open={Boolean(review)}
+        onOpenChange={(open) => {
+          if (!open && !busy) setReview(null);
+        }}
+      >
+        <DialogContent className="max-w-xl" dir="rtl">
+          <DialogTitle>رسیدگی به درخواست</DialogTitle>
+          {review ? (
+            <div className="space-y-4">
+              <p className="font-semibold">{review.subject}</p>
+              <p className="text-sm">
+                {review.senderName} · {review.trackingNumber}
+              </p>
+              <p className="whitespace-pre-wrap text-sm">
+                {review.description}
+              </p>
+              {review.leave ? (
+                <dl className="grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm">
+                  <dt>تاریخ</dt>
+                  <dd>
+                    {new Date(review.leave.from).toLocaleDateString('fa-IR')} —{' '}
+                    {new Date(review.leave.to).toLocaleDateString('fa-IR')}
+                  </dd>
+                  <dt>میزان عدم حضور</dt>
+                  <dd>
+                    {review.leave.mode} {review.leave.startTime}{' '}
+                    {review.leave.endTime ? `تا ${review.leave.endTime}` : ''}
+                  </dd>
+                  <dt>دلیل</dt>
+                  <dd>{review.leave.reason}</dd>
+                  <dt>جانشین احتمالی</dt>
+                  <dd>{review.leave.substitute || '—'}</dd>
+                </dl>
+              ) : null}
+              <p>{workbenchRequestStatusLabel(review.status)}</p>
+              {!['APPROVED', 'REJECTED'].includes(review.status) &&
+              store.data!.capabilities.approve &&
+              store.data!.capabilities.write ? (
+                <>
+                  <label className="block space-y-2">
+                    وضعیت
+                    <NativeSearchSelect
+                      disabled={busy}
+                      value={decision}
+                      onChange={(event) => setDecision(event.target.value)}
+                    >
+                      <option value="APPROVED">تأیید</option>
+                      <option value="REJECTED">رد</option>
+                      <option value="NEEDS_REVISION">نیازمند اصلاح</option>
+                    </NativeSearchSelect>
+                  </label>
+                  <Button disabled={busy} onClick={() => void onReview()}>
+                    ثبت نتیجه
+                  </Button>
+                </>
+              ) : null}
+              {error ? <p role="alert">{error}</p> : null}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open && !busy) setDeleting(null);
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>حذف درخواست از کارتابل؟</DialogTitle>
+          <Button disabled={busy} onClick={() => void deleteRow()}>
+            حذف
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => setDeleting(null)}
+          >
+            انصراف
+          </Button>
+          {error ? <p role="alert">{error}</p> : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -45,6 +45,45 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('uses the outbound destination even when return selections arrive first, including return-only contracts', () => {
+  const ticket = {
+    departureAt: '2026-11-05T10:00:00Z',
+    carrierNameSnapshot: 'Synthetic carrier',
+  };
+  const decode = (ticketSelections: object[]) =>
+    decodeIntake(
+      {
+        version: 1,
+        data: [
+          {
+            ...intake(),
+            snapshot: {
+              ...intake().snapshot,
+              ticketSelections,
+            },
+          },
+        ],
+      },
+      session,
+    )[0]?.destinationId;
+  const returning = {
+    ...ticket,
+    direction: 'RETURN',
+    originId: 'holiday-city',
+    destinationId: 'home-city',
+  };
+  expect(
+    decode([
+      returning,
+      { ...ticket, direction: 'OUTBOUND', destinationId: 'holiday-city' },
+    ]),
+  ).toBe('holiday-city');
+  expect(decode([returning])).toBe('holiday-city');
+  expect(decode([{ ...ticket, destinationId: 'legacy-city' }])).toBe(
+    'legacy-city',
+  );
+  expect(decode([])).toBeUndefined();
+});
 it('retains all composite hotels in saved itinerary order for the queue Hotel column', () => {
   const input = intake();
   const decoded = decodeIntake(
@@ -121,6 +160,20 @@ it('uses completed canonical passenger names instead of an empty or stale histor
     debtRial: null,
     debtForeign: null,
   };
+  expect(
+    decodeIntake(
+      {
+        version: 1,
+        data: [
+          {
+            ...input,
+            tableSummary: { ...summary, destinationId: 'current-city' },
+          },
+        ],
+      },
+      session,
+    )[0]?.destinationId,
+  ).toBe('current-city');
   const decode = (tableSummary?: object) =>
     decodeIntake(
       { version: 1, data: [{ ...input, tableSummary }] },

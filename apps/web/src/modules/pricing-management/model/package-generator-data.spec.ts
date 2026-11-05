@@ -320,3 +320,41 @@ it('round trips published footer fields separately, without adding them to hotel
     }),
   ).toThrow();
 });
+
+it('recovers missing service metadata from the matching room tariff without changing a recorded board', () => {
+  const legacy = {
+    ...publication,
+    roomPrices: publication.roomPrices.map((p) => {
+      const copy = { ...p };
+      delete copy.board;
+      return copy;
+    }),
+  };
+  const rates = {
+    ...batch,
+    rows: [
+      {
+        ...batch.rows[0]!,
+        roomRates: [
+          {
+            roomTypeId: 'standard',
+            roomTypeName: 'Standard',
+            occupancyRates: [{ board: 'UALL' }],
+          },
+          {
+            roomTypeId: 'other',
+            roomTypeName: 'Other',
+            occupancyRates: [{ board: 'BB' }],
+          },
+        ],
+      },
+    ],
+  } as unknown as PackageTourHotelPurchaseBatchV1;
+  expect(
+    packageGeneratorData(grid, rates, legacy).groups[0]?.hotels[0]?.service,
+  ).toBe('UALL');
+  expect(
+    packageGeneratorData(grid, rates, publication).groups[0]?.hotels[0]
+      ?.service,
+  ).toBe('BB');
+});

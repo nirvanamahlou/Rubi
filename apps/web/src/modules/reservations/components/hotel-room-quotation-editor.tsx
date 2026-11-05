@@ -18,6 +18,7 @@ export function HotelRoomQuotationEditor({
   busy,
   canSplitTransfers = true,
   nights,
+  hotelBroker,
 }: {
   draft: VoucherSettingsV1;
   requestId: string;
@@ -27,6 +28,7 @@ export function HotelRoomQuotationEditor({
   busy: boolean;
   canSplitTransfers?: boolean;
   nights: number;
+  hotelBroker?: { id: string; name: string } | null;
 }) {
   const rooms = draft.rooms ?? [];
   const prices =
@@ -199,21 +201,6 @@ export function HotelRoomQuotationEditor({
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            disabled={busy}
-            checked={draft.hotelTransferSeparate ?? false}
-            onChange={(event) =>
-              update({
-                ...draft,
-                hotelTransferSeparate: event.target.checked,
-                ...(!event.target.checked ? { hotelTransferSplit: false } : {}),
-              })
-            }
-          />
-          {purchaseRoot ? 'ترانسفر از آژانس دیگر' : 'ترانسفر از کارگزار دیگر'}
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
             disabled={
               busy || !canSplitTransfers || draft.hotelTransferRoundTrip
             }
@@ -225,6 +212,7 @@ export function HotelRoomQuotationEditor({
                 ...(event.target.checked
                   ? {
                       hotelTransferSeparate: true,
+                      hotelTransferRoundTrip: false,
                       hotelTransferReturn: draft.hotelTransferReturn ?? {
                         amount: transfer.amount,
                         currencyCode: transfer.currencyCode,
@@ -236,7 +224,7 @@ export function HotelRoomQuotationEditor({
           />
           {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
-        {(draft.hotelTransferSeparate ?? false) && (
+        {
           <ReservationPurchaseBrokerLookup
             purchaseRoot={purchaseRoot}
             requestId={requestId}
@@ -255,10 +243,18 @@ export function HotelRoomQuotationEditor({
                     id: draft.transferBrokerId,
                     name: draft.transferBrokerName ?? '',
                   }
-                : null
+                : (hotelBroker ??
+                  (draft.brokerId
+                    ? { id: draft.brokerId, name: draft.text.broker }
+                    : null))
             }
             onChange={(value) => {
-              const next = { ...draft };
+              const next = {
+                ...draft,
+                hotelTransferSeparate: Boolean(
+                  value && value.id !== (hotelBroker?.id ?? draft.brokerId),
+                ),
+              };
               if (value) {
                 next.transferBrokerId = value.id;
                 next.transferBrokerName = value.name;
@@ -269,7 +265,7 @@ export function HotelRoomQuotationEditor({
               update(next);
             }}
           />
-        )}
+        }
 
         <MoneyInput
           aria-label={

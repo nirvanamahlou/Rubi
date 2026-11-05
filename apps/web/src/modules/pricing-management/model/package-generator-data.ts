@@ -5,6 +5,30 @@ import type {
   PackageTourPublicationV1,
 } from '@nora/contracts';
 
+/** Recover display-only meal service for older publications without board metadata. */
+function roomService(
+  row: PackageTourHotelPurchaseBatchV1['rows'][number],
+  price: PackageTourPublicationV1['roomPrices'][number],
+) {
+  const identity = packageRoomIdentity(price.roomCode);
+  const recorded = price.board?.trim() || identity?.board?.trim();
+  if (recorded) return recorded;
+  const rooms = (row.roomRates ?? []).filter((room) =>
+    identity
+      ? room.roomTypeId === identity.roomTypeId
+      : !price.roomTypeName || room.roomTypeName === price.roomTypeName,
+  );
+  return [
+    ...new Set(
+      rooms.flatMap((room) =>
+        (room.occupancyRates ?? [])
+          .map((rate) => rate.board?.trim())
+          .filter(Boolean),
+      ),
+    ),
+  ].join(' / ');
+}
+
 /** Only published sale amounts cross the frame boundary; never purchase costs or profit. */
 export function packageGeneratorData(
   grid: PackageTourCostGridV1,
@@ -66,7 +90,7 @@ export function packageGeneratorData(
         ...new Set(
           publication.roomPrices
             .filter((price) => price.hotelRateId === id)
-            .map((price) => price.board)
+            .map((price) => roomService(row, price))
             .filter(Boolean),
         ),
       ].join(' / ');
@@ -112,7 +136,7 @@ function compositionGeneratorData(
           {
             hotel: row.hotelName,
             room: price.roomTypeName ?? '',
-            service: identity.board,
+            service: roomService(row, price),
           },
         ],
         prices: {},

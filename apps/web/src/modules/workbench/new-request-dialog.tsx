@@ -1,4 +1,6 @@
 'use client';
+import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
+import { DatePicker } from '@/components/ui/date-picker';
 import { WorkbenchSelect } from './workbench-select';
 
 import { useEffect, useRef, useState } from 'react';
@@ -34,6 +36,7 @@ function NewRequestForm({
   branchId,
   onCreated,
 }: NewRequestDialogProps) {
+  const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [unit, setUnit] = useState('');
@@ -59,7 +62,7 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [title, body, unit, recipient, priority, reference]);
+  }, [title, body, unit, recipient, priority, reference, leave]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -143,6 +146,7 @@ function NewRequestForm({
             void customerAffairsApi
               .createWorkbenchRequest(
                 {
+                  ...(leave ? { leave } : {}),
                   subject: title.trim(),
                   description: body.trim(),
                   reference: reference.trim(),
@@ -155,6 +159,7 @@ function NewRequestForm({
                 key.current,
               )
               .then((response) => {
+                setLeave(null);
                 setTitle('');
                 setBody('');
                 setReference('');
@@ -231,6 +236,27 @@ function NewRequestForm({
                 aria-hidden="true"
               />
               شرح درخواست *
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                className="ms-auto"
+                onClick={() => {
+                  setLeave(
+                    leave
+                      ? null
+                      : { from: '', to: '', mode: 'روزانه', reason: '' },
+                  );
+                  if (!leave) {
+                    setTitle('درخواست مرخصی');
+                    setBody(
+                      'با سلام، درخواست مرخصی مطابق تاریخ و مدت درج‌شده را دارم.',
+                    );
+                  }
+                }}
+              >
+                مرخصی
+              </Button>
             </span>
             <Textarea
               required
@@ -243,6 +269,92 @@ function NewRequestForm({
               onChange={(e) => setBody(e.target.value)}
             />
           </label>
+          {leave ? (
+            <fieldset
+              className="sm:col-span-2 grid gap-4 rounded-xl border bg-muted/20 p-4 sm:grid-cols-2"
+              disabled={pending}
+            >
+              <legend className="px-2 text-sm font-semibold">مرخصی</legend>
+              <label className="space-y-2 text-sm">
+                از تاریخ *
+                <DatePicker
+                  value={leave.from}
+                  onChange={(from) =>
+                    setLeave({ ...leave, from, to: leave.to || from })
+                  }
+                />
+              </label>
+              <label className="space-y-2 text-sm">
+                تا تاریخ *
+                <DatePicker
+                  value={leave.to}
+                  onChange={(to) => setLeave({ ...leave, to })}
+                />
+              </label>
+              <label className="space-y-2 text-sm">
+                میزان عدم حضور
+                <WorkbenchSelect
+                  label="نوع مدت مرخصی"
+                  value={leave.mode}
+                  onValueChange={(mode) =>
+                    setLeave({ ...leave, mode: mode as 'روزانه' | 'ساعتی' })
+                  }
+                  options={[
+                    { value: 'روزانه', label: 'روزانه' },
+                    { value: 'ساعتی', label: 'ساعتی' },
+                  ]}
+                />
+              </label>
+              <label className="space-y-2 text-sm">
+                جانشین احتمالی
+                <Input
+                  maxLength={160}
+                  value={leave.substitute ?? ''}
+                  onChange={(event) =>
+                    setLeave({ ...leave, substitute: event.target.value })
+                  }
+                />
+              </label>
+              {leave.mode === 'ساعتی' ? (
+                <>
+                  <label className="space-y-2 text-sm">
+                    ساعت شروع *
+                    <Input
+                      required
+                      type="time"
+                      value={leave.startTime ?? ''}
+                      onChange={(event) =>
+                        setLeave({ ...leave, startTime: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm">
+                    ساعت پایان *
+                    <Input
+                      required
+                      type="time"
+                      value={leave.endTime ?? ''}
+                      onChange={(event) =>
+                        setLeave({ ...leave, endTime: event.target.value })
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
+              <label className="space-y-2 text-sm sm:col-span-2">
+                دلیل مرخصی *
+                <Textarea
+                  required
+                  minLength={3}
+                  maxLength={500}
+                  value={leave.reason}
+                  onChange={(event) =>
+                    setLeave({ ...leave, reason: event.target.value })
+                  }
+                />
+              </label>
+            </fieldset>
+          ) : null}
           <label className="space-y-2 text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Flag className="size-4 text-primary" aria-hidden="true" />
@@ -284,9 +396,6 @@ function NewRequestForm({
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 sm:col-span-2">
-            <p className="text-xs text-muted-foreground">
-              پس از ثبت، کد پیگیری در همین میزکار نمایش داده می‌شود.
-            </p>
             <div className="flex gap-3">
               <Button
                 type="submit"

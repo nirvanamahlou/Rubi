@@ -1,3 +1,3 @@
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
-/** Pricing manages registered history too; the UI's explicit dates filter it. */
-export const loadTicketPricingOffers = () => toursApi.managedOffers(true);
+/** Pricing lists only flights whose departure time has not passed, using the server clock. */
+export const loadTicketPricingOffers = () => toursApi.managedOffers();
