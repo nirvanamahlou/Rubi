@@ -1,4 +1,5 @@
 'use client';
+import { CONTRACT_TOTAL_PURCHASE_KEY } from '@nora/contracts';
 import type { ReservationServicePurchaseInputV1 } from '@nora/contracts';
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
@@ -15,24 +16,35 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export function ReservationFloatingFlightPurchase({
   onStage,
+  wholeContract = false,
   request,
   purchaseRoot,
   onSaved,
   serviceClientKey,
 }: {
-  onStage?: (body: ReservationServicePurchaseInputV1) => void;
+  wholeContract?: boolean;
+  onStage?: (
+    body: ReservationServicePurchaseInputV1,
+    details?: { supplierName: string },
+  ) => void;
   request: ReservationIntakeV1;
   purchaseRoot?: string | undefined;
   onSaved: () => void;
   serviceClientKey?: string | undefined;
 }) {
-  const service = request.snapshot.serviceSelections.find(
-    (s) =>
-      s.kind === 'FLIGHT' &&
-      (s.metadata?.purchaseSupplyType === 'FLOATING' ||
-        s.metadata?.contractFlightVersion === 1) &&
-      (!serviceClientKey || s.clientKey === serviceClientKey),
-  );
+  const service = wholeContract
+    ? {
+        clientKey: CONTRACT_TOTAL_PURCHASE_KEY,
+        titleSnapshot: 'خرید کل قرارداد',
+        kind: 'OTHER',
+      }
+    : request.snapshot.serviceSelections.find(
+        (s) =>
+          s.kind === 'FLIGHT' &&
+          (s.metadata?.purchaseSupplyType === 'FLOATING' ||
+            s.metadata?.contractFlightVersion === 1) &&
+          (!serviceClientKey || s.clientKey === serviceClientKey),
+      );
   const current = request.servicePurchases?.find(
     (p) => p.serviceClientKey === service?.clientKey,
   );
@@ -77,7 +89,7 @@ export function ReservationFloatingFlightPurchase({
           : {}),
       });
       if (onStage) {
-        onStage(JSON.parse(payload));
+        onStage(JSON.parse(payload), { supplierName: supplier.name });
         onSaved();
         return;
       }
@@ -106,6 +118,7 @@ export function ReservationFloatingFlightPurchase({
             result?.message ??
             'ثبت هزینه بلیط ناموفق بود.',
         );
+      window.dispatchEvent(new Event('floating-purchases-changed'));
       onSaved();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'ثبت ناموفق بود.');
@@ -115,38 +128,59 @@ export function ReservationFloatingFlightPurchase({
   }
   return (
     <section className="space-y-3 rounded-xl border p-4">
-      <h4 className="font-bold">هزینه خرید بلیط — {service.titleSnapshot}</h4>
+      <h4 className="font-bold">
+        {wholeContract ? 'قیمت کل خرید قرارداد' : 'هزینه خرید بلیط'} —{' '}
+        {service.titleSnapshot}
+      </h4>
       <div className="grid gap-3 sm:grid-cols-3">
-        <FormField label={purchaseRoot ? 'آژانس بلیط' : 'کارگزار بلیط'}>
+        <FormField
+          label={
+            wholeContract
+              ? 'آژانس'
+              : purchaseRoot
+                ? 'آژانس بلیط'
+                : 'کارگزار بلیط'
+          }
+        >
           <ReservationPurchaseBrokerLookup
             purchaseRoot={purchaseRoot}
             requestId={request.id}
-            label={purchaseRoot ? 'آژانس بلیط' : 'کارگزار بلیط'}
+            label={
+              wholeContract
+                ? 'آژانس'
+                : purchaseRoot
+                  ? 'آژانس بلیط'
+                  : 'کارگزار بلیط'
+            }
             value={supplier}
             onChange={setSupplier}
           />
         </FormField>
-        <FormField label="ارز خرید بلیط">
+        <FormField label={wholeContract ? 'ارز خرید' : 'ارز خرید بلیط'}>
           {purchaseRoot ? (
             <PurchaseCurrencyLookup
               requestId={request.id}
               purchaseRoot={purchaseRoot}
-              label="ارز خرید بلیط"
+              label={wholeContract ? 'ارز خرید' : 'ارز خرید بلیط'}
               value={currency}
               onChange={setCurrency}
             />
           ) : (
             <Lookup
               kind="currencies"
-              label="ارز خرید بلیط"
+              label={wholeContract ? 'ارز خرید' : 'ارز خرید بلیط'}
               value={currency}
               onChange={setCurrency}
             />
           )}
         </FormField>
-        <FormField label="هزینه کل بلیط">
+        <FormField
+          label={wholeContract ? 'قیمت کل خرید قرارداد' : 'هزینه کل بلیط'}
+        >
           <MoneyInput
-            aria-label="هزینه کل خرید بلیط"
+            aria-label={
+              wholeContract ? 'قیمت کل خرید قرارداد' : 'هزینه کل خرید بلیط'
+            }
             value={amount}
             onValueChange={setAmount}
           />
@@ -159,7 +193,7 @@ export function ReservationFloatingFlightPurchase({
         onChange={updateFx}
       />
       <Button type="button" disabled={busy} onClick={() => void save()}>
-        ثبت خرید بلیط
+        {wholeContract ? 'ثبت قیمت کل خرید' : 'ثبت خرید بلیط'}
       </Button>
       {error && <p role="alert">{error}</p>}
     </section>

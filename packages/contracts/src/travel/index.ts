@@ -763,3 +763,6 @@ export type {
   TicketPurchaseInboxItemV1,
   TicketPurchaseGroupCommandV1,
 } from './ticket-purchase-inbox';
+
+/** Reserved purchase identity for the final aggregate cost of a floating contract. */
+export const CONTRACT_TOTAL_PURCHASE_KEY = 'contract-total-purchase';

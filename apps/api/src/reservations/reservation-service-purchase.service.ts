@@ -1,3 +1,5 @@
+import { assertFloatingPurchaseMode } from './floating-purchase-mode';
+import { CONTRACT_TOTAL_PURCHASE_KEY } from '@nora/contracts';
 import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
 import { customerPurchaseSettlement } from '../sales/customer-purchase-settlement.public';
 import { MasterSalesDirectory } from '../master-data/master-sales-directory';
@@ -44,6 +46,15 @@ export function purchasableReservationService(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
 ): SalesReservationRequestV1['serviceSelections'][number] | undefined {
+  if (
+    serviceClientKey === CONTRACT_TOTAL_PURCHASE_KEY &&
+    isFloatingSalesContract(snapshot.serviceSelections)
+  )
+    return {
+      clientKey: CONTRACT_TOTAL_PURCHASE_KEY,
+      kind: 'OTHER',
+      titleSnapshot: 'خرید کل قرارداد',
+    };
   const selected = snapshot.serviceSelections.find(
     ({ clientKey }) => clientKey === serviceClientKey,
   );
@@ -860,6 +871,13 @@ export class ReservationServicePurchaseService {
     }
     try {
       return await this.database.client.$transaction(async (tx) => {
+        if (salesContractId)
+          await assertFloatingPurchaseMode(
+            tx,
+            intake.contractId,
+            intake.branchId,
+            false,
+          );
         await tx.$queryRaw(
           Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${intakeId}, 0))`,
         );
@@ -956,6 +974,8 @@ export class ReservationServicePurchaseService {
       throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 160)
       throw new BadRequestException('شناسه درخواست و کلید ثبت معتبر لازم است.');
+    const total = input?.serviceClientKey === CONTRACT_TOTAL_PURCHASE_KEY;
+    if (total && !salesContractId) throw new ForbiddenException();
     validateServicePurchase(input, true);
     if (
       input.coveredServiceClientKeys ||
@@ -996,10 +1016,13 @@ export class ReservationServicePurchaseService {
           'هزینه ظرفیت شرکت فقط یک‌بار برای کل پرواز ثبت می‌شود.',
         );
     }
-    if (['HOTEL', 'TRANSFER', 'FLIGHT'].includes(service.kind))
+    if (total || ['HOTEL', 'TRANSFER', 'FLIGHT'].includes(service.kind))
       await this.assertPurchaseOwner(intake, actor, salesContractId);
     else if (salesContractId) throw new ForbiddenException();
-    if (!['HOTEL', 'TRANSFER', 'INSURANCE', 'FLIGHT'].includes(service.kind))
+    if (
+      !total &&
+      !['HOTEL', 'TRANSFER', 'INSURANCE', 'FLIGHT'].includes(service.kind)
+    )
       throw new BadRequestException(
         'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
@@ -1070,6 +1093,13 @@ export class ReservationServicePurchaseService {
     if (previous) return replay(previous);
     try {
       return await this.database.client.$transaction(async (tx) => {
+        if (salesContractId)
+          await assertFloatingPurchaseMode(
+            tx,
+            intake.contractId,
+            intake.branchId,
+            total,
+          );
         const settlement =
           service.kind === 'FLIGHT'
             ? await customerPurchaseSettlement(
@@ -1108,6 +1138,14 @@ export class ReservationServicePurchaseService {
           data: {
             intakeId,
             serviceClientKey: service.clientKey,
+            ...(total
+              ? {
+                  coveredServiceClientKeys: [
+                    CONTRACT_TOTAL_PURCHASE_KEY,
+                    ...snapshot.serviceSelections.map((s) => s.clientKey),
+                  ] as Prisma.InputJsonValue,
+                }
+              : {}),
             serviceKind: service.kind,
             serviceTitleSnapshot: service.titleSnapshot,
             supplierOrganizationId:
