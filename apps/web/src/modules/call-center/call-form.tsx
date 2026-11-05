@@ -274,7 +274,6 @@ export function CallForm({
                     onChange={() => setDirty(true)}
                     aria-label="منبع آشنایی"
                     className={styles.control}
-                    optionLimit={50}
                     disabled={busy}
                     name="source"
                     optionLimit={sources.length}
