@@ -767,4 +767,8 @@ Sales reporting must compose the latest Reservations intake/workflow cancellatio
 
 ## TOUR-PERIODS-GRID-1103
 
-Owner requests period stop/delete. Immutable TourDeparture travel facts and published history remain unchanged. Add separate lifecycle columns with immutable lifecycle revisions; default ACTIVE preserves old rows. PAUSED blocks new selection and can resume; DELETED is terminal logical retirement. Real ticket stock, contracts and publications are never deleted by these controls.
+Owner requests period stop/delete. Immutable TourDeparture travel facts and published history remain unchanged. Reuse the canonical isActive/salesVersion stop/resume protocol and add only terminal isDeleted plus transactional lifecycle revisions; defaults preserve old rows. PAUSED blocks new selection and can resume; DELETED is terminal logical retirement. Real ticket stock, contracts and publications are never deleted by these controls.
+
+## TOUR-TICKET-SELECTION-1103 — floating tour capacity clarification
+
+The owner clarified that floating tours have a specified capacity and must support stopping the departure. Reuse the contract flight editor UI, but persist a newly defined FLOATING offer with its own explicit capacity and allocation ledger for the tour; it does not consume any unrelated charter offer. This differs intentionally from a contract-only flight with no stock. Existing catalog flights continue to use their existing shared ledger. Departure pause is independent of shared flight activation, so stopping one tour never disables a charter used elsewhere. Separate salesVersion prevents operational pause from invalidating immutable pricing versions.

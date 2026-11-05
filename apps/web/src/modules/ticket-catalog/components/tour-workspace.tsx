@@ -29,10 +29,11 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
-import { TicketDatePicker } from './ticket-date-picker';
+import { ContractFlightEditor } from '@/modules/sales/components/contract-flight-editor';
 import { TourDetailsForm } from './tour-details-form';
 import { TourOverview } from './tour-overview';
 import { useAccessPermissions } from '@/modules/iam/access-context';
+import { activeTourTickets, tourTicketDates } from './tour-departure-tickets';
 
 const emptyPackage: TourPackageInputV1 = {
   name: '',
@@ -51,7 +52,7 @@ function Choice({
 }: {
   label: string;
   value: string;
-  options: { id: string; name: string }[];
+  options: { id: string; name: string; red?: boolean }[];
   onChange: (value: string) => void;
 }) {
   const [search, setSearch] = useState('');
@@ -62,7 +63,14 @@ function Choice({
         value={value || 'none'}
         onValueChange={(next) => onChange(next === 'none' ? '' : next)}
       >
-        <SelectTrigger aria-label={label}>
+        <SelectTrigger
+          aria-label={label}
+          className={
+            options.find((item) => item.id === value)?.red
+              ? 'text-red-700 bg-red-50'
+              : undefined
+          }
+        >
           <SelectValue placeholder="انتخاب کنید" />
         </SelectTrigger>
         <SelectContent>
@@ -81,7 +89,11 @@ function Choice({
               item.name.toLowerCase().includes(search.toLowerCase()),
             )
             .map((item) => (
-              <SelectItem key={item.id} value={item.id}>
+              <SelectItem
+                key={item.id}
+                value={item.id}
+                className={item.red ? 'text-red-700 bg-red-50' : undefined}
+              >
                 {item.name}
               </SelectItem>
             ))}
@@ -223,36 +235,18 @@ export function TourWorkspace({
 
   useEffect(() => {
     let cancelled = false;
-    if (
-      !pack ||
-      !pack.originId ||
-      !pack.destinationId ||
-      !dates.start ||
-      !dates.end
-    )
-      return;
-    if (dates.end < dates.start) return;
+    if (!pack || !pack.originId || !pack.destinationId) return;
     void Promise.all([
-      toursApi.offers(
-        pack.originId,
-        pack.destinationId,
-        dates.start,
-        dates.end,
-      ),
+      toursApi.offers(pack.originId, pack.destinationId),
       roundtrip
-        ? toursApi.offers(
-            pack.destinationId,
-            pack.originId,
-            dates.start,
-            dates.end,
-          )
+        ? toursApi.offers(pack.destinationId, pack.originId)
         : Promise.resolve([]),
     ])
       .then(([out, back]) => {
         if (!cancelled)
           setOffers({
-            out: out.filter((o) => o.branchId === pack.branchId),
-            back: back.filter((o) => o.branchId === pack.branchId),
+            out: activeTourTickets(out, pack.branchId),
+            back: activeTourTickets(back, pack.branchId),
           });
       })
       .catch((error: unknown) => {
@@ -264,7 +258,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [pack, dates, roundtrip, reload]);
+  }, [pack, roundtrip, reload]);
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
     setProblem('');
@@ -287,11 +281,11 @@ export function TourWorkspace({
   };
   const newFlight = (direction: 'out' | 'back') => {
     if (!pack) return;
-    const day = direction === 'out' ? dates.start : dates.end;
-    if (!day) {
-      setProblem('ابتدا تاریخ برگزاری را انتخاب کنید.');
-      return;
-    }
+    const day =
+      (direction === 'out' ? dates.start : dates.end) ||
+      new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tehran' }).format(
+        new Date(),
+      );
     const source =
       repeatSource?.packageId === pack.id
         ? direction === 'out'
@@ -321,6 +315,7 @@ export function TourWorkspace({
         carrierName: source?.carrierName ?? '',
         serviceNumber: source?.serviceNumber ?? '',
         cabinClassCode: source?.cabinClassCode ?? 'ECONOMY',
+        supplyType: 'FLOATING',
         totalCapacity: source?.totalCapacity ?? 0,
       },
     });
@@ -449,16 +444,22 @@ export function TourWorkspace({
             })
           }
           onSelect={selectTour}
+          onRepeat={repeatTour}
           onPeriodStatus={
             canManagePeriods
               ? (item, status) =>
                   void run(async () => {
-                    await toursApi.setDepartureStatus(item, status);
+                    await toursApi.setDepartureStatus(
+                      item.id,
+                      status === 'ACTIVE',
+                      item.salesVersion ?? 1,
+                      item.branchId,
+                      status === 'DELETED' ? true : undefined,
+                    );
                     setNotice('وضعیت بازه به‌روز شد.');
                   })
               : undefined
           }
-          onRepeat={repeatTour}
           definitionMode={mode === 'definition'}
         />
       ) : null}
@@ -714,42 +715,6 @@ export function TourWorkspace({
                       )}
                     </details>
                   )}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField label="روز شروع">
-                      <TicketDatePicker
-                        value={dates.start}
-                        onChange={(start) => {
-                          const next = { ...dates, start };
-                          setDates(next);
-                          setProblem(
-                            next.end && next.end < next.start
-                              ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
-                              : '',
-                          );
-                          resetTickets();
-                        }}
-                      />
-                    </FormField>
-                    <FormField label="روز پایان">
-                      <TicketDatePicker
-                        value={dates.end}
-                        onChange={(end) => {
-                          const next = { ...dates, end };
-                          setDates(next);
-                          setProblem(
-                            next.start && next.end < next.start
-                              ? 'روز پایان باید برابر یا بعد از روز شروع باشد.'
-                              : '',
-                          );
-                          resetTickets();
-                        }}
-                      />
-                    </FormField>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    فقط بلیت‌هایی نمایش داده می‌شوند که تاریخ حرکتشان از روز
-                    شروع تا روز پایان این نوبت باشد.
-                  </p>
                   <label className="flex gap-2">
                     <input
                       type="checkbox"
@@ -789,15 +754,40 @@ export function TourWorkspace({
                             )
                             .map((offer) => ({
                               id: offer.id,
-                              name: timeLabel(offer),
+                              name:
+                                new Intl.DateTimeFormat('fa-IR', {
+                                  timeZone: 'Asia/Tehran',
+                                  dateStyle: 'medium',
+                                }).format(new Date(offer.departureAt)) +
+                                ' · ' +
+                                timeLabel(offer),
+                              red: true,
                             }))}
                           onChange={
                             direction === 'out'
                               ? (id) => {
                                   setOutbound(id);
                                   setReturning('');
+                                  const selected = offers.out.find(
+                                    (o) => o.id === id,
+                                  );
+                                  if (selected) {
+                                    setDates(tourTicketDates(selected));
+                                  }
                                 }
-                              : setReturning
+                              : (id) => {
+                                  setReturning(id);
+                                  const selected = offers.back.find(
+                                    (o) => o.id === id,
+                                  );
+                                  if (selected)
+                                    setDates((current) => ({
+                                      ...current,
+                                      end: new Intl.DateTimeFormat('sv-SE', {
+                                        timeZone: 'Asia/Tehran',
+                                      }).format(new Date(selected.departureAt)),
+                                    }));
+                                }
                           }
                         />
                         <Button
@@ -805,101 +795,77 @@ export function TourWorkspace({
                           disabled={!pack?.originId || !pack.destinationId}
                           onClick={() => newFlight(direction)}
                         >
-                          تعریف بلیط برای این روز
+                          افزودن بلیط شناور
                         </Button>
                         <p className="text-xs text-muted-foreground">
-                          بلیط جدید در فروش تکی هم قابل انتخاب است و ظرفیت مشترک
-                          دارد.
+                          ظرفیت بلیت شناور مستقل از ظرفیت چارتر است.
                         </p>
                       </div>
                     ))}
                   </div>
                   {flight && (
                     <div className="space-y-3 rounded-xl bg-primary/5 p-4">
-                      <h4 className="font-bold">
-                        بلیط واقعی{' '}
-                        {flight.direction === 'out' ? 'رفت' : 'برگشت'} — زمان‌ها
-                        به وقت تهران
-                      </h4>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <FormField id="tour-airline" label="نام ایرلاین">
-                          <Input
-                            id="tour-airline"
-                            value={flight.draft.carrierName}
-                            onChange={(event) =>
-                              patchFlight({ carrierName: event.target.value })
-                            }
-                          />
-                        </FormField>
-                        <FormField id="tour-flight-number" label="شماره پرواز">
-                          <Input
-                            id="tour-flight-number"
-                            value={flight.draft.serviceNumber}
-                            onChange={(event) =>
-                              patchFlight({ serviceNumber: event.target.value })
-                            }
-                          />
-                        </FormField>
-                        <FormField label="حرکت">
-                          <TicketDatePicker
-                            includeTime
-                            value={flight.draft.departureAt}
-                            onChange={(departureAt) =>
-                              patchFlight({ departureAt })
-                            }
-                          />
-                        </FormField>
-                        <FormField label="رسیدن">
-                          <TicketDatePicker
-                            includeTime
-                            value={flight.draft.arrivalAt}
-                            onChange={(arrivalAt) => patchFlight({ arrivalAt })}
-                          />
-                        </FormField>
-                        <FormField
-                          id="tour-flight-capacity"
-                          label="ظرفیت خریداری‌شده"
-                        >
-                          <Input
-                            id="tour-flight-capacity"
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={flight.draft.totalCapacity}
-                            onChange={(event) =>
-                              patchFlight({
-                                totalCapacity: Number(event.target.value),
-                              })
-                            }
-                          />
-                        </FormField>
-                        <Choice
-                          label="کلاس پرواز"
-                          value={flight.draft.cabinClassCode}
-                          options={[
-                            { id: 'ECONOMY', name: 'اکونومی' },
-                            { id: 'BUSINESS', name: 'بیزینس' },
-                            { id: 'FIRST', name: 'فرست' },
-                          ]}
-                          onChange={(value) =>
+                      <ContractFlightEditor
+                        workflow="sales"
+                        airlines={references.airlines}
+                        destinationCityId={flight.draft.destinationId}
+                        value={flight.draft}
+                        onChange={(value) => {
+                          if (!value) setFlight(undefined);
+                          else patchFlight(value);
+                        }}
+                      />
+                      <FormField label="ظرفیت">
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={flight.draft.totalCapacity}
+                          onChange={(event) =>
                             patchFlight({
-                              cabinClassCode:
-                                value as TicketOfferCreateV1['cabinClassCode'],
+                              totalCapacity: Number(event.target.value),
                             })
                           }
                         />
-                      </div>
+                      </FormField>
                       <Button
+                        disabled={busy || flight.draft.totalCapacity < 1}
                         onClick={() =>
                           void run(async () => {
+                            const utc = (value: string) =>
+                              new Date(
+                                /(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+                                  ? value
+                                  : value + '+03:30',
+                              ).toISOString();
                             const result = await toursApi.publishOffer(
-                              flight.draft,
+                              {
+                                ...flight.draft,
+                                supplyType: 'FLOATING',
+                                departureAt: utc(flight.draft.departureAt),
+                                arrivalAt: utc(flight.draft.arrivalAt),
+                              },
                               pack.branchId,
                               keyFor('offer', flight.draft),
                             );
-                            if (flight.direction === 'out')
+                            const localDay = (value: string) =>
+                              new Intl.DateTimeFormat('sv-SE', {
+                                timeZone: 'Asia/Tehran',
+                              }).format(new Date(value));
+                            if (flight.direction === 'out') {
                               setOutbound(result.data.id);
-                            else setReturning(result.data.id);
+                              setReturning('');
+                              setDates({
+                                start: localDay(utc(flight.draft.departureAt)),
+                                end: localDay(utc(flight.draft.arrivalAt)),
+                              });
+                            } else {
+                              setReturning(result.data.id);
+                              setDates((current) => ({
+                                ...current,
+                                end: localDay(utc(flight.draft.departureAt)),
+                              }));
+                            }
                             setFlight(undefined);
                             setNotice(
                               'بلیط واقعی ثبت شد؛ برای ذخیره نوبت تور تأیید نهایی را بزنید.',

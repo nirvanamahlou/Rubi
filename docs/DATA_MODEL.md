@@ -1036,4 +1036,8 @@ Readonly accountingCode uses shared company sequence 3000001+ for organizations/
 
 ## TOUR-PERIODS-GRID-1103 lifecycle
 
-TourDeparture travel facts remain immutable. Add status ACTIVE/PAUSED/DELETED and lifecycleVersion solely for optimistic concurrency of availability management, plus restrictive FK TourDepartureLifecycleRevision audit rows. Existing occurrences default ACTIVE/version0. Catalog owns lifecycle writes; Sales validates availability through its existing public boundary; Pricing lists active periods while historical detail remains readable.
+TourDeparture travel facts remain immutable. Reuse canonical isActive/salesVersion (default true/version1) for stop/resume CAS; add only isDeleted=false and restrictive FK TourDepartureLifecycleRevision audit rows. Deletion is terminal and forces isActive=false. Catalog owns lifecycle writes; Sales validates availability through its existing public boundary; Pricing lists active periods while historical detail remains readable.
+
+## Tour departure sales state — TOUR-TICKET-SELECTION-1103
+
+TourDeparture.isActive defaults true; salesVersion defaults1 and supplies separate stop/resume CAS. The definition version and published prices do not change on stop. Ticket public reservation locks the departure before offer capacity; status updates serialize on that same row. Floating departure seats use the newly defined FLOATING offer allocation ledger, independent of charter offers. Existing offer FKs and allocation uniqueness remain unchanged.

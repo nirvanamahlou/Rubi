@@ -18,6 +18,10 @@ export const SALES_TICKET_AVAILABILITY_PORT = Symbol(
 );
 
 export interface SalesTicketAvailabilityPort {
+  reserveForTour?(
+    tourDepartureId: string,
+    ...args: Parameters<SalesTicketAvailabilityPort['reserve']>
+  ): ReturnType<SalesTicketAvailabilityPort['reserve']>;
   currentSelections?(
     selections: readonly SalesTicketSelectionInput[],
     branchId: string,
@@ -61,6 +65,21 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   constructor(
     @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
   ) {}
+  reserveForTour(
+    tourDepartureId: string,
+    ...args: Parameters<SalesTicketAvailabilityPort['reserve']>
+  ) {
+    const [selections, branchId, contractId, seatCount, totals, counts] = args;
+    return this.catalog.reserve(
+      selections,
+      branchId,
+      contractId,
+      seatCount,
+      totals,
+      counts,
+      tourDepartureId,
+    );
+  }
   currentSelections(
     selections: readonly SalesTicketSelectionInput[],
     branchId: string,

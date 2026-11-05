@@ -290,7 +290,10 @@ it.each(['PAUSED', 'DELETED'])(
   async (status) => {
     const { service, findMany, tourCostGrid } = fixture();
     const grid = await tourCostGrid();
-    tourCostGrid.mockResolvedValue({ ...grid, tour: { ...grid.tour, status } });
+    tourCostGrid.mockResolvedValue({
+      ...grid,
+      tour: { ...grid.tour, isActive: false, isDeleted: status === 'DELETED' },
+    });
     await expect(service.saleCatalog('tour', actor, 'branch')).resolves.toEqual(
       { data: [] },
     );

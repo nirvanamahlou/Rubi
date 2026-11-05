@@ -35,7 +35,9 @@ export function tourMetrics(departures: TourDepartureV1[], today: string) {
     upcoming: upcoming.length,
     available: upcoming.filter(
       (item) =>
-        item.remainingCapacity > 0 && (item.status ?? 'ACTIVE') === 'ACTIVE',
+        item.remainingCapacity > 0 &&
+        item.isActive !== false &&
+        !item.isDeleted,
     ).length,
   };
 }
@@ -230,7 +232,7 @@ export function TourOverview({
                           </div>
                           <div className="min-w-32 text-xs">
                             <p>
-                              {item.status === 'PAUSED'
+                              {item.isActive === false
                                 ? 'متوقف'
                                 : item.startsOn <= today
                                   ? 'در حال برگزاری'
@@ -282,13 +284,13 @@ export function TourOverview({
                                   onClick={() =>
                                     onPeriodStatus(
                                       item,
-                                      item.status === 'PAUSED'
+                                      item.isActive === false
                                         ? 'ACTIVE'
                                         : 'PAUSED',
                                     )
                                   }
                                 >
-                                  {item.status === 'PAUSED'
+                                  {item.isActive === false
                                     ? 'فعال‌سازی بازه'
                                     : 'توقف بازه'}
                                 </Button>

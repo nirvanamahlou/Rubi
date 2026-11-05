@@ -1877,8 +1877,17 @@ export class SalesService {
       : presented.passengersDetail.filter(
           ({ ageCategory }) => ageCategory !== 'INF',
         ).length;
+    const tourDepartureId = presented.servicesDetail.find(
+      (s) => typeof s.metadata?.tourDepartureId === 'string',
+    )?.metadata?.tourDepartureId;
+    if (typeof tourDepartureId === 'string' && !this.tickets.reserveForTour)
+      throw new ConflictException('مرز عمومی رزرو تور متصل نیست.');
+    const reserveTickets =
+      typeof tourDepartureId === 'string'
+        ? this.tickets.reserveForTour!.bind(this.tickets, tourDepartureId)
+        : this.tickets.reserve.bind(this.tickets);
     const ticketCheck = presented.ticketSelections.length
-      ? await this.tickets.reserve(
+      ? await reserveTickets(
           presented.ticketSelections,
           row.branchId,
           row.id,

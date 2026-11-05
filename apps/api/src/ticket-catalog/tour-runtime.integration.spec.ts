@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import type {
   AuthenticatedActor,
   SalesContractCreateRequest,
@@ -39,6 +39,16 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       branchIds: [branchId],
       permissions: ['ticket_catalog.read', 'ticket_catalog.manage'],
     };
+    beforeAll(async () => {
+      await client.user.create({
+        data: {
+          id: actor.userId,
+          username: `tour-lifecycle-${actor.userId}`,
+          displayName: 'Synthetic tour actor',
+          passwordHash: 'not-a-login-hash',
+        },
+      });
+    });
     const definition = {
       name: 'Synthetic tour',
       originId: randomUUID(),
@@ -274,6 +284,24 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
           selection(tour.returning!, 'RETURN'),
         ],
       };
+      await expect(
+        service.assertSalesSelection(salesInput, branchId),
+      ).resolves.toBeUndefined();
+      await service.setDepartureStatus(
+        tour.id,
+        { isActive: false, expectedVersion: 1 },
+        actor,
+        branchId,
+      );
+      await expect(
+        service.assertSalesSelection(salesInput, branchId),
+      ).rejects.toThrow('فروش این نوبت');
+      await service.setDepartureStatus(
+        tour.id,
+        { isActive: true, expectedVersion: 2 },
+        actor,
+        branchId,
+      );
       await expect(
         service.assertSalesSelection(salesInput, branchId),
       ).resolves.toBeUndefined();

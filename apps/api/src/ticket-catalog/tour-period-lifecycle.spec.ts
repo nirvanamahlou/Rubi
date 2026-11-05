@@ -6,13 +6,18 @@ const actor = {
   branchIds: ['branch'],
   permissions: ['ticket_catalog.tours.manage'],
 } as const;
-function fixture(status = 'ACTIVE', version = 0) {
+function fixture(status = 'ACTIVE', version = 1) {
   const tx = {
     tourDeparture: {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi
         .fn()
-        .mockResolvedValue({ id: 'period', status, lifecycleVersion: version }),
+        .mockResolvedValue({
+          id: 'period',
+          isActive: status === 'ACTIVE',
+          isDeleted: status === 'DELETED',
+          salesVersion: version,
+        }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     tourDepartureLifecycleRevision: { create: vi.fn() },
@@ -29,7 +34,7 @@ describe('audited tour period lifecycle', () => {
     const { tx, service } = fixture();
     await service.setDepartureStatus(
       'period',
-      { status: 'PAUSED', expectedVersion: 0 },
+      { isActive: false, expectedVersion: 1 },
       actor as never,
       'branch',
     );
@@ -40,15 +45,15 @@ describe('audited tour period lifecycle', () => {
       where: {
         id: 'period',
         branchId: 'branch',
-        lifecycleVersion: 0,
-        status: { not: 'DELETED' },
+        salesVersion: 1,
+        isDeleted: false,
       },
-      data: { status: 'PAUSED', lifecycleVersion: { increment: 1 } },
+      data: { isActive: false, salesVersion: { increment: 1 } },
     });
     expect(tx.tourDepartureLifecycleRevision.create).toHaveBeenCalledWith({
       data: {
         departureId: 'period',
-        version: 1,
+        version: 2,
         status: 'PAUSED',
         actorUserId: 'user',
       },
@@ -59,7 +64,11 @@ describe('audited tour period lifecycle', () => {
       await expect(
         fixture('PAUSED', 2).service.setDepartureStatus(
           'period',
-          { status, expectedVersion: 2 },
+          {
+            isActive: status === 'ACTIVE',
+            ...(status === 'DELETED' ? { isDeleted: true } : {}),
+            expectedVersion: 2,
+          },
           actor as never,
           'branch',
         ),
@@ -72,7 +81,7 @@ describe('audited tour period lifecycle', () => {
       await expect(
         service.setDepartureStatus(
           'period',
-          { status: 'ACTIVE', expectedVersion: 0 },
+          { isActive: true, expectedVersion: 1 },
           actor as never,
           'branch',
         ),
@@ -89,7 +98,7 @@ describe('audited tour period lifecycle', () => {
       await expect(
         service.setDepartureStatus(
           'period',
-          { status: 'DELETED', expectedVersion: 0 },
+          { isActive: false, isDeleted: true, expectedVersion: 1 },
           a as never,
           'branch',
         ),
@@ -97,7 +106,7 @@ describe('audited tour period lifecycle', () => {
     await expect(
       service.setDepartureStatus(
         'period',
-        { status: 'PAUSED', expectedVersion: 0, unexpected: true },
+        { isActive: false, expectedVersion: 1, unexpected: true },
         actor as never,
         'branch',
       ),
@@ -110,7 +119,7 @@ describe('audited tour period lifecycle', () => {
     await expect(
       service.setDepartureStatus(
         'period',
-        { status: 'PAUSED', expectedVersion: 0 },
+        { isActive: false, expectedVersion: 1 },
         actor as never,
         'branch',
       ),
@@ -137,23 +146,26 @@ it.each(['PAUSED', 'DELETED'])(
         } as never,
         'branch',
       ),
-    ).rejects.toThrow('این بازه برای فروش فعال نیست.');
+    ).rejects.toThrow('فروش این نوبت متوقف شده است.');
   },
 );
 
 it('keeps Sales choices active-only even for managers and authorizes explicit management reads', async () => {
   const { service, tx } = fixture();
   await service.departures(actor as never);
-  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toBe(
-    'ACTIVE',
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.isActive).toBe(
+    true,
   );
   await service.departures(actor as never, true);
-  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toEqual({
-    not: 'DELETED',
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where).toMatchObject({
+    isDeleted: false,
   });
+  expect(
+    tx.tourDeparture.findMany.mock.lastCall?.[0].where.isActive,
+  ).toBeUndefined();
   await service.pricingDepartures(['branch']);
-  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.status).toBe(
-    'ACTIVE',
+  expect(tx.tourDeparture.findMany.mock.lastCall?.[0].where.isActive).toBe(
+    true,
   );
   await expect(
     service.departures(

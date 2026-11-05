@@ -62,8 +62,9 @@ export interface TourDepartureInputV1 {
 }
 
 export interface TourDepartureV1 extends TourDepartureInputV1 {
-  status?: 'ACTIVE' | 'PAUSED' | 'DELETED';
-  lifecycleVersion?: number;
+  isActive?: boolean;
+  salesVersion?: number;
+  isDeleted?: boolean;
   id: string;
   version: number;
   branchId: string;

@@ -4318,9 +4318,10 @@ model TourPackage {
 }
 
 model TourDeparture {
-  status             String                           @default("ACTIVE") @db.VarChar(16)
-  lifecycleVersion   Int                              @default(0)
+  isDeleted          Boolean                          @default(false)
   lifecycleRevisions TourDepartureLifecycleRevision[]
+  isActive           Boolean                          @default(true)
+  salesVersion       Int                              @default(1)
   hotelRatePacks     ReservationHotelRatePack[]
   hotelRateBatches   ReservationHotelRateBatch[]
   pricingDrafts      PackagePricingTourDraft[]
@@ -4344,6 +4345,19 @@ model TourDeparture {
   @@unique([createdByUserId, createKey])
   @@index([branchId, startsOn])
   @@index([packageId])
+}
+
+model TourDepartureLifecycleRevision {
+  actor       User          @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departureId String        @db.Uuid
+  departure   TourDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  version     Int
+  status      String        @db.VarChar(16)
+  actorUserId String        @db.Uuid
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@unique([departureId, version])
 }
 
 model TicketPublishedOffer {
@@ -8317,17 +8331,4 @@ model ProcurementPettyEntry {
 
   @@index([fundId, createdAt])
   @@map("procurement_petty_entries")
-}
-
-model TourDepartureLifecycleRevision {
-  actor       User          @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  departureId String        @db.Uuid
-  departure   TourDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
-  version     Int
-  status      String        @db.VarChar(16)
-  actorUserId String        @db.Uuid
-  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
-
-  @@unique([departureId, version])
 }
