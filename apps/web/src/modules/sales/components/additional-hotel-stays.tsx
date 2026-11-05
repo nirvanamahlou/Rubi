@@ -135,11 +135,16 @@ export function AdditionalHotelStays({
           );
         const rooms = stay.rooms ?? [];
         const countryId =
-          stay.countryId ||
-          String(
+          stay.countryId ??
+          (String(
             cities.find((c) => c.id === stay.cityId)?.attributes.countryId ??
               '',
-          );
+          ) ||
+            state.destinationCountryId ||
+            String(
+              cities.find((c) => c.id === state.destinationId)?.attributes
+                .countryId ?? '',
+            ));
         const previous =
           index === 0
             ? {
