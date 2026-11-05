@@ -199,7 +199,7 @@ describe('Contract-only flight form and consumers', () => {
     expect(replaced.services[0]?.metadata).not.toHaveProperty(
       'flightDestinationAirportV1',
     );
-    expect(contractPrintHtml(output, printReferences)).toContain(
+    expect(contractPrintHtml(output, printReferences)).not.toContain(
       'شناور، نیازمند تأیید رزرو',
     );
     const tickets = reservationTickets({
