@@ -9022,3 +9022,7 @@ CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67
 ## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
 
 Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
+
+## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
+
+Implement the selected02 Layered Duotone reference only for Call Center KPI cards, with blue vector silhouettes, pale highlight layers and soft shadows. Increase icon/value gap and retain every current card action and actual server value. Source base ff31d2fd9; affected tests, build/types, responsive visual review and all hosted gates precede authorized bounded Web release. No shared sidebar/icon, API/schema/migration/dependency changes.
