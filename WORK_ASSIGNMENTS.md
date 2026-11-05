@@ -1,3 +1,9 @@
+## COMPLETION-PAGINATION-1105 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C (existing repository identity and current AGENTS.md); branch codex/pc-c-completion-pagination-1105 from origin/develop b75b812ff. User browser annotations authorize removing the expert detail description and matching its footer pagination to the contact list: centered, separated from the scrollable table, identical button/count sizing and spacing. Reserve only call-center/expert-activity.tsx, new expert-activity.module.css and own status notes. Prior completion source reservation is published/frozen. Reuse existing workspace pagination rules with portal-local typography/tokens; preserve requests, pagination boundaries and editor behavior. No API/schema/dependency/migration or production deployment.
+
+Validation: 18 existing focused tests, scoped lint, Web TypeScript, Prettier, full optimized Web production build and diff check pass. Implementation b3b0d35a0 pushed to origin; source reservation freezes for review. No migration; no site deployment.
+
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-three-panels-release-1103 from develop6dbafb7fe. Owner authorizes production publication of approved Call Center, Dashboard and Reports changes. Reserve bounded CallForm source/outcome option visibility and regression, own release docs/script, candidate verification and locked backup/build/canary/activation. Candidate overlays only these modules and required public reporting ports/translations on actual current live source; preserve other source, IAM grants, data, mounts and peer changes. No schema/dependency changes or unrelated develop migration. Refresh current runtime snapshot after lock acquisition; fail on concurrent changes. Existing call-center/reporting/dashboard source reservations are merged/frozen.
