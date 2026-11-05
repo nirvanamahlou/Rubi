@@ -1,4 +1,5 @@
 import { legacyRowPriceTotals } from '@nora/contracts';
+import { readHotelJourneys, validateHotelJourneys } from '@nora/contracts';
 import { ticketCalendarDate } from '@nora/contracts';
 import {
   salesBookedAgeCategory,
@@ -893,6 +894,20 @@ export function validateSalesContract(
         ids.add(stay.hotelId);
       }
     }
+  }
+  try {
+    validateHotelJourneys(
+      readHotelJourneys(input.services),
+      input.hotelSelection,
+      tickets.find((t) => t.direction === 'RETURN')?.departureAt,
+    );
+  } catch (error) {
+    throw new SalesDomainError(
+      'SALES_HOTEL_INVALID',
+      error instanceof Error
+        ? error.message
+        : 'اطلاعات جابه‌جایی هتل‌ها معتبر نیست.',
+    );
   }
   try {
     validateSalesChequePayments(

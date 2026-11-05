@@ -1957,6 +1957,8 @@ export function SalesContractForm() {
                       patch={patchState}
                       hotels={references.hotels}
                       cities={references.cities}
+                      countries={references.countries}
+                      airlines={references.airlines}
                       roomTypes={references.roomTypes}
                     />
                   </>
