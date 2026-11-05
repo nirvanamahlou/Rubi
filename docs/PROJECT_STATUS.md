@@ -1,6 +1,6 @@
-## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
+## SOURCE-SHARE-LEGEND-1105 — PC-C — MERGED_AND_DEPLOYED
 
-Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
+Implemented the supplied source-acquaintance-share appearance: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. All real categories and report/filter semantics remain, including unknown and small sources. No shared shell, KPI icons, API, schema or migration changes. PR1415 source fab9d4998 passed all eight hosted gates and merged as e58613d1e. Production Web image rubi-production:source-share-legend-1105 passed118 targeted tests, build/typecheck, canary, encrypted backup and final runtime checks. Authenticated browser verification at desktop/mobile widths confirmed all seven actual categories,109 contacts at observation time, no horizontal overflow or console errors. Deployment receipt: /opt/rubi/source-share-legend-1105/verified.json. See tasks/SOURCE-SHARE-LEGEND-1105.md.
 
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
 
