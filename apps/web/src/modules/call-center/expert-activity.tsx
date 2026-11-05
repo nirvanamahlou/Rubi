@@ -1,22 +1,19 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import {
   readApi,
   type Report,
   type SearchFilters,
   type ExpertMetric,
+  type ExpertRow,
   type ActivityDetail,
 } from './read-client';
 import { faNumber } from './model';
 import { CompletionStatus } from './completion-status';
 import statusStyles from './completion-status.module.css';
 import styles from './workspace.module.css';
+import activityStyles from './expert-activity.module.css';
 const columns: [ExpertMetric, string][] = [
   ['inboundAnswered', 'ورودی پاسخ‌داده‌شده'],
   ['outboundAttempts', 'تلاش خروجی'],
@@ -36,6 +33,48 @@ const labels: Record<string, string> = {
   COMPLETE: 'تکمیل‌شده',
   INCOMPLETE: 'نیازمند تکمیل',
 };
+export function expertActivityTotals(rows: ExpertRow[]) {
+  const totals = rows.reduce(
+    (sum, row) => ({
+      inboundAnswered: sum.inboundAnswered + row.inboundAnswered,
+      outboundAttempts: sum.outboundAttempts + row.outboundAttempts,
+      outboundConnected: sum.outboundConnected + row.outboundConnected,
+      uniqueContacts: sum.uniqueContacts + row.uniqueContacts,
+      open: sum.open + row.open,
+      overdue: sum.overdue + row.overdue,
+      total: sum.total + row.total,
+      incomplete: sum.incomplete + row.incomplete,
+    }),
+    {
+      inboundAnswered: 0,
+      outboundAttempts: 0,
+      outboundConnected: 0,
+      uniqueContacts: 0,
+      open: 0,
+      overdue: 0,
+      total: 0,
+      incomplete: 0,
+    },
+  );
+  return {
+    ...totals,
+    completionRate:
+      totals.total > 0
+        ? (totals.total - totals.incomplete) / totals.total
+        : null,
+  };
+}
+
+function completionText({
+  total,
+  incomplete,
+  completionRate,
+}: Pick<ExpertRow, 'total' | 'incomplete' | 'completionRate'>) {
+  return completionRate === null
+    ? '—'
+    : `${faNumber(Math.round(completionRate * 100))}٪ (${faNumber(total - incomplete)} از ${faNumber(total)})`;
+}
+
 export function ExpertActivity({
   data,
   branch,
@@ -106,6 +145,7 @@ export function ExpertActivity({
     return () => abort.abort();
   }, [selected, branch, filters, meta, page, requestKey]);
   const report = data.expertActivity;
+  const totals = expertActivityTotals(report?.rows ?? []);
   return (
     <>
       <p className={styles.formHint}>
@@ -141,9 +181,7 @@ export function ExpertActivity({
                       metric === 'completion' ? row.total : row[metric];
                     const text =
                       metric === 'completion'
-                        ? row.completionRate === null
-                          ? '—'
-                          : `${faNumber(Math.round(row.completionRate * 100))}٪ (${faNumber(row.total - row.incomplete)} از ${faNumber(row.total)})`
+                        ? completionText(row)
                         : faNumber(count);
                     return (
                       <td key={metric}>
@@ -166,6 +204,18 @@ export function ExpertActivity({
                 </tr>
               ))}
             </tbody>
+            <tfoot className={activityStyles.totals}>
+              <tr>
+                <th scope="row">جمع کل</th>
+                {columns.map(([metric]) => (
+                  <td key={metric}>
+                    {metric === 'completion'
+                      ? completionText(totals)
+                      : faNumber(totals[metric])}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
@@ -182,15 +232,11 @@ export function ExpertActivity({
             if (!v) setSelected(null);
           }}
         >
-          <DialogContent dir="rtl">
+          <DialogContent dir="rtl" aria-describedby={undefined}>
             <DialogTitle>
               {columns.find(([k]) => k === selected.metric)?.[1]} —{' '}
               {selected.name}
             </DialogTitle>
-            <DialogDescription>
-              زمان‌ها بر اساس تهران؛ جزئیات از همان محدودهٔ مجاز گزارش دوباره
-              خوانده می‌شوند.
-            </DialogDescription>
             {loading ? (
               <p role="status">در حال دریافت…</p>
             ) : error ? (
@@ -258,22 +304,31 @@ export function ExpertActivity({
                       </tbody>
                     </table>
                   </div>
-                  <button
-                    type="button"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
+                  <nav
+                    className={`${styles.pagination} ${activityStyles.pagination}`}
+                    aria-label={
+                      columns.find(([k]) => k === selected.metric)?.[1]
+                    }
                   >
-                    قبلی
-                  </button>{' '}
-                  {faNumber(page)} /{' '}
-                  {faNumber(Math.max(1, Math.ceil(detail.total / 20)))}{' '}
-                  <button
-                    type="button"
-                    disabled={page * 20 >= detail.total}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    بعدی
-                  </button>
+                    <button
+                      type="button"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => p - 1)}
+                    >
+                      قبلی
+                    </button>
+                    <span>
+                      {faNumber(page)} /{' '}
+                      {faNumber(Math.max(1, Math.ceil(detail.total / 20)))}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={page * 20 >= detail.total}
+                      onClick={() => setPage((p) => p + 1)}
+                    >
+                      بعدی
+                    </button>
+                  </nav>
                 </>
               )
             )}

@@ -141,6 +141,29 @@ describe('retained audit acknowledgements', () => {
     });
     return values;
   }
+  it('does not restore cleared non-audit events from a stale writer or another branch scope', () => {
+    browser();
+    const stored = notificationStorage('scope-a', 'user-a');
+    const item = {
+      id: 'local-request',
+      title: 'change',
+      description: 'change',
+      href: '/workbench',
+      occurredAt: '2026-11-05T08:00:00Z',
+      readAt: '2026-11-05T08:01:00Z',
+    };
+    stored.writeStoredNotifications([item]);
+    stored.clearReadNotifications();
+    expect(
+      stored.writeStoredNotifications([{ ...item, readAt: null }]),
+    ).toEqual([]);
+    expect(
+      notificationStorage('scope-b', 'user-a').writeStoredNotifications([item]),
+    ).toEqual([]);
+    expect(
+      notificationStorage('scope-c', 'user-b').writeStoredNotifications([item]),
+    ).toHaveLength(1);
+  });
   it('retains read state after list eviction, reload and a permission/branch switch', () => {
     browser();
     const stored = notificationStorage('user-a:old-scope', 'audit:user-a');

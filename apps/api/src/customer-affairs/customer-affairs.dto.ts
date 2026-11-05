@@ -135,7 +135,26 @@ export class TicketReferenceDto {
   @IsOptional() @IsString() @MaxLength(240) label?: string;
 }
 
+export class WorkbenchLeaveDto {
+  @IsISO8601({ strict: true }) from!: string;
+  @IsISO8601({ strict: true }) to!: string;
+  @IsIn(['روزانه', 'ساعتی']) mode!: 'روزانه' | 'ساعتی';
+  @IsOptional() @IsString() @MaxLength(5) startTime?: string;
+  @IsOptional() @IsString() @MaxLength(5) endTime?: string;
+  @IsString() @Length(3, 500) reason!: string;
+  @IsOptional() @IsString() @MaxLength(160) substitute?: string;
+}
+export class WorkbenchReviewDto {
+  @IsIn(['APPROVED', 'REJECTED', 'NEEDS_REVISION']) status!:
+    'APPROVED' | 'REJECTED' | 'NEEDS_REVISION';
+  @IsInt() @Min(1) version!: number;
+}
+
 export class WorkbenchRequestDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WorkbenchLeaveDto)
+  leave?: WorkbenchLeaveDto;
   @IsString() @Length(3, 200) subject!: string;
   @IsString() @Length(3, 2000) description!: string;
   @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority!: 'NORMAL' | 'HIGH' | 'URGENT';

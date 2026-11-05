@@ -1,6 +1,10 @@
 import type { DatePickerProps } from '@/components/ui/date-picker';
 import type * as React from 'react';
-import { emptySalesForm, type SalesFormState } from '../model/sales-form';
+import {
+  emptySalesForm,
+  salesPayload,
+  type SalesFormState,
+} from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesContractForm } from './sales-contract-form';
@@ -91,6 +95,39 @@ vi.mock('@/components/ui/date-picker', () => ({
 }));
 
 describe('compact sales contract form', () => {
+  it('keeps floating purchase entry out of new-contract pricing for a valid floating service', () => {
+    fixture.step = 1;
+    fixture.ticketDraft = {
+      ...emptySalesForm,
+      originId: '10000000-0000-4000-8000-000000000002',
+      destinationId: '10000000-0000-4000-8000-000000000003',
+      serviceKinds: ['FLIGHT'],
+      contractFlights: {
+        OUTBOUND: {
+          departureAt: '2099-10-01T10:30:00',
+          arrivalAt: '2099-10-01T13:30:00',
+          carrierName: 'Synthetic Air',
+          serviceNumber: 'TEST123',
+          cabinClassCode: 'ECONOMY',
+        },
+      },
+    };
+    try {
+      expect(
+        salesPayload(fixture.ticketDraft).services.some(
+          (service) => service.metadata?.contractFlightVersion === 1,
+        ),
+      ).toBe(true);
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html).toContain('قیمت کل خدمات هر مسافر');
+      expect(html).not.toContain('خرید قرارداد شناوری');
+      expect(html).not.toContain('خریدهای آماده ثبت');
+      expect(html).not.toContain('پاک‌کردن خریدهای آماده ثبت');
+    } finally {
+      fixture.step = 0;
+      fixture.ticketDraft = null;
+    }
+  });
   it('keeps review as a non-submitting screen with an explicit final action', () => {
     fixture.step = 2;
     let html: string;

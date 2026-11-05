@@ -163,7 +163,7 @@ const archiveTone = [
 
 const defaultQuery: DocumentListQueryV1 = {
   page: 1,
-  pageSize: 25,
+  pageSize: 10,
   sortBy: 'updatedAt',
   sortDirection: 'desc',
 };
@@ -409,16 +409,6 @@ export function DocumentsWorkspace() {
     query.createdTo ||
     query.personalView,
   );
-  const hasShareFilters = Boolean(
-    query.search || query.typeCode || query.branchId || query.confidentiality,
-  );
-  const shouldLoadDocuments =
-    section === 'overview' ||
-    section === 'expired' ||
-    (section === 'archive' && Boolean(activeArchiveTool)) ||
-    Boolean(personalView) ||
-    (section === 'shares' ? hasShareFilters : hasRecordFilters);
-
   const effectiveQuery = useMemo(() => {
     const active = sections.find((item) => item.key === section);
     const domain = sectionDomain ?? active?.domain;
@@ -432,7 +422,6 @@ export function DocumentsWorkspace() {
             : undefined;
     return {
       ...query,
-      ...(personalView === 'favorites' ? { page: 1, pageSize: 100 } : {}),
       ...(domain ? { domain } : {}),
       ...(section === 'expired'
         ? { attention: 'INCOMPLETE_OR_EXPIRED' as const }
@@ -442,23 +431,16 @@ export function DocumentsWorkspace() {
   }, [personalView, query, section, sectionDomain]);
 
   const load = useCallback(async () => {
-    if (!shouldLoadDocuments) {
-      setDocuments([]);
-      setTotal(0);
-      setTotalPages(1);
-      setSelected(new Set());
-      setError('');
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError('');
     try {
       if (personalView === 'favorites') {
         const response = await documentsApi.favorites();
-        setDocuments(response.data);
+        const pageSize = effectiveQuery.pageSize ?? 10;
+        const start = ((effectiveQuery.page ?? 1) - 1) * pageSize;
+        setDocuments(response.data.slice(start, start + pageSize));
         setTotal(response.data.length);
-        setTotalPages(1);
+        setTotalPages(Math.max(1, Math.ceil(response.data.length / pageSize)));
       } else {
         const response = await documentsApi.list(effectiveQuery);
         setDocuments(response.data);
@@ -473,7 +455,7 @@ export function DocumentsWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveQuery, personalView, shouldLoadDocuments]);
+  }, [effectiveQuery, personalView]);
 
   useEffect(() => {
     void load();
@@ -539,7 +521,7 @@ export function DocumentsWorkspace() {
     setQuery((current) => ({
       ...current,
       page: 1,
-      pageSize: next === 'favorites' ? 100 : 25,
+      pageSize: 10,
     }));
   }
 
@@ -856,7 +838,7 @@ export function DocumentsWorkspace() {
     setSectionDomain(null);
     setQuery({
       page: 1,
-      pageSize: 25,
+      pageSize: 10,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
       ...tool.query,
@@ -963,14 +945,6 @@ export function DocumentsWorkspace() {
   }
 
   function table() {
-    if (!shouldLoadDocuments)
-      return (
-        <EmptyState
-          description="برای نمایش رکوردها، حداقل یک فیلتر انتخاب کنید."
-          icon={Search}
-          title="ابتدا فیلتر را انتخاب کنید"
-        />
-      );
     if (loading)
       return (
         <div className="space-y-3" aria-label="در حال بارگذاری اسناد">
@@ -1721,13 +1695,7 @@ export function DocumentsWorkspace() {
             </div>
           </Card>
           {shareFilters()}
-          {!hasShareFilters ? (
-            <EmptyState
-              description="برای نمایش لینک‌ها، حداقل یک فیلتر یا عبارت جست‌وجو انتخاب کنید."
-              icon={Search}
-              title="ابتدا فیلتر اشتراک‌گذاری را انتخاب کنید"
-            />
-          ) : loading ? (
+          {loading ? (
             <div className="grid gap-3 md:grid-cols-2">
               <Skeleton className="h-36" />
               <Skeleton className="h-36" />

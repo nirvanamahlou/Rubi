@@ -183,10 +183,7 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
               </Button>
             </div>
           </div>
-          <p className="text-sm leading-7 text-muted-foreground">
-            فایل‌هایی که در «اسناد و فایل‌ها» با این حساب ستاره زده‌اید، اینجا و
-            در همه دستگاه‌های شما همگام نمایش داده می‌شوند.
-          </p>
+
           {loading ? (
             <Skeleton className="h-48" />
           ) : error ? (

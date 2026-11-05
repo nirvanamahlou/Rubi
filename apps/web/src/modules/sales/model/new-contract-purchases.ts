@@ -4,25 +4,129 @@ import type {
   ReservationServicePurchaseInputV1,
   ReservationPurchaseBatchInputV1,
 } from '@nora/contracts';
-export type StagedPurchase =
+export type StagedPurchase = (
   | { path: 'service-purchases'; body: ReservationServicePurchaseInputV1 }
-  | { path: 'purchase-batches'; body: ReservationPurchaseBatchInputV1 };
+  | { path: 'purchase-batches'; body: ReservationPurchaseBatchInputV1 }
+) & { supplierName?: string; supplierNames?: Record<string, string> };
 export function purchaseDraftFingerprint(input: SalesContractCreateRequest) {
   return JSON.stringify([
-    input.services,
+    input.services.map((service) => ({
+      clientKey: service.clientKey,
+      kind: service.kind,
+      referenceId: service.referenceId,
+      metadata: Object.fromEntries(
+        Object.entries(service.metadata ?? {}).filter(([key]) =>
+          [
+            'direction',
+            'purchaseSupplyType',
+            'contractFlightVersion',
+            'flightDepartureAt',
+            'flightArrivalAt',
+            'flightNumber',
+            'flightCarrierName',
+            'flightCabinClass',
+          ].includes(key),
+        ),
+      ),
+    })),
     input.passengers.map((p) => [
       p.customerId,
+      p.birthDate,
+      p.childAgeBand,
       p.ageCategory,
       p.serviceClientKeys,
     ]),
-    input.ticketSelections,
-    input.hotelSelection,
+    input.ticketSelections?.map((ticket) => ({
+      serviceClientKey: ticket.serviceClientKey,
+      offerId: ticket.offerId,
+      direction: ticket.direction,
+      originId: ticket.originId,
+      destinationId: ticket.destinationId,
+      departureAt: ticket.departureAt,
+      arrivalAt: ticket.arrivalAt,
+      carrierNameSnapshot: ticket.carrierNameSnapshot,
+      serviceNumberSnapshot: ticket.serviceNumberSnapshot,
+      cabinClassCode: ticket.cabinClassCode,
+    })),
+    JSON.parse(
+      JSON.stringify(input.hotelSelection ?? null, (key, value) =>
+        key === 'agreedPrice' ? undefined : value,
+      ),
+    ),
   ]);
 }
 export function purchaseDraftContext(
   input: SalesContractCreateRequest,
+  staged: Record<string, StagedPurchase> = {},
 ): ReservationIntakeV1 {
   return {
+    servicePurchases: Object.values(staged).flatMap((purchase) => {
+      const rows =
+        purchase.path === 'purchase-batches'
+          ? purchase.body.purchases
+          : [purchase.body];
+      return rows.map((row, index) => ({
+        id: 'draft:' + row.serviceClientKey + ':' + index,
+        version: 0,
+        serviceClientKey: row.serviceClientKey,
+        serviceKind:
+          input.services.find((s) => s.clientKey === row.serviceClientKey)
+            ?.kind ?? (row.roomPrices ? 'HOTEL' : 'TRANSFER'),
+        serviceTitle: row.serviceClientKey,
+        supplierOrganizationId: row.supplierOrganizationId,
+        supplierName:
+          purchase.supplierNames?.[row.supplierOrganizationId] ??
+          purchase.supplierName ??
+          row.supplierOrganizationId,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        passengerPrices: [],
+        ...(row.totalPassengerPrices
+          ? { totalPassengerPrices: row.totalPassengerPrices }
+          : {}),
+        actorUserId: 'draft',
+        createdAt: '2000-01-01T00:00:00Z',
+        ...(purchase.path === 'purchase-batches' &&
+        purchase.body.hotelTransferCounts
+          ? { hotelTransferCounts: purchase.body.hotelTransferCounts }
+          : {}),
+        ...(purchase.path === 'purchase-batches' &&
+        purchase.body.hotelTransferRoundTrip !== undefined
+          ? { hotelTransferRoundTrip: purchase.body.hotelTransferRoundTrip }
+          : {}),
+        ...(row.roomPrices ? { roomPrices: row.roomPrices } : {}),
+        ...(row.pricingCalculation
+          ? {
+              pricingCalculation: {
+                ...row.pricingCalculation,
+                nights: 1,
+                totalAmount: row.amount,
+              },
+            }
+          : {}),
+        ...(row.coveredServiceClientKeys
+          ? { coveredServiceClientKeys: row.coveredServiceClientKeys }
+          : {}),
+        finance: {
+          version: 0,
+          status: 'PENDING' as const,
+          bankId: null,
+          accountId: null,
+          accountTitle: null,
+          paymentMethodId: null,
+          paymentMethodName: null,
+          paidAmount: '0',
+          remainingAmount: row.amount,
+          exchangeRateToIrr: null,
+          rialEquivalent: null,
+          transferAt: null,
+          paymentReference: null,
+          reason: '',
+          updatedAt: null,
+          updatedByUserId: null,
+        },
+      }));
+    }),
     id: 'draft',
     requestId: 'draft',
     contractId: 'draft',

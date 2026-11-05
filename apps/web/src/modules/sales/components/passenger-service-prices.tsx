@@ -17,15 +17,14 @@ import { passengerHotelStay } from '../model/contract-guest-stays';
 import { passengerTotalEntry } from '../model/passenger-total-entry';
 import {
   salesHotelGuestIds,
-  salesPassengerAgeLabel,
   salesPassengerFlightDirections,
   salesPassengerTransferDirections,
   salesAdditionalServices,
-  salesTravelDate,
   salesNetServicePrices,
   salesHotelCalendarSystem,
   type SalesFormState,
 } from '../model/sales-form';
+import { passengerPricingAgeLabel } from '../model/passenger-pricing-age';
 
 export function PassengerServicePrices({
   state,
@@ -201,11 +200,7 @@ export function PassengerServicePrices({
                       {p.displayName.trim()}
                     </bdi>
                     <span className="text-xs text-muted-foreground">
-                      {salesPassengerAgeLabel(
-                        p.birthDate,
-                        salesTravelDate(state),
-                        p.ageCategory,
-                      )}
+                      {passengerPricingAgeLabel(state, p)}
                     </span>
                   </th>
                   <td className="min-w-24 p-2">

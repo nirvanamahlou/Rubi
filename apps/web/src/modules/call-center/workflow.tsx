@@ -6,7 +6,8 @@ import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { IllustrationIcon } from '@/components/ui/illustration-icon';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -27,6 +28,7 @@ import styles from './workflow.module.css';
 import workspaceStyles from './workspace.module.css';
 import { CallKpiCards } from './kpis';
 import { readApi } from './read-client';
+import { CallCenterHttpError } from './client';
 import { DossierRequestCard } from './dossier-request-card';
 import { ScrollContinuation } from './scroll-continuation';
 
@@ -429,11 +431,15 @@ export function WorkflowPanel({
                       ? 'ایجاد درخواست'
                       : entry.action === 'REQUEST_UPDATED'
                         ? 'تغییر درخواست'
-                        : entry.action === 'CUSTOMER_LINKED'
-                          ? 'اصلاح ارتباط مشتری'
-                          : entry.action === 'REFERRED'
-                            ? 'ارجاع درخواست'
-                            : 'ثبت اقدام پیگیری'}{' '}
+                        : entry.action === 'REQUEST_FOLLOWUP_RECORDED'
+                          ? 'ثبت نتیجهٔ تماس'
+                          : entry.action === 'REQUEST_FOLLOWUP_REVIEWED'
+                            ? 'بررسی پیگیری توسط مدیر'
+                            : entry.action === 'CUSTOMER_LINKED'
+                              ? 'اصلاح ارتباط مشتری'
+                              : entry.action === 'REFERRED'
+                                ? 'ارجاع درخواست'
+                                : 'ثبت اقدام پیگیری'}{' '}
                     ·{' '}
                     {operators.find((user) => user.id === entry.actorId)
                       ?.displayName ?? entry.actorId}
@@ -679,6 +685,7 @@ export function WorkQueue({
       >
         <header>
           <h3 tabIndex={-1} ref={queueHeading}>
+            <IllustrationIcon kind="clipboard" size={28} />
             صف رسیدگی و پیگیری
           </h3>
           <button
@@ -704,7 +711,7 @@ export function WorkQueue({
               setRevision((value) => value + 1)
             )}
           >
-            <RotateCcw size={16} aria-hidden="true" />
+            <IllustrationIcon kind="refresh" size={22} />
             به‌روزرسانی
           </button>
         </header>
@@ -818,7 +825,7 @@ export function WorkQueue({
                   setLoading(true);
                 }}
               >
-                <RotateCcw size={14} aria-hidden="true" />
+                <IllustrationIcon kind="refresh" size={20} />
                 پاک کردن فیلترها
               </button>
             </div>
@@ -854,7 +861,12 @@ export function WorkQueue({
                       });
                     }}
                   >
-                    <strong>{item.title}</strong>
+                    <strong className={styles.queueTitle}>
+                      <span>{item.title}</span>
+                      {item.pendingReview && (
+                        <span className={styles.reviewTag}>پیگیری شده</span>
+                      )}
+                    </strong>
                     <span>{item.ownerName ?? 'بدون مسئول'}</span>
                     <span className={styles.status} data-status={item.status}>
                       {requestLabels[item.status]}
@@ -944,38 +956,28 @@ function QueueRequestEditor({
   onReturnFocus: (event: Event) => void;
   onSaved: () => void;
 }) {
-  const [loaded, setLoaded] = useState<{
-    item: RequestCase;
-    contactCall: Call | undefined;
-  } | null>(null);
+  const [loaded, setLoaded] = useState<RequestCase | null>(null);
   const [error, setError] = useState('');
   const handingOff = useRef(false);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([
-      workflowApi.list(
+    workflowApi
+      .list(
         selected.branchId,
         selected.contactId,
         controller.signal,
         1,
         1,
         selected.requestId,
-      ),
-      readApi.calls(
-        selected.branchId,
-        selected.contactId,
-        undefined,
-        controller.signal,
-      ),
-    ])
-      .then(([requests, history]) => {
+      )
+      .then((requests) => {
         if (controller.signal.aborted) return;
         const item = requests.data.find(
           (request) => request.id === selected.requestId,
         );
         if (!item) throw new Error('دریافت درخواست‌ها انجام نشد.');
         handingOff.current = true;
-        setLoaded({ item, contactCall: history.data[0] });
+        setLoaded(item);
       })
       .catch((reason) => {
         if (!controller.signal.aborted)
@@ -990,8 +992,7 @@ function QueueRequestEditor({
   if (loaded)
     return (
       <WorkflowEditor
-        editor={{ kind: 'request', item: loaded.item }}
-        contactCall={loaded.contactCall}
+        editor={{ kind: 'request', item: loaded }}
         operators={[]}
         branchId={selected.branchId}
         contactId={selected.contactId}
@@ -1052,6 +1053,13 @@ export function WorkflowEditor({
     editor.kind === 'request' &&
     !!editor.item &&
     editor.item.canEditManagement !== true;
+  const request = editor.kind === 'request' ? editor.item : editor.request;
+  const contactSummary = request?.contactSummary ?? contactCall;
+  const pendingReview =
+    editor.kind === 'request' &&
+    editor.item?.review?.pending === true &&
+    editor.item.review.canReview === true &&
+    !!editor.item.review.token;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
@@ -1146,6 +1154,9 @@ export function WorkflowEditor({
         title: value('title'),
         reason: value('reason'),
         ...(editor.item ? { result: value('result') } : {}),
+        ...(pendingReview
+          ? { expectedReviewToken: editor.item?.review?.token }
+          : {}),
       };
     else {
       if (!owner) {
@@ -1177,7 +1188,15 @@ export function WorkflowEditor({
           : await workflowApi.saveFollowUp(branchId, editor.request.id, input);
       onSaved(response.data);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'ذخیره انجام نشد.');
+      const message =
+        reason instanceof Error ? reason.message : 'ذخیره انجام نشد.';
+      setError(
+        pendingReview &&
+          reason instanceof CallCenterHttpError &&
+          reason.status === 409
+          ? `${message} این پنجره را ببندید و درخواست را دوباره باز کنید؛ پس از بررسی آخرین پیگیری‌ها، تصمیم را ثبت کنید.`
+          : message,
+      );
     } finally {
       setBusy(false);
     }
@@ -1218,16 +1237,30 @@ export function WorkflowEditor({
             ? 'درخواست و مسئول رسیدگی'
             : 'اقدام پیگیری'}
         </DialogTitle>
-        <DialogDescription>
-          تغییرات پس از تأیید سرور ذخیره می‌شوند؛ زمان فرم بر اساس منطقه زمانی
-          دستگاه است.
+        <DialogDescription className="sr-only">
+          {editor.kind === 'request'
+            ? 'اطلاعات مخاطب، درخواست و مسئول رسیدگی'
+            : 'اطلاعات اقدام و نتیجهٔ پیگیری'}
         </DialogDescription>
-        {contactCall && (
-          <p className={styles.editorContact}>
-            مخاطب: {contactCall.name || 'نام ثبت نشده'} ·{' '}
-            <bdi dir="ltr">{contactCall.phone || 'شماره نامشخص'}</bdi> ·{' '}
-            {contactCall.subject}
-          </p>
+        {contactSummary && (
+          <dl className={styles.editorContact}>
+            <div>
+              <dt>نام مخاطب:</dt>
+              <dd>{contactSummary.name || 'نام ثبت نشده'}</dd>
+            </div>
+            <div>
+              <dt>شماره تماس:</dt>
+              <dd>
+                <bdi dir="ltr">{contactSummary.phone || 'شماره نامشخص'}</bdi>
+              </dd>
+            </div>
+            {request?.review?.subject && (
+              <div>
+                <dt>موضوع تماس:</dt>
+                <dd>{request.review.subject}</dd>
+              </div>
+            )}
+          </dl>
         )}
         <form
           className={styles.form}
@@ -1397,7 +1430,11 @@ export function WorkflowEditor({
             {!readOnly && (
               <footer>
                 <button type="submit">
-                  {busy ? 'در حال ذخیره…' : 'ذخیره'}
+                  {busy
+                    ? 'در حال ذخیره…'
+                    : pendingReview
+                      ? 'ثبت تصمیم'
+                      : 'ذخیره'}
                 </button>
                 <button type="button" onClick={close}>
                   انصراف

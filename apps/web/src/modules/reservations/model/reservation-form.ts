@@ -26,9 +26,11 @@ import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
   ReservationIntakeV1,
+  ReservationContractDetailsV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
+  contractDetails?: ReservationContractDetailsV1;
   workflow: TravelWorkflowStateV1;
   supplierFormUseSent?: boolean;
   supplierHotelSourceSnapshot?: ReservationFormIntake['snapshot'];
@@ -416,4 +418,12 @@ export function reservationRoomAppendices(
     { length: Math.ceil(Math.max(0, rooms.length - 4) / 12) },
     (_, i) => rooms.slice(4 + i * 12, 4 + (i + 1) * 12),
   );
+}
+
+/** Room children by the contract age bands; infants remain in the guest total. */
+export function roomChildCounts(ages: readonly number[]) {
+  return {
+    twoToSix: ages.filter((age) => age >= 2 && age < 6).length,
+    sixToTwelve: ages.filter((age) => age >= 6 && age < 12).length,
+  };
 }

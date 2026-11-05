@@ -1,4 +1,8 @@
 'use client';
+import {
+  sharedHotelDrafts,
+  saveHotelQuotationSequence,
+} from '../model/shared-hotel-supplier-editor';
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { hotelFormScope } from '../model/hotel-form-scope';
 import { reservationHotelStays } from '@nora/contracts';
@@ -182,6 +186,7 @@ export function ReservationSettingsForm({
   partyName,
   sharedHotelBroker,
   commonBroker,
+  sharedSource,
 }: {
   intake: ReservationFormIntake;
   refs: ReservationFormReferences;
@@ -193,6 +198,7 @@ export function ReservationSettingsForm({
   partyName?: string;
   sharedHotelBroker?: boolean | undefined;
   commonBroker?: { id: string; name: string } | undefined;
+  sharedSource?: ReservationFormIntake | undefined;
 }) {
   const [storedDraft, setDraft] = useState(() => {
     const source = structuredClone(intake);
@@ -216,6 +222,36 @@ export function ReservationSettingsForm({
         }
       : {}),
   };
+  const [hotelDraftEdits, setHotelDraftEdits] = useState<
+    Record<string, VoucherSettingsV1>
+  >({});
+  const sharedDrafts =
+    sharedHotelBroker && sharedSource
+      ? sharedHotelDrafts(sharedSource, refs, draft, hotelDraftEdits)
+      : [];
+  const previewIntake = sharedDrafts.length
+    ? {
+        ...intake,
+        workflow: {
+          ...intake.workflow,
+          hotelSupplierForms: {
+            ...intake.workflow.hotelSupplierForms,
+            ...Object.fromEntries(
+              sharedDrafts.map(({ stay, settings }) => [
+                stay.key,
+                {
+                  ...intake.workflow.hotelSupplierForms?.[stay.key],
+                  settings,
+                  status:
+                    intake.workflow.hotelSupplierForms?.[stay.key]?.status ??
+                    'NEW',
+                },
+              ]),
+            ),
+          },
+        },
+      }
+    : intake;
   const currencyDirectory = useReservationCurrencies(intake.id);
   const [directory, setDirectory] = useState<{
     key: string;
@@ -365,10 +401,19 @@ export function ReservationSettingsForm({
     setMessage('');
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
-      const supplierFormPrices = normalizeSupplierDraftPrices(
-        draft,
-        currencyDirectory.currencies,
-      );
+      const quotationDrafts = sharedDrafts.length
+        ? sharedDrafts
+        : [{ intake, settings: draft }];
+      const quotations = quotationDrafts.map(({ intake: scope, settings }) => ({
+        scope,
+        settings: {
+          ...settings,
+          supplierFormPrices: normalizeSupplierDraftPrices(
+            settings,
+            currencyDirectory.currencies,
+          ),
+        },
+      }));
       let currentVersion = intake.workflow.version;
       if (sendToBroker && !intake.workflow.branding) {
         const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
@@ -383,49 +428,62 @@ export function ReservationSettingsForm({
         currentVersion = branded.data.version;
         savedWorkflow = branded.data;
       }
-      const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
-        `reservations/requests/${intake.id}/workflow`,
-        {
-          action: 'SUPPLIER_FORM_SETTINGS',
-          ...(intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}),
-          applyToContractAndVoucher: false,
-          expectedVersion: currentVersion,
-          note: sectionLabels[section] + ' فقط در فرم رزواسیون',
-          voucherSettings: {
-            ...draft,
-            ...(sharedHotelBroker !== undefined ? { sharedHotelBroker } : {}),
-            hotelTransferReturn: draft.hotelTransferSplit
-              ? draft.hotelTransferReturn
-              : undefined,
-            supplierFormPrices,
-            text: {
-              ...draft.text,
-              arrivalAirline:
-                findReservationEditReference(
-                  draft.text.arrivalAirline ?? '',
-                  activeDirectory.options.airlines ?? [],
-                )?.label ?? draft.text.arrivalAirline,
-              departureAirline:
-                findReservationEditReference(
-                  draft.text.departureAirline ?? '',
-                  activeDirectory.options.airlines ?? [],
-                )?.label ?? draft.text.departureAirline,
-              broker:
-                findReservationEditReference(
-                  draft.text.broker ?? '',
-                  activeDirectory.options.brokers ?? [],
-                )?.label ??
-                draft.text.broker ??
-                '',
+      const r = await saveHotelQuotationSequence(
+        quotations,
+        currentVersion,
+        async (quotation, version) => {
+          return travelRequest<{ data: TravelWorkflowStateV1 }>(
+            `reservations/requests/${intake.id}/workflow`,
+            {
+              action: 'SUPPLIER_FORM_SETTINGS',
+              ...(quotation.scope.hotelStayKey
+                ? { hotelStayKey: quotation.scope.hotelStayKey }
+                : {}),
+              applyToContractAndVoucher: false,
+              expectedVersion: version,
+              note: sectionLabels[section] + ' فقط در فرم رزواسیون',
+              voucherSettings: {
+                ...quotation.settings,
+                ...(sharedHotelBroker !== undefined
+                  ? { sharedHotelBroker }
+                  : {}),
+                hotelTransferReturn: quotation.settings.hotelTransferSplit
+                  ? quotation.settings.hotelTransferReturn
+                  : undefined,
+                supplierFormPrices: quotation.settings.supplierFormPrices,
+                text: {
+                  ...quotation.settings.text,
+                  arrivalAirline:
+                    findReservationEditReference(
+                      draft.text.arrivalAirline ?? '',
+                      activeDirectory.options.airlines ?? [],
+                    )?.label ?? draft.text.arrivalAirline,
+                  departureAirline:
+                    findReservationEditReference(
+                      draft.text.departureAirline ?? '',
+                      activeDirectory.options.airlines ?? [],
+                    )?.label ?? draft.text.departureAirline,
+                  broker:
+                    findReservationEditReference(
+                      quotation.settings.text.broker ?? '',
+                      activeDirectory.options.brokers ?? [],
+                    )?.label ??
+                    quotation.settings.text.broker ??
+                    '',
+                },
+              },
             },
-          },
+          );
+        },
+        (state) => {
+          savedWorkflow = state;
         },
       );
-      savedWorkflow = r.data;
       const result = sendToBroker
         ? await sendSavedReservationForm(intake.id, r.data, intake.hotelStayKey)
         : r;
       onSaved(result.data);
+      setPreviewDirty(false);
       setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
@@ -615,88 +673,168 @@ export function ReservationSettingsForm({
           {currencyDirectory.error && (
             <p role="alert">{currencyDirectory.error}</p>
           )}
-          {!!draft.rooms?.length && (
-            <HotelRoomQuotationEditor
-              requestId={intake.id}
-              canSplitTransfers={
-                (intake.hotelStayOrdinal ?? 1) > 1 ||
-                intake.snapshot.serviceSelections.filter(
-                  (service) => service.kind === 'TRANSFER',
-                ).length !== 1
+          {(sharedDrafts.length
+            ? sharedDrafts
+            : [{ intake, settings: draft, stay: undefined }]
+          ).map((quotation, index) => {
+            const legacyQuotation =
+              !quotation.settings.hotelRoomPrices &&
+              Boolean(
+                quotation.settings.supplierFormPrices?.pp ||
+                quotation.settings.supplierFormPrices?.ratio,
+              );
+            const changeQuotation = (next: VoucherSettingsV1) => {
+              if (!index) update(next);
+              else {
+                setHotelDraftEdits((previous) => ({
+                  ...previous,
+                  [quotation.intake.hotelStayKey!]: next,
+                }));
+                setPreviewDirty(true);
+                onDirty();
               }
-              draft={draft}
-              update={update}
-              currencies={currencyDirectory.currencies}
-              busy={busy || currencyDirectory.loading}
-              nights={
-                intake.snapshot.hotelSelection
-                  ? Math.round(
-                      (Date.parse(
-                        draft.text.checkOut ||
-                          intake.snapshot.hotelSelection.checkOutDate,
-                      ) -
-                        Date.parse(
-                          draft.text.checkIn ||
-                            intake.snapshot.hotelSelection.checkInDate,
-                        )) /
-                        86400000,
-                    )
-                  : 0
-              }
-            />
-          )}
-          <table className={draft.rooms?.length ? 'hidden' : 'w-full text-sm'}>
-            <thead>
-              <tr>
-                {supplierPriceColumns.map((column) => (
-                  <th key={column.key}>{column.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                {supplierPriceColumns.map((column) => {
-                  const price = draft.supplierFormPrices?.[column.key] ?? {
-                    amount: '',
-                    currencyCode: '',
-                  };
-                  const change = (next: typeof price) =>
-                    update({
-                      ...draft,
-                      supplierFormPrices: {
-                        ...draft.supplierFormPrices,
-                        [column.key]: next,
-                      },
-                    });
-                  return (
-                    <td key={column.key} className="p-2 align-top">
-                      <div className="grid gap-2">
-                        <MoneyInput
-                          aria-label={`مبلغ ${column.label}`}
-                          value={price.amount}
-                          disabled={busy}
-                          onValueChange={(amount) =>
-                            change({ ...price, amount })
+            };
+            return (
+              <div
+                key={quotation.intake.hotelStayKey ?? 'primary'}
+                className="grid gap-3 rounded-lg border p-3"
+              >
+                {sharedDrafts.length > 1 && (
+                  <h5 className="font-bold">
+                    {index + 1}.{' '}
+                    {quotation.settings.text.hotel ||
+                      quotation.intake.snapshot.hotelSelection
+                        ?.hotelNameSnapshot}
+                  </h5>
+                )}
+                {sharedDrafts.length > 1 &&
+                  quotation.settings.rooms?.map((room) => (
+                    <p
+                      key={room.ordinal}
+                      className="text-xs text-muted-foreground"
+                    >
+                      {room.ordinal}. {room.roomTypeNameSnapshot} ·{' '}
+                      {room.adults} بزرگسال · {room.childAges.length} کودک
+                    </p>
+                  ))}
+                {index > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(['checkIn', 'checkOut'] as const).map((field) => (
+                      <label key={field}>
+                        {field === 'checkIn' ? 'ورود هتل' : 'خروج هتل'}
+                        <DatePicker
+                          defaultCalendarSystem="gregorian"
+                          gregorianEnglish
+                          value={quotation.settings.text[field]}
+                          onChange={(value) =>
+                            changeQuotation({
+                              ...quotation.settings,
+                              text: {
+                                ...quotation.settings.text,
+                                [field]: value,
+                              },
+                            })
                           }
                         />
-                        {column.key !== 'ratio' && (
-                          <ReservationCurrencySelect
-                            label={`ارز ${column.label}`}
-                            value={price.currencyCode ?? ''}
-                            currencies={currencyDirectory.currencies}
-                            disabled={busy || currencyDirectory.loading}
-                            onChange={(currencyCode) =>
-                              change({ ...price, currencyCode })
-                            }
-                          />
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            </tbody>
-          </table>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {!!quotation.settings.rooms?.length && !legacyQuotation && (
+                  <HotelRoomQuotationEditor
+                    requestId={quotation.intake.id}
+                    canSplitTransfers={
+                      (quotation.intake.hotelStayOrdinal ?? 1) > 1 ||
+                      quotation.intake.snapshot.serviceSelections.filter(
+                        (service) => service.kind === 'TRANSFER',
+                      ).length !== 1
+                    }
+                    draft={quotation.settings}
+                    update={changeQuotation}
+                    currencies={currencyDirectory.currencies}
+                    busy={busy || currencyDirectory.loading}
+                    nights={
+                      quotation.intake.snapshot.hotelSelection
+                        ? Math.round(
+                            (Date.parse(
+                              quotation.settings.text.checkOut ||
+                                quotation.intake.snapshot.hotelSelection
+                                  .checkOutDate,
+                            ) -
+                              Date.parse(
+                                quotation.settings.text.checkIn ||
+                                  quotation.intake.snapshot.hotelSelection
+                                    .checkInDate,
+                              )) /
+                              86400000,
+                          )
+                        : 0
+                    }
+                  />
+                )}
+                <table
+                  className={
+                    quotation.settings.rooms?.length && !legacyQuotation
+                      ? 'hidden'
+                      : 'w-full text-sm'
+                  }
+                >
+                  <thead>
+                    <tr>
+                      {supplierPriceColumns.map((column) => (
+                        <th key={column.key}>{column.label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {supplierPriceColumns.map((column) => {
+                        const price = quotation.settings.supplierFormPrices?.[
+                          column.key
+                        ] ?? {
+                          amount: '',
+                          currencyCode: '',
+                        };
+                        const change = (next: typeof price) =>
+                          changeQuotation({
+                            ...quotation.settings,
+                            supplierFormPrices: {
+                              ...quotation.settings.supplierFormPrices,
+                              [column.key]: next,
+                            },
+                          });
+                        return (
+                          <td key={column.key} className="p-2 align-top">
+                            <div className="grid gap-2">
+                              <MoneyInput
+                                aria-label={`مبلغ ${column.label}`}
+                                value={price.amount}
+                                disabled={busy}
+                                onValueChange={(amount) =>
+                                  change({ ...price, amount })
+                                }
+                              />
+                              {column.key !== 'ratio' && (
+                                <ReservationCurrencySelect
+                                  label={`ارز ${column.label}`}
+                                  value={price.currencyCode ?? ''}
+                                  currencies={currencyDirectory.currencies}
+                                  disabled={busy || currencyDirectory.loading}
+                                  onChange={(currencyCode) =>
+                                    change({ ...price, currencyCode })
+                                  }
+                                />
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
           <Button
             type="button"
             loading={busy}
@@ -718,6 +856,19 @@ export function ReservationSettingsForm({
             onClick={() => {
               const cleared = { ...draft, supplierFormPrices: {} };
               cleared.hotelRoomPrices = null;
+              if (sharedDrafts.length)
+                setHotelDraftEdits(
+                  Object.fromEntries(
+                    sharedDrafts.slice(1).map(({ stay, settings }) => [
+                      stay.key,
+                      {
+                        ...settings,
+                        supplierFormPrices: {},
+                        hotelRoomPrices: null,
+                      },
+                    ]),
+                  ),
+                );
               update(cleared);
             }}
           >
@@ -784,10 +935,19 @@ export function ReservationSettingsForm({
               </Button>
             )}
             <SupplierScopedDocuments
-              intake={past ? { ...intake, workflow: past } : intake}
+              intake={past ? { ...intake, workflow: past } : previewIntake}
               historical={Boolean(past)}
               {...(!past
-                ? { previewSettings: draft, dirty: previewDirty }
+                ? {
+                    previewSettings: draft,
+                    dirty:
+                      previewDirty ||
+                      (sharedHotelBroker !== undefined &&
+                        sharedHotelBroker !==
+                          (intake.workflow.supplierFormSettings
+                            ?.sharedHotelBroker ===
+                            true)),
+                  }
                 : {})}
             />
           </div>
@@ -1361,7 +1521,8 @@ export function ReservationSettings(props: {
       )}
       {shared && (
         <p>
-          قیمت هر هتل را جدا ذخیره کنید؛ سپس از هتل اول یک فرم مشترک صادر کنید.
+          اطلاعات و قیمت همه هتل‌ها را در همین فرم تکمیل کنید و یک خروجی مشترک
+          بگیرید.
         </p>
       )}
       {stays.length > 1 && !shared && (
@@ -1378,33 +1539,38 @@ export function ReservationSettings(props: {
         </nav>
       )}
       {stays.length ? (
-        stays.map((stay) => (
-          <div key={stay.key} hidden={!shared && stay.key !== key}>
-            {shared && <h3>{stay.hotel.hotelNameSnapshot}</h3>}
-            <HotelReservationSettings
-              {...props}
-              intake={hotelFormScope(props.intake, stay.key)}
-              sharedHotelBroker={stay.ordinal === 1 ? shared : undefined}
-              commonBroker={
-                shared && stay.ordinal !== 1 && commonBroker.id
-                  ? commonBroker
-                  : undefined
-              }
-              showDocument={
-                shared && stay.ordinal !== 1 ? false : props.showDocument
-              }
-              onPreview={(settings) => {
-                if (stay.ordinal === 1) {
-                  setCommonBroker({
-                    id: settings.brokerId ?? '',
-                    name: settings.text.broker,
-                  });
-                  props.onPreview?.({ ...settings, sharedHotelBroker: shared });
+        stays
+          .filter((stay) => !shared || stay.ordinal === 1)
+          .map((stay) => (
+            <div key={stay.key} hidden={!shared && stay.key !== key}>
+              <HotelReservationSettings
+                {...props}
+                intake={hotelFormScope(props.intake, stay.key)}
+                sharedSource={props.intake}
+                sharedHotelBroker={stay.ordinal === 1 ? shared : undefined}
+                commonBroker={
+                  shared && stay.ordinal !== 1 && commonBroker.id
+                    ? commonBroker
+                    : undefined
                 }
-              }}
-            />
-          </div>
-        ))
+                showDocument={
+                  shared && stay.ordinal !== 1 ? false : props.showDocument
+                }
+                onPreview={(settings) => {
+                  if (stay.ordinal === 1) {
+                    setCommonBroker({
+                      id: settings.brokerId ?? '',
+                      name: settings.text.broker,
+                    });
+                    props.onPreview?.({
+                      ...settings,
+                      sharedHotelBroker: shared,
+                    });
+                  }
+                }}
+              />
+            </div>
+          ))
       ) : (
         <HotelReservationSettings {...props} />
       )}
@@ -1414,10 +1580,16 @@ export function ReservationSettings(props: {
 function HotelReservationSettings(
   props: Parameters<typeof ReservationSettings>[0] & {
     sharedHotelBroker?: boolean | undefined;
+    sharedSource?: ReservationFormIntake | undefined;
     commonBroker?: { id: string; name: string } | undefined;
   },
 ) {
-  const refs = useReservationFormReferences(props.intake, true);
+  const refs = useReservationFormReferences(
+    props.sharedHotelBroker
+      ? (props.sharedSource ?? props.intake)
+      : props.intake,
+    true,
+  );
   return refs.ready ? (
     <ReservationSettingsForm {...props} refs={refs.references} />
   ) : (

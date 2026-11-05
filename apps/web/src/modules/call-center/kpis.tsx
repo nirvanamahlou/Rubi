@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { readApi, type CallKpis } from './read-client';
 import { faNumber } from './model';
 import styles from './workflow.module.css';
+import { CallKpiIcon } from './kpi-icon';
 
 const cards = [
   ['today', 'تعداد تماس امروز'],
@@ -103,6 +104,9 @@ export function CallKpiCards({
               }
             }}
           >
+            <div className={styles.kpiIllustration}>
+              <CallKpiIcon kind={key} />
+            </div>
             <span>{label}</span>
             <strong>
               {loading ? '…' : data ? faNumber(data.data[key]) : '—'}

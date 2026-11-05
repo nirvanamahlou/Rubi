@@ -5,6 +5,7 @@ const decimal = (n: string) => new Prisma.Decimal(n);
 function setup() {
   const record = {
     id: 'c',
+    destinationId: 'canonical-destination',
     version: 5,
     status: 'CANCELLED',
     cancelledAt: new Date('2026-09-30T10:00:00Z'),
@@ -88,6 +89,7 @@ it('reads completed name-only passengers without manufacturing ages or crashing'
     branchIds: ['b'],
   } as never);
   expect(result.get('c')).toMatchObject({
+    destinationId: 'canonical-destination',
     passengerCount: 3,
     passengerNames: ['SYNTHETIC ADULT'],
     adults: 1,
@@ -309,4 +311,59 @@ it('projects successful operational, contract and party amendments independently
       },
     }),
   );
+});
+
+it('reads only request-scoped canonical contact and sale totals, with permission-gated debt', async () => {
+  const s = setup();
+  const findFirst = vi.fn().mockResolvedValue({
+    ...s.record,
+    customerNameSnapshot: 'Contract party',
+    buyerContact: { encrypted: 'sealed' },
+    originId: 'origin',
+  });
+  const buyerContact = {
+    name: 'Contract party',
+    phone: 'SYNTHETIC-PHONE',
+    address: 'SYNTHETIC-ADDRESS',
+    postalCode: 'SYNTHETIC-POSTAL',
+  };
+  const decrypt = vi.fn().mockReturnValue(buyerContact);
+  const service = new SalesReservationTableService(
+    { client: { salesContract: { findFirst } } } as never,
+    s.tickets as never,
+    { decrypt } as never,
+  );
+  const actor = {
+    permissions: ['reservations.read'],
+    branchIds: ['branch'],
+  } as never;
+  const data = await service.generalDetails('contract', actor);
+  expect(findFirst).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { id: 'contract', branchId: { in: ['branch'] } },
+    }),
+  );
+  expect(data.buyerContact).toEqual(buyerContact);
+  expect(data.totals).toEqual([
+    { currencyCode: 'IRR', amount: '900', discount: '100', outstanding: null },
+    { currencyCode: 'USD', amount: '200', discount: '0', outstanding: null },
+  ]);
+  expect(data).not.toHaveProperty('payments');
+  const financial = await service.generalDetails('contract', {
+    permissions: ['reservations.read', 'sales.payments.read'],
+    branchIds: ['branch'],
+  } as never);
+  expect(financial.totals[0]?.outstanding).toBe('600');
+  await expect(
+    service.generalDetails('contract', {
+      permissions: [],
+      branchIds: ['branch'],
+    } as never),
+  ).rejects.toThrow();
+  expect(findFirst).toHaveBeenCalledTimes(2);
+  findFirst.mockResolvedValueOnce(null);
+  await expect(
+    service.generalDetails('foreign-contract', actor),
+  ).rejects.toThrow();
+  expect(decrypt).toHaveBeenCalledTimes(2);
 });

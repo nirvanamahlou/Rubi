@@ -125,3 +125,44 @@ it('waits for durable intake delivery only on temporary missing context and boun
   await expect(waitForPurchaseContext(absent, wait)).rejects.toBe(missing);
   expect(absent).toHaveBeenCalledTimes(21);
 });
+
+it('keeps purchase staging attached when only sale pricing changes', () => {
+  const priced = {
+    ...input,
+    services: input.services.map((service) => ({
+      ...service,
+      pricing: [
+        {
+          version: 1,
+          currencyCode: 'USD',
+          daySale: { basis: 'TOTAL', amount: '10' },
+        },
+      ],
+    })),
+  } as unknown as SalesContractCreateRequest;
+  expect(purchaseDraftFingerprint(priced)).toBe(
+    purchaseDraftFingerprint(input),
+  );
+});
+it('restores staged amounts, currencies and agency identities when the purchase step remounts', () => {
+  const current = purchaseDraftContext(input, {
+    'flight-outbound': {
+      path: 'service-purchases',
+      supplierName: 'Synthetic agency',
+      body: {
+        version: 1,
+        expectedVersion: 0,
+        serviceClientKey: 'flight-outbound',
+        supplierOrganizationId: 'agency',
+        amount: '123.45',
+        currencyCode: 'EUR',
+      },
+    },
+  });
+  expect(current.servicePurchases?.[0]).toMatchObject({
+    serviceClientKey: 'flight-outbound',
+    supplierName: 'Synthetic agency',
+    amount: '123.45',
+    currencyCode: 'EUR',
+  });
+});

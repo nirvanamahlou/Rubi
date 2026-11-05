@@ -23,6 +23,7 @@ import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterService, normalizedCallPhone } from './call-center.service';
 import { callSearchMetadata } from './call-center-search';
+import { recordCallRequestReview } from './call-center-request-review';
 import {
   applyTelephonyEvent,
   type TelephonyTechnical,
@@ -951,6 +952,12 @@ export class CallCenterTelephonyService {
             throw new ForbiddenException();
           if (!input.subject?.trim())
             throw new BadRequestException('موضوع را وارد کنید.');
+          // Share the completion/link lock order: session -> call -> request.
+          await tx.$queryRaw`SELECT id FROM customer_affairs_calls WHERE id=${row.callId}::uuid FOR UPDATE`;
+          row.call = await tx.callCenterCall.findUniqueOrThrow({
+            where: { id: row.callId },
+            include: { contact: true },
+          });
           const old = this.calls.presentCall(row.call);
           if (
             (input.source !== undefined && !input.source.trim()) ||
@@ -995,7 +1002,7 @@ export class CallCenterTelephonyService {
               : {}),
             note: input.note?.trim() ?? '',
           };
-          await tx.callCenterCall.update({
+          const saved = await tx.callCenterCall.update({
             where: { id: row.callId },
             data: {
               outcome,
@@ -1030,6 +1037,12 @@ export class CallCenterTelephonyService {
               version: { increment: 1 },
             },
           });
+          await recordCallRequestReview(tx, {
+            branchId: row.call.contact.branchId,
+            actorUserId: actor.userId,
+            call: saved,
+            synthetic: row.synthetic,
+          });
         }
       }
       await tx.customerAffairsAuditEvent.create({
@@ -1039,6 +1052,12 @@ export class CallCenterTelephonyService {
           entityType: 'TELEPHONY_CALL',
           entityId: id,
           action: input.action,
+          ...(input.action === 'SAVE'
+            ? {
+                beforeSnapshot: { outcome: row.call.outcome },
+                afterSnapshot: { outcome: input.outcome ?? row.call.outcome },
+              }
+            : {}),
           version: row.version + 1,
         },
       });

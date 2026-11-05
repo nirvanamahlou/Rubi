@@ -1,4 +1,5 @@
 'use client';
+import { FloatingPurchaseChoice } from './floating-purchase-choice';
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
 import { isFloatingSalesContract } from '@nora/contracts';
@@ -265,7 +266,7 @@ export function ReservationHotelPurchase(props: {
     !props.purchaseRoot &&
     isFloatingSalesContract(props.request.snapshot.serviceSelections)
   )
-    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
+    return <p>خرید شناوری از دکمه خرید در بخش فروش ثبت می‌شود.</p>;
   const request = {
     ...props.request,
     snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
@@ -872,7 +873,10 @@ export function ReservationPurchaseDialog({
       `${purchaseApiRoot(id, purchaseRoot)}/purchase-context`,
     )
       .then((response) => {
-        if (live) setRequest(response.data);
+        if (live) {
+          setError('');
+          setRequest(response.data);
+        }
       })
       .catch((reason: Error) => {
         if (live) setError(reason.message);
@@ -881,6 +885,15 @@ export function ReservationPurchaseDialog({
       live = false;
     };
   }, [id, refresh, purchaseRoot]);
+  useEffect(() => {
+    const refresh = () => setRefresh((value) => value + 1);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('floating-purchases-changed', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('floating-purchases-changed', refresh);
+    };
+  }, []);
   if (error) return <p role="alert">{error}</p>;
   if (
     request &&
@@ -888,13 +901,14 @@ export function ReservationPurchaseDialog({
     category !== 'INSURANCE' &&
     isFloatingSalesContract(request.snapshot.serviceSelections)
   )
-    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
-  return request ? (
+    return <p>خرید شناوری از دکمه خرید در بخش فروش ثبت می‌شود.</p>;
+  const content = request ? (
     <>
       {readOnly ? (
         <p>مجوز ثبت یا اصلاح خرید خدمات وجود ندارد.</p>
       ) : category === 'FLIGHT' ? (
         <ReservationFloatingFlightPurchase
+          key={request.purchaseVersion}
           purchaseRoot={purchaseRoot}
           request={request}
           serviceClientKey={serviceClientKey}
@@ -948,5 +962,20 @@ export function ReservationPurchaseDialog({
     </>
   ) : (
     <p>در حال دریافت اطلاعات خرید…</p>
+  );
+  return request && salesContractId && !readOnly ? (
+    <FloatingPurchaseChoice
+      request={request}
+      purchaseRoot={purchaseRoot!}
+      onSaved={() => {
+        window.dispatchEvent(new Event('floating-purchases-changed'));
+        setRefresh((value) => value + 1);
+        onSaved?.();
+      }}
+    >
+      {content}
+    </FloatingPurchaseChoice>
+  ) : (
+    content
   );
 }

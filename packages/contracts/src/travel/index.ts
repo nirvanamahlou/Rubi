@@ -2,7 +2,7 @@ export * from './hotel-savings';
 export * from './legacy-purchase-guests';
 export * from './ticket-flight-output';
 import type { HotelPurchaseSavingsV1 } from './hotel-savings';
-import type { SalesReservationRequestV1 } from '../sales';
+import type { SalesReservationRequestV1, SalesBuyerContactV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
 
@@ -326,6 +326,7 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  totalPassengerPrices?: ReservationServicePurchaseInputV1['totalPassengerPrices'];
   roomPurchase?: {
     checkInDate: string;
     checkOutDate: string;
@@ -397,6 +398,12 @@ export interface ReservationLegacyGuestPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
+  totalPassengerPrices?: readonly {
+    customerId: string;
+    rialAmount: string;
+    foreignAmount: string;
+    currencyCode?: string;
+  }[];
   roomPrices?: readonly ReservationRoomPriceV1[];
   legacyGuestPrices?: readonly { guestIndex: number; nightlyAmount: string }[];
   purchaseRateToIrr?: string;
@@ -527,7 +534,24 @@ export interface ReservationTableFlagV1 {
   updatedByUserId: string;
   actorName?: string | null | undefined;
 }
+/** Current, request-scoped Sales data for Reservations general details only. */
+export interface ReservationContractDetailsV1 {
+  customerName: string;
+  buyerContact: SalesBuyerContactV1 | null;
+  originId: string;
+  destinationId: string;
+  contractVersion: number;
+  totals: readonly {
+    currencyCode: string;
+    amount: string;
+    discount: string;
+    outstanding: string | null;
+  }[];
+}
+
 export interface ReservationTableSummaryV1 {
+  /** Current Sales route, including contracts without inventory ticket selections. */
+  destinationId?: string | undefined;
   /** Current canonical contract names, including completed historical passenger slots. */
   passengerNames?: readonly string[] | undefined;
   contractPartyName?: string;
@@ -763,3 +787,6 @@ export type {
   TicketPurchaseInboxItemV1,
   TicketPurchaseGroupCommandV1,
 } from './ticket-purchase-inbox';
+
+/** Reserved purchase identity for the final aggregate cost of a floating contract. */
+export const CONTRACT_TOTAL_PURCHASE_KEY = 'contract-total-purchase';

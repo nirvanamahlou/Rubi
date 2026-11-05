@@ -97,7 +97,7 @@ it('prints independent supplier, room prices and stay nights for each hotel, wit
   expect(second).not.toContain('FIRST SUPPLIER');
   expect(second).not.toContain('FIRST HOTEL');
   expect(second).toContain('250 EUR');
-  expect(second).toContain('OUTBOUND: 0 / RETURN: 0');
+  expect(second).toContain('ARRIVAL: 0 / DEPARTURE: 0');
   expect(second).toContain('0 IRR');
   expect(second).toContain('07');
 });

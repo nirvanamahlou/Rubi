@@ -277,3 +277,82 @@ describe('reservation general details', () => {
     expect(calls).toEqual([RESERVATION_CUSTOMER_AUDIT_REASON, undefined]);
   });
 });
+
+it('uses current contract contacts and exact currency totals ahead of stale customer and service data', () => {
+  const current = {
+    ...intake,
+    contractPartyName: 'Old party',
+    contractDetails: {
+      customerName: 'Contract party',
+      buyerContact: {
+        name: 'Contract party',
+        phone: 'CONTRACT-PHONE',
+        landline: 'CONTRACT-LANDLINE',
+        address: 'CONTRACT-ADDRESS',
+        postalCode: 'CONTRACT-POSTAL',
+      },
+      originId: 'origin-1',
+      destinationId: 'city-1',
+      contractVersion: 9,
+      totals: [
+        {
+          currencyCode: 'IRR',
+          amount: '9007199254740993',
+          discount: '0',
+          outstanding: '0',
+        },
+        {
+          currencyCode: 'EUR',
+          amount: '50.25',
+          discount: '2.5',
+          outstanding: null,
+        },
+      ],
+    },
+  };
+  const groups = reservationGeneralDetailGroups(current, request, {}, {
+    displayName: 'Stale party',
+    contacts: [],
+    addresses: [{ label: 'Stale address' }],
+  } as unknown as CustomerDetail);
+  const fields = new Map(groups.flatMap((group) => group.fields));
+  expect(fields.get('نام طرف قرارداد')).toBe('Contract party');
+  expect(fields.get('شماره تماس اصلی')).toBe('CONTRACT-PHONE');
+  expect(fields.get('سایر شماره‌ها')).toBe('CONTRACT-LANDLINE');
+  expect(fields.get('آدرس ثبت‌شده')).toBe('CONTRACT-ADDRESS');
+  expect(fields.get('کد پستی')).toBe('CONTRACT-POSTAL');
+  expect(fields.get('مبلغ توافقی خدمات')).toContain('9,007,199,254,740,993');
+  expect(fields.get('مبلغ توافقی خدمات')).toContain('50.25');
+  expect(fields.get('بدهکار ریالی')).toContain('0');
+  expect(fields.get('بدهکار ارزی')).toBe('نیازمند مجوز مشاهده مالی');
+});
+
+it('lists each additional hotel with its own stay dates and room composition', () => {
+  const value = structuredClone(intake);
+  value.snapshot.hotelSelection!.additionalStays = [
+    {
+      hotelId: 'second',
+      hotelNameSnapshot: 'SECOND HOTEL',
+      cityId: 'city-2',
+      checkInDate: '2026-10-07',
+      checkOutDate: '2026-10-10',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room-2',
+          roomTypeNameSnapshot: 'DELUXE',
+          adults: 2,
+          childAges: [8],
+        },
+      ],
+    },
+  ];
+  const second = reservationGeneralDetailGroups(value, request).find(
+    (group) => group.title === 'اقامت 2',
+  );
+  expect(JSON.stringify(second)).toContain('SECOND HOTEL');
+  expect(JSON.stringify(second)).toContain('07/10/2026');
+  expect(JSON.stringify(second)).toContain('10/10/2026');
+  expect(JSON.stringify(second)).toContain('DELUXE');
+  expect(JSON.stringify(second)).toContain('8');
+});

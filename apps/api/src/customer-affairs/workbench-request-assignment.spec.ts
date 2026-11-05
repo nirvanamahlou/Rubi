@@ -45,6 +45,8 @@ describe('IAM public Workbench request directory', () => {
     const units = {
       list: vi.fn().mockResolvedValue([{ id: unitId, name: 'رزرواسیون' }]),
       lock: vi.fn(),
+      lockEmployee: vi.fn(),
+      members: vi.fn().mockResolvedValue([]),
     };
     const directory = new IamWorkbenchRequestDirectory(
       { client: db } as never,
@@ -74,7 +76,7 @@ describe('IAM public Workbench request directory', () => {
         where: expect.objectContaining({
           status: 'ACTIVE',
           b2bOrganizationUser: null,
-          profile: { organizationUnitId: { in: [unitId] } },
+          OR: [{ profile: { organizationUnitId: { in: [unitId] } } }],
           branches: {
             some: { branchId: actor.branchIds[0], branch: { isActive: true } },
           },
@@ -84,6 +86,24 @@ describe('IAM public Workbench request directory', () => {
     expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty(
       'email',
     );
+  });
+  it('routes active HR employees through their linked account without an IAM unit profile', async () => {
+    const { directory, db, units } = setup();
+    units.members.mockResolvedValue([
+      { userId: recipientId, unit: 'رزرواسیون' },
+    ]);
+    db.user.findMany.mockResolvedValue([
+      { ...member, profile: { organizationUnitId: '' } },
+    ]);
+    const result = await directory.options(actor, actor.branchIds[0]!);
+    expect(result.units[0]!.users.map((user) => user.id)).toEqual([
+      recipientId,
+    ]);
+    expect(db.user.findMany.mock.calls[0]![0].where).toMatchObject({
+      status: 'ACTIVE',
+      b2bOrganizationUser: null,
+      branches: { some: { branchId: actor.branchIds[0] } },
+    });
   });
   it('rejects another branch before querying and rejects an inactive or removed operator', async () => {
     const { directory, db } = setup();
@@ -326,10 +346,10 @@ describe('Workbench request assignment and delivery', () => {
         },
       }),
     );
-    await repository.hrWorkbenchRequests(actor.branchIds);
-    expect(findMany.mock.calls[1]![0].where.category.not).toBe(
-      'WORKBENCH_INTERNAL',
-    );
+    await repository.hrWorkbenchRequests(actor.branchIds, actor.userId);
+    expect(findMany.mock.calls[1]![0].where.category).toEqual({
+      startsWith: 'WORKBENCH_',
+    });
   });
   it('validates required real UUIDs and supported priorities in the HTTP DTO', async () => {
     expect(await validate(plainToInstance(WorkbenchRequestDto, input))).toEqual(

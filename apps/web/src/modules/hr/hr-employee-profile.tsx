@@ -1,4 +1,8 @@
 'use client';
+import {
+  employeeLeaveDataset,
+  isEmployeeLeave,
+} from './employee-leave-dataset';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useRouteAccess } from '@/modules/iam/access-context';
 
@@ -143,10 +147,24 @@ export function HrEmployeeProfile({
   const realSource: HrSource = mapped
     ? { ...source, section: mapped[0], tab: mapped[1] }
     : source;
-  const selected = records.filter(
-    (item) =>
-      item.section === realSource.section && item.tab === realSource.tab,
+  const matchingRecords = records.filter((item) =>
+    source.tab === 'leave'
+      ? isEmployeeLeave(item)
+      : item.section === realSource.section && item.tab === realSource.tab,
   );
+  const selected =
+    realSource.section === 'employee' && realSource.tab === 'assignment'
+      ? [...matchingRecords]
+          .sort(
+            (a, b) =>
+              (b.effectiveAt ?? b.createdAt).localeCompare(
+                a.effectiveAt ?? a.createdAt,
+              ) ||
+              b.createdAt.localeCompare(a.createdAt) ||
+              b.id.localeCompare(a.id),
+          )
+          .slice(0, 1)
+      : matchingRecords;
   const data =
     source.tab === 'summary'
       ? {
@@ -174,7 +192,9 @@ export function HrEmployeeProfile({
           }
         : source.tab === 'attendance'
           ? employeeAttendanceDataset(records)
-          : recordsDataset(realSource.section, realSource.tab, selected);
+          : source.tab === 'leave'
+            ? employeeLeaveDataset(selected)
+            : recordsDataset(realSource.section, realSource.tab, selected);
   const pending = records.filter((item) => /انتظار|بررسی/.test(item.status));
   const rowSelection = useHrRowSelection(
     JSON.stringify([employee.id, source.tab, range]),
@@ -400,7 +420,10 @@ export function HrEmployeeProfile({
             )
               ? {
                   onOpen: (index: number) =>
-                    onSelect(selected[index]!, realSource),
+                    onSelect(
+                      selected[index]!,
+                      sourceForRecord(selected[index]!),
+                    ),
                 }
               : {})}
             {...(canManage && source.tab !== 'attendance'
@@ -408,7 +431,7 @@ export function HrEmployeeProfile({
                   onDelete: (index: number) => setRemoving(selected[index]!),
                   onEdit: (index: number) =>
                     onForm({
-                      source: realSource,
+                      source: sourceForRecord(selected[index]!),
                       record: selected[index]!,
                       employeeId: employee.id,
                     }),
@@ -418,6 +441,20 @@ export function HrEmployeeProfile({
         )}
       </HrPanel>
       <div className={ui.grid}>
+        {source.tab === 'leave' ? (
+          <div className={ui.card}>
+            <span>مرخصی تأییدشده</span>
+            <strong className={ui.metric}>
+              {records
+                .filter(
+                  (record) =>
+                    isEmployeeLeave(record) &&
+                    ['تأییدشده', 'تاییدشده', 'فعال'].includes(record.status),
+                )
+                .length.toLocaleString('fa-IR')}
+            </strong>
+          </div>
+        ) : null}
         <div className={ui.card}>
           <span>مرخصی باقی‌مانده</span>
           <strong className={ui.metric}>

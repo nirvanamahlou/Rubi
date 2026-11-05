@@ -4,6 +4,7 @@ import { canViewRoute, type AuthenticatedActor } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
 import type { HrNotificationDto, NotificationItemV1 } from '@nora/contracts';
 import {
+  X,
   Bell,
   BellRing,
   CheckCheck,
@@ -15,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from '@/i18n/link';
+import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -55,6 +57,7 @@ import {
   type NotificationKind,
 } from './notification-presentation';
 
+import { newMessagePopup } from './message-popup';
 import { createNotificationFeedGuard } from './notification-feed-guard';
 
 const SERVER_POLL_INTERVAL_MS = 10_000;
@@ -176,6 +179,11 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const loginChecked = useRef(false);
+  const messageStartedAt = useRef(new Date().toISOString());
+  const messageSeen = useRef<Set<string> | null>(null);
+  const [messagePopup, setMessagePopup] = useState<NotificationItemV1 | null>(
+    null,
+  );
   const serverLoadInFlight = useRef(false);
   const serverWrites = useRef(Promise.resolve());
   const hrWrites = useRef(Promise.resolve());
@@ -220,6 +228,15 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
     try {
       const response = await notificationsApi.list();
       if (version !== feedVersion.current || pendingWrites.current) return;
+      const fresh = newMessagePopup(
+        response.data,
+        messageSeen.current,
+        actor.permissions,
+        messageStartedAt.current,
+      );
+      if (fresh) setMessagePopup(fresh);
+      messageSeen.current ??= new Set();
+      response.data.forEach((item) => messageSeen.current!.add(item.id));
       setServerItems(response.data);
       setServerUnreadCount(response.meta.unreadCount);
       setServerError(null);
@@ -243,7 +260,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
       serverLoadInFlight.current = false;
       setServerLoading(false);
     }
-  }, []);
+  }, [actor.permissions]);
 
   function writeHr(operation: () => Promise<unknown>) {
     const settle = hrFeedGuard.current.beginWrite();
@@ -528,238 +545,291 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   );
 
   return (
-    <DropdownMenu
-      dir="rtl"
-      open={dropdownOpen}
-      onOpenChange={(open) => {
-        setDropdownOpen(open);
-        if (!open) return;
-        void loadServer();
-        void syncMasterDataFeed(true);
-      }}
-    >
-      <DropdownMenuTrigger asChild>
-        <Button
-          aria-label={
-            unreadCount
-              ? `اعلان‌ها، ${unreadCount.toLocaleString('fa-IR')} خوانده‌نشده`
-              : 'اعلان‌ها'
-          }
-          className={cn(
-            'relative',
-            unreadCount > 0 && 'text-amber-300 hover:text-amber-200',
-          )}
-          size="icon"
-          variant="ghost"
-        >
-          <BellIcon
-            aria-hidden="true"
-            className={cn(
-              'size-5',
-              unreadCount > 0 && 'fill-amber-300/25 text-amber-300',
-            )}
-          />
-          {hasPendingCallRequest && (
-            <span
-              aria-hidden="true"
-              data-call-request-alert
-              className="pointer-events-none absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-red-600 ring-2 ring-surface motion-safe:animate-pulse"
-            />
-          )}
-          {unreadCount ? (
-            <span className="absolute end-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-black leading-4 text-destructive-foreground ring-2 ring-surface">
-              {unreadCount > 99 ? '+۹۹' : unreadCount.toLocaleString('fa-IR')}
-            </span>
-          ) : null}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        aria-label="مرکز اعلان تغییرات"
-        className="w-[min(92vw,25rem)] overflow-hidden p-0"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-50 to-cyan-50 px-4 py-3 dark:from-blue-950/50 dark:to-cyan-950/30">
-          <div>
-            <p className="font-black">اعلان تغییرات</p>
-            <p className="text-xs text-muted-foreground">
-              {unreadCount
-                ? `${unreadCount.toLocaleString('fa-IR')} اعلان خوانده‌نشده`
-                : 'همه اعلان‌ها خوانده شده‌اند'}
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              aria-label="تازه‌سازی اعلان‌های اطلاعات پایه"
-              disabled={refreshingMasterData}
-              onClick={() => {
-                void loadServer();
-                void syncMasterDataFeed(true);
-              }}
-              size="icon"
+    <>
+      {messagePopup &&
+        createPortal(
+          <aside
+            role="status"
+            dir="rtl"
+            className="fixed bottom-5 right-4 z-[60] w-[calc(100vw-2rem)] max-w-80 rounded-2xl border border-primary/20 bg-background p-4 shadow-2xl"
+          >
+            <button
               type="button"
-              variant="ghost"
+              aria-label="بستن"
+              onClick={() => setMessagePopup(null)}
+              className="absolute left-2 top-2 rounded-lg p-2 hover:bg-muted"
             >
-              <RefreshCw
+              <X className="size-4" />
+            </button>
+            <Link
+              href={messagePopup.href!}
+              onClick={() => setMessagePopup(null)}
+              className="block space-y-2 pl-5"
+            >
+              <span className="flex items-center gap-2 font-bold text-primary">
+                <MessageSquare className="size-5" />
+                {messagePopup.title}
+              </span>
+              <span className="block text-sm font-semibold">
+                {messagePopup.actor?.displayName}
+              </span>
+              <span className="line-clamp-3 break-words text-sm leading-6 text-muted-foreground">
+                {messagePopup.message}
+              </span>
+            </Link>
+          </aside>,
+          document.body,
+        )}
+      <DropdownMenu
+        dir="rtl"
+        open={dropdownOpen}
+        onOpenChange={(open) => {
+          setDropdownOpen(open);
+          if (!open) return;
+          void loadServer();
+          void syncMasterDataFeed(true);
+        }}
+      >
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label={
+              unreadCount
+                ? `اعلان‌ها، ${unreadCount.toLocaleString('fa-IR')} خوانده‌نشده`
+                : 'اعلان‌ها'
+            }
+            className={cn(
+              'relative',
+              unreadCount > 0 && 'text-amber-300 hover:text-amber-200',
+            )}
+            size="icon"
+            variant="ghost"
+          >
+            <BellIcon
+              aria-hidden="true"
+              className={cn(
+                'size-5',
+                unreadCount > 0 && 'fill-amber-300/25 text-amber-300',
+              )}
+            />
+            {hasPendingCallRequest && (
+              <span
                 aria-hidden="true"
-                className={cn('size-4', refreshingMasterData && 'animate-spin')}
+                data-call-request-alert
+                className="pointer-events-none absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-red-600 ring-2 ring-surface motion-safe:animate-pulse"
               />
-            </Button>
+            )}
             {unreadCount ? (
+              <span className="absolute end-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-black leading-4 text-destructive-foreground ring-2 ring-surface">
+                {unreadCount > 99 ? '+۹۹' : unreadCount.toLocaleString('fa-IR')}
+              </span>
+            ) : null}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          aria-label="مرکز اعلان تغییرات"
+          className="w-[min(92vw,25rem)] overflow-hidden p-0"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-50 to-cyan-50 px-4 py-3 dark:from-blue-950/50 dark:to-cyan-950/30">
+            <div>
+              <p className="font-black">اعلان تغییرات</p>
+              <p className="text-xs text-muted-foreground">
+                {unreadCount
+                  ? `${unreadCount.toLocaleString('fa-IR')} اعلان خوانده‌نشده`
+                  : 'همه اعلان‌ها خوانده شده‌اند'}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
-                onClick={markAllRead}
+                aria-label="تازه‌سازی اعلان‌های اطلاعات پایه"
+                disabled={refreshingMasterData}
+                onClick={() => {
+                  void loadServer();
+                  void syncMasterDataFeed(true);
+                }}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={cn(
+                    'size-4',
+                    refreshingMasterData && 'animate-spin',
+                  )}
+                />
+              </Button>
+              {unreadCount ? (
+                <Button
+                  onClick={markAllRead}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <CheckCheck aria-hidden="true" className="size-4" />
+                  خواندن همه
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          {hrError ? (
+            <div role="alert" className="px-4 py-2 text-sm text-destructive">
+              {hrError}
+              <Button onClick={() => void loadHr()} size="sm" variant="ghost">
+                تلاش دوباره
+              </Button>
+            </div>
+          ) : null}
+
+          {notifications.length ? (
+            <div className="max-h-[min(65vh,28rem)] overflow-y-auto p-1.5">
+              {notifications.map((notification) => (
+                <DropdownMenuItem
+                  asChild
+                  className={cn(
+                    'mb-1 h-auto items-start px-3 py-3',
+                    notificationColors(notification.kind, notification.isRead)
+                      .item,
+                  )}
+                  key={notification.key}
+                >
+                  <Link
+                    href={notification.href}
+                    onClick={() => {
+                      markRead(notification);
+                      setDropdownOpen(false);
+                      if (notification.href.endsWith('#cc-follow-up-queue'))
+                        window.dispatchEvent(
+                          new Event('call-center:open-queue'),
+                        );
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        'mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl',
+                        notificationColors(
+                          notification.kind,
+                          notification.isRead,
+                        ).icon,
+                      )}
+                    >
+                      {notification.kind === 'message' ? (
+                        <MessageSquare aria-hidden="true" className="size-4" />
+                      ) : notification.kind === 'request' ? (
+                        <ClipboardList aria-hidden="true" className="size-4" />
+                      ) : (
+                        <BellRing aria-hidden="true" className="size-4" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-sm">
+                        {notification.title}
+                      </strong>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {notification.description}
+                      </span>
+                      <time
+                        className="mt-1 block text-[11px] text-muted-foreground"
+                        dateTime={notification.occurredAt}
+                      >
+                        {notification.actorName
+                          ? `${notification.actorName} · `
+                          : ''}
+                        {formatNotificationTime(notification.occurredAt)}
+                      </time>
+                    </span>
+                    {!notification.isRead ? (
+                      <span
+                        aria-label="خوانده‌نشده"
+                        className={cn(
+                          'mt-2 size-2 shrink-0 rounded-full',
+                          notificationColors(
+                            notification.kind,
+                            notification.isRead,
+                          ).dot,
+                        )}
+                      />
+                    ) : null}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </div>
+          ) : serverLoading ? (
+            <div className="flex items-center justify-center gap-2 px-6 py-10 text-sm text-muted-foreground">
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-5 animate-spin"
+              />
+              در حال دریافت اعلان‌ها
+            </div>
+          ) : serverError ? (
+            <div className="grid place-items-center gap-3 px-6 py-8 text-center text-sm text-muted-foreground">
+              <CircleAlert
+                aria-hidden="true"
+                className="size-6 text-amber-500"
+              />
+              <p>{serverError}</p>
+              <Button
+                onClick={() => void loadServer()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw aria-hidden="true" className="size-4" />
+                تلاش دوباره
+              </Button>
+            </div>
+          ) : (
+            <div className="grid place-items-center gap-2 px-6 py-10 text-center text-muted-foreground">
+              <span className="grid size-11 place-items-center rounded-2xl bg-muted">
+                <Bell aria-hidden="true" className="size-5" />
+              </span>
+              <p className="text-sm font-bold text-foreground">اعلانی ندارید</p>
+              <p className="max-w-64 text-xs leading-5">
+                پس از ایجاد، ویرایش، حذف یا تغییر وضعیت موفق، اعلان اینجا نمایش
+                داده می‌شود.
+              </p>
+            </div>
+          )}
+
+          {serverError && notifications.length ? (
+            <p className="border-t border-border px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              تازه‌سازی اعلان‌های پایدار ناموفق بود؛ فهرست قبلی نمایش داده
+              می‌شود.
+            </p>
+          ) : null}
+
+          {clearError ? (
+            <p
+              role="alert"
+              className="border-t border-border px-3 py-2 text-xs text-destructive"
+            >
+              {clearError}
+            </p>
+          ) : null}
+
+          {hasRead ? (
+            <div className="border-t border-border p-2">
+              <Button
+                className="w-full"
+                disabled={clearing}
+                onClick={clearRead}
                 size="sm"
                 type="button"
                 variant="ghost"
               >
-                <CheckCheck aria-hidden="true" className="size-4" />
-                خواندن همه
+                <Trash2
+                  aria-hidden="true"
+                  className="size-4 text-destructive"
+                />
+                پاک‌کردن اعلان‌های خوانده‌شده
               </Button>
-            ) : null}
-          </div>
-        </div>
-
-        {hrError ? (
-          <div role="alert" className="px-4 py-2 text-sm text-destructive">
-            {hrError}
-            <Button onClick={() => void loadHr()} size="sm" variant="ghost">
-              تلاش دوباره
-            </Button>
-          </div>
-        ) : null}
-
-        {notifications.length ? (
-          <div className="max-h-[min(65vh,28rem)] overflow-y-auto p-1.5">
-            {notifications.map((notification) => (
-              <DropdownMenuItem
-                asChild
-                className={cn(
-                  'mb-1 h-auto items-start px-3 py-3',
-                  notificationColors(notification.kind, notification.isRead)
-                    .item,
-                )}
-                key={notification.key}
-              >
-                <Link
-                  href={notification.href}
-                  onClick={() => {
-                    markRead(notification);
-                    setDropdownOpen(false);
-                    if (notification.href.endsWith('#cc-follow-up-queue'))
-                      window.dispatchEvent(new Event('call-center:open-queue'));
-                  }}
-                >
-                  <span
-                    className={cn(
-                      'mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl',
-                      notificationColors(notification.kind, notification.isRead)
-                        .icon,
-                    )}
-                  >
-                    {notification.kind === 'message' ? (
-                      <MessageSquare aria-hidden="true" className="size-4" />
-                    ) : notification.kind === 'request' ? (
-                      <ClipboardList aria-hidden="true" className="size-4" />
-                    ) : (
-                      <BellRing aria-hidden="true" className="size-4" />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <strong className="block text-sm">
-                      {notification.title}
-                    </strong>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {notification.description}
-                    </span>
-                    <time
-                      className="mt-1 block text-[11px] text-muted-foreground"
-                      dateTime={notification.occurredAt}
-                    >
-                      {notification.actorName
-                        ? `${notification.actorName} · `
-                        : ''}
-                      {formatNotificationTime(notification.occurredAt)}
-                    </time>
-                  </span>
-                  {!notification.isRead ? (
-                    <span
-                      aria-label="خوانده‌نشده"
-                      className={cn(
-                        'mt-2 size-2 shrink-0 rounded-full',
-                        notificationColors(
-                          notification.kind,
-                          notification.isRead,
-                        ).dot,
-                      )}
-                    />
-                  ) : null}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </div>
-        ) : serverLoading ? (
-          <div className="flex items-center justify-center gap-2 px-6 py-10 text-sm text-muted-foreground">
-            <LoaderCircle aria-hidden="true" className="size-5 animate-spin" />
-            در حال دریافت اعلان‌ها
-          </div>
-        ) : serverError ? (
-          <div className="grid place-items-center gap-3 px-6 py-8 text-center text-sm text-muted-foreground">
-            <CircleAlert aria-hidden="true" className="size-6 text-amber-500" />
-            <p>{serverError}</p>
-            <Button
-              onClick={() => void loadServer()}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <RefreshCw aria-hidden="true" className="size-4" />
-              تلاش دوباره
-            </Button>
-          </div>
-        ) : (
-          <div className="grid place-items-center gap-2 px-6 py-10 text-center text-muted-foreground">
-            <span className="grid size-11 place-items-center rounded-2xl bg-muted">
-              <Bell aria-hidden="true" className="size-5" />
-            </span>
-            <p className="text-sm font-bold text-foreground">اعلانی ندارید</p>
-            <p className="max-w-64 text-xs leading-5">
-              پس از ایجاد، ویرایش، حذف یا تغییر وضعیت موفق، اعلان اینجا نمایش
-              داده می‌شود.
-            </p>
-          </div>
-        )}
-
-        {serverError && notifications.length ? (
-          <p className="border-t border-border px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-            تازه‌سازی اعلان‌های پایدار ناموفق بود؛ فهرست قبلی نمایش داده می‌شود.
-          </p>
-        ) : null}
-
-        {clearError ? (
-          <p
-            role="alert"
-            className="border-t border-border px-3 py-2 text-xs text-destructive"
-          >
-            {clearError}
-          </p>
-        ) : null}
-
-        {hasRead ? (
-          <div className="border-t border-border p-2">
-            <Button
-              className="w-full"
-              disabled={clearing}
-              onClick={clearRead}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              <Trash2 aria-hidden="true" className="size-4 text-destructive" />
-              پاک‌کردن اعلان‌های خوانده‌شده
-            </Button>
-          </div>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            </div>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 
@@ -802,7 +872,6 @@ export function notificationStorage(
                 Array.isArray(entry) &&
                 entry.length === 2 &&
                 typeof entry[0] === 'string' &&
-                entry[0].startsWith('master-data:') &&
                 typeof entry[1] === 'string' &&
                 Number.isFinite(Date.parse(entry[1])),
             )
@@ -833,12 +902,20 @@ export function notificationStorage(
   function writeStoredNotifications(
     notifications: readonly ChangeNotification[],
   ) {
-    const limited = limitChangeNotifications(notifications);
+    const dismissed = readDismissedAuditIds();
+    const readTimes = readAuditReadTimes();
+    const limited = limitChangeNotifications(
+      notifications
+        .filter((item) => !dismissed.has(item.id))
+        .map((item) => ({
+          ...item,
+          readAt: item.readAt ?? readTimes.get(item.id) ?? null,
+        })),
+    );
     try {
       const readAudit = readAuditReadTimes();
       for (const item of notifications) {
-        if (item.id.startsWith('master-data:') && item.readAt)
-          readAudit.set(item.id, item.readAt);
+        if (item.readAt) readAudit.set(item.id, item.readAt);
       }
       window.localStorage.setItem(
         DISMISSED_AUDIT_KEY,
@@ -866,8 +943,7 @@ export function notificationStorage(
     // returned by the next poll even when they are no longer in that cache.
     for (const id of readAuditReadTimes().keys()) dismissed.add(id);
     for (const item of current) {
-      if (item.readAt && item.id.startsWith('master-data:'))
-        dismissed.add(item.id);
+      if (item.readAt) dismissed.add(item.id);
     }
     window.localStorage.setItem(
       DISMISSED_AUDIT_KEY,

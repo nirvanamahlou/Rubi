@@ -47,6 +47,7 @@ export function configureApplication(app: INestApplication): void {
   app.enableCors({
     credentials: true,
     exposedHeaders: [
+      'X-Nora-Manifest-Warnings',
       'X-Nora-Manifest-Contracts',
       'X-Nora-Manifest-Passengers',
       'X-Nora-Manifest-Skipped-Finance',

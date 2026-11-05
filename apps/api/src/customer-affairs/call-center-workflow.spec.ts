@@ -930,7 +930,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         );
         expect(selected.data.map((row) => row.id)).toEqual([item.id]);
         expect(selected.meta.total).toBe(1);
-        expect(selected.meta.contactCallCount).toBeGreaterThan(0);
+        expect(selected.data[0]!.contactSummary).toEqual({
+          name: expect.any(String),
+          phone: expect.any(String),
+        });
+        expect(selected.meta).not.toHaveProperty('contactCallCount');
         expect(
           (await workflow.list(actor, branchId, contactId, 1, 1, randomUUID()))
             .data,

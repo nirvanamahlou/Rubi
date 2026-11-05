@@ -227,6 +227,7 @@ export const readApi = {
     callCenterRequest<{
       data: { call: ContactSummary['latest']; callCount: number }[];
       meta: {
+        canCreateRequest?: boolean;
         total: number;
         page: number;
         pageSize: number;

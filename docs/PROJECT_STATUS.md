@@ -1,4 +1,39 @@
+## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
+
+Responsible experts saving a result for an explicitly linked real call, including unanswered calls, create a durable review receipt. Pending receipts appear with a followed-up badge in the request creator-manager's My Work queue. Saving that manager's decision acknowledges only the displayed receipt set, retaining assignment, history and expert access; newer distinct follow-ups can requeue. Repeatable-read snapshots, receipt-set tokens, row locks and command idempotence protect concurrent edits. Exact-request review access does not grant access to unrelated contact history. The editor displays name/phone separately and a subject only from the saved related follow-up, and removes the visible technical helper.
+
+Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 19 helper cases, 7 UI cases, 3 translation checks and 5 CI policy checks passed. Twenty new PostgreSQL cases exercise real SAVE entrypoints, concurrent decisions and the creator-manager access boundary; 87 existing affected regression cases also pass. Tests exposed and now cover an existing WRONG_NUMBER check-constraint mismatch, corrected in a separate migration retaining all previous values. Both migrations applied with all 222 migrations in isolated PostgreSQL 18 and require application before a future API rollout. No production settings, records, grants or services changed. Final integrated CI checks precede the authorized develop merge.
+
+## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
+
+Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
+
+Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
+
+## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
+
+User explicitly corrects the prior design scope: the shared sidebar, header and application shell must keep their normal appearance when Call Center is selected. Remove its route-dependent shell palette/icon substitutions; keep the illustrated Navy/Pearl palette on the Call Center workspace and its dossier portal only. Preserve navigation, permissions, history-icon updates, pagination and all operational data behavior. Source starts from develop de9729ea2.
+
+Independent scope review and one boundary regression cover normal shared navigation and panel-only light/dark styling, including the portal. Full affected checks and final-head hosted gates are required before the user-authorized merge/release. The Web-only bounded release preserves live peer overlays, handles deletion of exactly three obsolete appearance files, verifies an encrypted server backup and canary, and checks assets, Worker/AMI/recording health with rollback. No schema, migrations, dependencies or grants.
+
+## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
+
+Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
+
+Validation: 113 focused tests across 27 files, scoped ESLint, full Web TypeScript and optimized Web build passed. Browser checks use synthetic local data only: desktop1625px, mobile390px without page overflow, contact/detail pagination, queue collapse, header contrast. Final CSS rebuild and hosted exact-head gates precede merge. No schema, migrations, dependencies, grants or business-data writes. Bounded Web-only release script preserves live peer source, requires green merged revision, encrypted server backup, canary, deployment lock and rollback; all other service identities and settings must remain unchanged.
+
 ## THREE-PANELS-RELEASE-1103 — PC-C
+
+## CALLBACK-REQUEST-CAPABILITY-1105
+
+The missed-callback Register Request action was hidden when browser session permissions differed from the effective CallCenterActorGuard permissions (including approved global accounts). The missed-callback response now supplies additive meta.canCreateRequest; Web shows the manager action only when that value is explicitly true. Request creation continues through the existing authorized workflow editor and server write guard. No permissions, account configuration, database schema or dependencies change.
+
+Validation: four API capability tests, twelve existing IAM request-assignee tests and nine Web action tests. Local full typechecking with borrowed dependency links is not valid for this newer develop snapshot: generated contracts and Prisma types are stale; clean hosted gates are required before merge and deployment. Production deployment must preserve peer overlays and use the shared lock and verified backup.
+
+Candidate overlay validation: API/Web production builds passed; 4 API and 154 Web tests passed (one pre-existing skipped test). All four gates passed for the first integrated head; repeat hosted validation after the latest develop integration. Deployment uses the existing live baseline and preserves peer overlays; no grant or schema changes.
+
 
 Owner authorizes a bounded server release of approved Call Center, Dashboard and Reports work. CallForm explicitly exposes every source and outcome choice rather than silently truncating to five; default behavior of the shared selector remains unchanged elsewhere.17 popup/selector regressions and scoped lint pass. Release will preserve current unrelated production source/settings, validate required public reporting adapters, build and test a candidate, verify encrypted server-only backup and deploy under the existing lock with rollback and Worker/API/AMI checks. No IAM grants, schema/migrations, dependency or business-data writes are included.
 ## NOTIFICATION-CLEAR-COUNTER-1104 — PC-B — READY_FOR_CI
@@ -281,6 +316,9 @@ Validation:22 focused model/workspace/i18n checks pass, including rendered float
 COMPUTER_ID=PC-A; codex/pc-a-tour-periods-grid-1103 from develop13ff82d55. Owner authorizes nullable pricing-draft/grid repair, compact grouped tour periods, per-period stop/delete controls and develop merge after exact-head gates. Reserve Package Pricing nullable-draft client/regression, Ticket Catalog tour overview/workspace/API/public service/contracts and focused tests, own translations/status notes. Reserve sole bounded migration/schema scope for an additive audited departure lifecycle, preserving immutable tour definitions/occurrences, ticket capacity and historical contracts/publications. Delete means retire from new selection, never erase referenced history. New lifecycle producer ships with management and Sales/pricing consumers; absent marker remains active. No dependency/lockfile or production deployment.
 
 TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, lifecycle authorization/CAS/audit and published-sale regressions pass.249 surrounding Web checks and230 API checks pass; missing sparse-checkout CLI helper was materialized and rechecked successfully. Scoped lint, API4GiB typecheck and API build pass. Web production build passed. Canonical upstream tour-ticket selection integrated without duplicate lifecycle state; 38 updated targeted checks pass, including transactional audit, terminal deletion and existing status protocol. Final integrated checks follow. One additive lifecycle migration; no production migration or deployment. Existing translation keys remain unchanged; generated catalogues synchronize already-published peer entries. Exact-head hosted quality/test/build/PostgreSQL gates precede authorized develop merge. Source freezes on push and releases on successful merge.
+
+## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
+One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -8949,6 +8987,15 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
 
+
+
+
+## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — PC-C — IN_PROGRESS
+
+User requests all unit managers see/select only same-unit responsible experts, while CEO Danial Altafi retains all staff. Read-only production diagnosis confirms two callback-triage accounts with unit membership were widened by requestAssignees' callbackManagers global shortcut; only one has native team-manage authority. Scope now uses exact active IAM unit plus team permission, ordinary users self-only, and the verified danial global account as the sole all-unit exception. List and new/changed assignment writes share this policy. Preserve all other call scopes and approved UI. No schema/dependency, grants, business-data or runtime changes; validation pending.
+
+CALL-CENTER-OWNER-UNIT-SCOPE-1105:57 targeted checks pass (36 unit/security/HR,19 PostgreSQL access including forged cross-unit/moved-member denial,2 existing UI rendering). Scoped lint, formatting and full API TypeScript pass. API build passed; source-only push/PR proceeds under the standing DEVELOPMENT_WORKFLOW approval, and all hosted checks must pass before develop merge. No schema/dependency/IAM grant/business-data/server rollout changes.
+
 ## CALL-KPI-NOTIFICATIONS-1105 — PC-C — SOURCE_READY
 
 KPI drill-down/report refresh used POST read endpoints and was misclassified by the global fetch notification tracker as a new Customer Affairs record. Exact six existing Call Center query paths now bypass generic mutation notifications (including query strings/trailing slash); real call, note and request saves retain their notifications. No notification history, API, KPI refresh, permissions or operational data is changed.38 focused tracker/feed/read-client checks and scoped lint pass; full Web type/build and publication verification pending. PC-B notification-center persistence files untouched.
@@ -8959,3 +9006,36 @@ KPI drill-down/report refresh used POST read endpoints and was misclassified by 
 Call Center workflow assignments/reminders now emit recipient-scoped call-center.assigned notifications with a queue anchor. Closure notices use call-center.closed, so they do not activate the alert. The bell displays a red upper-right pulse while an authorized assignment is unread; existing persistent mark-read/mark-all and stale-feed guards dismiss it. Opening the notification expands and focuses the follow-up queue and clears queue filters. Unread assignments are prioritized before bounded feed pagination. Existing legacy notices remain visible. No migration or production data changes.
 
 Validation: scoped API/Web ESLint and 56 targeted tests pass, including all 27 workflow tests against a disposable migrated PostgreSQL database (local 30s timeout; default 5s initially timed out in an existing paging test). Full local types/build attempted but blocked by stale shared workspace contract/Prisma artifacts and Next Turbopack rejecting node_modules links outside checkout. Hosted CI and production acceptance remain required. No deployment performed.
+
+## HR-WORKBENCH-REQUESTS-1105
+
+Workbench recipients include active HR employee unit membership through linked active internal IAM accounts, retaining branch checks and transactional revalidation. HR inbox integrates directed Workbench requests with review/delete actions; sender sees approved/rejected/revision decisions. Structured daily/hourly leave uses the native HR approval/balance/overlap/closed-period rules in the same database transaction, then reconciles attendance. Employee leave view includes legacy and Workbench leave; full-day approved leave has zero late/early/deficit and leave status. Native Jalali year extraction uses date parts. No schema/dependency or production changes. Verification: targeted API/UI tests and isolated PostgreSQL approval/replay/rollback/attendance tests passed. Web production build passed; final-head checks precede merge.
+
+
+## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105
+
+Removed the four owner-selected helper paragraphs in Finance inbox and Workbench notes/favorites/activity. Group details and editing now use responsive member cards, owner badges, separated edit fields, bounded scrolling and a stable action footer. Employee assignment history compares resolved persisted organizational values, so sending an unchanged jobTitleId or editing personal details no longer creates a spurious assignment; actual organizational changes retain audited history. Added a real PostgreSQL repeated-save regression. No migration, historic-record deletion, operational data writes or deployment. Scoped lint, nine existing Web behavior tests and three translation checks passed; API/Web type checks and production builds passed. Both isolated PostgreSQL scenarios passed, including unchanged title/personal edit without a new assignment and a genuine organizational correction retaining its audit/history. Hosted gates remain required before merge.
+
+
+## FINANCE-REQUEST-ATTACHMENTS-1105
+
+Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
+
+
+## HR-REVIEW-MESSAGE-ALERTS-1105
+
+HR request review has an accessible action icon, a responsive structured dialog and no redundant request navigation. Ordinary employee organization edits correct the latest assignment in place; the cooperation panel shows the latest record while historical data and audited changes remain stored. All local notification read/dismissal IDs persist per user across feed/scope refreshes. New authorized messaging notifications show a dismissible preview at the viewport bottom-right and open their exact conversation; initial, old, seen and read messages do not replay. No schema migration, operational record deletion or deployment. Validation: 59 targeted Web tests and two isolated real PostgreSQL scenarios passed; API/Web production builds, type checks and scoped lint passed. The first PostgreSQL attempt timed out in Docker; a clean rerun passed. Hosted gates required before authorized develop merge.
+
+## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
+
+User-selected option2 replaces only call-history markers with filled green inbound/blue outbound handsets, pale rounded tiles and white directional arrow badges. Native SVGs remain sharp at36px; existing direction text and all data/actions/permissions remain unchanged. Light/dark RTL visual review,16 existing focused tests and scoped lint pass. No API/schema/dependency/server changes. Full Web types/build and all final-head hosted checks gate the standing authorized develop merge. Details: tasks/CALL-HISTORY-ICONS-1105.md.
+
+CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
+
+## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
+
+Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
+
+## CALL-KPI-DUOTONE-1105 — PC-C — IN_PROGRESS
+
+Implement the selected02 Layered Duotone reference only for Call Center KPI cards, with blue vector silhouettes, pale highlight layers and soft shadows. Increase icon/value gap and retain every current card action and actual server value. Source base ff31d2fd9; affected tests, build/types, responsive visual review and all hosted gates precede authorized bounded Web release. No shared sidebar/icon, API/schema/migration/dependency changes.

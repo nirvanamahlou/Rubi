@@ -376,3 +376,40 @@ describe('MANIFEST date-range history', () => {
     );
   });
 });
+
+it('keeps missing airline fields blank and appends a linked warning sheet without passenger values', async () => {
+  const template = await readFile(
+    join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
+  );
+  const bytes = buildIranAirtourManifest(template, [
+    {
+      firstName: 'SYNTHETIC',
+      lastName: '',
+      gender: '',
+      passengerType: '',
+      birthDate: '',
+      nationalId: '',
+      nationality: '',
+      passportNumber: '',
+      passportIssuingCountry: '',
+      birthCountry: '',
+      passportExpiryDate: '',
+      cabinClass: '',
+    },
+  ]);
+  const files = unzipSync(bytes);
+  expect(strFromU8(files['xl/worksheets/sheet1.xml']!)).toContain(
+    '<x:t xml:space="preserve"></x:t>',
+  );
+  const warnings = strFromU8(files['xl/worksheets/nora-empty-cells.xml']!);
+  expect(warnings).toContain('Last name');
+  expect(warnings).toContain('>2<');
+  expect(warnings).not.toContain('SYNTHETIC');
+  expect(strFromU8(files['xl/workbook.xml']!)).toContain('name="EMPTY CELLS"');
+  expect(strFromU8(files['xl/_rels/workbook.xml.rels']!)).toContain(
+    'worksheets/nora-empty-cells.xml',
+  );
+  expect(strFromU8(files['[Content_Types].xml']!)).toContain(
+    '/xl/worksheets/nora-empty-cells.xml',
+  );
+});

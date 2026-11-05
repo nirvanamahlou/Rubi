@@ -1,4 +1,7 @@
 'use client';
+import { roomChildCounts } from '../model/reservation-form';
+import { reservationDirectionLabel } from '../model/reservation-direction-label';
+import { sharedHotelSupplierTables } from '../model/shared-hotel-supplier-tables';
 import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { SupplierPriceTable } from './supplier-price-table';
 import { reservationHotelStays } from '@nora/contracts';
@@ -47,6 +50,12 @@ export function useReservationFormReferences(
     intake.snapshot.ticketSelections ?? [],
   );
   const entries = [
+    ...(intake.contractDetails
+      ? [
+          ['cities', intake.contractDetails.originId],
+          ['cities', intake.contractDetails.destinationId],
+        ]
+      : []),
     ...hotels.flatMap((hotel) => [
       ['cities', hotel.cityId],
       ['hotels', hotel.hotelId],
@@ -312,114 +321,157 @@ export function ReservationFormSheet({
                 ))}
               </div>
               {(!settings || settings.flags.hotel) &&
-                (voucher ? [intake] : sharedHotelSupplierScopes(intake)).map(
-                  (hotelIntake) => {
-                    const data = voucher
-                      ? voucherFormData(hotelIntake, references)
-                      : supplierFormData(hotelIntake, references);
-                    return (
-                      <div key={hotelIntake.hotelStayKey ?? 'primary'}>
-                        <Heading
-                          number="03"
-                          title="HOTEL INFORMATION"
-                          note="Accommodation"
-                        />
-                        <table
-                          className={`${styles.table} ${styles.hotelInformation}`}
-                        >
-                          <colgroup>
-                            <col
-                              style={{
-                                width: data.roomBreakdown.length
-                                  ? '54%'
-                                  : '34%',
-                              }}
-                            />
-                            <col style={{ width: '19%' }} />
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '15%' }} />
+                !voucher &&
+                sharedHotelSupplierTables(intake, references).map((section) => (
+                  <div key={section.title}>
+                    <Heading
+                      number={section.code}
+                      title={section.title}
+                      note={section.note}
+                    />
+                    <table className={styles.table}>
+                      <colgroup>
+                        {section.widths.map((width, index) => (
+                          <col key={index} style={{ width: `${width}%` }} />
+                        ))}
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          {section.headers.map((header) => (
+                            <th key={header}>{header}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {section.rows.map((row, i) => (
+                          <tr key={i}>
+                            {row.map((value, j) => (
+                              <td key={j} dir="auto">
+                                {value}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              {(!settings || settings.flags.hotel) &&
+                (voucher
+                  ? [intake]
+                  : sharedHotelSupplierScopes(intake).length > 1
+                    ? []
+                    : [intake]
+                ).map((hotelIntake) => {
+                  const data = voucher
+                    ? voucherFormData(hotelIntake, references)
+                    : supplierFormData(hotelIntake, references);
+                  return (
+                    <div key={hotelIntake.hotelStayKey ?? 'primary'}>
+                      <Heading
+                        number="03"
+                        title="HOTEL INFORMATION"
+                        note="Accommodation"
+                      />
+                      <table
+                        className={`${styles.table} ${styles.hotelInformation}`}
+                      >
+                        <colgroup>
+                          <col
+                            style={{
+                              width: data.roomBreakdown.length ? '54%' : '34%',
+                            }}
+                          />
+                          <col style={{ width: '19%' }} />
+                          <col style={{ width: '12%' }} />
+                          <col style={{ width: '15%' }} />
+                          {!data.roomBreakdown.length && (
+                            <col style={{ width: '20%' }} />
+                          )}
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            {[
+                              'HOTEL',
+                              'CITY',
+                              'STAR',
+                              'SERVICE',
+                              ...(!data.roomBreakdown.length
+                                ? ['ROOM TYPE']
+                                : []),
+                            ].map((t) => (
+                              <th key={t}>{t}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td dir="auto">{data.hotel}</td>
+                            <td dir="auto">{data.destination}</td>
+                            <td>{data.stars}</td>
+                            <td dir="auto">{data.meal}</td>
                             {!data.roomBreakdown.length && (
-                              <col style={{ width: '20%' }} />
+                              <td dir="auto">{data.roomType}</td>
                             )}
-                          </colgroup>
+                          </tr>
+                        </tbody>
+                      </table>
+                      {data.roomBreakdown.length ? (
+                        <table
+                          className={`${styles.table} ${styles.roomBreakdown}`}
+                        >
+                          <caption>ROOM QUANTITIES BY TYPE</caption>
                           <thead>
                             <tr>
                               {[
-                                'HOTEL',
-                                'CITY',
-                                'STAR',
-                                'SERVICE',
-                                ...(!data.roomBreakdown.length
-                                  ? ['ROOM TYPE']
-                                  : []),
+                                'ROOM',
+                                'ROOM TYPE',
+                                'ADULTS',
+                                'CHILDREN 2-6',
+                                'CHILDREN 6-12',
+                                'GUESTS',
                               ].map((t) => (
                                 <th key={t}>{t}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            <tr>
-                              <td dir="auto">{data.hotel}</td>
-                              <td dir="auto">{data.destination}</td>
-                              <td>{data.stars}</td>
-                              <td dir="auto">{data.meal}</td>
-                              {!data.roomBreakdown.length && (
-                                <td dir="auto">{data.roomType}</td>
-                              )}
-                            </tr>
+                            {data.roomBreakdown
+                              .slice(0, voucher ? 4 : undefined)
+                              .map((r) => (
+                                <tr key={r.ordinal}>
+                                  <td>{r.ordinal}</td>
+                                  <td dir="auto">{r.roomType}</td>
+                                  <td>{r.adults}</td>
+                                  <td>
+                                    {roomChildCounts(r.childAges).twoToSix}
+                                  </td>
+                                  <td>
+                                    {roomChildCounts(r.childAges).sixToTwelve}
+                                  </td>
+                                  <td>{r.adults + r.childAges.length}</td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
-                        {data.roomBreakdown.length ? (
-                          <table
-                            className={`${styles.table} ${styles.roomBreakdown}`}
-                          >
-                            <caption>ROOM QUANTITIES BY TYPE</caption>
-                            <thead>
-                              <tr>
-                                {[
-                                  'ROOM',
-                                  'ROOM TYPE',
-                                  'ADULTS',
-                                  'CHILD AGES',
-                                  'GUESTS',
-                                ].map((t) => (
-                                  <th key={t}>{t}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {data.roomBreakdown
-                                .slice(0, voucher ? 4 : undefined)
-                                .map((r) => (
-                                  <tr key={r.ordinal}>
-                                    <td>{r.ordinal}</td>
-                                    <td dir="auto">{r.roomType}</td>
-                                    <td>{r.adults}</td>
-                                    <td>{r.childAges.join(', ') || '-'}</td>
-                                    <td>{r.adults + r.childAges.length}</td>
-                                  </tr>
-                                ))}
-                            </tbody>
-                          </table>
-                        ) : null}
-                        <table className={styles.table}>
-                          <tbody>
-                            <tr>
-                              <th>CHECK-IN</th>
-                              <td>{data.checkIn}</td>
-                              <th>CHECK-OUT</th>
-                              <td>{data.checkOut}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        {!voucher &&
-                          sharedHotelSupplierScopes(intake).length > 1 && (
-                            <SupplierPriceTable intake={hotelIntake} />
-                          )}
-                      </div>
-                    );
-                  },
-                )}
+                      ) : null}
+                      <table className={styles.table}>
+                        <tbody>
+                          <tr>
+                            <th>CHECK-IN</th>
+                            <td>{data.checkIn}</td>
+                            <th>CHECK-OUT</th>
+                            <td>{data.checkOut}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      {!voucher &&
+                        sharedHotelSupplierScopes(intake).length > 1 && (
+                          <SupplierPriceTable intake={hotelIntake} />
+                        )}
+                    </div>
+                  );
+                })}
               {intake.snapshot.serviceSelections.some(
                 (s) => s.kind === 'TRANSFER',
               ) && (
@@ -442,7 +494,7 @@ export function ReservationFormSheet({
                     <tbody>
                       {data.flights.map((flight) => (
                         <tr key={flight.leg}>
-                          <td>{flight.leg}</td>
+                          <td>{reservationDirectionLabel(flight.leg)}</td>
                           <td dir="auto">{flight.airline}</td>
                           <td>{flight.number}</td>
                           <td>{flight.date}</td>
@@ -469,7 +521,7 @@ export function ReservationFormSheet({
                 <tbody>
                   <tr>
                     <td>
-                      {data.transfer}
+                      {reservationDirectionLabel(data.transfer)}
                       {voucher && (
                         <>
                           {' '}
@@ -658,11 +710,16 @@ export function ReservationFormSheet({
           <table className={styles.table}>
             <thead>
               <tr>
-                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'].map(
-                  (t) => (
-                    <th key={t}>{t}</th>
-                  ),
-                )}
+                {[
+                  'ROOM',
+                  'ROOM TYPE',
+                  'ADULTS',
+                  'CHILDREN 2-6',
+                  'CHILDREN 6-12',
+                  'GUESTS',
+                ].map((t) => (
+                  <th key={t}>{t}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -671,7 +728,8 @@ export function ReservationFormSheet({
                   <td>{r.ordinal}</td>
                   <td dir="auto">{r.roomType}</td>
                   <td>{r.adults}</td>
-                  <td>{r.childAges.join(', ') || '-'}</td>
+                  <td>{roomChildCounts(r.childAges).twoToSix}</td>
+                  <td>{roomChildCounts(r.childAges).sixToTwelve}</td>
                   <td>{r.adults + r.childAges.length}</td>
                 </tr>
               ))}

@@ -1,4 +1,6 @@
 import { readLegacyServiceParties } from '@nora/contracts';
+import { readHotelJourneys } from '@nora/contracts';
+import { contractHotelJourneyHtml } from './contract-hotel-journey';
 import type { TicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import { readPassengerTotalPrices } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
@@ -231,6 +233,36 @@ export function contractPrintHtml(
     .join('');
   const contractPartyName = c.customerNameSnapshot;
   const hotel = c.hotelSelection;
+  const hotelJourneys = readHotelJourneys(c.servicesDetail);
+  const hotelStays = hotel ? [hotel, ...(hotel.additionalStays ?? [])] : [];
+  const journeyHtml = (fromId: string, toId: string | null) => {
+    const leg = hotelJourneys.find(
+      (j) => j.fromHotelId === fromId && j.toHotelId === toId,
+    );
+    const label = (id: string) => {
+      const stay = hotelStays.find((s) => s.hotelId === id);
+      return (
+        (refs.hotels?.[id]?.name ?? stay?.hotelNameSnapshot ?? '') +
+        ' · ' +
+        name(stay?.cityId)
+      );
+    };
+    return leg
+      ? contractHotelJourneyHtml(leg, label(fromId), toId ? label(toId) : '')
+      : '';
+  };
+  const destinationCities = hotel?.additionalStays?.length
+    ? [
+        ...new Set(
+          [
+            hotel.cityId || c.destinationId,
+            ...hotel.additionalStays.map((stay) => stay.cityId),
+          ].filter(Boolean),
+        ),
+      ]
+        .map((cityId) => name(cityId))
+        .join(' / ')
+    : name(c.destinationId);
   // Hotel room product is a Master Data reference, not a passenger bed/age category.
   const room = hotel
     ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
@@ -547,7 +579,7 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
-  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
+  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(destinationCities)}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
 ${
   legacyParties
     ? `<section><table><thead><tr><th>خدمت</th><th>بزرگسال</th><th>کودک</th><th>نوزاد</th></tr></thead><tbody>${c.servicesDetail
@@ -561,7 +593,7 @@ ${
   `
 }
 <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
-  ${hotel ? [hotel, ...(hotel.additionalStays ?? [])].map(hotelSection).join('') : '<section>هتل در این قرارداد انتخاب نشده است.</section>'}
+  ${hotel ? hotelStays.map((stay, index) => (index > 0 ? journeyHtml(hotelStays[index - 1]!.hotelId, stay.hotelId) : '') + hotelSection(stay, index)).join('') + journeyHtml(hotelStays.at(-1)!.hotelId, null) : '<section>هتل در این قرارداد انتخاب نشده است.</section>'}
   ${contractNotice ? `<section class="contract-notice"><h3>یادداشت قرارداد <span dir="ltr">NOTICE</span></h3><p>${e(contractNotice)}</p></section>` : ''}
 </td></tr></tbody><tfoot><tr><td class="document-footer">  <div class="contract-closing"><section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
   <div class="customer-terms">
@@ -569,5 +601,5 @@ ${
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
     <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس ${e(niyayeshIssuer ? 'نیایش سیر سحر' : issuerName)} اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer>${refs.publicDocumentUrl ? `<div class="footer-qr">${publicDocumentQr(refs.publicDocumentUrl) ?? ''}</div>` : contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${jahanIssuer ? `<div class="contact-row">${phoneIcon}<bdi>02172075000</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
+  <footer>${refs.publicDocumentUrl ? `<div class="footer-qr">${publicDocumentQr(refs.publicDocumentUrl) ?? ''}</div>` : contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>niyayeshseir.com</bdi></div>` : ''}${jahanIssuer ? `<div class="contact-row">${phoneIcon}<bdi>02172075000</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
 }

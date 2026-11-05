@@ -1,3 +1,4 @@
+import { FinanceRequestReceipts } from './finance-request-receipts';
 import { PartyReceipts } from './party-receipts';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
@@ -863,9 +864,6 @@ export function FinanceInboxLiveWorkspace() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black">اولویت‌های نزدیک</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    موارد باز با نزدیک‌ترین سررسید
-                  </p>
                 </div>
                 <Clock3 className="size-5 text-rose-500" />
               </div>
@@ -1461,10 +1459,6 @@ export function FinanceInboxLiveWorkspace() {
                     ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
                     ['تاریخ ایجاد', faDate(selected.createdAt)],
                     ['تاریخ سررسید', faDate(selected.dueAt)],
-                    [
-                      'نسخه منبع',
-                      selected.sourceVersion.toLocaleString('fa-IR'),
-                    ],
                   ].map(([label, value]) => (
                     <div
                       className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
@@ -1478,6 +1472,14 @@ export function FinanceInboxLiveWorkspace() {
                       </strong>
                     </div>
                   ))}
+                  {selected.source === 'SALES' &&
+                    selected.kind === 'RECEIPT_VERIFICATION' && (
+                      <FinanceRequestReceipts
+                        key={selected.id}
+                        contractId={selected.sourceContextReference}
+                        paymentId={selected.sourceReference}
+                      />
+                    )}
                   {selected.source === 'SALES' &&
                     selected.kind === 'RECEIPT_VERIFICATION' && (
                       <ContractProfit
