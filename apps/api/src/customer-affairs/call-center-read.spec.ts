@@ -19,6 +19,7 @@ import {
 } from './call-center-read.service';
 import { callSearchMetadata, normalizeCallSearch } from './call-center-search';
 import { CallCenterSearchDto } from './call-center-search.dto';
+import { reconcileCallCompletion } from './call-center-completion-repair';
 const crypto = new CallCenterCrypto(
   new ConfigService({
     CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Buffer.alloc(32, 7).toString(
@@ -1019,6 +1020,87 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         vi.useRealTimers();
         decrypt.mockRestore();
       }
+    });
+    it('reconciles legacy optional identity flags without changing call facts and refreshes report/filter results', async () => {
+      const ids: string[] = [];
+      for (const identity of [
+        { name: 'Synthetic known caller', phone: '' },
+        { name: '', phone: '2025550188' },
+      ]) {
+        const saved = await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            ...identity,
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'ANSWERED',
+            occurredAt: '2026-12-01T10:00:00Z',
+          },
+          actor,
+          branchId,
+        );
+        expect(saved.data.needsCompletion).toBe(false);
+        ids.push(saved.data.id);
+        await db.callCenterCall.update({
+          where: { id: saved.data.id },
+          data: { needsCompletion: true },
+        });
+      }
+      const query = {
+        ...new CallCenterSearchDto(),
+        from: '2026-12-01T00:00:00Z',
+        to: '2026-12-02T00:00:00Z',
+      };
+      expect((await read.report(actor, branchId, query)).data.incomplete).toBe(
+        2,
+      );
+      const oldPage = await read.search(actor, branchId, query);
+      for (const id of ids) {
+        const before = await db.callCenterCall.findUniqueOrThrow({
+          where: { id },
+        });
+        expect(await reconcileCallCompletion(db, crypto, id)).toBe(
+          'WOULD_REPAIR',
+        );
+        expect(
+          (await db.callCenterCall.findUniqueOrThrow({ where: { id } }))
+            .needsCompletion,
+        ).toBe(true);
+        const results = await Promise.all([
+          reconcileCallCompletion(db, crypto, id, true),
+          reconcileCallCompletion(db, crypto, id, true),
+        ]);
+        expect(results.sort()).toEqual(['REPAIRED', 'UNCHANGED']);
+        const after = await db.callCenterCall.findUniqueOrThrow({
+          where: { id },
+        });
+        expect(after).toEqual({ ...before, needsCompletion: false });
+        expect(
+          await db.customerAffairsAuditEvent.count({
+            where: { entityId: id, action: 'RECONCILE_CALL_COMPLETION' },
+          }),
+        ).toBe(1);
+      }
+      expect((await read.report(actor, branchId, query)).data).toMatchObject({
+        calls: 2,
+        incomplete: 0,
+      });
+      await expect(
+        read.search(actor, branchId, {
+          ...query,
+          page: 2,
+          revision: oldPage.meta.revision,
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(
+        (await read.search(actor, branchId, { ...query, incomplete: 'YES' }))
+          .meta.total,
+      ).toBe(0);
+      expect(
+        (await read.search(actor, branchId, { ...query, incomplete: 'NO' }))
+          .meta.total,
+      ).toBe(2);
     });
     it('counts repeated contacts once using the latest matching source in the report window', async () => {
       const phone = '2025550198';

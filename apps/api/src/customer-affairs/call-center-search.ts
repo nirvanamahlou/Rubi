@@ -49,8 +49,8 @@ export function callSearchMetadata(
     sourceToken: callSearchToken(crypto, branch, 'source', value.source),
     unitToken: callSearchToken(crypto, branch, 'unit', value.operator),
     needsCompletion:
-      !value.name.trim() ||
-      !value.phone ||
+      // Caller identity is optional; a hidden/unknown technical number cannot
+      // be entered by the expert completing an existing telephony call.
       !outcome ||
       !value.subject.trim() ||
       !value.source.trim() ||

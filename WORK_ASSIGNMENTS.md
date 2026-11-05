@@ -11248,3 +11248,12 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 ## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105 — PC-A — ACTIVE
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
+
+
+## CALL-COMPLETION-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-completion-1105 from develop000cd543d. Owner requests correction of completed calls incorrectly marked incomplete for every expert. Reserve shared call-search completeness criteria/tests, bounded operator-only historical completion-metadata reconciliation and tests, and expert drilldown invalidation only if required. Preserve optional caller name/unknown immutable number, technical call evidence, source/operator prerequisites, scopes, UI and workflow ownership. No schema, dependencies, other module tables, grants or guessed contact values. Previous published source leases are frozen; notification/request-directory active work does not overlap these leaf paths.
+
+CALL-COMPLETION-1105 also reserves the existing read-service revision fingerprint to include reconciliation audit events, invalidating stale paginated completion filters. Shared criteria and operator-only reconciliation preserve facts and require actual saved-call evidence; active/synthetic sessions are skipped. Production read-only diagnostic found181 flagged calls,4 identity-only mismatches with saved terminal evidence. No production mutation.
+
+CALL-COMPLETION-1105 — SOURCE_READY:66 tests pass, including real PostgreSQL optional-identity save, preview, concurrent replay, unchanged call facts, audit uniqueness and report/filter/revision consistency. Scoped lint/format pass. Full local API type/build attempted with stale shared generated dependencies; hosted full CI remains required. Source reservation releases on commit. No production changes.
