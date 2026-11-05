@@ -5126,5 +5126,6 @@
   "قیمت کل": "Total price",
   "قیمت کل و خرید تفکیکی هم‌زمان ثبت نمی‌شوند.": "Total and itemized purchase costs cannot be combined.",
   "ارز خرید": "Purchase currency",
-  "هزینه خرید بلیط": "Ticket purchase cost"
+  "هزینه خرید بلیط": "Ticket purchase cost",
+  "فرودگاه بلیت برگشت در فهرست فرودگاه‌های فعال یافت نشد.": "The return ticket airport was not found in the active airport directory."
 }

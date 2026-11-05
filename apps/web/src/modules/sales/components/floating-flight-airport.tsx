@@ -100,12 +100,13 @@ export function FloatingFlightAirport({
   );
   useEffect(() => {
     const preferred = rows.find((airport) => airport.id === preferredId);
-    if (preferred && value?.id !== preferred.id) onChange(preferred);
-    else if (rows[0] && (!value || value.countryId !== countryId))
-      onChange(
-        rows.find((airport) => airport.id === preferredId) ??
-          preferredFloatingAirport(rows, cityId),
-      );
+    if (preferredId) {
+      if (preferred && value?.id !== preferred.id) onChange(preferred);
+      else if (value && value.id !== preferredId) onChange(undefined);
+      return;
+    }
+    if (rows[0] && (!value || value.countryId !== countryId))
+      onChange(preferredFloatingAirport(rows, cityId));
     else if (ready && value && value.countryId !== countryId)
       onChange(undefined);
   }, [rows, value, cityId, countryId, onChange, ready, preferredId]);
@@ -121,12 +122,7 @@ export function FloatingFlightAirport({
         }
         placeholder="جست‌وجو و انتخاب…"
         loading={!ready && !!countryId}
-        disabled={
-          !countryId ||
-          !ready ||
-          !rows.length ||
-          !!rows.find((airport) => airport.id === preferredId)
-        }
+        disabled={!countryId || !ready || !rows.length || !!preferredId}
         options={rows.map((airport) => ({
           value: airport.id,
           label: `${airport.name} · ${airport.code}`,
@@ -136,6 +132,14 @@ export function FloatingFlightAirport({
           if (airport) onChange(airport);
         }}
       />
+      {ready &&
+        !result.error &&
+        preferredId &&
+        !rows.some((airport) => airport.id === preferredId) && (
+          <p role="status" className="text-xs text-amber-700">
+            فرودگاه بلیت برگشت در فهرست فرودگاه‌های فعال یافت نشد.
+          </p>
+        )}
       {ready && result.error ? (
         <>
           <p role="alert" className="text-xs text-destructive">
