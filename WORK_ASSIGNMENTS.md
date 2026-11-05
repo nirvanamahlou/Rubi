@@ -11215,11 +11215,21 @@ Publication: owner requests push, hosted CI, PR to develop, and ordinary merge a
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
 
+## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — PC-C — IN_PROGRESS
+
+Base develop03dba84cb; codex/pc-c-call-center-owner-scope-1105. Owner explicitly requests department-restricted responsible-expert options for every unit manager, with only CEO Danial Altafi retaining all-staff selection. Reserve bounded IAM Call Center request-assignee directory and tests, Call Center request save validation/tests, owner-select handling only if needed, own docs. Current code incorrectly treats callback-triage membership as global assignee authority. Preserve contact/recording/callback visibility and existing approved Call Center UI; list and writes share the same native organization-ID/active-account/branch constraints. No schema/dependency, grants, operational data or server deployment changes. Existing published source leases are frozen/released; current UI-copy and notification scopes do not overlap this directory leaf. Public response shape stays compatible.
+
+CALL-CENTER-OWNER-UNIT-SCOPE-1105 test extension: reserve only new recipient-list/write regression cases in the existing disposable-PostgreSQL call-center-access fixture, preserving all existing cases and HTTP guards. No production writes; isolated container/database with synthetic records only.
+
+CALL-CENTER-OWNER-UNIT-SCOPE-1105 validation:36 focused IAM/HR/recording-policy checks,19 real PostgreSQL access checks (including both new organizational scenarios), and2 unchanged OwnerSelect render checks pass. Scoped ESLint, formatting and full API TypeScript pass; API production build passed. Standalone production-read-only candidate validates4 configured accounts:unit manager6/20, CEO20/20, others self-only across current branches; no identities exported.219 existing migrations were applied only in a fresh local disposable QA database, with no new migration or production change. Final-head hosted gates control the standing authorized develop merge; no deployment.
+
 ## CALL-KPI-NOTIFICATIONS-1105 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-notifications-1105 from develop03dba84cb. Owner explicitly requests suppression of repeated generic bell notifications caused by Call Center KPI refresh. Reserve only central change-notifications.ts and its focused spec, plus own status/task notes. Classify the six existing POST read endpoints as reads; preserve genuine create/edit notifications, request/response behavior and all server notifications. PC-B notification-clear-persistence reserves notification-center and its regression only; those files remain untouched. No API/schema/dependency/IAM/data deletion or unrelated UI changes.
 
 CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-client tests passed; scoped ESLint passed. No UI/request changes; source scope freezes on push. Full Web build/types and CI remain separate gates. Production not yet changed.
+
+CALL-CENTER-OWNER-UNIT-SCOPE-1105 CI follow-up: reserve only the retained-missed-call request-assignment expectation in call-center-answered-access.postgres.spec.ts. The old fixture assigned another user through callback-triage membership alone; the new owner rule requires self-only ordinary accounts and native unit-manager authority. Add the denial assertion and use the already-authorized same-unit manager for the positive initial assignment, retaining all answer evidence, callback resolution, reopen and follow-up assertions. No production behavior or gate relaxation. The revised retained-callback PostgreSQL scenario passes locally with both the negative and same-unit manager positive paths.
 
 ## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
 

@@ -22,7 +22,7 @@ import {
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { HrWorkbenchRequestUnits } from '../hr/hr-workbench-request-units';
@@ -266,6 +266,70 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await db?.$disconnect();
     });
 
+    it('limits callback managers to their own organizational units and rejects cross-unit save requests', async () => {
+      vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
+      vi.stubEnv(
+        'CALL_CENTER_CALLBACK_MANAGER_IDS',
+        [managerId, outsiderId].join(','),
+      );
+      const directory = new IamCallCenterDirectory({ client: db } as never);
+      try {
+        expect(
+          new Set(
+            (await directory.requestAssignees(manager, branchId)).map(
+              (u) => u.id,
+            ),
+          ),
+        ).toEqual(new Set([managerId, expertId, peerId]));
+        const otherManager = { ...manager, userId: outsiderId };
+        expect(
+          (await directory.requestAssignees(otherManager, branchId)).map(
+            (u) => u.id,
+          ),
+        ).toEqual([outsiderId]);
+        await expect(
+          db.$transaction((tx) =>
+            directory.resolveRequestAssignee(tx, manager, branchId, outsiderId),
+          ),
+        ).rejects.toThrow('خارج از محدوده');
+        await expect(
+          db.$transaction((tx) =>
+            directory.resolveRequestAssignee(tx, manager, branchId, peerId),
+          ),
+        ).resolves.toMatchObject({ id: peerId });
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+    it('rechecks current unit membership instead of trusting a previously loaded assignee list', async () => {
+      const directory = new IamCallCenterDirectory({ client: db } as never);
+      expect(
+        (await directory.requestAssignees(manager, branchId)).some(
+          (u) => u.id === peerId,
+        ),
+      ).toBe(true);
+      await db.iamUserProfile.update({
+        where: { userId: peerId },
+        data: { organizationUnitId: otherUnit },
+      });
+      try {
+        expect(
+          (await directory.requestAssignees(manager, branchId)).some(
+            (u) => u.id === peerId,
+          ),
+        ).toBe(false);
+        await expect(
+          db.$transaction((tx) =>
+            directory.resolveRequestAssignee(tx, manager, branchId, peerId),
+          ),
+        ).rejects.toThrow('خارج از محدوده');
+      } finally {
+        await db.iamUserProfile.update({
+          where: { userId: peerId },
+          data: { organizationUnitId: unitId },
+        });
+      }
+    });
     it('enforces real ownership writes through the authenticated HTTP/validation boundary', async () => {
       const row = await db.callCenterContact.create({
         data: {
