@@ -11299,6 +11299,12 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
 
+## CALL-QUEUE-MINE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; base develop14539e34e; branch codex/pc-c-call-queue-mine-1105. User explicitly requests swapping global queue My work/All tabs and making My work the default. Reserve only WorkQueue default/tab order in workflow.tsx and own status notes. Preserve contact dossier defaults, backend MINE authorization, counts and other filters. Own prior alert task1397 is source-frozen; its queue navigation reset must preserve this newer default during integration. No schema/API/dependency/data change.
+
+CALL-QUEUE-MINE-1105 validation: six existing workflow/layout tests and scoped lint pass; diff is limited to three queue UI lines plus notes. Source reservation releases on commit. Own frozen alert PR1397 gets a one-line MINE navigation compatibility follow-up under this newer owner instruction. Full hosted CI remains required before release.
+
 ## CALL-COMPLETION-1105 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-completion-1105 from develop000cd543d. Owner requests correction of completed calls incorrectly marked incomplete for every expert. Reserve shared call-search completeness criteria/tests, bounded operator-only historical completion-metadata reconciliation and tests, and expert drilldown invalidation only if required. Preserve optional caller name/unknown immutable number, technical call evidence, source/operator prerequisites, scopes, UI and workflow ownership. No schema, dependencies, other module tables, grants or guessed contact values. Previous published source leases are frozen; notification/request-directory active work does not overlap these leaf paths.
