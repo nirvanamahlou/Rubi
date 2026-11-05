@@ -11224,3 +11224,8 @@ CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-
 ## HR-WORKBENCH-REQUESTS-1105 — PC-A — ACTIVE
 
 Owner authorizes recipient repair, leave template, unified HR inbox and review, push and develop merge. Reserve HR/Customer Affairs/IAM request directory and Workbench request UI/contracts/tests only. Additive leave payload ships producer and consumers together. Preserve branch/account guards, native HR approval/balance rules, atomicity and audit. No migration, dependency changes, production writes or deployment. Reserve bounded English labels and generated API/legacy translation catalogues for these new controls.
+
+
+## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105 — PC-A — ACTIVE
+
+Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.

@@ -1262,79 +1262,133 @@ export function MessageComposer({
         open={groupDetails && active?.type === 'GROUP'}
         onOpenChange={setGroupDetails}
       >
-        <DialogContent dir="rtl" className="max-w-lg">
-          <DialogTitle>{active?.title}</DialogTitle>
-          <DialogDescription>اعضای گروه</DialogDescription>
-          <ul className="max-h-48 overflow-y-auto space-y-2">
-            {active?.participants.map((member) => (
-              <li key={member.id} className="flex justify-between gap-2">
-                <span>{member.displayName}</span>
-                {member.role === 'OWNER' && <span>مدیر گروه</span>}
-              </li>
-            ))}
-          </ul>
-          {canEditGroup && (
-            <Button
-              variant="outline"
-              onClick={() => setGroupEditing((value) => !value)}
-            >
-              ویرایش گروه
-            </Button>
-          )}
-          {canEditGroup && groupEditing && (
-            <>
-              <label className="space-y-2">
-                <span>نام گروه</span>
-                <Input
-                  value={editTitle}
-                  onChange={(event) => setEditTitle(event.target.value)}
-                  maxLength={160}
-                  disabled={busy}
-                />
-              </label>
-              <p>افزودن عضو</p>
-              <Input
-                aria-label="جستجوی اعضای جدید"
-                placeholder="جستجو"
-                value={contactSearch}
-                onChange={(event) => setContactSearch(event.target.value)}
-              />
-              <div className="max-h-48 overflow-y-auto space-y-2">
-                {contacts
-                  .filter(
-                    (contact) =>
-                      contact.branches.some(
-                        (branch) => branch.id === active?.branchId,
-                      ) &&
-                      !active?.participants.some(
-                        (member) => member.id === contact.id,
-                      ),
-                  )
-                  .map((contact) => (
-                    <label key={contact.id} className="flex gap-2 items-center">
-                      <Checkbox
-                        disabled={busy}
-                        checked={addMembers.includes(contact.id)}
-                        onCheckedChange={(checked) =>
-                          setAddMembers((current) =>
-                            checked
-                              ? [...new Set([...current, contact.id])]
-                              : current.filter((id) => id !== contact.id),
-                          )
-                        }
-                      />
-                      {contact.displayName}
-                    </label>
+        <DialogContent
+          dir="rtl"
+          className="flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0"
+        >
+          <header className="flex items-center gap-3 border-b bg-primary/5 px-5 py-5 pl-12">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <Users className="size-6" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle className="break-words text-lg">
+                {active?.title}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                <span>اعضای گروه</span> · {active?.participants.length ?? 0}
+              </DialogDescription>
+            </div>
+          </header>
+          <div className="min-h-0 overflow-y-auto p-5">
+            <div className={groupEditing ? 'grid gap-5 sm:grid-cols-2' : ''}>
+              <section className="min-w-0">
+                <h3 className="mb-3 text-sm font-semibold">اعضای گروه</h3>
+                <ul className="max-h-72 space-y-2 overflow-y-auto overscroll-contain">
+                  {active?.participants.map((member) => (
+                    <li
+                      key={member.id}
+                      className="flex items-center gap-3 rounded-xl border bg-muted/20 p-3"
+                    >
+                      <span
+                        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
+                        aria-hidden="true"
+                      >
+                        {initials(member.displayName)}
+                      </span>
+                      <span className="min-w-0 flex-1 break-words text-sm">
+                        {member.displayName}
+                      </span>
+                      {member.role === 'OWNER' && (
+                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+                          مدیر گروه
+                        </span>
+                      )}
+                    </li>
                   ))}
-              </div>
-              {error && <Alert tone="error" title={error} />}
-              <Button
-                disabled={busy || editTitle.trim().length < 2}
-                onClick={() => void saveGroup()}
-              >
-                ذخیره تغییرات گروه
-              </Button>
-            </>
+                </ul>
+              </section>
+              {canEditGroup && groupEditing && (
+                <section className="min-w-0 space-y-4 rounded-2xl border bg-muted/20 p-4">
+                  <label className="block space-y-2 text-sm font-medium">
+                    <span>نام گروه</span>
+                    <Input
+                      value={editTitle}
+                      onChange={(event) => setEditTitle(event.target.value)}
+                      maxLength={160}
+                      disabled={busy}
+                    />
+                  </label>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">افزودن عضو</p>
+                    <Input
+                      aria-label="جستجوی اعضای جدید"
+                      placeholder="جستجو"
+                      value={contactSearch}
+                      onChange={(event) => setContactSearch(event.target.value)}
+                    />
+                    <div className="max-h-52 space-y-2 overflow-y-auto overscroll-contain">
+                      {contacts
+                        .filter(
+                          (contact) =>
+                            contact.branches.some(
+                              (branch) => branch.id === active?.branchId,
+                            ) &&
+                            !active?.participants.some(
+                              (member) => member.id === contact.id,
+                            ),
+                        )
+                        .map((contact) => (
+                          <label
+                            key={contact.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-xl border bg-background p-3 text-sm hover:bg-primary/5"
+                          >
+                            <Checkbox
+                              disabled={busy}
+                              checked={addMembers.includes(contact.id)}
+                              onCheckedChange={(checked) =>
+                                setAddMembers((current) =>
+                                  checked
+                                    ? [...new Set([...current, contact.id])]
+                                    : current.filter((id) => id !== contact.id),
+                                )
+                              }
+                            />
+                            <span className="min-w-0 break-words">
+                              {contact.displayName}
+                            </span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                  {error && <Alert tone="error" title={error} />}
+                </section>
+              )}
+            </div>
+          </div>
+          {canEditGroup && (
+            <footer className="flex flex-wrap justify-end gap-2 border-t bg-muted/10 px-5 py-4">
+              {groupEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => setGroupEditing(false)}
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    disabled={busy || editTitle.trim().length < 2}
+                    onClick={() => void saveGroup()}
+                  >
+                    ذخیره تغییرات گروه
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={() => setGroupEditing(true)}>
+                  ویرایش گروه
+                </Button>
+              )}
+            </footer>
           )}
         </DialogContent>
       </Dialog>

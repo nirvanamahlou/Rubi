@@ -863,9 +863,6 @@ export function FinanceInboxLiveWorkspace() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black">اولویت‌های نزدیک</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    موارد باز با نزدیک‌ترین سررسید
-                  </p>
                 </div>
                 <Clock3 className="size-5 text-rose-500" />
               </div>
