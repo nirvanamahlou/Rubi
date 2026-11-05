@@ -363,7 +363,11 @@ function Content({
     ),
   );
   return (
-    <section dir="rtl" className={`${styles.workspace} ${appearance.panel}`}>
+    <section
+      dir="rtl"
+      className={`${styles.workspace} ${appearance.panel}`}
+      style={{ background: 'transparent' }}
+    >
       <header className={styles.header}>
         <div>
           <h1>

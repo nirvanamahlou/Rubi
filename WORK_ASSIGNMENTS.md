@@ -11316,3 +11316,7 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-duotone-1105 from develop ff31d2fd9
 ## CALL-PAGER-HEADSET-1105 — PC-C — IN_PROGRESS
 
 PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.
+
+## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
+
+PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
