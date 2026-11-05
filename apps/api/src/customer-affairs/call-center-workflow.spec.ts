@@ -910,6 +910,16 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           ),
         ).toEqual([]);
         await workflow.saveRequest(actor, branchId, contactId, item);
+        await workflow.saveRequest(actor, branchId, contactId, item);
+        const assignments = await db.notification.findMany({
+          where: { entityId: item.id, eventType: 'call-center.assigned' },
+        });
+        expect(assignments).toHaveLength(1);
+        expect(assignments[0]).toMatchObject({
+          recipientUserId: userId,
+          readAt: null,
+          href: '/customer-affairs/call-center#cc-follow-up-queue',
+        });
         const selected = await workflow.list(
           actor,
           branchId,
@@ -965,7 +975,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           },
         });
         expect(notices).toHaveLength(1);
-        expect(notices[0]?.recipientUserId).toBe(userId);
+        expect(notices[0]).toMatchObject({
+          recipientUserId: userId,
+          eventType: 'call-center.closed',
+          href: '/customer-affairs/call-center#cc-follow-up-queue',
+        });
         expect(JSON.stringify(notices)).not.toContain(closed.result);
         await workflow.saveRequest(actor, branchId, contactId, {
           ...closed,

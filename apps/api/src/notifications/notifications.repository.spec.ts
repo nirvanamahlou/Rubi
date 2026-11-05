@@ -1,9 +1,53 @@
 import { describe, expect, it, vi } from 'vitest';
+import { MANUAL_ACCESS_VERSION } from '@nora/contracts';
 
 import type { DatabaseService } from '../database/database.service';
 import { NotificationsRepository } from './notifications.repository';
 
 describe('NotificationsRepository recipient scoping', () => {
+  it('keeps an older unread Call Center assignment visible beyond the feed limit, then stops prioritizing it after reading', async () => {
+    const assignment = {
+      id: 'assignment',
+      href: '/customer-affairs/call-center#cc-follow-up-queue',
+      readAt: null as Date | null,
+      sourceModule: 'customer-affairs',
+      eventType: 'call-center.assigned',
+    };
+    const ordinary = Array.from({ length: 25 }, (_, id) => ({
+      id: String(id),
+      href: null,
+      readAt: null,
+    }));
+    const findMany = vi
+      .fn()
+      .mockImplementation(async () => [...ordinary, assignment]);
+    const repository = new NotificationsRepository({
+      client: {
+        notification: { findMany, count: vi.fn().mockResolvedValue(26) },
+        $transaction: async (operations: Promise<unknown>[]) =>
+          Promise.all(operations),
+      },
+    } as unknown as DatabaseService);
+    const permissions = [
+      MANUAL_ACCESS_VERSION,
+      'ui.screen.customer-affairs.call-center',
+    ];
+    expect(
+      (await repository.listForRecipient('expert', 20, permissions)).rows[0]
+        ?.id,
+    ).toBe('assignment');
+    assignment.readAt = new Date();
+    expect(
+      (await repository.listForRecipient('expert', 20, permissions)).rows.some(
+        (row) => row.id === 'assignment',
+      ),
+    ).toBe(false);
+    expect(
+      (await repository.listForRecipient('expert', 20, [])).rows.some(
+        (row) => row.id === 'assignment',
+      ),
+    ).toBe(false);
+  });
   it('lists and counts only notifications belonging to the authenticated user', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const count = vi.fn().mockResolvedValue(0);

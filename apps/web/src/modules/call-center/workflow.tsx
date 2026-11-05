@@ -592,11 +592,6 @@ export function WorkQueue({
       active = false;
     };
   }, [branchId]);
-  const changeQueueFilter = (key: keyof typeof queueFilters, value: string) => {
-    setQueueFilters((current) => ({ ...current, [key]: value }));
-    setPage(1);
-    setLoading(true);
-  };
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
@@ -613,6 +608,31 @@ export function WorkQueue({
       contactId: string;
       branchId: string;
     } | null>(null);
+  const changeQueueFilter = (key: keyof typeof queueFilters, value: string) => {
+    setQueueFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+    setLoading(true);
+  };
+  useEffect(() => {
+    const openQueue = () => {
+      setCollapsed(false);
+      setView('ALL');
+      setPage(1);
+      setQueueFilters({ teamId: '', agentId: '', requestStatus: '' });
+      queueHeading.current?.scrollIntoView({ block: 'start' });
+      queueHeading.current?.focus({ preventScroll: true });
+    };
+    const fromHash = () => {
+      if (window.location.hash === '#cc-follow-up-queue') openQueue();
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+    window.addEventListener('call-center:open-queue', openQueue);
+    return () => {
+      window.removeEventListener('hashchange', fromHash);
+      window.removeEventListener('call-center:open-queue', openQueue);
+    };
+  }, []);
   useEffect(() => {
     const refresh = () => {
       setLoading(true);
@@ -653,7 +673,10 @@ export function WorkQueue({
         branchId={branchId}
         revision={`${refreshKey}:${revision}`}
       />
-      <section className={`${styles.panel} ${styles.queue}`}>
+      <section
+        id="cc-follow-up-queue"
+        className={`${styles.panel} ${styles.queue}`}
+      >
         <header>
           <h3 tabIndex={-1} ref={queueHeading}>
             صف رسیدگی و پیگیری

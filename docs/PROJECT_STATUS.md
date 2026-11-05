@@ -8952,3 +8952,10 @@ NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items r
 ## CALL-KPI-NOTIFICATIONS-1105 — PC-C — SOURCE_READY
 
 KPI drill-down/report refresh used POST read endpoints and was misclassified by the global fetch notification tracker as a new Customer Affairs record. Exact six existing Call Center query paths now bypass generic mutation notifications (including query strings/trailing slash); real call, note and request saves retain their notifications. No notification history, API, KPI refresh, permissions or operational data is changed.38 focused tracker/feed/read-client checks and scoped lint pass; full Web type/build and publication verification pending. PC-B notification-center persistence files untouched.
+
+
+## CALL-REQUEST-ALERT-1105 — PC-C — SOURCE_READY
+
+Call Center workflow assignments/reminders now emit recipient-scoped call-center.assigned notifications with a queue anchor. Closure notices use call-center.closed, so they do not activate the alert. The bell displays a red upper-right pulse while an authorized assignment is unread; existing persistent mark-read/mark-all and stale-feed guards dismiss it. Opening the notification expands and focuses the follow-up queue and clears queue filters. Unread assignments are prioritized before bounded feed pagination. Existing legacy notices remain visible. No migration or production data changes.
+
+Validation: scoped API/Web ESLint and 56 targeted tests pass, including all 27 workflow tests against a disposable migrated PostgreSQL database (local 30s timeout; default 5s initially timed out in an existing paging test). Full local types/build attempted but blocked by stale shared workspace contract/Prisma artifacts and Next Turbopack rejecting node_modules links outside checkout. Hosted CI and production acceptance remain required. No deployment performed.
