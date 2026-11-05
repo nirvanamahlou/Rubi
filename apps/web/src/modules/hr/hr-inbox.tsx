@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
 import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton } from './hr-controls';
-import Link from '@/components/access-link';
+import { ClipboardCheck } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -206,11 +206,6 @@ export function HrInbox({
   };
   return (
     <div className={ui.spaced}>
-      <nav className={ui.actions}>
-        <Link href="/hr?section=requests&tab=radanLeave">ثبت درخواست</Link>
-        <Link href="/hr?section=requests&tab=patterns">الگوها</Link>
-        <Link href="/hr?section=requests&tab=procedures">روند تأیید</Link>
-      </nav>
       <header className={ui.heading}>
         <div>
           <h1>کارتابل و درخواست‌های من</h1>
@@ -323,7 +318,13 @@ export function HrInbox({
           onOpen={openRow}
           {...(store.data!.capabilities.write ? { onDelete: setDeleting } : {})}
           rowActions={(index) => (
-            <HrButton onClick={() => openRow(index)}>رسیدگی</HrButton>
+            <HrButton
+              onClick={() => openRow(index)}
+              aria-label="رسیدگی"
+              title="رسیدگی"
+            >
+              <ClipboardCheck className="size-4" aria-hidden="true" />
+            </HrButton>
           )}
         />
       </HrPanel>
@@ -333,19 +334,27 @@ export function HrInbox({
           if (!open && !busy) setReview(null);
         }}
       >
-        <DialogContent className="max-w-xl" dir="rtl">
-          <DialogTitle>رسیدگی به درخواست</DialogTitle>
+        <DialogContent
+          className="max-h-[85dvh] max-w-2xl overflow-y-auto p-0"
+          dir="rtl"
+        >
+          <header className="flex items-center gap-3 border-b bg-primary/5 p-5 pl-12">
+            <span className="rounded-xl bg-primary p-3 text-primary-foreground">
+              <ClipboardCheck className="size-5" aria-hidden="true" />
+            </span>
+            <DialogTitle>رسیدگی به درخواست</DialogTitle>
+          </header>
           {review ? (
-            <div className="space-y-4">
-              <p className="font-semibold">{review.subject}</p>
+            <div className="space-y-5 p-5">
+              <p className="text-lg font-bold">{review.subject}</p>
               <p className="text-sm">
                 {review.senderName} · {review.trackingNumber}
               </p>
-              <p className="whitespace-pre-wrap text-sm">
+              <p className="whitespace-pre-wrap rounded-xl bg-muted/30 p-4 text-sm leading-7">
                 {review.description}
               </p>
               {review.leave ? (
-                <dl className="grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm">
+                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-4 gap-y-5 rounded-xl border bg-primary/5 p-4 text-sm [&_dd]:break-words [&_dt]:text-muted-foreground">
                   <dt>تاریخ</dt>
                   <dd>
                     {new Date(review.leave.from).toLocaleDateString('fa-IR')} —{' '}
@@ -362,7 +371,9 @@ export function HrInbox({
                   <dd>{review.leave.substitute || '—'}</dd>
                 </dl>
               ) : null}
-              <p>{workbenchRequestStatusLabel(review.status)}</p>
+              <p className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                {workbenchRequestStatusLabel(review.status)}
+              </p>
               {!['APPROVED', 'REJECTED'].includes(review.status) &&
               store.data!.capabilities.approve &&
               store.data!.capabilities.write ? (
@@ -379,7 +390,11 @@ export function HrInbox({
                       <option value="NEEDS_REVISION">نیازمند اصلاح</option>
                     </NativeSearchSelect>
                   </label>
-                  <Button disabled={busy} onClick={() => void onReview()}>
+                  <Button
+                    className="w-full sm:w-auto"
+                    disabled={busy}
+                    onClick={() => void onReview()}
+                  >
                     ثبت نتیجه
                   </Button>
                 </>

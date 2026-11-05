@@ -109,7 +109,7 @@ beforeEach(() => {
   fixture.ages = [];
   fixture.categories = [];
 });
-it('derives the city from the selected hotel without a separate city or guest editor', () => {
+it('only offers hotels in the selected city without a duplicate guest editor', () => {
   const patch = vi.fn();
   const html = renderToStaticMarkup(
     <AdditionalHotelStays
@@ -210,4 +210,56 @@ it('keeps room composition and dates in the payload without creating charged dup
       },
     }),
   ).toBe(false);
+});
+
+it('selects another country and then a city before offering only that city hotels', () => {
+  const patch = vi.fn();
+  const cities = [
+    { id: 'city-two', name: 'Istanbul', attributes: { countryId: 'turkey' } },
+    { id: 'paris', name: 'Paris', attributes: { countryId: 'france' } },
+    { id: 'lyon', name: 'Lyon', attributes: { countryId: 'france' } },
+  ] as never;
+  const allHotels = [
+    ...(hotels as unknown as { id: string; attributes: object }[]),
+    { id: 'paris-hotel', name: 'Paris hotel', attributes: { cityId: 'paris' } },
+    { id: 'lyon-hotel', name: 'Lyon hotel', attributes: { cityId: 'lyon' } },
+  ] as never;
+  const draw = (current: SalesFormState) => {
+    fixture.choices = [];
+    renderToStaticMarkup(
+      <AdditionalHotelStays
+        state={current}
+        patch={patch}
+        hotels={allHotels}
+        cities={cities}
+        roomTypes={roomTypes}
+      />,
+    );
+  };
+  draw(state);
+  fixture.choices
+    .find((c) => c.label === 'کشور اقامت بعدی')!
+    .onChange('france');
+  let next = { ...state, ...patch.mock.lastCall![0] } as SalesFormState;
+  expect(next.hotel.additionalStays![0]).toMatchObject({
+    countryId: 'france',
+    cityId: '',
+    hotelId: '',
+  });
+  draw(next);
+  expect(
+    fixture.choices
+      .find((c) => c.label === 'شهر اقامت بعدی')!
+      .options.map((c) => c.id),
+  ).toEqual(['paris', 'lyon']);
+  expect(fixture.choices.find((c) => c.label === 'هتل')!.options).toEqual([]);
+  fixture.choices.find((c) => c.label === 'شهر اقامت بعدی')!.onChange('paris');
+  next = { ...next, ...patch.mock.lastCall![0] } as SalesFormState;
+  draw(next);
+  expect(
+    fixture.choices.find((c) => c.label === 'هتل')!.options.map((c) => c.id),
+  ).toEqual(['paris-hotel']);
+  const before = patch.mock.calls.length;
+  fixture.choices.find((c) => c.label === 'هتل')!.onChange('lyon-hotel');
+  expect(patch).toHaveBeenCalledTimes(before);
 });

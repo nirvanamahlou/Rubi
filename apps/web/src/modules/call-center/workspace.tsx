@@ -17,7 +17,8 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import { Eye, X, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { Eye, X } from 'lucide-react';
+import { CallHistoryIcon } from './call-history-icon';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
@@ -49,6 +50,7 @@ import { HostedCallForm } from './call-form-host';
 import { WithoutOutcomeDialog } from './without-outcome-dialog';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
+import appearance from './panel-appearance.module.css';
 import { ReportHighlights } from './report-highlights';
 import { IllustrationIcon } from '@/components/ui/illustration-icon';
 const outcomes: Record<string, string> = {
@@ -360,7 +362,7 @@ function Content({
     ),
   );
   return (
-    <section dir="rtl" className={styles.workspace}>
+    <section dir="rtl" className={`${styles.workspace} ${appearance.panel}`}>
       <header className={styles.header}>
         <div>
           <h1>
@@ -874,7 +876,9 @@ function DossierFrame({
         <DialogDescription className="sr-only">
           تماس‌ها، درخواست‌ها و یادداشت‌های مخاطب
         </DialogDescription>
-        <div className={styles.workspace}>{children}</div>
+        <div className={`${styles.workspace} ${appearance.panel}`}>
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   ) : (
@@ -1088,11 +1092,7 @@ function History({
           {calls.map((c) => (
             <li key={c.id}>
               <span className={styles.timelineIcon}>
-                {c.direction === 'INBOUND' ? (
-                  <PhoneIncoming size={15} />
-                ) : (
-                  <PhoneOutgoing size={15} />
-                )}
+                <CallHistoryIcon direction={c.direction} />
               </span>
               <h3>{c.subject}</h3>
               <time dateTime={c.occurredAt}>{callDate(c.occurredAt)}</time>

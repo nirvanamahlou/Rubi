@@ -296,21 +296,47 @@ export class CallCenterAccessService {
     if (users === null) return { branchId };
     return {
       branchId,
-      callCenterContact: await this.where(actor, branchId, 'workflow', tx),
       OR: [
-        ...(callbackManagers().includes(actor.userId)
-          ? [
-              {
-                callCenterContactId: {
-                  in: await this.callbackContactIds(actor, branchId, tx),
-                },
-              },
-            ]
+        ...((await this.canReviewCreatedRequest(actor, branchId, tx))
+          ? [{ createdByUserId: actor.userId, callCenterReviews: { some: {} } }]
           : []),
-        { executionOwnerUserId: { in: users } },
-        { executionOwnerUserId: null, createdByUserId: { in: users } },
+        {
+          callCenterContact: await this.where(actor, branchId, 'workflow', tx),
+          OR: [
+            ...(callbackManagers().includes(actor.userId)
+              ? [
+                  {
+                    callCenterContactId: {
+                      in: await this.callbackContactIds(actor, branchId, tx),
+                    },
+                  },
+                ]
+              : []),
+            { executionOwnerUserId: { in: users } },
+            { executionOwnerUserId: null, createdByUserId: { in: users } },
+          ],
+        },
       ],
     };
+  }
+  /** A creator's review grants access to that request, never the whole contact history. */
+  async canReviewCreatedRequest(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    this.authorize(actor, branchId);
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage',
+      )
+    )
+      return false;
+    if (callbackManagers().includes(actor.userId)) {
+      await this.directory.callCenterOperator(actor, branchId, tx);
+      return true;
+    }
+    return this.accounts.canManageRequest(actor, branchId, actor.userId, tx);
   }
   async request(
     actor: AuthenticatedActor,
@@ -326,14 +352,6 @@ export class CallCenterAccessService {
       },
     });
     if (!row) throw new NotFoundException();
-    if (row.callCenterContactId)
-      await this.contact(
-        actor,
-        branchId,
-        row.callCenterContactId,
-        'workflow',
-        tx,
-      );
     return row;
   }
 }

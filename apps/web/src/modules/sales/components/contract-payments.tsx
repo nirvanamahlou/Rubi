@@ -1,5 +1,4 @@
 'use client';
-import { ReservationPurchaseDialog } from '@/modules/reservations/components/reservation-hotel-purchase';
 import {
   paymentReceiptsApi,
   type PaymentReceiptEntry,
@@ -423,6 +422,7 @@ export function ContractPayments({
       );
       if (added) {
         setSavedPaymentId(added.id);
+        let receiptComplete = !receiptFile;
         if (receiptFile) {
           let submitted = false;
           try {
@@ -433,6 +433,7 @@ export function ContractPayments({
             submitted = true;
             await paymentReceiptsApi.upload(id, added.id, form);
             setReceiptFile(null);
+            receiptComplete = true;
           } catch (reason) {
             setError(
               reason instanceof Error
@@ -450,6 +451,7 @@ export function ContractPayments({
             );
           }
         }
+        if (receiptComplete) setAdding(false);
       }
       onSaved();
     } catch (reason) {
@@ -490,19 +492,6 @@ export function ContractPayments({
         <DialogTitle className="pe-10">
           پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
         </DialogTitle>
-        {contract?.isFloating &&
-          (selfService ||
-            actor?.permissions.includes('sales.payments.create')) && (
-            <section className="grid gap-3 rounded-xl border p-3">
-              <h3 className="font-bold">خرید قرارداد شناوری</h3>
-              <ReservationPurchaseDialog
-                key={contract.id}
-                id={contract.id}
-                salesContractId={contract.id}
-                onSaved={onSaved}
-              />
-            </section>
-          )}
         {error ? <Alert tone="error" title={error} /> : null}
         {contract?.balances.map((balance) => (
           <p key={balance.currencyCode}>
@@ -858,7 +847,7 @@ export function ContractPayments({
                 </div>
               </fieldset>
               <div className="md:col-span-2">
-                {savedPaymentId && contract && !busy ? (
+                {adding && savedPaymentId && contract && !busy ? (
                   <PaymentDocuments
                     initialFile={receiptFile}
                     initialUnknown={receiptUnknown}

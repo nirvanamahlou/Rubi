@@ -7,6 +7,7 @@ import {
   requestStatusOptions,
 } from './workflow';
 import type { RequestCase } from './workflow-client';
+import type { Call } from './model';
 
 vi.mock('@/components/ui/overlays', () => {
   const Wrapper = ({ children }: { children: ReactNode }) => (
@@ -34,6 +35,34 @@ const props = {
   contactId: 'synthetic',
   onClose: () => {},
   onSaved: () => {},
+};
+const reviewRequest: RequestCase = {
+  id: 'review-request',
+  version: 3,
+  title: 'Request awaiting review',
+  reason: 'Follow up',
+  status: 'IN_PROGRESS',
+  priority: 'NORMAL',
+  ownerId: 'responsible-expert',
+  ownerName: 'Responsible expert',
+  createdAt: '2026-11-05T08:00:00Z',
+  followUps: [],
+  history: [],
+  privateHistory: [],
+  contactSummary: { name: 'Synthetic contact', phone: '5550102' },
+};
+const unrelatedCall: Call = {
+  id: 'unrelated-call',
+  name: 'Unrelated name',
+  phone: '5550103',
+  subject: 'Unrelated latest call',
+  occurredAt: '2026-11-05T10:00:00Z',
+  direction: 'INBOUND',
+  recordings: [],
+  source: 'نامشخص',
+  operator: 'نامشخص',
+  status: 'جدید',
+  note: '',
 };
 describe('request workflow form', () => {
   it('offers only actionable request states and presents legacy open as waiting for agent', () => {
@@ -91,6 +120,55 @@ describe('request workflow form', () => {
     expect(html).toContain('<fieldset disabled=""');
     expect(html).not.toContain('type="submit"');
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>بستن<\/button>/);
+  });
+  it('shows separate contact rows without borrowing the latest unrelated call subject', () => {
+    const html = renderToStaticMarkup(
+      <WorkflowEditor
+        {...props}
+        editor={{ kind: 'request', item: reviewRequest }}
+        contactCall={unrelatedCall}
+      />,
+    );
+    expect(html).toContain('<dt>نام مخاطب:</dt>');
+    expect(html).toContain('<dd>Synthetic contact</dd>');
+    expect(html).toContain('<dt>شماره تماس:</dt>');
+    expect(html).toContain('<bdi dir="ltr">5550102</bdi>');
+    expect(html).not.toContain('موضوع تماس:');
+    expect(html).not.toContain('Unrelated latest call');
+    expect(html).not.toContain('تغییرات پس از تأیید سرور');
+  });
+  it('shows the saved related follow-up subject and a decision action only to its reviewer', () => {
+    const item: RequestCase = {
+      ...reviewRequest,
+      review: {
+        pending: true,
+        canReview: true,
+        token: 'a'.repeat(64),
+        subject: 'Saved related follow-up',
+      },
+    };
+    const render = (request: RequestCase) =>
+      renderToStaticMarkup(
+        <WorkflowEditor
+          {...props}
+          editor={{ kind: 'request', item: request }}
+          contactCall={unrelatedCall}
+        />,
+      );
+    const html = render(item);
+    expect(html).toContain('<dt>موضوع تماس:</dt>');
+    expect(html).toContain('<dd>Saved related follow-up</dd>');
+    expect(html).not.toContain('Unrelated latest call');
+    expect(html).toMatch(/<button[^>]*type="submit"[^>]*>ثبت تصمیم<\/button>/);
+    expect(
+      render({ ...item, review: { ...item.review!, canReview: false } }),
+    ).not.toContain('ثبت تصمیم');
+    const reviewed = render({
+      ...item,
+      review: { ...item.review!, pending: false },
+    });
+    expect(reviewed).not.toContain('ثبت تصمیم');
+    expect(reviewed).toContain('Saved related follow-up');
   });
 });
 
