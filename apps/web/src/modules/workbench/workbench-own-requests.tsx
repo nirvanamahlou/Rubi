@@ -57,6 +57,11 @@ export function WorkbenchOwnRequests() {
           if (active) {
             setRows(data.filter((row) => !removed.current.has(row.id)));
             setError('');
+            setSelected((current) =>
+              current
+                ? (data.find((row) => row.id === current.id) ?? null)
+                : null,
+            );
             if (requestedId && openedRequest.current !== requestedId) {
               const request = data.find((row) => row.id === requestedId);
               if (request) {

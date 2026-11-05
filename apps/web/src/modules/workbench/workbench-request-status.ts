@@ -6,7 +6,9 @@ export function shouldShowWorkbenchRequestStatus(
 }
 
 const requestStatusLabels: Record<string, string> = {
-  NEW: 'جدید',
+  NEW: 'در انتظار تأیید',
+  APPROVED: 'تأییدشده',
+  NEEDS_REVISION: 'نیازمند اصلاح',
   IN_PROGRESS: 'در حال پیگیری',
   DONE: 'تکمیل‌شده',
   CLOSED: 'بسته‌شده',

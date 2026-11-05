@@ -44,6 +44,28 @@ export class HrWorkbenchRequestUnits {
     });
   }
 
+  /** HR employee membership supplements IAM profile membership for requests only. */
+
+  async members(branchId: string, tx?: Prisma.TransactionClient) {
+    return (tx ?? this.database.client).hrEmployee.findMany({
+      where: {
+        branchId,
+        status: 'فعال',
+        deletedAt: null,
+        userId: { not: null },
+      },
+
+      select: { userId: true, unit: true },
+    });
+  }
+
+  async lockEmployee(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    branchId: string,
+  ) {
+    await tx.$queryRaw`SELECT id FROM hr_employees WHERE user_id=${userId}::uuid AND branch_id=${branchId}::uuid FOR SHARE`;
+  }
   async lock(tx: Prisma.TransactionClient, unitId: string) {
     await tx.$queryRaw`SELECT id FROM hr_records WHERE id = ${unitId}::uuid FOR SHARE`;
   }

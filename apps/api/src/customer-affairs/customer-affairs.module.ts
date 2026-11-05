@@ -1,3 +1,4 @@
+import { HrModule } from '../hr/hr.module';
 import { CallCenterActorGuard } from './call-center-actor.guard';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import { CallCenterTelephonyService } from './call-center-telephony.service';
@@ -51,6 +52,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
 
 @Module({
   imports: [
+    HrModule,
     TasksModule,
     IamModule,
     CustomersModule,
