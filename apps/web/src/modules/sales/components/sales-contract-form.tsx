@@ -342,6 +342,11 @@ export function SalesContractForm() {
   ]);
   const flightDatesReady =
     flightRangeRoute === flightRouteKey && salesFlightRangeReady(flightRange);
+  // Floating entry needs only its own departure day, not a complete round trip
+  // or a matching company inventory offer.
+  const flightEntryReady =
+    flightRangeRoute === flightRouteKey &&
+    salesFlightRangeReady({ from: flightRange.from, to: flightRange.from });
   const canPrefetchTickets = Boolean(
     state.originId &&
     state.destinationId &&
@@ -908,6 +913,10 @@ export function SalesContractForm() {
   const [purchaseError, setPurchaseError] = useState('');
   const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [purchaseCount, setPurchaseCount] = useState(0);
+  const [stagedView, setStagedView] = useState<{
+    fingerprint: string;
+    purchases: Record<string, StagedPurchase>;
+  }>({ fingerprint: '', purchases: {} });
   async function flushPurchases(id: string) {
     setPurchaseBusy(true);
     setPurchaseError('');
@@ -1976,7 +1985,7 @@ export function SalesContractForm() {
                         });
                       }}
                     />
-                    {flightDatesReady ||
+                    {flightEntryReady ||
                     state.contractFlights?.OUTBOUND ||
                     state.contractFlights?.RETURN ? (
                       <div className="mt-4">{flightDetails}</div>
@@ -2673,6 +2682,18 @@ export function SalesContractForm() {
                 <NewContractPurchases
                   key={purchaseDraftFingerprint(purchaseInput)}
                   input={purchaseInput}
+                  stagedPurchases={
+                    stagedView.fingerprint ===
+                    purchaseDraftFingerprint(purchaseInput)
+                      ? stagedView.purchases
+                      : {}
+                  }
+                  onReset={() => {
+                    pendingPurchases.current = {};
+                    purchaseAttempts.current = {};
+                    setPurchaseCount(0);
+                    setStagedView({ fingerprint: '', purchases: {} });
+                  }}
                   onStage={(id, purchase) => {
                     const fingerprint = purchaseDraftFingerprint(
                       purchaseInput!,
@@ -2683,6 +2704,10 @@ export function SalesContractForm() {
                     }
                     purchaseFingerprint.current = fingerprint;
                     pendingPurchases.current[id] = purchase;
+                    setStagedView({
+                      fingerprint,
+                      purchases: { ...pendingPurchases.current },
+                    });
                     setPurchaseCount(
                       Object.keys(pendingPurchases.current).length,
                     );
@@ -2700,6 +2725,7 @@ export function SalesContractForm() {
                     pendingPurchases.current = {};
                     purchaseAttempts.current = {};
                     setPurchaseCount(0);
+                    setStagedView({ fingerprint: '', purchases: {} });
                   }}
                 >
                   پاک‌کردن خریدهای آماده ثبت

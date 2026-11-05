@@ -87,7 +87,10 @@ export function HotelStayPurchase({
 }: {
   request: Request;
   purchaseRoot?: string | undefined;
-  onStage?: (body: ReservationPurchaseBatchInputV1) => void;
+  onStage?: (
+    body: ReservationPurchaseBatchInputV1,
+    details?: { supplierName: string; supplierNames?: Record<string, string> },
+  ) => void;
   stayKey: string;
   onSaved: () => void;
 }) {
@@ -410,7 +413,22 @@ export function HotelStayPurchase({
         ],
       };
       if (onStage) {
-        onStage(body);
+        onStage(body, {
+          supplierName: broker?.name ?? '',
+          supplierNames: Object.fromEntries(
+            [
+              [broker?.id, broker?.name],
+              [draft.transferBrokerId, draft.transferBrokerName],
+              [
+                draft.hotelTransferReturn?.brokerId,
+                draft.hotelTransferReturn?.brokerName,
+              ],
+            ].filter(
+              (entry): entry is [string, string] =>
+                typeof entry[0] === 'string' && typeof entry[1] === 'string',
+            ),
+          ),
+        });
         setMessage('خرید هتل و ترانسفر آن ثبت شد.');
         onSaved();
         return;
@@ -446,6 +464,7 @@ export function HotelStayPurchase({
         );
       }
       setMessage('خرید هتل و ترانسفر آن ثبت شد.');
+      window.dispatchEvent(new Event('floating-purchases-changed'));
       onSaved();
     } catch (error) {
       setMessage(
