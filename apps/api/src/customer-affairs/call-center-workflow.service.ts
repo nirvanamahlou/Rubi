@@ -1024,6 +1024,8 @@ export class CallCenterWorkflowService
             actor.userId,
             input.id,
             'درخواست کال سنتر رسیدگی و بسته شد',
+            undefined,
+            'call-center.closed',
           );
       }
     });
@@ -1203,17 +1205,18 @@ export class CallCenterWorkflowService
     id: string,
     title: string,
     taskId?: string,
+    eventType = 'call-center.assigned',
   ) {
     return this.notifications.createWithinTransaction(tx, {
       recipientUserIds: [recipient],
       actorUserId: actor,
       sourceModule: 'customer-affairs',
-      eventType: 'call-center.followup',
+      eventType,
       title,
       message: 'برای بررسی به پنل کال سنتر مراجعه کنید.',
       entityType: taskId ? 'CALL_CENTER_FOLLOW_UP' : 'CALL_CENTER_REQUEST',
       entityId: taskId ?? id,
-      href: '/customer-affairs/call-center',
+      href: '/customer-affairs/call-center#cc-follow-up-queue',
     });
   }
   async remind(now = new Date()) {

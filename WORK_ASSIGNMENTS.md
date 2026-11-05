@@ -1,3 +1,7 @@
+## AMIN-PR-CALL-RELEASE-1105 — PC-C — IN_PROGRESS
+
+Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
+
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
 
 Narrow CI lease: append only the new request-review PostgreSQL spec to the existing Call Center database-gate command in .github/workflows/ci.yml. Existing jobs, guards and checks remain unchanged. Prior workflow reservations are merged/released; no concurrent workflow edit appears in the current develop delta.
@@ -11276,6 +11280,14 @@ CALL-CENTER-OWNER-UNIT-SCOPE-1105 validation:36 focused IAM/HR/recording-policy 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-notifications-1105 from develop03dba84cb. Owner explicitly requests suppression of repeated generic bell notifications caused by Call Center KPI refresh. Reserve only central change-notifications.ts and its focused spec, plus own status/task notes. Classify the six existing POST read endpoints as reads; preserve genuine create/edit notifications, request/response behavior and all server notifications. PC-B notification-clear-persistence reserves notification-center and its regression only; those files remain untouched. No API/schema/dependency/IAM/data deletion or unrelated UI changes.
 
 CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-client tests passed; scoped ESLint passed. No UI/request changes; source scope freezes on push. Full Web build/types and CI remain separate gates. Production not yet changed.
+
+## CALL-REQUEST-ALERT-1105 — PC-C — RESERVED
+
+Owner requests recipient-only blinking red Call Center follow-up indicator, persistent assignment notifications and navigation to queue. Base developb6c7598fe; COMPUTER_ID=PC-C. Reserve Call Center workflow notification producer and queue anchor, Notifications repository bounded priority and tests, NotificationCenter indicator/navigation and presentation tests plus own notes. Prior notification persistence/presentation work is merged (4e4f16547 contained in develop) and retained. Additive event types call-center.assigned/closed distinguish actionable assignments from closure notices; same producer/consumer ship together, existing legacy followup notices stay visible. Recipient/auth/read persistence and transaction guards retained. No schema, dependency, IAM or business-data changes.
+
+CALL-REQUEST-ALERT-1105 validation: 56 targeted API/Web/PostgreSQL tests and scoped ESLint pass. Producer transaction/replay/closure assertions pass against a disposable database with all 220 migrations. Local database test timeout was raised to 30s for slow Docker storage, without changing repository test settings. Shared local dependency artifacts block full type/build verification; hosted CI is a release gate. Source reservations release on commit; no migration or production change.
+
+CALL-REQUEST-ALERT-1105 compatibility follow-up: owner subsequently requests My work as the queue default (CALL-QUEUE-MINE-1105). Reopen only the notification openQueue reset to MINE so notification navigation cannot restore the obsolete ALL default; retain all prior indicator/acknowledgement behavior.
 
 CALL-CENTER-OWNER-UNIT-SCOPE-1105 CI follow-up: reserve only the retained-missed-call request-assignment expectation in call-center-answered-access.postgres.spec.ts. The old fixture assigned another user through callback-triage membership alone; the new owner rule requires self-only ordinary accounts and native unit-manager authority. Add the denial assertion and use the already-authorized same-unit manager for the positive initial assignment, retaining all answer evidence, callback resolution, reopen and follow-up assertions. No production behavior or gate relaxation. The revised retained-callback PostgreSQL scenario passes locally with both the negative and same-unit manager positive paths.
 
