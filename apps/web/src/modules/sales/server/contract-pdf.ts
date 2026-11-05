@@ -1,4 +1,5 @@
 import { localizeDocumentHtml } from '@/i18n/document';
+import { renderPdfWithSmallOverflowFit } from '@/lib/pdf-overflow-fit';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import {
@@ -137,7 +138,6 @@ export async function renderContractPdf(
     directory = await mkdtemp(join(tmpdir(), 'nora-contract-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
-    await writeFile(input, html, { mode: 0o600 });
     // Isolated profile, no authentication cookies, no inherited database/document secrets.
     const env: NodeJS.ProcessEnv = { NODE_ENV: 'production' };
     for (const name of [
@@ -150,33 +150,37 @@ export async function renderContractPdf(
       'LANG',
     ])
       if (process.env[name]) env[name] = process.env[name];
-    await run(
-      chrome,
-      [
-        '--headless',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--host-resolver-rules=MAP * ~NOTFOUND',
-        '--user-data-dir=' + join(directory, 'profile'),
-        '--no-pdf-header-footer',
-        '--print-to-pdf=' + result,
-        pathToFileURL(input).href,
-      ],
-      { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
-    );
-    // Chrome on Windows can return before its headless process flushes the file.
-    await waitForPdf(result);
-    const bytes = await readFile(result);
-    if (
-      bytes.subarray(0, 5).toString() !== '%PDF-' ||
-      bytes.length > 20_000_000
-    )
-      throw new Error('PDF_INVALID');
-    return bytes;
+    return await renderPdfWithSmallOverflowFit(html, async (candidate) => {
+      await writeFile(input, candidate, { mode: 0o600 });
+      await rm(result, { force: true });
+      await run(
+        chrome,
+        [
+          '--headless',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-extensions',
+          '--disable-background-networking',
+          '--disable-sync',
+          '--host-resolver-rules=MAP * ~NOTFOUND',
+          '--user-data-dir=' + join(directory, 'profile'),
+          '--no-pdf-header-footer',
+          '--print-to-pdf=' + result,
+          pathToFileURL(input).href,
+        ],
+        { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
+      );
+      // Chrome on Windows can return before its headless process flushes the file.
+      await waitForPdf(result);
+      const bytes = await readFile(result);
+      if (
+        bytes.subarray(0, 5).toString() !== '%PDF-' ||
+        bytes.length > 20_000_000
+      )
+        throw new Error('PDF_INVALID');
+      return bytes;
+    });
   } finally {
     active--;
     // Only the exact private directory created by this invocation may be removed.
