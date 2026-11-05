@@ -772,3 +772,7 @@ The owner clarified that floating tours have a specified capacity and must suppo
 ## ACCOUNT-DETAIL-FORMS-1104 — Independent codes for each detail type
 
 The owner sets classification width to 1–20 and requires leading zeroes in the code. Replace ledger-wide code uniqueness with uniqueness per ledger and detail type; journal references keep using IDs. Use six digits for the two built-in types in new books. Migrate zero/unset widths to at least six, expanding to fit existing codes or the default starting code. The migration stops on colliding normalized type names rather than choosing which historical records to combine. PC-B and PC-D share this bounded scope.
+
+## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — 2026-11-05
+
+The owner now requires each unit manager's responsible-expert selector to contain only the manager's current organizational unit; only the verified company-director account (native username danial plus existing approved global authority) retains all-unit selection within the authorized request branch. This supersedes the earlier executive/demo all-assignee exception for this selector only. Callback-triage membership and general global Call Center read permission are not cross-unit assignment authority. Keep the native workflow/team permission, exact active organizationUnitId, current active internal accounts and branch guards. New/changed assignments revalidate the same directory under account/profile/membership locks. Historical unchanged attribution and other call visibility/recording/callback capabilities are preserved.
