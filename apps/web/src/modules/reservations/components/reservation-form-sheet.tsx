@@ -48,6 +48,12 @@ export function useReservationFormReferences(
     intake.snapshot.ticketSelections ?? [],
   );
   const entries = [
+    ...(intake.contractDetails
+      ? [
+          ['cities', intake.contractDetails.originId],
+          ['cities', intake.contractDetails.destinationId],
+        ]
+      : []),
     ...hotels.flatMap((hotel) => [
       ['cities', hotel.cityId],
       ['hotels', hotel.hotelId],

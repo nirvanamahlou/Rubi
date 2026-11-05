@@ -1,9 +1,18 @@
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { hotelAgeOn, type SalesReservationRequestV1 } from '@nora/contracts';
-import { Inject, Injectable, Module } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Module,
+  Optional,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   AuthenticatedActor,
   ReservationTableSummaryV1,
+  ReservationContractDetailsV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
@@ -17,7 +26,70 @@ export class SalesReservationTableService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(TicketPublicService) private readonly tickets: TicketPublicService,
+    @Optional()
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerCrypto?: SalesBuyerContactCrypto,
   ) {}
+  async generalDetails(
+    id: string,
+    actor: AuthenticatedActor,
+  ): Promise<ReservationContractDetailsV1> {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const row = await this.database.client.salesContract.findFirst({
+      where: { id, branchId: { in: [...actor.branchIds] } },
+      select: {
+        customerNameSnapshot: true,
+        buyerContact: true,
+        originId: true,
+        destinationId: true,
+        version: true,
+        priceComponents: true,
+        payments: true,
+      },
+    });
+    if (!row) throw new NotFoundException('قرارداد در دسترس نیست.');
+    const prices = row.priceComponents.map((p) => ({
+      type: p.type,
+      title: p.title,
+      currencyCode: p.currencyCode,
+      amount: p.amount.toString(),
+    }));
+    const balances = calculateSalesBalances(
+      prices,
+      row.payments.map((p) => ({
+        amount: p.amount.toString(),
+        currencyCode: p.currencyCode,
+        status: p.status,
+      })),
+    );
+    const financial = actor.permissions.some((p) =>
+      [
+        'sales.payments.read',
+        'finance.financial_release.read',
+        'finance.financial_release.approve',
+      ].includes(p),
+    );
+    return {
+      customerName: row.customerNameSnapshot,
+      buyerContact: this.buyerCrypto?.decrypt(row.buyerContact) ?? null,
+      originId: row.originId,
+      destinationId: row.destinationId,
+      contractVersion: row.version,
+      totals: balances.map((balance) => ({
+        currencyCode: balance.currencyCode,
+        amount: balance.amount,
+        discount: prices
+          .filter(
+            (p) =>
+              p.type === 'DISCOUNT' && p.currencyCode === balance.currencyCode,
+          )
+          .reduce((sum, p) => sum.add(p.amount), new Prisma.Decimal(0))
+          .toString(),
+        outstanding: financial ? balance.outstanding : null,
+      })),
+    };
+  }
   async hotelSavingsContracts(
     ids: readonly string[],
     actor: AuthenticatedActor,
@@ -320,7 +392,7 @@ export class SalesReservationTableService {
 }
 @Module({
   imports: [TicketRuntimeModule],
-  providers: [SalesReservationTableService],
+  providers: [SalesReservationTableService, SalesBuyerContactCrypto],
   exports: [SalesReservationTableService],
 })
 export class SalesReservationTableModule {}

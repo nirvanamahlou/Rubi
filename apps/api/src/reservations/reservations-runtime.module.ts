@@ -423,6 +423,20 @@ export class ReservationRequestsController {
       },
     };
   }
+  @Get(':id/general-details')
+  @Header('Cache-Control', 'private, no-store')
+  async generalDetails(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    if (!this.table) throw new NotFoundException();
+    return {
+      data: await this.table.generalDetails(intake.contractId, req.actor),
+    };
+  }
   @Get(':id/workflow')
   @Header('Cache-Control', 'private, no-store')
   async workflowDetail(

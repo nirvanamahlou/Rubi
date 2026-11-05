@@ -8,6 +8,9 @@ import {
   moneyUnits,
   resolveSalesPrice,
   salesContractFlights,
+  reservationHotelStays,
+  salesRoomDisplayName,
+  type ReservationContractDetailsV1,
   type CustomerDetail,
 } from '@nora/contracts';
 import { customersApi } from '@/modules/customers/api/client';
@@ -124,6 +127,27 @@ export function reservationGeneralDetailGroups(
   sensitiveContact = false,
 ): Group[] {
   const snapshot = intake.snapshot;
+  const contract = intake.contractDetails;
+  const buyer = contract?.buyerContact;
+  const nonempty = (...values: (string | null | undefined)[]) =>
+    values.find((value) => value?.trim());
+  const amount = (value: string, currency: string) =>
+    `${formatSalesMoney(value)} ${currencySymbol(currency)}`;
+  const canonicalPrices = (key: 'amount' | 'discount') =>
+    contract?.totals
+      .map((total) => amount(total[key], total.currencyCode))
+      .join(' · ');
+  const debt = (rial: boolean) => {
+    const totals = contract?.totals.filter(
+      (total) => (total.currencyCode === 'IRR') === rial,
+    );
+    if (!totals?.length) return unavailable;
+    if (totals.some((total) => total.outstanding === null))
+      return 'نیازمند مجوز مشاهده مالی';
+    return totals
+      .map((total) => amount(total.outstanding!, total.currencyCode))
+      .join(' · ');
+  };
   const workflow = intake.workflow;
   const form = reservationFormData(intake, references);
   const hotel = snapshot.hotelSelection;
@@ -169,19 +193,33 @@ export function reservationGeneralDetailGroups(
     (contact) => contact.id !== primaryPhone?.id,
   );
   const prices = priceSummary(intake);
-  const roomSummary = [
-    `کل ${form.rooms}`,
-    `DBL ${form.double}`,
-    `SGL ${form.single}`,
-    `EXT ${form.extra}`,
-  ].join(' · ');
+  const roomSummary = hotel?.rooms?.length
+    ? hotel.rooms
+        .map(
+          (room) =>
+            `اتاق ${room.ordinal}: ${salesRoomDisplayName(room)} · بزرگسال ${room.adults} · سن کودکان ${room.childAges.join('، ') || '—'}`,
+        )
+        .join(' / ')
+    : [
+        `کل ${form.rooms}`,
+        `DBL ${form.double}`,
+        `SGL ${form.single}`,
+        `EXT ${form.extra}`,
+      ].join(' · ');
   return [
     {
       title: 'طرف قرارداد',
       fields: [
         [
           'نام طرف قرارداد',
-          text(customer?.displayName ?? request.customerName),
+          text(
+            nonempty(
+              contract?.customerName,
+              intake.contractPartyName,
+              customer?.displayName,
+              request.customerName,
+            ),
+          ),
         ],
         [
           'نوع پرونده',
@@ -193,19 +231,28 @@ export function reservationGeneralDetailGroups(
         ],
         [
           'شماره تماس اصلی',
-          primaryPhone
-            ? contactValue(primaryPhone)
-            : text(customer?.maskedPrimaryContact),
+          nonempty(
+            buyer?.phone,
+            primaryPhone
+              ? contactValue(primaryPhone)
+              : customer?.maskedPrimaryContact,
+          ) ?? unavailable,
         ],
         [
           'سایر شماره‌ها',
-          otherPhones.map(contactValue).join('، ') || unavailable,
+          [buyer?.landline, ...otherPhones.map(contactValue)]
+            .filter(Boolean)
+            .filter((value, index, values) => values.indexOf(value) === index)
+            .join('، ') || unavailable,
         ],
+        ['کد پستی', text(buyer?.postalCode)],
         ['ایمیل', emails.map(contactValue).join('، ') || unavailable],
         [
           'آدرس ثبت‌شده',
-          customer?.addresses.map((address) => address.label).join('، ') ||
-            unavailable,
+          nonempty(
+            buyer?.address,
+            customer?.addresses.map((address) => address.label).join('، '),
+          ) ?? unavailable,
         ],
         [
           'وضعیت پرونده',
@@ -238,7 +285,18 @@ export function reservationGeneralDetailGroups(
       title: 'مسیر و خدمات',
       fields: [
         ['کشور', text(countryName)],
-        ['شهر / مقصد', form.destination],
+        [
+          'شهر مبدأ',
+          text(contract ? references[contract.originId]?.name : undefined),
+        ],
+        [
+          'شهر / مقصد',
+          nonempty(
+            contract ? references[contract.destinationId]?.name : undefined,
+            form.destination === '-' ? undefined : form.destination,
+            request.destination,
+          ) ?? unavailable,
+        ],
         [
           'تاریخ رفت',
           date(
@@ -297,6 +355,36 @@ export function reservationGeneralDetailGroups(
         ['توضیح اتاق', text(request.hotelNotes ?? meta('roomNotes'))],
       ],
     },
+    ...reservationHotelStays(snapshot)
+      .slice(1)
+      .map((stay): Group => ({
+        title: `اقامت ${stay.ordinal}`,
+        fields: [
+          ['نام هتل', text(stay.hotel.hotelNameSnapshot)],
+          ['شهر / مقصد', text(references[stay.hotel.cityId]?.name)],
+          [
+            'سرویس هتل',
+            text(
+              stay.hotel.mealServiceId
+                ? references[stay.hotel.mealServiceId]?.name
+                : undefined,
+            ),
+          ],
+          ['ورود هتل', date(stay.hotel.checkInDate, hotelCalendar)],
+          ['خروج هتل', date(stay.hotel.checkOutDate, hotelCalendar)],
+          [
+            'تعداد و ترکیب اتاق‌ها',
+            stay.hotel.rooms?.length
+              ? stay.hotel.rooms
+                  .map(
+                    (room) =>
+                      `اتاق ${room.ordinal}: ${salesRoomDisplayName(room)} · بزرگسال ${room.adults} · سن کودکان ${room.childAges.join('، ') || '—'}`,
+                  )
+                  .join(' / ')
+              : String(stay.hotel.roomCount),
+          ],
+        ],
+      })),
     {
       title: 'پرواز',
       fields: [
@@ -320,12 +408,33 @@ export function reservationGeneralDetailGroups(
     {
       title: 'مبالغ ثبت‌شده',
       fields: [
-        ['ارزها', prices.currencies],
-        ['قیمت روز خدمات', prices.day],
-        ['مبلغ توافقی خدمات', prices.agreed],
-        ['تخفیف / اختلاف توافق', prices.discount],
-        ['بدهکار ریالی', 'در اطلاعات ارسالی به رزرواسیون موجود نیست'],
-        ['بدهکار ارزی', 'در اطلاعات ارسالی به رزرواسیون موجود نیست'],
+        [
+          'ارزها',
+          contract?.totals.map((total) => total.currencyCode).join('، ') ||
+            prices.currencies,
+        ],
+        [
+          'قیمت روز خدمات',
+          prices.day !== unavailable
+            ? prices.day
+            : contract?.totals
+                .map((total) =>
+                  amount(
+                    moneyDecimal(
+                      moneyUnits(total.amount) + moneyUnits(total.discount),
+                    ),
+                    total.currencyCode,
+                  ),
+                )
+                .join(' · ') || unavailable,
+        ],
+        ['مبلغ توافقی خدمات', canonicalPrices('amount') || prices.agreed],
+        [
+          'تخفیف / اختلاف توافق',
+          canonicalPrices('discount') || prices.discount,
+        ],
+        ['بدهکار ریالی', debt(true)],
+        ['بدهکار ارزی', debt(false)],
         ['نرخ ارز', 'در اطلاعات ارسالی به رزرواسیون موجود نیست'],
       ],
     },
@@ -389,7 +498,12 @@ function LoadedDetails({
       active = false;
     };
   }, [intake.snapshot.customerId]);
-  const city = refs.references[intake.snapshot.hotelSelection?.cityId ?? ''];
+  const city =
+    refs.references[
+      intake.contractDetails?.destinationId ??
+        intake.snapshot.hotelSelection?.cityId ??
+        ''
+    ];
   const countryId = city?.attributes.countryId;
   useEffect(() => {
     if (typeof countryId !== 'string') return;
@@ -440,11 +554,17 @@ export function ReservationGeneralDetails({
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    void travelRequest<{ data: ReservationFormIntake }>(
-      `reservations/requests/${request.id}/workflow`,
-    )
-      .then(({ data }) => {
-        if (active) setIntake(data);
+    void Promise.all([
+      travelRequest<{ data: ReservationFormIntake }>(
+        `reservations/requests/${request.id}/workflow`,
+      ),
+      travelRequest<{ data: ReservationContractDetailsV1 }>(
+        `reservations/requests/${request.id}/general-details`,
+      ),
+    ])
+      .then(([workflow, details]) => {
+        if (active)
+          setIntake({ ...workflow.data, contractDetails: details.data });
       })
       .catch((reason) => {
         if (active)
