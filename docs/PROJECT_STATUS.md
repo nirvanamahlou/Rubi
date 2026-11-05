@@ -8942,3 +8942,7 @@ Production API/Web builds, typechecks, scoped lint and formatting passed. Verifi
 
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+## CALL-KPI-NOTIFICATIONS-1105 — PC-C — SOURCE_READY
+
+KPI drill-down/report refresh used POST read endpoints and was misclassified by the global fetch notification tracker as a new Customer Affairs record. Exact six existing Call Center query paths now bypass generic mutation notifications (including query strings/trailing slash); real call, note and request saves retain their notifications. No notification history, API, KPI refresh, permissions or operational data is changed.38 focused tracker/feed/read-client checks and scoped lint pass; full Web type/build and publication verification pending. PC-B notification-center persistence files untouched.
