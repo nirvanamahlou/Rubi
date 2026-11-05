@@ -528,6 +528,8 @@ export interface ReservationTableFlagV1 {
   actorName?: string | null | undefined;
 }
 export interface ReservationTableSummaryV1 {
+  /** Current Sales route, including contracts without inventory ticket selections. */
+  destinationId?: string | undefined;
   /** Current canonical contract names, including completed historical passenger slots. */
   passengerNames?: readonly string[] | undefined;
   contractPartyName?: string;
@@ -763,3 +765,6 @@ export type {
   TicketPurchaseInboxItemV1,
   TicketPurchaseGroupCommandV1,
 } from './ticket-purchase-inbox';
+
+/** Reserved purchase identity for the final aggregate cost of a floating contract. */
+export const CONTRACT_TOTAL_PURCHASE_KEY = 'contract-total-purchase';

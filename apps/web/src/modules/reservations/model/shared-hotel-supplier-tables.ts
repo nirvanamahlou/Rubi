@@ -1,3 +1,4 @@
+import { roomChildCounts } from './reservation-form';
 import type {
   ReservationFormIntake,
   ReservationFormReferences,
@@ -35,11 +36,12 @@ export function sharedHotelSupplierTables(
           room.ordinal,
           room.roomType,
           room.adults,
-          room.childAges.join(', ') || '-',
+          roomChildCounts(room.childAges).twoToSix,
+          roomChildCounts(room.childAges).sixToTwelve,
           room.adults + room.childAges.length,
         ]),
       );
-    else rooms.push([number, '-', data.roomType, '-', '-', '-']);
+    else rooms.push([number, '-', data.roomType, '-', '-', '-', '-']);
     const table = supplierPriceTableData(scope);
     if (scope.workflow.supplierFormSettings?.hotelRoomPrices) {
       prices.push(
@@ -96,7 +98,7 @@ export function sharedHotelSupplierTables(
     },
     {
       code: '03R',
-      widths: [6, 7, 42, 11, 23, 11],
+      widths: [6, 7, 35, 10, 16, 16, 10],
       title: 'ROOM DETAILS',
       note: 'Room quantities by hotel',
       headers: [
@@ -104,7 +106,8 @@ export function sharedHotelSupplierTables(
         'ROOM',
         'ROOM TYPE',
         'ADULTS',
-        'CHILD AGES',
+        'CHILDREN 2-6',
+        'CHILDREN 6-12',
         'GUESTS',
       ],
       rows: rooms,

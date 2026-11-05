@@ -151,6 +151,25 @@ beforeEach(() => {
     passengerComposition: { adults: 2, children: 0, infants: 0 },
   };
 });
+it.each(['2000-10-01', '2099-10-01'])(
+  'shows floating ticket entry immediately after selecting departure day %s without a return or inventory',
+  (from) => {
+    render();
+    fixture.dates!.onChange({ from, to: '' });
+    const html = render();
+    expect(html.match(/افزودن بلیط شناور/g)).toHaveLength(2);
+    expect(fixture.pickers[0]).toMatchObject({
+      exactDay: from,
+      enabled: false,
+    });
+    const selected = fixture.cells.find((c): c is SalesFormState =>
+      Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+    )!;
+    expect(salesFlightsValid(selected)).toBe(false);
+    expect(selected.ticket.outboundOfferId).toBe('');
+    expect(selected.ticket.returnOfferId).toBe('');
+  },
+);
 it.each(['ONE_WAY', 'ROUND_TRIP'] as const)(
   'selects unpriced flight-only inventory without a hotel (%s)',
   (tripType) => {
@@ -194,7 +213,8 @@ it('shows exact-date cards automatically, selects the registered return, and all
   fixture.dates!.onReturningOffers([back]);
   fixture.dates!.onChange({ from: '2099-10-01', to: '' });
   render();
-  expect(fixture.pickers).toHaveLength(0);
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]).toMatchObject({ enabled: false });
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   const searched = render();
   expect(fixture.pickers).toHaveLength(1);

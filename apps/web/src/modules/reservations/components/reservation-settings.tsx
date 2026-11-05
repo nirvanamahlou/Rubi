@@ -206,6 +206,8 @@ export function ReservationSettingsForm({
     if (source.workflow.supplierFormSettings)
       source.workflow.voucherSettings = source.workflow.supplierFormSettings;
     const settings = defaultVoucherSettings(source, refs);
+    if (!source.workflow.supplierFormSettings)
+      settings.hotelTransferRoundTrip = true;
     if (!settings.text.contractPartyName && partyName)
       settings.text.contractPartyName = partyName;
     return settings;

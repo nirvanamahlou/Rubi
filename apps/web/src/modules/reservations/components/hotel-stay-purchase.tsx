@@ -87,7 +87,10 @@ export function HotelStayPurchase({
 }: {
   request: Request;
   purchaseRoot?: string | undefined;
-  onStage?: (body: ReservationPurchaseBatchInputV1) => void;
+  onStage?: (
+    body: ReservationPurchaseBatchInputV1,
+    details?: { supplierName: string; supplierNames?: Record<string, string> },
+  ) => void;
   stayKey: string;
   onSaved: () => void;
 }) {
@@ -139,12 +142,28 @@ export function HotelStayPurchase({
       p.serviceClientKey === returnKey &&
       (p.coveredServiceClientKeys?.length ?? 1) === 1,
   );
+  const initialCounts = contractHotelTransferCounts(request.snapshot, stayKey);
+  const defaultRoundTrip =
+    quote.hotelTransferRoundTrip ?? !request.workflow?.supplierFormSettings;
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    hotelTransferRoundTrip: defaultRoundTrip,
     hotelTransferCounts:
-      quote.hotelTransferRoundTrip && quote.hotelTransferCounts
+      request.workflow?.supplierFormSettings?.hotelTransferRoundTrip &&
+      quote.hotelTransferCounts
         ? { ...quote.hotelTransferCounts }
-        : contractHotelTransferCounts(request.snapshot, stayKey),
+        : defaultRoundTrip
+          ? {
+              outbound: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+              returning: Math.max(
+                initialCounts.outbound,
+                initialCounts.returning,
+              ),
+            }
+          : initialCounts,
     ...(transfer
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
@@ -313,9 +332,10 @@ export function HotelStayPurchase({
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
         );
-      const separate =
-        draft.hotelTransferSeparate ??
-        Boolean(draft.transferBrokerId && draft.transferBrokerId !== broker.id);
+      const separate = Boolean(
+        draft.hotelTransferSplit ||
+        (draft.transferBrokerId && draft.transferBrokerId !== broker.id),
+      );
       const groups = draft.hotelTransferSplit
         ? [[outboundKey], [returnKey!]]
         : [transferKeys];
@@ -393,7 +413,22 @@ export function HotelStayPurchase({
         ],
       };
       if (onStage) {
-        onStage(body);
+        onStage(body, {
+          supplierName: broker?.name ?? '',
+          supplierNames: Object.fromEntries(
+            [
+              [broker?.id, broker?.name],
+              [draft.transferBrokerId, draft.transferBrokerName],
+              [
+                draft.hotelTransferReturn?.brokerId,
+                draft.hotelTransferReturn?.brokerName,
+              ],
+            ].filter(
+              (entry): entry is [string, string] =>
+                typeof entry[0] === 'string' && typeof entry[1] === 'string',
+            ),
+          ),
+        });
         setMessage('خرید هتل و ترانسفر آن ثبت شد.');
         onSaved();
         return;
@@ -429,6 +464,7 @@ export function HotelStayPurchase({
         );
       }
       setMessage('خرید هتل و ترانسفر آن ثبت شد.');
+      window.dispatchEvent(new Event('floating-purchases-changed'));
       onSaved();
     } catch (error) {
       setMessage(
@@ -463,6 +499,7 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        hotelBroker={broker}
         purchaseRoot={purchaseRoot}
         requestId={request.id}
         canSplitTransfers={transferKeys.length > 1}

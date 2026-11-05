@@ -1,3 +1,4 @@
+import { roomChildCounts } from '../model/reservation-form';
 import { reservationDirectionLabel } from '../model/reservation-direction-label';
 import { sharedHotelSupplierTables } from '../model/shared-hotel-supplier-tables';
 import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
@@ -157,14 +158,22 @@ export function reservationPdfHtml(
     ${
       data.roomBreakdown.length
         ? table(
-            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
+            [
+              'ROOM',
+              'ROOM TYPE',
+              'ADULTS',
+              'CHILDREN 2-6',
+              'CHILDREN 6-12',
+              'GUESTS',
+            ],
             data.roomBreakdown
               .slice(0, voucher ? 4 : undefined)
               .map((r) => [
                 r.ordinal,
                 r.roomType,
                 r.adults,
-                r.childAges.join(', ') || '-',
+                roomChildCounts(r.childAges).twoToSix,
+                roomChildCounts(r.childAges).sixToTwelve,
                 r.adults + r.childAges.length,
               ]),
             'roomBreakdown',
@@ -238,12 +247,20 @@ ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRI
     .map(
       (rooms, index) =>
         `<article class="page" dir="ltr" data-reservation-form-page><header class="header"><h1>ROOM DETAILS</h1></header><p>${escape(data.request)} · ${escape(data.hotel)} · ${escape(data.checkIn)} / ${escape(data.checkOut)}</p>${table(
-          ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
+          [
+            'ROOM',
+            'ROOM TYPE',
+            'ADULTS',
+            'CHILDREN 2-6',
+            'CHILDREN 6-12',
+            'GUESTS',
+          ],
           rooms.map((r) => [
             r.ordinal,
             r.roomType,
             r.adults,
-            r.childAges.join(', ') || '-',
+            roomChildCounts(r.childAges).twoToSix,
+            roomChildCounts(r.childAges).sixToTwelve,
             r.adults + r.childAges.length,
           ]),
         )}<footer class="footer"><b>${pages.length + index + 1} / ${pageCount}</b></footer></article>`,
