@@ -860,3 +860,30 @@ it('does not add an aggregate total on top of partial saved individual prices', 
   expect(rows[0]).not.toContain('123,456,789.25');
   expect(rows[1]).not.toContain('900.50');
 });
+
+it.each([2, 3])(
+  'prints all %s combined hotel cities in the contract destination in stay order',
+  (count) => {
+    const output = structuredClone(printFixture);
+    output.contract.hotelSelection!.additionalStays = Array.from(
+      { length: count - 1 },
+      (_, i) => ({
+        hotelId: 'extra-' + i,
+        cityId: 'extra-city-' + i,
+        hotelNameSnapshot: 'SAMPLE',
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-03',
+      }),
+    );
+    const refs = structuredClone(printReferences);
+    refs.names.antalya = 'آنتالیا';
+    refs.names['extra-city-0'] = 'استانبول';
+    refs.names['extra-city-1'] = 'ازمیر';
+    const html = contractPrintHtml(output, refs);
+    expect(html).toContain(
+      'مقصد: ' +
+        (count === 2 ? 'آنتالیا / استانبول' : 'آنتالیا / استانبول / ازمیر') +
+        '</div>',
+    );
+  },
+);

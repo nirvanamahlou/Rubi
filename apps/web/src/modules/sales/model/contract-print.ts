@@ -231,6 +231,18 @@ export function contractPrintHtml(
     .join('');
   const contractPartyName = c.customerNameSnapshot;
   const hotel = c.hotelSelection;
+  const destinationCities = hotel?.additionalStays?.length
+    ? [
+        ...new Set(
+          [
+            hotel.cityId || c.destinationId,
+            ...hotel.additionalStays.map((stay) => stay.cityId),
+          ].filter(Boolean),
+        ),
+      ]
+        .map((cityId) => name(cityId))
+        .join(' / ')
+    : name(c.destinationId);
   // Hotel room product is a Master Data reference, not a passenger bed/age category.
   const room = hotel
     ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
@@ -547,7 +559,7 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
-  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
+  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(destinationCities)}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
 ${
   legacyParties
     ? `<section><table><thead><tr><th>خدمت</th><th>بزرگسال</th><th>کودک</th><th>نوزاد</th></tr></thead><tbody>${c.servicesDetail
