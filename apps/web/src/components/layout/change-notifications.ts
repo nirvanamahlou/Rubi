@@ -66,6 +66,17 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
 ];
 
 const mutationMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+// These endpoints use POST to carry query filters, but never write business data.
+const callCenterReadPaths = new Set(
+  [
+    'search',
+    'without-outcome',
+    'today-calls',
+    'week-calls',
+    'missed-callbacks',
+    'report',
+  ].map((endpoint) => `customer-affairs/call-center/${endpoint}`),
+);
 const ignoredPathSegments = new Set([
   'export',
   'exports',
@@ -101,7 +112,9 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
   return request.pathname.slice(basePath.length).replace(/^\/+/, '');
 }
 
-function isIgnoredMutation(path: string) {
+function isIgnoredMutation(path: string, method: string) {
+  if (method === 'POST' && callCenterReadPaths.has(path.replace(/\/+$/, '')))
+    return true;
   if (path === 'iam/auth' || path.startsWith('iam/auth/')) return true;
   if (
     path === 'documents' ||
@@ -151,7 +164,7 @@ export function buildChangeNotification(
   const method = result.method.toUpperCase();
   if (!result.responseOk || !mutationMethods.has(method)) return null;
   const path = relativeApiPath(result.requestUrl, apiBaseUrl);
-  if (!path || isIgnoredMutation(path)) return null;
+  if (!path || isIgnoredMutation(path, method)) return null;
   const area = areaForPath(path);
   const action = actionForMutation(method, path);
   return {

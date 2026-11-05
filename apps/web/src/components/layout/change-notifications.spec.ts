@@ -73,6 +73,56 @@ describe('global change notifications', () => {
   });
 
   it.each([
+    'search',
+    'without-outcome',
+    'today-calls',
+    'week-calls',
+    'missed-callbacks',
+    'report',
+  ])('never notifies on repeated Call Center %s reads', async (endpoint) => {
+    const response = new Response(JSON.stringify({ data: [] }));
+    const originalFetch = vi.fn().mockResolvedValue(response);
+    const onNotification = vi.fn();
+    const trackedFetch = createTrackedFetch(
+      originalFetch as unknown as typeof fetch,
+      apiBaseUrl,
+      onNotification,
+      () => 'read-notification',
+      () => new Date(options.occurredAt),
+    );
+    for (const suffix of ['', '/?page=1', '?page=2']) {
+      const request = new Request(
+        `${apiBaseUrl}/customer-affairs/call-center/${endpoint}${suffix}`,
+        { method: 'POST', body: JSON.stringify({ page: 1 }) },
+      );
+      await expect(trackedFetch(request)).resolves.toBe(response);
+      expect(originalFetch).toHaveBeenLastCalledWith(request);
+    }
+    expect(originalFetch).toHaveBeenCalledTimes(3);
+    expect(onNotification).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['POST', 'calls'],
+    ['PATCH', 'calls/call-1'],
+    ['POST', 'contacts/contact-1/notes'],
+    ['POST', 'contacts/contact-1/requests'],
+    ['POST', 'report-settings'],
+  ])('preserves genuine Call Center %s %s notifications', (method, path) => {
+    expect(
+      buildChangeNotification(
+        {
+          method,
+          requestUrl: `${apiBaseUrl}/customer-affairs/call-center/${path}`,
+          responseOk: true,
+        },
+        apiBaseUrl,
+        options,
+      ),
+    ).toMatchObject({ href: '/customer-affairs', readAt: null });
+  });
+
+  it.each([
     ['GET', `${apiBaseUrl}/customers`, true],
     ['PATCH', `${apiBaseUrl}/customers/customer-1`, false],
     ['POST', `${apiBaseUrl}/iam/auth/refresh`, true],

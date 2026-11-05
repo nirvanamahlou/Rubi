@@ -11214,3 +11214,9 @@ Scoped reservations released at local commit. The company profile uses the share
 Publication: owner requests push, hosted CI, PR to develop, and ordinary merge after review and passing PR checks for the stacked person and company profiles. Latest develop integration preserves peer records.
 
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
+
+## CALL-KPI-NOTIFICATIONS-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-notifications-1105 from develop03dba84cb. Owner explicitly requests suppression of repeated generic bell notifications caused by Call Center KPI refresh. Reserve only central change-notifications.ts and its focused spec, plus own status/task notes. Classify the six existing POST read endpoints as reads; preserve genuine create/edit notifications, request/response behavior and all server notifications. PC-B notification-clear-persistence reserves notification-center and its regression only; those files remain untouched. No API/schema/dependency/IAM/data deletion or unrelated UI changes.
+
+CALL-KPI-NOTIFICATIONS-1105 validation:38 targeted tracker, feed-guard and read-client tests passed; scoped ESLint passed. No UI/request changes; source scope freezes on push. Full Web build/types and CI remain separate gates. Production not yet changed.
