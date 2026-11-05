@@ -11261,6 +11261,9 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
 
+## FINANCE-REQUEST-ATTACHMENTS-1105 — PC-A
+
+Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
 
 ## CALL-HISTORY-ICONS-1105 — PC-C — IN_PROGRESS
 

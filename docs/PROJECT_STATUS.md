@@ -8989,6 +8989,11 @@ Workbench recipients include active HR employee unit membership through linked a
 
 Removed the four owner-selected helper paragraphs in Finance inbox and Workbench notes/favorites/activity. Group details and editing now use responsive member cards, owner badges, separated edit fields, bounded scrolling and a stable action footer. Employee assignment history compares resolved persisted organizational values, so sending an unchanged jobTitleId or editing personal details no longer creates a spurious assignment; actual organizational changes retain audited history. Added a real PostgreSQL repeated-save regression. No migration, historic-record deletion, operational data writes or deployment. Scoped lint, nine existing Web behavior tests and three translation checks passed; API/Web type checks and production builds passed. Both isolated PostgreSQL scenarios passed, including unchanged title/personal edit without a new assignment and a genuine organizational correction retaining its audit/history. Hosted gates remain required before merge.
 
+
+## FINANCE-REQUEST-ATTACHMENTS-1105
+
+Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
+
 ## CALL-HISTORY-ICONS-1105 — PC-C — VALIDATING
 
 User-selected option2 replaces only call-history markers with filled green inbound/blue outbound handsets, pale rounded tiles and white directional arrow badges. Native SVGs remain sharp at36px; existing direction text and all data/actions/permissions remain unchanged. Light/dark RTL visual review,16 existing focused tests and scoped lint pass. No API/schema/dependency/server changes. Full Web types/build and all final-head hosted checks gate the standing authorized develop merge. Details: tasks/CALL-HISTORY-ICONS-1105.md.
