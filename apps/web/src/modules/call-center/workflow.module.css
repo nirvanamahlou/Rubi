@@ -254,11 +254,10 @@
 .actionCards article {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
-  column-gap: 12px;
   align-content: center;
-  gap: 8px;
+  gap: 5px 18px;
   text-align: start;
-  padding: 16px;
+  padding: 14px 16px;
   background: var(--surface, #fff);
   border: 1px solid var(--border, #e2e9f2);
   border-radius: 15px;
@@ -279,9 +278,11 @@
   place-items: center;
   width: 52px;
   height: 52px;
-  border-radius: 13px;
-  background: linear-gradient(145deg, #eff5ff, #dce9ff);
-  box-shadow: inset 0 1px 0 #ffffffb3;
+}
+.kpiIllustration > svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 .actionCards article > span,
 .actionCards article > strong {
@@ -353,10 +354,6 @@
 }
 .queueViews {
   margin-block: 6px;
-}
-.actionCards article {
-  padding: 14px 16px;
-  gap: 5px;
 }
 .queue [hidden] {
   display: none;
@@ -516,6 +513,7 @@
   }
   .actionCards article {
     grid-template-columns: 1fr auto;
+    column-gap: 12px;
     padding: 12px;
   }
   .kpiIllustration {
@@ -526,6 +524,7 @@
   .actionCards article > strong {
     grid-row: 1;
     align-self: center;
+    font-size: 24px;
   }
   .actionCards article > span {
     grid-column: 1 / -1;

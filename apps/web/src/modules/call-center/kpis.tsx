@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react';
 import { readApi, type CallKpis } from './read-client';
 import { faNumber } from './model';
 import styles from './workflow.module.css';
-import {
-  IllustrationIcon,
-  type IllustrationKind,
-} from '@/components/ui/illustration-icon';
-
-const illustrations: Record<string, IllustrationKind> = {
-  today: 'phone',
-  week: 'calendar',
-  withoutOutcome: 'unresolved',
-  needsFollowUp: 'callback',
-};
+import { CallKpiIcon } from './kpi-icon';
 
 const cards = [
   ['today', 'تعداد تماس امروز'],
@@ -115,7 +105,7 @@ export function CallKpiCards({
             }}
           >
             <div className={styles.kpiIllustration}>
-              <IllustrationIcon kind={illustrations[key]!} size={40} />
+              <CallKpiIcon kind={key} />
             </div>
             <span>{label}</span>
             <strong>
