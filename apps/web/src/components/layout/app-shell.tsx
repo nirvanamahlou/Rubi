@@ -61,13 +61,6 @@ import {
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
-import { IllustrationIcon } from '../ui/illustration-icon';
-import {
-  isCallCenterAppearance,
-  callCenterGroupIllustrations,
-  callCenterNavigationIllustration,
-} from './call-center-appearance';
-import callCenterAppearance from './call-center-appearance.module.css';
 import { UserMenu } from './user-menu';
 import { HeaderToday } from './header-today';
 import {
@@ -147,7 +140,6 @@ function Navigation({
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const pathname = usePathname();
-  const illustrated = isCallCenterAppearance(pathname);
   const canNavigate = useRouteAccess();
   const visibleGroups = groupedNavigationItems
     .map((group) => ({
@@ -231,21 +223,14 @@ function Navigation({
         href={destination}
         title={!compact ? displayTitle : undefined}
       >
-        {illustrated ? (
-          <IllustrationIcon
-            kind={callCenterNavigationIllustration(href)}
-            size={24}
-          />
-        ) : (
-          <Icon
-            strokeWidth={1.7}
-            aria-hidden="true"
-            className={cn(
-              'size-[17px] shrink-0',
-              !mobile && (active ? 'text-cyan-100' : 'text-[#adcaed]'),
-            )}
-          />
-        )}
+        <Icon
+          strokeWidth={1.7}
+          aria-hidden="true"
+          className={cn(
+            'size-[17px] shrink-0',
+            !mobile && (active ? 'text-cyan-100' : 'text-[#adcaed]'),
+          )}
+        />
         {!compact ? (
           <span className="min-w-0 whitespace-normal break-words">
             {displayTitle}
@@ -330,20 +315,13 @@ function Navigation({
                     mobile ? 'text-muted-foreground' : 'text-blue-200',
                   )}
                 >
-                  {illustrated ? (
-                    <IllustrationIcon
-                      kind={callCenterGroupIllustrations[group.id] ?? 'folder'}
-                      size={26}
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'size-2 shrink-0 rounded-full ring-1 ring-black/10',
-                        group.dotClass,
-                      )}
-                    />
-                  )}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-2 shrink-0 rounded-full ring-1 ring-black/10',
+                      group.dotClass,
+                    )}
+                  />
                   {english
                     ? (englishNavigationGroups[group.id] ?? group.title)
                     : group.title}
@@ -621,18 +599,12 @@ function Breadcrumb() {
 }
 
 function AppShellContent({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const { language } = useSystemPreferences();
   const english = language === 'en';
   const messages = english ? enMessages : faMessages;
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <div
-      className={cn(
-        'flex min-h-screen bg-background',
-        isCallCenterAppearance(pathname) && callCenterAppearance.shell,
-      )}
-    >
+    <div className="flex min-h-screen bg-background">
       <aside
         data-nora-sidebar
         className={cn(
