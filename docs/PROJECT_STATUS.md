@@ -1,3 +1,9 @@
+## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
+
+User explicitly corrects the prior design scope: the shared sidebar, header and application shell must keep their normal appearance when Call Center is selected. Remove its route-dependent shell palette/icon substitutions; keep the illustrated Navy/Pearl palette on the Call Center workspace and its dossier portal only. Preserve navigation, permissions, history-icon updates, pagination and all operational data behavior. Source starts from develop de9729ea2.
+
+Independent scope review and one boundary regression cover normal shared navigation and panel-only light/dark styling, including the portal. Full affected checks and final-head hosted gates are required before the user-authorized merge/release. The Web-only bounded release preserves live peer overlays, handles deletion of exactly three obsolete appearance files, verifies an encrypted server backup and canary, and checks assets, Worker/AMI/recording health with rollback. No schema, migrations, dependencies or grants.
+
 ## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
 
 Owner explicitly approves implementation of the illustrated Navy/Pearl reference, PR to develop, merge after green gates, and production deployment. Route-scoped shell colors and decorative SVG illustrations preserve navigation, permissions, data, filters and actions. Cards, queue, contact table and reports share pearl surfaces, navy typography and blue accents. Completion drill-down removes the selected helper text and centers its pager below the scrolling rows. Mobile queue controls wrap; compact KPI cards retain full labels.
@@ -8993,6 +8999,11 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 ## FINANCE-REQUEST-ATTACHMENTS-1105
 
 Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
+
+
+## HR-REVIEW-MESSAGE-ALERTS-1105
+
+HR request review has an accessible action icon, a responsive structured dialog and no redundant request navigation. Ordinary employee organization edits correct the latest assignment in place; the cooperation panel shows the latest record while historical data and audited changes remain stored. All local notification read/dismissal IDs persist per user across feed/scope refreshes. New authorized messaging notifications show a dismissible preview at the viewport bottom-right and open their exact conversation; initial, old, seen and read messages do not replay. No schema migration, operational record deletion or deployment. Validation: 59 targeted Web tests and two isolated real PostgreSQL scenarios passed; API/Web production builds, type checks and scoped lint passed. The first PostgreSQL attempt timed out in Docker; a clean rerun passed. Hosted gates required before authorized develop merge.
 
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 

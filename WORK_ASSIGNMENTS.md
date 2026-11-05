@@ -1,3 +1,7 @@
+## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de9729ea2. User explicitly authorizes restoring the shared sidebar/header/shell and limiting the approved Navy/Pearl design to the Call Center panel, tests, develop PR/merge and production release. Reserve app-shell.tsx, Call Center appearance leaf files/tests and workspace CSS binding, own notes and bounded Web release script. Preserve all peer changes, business behavior and inner panel illustrations. No API, schema, migrations, dependencies or grants. Prior NAVY-PEARL source is merged; this is the user's explicit scope correction.
+
 ## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-navy-pearl-1105 from develop ca44d23da. User explicitly approves the Navy/Pearl illustrated-icon reference, implementation, develop PR, merge only after every final-head check and production publication. Reserve Call Center presentation (workspace/workflow/kpis/report/chart/expert dialog), new reusable illustration component, and bounded route-scoped app-shell/leaf CSS changes, own regression/task/status and bounded Web-only release script. Earlier UI-COPY-CLEANUP source is already contained in develop; preserve all approved copy/structure/actions/permissions. Include this chat's prior completion-pagination change. No API/schema/dependency/data changes. Shell styling/icon substitution applies only to the Call Center route. Release must snapshot current live Web, preserve peer overlays and all non-Web services, lock, verify backup/candidate/CI and rollback on failed health or asset checks.
@@ -11264,6 +11268,10 @@ Owner authorizes four helper-text removals, group details/edit dialog redesign a
 ## FINANCE-REQUEST-ATTACHMENTS-1105 — PC-A
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
+
+## HR-REVIEW-MESSAGE-ALERTS-1105 — PC-A
+
+Owner authorizes HR review styling/icon and nav removal, current cooperation correction, durable local notification dismissal and new-message popup with chat navigation, push/develop merge. Reserve HR inbox/profile and bounded employee correction, notification center/storage and focused tests. Preserve audit history, permissions and source data; no migration or production deletion.
 
 ## CALL-HISTORY-ICONS-1105 — PC-C — SOURCE_READY
 

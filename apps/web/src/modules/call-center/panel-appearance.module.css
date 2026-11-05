@@ -1,0 +1,25 @@
+.panel {
+  --background: #f2f5fa;
+  --surface: #fff;
+  --foreground: #142440;
+  --muted: #edf2f9;
+  --muted-foreground: #5d6d85;
+  --border: #dce5f1;
+  --input: #ccd9ec;
+  --primary: #2459e8;
+  --primary-foreground: #fff;
+  --ring: #397ff5;
+  background: radial-gradient(ellipse at 75% 0, #e7eff9 0, #f2f5fa 65%);
+}
+:global(.dark) .panel {
+  --background: #111b2b;
+  --surface: #1a2940;
+  --foreground: #e8f0fc;
+  --muted: #243650;
+  --muted-foreground: #b0c2db;
+  --border: #3b506d;
+  --input: #516b8c;
+  --primary: #92b9ff;
+  --primary-foreground: #0e203c;
+  background: #111b2b;
+}
