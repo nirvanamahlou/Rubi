@@ -9028,6 +9028,14 @@ Workbench recipients include active HR employee unit membership through linked a
 Removed the four owner-selected helper paragraphs in Finance inbox and Workbench notes/favorites/activity. Group details and editing now use responsive member cards, owner badges, separated edit fields, bounded scrolling and a stable action footer. Employee assignment history compares resolved persisted organizational values, so sending an unchanged jobTitleId or editing personal details no longer creates a spurious assignment; actual organizational changes retain audited history. Added a real PostgreSQL repeated-save regression. No migration, historic-record deletion, operational data writes or deployment. Scoped lint, nine existing Web behavior tests and three translation checks passed; API/Web type checks and production builds passed. Both isolated PostgreSQL scenarios passed, including unchanged title/personal edit without a new assignment and a genuine organizational correction retaining its audit/history. Hosted gates remain required before merge.
 
 
+## CALL-QUEUE-MINE-1105 — PC-C — SOURCE_READY
+
+Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
+
+## CALL-COMPLETION-1105 — PC-C — SOURCE_READY
+
+Corrected shared completion criteria: optional caller name and unknown immutable phone no longer keep an otherwise completed call incomplete. All staff use the same producer; existing report/drilldown refresh preserved. Added preview-first audited reconciliation for saved terminal historical calls and revision invalidation for filtered pages.66 targeted tests pass, including disposable PostgreSQL preservation, concurrent replay and report/filter checks. Production read-only inspection identified4 identity-only mismatches among181 flagged calls; no live data or release changed. Full CI/build and backed-up rollout with reconciliation remain required. See tasks/CALL-COMPLETION-1105.md.
+
 ## FINANCE-REQUEST-ATTACHMENTS-1105
 
 Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
@@ -9043,6 +9051,12 @@ User-selected option2 replaces only call-history markers with filled green inbou
 
 CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
 
+## DASHBOARD-FIRST-PURCHASE-1105 — PC-C — source ready
+
+Owner confirms only the first Finance-confirmed paid contract establishes a new customer; delayed payment belongs to its approval period. Fixed scope-local history that could classify a repeat buyer as new after changing branch/agent. Current candidate contracts remain authorized; Sales internally checks candidate-only earlier company purchase existence and returns aggregate observations. Canonical buyer identity and lead-conversion behavior are preserved. No schema, dependency, business-data write or deployment.
+
+Validation:48 focused Sales/Lead/Reporting/calendar tests,7 migrated PostgreSQL cohort regressions,5 CI-policy tests, scoped ESLint/Prettier, full API TypeScript and production build pass. Fresh local dependencies/generated client were isolated to this worktree. Existing220 migrations applied only to the disposable QA database; no migration added. Added the opt-in PostgreSQL source test to existing hosted CI. Read-only production audit found no Finance-confirmed Sales receipt; pending/rejected receipts correctly yield zero paid new customers. The native Finance paths were traced and confirmed to persist approved receipts in this Sales source. See docs/tasks/DASHBOARDS-FIRST-PURCHASE-1105.md. Hosted CI/review and deployment remain outstanding.
+
 ## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
 
 Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.
@@ -9054,3 +9068,7 @@ Implement the selected02 Layered Duotone reference only for Call Center KPI card
 ## CALL-PAGER-HEADSET-1105 — PC-C — IN_PROGRESS
 
 PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.
+
+## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
+
+PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.

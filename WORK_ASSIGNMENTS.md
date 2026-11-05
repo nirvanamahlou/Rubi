@@ -11299,6 +11299,20 @@ Owner authorizes recipient repair, leave template, unified HR inbox and review, 
 
 Owner authorizes four helper-text removals, group details/edit dialog redesign and prevention of spurious employee assignment history, push/develop merge. Reserve specified Workbench/Finance text nodes, message-composer group dialog, HR update comparison and focused regressions. Base f591e86bf; prior reservations on these scopes are merged/frozen. No migration, dependencies, operational data deletion or deployment.
 
+## CALL-QUEUE-MINE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; base develop14539e34e; branch codex/pc-c-call-queue-mine-1105. User explicitly requests swapping global queue My work/All tabs and making My work the default. Reserve only WorkQueue default/tab order in workflow.tsx and own status notes. Preserve contact dossier defaults, backend MINE authorization, counts and other filters. Own prior alert task1397 is source-frozen; its queue navigation reset must preserve this newer default during integration. No schema/API/dependency/data change.
+
+CALL-QUEUE-MINE-1105 validation: six existing workflow/layout tests and scoped lint pass; diff is limited to three queue UI lines plus notes. Source reservation releases on commit. Own frozen alert PR1397 gets a one-line MINE navigation compatibility follow-up under this newer owner instruction. Full hosted CI remains required before release.
+
+## CALL-COMPLETION-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-completion-1105 from develop000cd543d. Owner requests correction of completed calls incorrectly marked incomplete for every expert. Reserve shared call-search completeness criteria/tests, bounded operator-only historical completion-metadata reconciliation and tests, and expert drilldown invalidation only if required. Preserve optional caller name/unknown immutable number, technical call evidence, source/operator prerequisites, scopes, UI and workflow ownership. No schema, dependencies, other module tables, grants or guessed contact values. Previous published source leases are frozen; notification/request-directory active work does not overlap these leaf paths.
+
+CALL-COMPLETION-1105 also reserves the existing read-service revision fingerprint to include reconciliation audit events, invalidating stale paginated completion filters. Shared criteria and operator-only reconciliation preserve facts and require actual saved-call evidence; active/synthetic sessions are skipped. Production read-only diagnostic found181 flagged calls,4 identity-only mismatches with saved terminal evidence. No production mutation.
+
+CALL-COMPLETION-1105 — SOURCE_READY:66 tests pass, including real PostgreSQL optional-identity save, preview, concurrent replay, unchanged call facts, audit uniqueness and report/filter/revision consistency. Scoped lint/format pass. Full local API type/build attempted with stale shared generated dependencies; hosted full CI remains required. Source reservation releases on commit. No production changes.
+
 ## FINANCE-REQUEST-ATTACHMENTS-1105 — PC-A
 
 Owner authorizes payment evidence in the selected Sales receipt request and removal of the source-version display, push/develop merge. Reserve Finance detail viewer, Sales source-scoped read authorization and focused tests. Finance read only within authorized branch; no new upload privilege, no migrations or deployment.
@@ -11317,6 +11331,14 @@ Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitl
 
 CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
 
+## DASHBOARD-FIRST-PURCHASE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-first-contract-1105 from develop957ff4248. Owner confirms new customers are canonical buyers with their first confirmed paid purchase in the selected period, dated by first Finance payment approval (not an earlier contract date). Reserve Sales-owned sales-dashboard-customers.public.ts and focused tests, Dashboard metric description and own task/status/decision entries. Preserve the authorized current customer cohort, but check earlier paid history company-wide inside the Sales producer using candidate IDs only; return no historical identities or branch details. No duplicate-person inference, lead-conversion changes, shared HTTP shape, schema/migration/dependency changes or production writes. Prior1031 Sales leaf reservation is released; existing1103 Dashboard changes remain intact.
+
+DASHBOARD-FIRST-PURCHASE-1105 bounded CI reservation: add only an opt-in PostgreSQL regression step in .github/workflows/ci.yml after workspace package builds; preserve all existing gates. CONTRACT-RECEIPT-1104 prior step is merged/frozen. Source scope includes the new synthetic Sales cohort integration spec.
+
+DASHBOARD-FIRST-PURCHASE-1105 validation:55 focused application tests (including7 real PostgreSQL cases),5 CI-policy checks, scoped lint/format, full API types/build passed. No production writes or deployment. Bounded source/CI lease freezes on push; hosted checks and review remain gates.
+
 ## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-expert-activity-totals-1105 from develop e58613d1e. User explicitly requests a blue grand-total footer at the end of the expert-performance table, matching the supplied reference. Reserve expert-activity.tsx/.module.css and report-highlights.spec.tsx, own task/status notes and bounded Web release helper. Sum all returned authorized expert rows, with completion calculated from summed complete/total counts rather than averaging percentages. Preserve all columns, row drilldowns, current report filters, unattributed warning, sidebar, source-share chart and KPI designs. No API, schema, migrations, permissions or dependencies. Existing chat authorization covers develop PR, green-gate merge and bounded server publication. Source-share previous release completed via PR1415; receipt4c372604f. Ownership review confirmed all returned rows are complete and no competing expert-table writer exists.
@@ -11333,3 +11355,7 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 
 Base develop16fbcf294; codex/pc-a-hr-mission-attendance-1105. Owner explicitly authorizes payroll/filter/profile UI changes, Nima-only manual attendance editing, mission time/evidence and optional petty-cash posting, push and green-gate develop merge. Reserve bounded HR frontend/API, HR contracts, IAM identity capability and Finance/Documents public mission ports and focused tests. Prior same-owner HR scopes merged/frozen. Preserve branch authorization, immutable identity restriction, raw punches/manual overrides, Decimal currency, atomic/idempotent cash posting and audit. No dependency or migration changes planned; no production deployment or live financial transactions.
 HR-MISSION-ATTENDANCE-1105 scope clarification: existing petty registrations are owned by Procurement. Reserve additive ProcurementMissionPort and optional shared transaction support in procurement.registrations only; existing fund custodian/manager, branch, evidence, balance and idempotency guards remain intact. No Finance ledger table access from HR.
+
+## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
+
+PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
