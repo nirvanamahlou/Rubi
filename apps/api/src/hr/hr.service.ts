@@ -2497,7 +2497,13 @@ export class HrService {
   }
   async leaveOptions(branchId: string, actor: AuthenticatedActor) {
     this.branch(actor, branchId);
-    return { users: await this.iam.leaveSubstituteUsers(branchId) };
+    const users = await this.iam.leaveSubstituteUsers(branchId);
+    if (
+      !users.some((user) => user.id === actor.userId) &&
+      !this.has(actor, 'hr.manage')
+    )
+      throw new ForbiddenException();
+    return { users };
   }
   async uploadLeaveEvidence(
     branchId: string,
@@ -2507,6 +2513,7 @@ export class HrService {
   ) {
     this.branch(actor, branchId);
     validate.isoDate(validUntil);
+    await this.leaveOptions(branchId, actor);
     return this.documents.uploadLeaveEvidence(
       branchId,
       validUntil,
