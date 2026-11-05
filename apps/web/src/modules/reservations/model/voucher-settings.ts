@@ -483,8 +483,5 @@ export function defaultSupplierFormSettings(
   delete source.workflow.voucherSettings;
   if (source.workflow.supplierFormSettings)
     source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-  const defaults = defaultVoucherSettings(source, refs);
-  if (!source.workflow.supplierFormSettings)
-    defaults.hotelTransferRoundTrip = true;
-  return defaults;
+  return defaultVoucherSettings(source, refs);
 }
