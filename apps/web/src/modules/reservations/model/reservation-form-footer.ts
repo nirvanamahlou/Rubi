@@ -31,7 +31,7 @@ export function reservationFormFooterHtml(
   const contact =
     companyCode && companyCode !== 'NIYAYESH_SEIR_SAHAR'
       ? `<div data-reservation-contact><strong>${escape(companyCode === 'JAHAN_BASTAN' ? (english ? 'Jahan Bastan' : 'جهان باستان') : brandName)}</strong></div>`
-      : `<div data-reservation-contact><strong>RESERVATIONS CONTACT</strong><span>Nystkt.ir · 021-72075000</span><a href="mailto:${reservationContactEmail}">${reservationContactEmail}</a></div>`;
+      : `<div data-reservation-contact><strong>RESERVATIONS CONTACT</strong><span>niyayeshseir.com · 021-72075000</span><a href="mailto:${reservationContactEmail}">${reservationContactEmail}</a></div>`;
   const publicQr = publicDocumentQr(publicDocumentUrl);
   const finish = (html: string) =>
     english ? localizeDocumentHtml(html, 'en') : html;

@@ -372,7 +372,7 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('DBL');
     expect(html).toContain('SAMPLE HOTEL');
     expect(html).toContain('https://hotel.example');
-    expect(html).toContain('Nystkt.ir');
+    expect(html).toContain('niyayeshseir.com');
     expect(html).not.toContain('>هتل نمونه<');
   });
   it('leaves the IRR cell blank for a foreign-only passenger and escapes hotel fields', () => {
@@ -498,7 +498,7 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   expect(html).toContain('<strong>جهان باستان</strong>');
   expect(html).not.toContain('header .jahan-brand{background:white');
   expect(html).not.toContain('نیایش');
-  expect(html).not.toContain('Nystkt.ir');
+  expect(html).not.toContain('niyayeshseir.com');
   expect(html).not.toContain('niyayeshseir.com');
 });
 

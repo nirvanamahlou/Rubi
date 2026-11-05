@@ -492,6 +492,21 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
 });
 
 it.each([false, true])(
+  'prints the Niyayesh website in the reservation/voucher=%s footer',
+  (voucher) => {
+    const html = reservationPdfHtml(
+      intake,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+      voucher,
+    );
+    expect(html).toContain('<span>niyayeshseir.com · 021-72075000</span>');
+    expect(html).not.toContain('Nystkt.ir');
+  },
+);
+
+it.each([false, true])(
   'prints the Jahan reservation/voucher=%s without Niyayesh footer details',
   (voucher) => {
     const companyIntake = structuredClone(intake);
@@ -511,7 +526,7 @@ it.each([false, true])(
       'https://example.test',
     );
     expect(html).toContain('jahanLogo');
-    expect(html).not.toContain('Nystkt.ir');
+    expect(html).not.toContain('niyayeshseir.com');
     expect(html).not.toContain('niyayehseir.com');
     expect(html).not.toContain('نیایش');
   },
