@@ -25,6 +25,14 @@ export interface FollowUp {
   }[];
 }
 export interface RequestCase {
+  contactSummary?: { name: string; phone: string };
+  review?: {
+    pending: boolean;
+    token?: string;
+    canReview: boolean;
+    subject?: string;
+    completedAt?: string;
+  };
   canEditManagement?: boolean;
   result?: string;
   customerId?: string | null;
@@ -95,6 +103,7 @@ export const workflowApi = {
         status: string;
         priority: string;
         createdAt: string;
+        pendingReview?: boolean;
         dueAt?: string | null;
       }[];
       meta: {

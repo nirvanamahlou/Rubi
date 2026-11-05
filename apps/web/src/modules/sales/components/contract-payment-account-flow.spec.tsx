@@ -120,7 +120,7 @@ beforeEach(() => {
     },
   });
 });
-it('saves the selected account with the payment and keeps receipt continuation available', async () => {
+it('saves the selected account and closes entry without forcing another receipt', async () => {
   render();
   await effects();
   const dialogs = nodes(render()).filter((node) => node.type === Dialog);
@@ -149,7 +149,7 @@ it('saves the selected account with the payment and keeps receipt continuation a
   );
   expect(
     nodes(render()).some((node) => node.props.paymentId === 'payment'),
-  ).toBe(true);
+  ).toBe(false);
 });
 it('clears a selected account after currency changes and blocks submitting without a compatible destination', async () => {
   render();
