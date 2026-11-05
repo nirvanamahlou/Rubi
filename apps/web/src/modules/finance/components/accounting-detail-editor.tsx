@@ -5,9 +5,20 @@ import {
   parseSetupNotes,
 } from './accounting-setup-notes';
 import { useQuery } from '@tanstack/react-query';
-import { customersApi } from '@/modules/customers/api/client';
+import { customersApi } from '@/modules/customers/public/entry';
 import { masterDataApi } from '@/modules/master-data/api/client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import styles from './accounting-detail-editor.module.css';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import { LedgerCompanyDialog } from './ledger-company-dialog';
+import { LedgerPersonDialog } from './ledger-person-dialog';
+import { DetailPicker } from './accounting-detail-picker';
+import {
+  detailDigits,
+  detailWidth,
+  nextDetailCode,
+  paddedDetailCode,
+} from '@nora/contracts';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   AccountingConfigurationV1,
@@ -35,6 +46,7 @@ const initial = (row: RecordRow | null) => ({
   active: row?.active ?? true,
   typeId: row && 'typeId' in row ? row.typeId : '',
   parentId: row && 'parentId' in row ? (row.parentId ?? '') : '',
+  customerId: (row && 'typeId' in row ? row.customerId : '') ?? '',
   currency: row && 'currency' in row ? (row.currency ?? '') : '',
   defaultFirstCode: attr(row, 'defaultFirstCode'),
   parentTypeId: attr(row, 'parentTypeId'),
@@ -74,7 +86,16 @@ export function AccountingDetailEditor({
     router.push(
       `/finance/accounting/general-ledger/accounts/lists/${kind}?bookId=${book.book.id}`,
     );
+  const [manualCode, setManualCode] = useState(false);
+  const [ownerPage, setOwnerPage] = useState(1);
+  const [ownerDialog, setOwnerDialog] = useState<string | null>(null);
+  const [newKind, setNewKind] = useState<'person' | 'organization'>('person');
+  const focusRef = useRef<HTMLElement>(null);
   const fresh = () => {
+    setManualCode(false);
+    setOwnerPage(1);
+    setOwnerDialog(null);
+    setOwnerSearch('');
     setSelected(null);
     setDraft(initial(null));
     setNotes([]);
@@ -86,23 +107,47 @@ export function AccountingDetailEditor({
   ) => setDraft((old) => ({ ...old, [key]: value }));
   const type = types.find((row) => row.id === draft.typeId);
   const [ownerSearch, setOwnerSearch] = useState('');
-  const linkedTitle =
+  const personTitle = !isType && ['شخص', 'شرکت'].includes(type?.title ?? '');
+  const detailRows = book.details.filter((row) => row.typeId === draft.typeId);
+  const width = detailWidth(type?.attributes.classificationNumberLength);
+  const suggesting =
     !isType &&
-    type?.attributes.isSystem === true &&
-    [
-      'شخص',
-      'شرکت',
-      'انبار',
-      'پروژه',
-      'ماهیت تسویه',
-      'مرکز فروش',
-      'کانال فروش',
-      'بخش',
-      'طبقه حساب محصول',
-      'طبقه حساب مشتری',
-    ].includes(type.title);
-  const personTitle =
-    linkedTitle && ['شخص', 'شرکت'].includes(type?.title ?? '');
+    !manualCode &&
+    (!selected || !('typeId' in selected) || selected.typeId !== draft.typeId);
+  const suggestedCode =
+    width && suggesting
+      ? nextDetailCode(
+          width,
+          String(type?.attributes.defaultFirstCode ?? ''),
+          detailRows.map((row) => row.code),
+        )
+      : null;
+  const displayCode = suggesting ? (suggestedCode ?? '') : draft.code;
+  const personEditor =
+    ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص';
+  const profile = useQuery({
+    queryKey: ['ledger-person', book.book.branchId, ownerDialog],
+    queryFn: () => customersApi.ledgerPerson(ownerDialog!, book.book.branchId),
+    enabled:
+      !!ownerDialog && !['choose', 'new'].includes(ownerDialog) && personEditor,
+    gcTime: 0,
+    retry: false,
+  });
+  const ownerRecord = useQuery({
+    queryKey: [
+      'accounting',
+      'detail-owner-edit',
+      book.book.branchId,
+      ownerDialog,
+    ],
+    queryFn: () => customersApi.ledgerCompany(ownerDialog!, book.book.branchId),
+    enabled:
+      !!ownerDialog &&
+      !['choose', 'new'].includes(ownerDialog) &&
+      !personEditor,
+    staleTime: 0,
+    gcTime: 0,
+  });
   const people = useQuery({
     queryKey: [
       'accounting',
@@ -110,6 +155,7 @@ export function AccountingDetailEditor({
       book.book.branchId,
       type?.title,
       ownerSearch,
+      ownerPage,
     ],
     queryFn: () =>
       customersApi.selections('accounting', {
@@ -120,45 +166,61 @@ export function AccountingDetailEditor({
         branchId: book.book.branchId,
         sortBy: 'displayName',
         sortDirection: 'asc',
-        page: 1,
+        page: ownerPage,
         pageSize: 30,
       }),
     enabled: personTitle,
   });
-  const salesChannels = useQuery({
-    queryKey: ['accounting', 'detail-sales-channels', ownerSearch],
-    queryFn: () =>
-      masterDataApi.list(
-        'sales-channels',
-        {
-          search: ownerSearch,
-          status: 'active',
-          sortBy: 'name',
-          sortDirection: 'asc',
-          page: 1,
-          pageSize: 30,
-        },
-        'accounting',
-      ),
-    enabled: linkedTitle && type?.title === 'کانال فروش',
-  });
-  const ownerOptions = personTitle
-    ? (people.data?.data ?? []).map((row) => ({
-        value: row.displayName,
-        label: row.displayName,
-      }))
-    : (type?.title === 'کانال فروش'
-        ? (salesChannels.data?.data ?? [])
-        : []
-      ).map((row) => ({
-        value: row.name,
-        label: row.name,
-      }));
-  const ownerError = personTitle
-    ? people.error?.message
-    : type?.title === 'کانال فروش'
-      ? salesChannels.error?.message
-      : 'فهرست موجودیت‌های این نوع تفصیلی هنوز به روبی متصل نشده است.';
+  function editDetail(id: string) {
+    const row = detailRows.find((item) => item.id === id);
+    if (row) {
+      setSelected(row);
+      setDraft(initial(row));
+      setManualCode(false);
+      setNotes(parseSetupNotes(row.attributes.notes));
+      setTab('main');
+    }
+  }
+  function openOwner(id: string) {
+    if (id === 'new') {
+      setNewKind(type?.title === 'شرکت' ? 'organization' : 'person');
+      setOwnerDialog('choose');
+    } else setOwnerDialog(id);
+  }
+  function selectType(typeId: string) {
+    if (typeId === draft.typeId) return;
+    setManualCode(false);
+    setOwnerSearch('');
+    setOwnerPage(1);
+    setDraft((old) => ({
+      ...old,
+      typeId,
+      parentId: '',
+      code:
+        selected && 'typeId' in selected && selected.typeId === typeId
+          ? selected.code
+          : '',
+      title: '',
+      customerId: '',
+    }));
+  }
+  function adoptOwner(
+    customer: { id: string; displayName: string },
+    kind: 'person' | 'organization',
+  ) {
+    const target = types.find(
+      (t) => t.active && t.title === (kind === 'person' ? 'شخص' : 'شرکت'),
+    );
+    if (!target) return;
+    if (target.id !== draft.typeId) selectType(target.id);
+    setDraft((old) => ({
+      ...old,
+      title: customer.displayName,
+      customerId: customer.id,
+    }));
+    setOwnerDialog(null);
+    void people.refetch();
+  }
   const currencies = useQuery({
     queryKey: ['accounting', 'currencies'],
     queryFn: () =>
@@ -200,18 +262,57 @@ export function AccountingDetailEditor({
     required = false,
     disabled = false,
   ) => (
-    <FormField key={key} label={label} id={`detail-${key}`}>
+    <FormField key={key} label={label} required={required} id={`detail-${key}`}>
       <Input
         id={`detail-${key}`}
         required={required}
         disabled={disabled}
-        value={String(draft[key])}
-        onChange={(e) => update(key, e.target.value)}
+        {...(key === 'classificationNumberLength'
+          ? {
+              inputMode: 'numeric' as const,
+              pattern: '([1-9]|1[0-9]|20)',
+              maxLength: 2,
+            }
+          : {})}
+        {...(['code', 'defaultFirstCode', 'classificationNumber'].includes(key)
+          ? {
+              inputMode: 'numeric' as const,
+              dir: 'ltr',
+              maxLength: 20,
+              pattern: '[0-9]+',
+            }
+          : {})}
+        onBlur={() => {
+          if (key === 'code' && manualCode && width && draft.code) {
+            const padded = paddedDetailCode(draft.code, width);
+            if (padded) update('code', padded);
+          }
+        }}
+        value={key === 'code' ? displayCode : String(draft[key])}
+        onChange={(e) => {
+          if (key === 'code') setManualCode(true);
+          update(
+            key,
+            [
+              'code',
+              'defaultFirstCode',
+              'classificationNumber',
+              'classificationNumberLength',
+            ].includes(key)
+              ? detailDigits(e.target.value)
+              : e.target.value,
+          );
+        }}
       />
     </FormField>
   );
   return (
-    <section className="@container space-y-3" dir="rtl">
+    <section
+      ref={focusRef}
+      tabIndex={-1}
+      className="@container space-y-3"
+      dir="rtl"
+    >
       <AccountingButton onClick={fresh}>جدید</AccountingButton>
       <AccountingDeleteButtons
         busy={busy || !!isSystem}
@@ -249,6 +350,7 @@ export function AccountingDetailEditor({
             isType ? 'save-configuration' : 'save-detail',
             {
               ...draft,
+              ...(!isType ? { code: suggesting ? '' : draft.code } : {}),
               ...(isType ? { kind: 'detail-types' } : {}),
               attributes,
               ...(selected ? { id: selected.id } : {}),
@@ -256,6 +358,7 @@ export function AccountingDetailEditor({
             selected?.version,
           ).then((saved) => {
             if (!saved) return;
+            setManualCode(false);
             setSelected(saved);
             setDraft(initial(saved));
             setNotes(parseSetupNotes(saved.attributes.notes));
@@ -281,15 +384,15 @@ export function AccountingDetailEditor({
             </button>
           ))}
         </div>
-        <div hidden={tab !== 'main'} className="space-y-4">
+        <div hidden={tab !== 'main'} className={styles.panel}>
           {isType ? (
-            <div className="grid gap-4 @min-[40rem]:grid-cols-2">
-              <div className="space-y-4">
+            <div className={styles.columns + ' ' + styles.typeColumns}>
+              <div>
                 {field('title', 'عنوان', true, !!isSystem)}
                 {field('titleEn', 'عنوان به زبان دوم', false, !!isSystem)}
                 {field('defaultFirstCode', 'اولین کد پیش فرض')}
               </div>
-              <div className="space-y-4">
+              <div>
                 <FormField label="نوع تفصیلی پدر">
                   <SearchCombobox
                     label="نوع تفصیلی پدر"
@@ -317,23 +420,32 @@ export function AccountingDetailEditor({
               </div>
             </div>
           ) : (
-            <div className="grid gap-4 @min-[40rem]:grid-cols-2">
-              <div className="space-y-4">
-                <FormField label="نوع تفصیلی">
-                  <SearchCombobox
-                    label="نوع تفصیلی"
-                    value={draft.typeId}
-                    onValueChange={(value) => {
-                      update('typeId', value);
-                      update('parentId', '');
-                      update('title', '');
-                      setOwnerSearch('');
-                    }}
-                    options={types
-                      .filter((row) => row.active)
-                      .map((row) => ({ value: row.id, label: row.title }))}
-                  />
-                </FormField>
+            <div className={styles.columns + ' ' + styles.accountColumns}>
+              <div>
+                <DetailPicker
+                  label="نوع تفصیلی"
+                  required
+                  value={type?.title ?? ''}
+                  columns={[
+                    'عنوان',
+                    'پیش‌فرض',
+                    'نوع تفصیلی پدر',
+                    'کنترل رابطه پدر فرزندی',
+                  ]}
+                  rows={types
+                    .filter((row) => row.active)
+                    .map((row) => ({
+                      id: row.id,
+                      cells: [
+                        row.title,
+                        row.attributes.isSystem ? 'بله' : 'خیر',
+                        types.find((p) => p.id === row.attributes.parentTypeId)
+                          ?.title ?? '—',
+                        row.attributes.enforceParent ? 'بله' : 'خیر',
+                      ],
+                    }))}
+                  onSelect={selectType}
+                />
                 <FormField label="تفصیلی پدر">
                   <SearchCombobox
                     label="تفصیلی پدر"
@@ -354,39 +466,108 @@ export function AccountingDetailEditor({
                   فعال
                 </label>
               </div>
-              <div className="space-y-4">
-                {field('code', 'کد', !type?.attributes.defaultFirstCode)}
+              <div>
+                {field('code', 'کد', true, !type)}
+                {suggesting && type && !suggestedCode && (
+                  <p role="alert">بازه کد این نوع تفصیلی تکمیل شده است.</p>
+                )}
                 {field('classificationNumber', 'شماره طبقه بندی')}
               </div>
-              <div className="space-y-4">
-                {linkedTitle ? (
-                  <FormField label="عنوان">
-                    <SearchCombobox
-                      label="عنوان"
-                      required
-                      value={draft.title}
-                      selectedLabel={draft.title}
-                      onSearchChange={setOwnerSearch}
-                      remote
-                      loading={people.isFetching || salesChannels.isFetching}
-                      error={ownerError}
-                      onValueChange={(value) => update('title', value)}
-                      options={ownerOptions}
-                    />
-                  </FormField>
-                ) : (
-                  field('title', 'عنوان', true)
-                )}
-                {field('titleEn', 'عنوان به زبان دوم')}
-              </div>
-              <FormField label="ارز پیش فرض">
-                <SearchCombobox
-                  label="ارز پیش فرض"
-                  value={draft.currency}
-                  onValueChange={(value) => update('currency', value)}
-                  options={currencyOptions}
+              <div>
+                <DetailPicker
+                  key={draft.typeId}
+                  label="عنوان"
+                  value={draft.title}
+                  disabled={!type}
+                  required
+                  columns={['نام کامل', 'شماره', 'نوع']}
+                  rows={
+                    personTitle
+                      ? (people.data?.data ?? []).map((row) => ({
+                          id: row.id,
+                          cells: [
+                            row.displayName,
+                            row.companyCode ??
+                              row.personCode ??
+                              detailRows.find((d) => d.customerId === row.id)
+                                ?.code ??
+                              '—',
+                            type!.title,
+                          ],
+                        }))
+                      : detailRows.map((row) => ({
+                          id: row.id,
+                          cells: [row.title, row.code, type?.title ?? ''],
+                        }))
+                  }
+                  {...(personTitle
+                    ? {
+                        onSearch: (value: string) => {
+                          setOwnerSearch(value);
+                          setOwnerPage(1);
+                        },
+                      }
+                    : { onType: (title: string) => update('title', title) })}
+                  onSelect={(id) => {
+                    if (personTitle) {
+                      const row = people.data?.data.find(
+                        (item) => item.id === id,
+                      );
+                      if (row)
+                        setDraft((old) => ({
+                          ...old,
+                          customerId: id,
+                          title: row.displayName,
+                        }));
+                    } else {
+                      const row = detailRows.find((item) => item.id === id);
+                      if (row) update('title', row.title);
+                    }
+                  }}
+                  onEdit={personTitle ? openOwner : editDetail}
+                  message={
+                    personTitle
+                      ? people.isFetching
+                        ? 'در حال دریافت…'
+                        : people.error?.message
+                      : undefined
+                  }
+                  footer={
+                    personTitle && (
+                      <>
+                        <button type="button" onClick={() => openOwner('new')}>
+                          ＋ ایجاد {type?.title}
+                        </button>
+                        {ownerPage > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setOwnerPage((page) => page - 1)}
+                          >
+                            قبلی
+                          </button>
+                        )}
+                        {people.data?.data.length === 30 && (
+                          <button
+                            type="button"
+                            onClick={() => setOwnerPage((page) => page + 1)}
+                          >
+                            بعدی
+                          </button>
+                        )}
+                      </>
+                    )
+                  }
                 />
-              </FormField>
+                {field('titleEn', 'عنوان به زبان دوم')}
+                <FormField label="ارز پیش فرض">
+                  <SearchCombobox
+                    label="ارز پیش فرض"
+                    value={draft.currency}
+                    onValueChange={(value) => update('currency', value)}
+                    options={currencyOptions}
+                  />
+                </FormField>
+              </div>
             </div>
           )}
           <FormField label="توضیحات" id="detail-description">
@@ -418,6 +599,74 @@ export function AccountingDetailEditor({
         </div>
         <AccountingSaveButtons busy={busy} />
       </form>
+      {ownerDialog === 'choose' ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setOwnerDialog(null);
+          }}
+        >
+          <DialogContent
+            dir="rtl"
+            aria-describedby={undefined}
+            className="max-w-sm"
+          >
+            <DialogTitle>انتخاب شخص یا شرکت</DialogTitle>
+            <fieldset className="grid gap-3">
+              <legend>مایل به افزودن شخص هستید یا شرکت؟</legend>
+              {(['person', 'organization'] as const).map((k) => (
+                <label key={k}>
+                  <input
+                    type="radio"
+                    name="new-owner-kind"
+                    checked={newKind === k}
+                    onChange={() => setNewKind(k)}
+                  />{' '}
+                  {k === 'person' ? 'شخص' : 'شرکت'}
+                </label>
+              ))}
+            </fieldset>
+            <div className="flex gap-4">
+              <button type="button" onClick={() => setOwnerDialog('new')}>
+                تأیید
+              </button>
+              <button type="button" onClick={() => setOwnerDialog(null)}>
+                انصراف
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : ownerDialog &&
+        personEditor &&
+        (ownerDialog === 'new' || profile.data) ? (
+        <LedgerPersonDialog
+          key={ownerDialog}
+          initial={ownerDialog === 'new' ? undefined : profile.data?.data}
+          book={book}
+          onClose={() => setOwnerDialog(null)}
+          onSelected={(row) => adoptOwner(row, 'person')}
+        />
+      ) : (
+        ownerDialog &&
+        (!personEditor && (ownerDialog === 'new' || ownerRecord.data) ? (
+          <LedgerCompanyDialog
+            key={ownerDialog}
+            initial={ownerDialog === 'new' ? undefined : ownerRecord.data?.data}
+            book={book}
+            onClose={() => setOwnerDialog(null)}
+            onSelected={(row) => adoptOwner(row, 'organization')}
+          />
+        ) : (
+          <div role="status">
+            {profile.error?.message ??
+              ownerRecord.error?.message ??
+              'در حال دریافت…'}{' '}
+            <button type="button" onClick={() => setOwnerDialog(null)}>
+              بستن
+            </button>
+          </div>
+        ))
+      )}
     </section>
   );
 }

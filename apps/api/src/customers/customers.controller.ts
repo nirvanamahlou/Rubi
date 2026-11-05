@@ -44,6 +44,114 @@ export class CustomersController {
     @Inject(CustomerService) private readonly service: CustomerService,
   ) {}
 
+  @Get('ledger-companies/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.read',
+    'customers.sensitive.read',
+  )
+  ledgerCompany(
+    @Param('id') id: string,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.ledgerCompany(id, branch, req.actor, trace);
+  }
+  @Post('ledger-companies')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.create',
+  )
+  createLedgerCompany(
+    @Body() body: unknown,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.saveLedgerCompany(
+      body,
+      branch,
+      req.actor,
+      undefined,
+      trace,
+    );
+  }
+  @Patch('ledger-companies/:id')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.update',
+    'customers.read',
+    'customers.sensitive.read',
+  )
+  updateLedgerCompany(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.saveLedgerCompany(body, branch, req.actor, id, trace);
+  }
+
+  @Get('ledger-persons/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.read',
+    'customers.sensitive.read',
+  )
+  ledgerPerson(
+    @Param('id') id: string,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.ledgerPerson(id, branch, req.actor, trace);
+  }
+  @Post('ledger-persons')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.create',
+  )
+  createLedgerPerson(
+    @Body() body: unknown,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.saveLedgerPerson(
+      body,
+      branch,
+      req.actor,
+      undefined,
+      trace,
+    );
+  }
+  @Patch('ledger-persons/:id')
+  @RequirePermissions(
+    'finance.read',
+    'finance.account.manage',
+    'customers.update',
+    'customers.read',
+    'customers.sensitive.read',
+  )
+  updateLedgerPerson(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-request-id') trace?: string,
+  ) {
+    return this.service.saveLedgerPerson(body, branch, req.actor, id, trace);
+  }
+
   @Get()
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')

@@ -13,7 +13,7 @@ describe('master data API proposal', () => {
     expect(query).toMatchObject({
       search: 'ایران',
       status: 'all',
-      sortBy: 'name',
+      sortBy: 'displayOrder',
       sortDirection: 'asc',
       page: 1,
       pageSize: 25,

@@ -138,7 +138,7 @@ function render(language: 'fa' | 'en', suppliers = false) {
     </AccessPermissionsProvider>,
   );
 }
-it('offers the existing supplier directory only to users with purchase access', () => {
+it('keeps the supplier directory card out of the purchase hub even with purchase access', () => {
   const managed = [
     'procurement.read.all',
     USER_ACCESS_PROFILE_PERMISSION,
@@ -154,8 +154,8 @@ it('offers the existing supplier directory only to users with purchase access', 
   expect(render('fa')).not.toContain('/purchases?section=suppliers');
   state.index = 0;
   const html = render('fa', true);
-  expect(html).toContain('href="/purchases?section=suppliers"');
-  expect(html).toContain('مدیریت تأمین‌کنندگان');
+  expect(html).not.toContain('href="/purchases?section=suppliers"');
+  expect(html).not.toContain('مدیریت تأمین‌کنندگان');
 });
 it('renders themed categories alongside both recorded and missing contract services', () => {
   const html = render('fa');

@@ -1260,13 +1260,20 @@ export class MasterDataRepository {
     // Every reference resource except rate history has a persisted displayOrder.
     // Apply it before pagination; sorting only the loaded page loses placement.
     const orderBy =
-      query.sortBy === 'name' && resource !== 'exchange-rates'
+      (query.sortBy === 'displayOrder' || query.sortBy === 'name') &&
+      resource !== 'exchange-rates'
         ? [
-            { displayOrder: 'asc' },
-            { [sortField]: query.sortDirection },
+            {
+              displayOrder:
+                query.sortBy === 'name' ? 'asc' : query.sortDirection,
+            },
+            { createdAt: 'asc' },
             { id: 'asc' },
           ]
-        : { [sortField]: query.sortDirection };
+        : {
+            [query.sortBy === 'displayOrder' ? 'updatedAt' : sortField]:
+              query.sortDirection,
+          };
     const args: Record<string, unknown> = {
       where,
       orderBy,
@@ -1331,8 +1338,9 @@ export class MasterDataRepository {
     data: Record<string, unknown>,
     actorUserId: string,
     actorBranchId: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const createData = { ...data };
       const dossier = createData.partnerDossier as
         Record<string, unknown> | undefined;
@@ -1406,7 +1414,10 @@ export class MasterDataRepository {
         },
       });
       return row;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async update(
@@ -1416,8 +1427,9 @@ export class MasterDataRepository {
     expectedVersion: number,
     actorUserId: string,
     actorBranchId: string,
+    existingTransaction?: Prisma.TransactionClient,
   ) {
-    return this.database.client.$transaction(async (transaction) => {
+    const work = async (transaction: Prisma.TransactionClient) => {
       const model = delegate(transaction, resource);
       const writeData = { ...data };
       const dossier = writeData.partnerDossier as
@@ -1490,7 +1502,10 @@ export class MasterDataRepository {
         },
       });
       return row;
-    });
+    };
+    return existingTransaction
+      ? work(existingTransaction)
+      : this.database.client.$transaction(work);
   }
 
   async remove(

@@ -1,3 +1,9 @@
+import type { LedgerCompanyView, LedgerCompanyInput } from '@nora/contracts';
+import type {
+  LedgerPersonInput,
+  LedgerPersonView,
+  PersonNote,
+} from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   BranchReference,
@@ -133,10 +139,56 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
-  selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
-    return request<{ data: readonly { id: string; displayName: string }[] }>(
-      `/selections/${workflow}?${serializeCustomerListQuery(query)}`,
+  ledgerCompany(id: string, branch: string) {
+    return request<{ data: LedgerCompanyView }>(
+      '/ledger-companies/' + encodeURIComponent(id),
+      { headers: { 'x-branch-id': branch } },
     );
+  },
+  saveLedgerCompany(input: LedgerCompanyInput, branch: string, id?: string) {
+    return request<{
+      data: {
+        id: string;
+        displayName: string;
+        version: number;
+        organizationVersion: number;
+        notes: PersonNote[];
+      };
+    }>('/ledger-companies' + (id ? '/' + encodeURIComponent(id) : ''), {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'x-branch-id': branch },
+      body: JSON.stringify(input),
+    });
+  },
+  ledgerPerson(id: string, branch: string) {
+    return request<{ data: LedgerPersonView }>(
+      '/ledger-persons/' + encodeURIComponent(id),
+      { headers: { 'x-branch-id': branch } },
+    );
+  },
+  saveLedgerPerson(input: LedgerPersonInput, branch: string, id?: string) {
+    return request<{
+      data: {
+        id: string;
+        displayName: string;
+        version: number;
+        notes: PersonNote[];
+      };
+    }>('/ledger-persons' + (id ? '/' + encodeURIComponent(id) : ''), {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'x-branch-id': branch },
+      body: JSON.stringify(input),
+    });
+  },
+  selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
+    return request<{
+      data: readonly {
+        id: string;
+        displayName: string;
+        personCode?: string;
+        companyCode?: string;
+      }[];
+    }>(`/selections/${workflow}?${serializeCustomerListQuery(query)}`);
   },
   registrationLookup(input: CustomerRegistrationLookupRequest) {
     return request<{ data: CustomerDetail | null }>(
@@ -180,8 +232,11 @@ export const customersApi = {
   audit(id: string) {
     return request<CustomerAuditResponse>(`/${encodeURIComponent(id)}/audit`);
   },
-  create(input: CustomerMutationRequest) {
-    return request<{ data: CustomerDetail }>('', body(input));
+  create(input: CustomerMutationRequest, branchId?: string) {
+    return request<{ data: CustomerDetail }>('', {
+      ...body(input),
+      ...(branchId ? { headers: { 'x-branch-id': branchId } } : {}),
+    });
   },
   update(id: string, input: CustomerMutationRequest) {
     return request<{ data: CustomerDetail }>(`/${encodeURIComponent(id)}`, {

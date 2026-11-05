@@ -556,7 +556,7 @@ export function HrEmployees({
   );
   const [branch, setBranch] = useState('');
   const [unit, setUnit] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('فعال');
   const [range, setRange] = useState({ from: '', to: '' });
   const [editing, setEditing] = useState<HrEmployeeDto | null | undefined>(
     undefined,
@@ -643,6 +643,26 @@ export function HrEmployees({
       />
       {references.error ? <p role="alert">{references.error}</p> : null}
       <HrPanel title="فهرست کارکنان">
+        <div
+          className="mb-4 flex gap-2 rounded-xl bg-muted p-1"
+          role="group"
+          aria-label="گروه کارکنان"
+        >
+          {[
+            { value: 'فعال', label: 'کارکنان فعلی' },
+            { value: 'غیرفعال', label: 'کارکنان سابق' },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              aria-pressed={status === tab.value}
+              onClick={() => setStatus(tab.value)}
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${status === tab.value ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:bg-background/50'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <div className={ui.filters}>
           <label>
             جست‌وجو
@@ -682,24 +702,6 @@ export function HrEmployees({
             >
               <option value="code">کد پرسنلی</option>
               <option value="name">اسم و فامیل</option>
-            </NativeSearchSelect>
-          </label>
-          <label>
-            وضعیت
-            <NativeSearchSelect
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-            >
-              <option value="">همه وضعیت‌ها</option>
-              {Array.from(
-                new Set(
-                  store.data!.employees.map((item) =>
-                    hrStatusText(item.status),
-                  ),
-                ),
-              ).map((item) => (
-                <option key={item}>{item}</option>
-              ))}
             </NativeSearchSelect>
           </label>
           <label>
@@ -751,7 +753,6 @@ export function HrEmployees({
               setSort('code');
               setBranch('');
               setUnit('');
-              setStatus('');
             }}
           >
             پاک‌کردن فیلتر

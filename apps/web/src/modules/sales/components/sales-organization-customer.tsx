@@ -128,10 +128,6 @@ export function SalesOrganizationCustomer({
       aria-label="انتخاب مشتری حقوقی یا آژانس"
     >
       <h3 className="font-bold">مشتری حقوقی / آژانس</h3>
-      <p className="text-sm text-muted-foreground">
-        سازمان یا آژانس ثبت‌شده را جست‌وجو کنید؛ مسافران را جداگانه در پایین
-        وارد کنید.
-      </p>
       {error ? (
         <Alert tone="error" title="اتصال انجام نشد" description={error} />
       ) : null}
@@ -173,10 +169,6 @@ export function SalesOrganizationCustomer({
           دریافت دوباره
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        سازمان جدیدی ساخته نمی‌شود؛ در صورت نبود پرونده مشتری، فقط پرونده حقوقی
-        متصل به همین سازمان ثبت می‌شود.
-      </p>
     </section>
   );
 }

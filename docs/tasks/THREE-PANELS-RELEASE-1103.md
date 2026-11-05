@@ -1,3 +1,6 @@
 # THREE-PANELS-RELEASE-1103
 
 Owner authorizes a bounded server release of approved Call Center, Dashboard and Reports work. CallForm explicitly exposes every source and outcome choice rather than silently truncating to five; default behavior of the shared selector remains unchanged elsewhere.17 popup/selector regressions and scoped lint pass. Release will preserve current unrelated production source/settings, validate required public reporting adapters, build and test a candidate, verify encrypted server-only backup and deploy under the existing lock with rollback and Worker/API/AMI checks. No IAM grants, schema/migrations, dependency or business-data writes are included.
+
+2026-11-05 refresh: production is now develop3558a65a5, which contains the approved Call Center/Dashboard/Reports source from6dbafb7fe. Their scoped source has no further diff in current develop. Preserve that newer deployment and peer overlays; refresh only the remaining shared CallForm option visibility and regression. Existing prepared1103 context is obsolete and must not be activated. Scoped lint and9 popup tests pass after removing the duplicate source prop caught by hosted CI. Final CI gates remain required.
+

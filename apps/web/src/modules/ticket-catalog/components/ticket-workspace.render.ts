@@ -51,7 +51,7 @@ describe('Rendered ticket UI', () => {
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('تعریف بلیط جدید');
     expect(html).not.toContain('افزودن نمونه‌ها');
-    expect(html).toContain('هواپیما • قطار • اتوبوس');
+    expect(html).not.toContain('هواپیما • قطار • اتوبوس');
     expect(html).toContain('تعریف بلیط قابل فروش');
     expect(html).toContain('مسیر، برنامه حرکت و ظرفیت');
     expect(html).toContain('بلیط‌های صادرشده مسافران');

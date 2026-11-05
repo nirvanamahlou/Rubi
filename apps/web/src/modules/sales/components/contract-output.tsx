@@ -19,12 +19,7 @@ import type {
   SalesContractOutputV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { salesApi } from '../api/client';
@@ -228,12 +223,11 @@ export function ContractOutputButton({
           }
         }}
       >
-        <DialogContent className="flex max-h-[94vh] max-w-5xl flex-col gap-3 overflow-hidden">
+        <DialogContent
+          aria-describedby={undefined}
+          className="flex max-h-[94vh] max-w-5xl flex-col gap-3 overflow-hidden"
+        >
           <DialogTitle>خروجی قرارداد برای مشتری</DialogTitle>
-          <DialogDescription>
-            مبلغ‌ها از قرارداد ثبت‌شده خوانده می‌شوند. فایل PDF را مستقیم دانلود
-            کنید. این نسخه رسید پرداخت یا فاکتور رسمی مالیاتی نیست.
-          </DialogDescription>
           {output && (
             <p className="text-sm">
               شرکت فعال برای این نسخه:{' '}
@@ -241,11 +235,6 @@ export function ContractOutputButton({
               <bdi>{output.contract.contractNumber}</bdi>
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            شرکت این نسخه، شرکت فعال هنگام تهیه خروجی است. این برگه رسید پرداخت
-            یا تأیید نهایی خدمات رزرواسیون نیست؛ صدور رسمی نسخهٔ بایگانی‌شده
-            جداگانه انجام می‌شود.
-          </p>
           {busy && <p role="status">دریافت اطلاعات قرارداد…</p>}
           {warnings.length > 0 && html && (
             <p className="text-xs text-amber-700">

@@ -52,6 +52,14 @@ export class TourController {
   ) {
     return this.service.updatePackage(id, body, req.actor, branch);
   }
+  @Patch('departures/:id/status') status(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.setDepartureStatus(id, body, req.actor, branch);
+  }
   @Post('departures') createDeparture(
     @Body() body: unknown,
     @Req() req: AuthenticatedRequest,

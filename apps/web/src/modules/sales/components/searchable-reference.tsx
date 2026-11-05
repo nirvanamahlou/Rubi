@@ -1,4 +1,5 @@
 'use client';
+import { orderSalesCountryOptions } from '../model/country-order';
 import { currencySymbol } from '@/lib/currency-symbol';
 import type { MasterDataRecord } from '@nora/contracts';
 import { useId } from 'react';
@@ -62,7 +63,7 @@ export function SearchableReference({
           disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
         }
         className="h-10 rounded-xl"
-        options={options.map((item) => ({
+        options={orderSalesCountryOptions(options).map((item) => ({
           value: item.id,
           label: salesReferenceDisplayName(item, preferEnglishName),
           searchText:

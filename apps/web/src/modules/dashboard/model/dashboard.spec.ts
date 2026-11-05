@@ -20,14 +20,14 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
-  it('shows source-unavailable warnings without mislabelling them as empty data', () => {
+  it('keeps per-widget source availability without the removed connection banner', () => {
     const source = readFileSync(
       resolve('src/modules/dashboard/components/dashboard-workspace.tsx'),
       'utf8',
     );
-    expect(source).toContain("query.data?.state === 'blocked'");
-    expect(source).toContain('query.data.unavailableMetrics');
-    expect(source).toContain('query.data.unavailableVisuals');
+    expect(source).not.toContain('title="وضعیت اتصال داده‌های داشبورد"');
+    expect(source).toContain('query.data?.unavailableMetrics');
+    expect(source).toContain('displayData?.values.length');
     expect(source).toContain('series={displayData.series}');
     expect(source).not.toContain('series={data?.series}');
     expect(source).toContain('description={query.data.message}');

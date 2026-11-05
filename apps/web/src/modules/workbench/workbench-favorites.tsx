@@ -44,11 +44,18 @@ function StarredNotes() {
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     const refresh = () => void load();
+    const visible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
     window.addEventListener(WORKBENCH_NOTE_FAVORITES_CHANGED, refresh);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', visible);
     return () => {
       window.clearTimeout(timer);
       invalidate();
       window.removeEventListener(WORKBENCH_NOTE_FAVORITES_CHANGED, refresh);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', visible);
     };
   }, [load, invalidate]);
   return (

@@ -33,8 +33,8 @@ export class MasterDataListQueryDto {
   @IsOptional() @IsString() @MaxLength(100) search = '';
   @IsOptional() @IsIn(['all', 'active', 'inactive']) status:
     'all' | 'active' | 'inactive' = 'all';
-  @IsOptional() @IsIn(['name', 'code', 'updatedAt']) sortBy:
-    'name' | 'code' | 'updatedAt' = 'name';
+  @IsOptional() @IsIn(['displayOrder', 'name', 'code', 'updatedAt']) sortBy:
+    'displayOrder' | 'name' | 'code' | 'updatedAt' = 'displayOrder';
   @IsOptional() @IsIn(['asc', 'desc']) sortDirection: 'asc' | 'desc' = 'asc';
   @IsOptional()
   @Transform(({ value }) => Number(value))

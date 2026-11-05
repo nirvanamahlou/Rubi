@@ -7,6 +7,8 @@ import {
   Bell,
   BellRing,
   CheckCheck,
+  ClipboardList,
+  MessageSquare,
   CircleAlert,
   LoaderCircle,
   RefreshCw,
@@ -45,9 +47,19 @@ import {
   type ChangeNotification,
 } from './change-notifications';
 
-const SERVER_POLL_INTERVAL_MS = 45_000;
+import {
+  compareNotifications,
+  notificationColors,
+  notificationKind,
+  type NotificationKind,
+} from './notification-presentation';
+
+import { createNotificationFeedGuard } from './notification-feed-guard';
+
+const SERVER_POLL_INTERVAL_MS = 10_000;
 
 interface CenterNotification {
+  kind?: NotificationKind;
   key: string;
   id: string;
   source: 'local' | 'server' | 'hr';
@@ -77,6 +89,7 @@ export function mergeMasterDataFeed(
   current: readonly ChangeNotification[],
   events: readonly MasterDataNotification[],
   dismissed: ReadonlySet<string> = new Set(),
+  readAudit: ReadonlyMap<string, string> = new Map(),
 ) {
   const currentById = new Map(current.map((item) => [item.id, item]));
   const fromAudit = events.map((event): ChangeNotification => {
@@ -89,7 +102,7 @@ export function mergeMasterDataFeed(
       description: `تغییر در ${presentation.sectionLabel} ثبت شد.`,
       href: presentation.href,
       occurredAt: event.occurredAt,
-      readAt: existing?.readAt ?? null,
+      readAt: existing?.readAt ?? readAudit.get(id) ?? null,
     };
   });
   const auditIds = new Set(fromAudit.map((item) => item.id));
@@ -104,6 +117,7 @@ export function mergeMasterDataFeed(
 function serverNotification(item: NotificationItemV1): CenterNotification {
   return {
     key: `server:${item.id}`,
+    kind: notificationKind(item),
     id: item.id,
     source: 'server',
     title: item.title,
@@ -145,37 +159,47 @@ export function notificationScope(actor: AuthenticatedActor) {
 function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   const CHANGE_NOTIFICATIONS_STORAGE_KEY =
     'nora.notifications.scoped:' + notificationScope(actor);
-  const DISMISSED_AUDIT_KEY =
-    CHANGE_NOTIFICATIONS_STORAGE_KEY + '.dismissed-audit';
+  const AUDIT_STATE_KEY = 'nora.notifications.audit:' + actor.userId;
+  const DISMISSED_AUDIT_KEY = AUDIT_STATE_KEY + '.dismissed-audit';
   const {
     readDismissedAuditIds,
+    readAuditReadTimes,
     readStoredNotifications,
     writeStoredNotifications,
   } = useMemo(
-    () => notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY),
-    [CHANGE_NOTIFICATIONS_STORAGE_KEY],
+    () =>
+      notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY, AUDIT_STATE_KEY),
+    [CHANGE_NOTIFICATIONS_STORAGE_KEY, AUDIT_STATE_KEY],
   );
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const loginChecked = useRef(false);
+  const serverLoadInFlight = useRef(false);
   const serverWrites = useRef(Promise.resolve());
+  const hrWrites = useRef(Promise.resolve());
+  const hrFeedGuard = useRef(createNotificationFeedGuard());
   const pendingWrites = useRef(0);
   const feedVersion = useRef(0);
   const [localItems, setLocalItems] = useState<ChangeNotification[]>([]);
   const [serverItems, setServerItems] = useState<NotificationItemV1[]>([]);
   const [hrItems, setHrItems] = useState<HrNotificationDto[]>([]);
   const [hrError, setHrError] = useState<string | null>(null);
-  const [, setServerUnreadCount] = useState(0);
+  const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [refreshingMasterData, setRefreshingMasterData] = useState(false);
   const apiBaseUrl = getPublicApiBaseUrl();
 
   const loadHr = useCallback(async () => {
+    const token = hrFeedGuard.current.beginRead();
+    if (token === null) return;
     try {
-      setHrItems(await hrApi.notifications());
+      const items = await hrApi.notifications();
+      if (!hrFeedGuard.current.canApply(token)) return;
+      setHrItems(items);
       setHrError(null);
     } catch (error) {
+      if (!hrFeedGuard.current.canApply(token)) return;
       setHrItems([]);
       setHrError(
         error instanceof HrApiError && error.status === 403
@@ -186,7 +210,8 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   }, []);
 
   const loadServer = useCallback(async () => {
-    if (pendingWrites.current) return;
+    if (pendingWrites.current || serverLoadInFlight.current) return;
+    serverLoadInFlight.current = true;
     const version = feedVersion.current;
     try {
       const response = await notificationsApi.list();
@@ -211,9 +236,30 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
           : 'دریافت اعلان‌های پایدار ناموفق بود.',
       );
     } finally {
+      serverLoadInFlight.current = false;
       setServerLoading(false);
     }
   }, []);
+
+  function writeHr(operation: () => Promise<unknown>) {
+    const settle = hrFeedGuard.current.beginWrite();
+    hrWrites.current = hrWrites.current
+      .then(operation)
+      .then(() => {
+        window.dispatchEvent(new Event('nora:hr-server-change'));
+      })
+      .catch((error: unknown) =>
+        setHrError(
+          error instanceof Error
+            ? error.message
+            : 'ثبت تغییر اعلان ناموفق بود.',
+        ),
+      )
+      .finally(() => {
+        settle();
+        if (!hrFeedGuard.current.writing()) void loadHr();
+      });
+  }
 
   function writeServer(operation: () => Promise<unknown>) {
     pendingWrites.current += 1;
@@ -246,24 +292,19 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
           .filter((item) => canViewRoute(actor.permissions, item.href))
           .map(localNotification),
         ...pendingHrBellNotifications(hrItems),
-      ].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
+      ].sort(compareNotifications),
     [localItems, serverItems, hrItems, actor.permissions],
   );
   const unreadCount = useMemo(
     () =>
-      serverItems.filter(
-        (item) =>
-          !item.isRead &&
-          item.href &&
-          canViewRoute(actor.permissions, item.href),
-      ).length +
+      serverUnreadCount +
       hrItems.filter((item) => !item.readAt).length +
       localItems.filter(
         (notification) =>
           !notification.readAt &&
           canViewRoute(actor.permissions, notification.href),
       ).length,
-    [localItems, serverItems, hrItems, actor.permissions],
+    [localItems, serverUnreadCount, hrItems, actor.permissions],
   );
 
   const syncMasterDataFeed = useCallback(
@@ -276,6 +317,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
             readStoredNotifications(),
             response.data,
             readDismissedAuditIds(),
+            readAuditReadTimes(),
           ),
         );
         setLocalItems(next);
@@ -286,13 +328,18 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
         if (showProgress) setRefreshingMasterData(false);
       }
     },
-    [readDismissedAuditIds, readStoredNotifications, writeStoredNotifications],
+    [
+      readDismissedAuditIds,
+      readAuditReadTimes,
+      readStoredNotifications,
+      writeStoredNotifications,
+    ],
   );
 
   useEffect(() => {
     const refresh = () => void loadHr();
     const initial = window.setTimeout(refresh, 0);
-    const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
+    const interval = window.setInterval(refresh, 45_000);
     window.addEventListener('nora:hr-server-change', refresh);
     window.addEventListener('focus', refresh);
     return () => {
@@ -306,7 +353,12 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   useEffect(() => {
     const sync = () => setLocalItems(readStoredNotifications());
     const syncStorage = (event: StorageEvent) => {
-      if (event.key === CHANGE_NOTIFICATIONS_STORAGE_KEY) sync();
+      if (
+        event.key === CHANGE_NOTIFICATIONS_STORAGE_KEY ||
+        event.key === AUDIT_STATE_KEY + '.read-audit' ||
+        event.key === DISMISSED_AUDIT_KEY
+      )
+        sync();
     };
     sync();
     window.addEventListener(CHANGE_NOTIFICATIONS_EVENT, sync);
@@ -315,15 +367,20 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
       window.removeEventListener(CHANGE_NOTIFICATIONS_EVENT, sync);
       window.removeEventListener('storage', syncStorage);
     };
-  }, [readStoredNotifications, CHANGE_NOTIFICATIONS_STORAGE_KEY]);
+  }, [
+    readStoredNotifications,
+    CHANGE_NOTIFICATIONS_STORAGE_KEY,
+    AUDIT_STATE_KEY,
+    DISMISSED_AUDIT_KEY,
+  ]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => void loadServer(), 0);
-    const interval = window.setInterval(
-      () => void loadServer(),
-      SERVER_POLL_INTERVAL_MS,
-    );
-    const refresh = () => void loadServer();
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void loadServer();
+    };
+    const interval = window.setInterval(refresh, SERVER_POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
@@ -331,6 +388,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
       window.clearInterval(interval);
       window.removeEventListener('focus', refresh);
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+      document.removeEventListener('visibilitychange', refresh);
     };
   }, [loadServer]);
 
@@ -386,10 +444,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
             : item,
         ),
       );
-      void hrApi
-        .readNotification(notification.id)
-        .then(() => window.dispatchEvent(new Event('nora:hr-server-change')))
-        .catch(() => loadHr());
+      writeHr(() => hrApi.readNotification(notification.id));
       return;
     }
     if (notification.source === 'server') {
@@ -420,9 +475,9 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
     const readAt = new Date().toISOString();
     const pendingHr = hrItems.filter((item) => !item.readAt);
     setHrItems((current) => current.map((item) => ({ ...item, readAt })));
-    void (async () => {
+    writeHr(async () => {
       for (const item of pendingHr) await hrApi.readNotification(item.id);
-    })().catch(() => loadHr());
+    });
     updateLocalItems((current) =>
       current.map((item) => (item.readAt ? item : { ...item, readAt })),
     );
@@ -454,6 +509,7 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   }
 
   const hasRead = notifications.some((notification) => notification.isRead);
+  const BellIcon = unreadCount ? BellRing : Bell;
 
   return (
     <DropdownMenu
@@ -473,11 +529,20 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
               ? `اعلان‌ها، ${unreadCount.toLocaleString('fa-IR')} خوانده‌نشده`
               : 'اعلان‌ها'
           }
-          className="relative"
+          className={cn(
+            'relative',
+            unreadCount > 0 && 'text-amber-300 hover:text-amber-200',
+          )}
           size="icon"
           variant="ghost"
         >
-          <Bell aria-hidden="true" className="size-5" />
+          <BellIcon
+            aria-hidden="true"
+            className={cn(
+              'size-5',
+              unreadCount > 0 && 'fill-amber-300/25 text-amber-300',
+            )}
+          />
           {unreadCount ? (
             <span className="absolute end-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-black leading-4 text-destructive-foreground ring-2 ring-surface">
               {unreadCount > 99 ? '+۹۹' : unreadCount.toLocaleString('fa-IR')}
@@ -546,7 +611,8 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                 asChild
                 className={cn(
                   'mb-1 h-auto items-start px-3 py-3',
-                  !notification.isRead && 'bg-primary/5',
+                  notificationColors(notification.kind, notification.isRead)
+                    .item,
                 )}
                 key={notification.key}
               >
@@ -557,12 +623,17 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                   <span
                     className={cn(
                       'mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl',
-                      notification.isRead
-                        ? 'bg-muted text-muted-foreground'
-                        : 'bg-primary/10 text-primary',
+                      notificationColors(notification.kind, notification.isRead)
+                        .icon,
                     )}
                   >
-                    <BellRing aria-hidden="true" className="size-4" />
+                    {notification.kind === 'message' ? (
+                      <MessageSquare aria-hidden="true" className="size-4" />
+                    ) : notification.kind === 'request' ? (
+                      <ClipboardList aria-hidden="true" className="size-4" />
+                    ) : (
+                      <BellRing aria-hidden="true" className="size-4" />
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">
                     <strong className="block text-sm">
@@ -584,7 +655,13 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
                   {!notification.isRead ? (
                     <span
                       aria-label="خوانده‌نشده"
-                      className="mt-2 size-2 shrink-0 rounded-full bg-primary"
+                      className={cn(
+                        'mt-2 size-2 shrink-0 rounded-full',
+                        notificationColors(
+                          notification.kind,
+                          notification.isRead,
+                        ).dot,
+                      )}
                     />
                   ) : null}
                 </Link>
@@ -648,29 +725,68 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   );
 }
 
-function notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY: string) {
-  const DISMISSED_AUDIT_KEY =
+export function notificationStorage(
+  CHANGE_NOTIFICATIONS_STORAGE_KEY: string,
+  auditStateKey = CHANGE_NOTIFICATIONS_STORAGE_KEY,
+) {
+  const LEGACY_DISMISSED_AUDIT_KEY =
     CHANGE_NOTIFICATIONS_STORAGE_KEY + '.dismissed-audit';
+  const DISMISSED_AUDIT_KEY = auditStateKey + '.dismissed-audit';
+  const AUDIT_READ_KEY = auditStateKey + '.read-audit';
   function readDismissedAuditIds(): Set<string> {
     try {
       const ids: unknown = JSON.parse(
         window.localStorage.getItem(DISMISSED_AUDIT_KEY) ?? '[]',
       );
+      const legacy: unknown = JSON.parse(
+        window.localStorage.getItem(LEGACY_DISMISSED_AUDIT_KEY) ?? '[]',
+      );
       return new Set(
-        Array.isArray(ids)
-          ? ids.filter((id): id is string => typeof id === 'string')
-          : [],
+        [
+          ...(Array.isArray(ids) ? ids : []),
+          ...(Array.isArray(legacy) ? legacy : []),
+        ].filter((id): id is string => typeof id === 'string'),
       );
     } catch {
       return new Set();
     }
   }
 
+  function readAuditReadTimes(): Map<string, string> {
+    try {
+      const data: unknown = JSON.parse(
+        window.localStorage.getItem(AUDIT_READ_KEY) ?? '[]',
+      );
+      return new Map(
+        Array.isArray(data)
+          ? data.filter(
+              (entry): entry is [string, string] =>
+                Array.isArray(entry) &&
+                entry.length === 2 &&
+                typeof entry[0] === 'string' &&
+                entry[0].startsWith('master-data:') &&
+                typeof entry[1] === 'string' &&
+                Number.isFinite(Date.parse(entry[1])),
+            )
+          : [],
+      );
+    } catch {
+      return new Map();
+    }
+  }
+
   function readStoredNotifications() {
     try {
+      const readAudit = readAuditReadTimes();
+      const dismissed = readDismissedAuditIds();
       return parseChangeNotifications(
         window.localStorage.getItem(CHANGE_NOTIFICATIONS_STORAGE_KEY),
-      );
+      )
+        .filter((item) => !dismissed.has(item.id))
+        .map((item) => ({
+          ...item,
+          readAt: item.readAt ?? readAudit.get(item.id) ?? null,
+        }));
     } catch {
       return [];
     }
@@ -681,6 +797,19 @@ function notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY: string) {
   ) {
     const limited = limitChangeNotifications(notifications);
     try {
+      const readAudit = readAuditReadTimes();
+      for (const item of notifications) {
+        if (item.id.startsWith('master-data:') && item.readAt)
+          readAudit.set(item.id, item.readAt);
+      }
+      window.localStorage.setItem(
+        DISMISSED_AUDIT_KEY,
+        JSON.stringify([...readDismissedAuditIds()]),
+      );
+      window.localStorage.setItem(
+        AUDIT_READ_KEY,
+        JSON.stringify([...readAudit]),
+      );
       window.localStorage.setItem(
         CHANGE_NOTIFICATIONS_STORAGE_KEY,
         JSON.stringify(limited),
@@ -694,6 +823,7 @@ function notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY: string) {
 
   return {
     readDismissedAuditIds,
+    readAuditReadTimes,
     readStoredNotifications,
     writeStoredNotifications,
   };

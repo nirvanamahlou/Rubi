@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -95,6 +96,70 @@ export class DocumentsController {
   constructor(
     @Inject(DocumentsService) private readonly service: DocumentsService,
   ) {}
+
+  @Get('incoming/options')
+  @Header('Cache-Control', 'private, no-store')
+  incomingOptions(@Req() request: AuthenticatedRequest) {
+    return this.service.incomingOptions(request.actor);
+  }
+  @Get('incoming')
+  @Header('Cache-Control', 'private, no-store')
+  incomingList(
+    @Query() query: DocumentListQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.incomingList(
+      query as DocumentListQueryV1,
+      request.actor,
+    );
+  }
+  @Post('incoming/upload')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_DOCUMENT_SIZE_BYTES } }),
+  )
+  incomingUpload(
+    @Body() dto: DocumentUploadDto,
+    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.incomingUpload(
+      dto,
+      file,
+      request.actor,
+      requestMetadata(request),
+    );
+  }
+  @Get('incoming/:id/:purpose')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header(
+    'Content-Security-Policy',
+    "default-src 'none'; img-src 'self' blob:; sandbox",
+  )
+  async incomingFile(
+    @Param('id') id: string,
+    @Param('purpose') purpose: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-sensitive-read-reason') reason?: string,
+    @Headers('x-document-access-grant') grant?: string,
+    @Headers('x-document-confidential-grant') confidential?: string,
+  ) {
+    if (!['preview', 'download'].includes(purpose))
+      throw new BadRequestException('عملیات معتبر نیست.');
+    const result = await this.service.incomingFile(
+      id,
+      request.actor,
+      requestMetadata(request, reason, grant, confidential),
+      purpose === 'preview',
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: `${purpose === 'preview' ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+    });
+  }
 
   @Get()
   @Header('Cache-Control', 'private, no-store')

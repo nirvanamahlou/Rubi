@@ -146,6 +146,7 @@ export function NiyayeshData({
         const state = await integrationsApi.niyayeshStatus(
           branchId,
           controller.signal,
+          expectedSystemId,
         );
         if (controller.signal.aborted) return;
         setStatus(state);
@@ -153,6 +154,7 @@ export function NiyayeshData({
         const access = await integrationsApi.ssoAccess(
           branchId,
           controller.signal,
+          expectedSystemId,
         );
         if (controller.signal.aborted) return;
         setSsoEnabled(access.enabled);
@@ -160,6 +162,7 @@ export function NiyayeshData({
           const totals = await integrationsApi.niyayeshDashboard(
             branchId,
             controller.signal,
+            expectedSystemId,
           );
           if (controller.signal.aborted) return;
           setDashboard(totals);
@@ -171,6 +174,8 @@ export function NiyayeshData({
             after,
             controller.signal,
             metric || undefined,
+            undefined,
+            expectedSystemId,
           );
           if (!controller.signal.aborted) setPage(data);
         }
@@ -320,6 +325,7 @@ export function NiyayeshData({
               {view === 'editor' ? (
                 <NiyayeshEditor
                   branchId={branchId}
+                  {...(expectedSystemId ? { systemId: expectedSystemId } : {})}
                   onSaved={() => setRevision((v) => v + 1)}
                 />
               ) : null}
@@ -327,6 +333,9 @@ export function NiyayeshData({
                 dashboard.imports.length ? (
                   <NiyayeshWorkbooks
                     branchId={branchId}
+                    {...(expectedSystemId
+                      ? { systemId: expectedSystemId }
+                      : {})}
                     available={dashboard.imports}
                     onApplied={() => setRevision((v) => v + 1)}
                   />

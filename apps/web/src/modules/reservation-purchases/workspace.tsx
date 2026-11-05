@@ -249,7 +249,6 @@ function PurchaseHub() {
     <section className="space-y-6">
       <PageHeader
         title="خرید و تأمین"
-        eyebrow="خرید خدمات قراردادهای رزرواسیون"
         actions={
           <Button variant="outline" onClick={() => setRevision((v) => v + 1)}>
             <RefreshCw className="size-4" />
@@ -257,29 +256,9 @@ function PurchaseHub() {
           </Button>
         }
       />
-      {permissions &&
-        canViewRoute(permissions, '/purchases?section=suppliers') && (
-          <Card
-            className="flex flex-wrap items-center justify-between gap-4 border-cyan-200 p-5 dark:border-cyan-900"
-            aria-label="تأمین‌کنندگان"
-          >
-            <div className="flex items-center gap-3">
-              <Building2 className="size-6 text-primary" />
-              <h2 className="text-lg font-bold">تأمین‌کنندگان</h2>
-            </div>
-            <Button asChild variant="outline">
-              <Link href="/purchases?section=suppliers">
-                مدیریت تأمین‌کنندگان
-              </Link>
-            </Button>
-          </Card>
-        )}
       {canRead && (
         <section aria-label="داشبورد خرید خدمات" className="space-y-3">
           <h2 className="text-lg font-bold">داشبورد خرید خدمات</h2>
-          <p className="text-xs text-muted-foreground">
-            آمار همه وضعیت‌ها در دسته، جست‌وجو و بازه انتخاب‌شده
-          </p>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {(
               [
@@ -329,7 +308,7 @@ function PurchaseHub() {
       )}
       <nav
         aria-label="دسته‌های خرید خدمات"
-        className="grid grid-cols-2 gap-3 md:grid-cols-5"
+        className="flex flex-nowrap gap-2 overflow-x-auto p-1"
       >
         {purchaseCategories.map(([value, label], index) => {
           const Icon = icons[index]!;
@@ -339,9 +318,9 @@ function PurchaseHub() {
               type="button"
               aria-pressed={kind === value}
               onClick={() => navigate(value)}
-              className={`flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border p-4 font-bold shadow-sm transition hover:shadow-md ${tones[index % tones.length]} ${kind === value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+              className={`flex min-h-20 min-w-28 flex-1 flex-col items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-bold shadow-sm transition hover:shadow-md ${tones[index % tones.length]} ${kind === value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
             >
-              <Icon className="size-7" />
+              <Icon className="size-5 shrink-0" />
               {label}
             </button>
           );
