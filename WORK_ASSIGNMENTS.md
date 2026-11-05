@@ -11200,3 +11200,5 @@ Reserve the company title picker, Customers ledger company command and public or
 
 Scoped reservations released at local commit. The company profile uses the shared person/company chooser and document/geo bindings with an independent company title code and tax policy.
 Publication: owner requests push, hosted CI, PR to develop, and ordinary merge after review and passing PR checks for the stacked person and company profiles. Latest develop integration preserves peer records.
+
+NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
