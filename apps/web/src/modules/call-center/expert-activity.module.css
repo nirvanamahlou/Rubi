@@ -1,0 +1,24 @@
+/* The dialog portal does not inherit the contact workspace's tokens or type. */
+.pagination {
+  --cc-border: var(--border, #e2e9f2);
+  color: var(--foreground, #193457);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.pagination button {
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+
+.pagination button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.pagination button:focus-visible {
+  outline: 2px solid #1875e5;
+  outline-offset: 3px;
+}
