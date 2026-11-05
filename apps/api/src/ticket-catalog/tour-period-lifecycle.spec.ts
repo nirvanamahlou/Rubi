@@ -10,14 +10,12 @@ function fixture(status = 'ACTIVE', version = 1) {
   const tx = {
     tourDeparture: {
       findMany: vi.fn().mockResolvedValue([]),
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'period',
-          isActive: status === 'ACTIVE',
-          isDeleted: status === 'DELETED',
-          salesVersion: version,
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        id: 'period',
+        isActive: status === 'ACTIVE',
+        isDeleted: status === 'DELETED',
+        salesVersion: version,
+      }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     tourDepartureLifecycleRevision: { create: vi.fn() },
