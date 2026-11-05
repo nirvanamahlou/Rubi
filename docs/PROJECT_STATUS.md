@@ -9047,6 +9047,12 @@ User-selected option2 replaces only call-history markers with filled green inbou
 
 CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
 
+## DASHBOARD-FIRST-PURCHASE-1105 — PC-C — source ready
+
+Owner confirms only the first Finance-confirmed paid contract establishes a new customer; delayed payment belongs to its approval period. Fixed scope-local history that could classify a repeat buyer as new after changing branch/agent. Current candidate contracts remain authorized; Sales internally checks candidate-only earlier company purchase existence and returns aggregate observations. Canonical buyer identity and lead-conversion behavior are preserved. No schema, dependency, business-data write or deployment.
+
+Validation:48 focused Sales/Lead/Reporting/calendar tests,7 migrated PostgreSQL cohort regressions,5 CI-policy tests, scoped ESLint/Prettier, full API TypeScript and production build pass. Fresh local dependencies/generated client were isolated to this worktree. Existing220 migrations applied only to the disposable QA database; no migration added. Added the opt-in PostgreSQL source test to existing hosted CI. Read-only production audit found no Finance-confirmed Sales receipt; pending/rejected receipts correctly yield zero paid new customers. The native Finance paths were traced and confirmed to persist approved receipts in this Sales source. See docs/tasks/DASHBOARDS-FIRST-PURCHASE-1105.md. Hosted CI/review and deployment remain outstanding.
+
 ## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
 
 Add the user's approved grand-total footer to the existing expert-performance table. Totals cover all returned authorized expert rows, including rows outside the visible scroll area; completion uses total completed divided by total calls. Keep individual metric drilldowns, filters, shared attribution and unattributed semantics intact. Scope is Web presentation only; no API, schema, migration, dependency or data mutation. Base e58613d1e; test/build/visual and hosted gates precede authorized publication.

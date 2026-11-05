@@ -11331,6 +11331,14 @@ Base develop14539e34e; branch codex/pc-c-call-history-icons-1105. User explicitl
 
 CALL-HISTORY-ICONS-1105:16 focused tests, scoped lint, full Web TypeScript and67-route production build pass; RTL light/dark visual review and independent diff review passed. Implementation09cf21034 published in PR1409. Source frozen; all final-head hosted gates must pass before the standing authorized develop merge. No deployment.
 
+## DASHBOARD-FIRST-PURCHASE-1105 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-first-contract-1105 from develop957ff4248. Owner confirms new customers are canonical buyers with their first confirmed paid purchase in the selected period, dated by first Finance payment approval (not an earlier contract date). Reserve Sales-owned sales-dashboard-customers.public.ts and focused tests, Dashboard metric description and own task/status/decision entries. Preserve the authorized current customer cohort, but check earlier paid history company-wide inside the Sales producer using candidate IDs only; return no historical identities or branch details. No duplicate-person inference, lead-conversion changes, shared HTTP shape, schema/migration/dependency changes or production writes. Prior1031 Sales leaf reservation is released; existing1103 Dashboard changes remain intact.
+
+DASHBOARD-FIRST-PURCHASE-1105 bounded CI reservation: add only an opt-in PostgreSQL regression step in .github/workflows/ci.yml after workspace package builds; preserve all existing gates. CONTRACT-RECEIPT-1104 prior step is merged/frozen. Source scope includes the new synthetic Sales cohort integration spec.
+
+DASHBOARD-FIRST-PURCHASE-1105 validation:55 focused application tests (including7 real PostgreSQL cases),5 CI-policy checks, scoped lint/format, full API types/build passed. No production writes or deployment. Bounded source/CI lease freezes on push; hosted checks and review remain gates.
+
 ## EXPERT-ACTIVITY-TOTALS-1105 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-expert-activity-totals-1105 from develop e58613d1e. User explicitly requests a blue grand-total footer at the end of the expert-performance table, matching the supplied reference. Reserve expert-activity.tsx/.module.css and report-highlights.spec.tsx, own task/status notes and bounded Web release helper. Sum all returned authorized expert rows, with completion calculated from summed complete/total counts rather than averaging percentages. Preserve all columns, row drilldowns, current report filters, unattributed warning, sidebar, source-share chart and KPI designs. No API, schema, migrations, permissions or dependencies. Existing chat authorization covers develop PR, green-gate merge and bounded server publication. Source-share previous release completed via PR1415; receipt4c372604f. Ownership review confirmed all returned rows are complete and no competing expert-table writer exists.
