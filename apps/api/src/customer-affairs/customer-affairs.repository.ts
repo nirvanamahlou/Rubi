@@ -462,7 +462,15 @@ export class CustomerAffairsRepository {
           id,
           branchId: { in: branchIds },
           category: { startsWith: 'WORKBENCH_' },
-          OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
+          OR: [
+            { createdByUserId: userId },
+            { executionOwnerUserId: userId },
+            {
+              timeline: {
+                some: { type: 'WORKBENCH_SUBSTITUTE', summary: userId },
+              },
+            },
+          ],
         },
         select: { id: true },
       });
@@ -488,11 +496,20 @@ export class CustomerAffairsRepository {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         timeline: { none: { type: 'WORKBENCH_REMOVED', actorUserId: userId } },
-        OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
+        OR: [
+          { createdByUserId: userId },
+          { executionOwnerUserId: userId },
+          {
+            timeline: {
+              some: { type: 'WORKBENCH_SUBSTITUTE', summary: userId },
+            },
+          },
+        ],
         branchId: { in: branchIds },
         category: { startsWith: 'WORKBENCH_' },
       },
       include: {
+        timeline: { where: { type: 'WORKBENCH_SUBSTITUTE' } },
         createdBy: { select: { displayName: true } },
         executionOwner: { select: { displayName: true } },
       },
@@ -530,7 +547,9 @@ export class CustomerAffairsRepository {
       },
       include: {
         createdBy: { select: { displayName: true } },
-        timeline: { where: { type: 'WORKBENCH_LEAVE' } },
+        timeline: {
+          where: { type: { in: ['WORKBENCH_LEAVE', 'WORKBENCH_SUBSTITUTE'] } },
+        },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       take: 200,

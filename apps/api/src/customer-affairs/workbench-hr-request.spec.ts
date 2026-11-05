@@ -59,6 +59,39 @@ function setup(status = 'NEW') {
   return { service, tx, row, hr, notifications };
 }
 describe('HR Workbench review', () => {
+  it('does not let HR approve before the selected substitute consents', async () => {
+    const { service, row, hr } = setup();
+    row.timeline[0]!.summary = JSON.stringify({
+      ...leave,
+      substituteUserId: 'substitute',
+    });
+    for (const outcome of ['PENDING', 'REJECTED']) {
+      row.timeline[1] = {
+        type: 'WORKBENCH_SUBSTITUTE',
+        summary: 'substitute',
+        outcome,
+      } as never;
+      await expect(
+        service.reviewHrWorkbenchRequest(
+          'request',
+          { version: 1, status: 'APPROVED' },
+          actor,
+        ),
+      ).rejects.toThrow('جانشین');
+    }
+    expect(hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+    row.timeline[1] = {
+      type: 'WORKBENCH_SUBSTITUTE',
+      summary: 'substitute',
+      outcome: 'APPROVED',
+    } as never;
+    await service.reviewHrWorkbenchRequest(
+      'request',
+      { version: 1, status: 'APPROVED' },
+      actor,
+    );
+    expect(hr.approveWorkbenchLeave).toHaveBeenCalledOnce();
+  });
   it('approves through the HR public port in the same transaction and refreshes attendance', async () => {
     const { service, tx, hr, notifications } = setup();
     await service.reviewHrWorkbenchRequest(

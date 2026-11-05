@@ -516,6 +516,18 @@ export class IamService implements IamStepUpPort {
     }
   }
 
+  async leaveSubstituteUsers(branchId: string, tx?: Prisma.TransactionClient) {
+    return (tx ?? this.database.client).user.findMany({
+      where: {
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true, displayName: true, username: true },
+      orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
+    });
+  }
+
   async listUsers() {
     const users = await this.database.client.user.findMany({
       orderBy: { displayName: 'asc' },

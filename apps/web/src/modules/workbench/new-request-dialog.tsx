@@ -1,11 +1,11 @@
 'use client';
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
-import { DatePicker } from '@/components/ui/date-picker';
+import { LeaveFields, type LeaveUser } from '@/modules/hr/leave-fields';
 import { WorkbenchSelect } from './workbench-select';
 
 import { useEffect, useRef, useState } from 'react';
 import type { WorkbenchRequestOptionsV1 } from '@nora/contracts';
-import { ClipboardList, FileText, Flag, Link2, Send } from 'lucide-react';
+import { ClipboardList, FileText, Flag, Send } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -46,6 +46,7 @@ function NewRequestForm({
     branchId: string;
     version: number;
     units: WorkbenchRequestOptionsV1['units'];
+    substituteUsers?: LeaveUser[] | undefined;
     error: string;
   } | null>(null);
   const optionsMatch =
@@ -54,7 +55,7 @@ function NewRequestForm({
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
   const [priority, setPriority] = useState('normal');
-  const [reference, setReference] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -62,7 +63,7 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [title, body, unit, recipient, priority, reference, leave]);
+  }, [title, body, unit, recipient, priority, leave]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -74,6 +75,7 @@ function NewRequestForm({
             branchId,
             version: optionsVersion,
             units: data.units,
+            substituteUsers: data.substituteUsers,
             error: '',
           });
           setUnit('');
@@ -99,7 +101,9 @@ function NewRequestForm({
   return (
     <Dialog
       open={open}
-      onOpenChange={(value) => !submitting.current && onOpenChange(value)}
+      onOpenChange={(value) =>
+        !submitting.current && !uploading && onOpenChange(value)
+      }
     >
       <DialogContent
         dir="rtl"
@@ -131,13 +135,6 @@ function NewRequestForm({
               setError('واحد مقصد و کاربر گیرنده را انتخاب کنید.');
               return;
             }
-            if (
-              `${body.trim()}${reference.trim() ? `\n\nمرجع پرونده: ${reference.trim()}` : ''}`
-                .length > 2000
-            ) {
-              setError('شرح درخواست همراه مرجع پرونده حداکثر ۲۰۰۰ نویسه است.');
-              return;
-            }
             submitting.current = true;
             setPending(true);
             setError('');
@@ -149,7 +146,6 @@ function NewRequestForm({
                   ...(leave ? { leave } : {}),
                   subject: title.trim(),
                   description: body.trim(),
-                  reference: reference.trim(),
                   organizationUnitId: unit,
                   executionOwnerUserId: recipient,
                   priority: priority.toUpperCase() as
@@ -162,7 +158,6 @@ function NewRequestForm({
                 setLeave(null);
                 setTitle('');
                 setBody('');
-                setReference('');
                 key.current = null;
                 setSuccess(
                   `درخواست برای ${member.displayName} ارسال شد. کد پیگیری: ${response.data.trackingNumber}`,
@@ -190,7 +185,7 @@ function NewRequestForm({
             <Input
               required
               minLength={3}
-              disabled={pending}
+              disabled={pending || uploading}
               maxLength={200}
               placeholder="مثلاً: بررسی وضعیت پرونده ویزا"
               value={title}
@@ -239,13 +234,19 @@ function NewRequestForm({
               <Button
                 type="button"
                 variant="outline"
-                disabled={pending}
+                disabled={pending || uploading}
                 className="ms-auto"
                 onClick={() => {
                   setLeave(
                     leave
                       ? null
-                      : { from: '', to: '', mode: 'روزانه', reason: '' },
+                      : {
+                          from: '',
+                          to: '',
+                          mode: 'روزانه',
+                          reason: '',
+                          leaveType: 'استحقاقی',
+                        },
                   );
                   if (!leave) {
                     setTitle('درخواست مرخصی');
@@ -261,7 +262,7 @@ function NewRequestForm({
             <Textarea
               required
               minLength={3}
-              disabled={pending}
+              disabled={pending || uploading}
               rows={5}
               maxLength={2000}
               placeholder="جزئیات مورد نیاز، زمان‌بندی و اطلاعات لازم برای رسیدگی را بنویسید."
@@ -270,90 +271,14 @@ function NewRequestForm({
             />
           </label>
           {leave ? (
-            <fieldset
-              className="sm:col-span-2 grid gap-4 rounded-xl border bg-muted/20 p-4 sm:grid-cols-2"
-              disabled={pending}
-            >
-              <legend className="px-2 text-sm font-semibold">مرخصی</legend>
-              <label className="space-y-2 text-sm">
-                از تاریخ *
-                <DatePicker
-                  value={leave.from}
-                  onChange={(from) =>
-                    setLeave({ ...leave, from, to: leave.to || from })
-                  }
-                />
-              </label>
-              <label className="space-y-2 text-sm">
-                تا تاریخ *
-                <DatePicker
-                  value={leave.to}
-                  onChange={(to) => setLeave({ ...leave, to })}
-                />
-              </label>
-              <label className="space-y-2 text-sm">
-                میزان عدم حضور
-                <WorkbenchSelect
-                  label="نوع مدت مرخصی"
-                  value={leave.mode}
-                  onValueChange={(mode) =>
-                    setLeave({ ...leave, mode: mode as 'روزانه' | 'ساعتی' })
-                  }
-                  options={[
-                    { value: 'روزانه', label: 'روزانه' },
-                    { value: 'ساعتی', label: 'ساعتی' },
-                  ]}
-                />
-              </label>
-              <label className="space-y-2 text-sm">
-                جانشین احتمالی
-                <Input
-                  maxLength={160}
-                  value={leave.substitute ?? ''}
-                  onChange={(event) =>
-                    setLeave({ ...leave, substitute: event.target.value })
-                  }
-                />
-              </label>
-              {leave.mode === 'ساعتی' ? (
-                <>
-                  <label className="space-y-2 text-sm">
-                    ساعت شروع *
-                    <Input
-                      required
-                      type="time"
-                      value={leave.startTime ?? ''}
-                      onChange={(event) =>
-                        setLeave({ ...leave, startTime: event.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="space-y-2 text-sm">
-                    ساعت پایان *
-                    <Input
-                      required
-                      type="time"
-                      value={leave.endTime ?? ''}
-                      onChange={(event) =>
-                        setLeave({ ...leave, endTime: event.target.value })
-                      }
-                    />
-                  </label>
-                </>
-              ) : null}
-              <label className="space-y-2 text-sm sm:col-span-2">
-                دلیل مرخصی *
-                <Textarea
-                  required
-                  minLength={3}
-                  maxLength={500}
-                  value={leave.reason}
-                  onChange={(event) =>
-                    setLeave({ ...leave, reason: event.target.value })
-                  }
-                />
-              </label>
-            </fieldset>
+            <LeaveFields
+              value={leave}
+              onChange={setLeave}
+              users={optionsMatch ? (options?.substituteUsers ?? []) : []}
+              branchId={branchId ?? ''}
+              disabled={pending || uploading}
+              onBusy={setUploading}
+            />
           ) : null}
           <label className="space-y-2 text-sm font-semibold">
             <span className="flex items-center gap-2">
@@ -362,7 +287,7 @@ function NewRequestForm({
             </span>
             <WorkbenchSelect
               label="اولویت"
-              disabled={pending}
+              disabled={pending || uploading}
               value={priority}
               onValueChange={setPriority}
               options={[
@@ -370,19 +295,6 @@ function NewRequestForm({
                 { value: 'high', label: 'بالا' },
                 { value: 'urgent', label: 'فوری' },
               ]}
-            />
-          </label>
-          <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2">
-              <Link2 className="size-4 text-primary" aria-hidden="true" />
-              مرجع پرونده مرتبط
-            </span>
-            <Input
-              disabled={pending}
-              maxLength={200}
-              placeholder="اختیاری؛ شماره پرونده یا قرارداد"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
             />
           </label>
           {error ? (
@@ -400,7 +312,12 @@ function NewRequestForm({
               <Button
                 type="submit"
                 disabled={
-                  pending || optionsLoading || !branchId || !recipient || !unit
+                  pending ||
+                  uploading ||
+                  optionsLoading ||
+                  !branchId ||
+                  !recipient ||
+                  !unit
                 }
               >
                 <Send className="size-4" aria-hidden="true" />
@@ -409,7 +326,7 @@ function NewRequestForm({
               <Button
                 type="button"
                 variant="outline"
-                disabled={pending}
+                disabled={pending || uploading}
                 onClick={() => onOpenChange(false)}
               >
                 انصراف

@@ -1,8 +1,10 @@
+import type { UploadedDocumentFile } from '../documents/documents.service';
 import { Optional, ServiceUnavailableException } from '@nestjs/common';
 import { HrRadanDeviceService } from './hr-radan-device.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import {
+  StreamableFile,
   Body,
   Controller,
   Delete,
@@ -59,6 +61,56 @@ export class HrController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.dashboardCharts(query, req.actor);
+  }
+  @Patch('leave-substitutes/:id')
+  reviewNativeLeaveSubstitute(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.reviewNativeLeaveSubstitute(id, body, req.actor);
+  }
+  @Get('leave-options')
+  @Header('Cache-Control', 'private, no-store')
+  leaveOptions(
+    @Query('branchId') branchId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.leaveOptions(branchId, req.actor);
+  }
+  @Post('leave-evidence')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+    }),
+  )
+  uploadLeaveEvidence(
+    @Body('branchId') branchId: string,
+    @Body('validUntil') validUntil: string,
+    @UploadedFile()
+    file: UploadedDocumentFile | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.uploadLeaveEvidence(
+      branchId,
+      validUntil,
+      file,
+      req.actor,
+    );
+  }
+  @Get('records/:id/leave-evidence/:documentId')
+  @Header('Cache-Control', 'private, no-store')
+  async leaveEvidence(
+    @Param('id') id: string,
+    @Param('documentId') documentId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.service.leaveEvidence(id, documentId, req.actor);
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      disposition: `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+      length: result.sizeBytes,
+    });
   }
   @Get('bootstrap') @Header('Cache-Control', 'private, no-store') bootstrap(
     @Req() req: AuthenticatedRequest,

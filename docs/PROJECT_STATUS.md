@@ -1,3 +1,9 @@
+## LEAVE-POLICY-SUBSTITUTE-1105 — PC-A — VALIDATED
+
+Shared Workbench/employee leave fields now support annual/sick types, hourly intervals, registered substitute selection and restricted medical evidence. Substitute consent is a separate versioned inbox decision before final HR approval. The request reference field is removed and deletion uses an outlined trash icon. Policies use monthly day/hour quotas, daily advance notice and same-day hourly cutoff in Tehran time; quota months follow the Persian calendar. Approved hourly coverage updates attendance status, early departure and deficit through the existing reconciliation path.
+
+Legacy annual policy values remain compatible until explicitly saved in the new monthly form; no automatic conversion of annual allowances or operational data seed. New monthly policies also guard legacy submission paths. Evidence is branch/owner bound, restricted, scanned through Documents and downloaded only via an authorized request/record association. No schema or dependency changes. Validation includes focused API/domain/privacy tests, a real PostgreSQL substitute-to-HR approval and attendance/quota test, Web HR/Workbench tests, contracts tests, lint/typechecks/builds. User authorizes push/develop merge and local3100 only; no production deployment.
+
 ## CALL-CENTER-PANEL-SCOPE-1105 — PC-C — CANDIDATE
 
 User explicitly corrects the prior design scope: the shared sidebar, header and application shell must keep their normal appearance when Call Center is selected. Remove its route-dependent shell palette/icon substitutions; keep the illustrated Navy/Pearl palette on the Call Center workspace and its dossier portal only. Preserve navigation, permissions, history-icon updates, pagination and all operational data behavior. Source starts from develop de9729ea2.

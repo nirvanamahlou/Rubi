@@ -136,6 +136,14 @@ export class TicketReferenceDto {
 }
 
 export class WorkbenchLeaveDto {
+  @IsOptional() @IsIn(['استحقاقی', 'استعلاجی']) leaveType?:
+    'استحقاقی' | 'استعلاجی';
+  @IsOptional() @IsUUID() substituteUserId?: string;
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsUUID('4', { each: true })
+  attachmentIds?: string[];
   @IsISO8601({ strict: true }) from!: string;
   @IsISO8601({ strict: true }) to!: string;
   @IsIn(['روزانه', 'ساعتی']) mode!: 'روزانه' | 'ساعتی';

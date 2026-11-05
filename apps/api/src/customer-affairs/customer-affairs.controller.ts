@@ -508,6 +508,32 @@ export class CustomerAffairsController {
   workbenchRequests(@Req() req: AuthenticatedRequest) {
     return this.service.workbenchRequests(req.actor);
   }
+  @Patch('workbench/requests/:id/substitute')
+  reviewLeaveSubstitute(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: WorkbenchReviewDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.reviewLeaveSubstitute(id, dto, req.actor);
+  }
+  @Get('workbench/hr-requests/:id/evidence/:documentId')
+  @Header('Cache-Control', 'private, no-store')
+  async hrLeaveEvidence(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.service.hrLeaveEvidence(
+      id,
+      documentId,
+      req.actor,
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      disposition: `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`,
+      length: result.sizeBytes,
+    });
+  }
   @Patch('workbench/hr-requests/:id')
   reviewHrWorkbenchRequest(
     @Param('id', new ParseUUIDPipe()) id: string,
