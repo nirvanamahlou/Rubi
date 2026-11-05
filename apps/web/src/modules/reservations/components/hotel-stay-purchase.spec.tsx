@@ -269,6 +269,7 @@ it('submits distinct transfer brokers and prices per direction in the same atomi
     ...draft,
     hotelTransferSeparate: true,
     hotelTransferSplit: true,
+    hotelTransferRoundTrip: false,
     transferBrokerId: '22222222-2222-4222-8222-222222222222',
     transferBrokerName: 'OUT',
     hotelTransferCounts: { outbound: 2, returning: 1 },
@@ -346,6 +347,7 @@ it('exposes both transfer checkboxes and enables independent return quotation wi
     expect.objectContaining({
       hotelTransferSeparate: true,
       hotelTransferSplit: true,
+      hotelTransferRoundTrip: false,
       hotelTransferCounts: { outbound: 2, returning: 1 },
       hotelTransferReturn: { amount: '10', currencyCode: 'IRR' },
     }),
@@ -598,3 +600,40 @@ it('stages the exact calculated hotel batch without posting a purchase before co
     ]),
   });
 });
+
+it.each([undefined, 'sales/contracts/contract/purchases'])(
+  'offers an editable hotel broker default without a separate-agency checkbox: %s',
+  (purchaseRoot) => {
+    const draft = defaultVoucherSettings(request, {});
+    const update = vi.fn();
+    const tree = nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: request.id,
+        purchaseRoot,
+        hotelBroker: { id: 'hotel-broker', name: 'HOTEL' },
+        update,
+        currencies: [],
+        busy: false,
+        nights: 6,
+      }),
+    );
+    expect(JSON.stringify(tree.map((n) => n.props.children))).not.toContain(
+      'ترانسفر از آژانس دیگر',
+    );
+    const lookup = tree.find(
+      (n) => n.type === ReservationPurchaseBrokerLookup,
+    )!;
+    expect(lookup.props.value).toEqual({ id: 'hotel-broker', name: 'HOTEL' });
+    (lookup.props.onChange as (value: { id: string; name: string }) => void)({
+      id: 'other',
+      name: 'OTHER',
+    });
+    expect(update).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        transferBrokerId: 'other',
+        hotelTransferSeparate: true,
+      }),
+    );
+  },
+);

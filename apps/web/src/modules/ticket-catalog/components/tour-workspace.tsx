@@ -32,6 +32,7 @@ import { toursApi } from '../api/tours';
 import { ContractFlightEditor } from '@/modules/sales/components/contract-flight-editor';
 import { TourDetailsForm } from './tour-details-form';
 import { TourOverview } from './tour-overview';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { activeTourTickets, tourTicketDates } from './tour-departure-tickets';
 
 const emptyPackage: TourPackageInputV1 = {
@@ -117,6 +118,12 @@ export function TourWorkspace({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const permissions = useAccessPermissions();
+  const canManagePeriods = (permissions ?? []).some((permission) =>
+    ['ticket_catalog.manage', 'ticket_catalog.tours.manage'].includes(
+      permission,
+    ),
+  );
   const [packages, setPackages] = useState<TourPackageV1[]>([]);
   const [departures, setDepartures] = useState<TourDepartureV1[]>([]);
   const [branches, setBranches] = useState<BranchReference[]>([]);
@@ -193,7 +200,7 @@ export function TourWorkspace({
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
       const [p, d, cities, insurance, airlines, airports] = await Promise.all([
         toursApi.packages(),
-        toursApi.departures(),
+        toursApi.departures(canManagePeriods),
         loadRefs('cities'),
         loadRefs('insurance-plans'),
         loadRefs('airlines'),
@@ -224,7 +231,7 @@ export function TourWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [reload]);
+  }, [reload, canManagePeriods]);
 
   useEffect(() => {
     let cancelled = false;
@@ -439,15 +446,20 @@ export function TourWorkspace({
           }
           onSelect={selectTour}
           onRepeat={repeatTour}
-          onToggleDeparture={(item) =>
-            void run(async () => {
-              await toursApi.setDepartureStatus(
-                item.id,
-                item.isActive === false,
-                item.salesVersion ?? 1,
-                item.branchId,
-              );
-            })
+          onPeriodStatus={
+            canManagePeriods
+              ? (item, status) =>
+                  void run(async () => {
+                    await toursApi.setDepartureStatus(
+                      item.id,
+                      status === 'ACTIVE',
+                      item.salesVersion ?? 1,
+                      item.branchId,
+                      status === 'DELETED' ? true : undefined,
+                    );
+                    setNotice('وضعیت بازه به‌روز شد.');
+                  })
+              : undefined
           }
           definitionMode={mode === 'definition'}
         />

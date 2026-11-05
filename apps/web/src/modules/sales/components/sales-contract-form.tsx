@@ -98,7 +98,6 @@ import {
   validateSalesChequePayments,
 } from '@nora/contracts';
 import { SalesChequeCalculator } from './sales-cheque-calculator';
-import { AgencyCommission } from './agency-commission';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
@@ -343,6 +342,11 @@ export function SalesContractForm() {
   ]);
   const flightDatesReady =
     flightRangeRoute === flightRouteKey && salesFlightRangeReady(flightRange);
+  // Floating entry needs only its own departure day, not a complete round trip
+  // or a matching company inventory offer.
+  const flightEntryReady =
+    flightRangeRoute === flightRouteKey &&
+    salesFlightRangeReady({ from: flightRange.from, to: flightRange.from });
   const canPrefetchTickets = Boolean(
     state.originId &&
     state.destinationId &&
@@ -1977,7 +1981,7 @@ export function SalesContractForm() {
                         });
                       }}
                     />
-                    {flightDatesReady ||
+                    {flightEntryReady ||
                     state.contractFlights?.OUTBOUND ||
                     state.contractFlights?.RETURN ? (
                       <div className="mt-4">{flightDetails}</div>
@@ -2706,12 +2710,6 @@ export function SalesContractForm() {
                   پاک‌کردن خریدهای آماده ثبت
                 </Button>
               )}
-              <AgencyCommission
-                state={state}
-                onChange={(agencyCommission) =>
-                  patchState({ agencyCommission })
-                }
-              />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}

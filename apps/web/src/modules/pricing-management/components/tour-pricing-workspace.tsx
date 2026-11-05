@@ -749,7 +749,17 @@ export function TourPricingWorkspace() {
           <div className="flex flex-wrap gap-2">
             <Badge>{grid.tour.package.name}</Badge>
             <Badge>{grid.nights} شب</Badge>
-            <Badge>{grid.tour.package.hotelIds.length} هتل تعریف‌شده</Badge>
+            <Badge>
+              {
+                new Set([
+                  ...grid.tour.package.hotelIds,
+                  ...grid.purchaseBatches.flatMap((batch) =>
+                    batch.rows.map((row) => row.hotelId),
+                  ),
+                ]).size
+              }{' '}
+              هتل تعریف‌شده
+            </Badge>
             <Badge>ظرفیت {grid.tour.remainingCapacity}</Badge>
           </div>
         ) : null}
