@@ -84,6 +84,7 @@ export async function renderReservationPdf(
     directory = await mkdtemp(join(tmpdir(), 'nora-reservation-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');
+    const profile = join(directory, 'profile');
     // Isolated profile, no authentication cookies, no inherited database/document secrets.
     const env: NodeJS.ProcessEnv = { NODE_ENV: 'production' };
     for (const name of [
@@ -112,7 +113,7 @@ export async function renderReservationPdf(
             '--disable-background-networking',
             '--disable-sync',
             '--host-resolver-rules=MAP * ~NOTFOUND',
-            '--user-data-dir=' + join(directory, 'profile'),
+            '--user-data-dir=' + profile,
             '--no-pdf-header-footer',
             '--print-to-pdf=' + result,
             pathToFileURL(input).href,
