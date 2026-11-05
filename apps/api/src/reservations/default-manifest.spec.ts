@@ -436,19 +436,21 @@ describe('default ticket manifest', () => {
       expect(xml).toContain(value);
   });
 
-  it('rejects incomplete international passports without recording a successful export', async () => {
+  it('exports incomplete passengers as empty cells and lists their Excel row and missing columns', async () => {
     const f = fixture(true);
     f.customers.detail.mockResolvedValue({
       data: { firstName: 'علی' },
     } as never);
-    await expect(
-      f.service.exportTicket('offer', range, 'key', actor),
-    ).rejects.toThrow('پاسپورت');
+    const result = await f.service.exportTicket('offer', range, 'key', actor);
+    const files = unzipSync(result.bytes);
+    const warnings = strFromU8(files['xl/worksheets/nora-empty-cells.xml']!);
+    expect(warnings).toContain('شماره پاسپورت');
+    expect(warnings).toContain('>2<');
+    expect(sheet(result.bytes)).not.toContain('undefined');
     expect(
       f.database.client.reservationManifestExport.create,
-    ).not.toHaveBeenCalled();
+    ).toHaveBeenCalledOnce();
   });
-
   it('lists inventory and exports pending contracts without consulting Finance', async () => {
     const f = fixture();
     f.finance.readCustomerContract.mockResolvedValue({ approved: false });

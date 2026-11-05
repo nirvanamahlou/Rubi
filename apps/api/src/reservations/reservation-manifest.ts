@@ -1,3 +1,4 @@
+import { addManifestWarnings, manifestWarningCount } from './manifest-warnings';
 import { PassengerCorrectionService } from '../sales/corrections/passenger-correction.service';
 import {
   BadRequestException,
@@ -53,8 +54,8 @@ export const MANIFEST_XLSX_MIME =
 export interface IranAirtourManifestRow {
   firstName: string;
   lastName: string;
-  gender: 'MR' | 'MS';
-  passengerType: 'ADULT' | 'CHILD' | 'INFANT';
+  gender: 'MR' | 'MS' | '';
+  passengerType: 'ADULT' | 'CHILD' | 'INFANT' | '';
   birthDate: string;
   nationalId: string;
   nationality: string;
@@ -168,20 +169,47 @@ export function buildIranAirtourManifest(
     sheet = sheet.replace(rowPattern, `<x:row r="${row}"$1>${cells}</x:row>`);
   });
   files[path] = strToU8(sheet);
-  return zipSync(files, { level: 6 });
+  return addManifestWarnings(
+    zipSync(files, { level: 6 }),
+    [
+      'First name',
+      'Last name',
+      'Gender',
+      'Passenger type',
+      'Birth date',
+      'National ID',
+      'Nationality',
+      'Passport number',
+      'Passport issuing country',
+      'Birth country',
+      'Passport expiry',
+      'Cabin class',
+    ],
+    passengers.map((p) => [
+      p.firstName,
+      p.lastName,
+      p.gender,
+      p.passengerType,
+      p.birthDate,
+      p.nationalId,
+      p.nationality,
+      p.passportNumber,
+      p.passportIssuingCountry,
+      p.birthCountry,
+      p.passportExpiryDate,
+      p.cabinClass,
+    ]),
+  );
 }
 
 const required = (
   passenger: CustomerDetail,
   field: keyof CustomerDetail,
-  label: string,
+  _label: string,
 ) => {
+  void _label;
   const value = passenger[field];
-  if (typeof value !== 'string' || !value.trim())
-    throw new BadRequestException(
-      `${passenger.displayName}: ${label} در پرونده فروش ثبت نشده است.`,
-    );
-  return value.trim().toUpperCase();
+  return typeof value === 'string' ? value.trim().toUpperCase() : '';
 };
 
 @Injectable()
@@ -470,11 +498,13 @@ export class ReservationManifestService {
     );
     if (!flight)
       throw new BadRequestException('پرواز رفت قرارداد ثبت نشده است.');
-    const cabin = /BUSINESS|^B$/i.test(flight.cabinClassCode)
-      ? 'B'
-      : /FIRST|^F$/i.test(flight.cabinClassCode)
-        ? 'F'
-        : 'Y';
+    const cabin = !flight.cabinClassCode
+      ? ''
+      : /BUSINESS|^B$/i.test(flight.cabinClassCode)
+        ? 'B'
+        : /FIRST|^F$/i.test(flight.cabinClassCode)
+          ? 'F'
+          : 'Y';
     const assignments = new Map(
       (intake.snapshot.passengerAssignments ?? []).map((item) => [
         item.customerId,
@@ -526,13 +556,16 @@ export class ReservationManifestService {
           'passportLastName',
           'نام خانوادگی لاتین پاسپورت',
         ),
-        gender: required(customer, 'gender', 'جنسیت') === 'M' ? 'MR' : 'MS',
+        gender:
+          customer.gender === 'M' ? 'MR' : customer.gender === 'F' ? 'MS' : '',
         passengerType:
           age === 'INF' || age === 'INFANT'
             ? 'INFANT'
             : age === 'CHD' || age === 'CHILD'
               ? 'CHILD'
-              : 'ADULT',
+              : age === 'ADT' || age === 'ADULT'
+                ? 'ADULT'
+                : '',
         birthDate: required(customer, 'birthDate', 'تاریخ تولد'),
         nationalId: customer.nationalId?.trim() ?? '',
         nationality: required(customer, 'nationalityCode', 'ملیت ISO3'),
@@ -1051,11 +1084,13 @@ export class ReservationManifestService {
       throw new BadRequestException(
         'پرواز رفت این قرارداد متعلق به ایران ایرتور نیست.',
       );
-    const cabin = /BUSINESS|^B$/i.test(flight.cabinClassCode)
-      ? 'B'
-      : /FIRST|^F$/i.test(flight.cabinClassCode)
-        ? 'F'
-        : 'Y';
+    const cabin = !flight.cabinClassCode
+      ? ''
+      : /BUSINESS|^B$/i.test(flight.cabinClassCode)
+        ? 'B'
+        : /FIRST|^F$/i.test(flight.cabinClassCode)
+          ? 'F'
+          : 'Y';
     const assignments = new Map(
       (intake.snapshot.passengerAssignments ?? []).map((item) => [
         item.customerId,
@@ -1095,13 +1130,16 @@ export class ReservationManifestService {
           'passportLastName',
           'نام خانوادگی لاتین پاسپورت',
         ),
-        gender: required(customer, 'gender', 'جنسیت') === 'M' ? 'MR' : 'MS',
+        gender:
+          customer.gender === 'M' ? 'MR' : customer.gender === 'F' ? 'MS' : '',
         passengerType:
           age === 'INF' || age === 'INFANT'
             ? 'INFANT'
             : age === 'CHD' || age === 'CHILD'
               ? 'CHILD'
-              : 'ADULT',
+              : age === 'ADT' || age === 'ADULT'
+                ? 'ADULT'
+                : '',
         birthDate: required(customer, 'birthDate', 'تاریخ تولد'),
         nationalId: customer.nationalId?.trim() ?? '',
         nationality: required(customer, 'nationalityCode', 'ملیت ISO3'),
@@ -1202,6 +1240,10 @@ export class ReservationManifestBatchController {
       req.actor,
       req.headers['x-request-id'] as string | undefined,
     );
+    response.setHeader(
+      'X-Nora-Manifest-Warnings',
+      manifestWarningCount(result.bytes),
+    );
     response.setHeader('X-Nora-Manifest-Contracts', result.contractCount);
     response.setHeader('X-Nora-Manifest-Passengers', result.passengerCount);
     response.setHeader(
@@ -1227,6 +1269,10 @@ export class ReservationManifestBatchController {
       idempotencyKey,
       req.actor,
       req.headers['x-request-id'] as string | undefined,
+    );
+    response.setHeader(
+      'X-Nora-Manifest-Warnings',
+      manifestWarningCount(result.bytes),
     );
     response.setHeader('X-Nora-Manifest-Contracts', result.contractCount);
     response.setHeader('X-Nora-Manifest-Passengers', result.passengerCount);
