@@ -18,9 +18,9 @@ guard = "assert read('offserver-backup-verified')['hashes']==before['hashes']"
 assert definitions.count(guard) == 2
 definitions = definitions.replace(guard, "assert read('server-backup-verified')['hashes']==before['hashes']")
 exec(compile(definitions, str(PRIOR), 'exec'))
-WORK = ROOT / 'three-panels-release-1103'
+WORK = ROOT / 'three-panels-release-1105'
 CONTEXT = WORK / 'context'
-IMAGE = 'rubi-production:three-panels-1103'
+IMAGE = 'rubi-production:three-panels-1105'
 
 PREFIXES = ('apps/web/src/modules/call-center/', 'apps/web/src/modules/dashboard/',
             'apps/web/src/modules/reports/', 'apps/api/src/reporting/')
@@ -105,8 +105,7 @@ def prepare():
     run(['docker', 'cp', 'rubi-production-web-1:/workspace/apps/web/.next/static', str(CONTEXT / 'previous-static')])
     public = next(m['Source'] for m in state['web']['mounts'] if m['Destination'] == '/workspace/apps/web/public')
     # Copy current Web source, rather than an old Git snapshot, to preserve peer overlays.
-    dockerfile = 'FROM ' + state['api']['image'] + '\nWORKDIR /workspace\nCOPY overlay/ ./\nCOPY previous-static/ /tmp/previous-static/\n'
-    dockerfile += 'RUN rm -rf apps/api/dist && NODE_OPTIONS=--max-old-space-size=3072 pnpm --filter @nora/api build\n'
+    dockerfile = 'FROM ' + state['web']['image'] + '\nWORKDIR /workspace\nCOPY overlay/ ./\nCOPY previous-static/ /tmp/previous-static/\n'
     dockerfile += 'RUN rm -rf apps/web/.next && NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED=true NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED=true NEXT_PUBLIC_API_BASE_URL=https://avinaofficial.ir/api/v1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=2048 pnpm --filter @nora/web build --webpack && cp -an /tmp/previous-static/. apps/web/.next/static/ && rm -rf /tmp/previous-static apps/web/.next/cache\n'
     dockerfile += 'LABEL rubi.three-panels-source="' + manifest['revision'] + '"\n'
     (CONTEXT / 'Dockerfile').write_text(dockerfile)
@@ -124,8 +123,6 @@ def build():
     with (WORK / 'build.log').open('w') as log:
         run(['docker', 'build', '--network', 'none', '-t', IMAGE, str(CONTEXT)], stdout=log, stderr=subprocess.STDOUT)
     for app, paths in {
-        'api': ['src/customer-affairs/expert-performance.spec.ts', 'src/reporting/reporting-native-operational.spec.ts',
-                'src/reporting/reporting-native-sales.spec.ts', 'src/reporting/reporting.catalog.spec.ts'],
         'web': ['src/modules/call-center/call-form-option-visibility.spec.tsx', 'src/modules/call-center/call-form.spec.tsx',
                 'src/modules/call-center/kpi-call-actions.spec.tsx', 'src/modules/call-center/source-share-chart.spec.tsx',
                 'src/modules/call-center/completion-status.spec.tsx', 'src/modules/call-center/report-highlights.spec.tsx',
@@ -186,6 +183,76 @@ def backup():
     save('backup-verified', receipt)
     save('server-backup-verified', receipt)
     print('ENCRYPTED_SERVER_BACKUP_VERIFIED', flush=True)
+
+
+def activate():
+    record = read('build-verified')
+    before = read('backup-verified')
+    ci = read('ci-approved')
+    assert ci['revision'] == record['revision'] and ci['merged'] and ci['allChecksSuccessful']
+    assert read('server-backup-verified')['hashes'] == before['hashes']
+    folder = Path(before['folder'])
+    assert all(filehash(folder / name) == value for name, value in before['hashes'].items())
+    assert time.time() - before['createdAt'] < 900 and healthy()
+    assert snapshot() == before['state'] == record['base']
+    assert filehash(COMPOSE) == record['composeHash'] == before['composeHash']
+    assert migrations() == record['migrations'] and not record['pendingMigrations']
+    assert shutil.disk_usage(ROOT).free > 2 * 1024**3
+    candidate = json.loads(capture(['docker', 'image', 'inspect', IMAGE]))[0]
+    old_image = json.loads(capture(['docker', 'image', 'inspect', record['base']['web']['image']]))[0]
+    assert sorted(candidate['Config']['Env']) == sorted(old_image['Config']['Env'])
+    original = COMPOSE.read_text()
+    pattern = r'(^  web:\s*\n)(.*?)(?=^  [A-Za-z0-9_-]+:|\Z)'
+    matches = list(re.finditer(pattern, original, re.M | re.S))
+    assert len(matches) == 1
+    match = matches[0]
+    body, count = re.subn(r'(?m)^(    image:\s*)' + re.escape(record['base']['web']['image']) + r'\s*$',
+                         lambda m: m.group(1) + IMAGE, match.group(2))
+    assert count == 1
+    updated = original[:match.start(2)] + body + original[match.end(2):]
+    command = ['docker', 'compose', '-p', 'rubi-production', '-f', str(COMPOSE)]
+    try:
+        atomic(COMPOSE, updated)
+        run(command + ['config', '--quiet'])
+        run(command + ['up', '-d', '--no-deps', '--force-recreate', 'web'])
+        for _ in range(60):
+            if healthy():
+                break
+            time.sleep(2)
+        else:
+            raise RuntimeError('Web health check failed')
+        after = snapshot()
+        for service in SERVICES:
+            assert after[service]['envHash'] == before['state'][service]['envHash']
+            assert after[service]['mounts'] == before['state'][service]['mounts']
+            if service != 'web':
+                assert after[service] == before['state'][service], 'Unrelated service changed: ' + service
+        assert after['web']['image'] == IMAGE
+        for name, expected in record['sourceHashes'].items():
+            assert digest(source_file('web', name)) == expected, 'Deployed source mismatch: ' + name
+        assert all(get(path)[0] == 200 for path in before['oldAssets'])
+        assert assets() and all(get(path)[0] == 200 for path in assets())
+        integration_ready()
+        assert migrations() == record['migrations']
+        time.sleep(10)
+        assert healthy() and shutil.disk_usage(ROOT).free > 2 * 1024**3
+        save('verified', {'revision': record['revision'], 'image': IMAGE,
+                         'healthy': True, 'workerAuthenticated': True, 'amiConnected': True,
+                         'recordingTimer': True, 'backup': str(folder), 'sourceHashes': record['sourceHashes'],
+                         'migrationsApplied': [], 'unrelatedServicesUnchanged': True,
+                         'freeBytes': shutil.disk_usage(ROOT).free})
+        print('THREE_PANELS_VERIFIED_WEB_UPDATE', flush=True)
+    except BaseException:
+        if COMPOSE.read_text() != updated:
+            raise RuntimeError('Concurrent Compose edit; rollback paused')
+        atomic(COMPOSE, original)
+        run(command + ['up', '-d', '--no-deps', '--force-recreate', 'web'])
+        for _ in range(60):
+            if healthy():
+                print('ROLLBACK_HEALTHY', flush=True)
+                break
+            time.sleep(2)
+        raise
 
 
 if __name__ == '__main__':
