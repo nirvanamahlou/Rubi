@@ -21,3 +21,7 @@ The existing OwnerSelect is retained. Only request editing uses the new director
 Read-only inspection found no linked active HR staff, no IAM unit membership, and neither configured executive account in this local database. Therefore complete staff/name/title/manager demonstrations require the real ERP account and HR associations to be populated through their owning modules. No names, unit memberships, accounts or grants are guessed or created by this work. Private local environment contains the owner-approved allowlist; it must be carried separately to an authorized server rollout.
 
 No migration or dependency/lockfile change. No production deployment, PR or merge authorized. Runtime and final verification evidence are recorded in PROJECT_STATUS.md.
+
+## Updated policy — 2026-11-05
+
+The owner now requires only the verified company director to retain all-unit assignee selection. Callback triage and legacy demo/global-reader exceptions no longer expand this selector. Unit managers use their exact current active unit and native team permission. See [CALL-CENTER-OWNER-UNIT-SCOPE-1105](CALL-CENTER-OWNER-UNIT-SCOPE-1105.md); all other historical scope and audit behavior above remains applicable.
