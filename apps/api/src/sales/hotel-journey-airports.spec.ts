@@ -35,10 +35,17 @@ const input = {
   ],
 } as unknown as SalesContractCreateRequest;
 it('does not inspect unrelated historical flights when no journeys are present', async () => {
-  const withoutJourneys = {
+  const withoutJourneys: SalesContractCreateRequest = {
     ...input,
-    services: [{ kind: 'FLIGHT', metadata: { contractFlightVersion: 1 } }],
-  } as SalesContractCreateRequest;
+    services: [
+      {
+        clientKey: 'historical-flight',
+        titleSnapshot: 'Historical flight',
+        kind: 'FLIGHT',
+        metadata: { contractFlightVersion: 1 },
+      },
+    ],
+  };
   await expect(
     assertHotelJourneyAirports(withoutJourneys, undefined, withoutJourneys),
   ).resolves.toBeUndefined();
