@@ -150,6 +150,8 @@ export class CallCenterService {
       id: string;
       origin: string | null;
       direction: string;
+      outcome?: string | null;
+      operator?: string;
       answerRecipient?: CallAnswerRecipient;
     },
   >(
@@ -217,6 +219,7 @@ export class CallCenterService {
       if (
         callbackManagers().length &&
         missedInbound(technical) &&
+        call.outcome !== 'ANSWERED' &&
         !inboundDestination
       ) {
         descriptions.set(
@@ -250,7 +253,11 @@ export class CallCenterService {
         labels.set(key, recipient);
       }
       if (recipient.label === `داخلی ${extension}`) {
-        if (callbackManagers().length && missedInbound(technical)) {
+        if (
+          callbackManagers().length &&
+          missedInbound(technical) &&
+          call.outcome !== 'ANSWERED'
+        ) {
           descriptions.set(
             call.id,
             `داخلی ${extension}؛ کارشناس در سوابق شناسایی نشد`,
@@ -507,6 +514,8 @@ export class CallCenterService {
             entityId: input.id,
             action: 'COMPLETE_CALL',
             version: (existing.telephonySession?.version ?? 0) + 1,
+            beforeSnapshot: { outcome: existing.outcome },
+            afterSnapshot: { outcome },
             traceId,
           },
         });

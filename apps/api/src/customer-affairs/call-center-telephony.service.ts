@@ -1039,6 +1039,12 @@ export class CallCenterTelephonyService {
           entityType: 'TELEPHONY_CALL',
           entityId: id,
           action: input.action,
+          ...(input.action === 'SAVE'
+            ? {
+                beforeSnapshot: { outcome: row.call.outcome },
+                afterSnapshot: { outcome: input.outcome ?? row.call.outcome },
+              }
+            : {}),
           version: row.version + 1,
         },
       });

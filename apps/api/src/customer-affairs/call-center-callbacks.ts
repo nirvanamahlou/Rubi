@@ -3,6 +3,7 @@ import { callbackManagers, missedInbound } from './callback-triage';
 import { Prisma } from '@nora/database';
 import type { CallCenterCrypto } from './call-center.crypto';
 import type { TelephonyTechnical } from './telephony-state';
+import { conversationCompletions } from './call-conversation-completions';
 
 /** Count contacts (branch + normalized phone), never individual ringing legs. */
 export async function missedCallbackCount(
@@ -45,7 +46,12 @@ export async function missedCallbackContacts(
     const facts = new Map(
       contacts.map(({ id }) => [
         id,
-        { missed: -Infinity, answered: -Infinity, callId: '' },
+        {
+          missed: -Infinity,
+          answered: -Infinity,
+          resolved: -Infinity,
+          callId: '',
+        },
       ]),
     );
     let cursor: string | undefined;
@@ -65,6 +71,12 @@ export async function missedCallbackContacts(
         orderBy: { id: 'asc' },
         take: 500,
       });
+      const completions = await conversationCompletions(
+        tx,
+        branchId,
+        rows,
+        asOf,
+      );
       for (const row of rows) {
         const session = row.telephonySession;
         if (session?.synthetic) continue;
@@ -94,6 +106,9 @@ export async function missedCallbackContacts(
                 !answered
             : row.origin !== 'TELEPHONY' && row.outcome === 'NO_ANSWER');
         const fact = facts.get(row.contactId)!;
+        const completedAt = completions.get(row.id);
+        if (completedAt !== undefined)
+          fact.resolved = Math.max(fact.resolved, completedAt);
         if (answered && ['INBOUND', 'OUTBOUND'].includes(row.direction))
           fact.answered = Math.max(fact.answered, row.occurredAt.getTime());
         if (missed && candidates.has(row.id)) {
@@ -161,6 +176,7 @@ export async function missedCallbackContacts(
       if (
         Number.isFinite(fact.missed) &&
         fact.answered <= fact.missed &&
+        fact.resolved < fact.missed &&
         !resolutions.some(
           (r) =>
             r.callCenterContactId === contactId &&
