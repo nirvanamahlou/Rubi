@@ -15,7 +15,7 @@ Contract: `jahan-bastan.nora.v1`. Owner request: 2026-11-07. COMPUTER_ID=PC-D.
 
 Two independent task branches and two develop PRs are explicitly authorized by
 the attached task. No merge or deployment. Producer starts at origin/main
-4605f6d1; Nora starts at origin/develop4735b69c3. This task's explicit develop
+4605f6d1; Nora starts at origin/develop `4735b69c3`. This task's explicit develop
 destination takes precedence over the earlier local PC-D-Integration preference.
 
 No Nora migration/dependency/business-module writes. No production test writes.
@@ -26,8 +26,8 @@ Nora origin defaults to https://avinaofficial.ir. All secret values remain outsi
 ## Configuration and connection procedure
 
 
-1. Deploy the producer only after review; apply additive migration20261107_0103.
-   It creates9 connector-owned tables and does not alter existing business data.
+1. Deploy the producer only after review; apply additive migration `20261107_0103`.
+   It creates 9 connector-owned tables and does not alter existing business data.
 2. Set PUBLIC_SITE_URL to the actual public HTTPS website origin and retain the
    existing secure admin-cookie/proxy configuration. Generate a dedicated Fernet
    NORA_CONNECTOR_ENCRYPTION_KEY once in the secret manager/deployment environment.
@@ -50,7 +50,7 @@ Nora origin defaults to https://avinaofficial.ir. All secret values remain outsi
    true on the producer. Before activation, report NOT_CONFIGURED with null live
    counts. No past visits are manufactured. The tracker emits only a random
    anonymous browser/navigation ID and an allowlisted category.
-7. Rotation starts14 days before expiry without a browser. Nora writes the next
+7. Rotation starts 14 days before expiry without a browser. Nora writes the next
    key encrypted before network I/O. Lost responses/restarts reuse that candidate;
    the old key is invalid immediately after server commit. Disconnect/delete are
    durable control operations, with explicit pending state until remote confirmation.
@@ -76,13 +76,13 @@ identity, native commands, CAS/duplicate operations, presence, simultaneous key
 rotation, discarded rotation reply/restart and offline durable revocation/restart.
 The producer additionally proves real XLSX preview/apply, cross-actor rejection,
 nonce replay, disabled personal accounts, dependent session revocation, deletion,
-and all future business domains returning501 after retry and application restart.
+and all future business domains returning HTTP 501 after retry and application restart.
 
-Existing connector API regression suites and14 Integrations Web/i18n suites pass.
-Producer full backend tests,135 frontend tests, lint, typecheck and vulnerability
+Existing connector API regression suites and 15 Integrations Web/i18n suites pass.
+Producer full backend/frontend test suites, lint, typecheck and vulnerability
 audits pass locally. Final production builds and exact-head GitHub CI are release
 gates; no gate is removed or ignored. Browser QA used only the disposable fixture:
-actual bundle creation/one-time close, confirmation/cancel and390/1440px layouts.
+actual bundle creation/one-time close, confirmation/cancel and 390/1440 px layouts.
 Nora dedicated form also has Persian/English render tests. Production connectivity
 remains unverified until a separately authorized deployment and actual bundle test.
 
@@ -90,6 +90,6 @@ Catalog filters use bounded native name/status queries and keyset pagination.
 Exchange rates preserve the exact decimal rate and IRT quote currency. Source
 records remain external site-scoped data; they never create Nora business records.
 
-Before publication, unpublished task commits were rebased onto producer origin/maine3efa9bb and consumer origin/develop5c72bc48b. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the samee3efa9bb main snapshot when absent.
+Before publication, unpublished task commits were rebased onto producer origin/main `e3efa9bb` and consumer origin/develop `5c72bc48b`. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the same `e3efa9bb` main snapshot when absent.
 
 Each remote credential is durably bound to one Nora branch/site coordinator. Reusing the same rotating credential in two scopes is rejected atomically, including concurrent imports, to prevent independent rotations from invalidating another branch. Generate one initial bundle per branch/site connection; user access still follows existing Nora IAM. No branch/user allowlist is introduced.
