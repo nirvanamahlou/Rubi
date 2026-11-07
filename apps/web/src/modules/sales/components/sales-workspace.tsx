@@ -785,7 +785,7 @@ export function SalesDashboardMetrics({
         ] satisfies ReadonlyArray<readonly [string, string, LucideIcon]>
       ).map(([label, value, Icon], index) => (
         <Card
-          className={`${salesMetricThemes[index]} bg-gradient-to-br p-4`}
+          className={`${salesMetricThemes[index]} @container min-w-0 bg-gradient-to-br p-4`}
           key={label}
         >
           <div className="flex items-center justify-between gap-3">
@@ -794,7 +794,9 @@ export function SalesDashboardMetrics({
             </p>
             <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
           </div>
-          <p className="mt-3 break-words text-3xl font-black tabular-nums">
+          <p
+            className={`mt-3 ${index === 3 ? 'whitespace-nowrap text-[clamp(0.875rem,6cqi,1.25rem)] leading-8 tracking-tight' : 'break-words text-3xl'} font-black tabular-nums`}
+          >
             {value}
           </p>
         </Card>
