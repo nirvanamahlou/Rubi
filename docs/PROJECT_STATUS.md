@@ -9193,6 +9193,7 @@ without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
 
 Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
 
+CALENDAR-DAY-ACTIONS-1107: day context actions open existing note/event/request forms with selected date; note reminder date/time optional and persisted through existing personal Notes API. Calendar includes dated notes and linked request entries. No schema migration. Focused calendar/note/submission tests:11 passed; scoped lint passed. Final Web typecheck and scoped ESLint passed. Hosted checks required before merge.
 ## 2026-11-07 — RESERVATION-CONTRACT-VALUES-1107 — READY_FOR_CI
 
 PC-A; branch codex/pc-a-reservation-contract-values-1107, base cbc8d334b.

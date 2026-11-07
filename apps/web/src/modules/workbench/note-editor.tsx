@@ -1,4 +1,6 @@
 'use client';
+import { tehranDay } from './calendar-model';
+import { DatePicker } from '@/components/ui/date-picker';
 import { WorkbenchSelect } from './workbench-select';
 
 import { useRef, useState } from 'react';
@@ -20,19 +22,36 @@ export function NoteEditor({
   open,
   onOpenChange,
   initial,
+  initialDate,
   folders = ['شخصی', 'جلسات', 'ایده‌ها'],
   onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: NoteDraft | undefined;
+  initialDate?: string;
   folders?: string[];
   onApply?: (draft: NoteDraft) => void | Promise<void>;
 }) {
+  const [date, setDate] = useState(
+    (initial?.reminderAt ? tehranDay(initial.reminderAt) : undefined) ??
+      initialDate ??
+      '',
+  );
+  const [time, setTime] = useState(
+    initial?.reminderAt
+      ? new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Asia/Tehran',
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(new Date(initial.reminderAt))
+      : '',
+  );
   const [title, setTitle] = useState(initial?.title ?? '');
   const [body, setBody] = useState(initial?.body ?? '');
   const [folder, setFolder] = useState(initial?.folder ?? 'شخصی');
   const [tags, setTags] = useState(initial?.tags ?? '');
+  const [error, setError] = useState('');
   const [discard, setDiscard] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submissionLock = useRef(createSubmissionLock());
@@ -40,7 +59,9 @@ export function NoteEditor({
     initial?.items ?? [],
   );
   const [itemText, setItemText] = useState('');
-  const dirty = Boolean(title || body || items.length || itemText);
+  const dirty = Boolean(
+    title || body || items.length || itemText || date || time,
+  );
   function close() {
     if (submissionLock.current.locked) return;
     if (dirty) setDiscard(true);
@@ -64,6 +85,7 @@ export function NoteEditor({
     )
       return;
 
+    setError('');
     setSubmitting(true);
     try {
       await submissionLock.current.run(() => {
@@ -77,8 +99,15 @@ export function NoteEditor({
           pinned: initial?.pinned ?? false,
           updatedAt: new Date().toISOString(),
           template: false,
+          reminderAt: date
+            ? new Date(`${date}T${time || '00:00'}:00+03:30`).toISOString()
+            : null,
         });
       });
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ثبت یادداشت انجام نشد.',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -124,6 +153,22 @@ export function NoteEditor({
               void submitNote();
             }}
           >
+            {error && <Alert title={error} tone="error" />}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm">
+                <span>تاریخ (اختیاری)</span>
+                <DatePicker value={date} onChange={setDate} />
+              </label>
+              <label className="space-y-2 text-sm">
+                <span>ساعت (اختیاری)</span>
+                <Input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  disabled={!date}
+                />
+              </label>
+            </div>
             <div className="space-y-2">
               <p className="text-sm font-semibold">شروع از قالب یادداشت</p>
               <div className="flex flex-wrap gap-2">

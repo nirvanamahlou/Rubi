@@ -11486,6 +11486,8 @@ publication/merge and preserve the peer's test and work records if it lands firs
 
 COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.
 
+CALENDAR-DAY-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve workbench calendar, note editor and request initial date wiring; existing APIs only, no migration/dependency changes.
+
 ## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
