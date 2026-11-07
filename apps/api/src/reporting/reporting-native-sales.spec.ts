@@ -93,10 +93,35 @@ describe('native Sales report source and shared preview/export path', () => {
       actor,
       true,
     );
-    expect(result.rows).toHaveLength(2);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0]?.primaryDimension).toBe('پرواز + هتل');
     expect(result.rows[0]?.salesAmount).toBe('900');
     expect(result.columns[0]?.label).toBe('ترکیب خدمات قرارداد');
+    expect(result.rows[0]?.orderCount).toBe(1);
+    expect(result.rows[0]?.passengerCount).toBe(3);
+    expect(result.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
+    expect(result.rows[0]?.amountsByCurrency).toEqual([
+      { currencyCode: 'IRR', amount: '900' },
+      { currencyCode: 'USD', amount: '20' },
+    ]);
+    expect(result.columns.map((c) => c.key)).not.toContain('currencyCode');
+    const preview = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+    );
+    expect(preview.rows).toEqual(result.rows);
+    expect(preview.totalsByCurrency).toEqual(result.totalsByCurrency);
+    const file = new ReportingExportService({} as LocalDocumentStorage).build(
+      'XLSX',
+      result,
+      'خدمات و مسیر',
+    );
+    const sheet = strFromU8(
+      unzipSync(new Uint8Array(file.buffer))['xl/worksheets/sheet1.xml']!,
+    );
+    expect(sheet).toContain('900 ریال + 20 $');
   });
   it('rejects sorting by an unavailable financial metric before reading the source', async () => {
     const { client, findMany } = fixture();
@@ -109,6 +134,41 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     ).rejects.toThrow();
     expect(findMany).not.toHaveBeenCalled();
+  });
+  it('deduplicates contracts across currencies before pagination and keeps different route IDs separate', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      { ...one, id: 'two', _count: { passengers: 2 } },
+      { ...one, id: 'three', destinationId: 'other-destination' },
+    ]);
+    const all = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+      true,
+    );
+    expect(all.total).toBe(2);
+    expect(all.rows[0]?.orderCount).toBe(2);
+    expect(all.rows[0]?.passengerCount).toBe(5);
+    expect(all.rows[0]?.sourceValues?.salesAmount).toBe('1800 ریال + 40 $');
+    const page = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+    );
+    expect(page.total).toBe(2);
+    expect(page.rows).toEqual(all.rows.slice(0, 1));
+    const second = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      { ...query, page: 2 },
+      actor,
+    );
+    expect(second.rows).toEqual(all.rows.slice(1));
   });
   it('requires native authorization even when the actor has generic reporting read', async () => {
     const { client, findMany } = fixture();

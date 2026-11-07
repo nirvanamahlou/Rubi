@@ -11497,3 +11497,6 @@ RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must app
 RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
 
 RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.
+
+SERVICE-ROUTE-CURRENCIES-1107 | PC-C | codex/pc-c-service-route-currencies-1107 | native-sales + multicurrency helper + regressions | IN_PROGRESS | owner request; no FX calculation, migration or deploy
+SERVICE-ROUTE-CURRENCIES-1107 READY_FOR_CI: scoped implementation + 13 regression tests passed; preserve per-currency chart series, no FX assumptions.
