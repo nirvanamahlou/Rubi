@@ -8194,7 +8194,7 @@ REQUEST-MANAGER-FIELDS-1025 final: full Web types/build65 pages and browser acce
 
 ## 2026-10-25 — FLIGHT-PURCHASE-EDIT-1025 — PC-A — READY_FOR_CI
 
-Purchasing now displays each dated flight independently instead of pooling matching weekdays. Filters, focused offer, capacity cost and KPIs use each request's actual cost/payment shares; saved historical pools stay independently visible while edits preserve their original atomic full-pool scope with an explicit explanation. Existing total/per-seat APIs and append-only pricing revisions remain; cost edits reopen before any payment, permissions/stale-version/replay/paid locks stay intact. Web26 and API30 focused tests and affected lint passed. Full Web types/production build and exact-head hosted quality/test/database/build gates precede owner-authorized develop merge. No API/schema/migration/dependency/runtime changes. Bounded source locks freeze/release with publication.
+Purchasing now displays each dated flight independently instead of pooling matching weekdays. Filters, focused offer, capacity cost and KPIs use each request's actual cost/payment shares; saved historical pools stay independently visible while edits preserve their original atomic full-pool scope with an explicit explanation. Existing total/per-seat APIs and append-only pricing revisions remain; cost edits reopen before any payment, permissions/stale-version/replay/paid locks stay intact. Web26 and API52 focused tests and affected lint passed. Full Web types/production build and exact-head hosted quality/test/database/build gates precede owner-authorized develop merge. No API/schema/migration/dependency/runtime changes. Bounded source locks freeze/release with publication.
 
 ## 2026-10-25 — SALES-TRIP-COLUMNS-1025 — PC-A
 
@@ -8317,7 +8317,7 @@ Existing-form-only Finance repairs: explicit account-only petty FX, independent 
 
 ## LEGACY-RESERVATION-LOCAL-1026 — local review only
 
-Historical reservation supplier forms now preserve aggregate contracts without fabricating named passengers. A trusted historical snapshot permits empty supplier manifests; ordinary and voucher validation retain their existing rules. The Sales public summary supplies the saved buyer after request authorization, and the form and escaped PDF show it as CONTRACT PARTY, separate from passenger identities. Broker selection, CAS, issuance and revision history remain enforced. Web44/API30 focused tests, scoped lint and full Web/API production builds pass. Preview runs at http://localhost:3100/reservations with API4000 against an isolated copy of the existing local database; original local data and production remain unchanged. The owner subsequently authorized source-only PR1137 and develop merge. Synthetic review data is excluded; the review copy was restored to its pre-test state to remove the test account and contract. No production rollout.
+Historical reservation supplier forms now preserve aggregate contracts without fabricating named passengers. A trusted historical snapshot permits empty supplier manifests; ordinary and voucher validation retain their existing rules. The Sales public summary supplies the saved buyer after request authorization, and the form and escaped PDF show it as CONTRACT PARTY, separate from passenger identities. Broker selection, CAS, issuance and revision history remain enforced. Web44/API52 focused tests, scoped lint and full Web/API production builds pass. Preview runs at http://localhost:3100/reservations with API4000 against an isolated copy of the existing local database; original local data and production remain unchanged. The owner subsequently authorized source-only PR1137 and develop merge. Synthetic review data is excluded; the review copy was restored to its pre-test state to remove the test account and contract. No production rollout.
 
 ## MASTER-DATA-ACCESS-1026 — PC-B
 
@@ -9055,9 +9055,9 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 
 Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
 
-## SALES-REQUEST-ASSIGNEES-1107 — PC-C — SOURCE_READY
+## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
-Owner confirmed an exact two-manager/three-extra-recipient Call Center assignment exception. Protected exact-ID policy feeds both selector and save validation; active internal branch checks and all other department/team/self policies remain intact. Own-created target requests remain readable without expanding contact history. No schema/dependency/HR/stored-grant change.30 focused tests pass; full types/build and hosted gates precede approved merge/publication. See tasks/SALES-REQUEST-ASSIGNEES-1107.md.
+Owner confirmed an exact two-manager/three-extra-recipient Call Center assignment exception. Protected exact-ID policy feeds both selector and save validation; active internal branch checks and all other department/team/self policies remain intact. Own-created target requests remain readable without expanding contact history. No schema/dependency/HR/stored-grant change.52 focused tests pass; full types/build and hosted gates precede approved merge/publication. See tasks/SALES-REQUEST-ASSIGNEES-1107.md.
 
 ## CALL-CENTER-RELEASE-1107 — PC-C — DEPLOYED_AND_VERIFIED
 
