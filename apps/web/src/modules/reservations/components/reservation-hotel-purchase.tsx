@@ -23,6 +23,7 @@ import {
   legacyPurchaseGuests,
   moneyDecimal,
   moneyUnits,
+  readLegacyServiceParties,
   reservationServicePurchaseTotal,
   type ReservationIntakeV1,
   type SalesPassengerAgeCategory,
@@ -120,6 +121,46 @@ export const reservationTransferPassengers = (
           const guests = unnamedPurchaseGuests(snapshot, key);
           return guests.length > largest.length ? guests : largest;
         }, []);
+
+/** Initial quantity comes from the immutable contract snapshot; saved purchases win later. */
+export const reservationTransferContractCount = (
+  snapshot: ReservationIntakeV1['snapshot'],
+  serviceKeys: readonly string[],
+) => {
+  const keys = new Set(serviceKeys);
+  const members = new Set(snapshot.passengerIds);
+  const parties = readLegacyServiceParties(snapshot.serviceSelections);
+  const legacyCounts = serviceKeys
+    .map((key) => parties?.[key])
+    .filter((party) => party !== undefined)
+    .map((party) => party.adults + party.children);
+  if (legacyCounts.length) return Math.max(...legacyCounts);
+
+  const allocated = new Set(
+    (snapshot.passengerAssignments ?? [])
+      .filter(
+        (passenger) =>
+          (!members.size || members.has(passenger.customerId)) &&
+          passenger.ageCategory !== 'INF' &&
+          passenger.serviceClientKeys.some((key) => keys.has(key)),
+      )
+      .map((passenger) => passenger.customerId),
+  ).size;
+  if (allocated) return allocated;
+
+  const declared = snapshot.serviceSelections
+    .filter((service) => keys.has(service.clientKey))
+    .map((service) => service.metadata?.passengerCount)
+    .filter(
+      (count): count is number =>
+        typeof count === 'number' && Number.isSafeInteger(count) && count >= 0,
+    );
+  if (declared.length) return Math.max(...declared);
+
+  return reservationTransferPassengers(snapshot, serviceKeys).filter(
+    (passenger) => passenger.age !== 'INF',
+  ).length;
+};
 
 export function transferPurchaseTotal(price: string, count: string) {
   if (
@@ -350,7 +391,7 @@ export function LegacyReservationHotelPurchase({
       price: purchase?.pricingCalculation?.baseAmount ?? '',
       count: String(
         purchase?.pricingCalculation?.chargeablePassengerCount ??
-          reservationTransferPassengers(request.snapshot, keys).length,
+          reservationTransferContractCount(request.snapshot, keys),
       ),
     };
   };
@@ -547,6 +588,89 @@ export function LegacyReservationHotelPurchase({
     }
   }
 
+  const transferSplitToggle =
+    transfers.length > 1 ? (
+      <label className="flex items-center gap-2 text-sm font-bold">
+        <input
+          type="checkbox"
+          checked={splitTransfers}
+          onChange={(event) => {
+            const split = event.target.checked;
+            if (split) {
+              const supplier = combinedTransfer.supplier ?? hotelSupplier;
+              setSeparateTransfers((rows) =>
+                rows.map((row) => ({
+                  ...row,
+                  supplier: row.supplier ?? supplier,
+                  currency: row.currency ?? combinedTransfer.currency,
+                })),
+              );
+            }
+            setSplitTransfers(split);
+          }}
+        />
+        کارگزار جدا برای ترانسفر رفت و برگشت
+      </label>
+    ) : null;
+  const transferFields = transferRows.map(({ keys, title, draft }, index) => (
+    <div key={keys.join('|')} className="space-y-3 rounded-lg border p-3">
+      <h4 className="font-bold">{title}</h4>
+      {latestTransfer(keys) && (
+        <p className="text-xs text-muted-foreground">
+          آخرین خرید ثبت‌شده: {formatSalesMoney(latestTransfer(keys)!.amount)}{' '}
+          {latestTransfer(keys)!.currencyCode}
+        </p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FormField label={purchaseRoot ? 'آژانس ترانسفر' : 'کارگزار ترانسفر'}>
+          <ReservationPurchaseBrokerLookup
+            purchaseRoot={purchaseRoot}
+            requestId={request.id}
+            label={title + ' · کارگزار ترانسفر'}
+            value={draft.supplier ?? (!splitTransfers ? hotelSupplier : null)}
+            onChange={(supplier) => changeTransfer(index, { supplier })}
+          />
+        </FormField>
+        <FormField label="ارز خرید ترانسفر">
+          <Lookup
+            kind="currencies"
+            label={title + ' · ارز خرید ترانسفر'}
+            value={draft.currency}
+            onChange={(currency) => changeTransfer(index, { currency })}
+          />
+        </FormField>
+        <FormField label="قیمت ترانسفر هر نفر">
+          <MoneyInput
+            aria-label={title + ' · قیمت ترانسفر هر نفر'}
+            value={draft.price}
+            onValueChange={(price) => changeTransfer(index, { price })}
+          />
+        </FormField>
+        <FormField label="تعداد نفرات محاسبه‌شونده">
+          <input
+            type="number"
+            min="1"
+            step="1"
+            className="h-10 w-full rounded-lg border bg-background px-3"
+            aria-label={title + ' · تعداد نفرات محاسبه‌شونده'}
+            value={draft.count}
+            onChange={(event) =>
+              changeTransfer(index, { count: event.target.value })
+            }
+          />
+        </FormField>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        قیمت هر نفر × تعداد نفرات محاسبه‌شونده
+      </p>
+      <p className="font-bold">
+        جمع ترانسفر:{' '}
+        {transferTotals[index] ? formatSalesMoney(transferTotals[index]!) : '—'}{' '}
+        {draft.currency?.id ?? ''}
+      </p>
+    </div>
+  ));
+
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
@@ -696,101 +820,19 @@ export function LegacyReservationHotelPurchase({
               <HotelPurchaseSavings value={hotelPurchase.hotelSavings} />
             </div>
           ) : null}
+          {transfers.length ? (
+            <div className="space-y-4 border-t border-border pt-4">
+              <h4 className="font-bold">ترانسفر همراه رزرو هتل</h4>
+              {transferSplitToggle}
+              {!splitTransfers && transferFields}
+            </div>
+          ) : null}
         </section>
       ) : null}
-      {transfers.length ? (
+      {transfers.length && (!hotel || splitTransfers) ? (
         <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
-          {transfers.length > 1 && (
-            <label className="flex items-center gap-2 text-sm font-bold">
-              <input
-                type="checkbox"
-                checked={splitTransfers}
-                onChange={(event) => {
-                  const split = event.target.checked;
-                  if (split) {
-                    const supplier = combinedTransfer.supplier ?? hotelSupplier;
-                    setSeparateTransfers((rows) =>
-                      rows.map((row) => ({
-                        ...row,
-                        supplier: row.supplier ?? supplier,
-                        currency: row.currency ?? combinedTransfer.currency,
-                      })),
-                    );
-                  }
-                  setSplitTransfers(split);
-                }}
-              />
-              کارگزار جدا برای ترانسفر رفت و برگشت
-            </label>
-          )}
-          {transferRows.map(({ keys, title, draft }, index) => (
-            <div
-              key={keys.join('|')}
-              className="space-y-3 rounded-lg border p-3"
-            >
-              <h4 className="font-bold">{title}</h4>
-              {latestTransfer(keys) && (
-                <p className="text-xs text-muted-foreground">
-                  آخرین خرید ثبت‌شده:{' '}
-                  {formatSalesMoney(latestTransfer(keys)!.amount)}{' '}
-                  {latestTransfer(keys)!.currencyCode}
-                </p>
-              )}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FormField
-                  label={purchaseRoot ? 'آژانس ترانسفر' : 'کارگزار ترانسفر'}
-                >
-                  <ReservationPurchaseBrokerLookup
-                    purchaseRoot={purchaseRoot}
-                    requestId={request.id}
-                    label={title + ' · کارگزار ترانسفر'}
-                    value={
-                      draft.supplier ?? (!splitTransfers ? hotelSupplier : null)
-                    }
-                    onChange={(supplier) => changeTransfer(index, { supplier })}
-                  />
-                </FormField>
-                <FormField label="ارز خرید ترانسفر">
-                  <Lookup
-                    kind="currencies"
-                    label={title + ' · ارز خرید ترانسفر'}
-                    value={draft.currency}
-                    onChange={(currency) => changeTransfer(index, { currency })}
-                  />
-                </FormField>
-                <FormField label="قیمت ترانسفر هر نفر">
-                  <MoneyInput
-                    aria-label={title + ' · قیمت ترانسفر هر نفر'}
-                    value={draft.price}
-                    onValueChange={(price) => changeTransfer(index, { price })}
-                  />
-                </FormField>
-                <FormField label="تعداد نفرات محاسبه‌شونده">
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    className="h-10 w-full rounded-lg border bg-background px-3"
-                    aria-label={title + ' · تعداد نفرات محاسبه‌شونده'}
-                    value={draft.count}
-                    onChange={(event) =>
-                      changeTransfer(index, { count: event.target.value })
-                    }
-                  />
-                </FormField>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                قیمت هر نفر × تعداد نفرات محاسبه‌شونده
-              </p>
-              <p className="font-bold">
-                جمع ترانسفر:{' '}
-                {transferTotals[index]
-                  ? formatSalesMoney(transferTotals[index]!)
-                  : '—'}{' '}
-                {draft.currency?.id ?? ''}
-              </p>
-            </div>
-          ))}
+          {!hotel && transferSplitToggle}
+          {transferFields}
         </section>
       ) : null}
       {services.length ? (
