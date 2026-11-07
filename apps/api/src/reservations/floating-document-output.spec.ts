@@ -58,6 +58,7 @@ it('preserves an explicit agency letterhead and keeps ticket-only contracts free
     kind: 'AGENCY' as const,
     name: 'Chosen agency',
     referenceId: 'agency',
+    logoFileId: null,
   };
   const result = await service.floatingDocumentOutput(
     {
