@@ -18,6 +18,45 @@ const command = (
   ...extra,
 });
 describe('travel workflow', () => {
+  it('sends a prepared form and issues a voucher without broker or leader only when the contract has no transfer', () => {
+    const initial = {
+      ...initialTravelWorkflow(),
+      supplierFormSettings: { text: {}, flags: {}, passengers: [] } as never,
+    };
+    const apply = (
+      state: TravelWorkflowStateV1,
+      action: TravelWorkflowCommandV1['action'],
+      requiresTransfer: boolean,
+    ) =>
+      transition(
+        state,
+        command(state, action, {
+          supplierReference: '',
+          acknowledgeMissingInsurance: true,
+        }),
+        [],
+        [],
+        false,
+        [],
+        true,
+        requiresTransfer,
+      );
+    expect(() => apply(initial, 'REQUEST_SUPPLIER', true)).toThrow('کارگزار');
+    const sent = apply(initial, 'REQUEST_SUPPLIER', false);
+    expect(sent.sentSupplierFormVersion).toBe(sent.version);
+    expect(sent.sentSupplierFormSettings).toEqual(initial.supplierFormSettings);
+    const confirmed = apply(sent, 'CONFIRM_SUPPLIER', false);
+    expect(confirmed.voucherIssued).toBe(true);
+    expect(confirmed.supplierStatus).toBe('CONFIRMED');
+    expect(() => apply(sent, 'CONFIRM_SUPPLIER', true)).toThrow('کارگزار');
+    expect(() =>
+      apply(initialTravelWorkflow(), 'REQUEST_SUPPLIER', false),
+    ).toThrow('فرم');
+    expect(
+      apply({ ...confirmed, voucherIssued: false }, 'ISSUE_VOUCHER', false)
+        .voucherIssued,
+    ).toBe(true);
+  });
   it('keeps supplier-form corrections out of the sales contract and voucher', () => {
     const state = initialTravelWorkflow();
     const settings = {
