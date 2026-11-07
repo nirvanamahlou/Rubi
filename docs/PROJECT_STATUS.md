@@ -339,6 +339,9 @@ TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, life
 ## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
 One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107
+Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with insert-only migration. Preserve configured IDs, policies and deactivation. Isolated PostgreSQL regression exercises missing references and replay preservation under existing receipt-reference CI gate. No operational data changes or deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9092,5 +9095,8 @@ PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User reques
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
 
 
-## MANIFEST-DOCUMENT-REFERENCES-1107
-Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with insert-only migration. Preserve configured IDs, policies and deactivation. Isolated PostgreSQL regression exercises missing references and replay preservation under existing receipt-reference CI gate. No operational data changes or deployment.
+
+
+## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
+
+PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.

@@ -323,6 +323,10 @@ COMPUTER_ID=PC-A; codex/pc-a-shared-broker-form-1105 from develop1caf96d8. Owner
 
 SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTURE output vocabulary in place of OUTBOUND/RETURN. Reserve only supplier-form output label projection, price-table labels and corresponding render regression; stored enums and routing are unchanged. Existing sent quotation selection stays immutable. Synthetic combined PDF visually verified; all final-head hosted gates precede authorized develop merge. Scope freezes on push and releases on verified merge.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
+
+Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
@@ -11374,6 +11378,6 @@ User authorizes persisted requester resolution and list/detail redesign, push an
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
 
-## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
+## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
 
-Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
+PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
