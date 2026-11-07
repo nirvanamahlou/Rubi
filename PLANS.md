@@ -604,6 +604,7 @@ The earlier package-three UI test guide requires restoration of this section bef
 - [x] Dedicated secure producer/consumer and native services/workbooks.
 - [x] Durable rotation, offline revocation and personal/site/branch isolation.
 - [x] Synthetic HTTP/PostgreSQL acceptance; future business effects disabled.
-- [ ] Two develop PRs with every exact-head CI check green.
+- [x] Create [consumer PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18) to develop.
+- Final acceptance requires all exact-head CI checks green on both PRs; live status is recorded in GitHub.
 - [ ] Separate owner-approved deployment; producer/migration before consumer,
       then real production bundle import and explicit connection test.

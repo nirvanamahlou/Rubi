@@ -1,3 +1,9 @@
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
@@ -11426,6 +11432,28 @@ PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-
 
 `nDOC-REPORT-1107 | PC-C | codex/pc-c-document-report-access-1107 | document-reporting.public.ts + targeted regression | IN_PROGRESS | origin/develop
 
-## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_CI
+## BACKGROUND-NOTIFICATIONS-1107 — PC-D — RESERVED
 
-COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
+COMPUTER_ID=PC-D; branch codex/pc-d-background-notifications-1107 from
+origin/develop@5c72bc48b. The owner explicitly authorizes this focused fix,
+push, hosted CI, a PR targeting develop and merge only after all checks pass.
+This task-specific instruction supersedes the local PC-D-Integration default.
+Reserve only the global change-notifications classifier and focused regressions,
+one Call Center tracker integration regression, and this task's status notes.
+Exclude technical telephony lease renew/release requests and existing POST query
+reads from business-change announcements; preserve genuine mutations and all
+recipient-scoped persistent feeds, permissions, polling and read/clear behavior.
+Call Center business announcements must identify/link their owning workspace.
+Earlier CALL-KPI-NOTIFICATIONS-1105 source is merged/frozen; notification-center
+and the other active notification work remain untouched. No API/schema,
+migration, dependency/lockfile, operational data deletion or deployment changes.
+Historical generic local entries lack request provenance and must be preserved.
+Source freezes on push; release reservation after verified merge.
+
+Compatibility check: peer PR1461 (PC-B, source frozen on push at25815dadf)
+contains the same exact lease exclusion alongside unrelated HR work. Reuse that
+published exclusion verbatim in this isolated branch; do not modify the peer
+branch, HR changes or notification-center. The additional PC-D change is the
+more-specific Call Center label/route and real-client integration coverage.
+Both branch orders must retain the compatible exclusion; refresh develop before
+publication/merge and preserve the peer's test and work records if it lands first.

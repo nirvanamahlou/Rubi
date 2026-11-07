@@ -1,3 +1,14 @@
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
+encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
+Excel, anonymous presence and read-only reports. Future commerce and SSO remain
+DISABLED. Synthetic producer/consumer and existing connector regressions pass;
+GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
+See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
@@ -9145,11 +9156,18 @@ PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-
 
 `n2026-11-07 PC-C: Document compliance producer used nonexistent documents.read; corrected to native documents.list. Runtime regression passed with mocked DB; no production activation yet. Local suite blocked by missing @nestjs/common in shared dependencies.
 
-## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_CI
+## BACKGROUND-NOTIFICATIONS-1107 — PC-D — READY_FOR_CI
 
-Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
-encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
-Excel, anonymous presence and read-only reports. Future commerce and SSO remain
-DISABLED. Synthetic producer/consumer and existing connector regressions pass;
-GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
-See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
+The global bell no longer announces successful telephony lease renew/release
+requests as Customer Affairs record creation. All six existing POST query reads
+remain silent. Real Call Center mutations now identify and link the Call Center
+workspace; regular leads/tickets and persistent recipient feeds retain their
+existing behavior. Real-client regressions first reproduced 31 false events per
+simulated minute in each language, then passed after the repair. All106 focused
+Web checks pass, including privacy, read/clear, failed/aborted requests and
+distinct real saves at identical timestamps. Exact-head hosted quality, full
+tests, production build and PostgreSQL gates are mandatory before the owner's
+authorized develop merge. No migration, dependency, production write or deploy.
+Historical generic local items are retained because their source cannot be
+identified safely. Peer PR1461's published/frozen exact lease exclusion is reused
+without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
