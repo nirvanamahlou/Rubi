@@ -2,6 +2,10 @@
 
 Both monthly leave notice controls now accept integer days (0–365), with legacy hourly cutoff compatibility. HR mission fund previews use a narrow HR-manage port retaining custodian/manager and branch enforcement, without requiring purchase-list access. Workbench leave resolves the explicitly linked active sender employee independently of request destination, and approval/reconciliation use that personnel branch; missing links are never guessed. Focused unit/form tests and two isolated PostgreSQL workflows pass, including canonical cross-branch persistence and fund preview. Production account mapping remains pending for unlinked accounts.
 
+## CHAT-MESSAGE-SEARCH-1107 — PC-B — READY_FOR_CI
+
+User authorizes in-conversation message search beside resize controls, push and develop merge. Reserve Messaging list search query/repository filtering, client and composer search results/pagination, tests and translations. Server-side history search stays within authorized conversation; search does not mark unrelated messages read. No schema/dependency/deployment. Validation: 97 Web/translation tests, 30 API tests and all 8 real PostgreSQL messaging tests passed; scoped lint passed. The first simultaneous local database run timed out in the existing attachment upload; an isolated rerun passed all cases. Coverage includes history beyond the current feed, non-overlapping cursor pages, authorization and unread preservation. Final-head hosted gates precede merge.
+
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
 
 MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete expense helper and approval inputs/column hidden without moving persisted positions. Standalone expense form shares mission petty-cash fields, supports parent mission, evidence and currency. Mission row opens all child expenses with edit/delete controls. Procurement-owned transaction port retains original debits and writes idempotent linked reversal credits on HR expense edit/delete, preserving branch/custodian controls and atomic balance rollback. Local isolated PostgreSQL test passes create, replay, edit, stale version, dependent delete guard, claim debit and full reversal; three focused port tests pass. No schema/dependency change. Hosted final-head gates required.
@@ -9233,3 +9237,13 @@ RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pas
 RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
 
 RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.
+## 2026-11-07 — Ticket multi-airline marks and leg-date typography
+
+- PC-A reserved the shared presentation-only flight-ticket layout and focused
+  regression on `codex/pc-a-ticket-multi-airline-labels-1107`.
+- Scope is limited to one header mark per distinct ticket carrier and matching
+  ARRIVAL/DEPARTURE date typography; no data, API, schema or runtime change.
+- Implemented deduplicated multi-carrier marks with compact two-airline sizing;
+  dates now share the row label's 13pt/700 inherited-color typography.
+- Layout tests 9/9 and related consumers 43/43 pass with one existing optional
+  skip; scoped lint, Web TypeScript and the 67-route production build pass.
