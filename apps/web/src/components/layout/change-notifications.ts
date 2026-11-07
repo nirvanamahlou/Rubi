@@ -48,6 +48,10 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
   ],
   ['master-data', { label: 'اطلاعات پایه', href: '/master-data' }],
   ['customers', { label: 'مشتریان', href: '/customers' }],
+  [
+    'customer-affairs/call-center',
+    { label: 'کال سنتر', href: '/customer-affairs/call-center' },
+  ],
   ['customer-affairs', { label: 'امور مشتریان', href: '/customer-affairs' }],
   ['sales', { label: 'فروش و قراردادها', href: '/sales' }],
   ['ticket-catalog', { label: 'مدیریت بلیط‌ها', href: '/ticket-management' }],
