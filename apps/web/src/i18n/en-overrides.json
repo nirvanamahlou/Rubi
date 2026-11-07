@@ -5238,5 +5238,10 @@
   "ویرایش تردد ·": "Edit attendance ·",
   "ویرایش دستی تردد برای این حساب مجاز نیست.": "This account is not authorized to edit attendance manually.",
   "هزینه فقط برای مأموریت مجاز است.": "Expense data is only allowed for missions.",
-  "هزینه:": "Cost:"
+  "هزینه:": "Cost:",
+  "فروشنده قرارداد": "Contract salesperson",
+  "همه فروشنده‌ها": "All salespeople",
+  "نوع بلیط قرارداد": "Contract ticket type",
+  "چارتری": "Charter",
+  "فیلتر قرارداد معتبر نیست.": "Invalid contract filter."
 }
