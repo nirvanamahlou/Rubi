@@ -5554,5 +5554,7 @@
   "تاریخ ورود هتل بعدی نباید قبل از خروج هتل قبلی باشد؛ تاریخ خروج هتل قبلی را اصلاح کنید.": "The next hotel check-in cannot precede the previous hotel checkout. Correct the previous hotel checkout date.",
   "نوع اتاق و ترکیب مهمانان هتل بعدی را تکمیل کنید.": "Complete the next hotel room types and guest composition.",
   "حداکثر ۵۰ هتل قابل انتخاب است.": "You can select up to 50 hotels.",
-  "اطلاعات هتل اول، تاریخ اقامت و اتاق‌ها را تکمیل کنید.": "Complete the first hotel details, stay dates and rooms."
+  "اطلاعات هتل اول، تاریخ اقامت و اتاق‌ها را تکمیل کنید.": "Complete the first hotel details, stay dates and rooms.",
+  "ترانسفر این هتل": "Hotel transfer",
+  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel"
 }

@@ -5810,6 +5810,8 @@
   "نوع اتاق و ترکیب مهمانان هتل بعدی را تکمیل کنید.": "Complete the next hotel room types and guest composition.",
   "حداکثر ۵۰ هتل قابل انتخاب است.": "You can select up to 50 hotels.",
   "اطلاعات هتل اول، تاریخ اقامت و اتاق‌ها را تکمیل کنید.": "Complete the first hotel details, stay dates and rooms.",
+  "ترانسفر این هتل": "Hotel transfer",
+  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",
@@ -5882,6 +5884,7 @@
   "ارز معتبر نیست.": "The currency is not valid.",
   "ارز مقصد": "Destination currency",
   "ارز منبع مالی معتبر نیست.": "Invalid financial source currency.",
+  "ارز هزینه با تنخواه یکسان نیست.": "The expense currency must match the petty-cash fund.",
   "ارز یا درصد شرایط تجاری معتبر نیست.": "The currency or percentage of the trade terms is not valid.",
   "ارزها": "Currencies",
   "ارزیابی آمادگی فروش در مرحله فعلی درخواست مجاز نیست.": "Sales readiness assessment is not allowed at the current stage of the application.",
@@ -5928,6 +5931,7 @@
   "اطلاعات قیمت خرید بلیط معتبر نیست.": "Ticket price information is not valid.",
   "اطلاعات نامه معتبر نیست.": "The letter information is invalid.",
   "اطلاعات واردشده معتبر نیست.": "The information entered is not valid.",
+  "اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.": "Expense details do not match the submitted values.",
   "اطلاعات هزینه خرید هتل معتبر نیست.": "The hotel purchase price information is not valid.",
   "اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.": "Information has changed at the same time; Reload.",
   "اطلاعات یا نسخه اتصال معتبر نیست.": "The connection settings or version are invalid.",
@@ -7878,7 +7882,5 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing.",
-  "ارز هزینه با تنخواه یکسان نیست.": "The expense currency must match the petty-cash fund.",
-  "اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.": "Expense details do not match the submitted values."
+  "version برای ویرایش الزامی است.": "version is required for editing."
 }
