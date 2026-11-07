@@ -137,3 +137,36 @@ it('allows another city in the destination country and rejects a different count
     assertFloatingFlightAirports(input, { detail } as never),
   ).rejects.toThrow();
 });
+
+it('validates origin airport against the origin country and preserves its snapshot', async () => {
+  const input = services();
+  input[0]!.metadata = {
+    ...input[0]!.metadata,
+    flightOriginAirportV1: JSON.stringify(airport),
+  };
+  const detail = vi.fn().mockImplementation(async (resource: string) => ({
+    data:
+      resource === 'airports'
+        ? reference()
+        : { attributes: { countryId: airport.countryId } },
+  }));
+  await assertFloatingFlightAirports(input, { detail } as never);
+  expect(detail).toHaveBeenCalledWith('cities', input[0]!.metadata!.originId);
+  expect(salesContractOnlyFlights(input)[0]?.originAirport).toEqual(airport);
+  detail.mockImplementation(async (resource: string, id: string) => ({
+    data:
+      resource === 'airports'
+        ? reference()
+        : {
+            attributes: {
+              countryId:
+                id === input[0]!.metadata!.originId
+                  ? 'other-country'
+                  : airport.countryId,
+            },
+          },
+  }));
+  await expect(
+    assertFloatingFlightAirports(input, { detail } as never),
+  ).rejects.toThrow();
+});
