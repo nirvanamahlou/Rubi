@@ -361,6 +361,97 @@ describe.skipIf(!enabled)(
       },
       30000,
     );
+    it('searches older history with isolated cursor pages and does not mark search as read', async () => {
+      const group = await client.messagingConversation.create({
+        data: {
+          type: 'GROUP',
+          branchId,
+          creatorUserId: senderId,
+          title: 'Search test',
+          createRequestId: `group:${randomUUID()}`,
+          members: {
+            create: [
+              { userId: senderId, role: 'OWNER' },
+              { userId: recipientId, role: 'MEMBER' },
+            ],
+          },
+        },
+      });
+      await client.messagingMessage.createMany({
+        data: Array.from({ length: 65 }, (_, index) => ({
+          conversationId: group.id,
+          senderUserId: senderId,
+          clientRequestId: `message:${randomUUID()}`,
+          body: index < 3 ? 'ArchiveNeedle قرارداد' : 'Recent text',
+          createdAt: new Date(Date.UTC(2026, 0, 1, 0, index)),
+        })),
+      });
+      const http = app.getHttpServer();
+      const path = `/messaging/conversations/${group.id}/messages`;
+      const first = await request(http)
+        .get(path)
+        .query({ search: 'archiveneedle', limit: 2 })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(first.body.data).toHaveLength(2);
+      expect(
+        first.body.data.every((message: { body: string }) =>
+          message.body.includes('ArchiveNeedle'),
+        ),
+      ).toBe(true);
+      expect(first.body.meta.nextCursor).toBeTruthy();
+      const second = await request(http)
+        .get(path)
+        .query({
+          search: 'archiveneedle',
+          limit: 2,
+          cursor: first.body.meta.nextCursor,
+        })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(second.body.data).toHaveLength(1);
+      expect(second.body.meta.nextCursor).toBeNull();
+      expect(
+        new Set(
+          [...first.body.data, ...second.body.data].map(
+            (message: { id: string }) => message.id,
+          ),
+        ).size,
+      ).toBe(3);
+      expect(
+        (
+          await client.messagingMember.findUniqueOrThrow({
+            where: {
+              conversationId_userId: {
+                conversationId: group.id,
+                userId: recipientId,
+              },
+            },
+          })
+        ).lastReadAt,
+      ).toBeNull();
+      await request(http)
+        .get(path)
+        .query({ search: 'ArchiveNeedle' })
+        .set('x-test-actor', outsiderId)
+        .expect(403);
+      const empty = await request(http)
+        .get(`/messaging/conversations/${conversationId}/messages`)
+        .query({ search: 'ArchiveNeedle' })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(empty.body.data).toHaveLength(0);
+      const normal = await request(http)
+        .get(path)
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(
+        normal.body.data.every(
+          (message: { body: string }) => message.body === 'Recent text',
+        ),
+      ).toBe(true);
+    });
+
     it('allows only current group managers to remove or promote members and retains message history', async () => {
       const http = app.getHttpServer();
       const group = await client.messagingConversation.create({
