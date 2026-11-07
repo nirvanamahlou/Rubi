@@ -39,6 +39,58 @@ function setup() {
   return { service, employees, units, hrEmployee, hrRecord };
 }
 describe('HR-owned live manager request team', () => {
+  it('limits optional policy to the exact current unit and rejects a transferred manager at read and save time', async () => {
+    const { service, hrRecord, employees } = setup();
+    const units = [
+      { id: 'sales-unit', values: ['Sales'], data: {} },
+      { id: 'hr-unit', values: ['HR'], data: {} },
+    ];
+    hrRecord.findMany.mockResolvedValue(units);
+    expect(
+      await service.callCenterRequestTeam(
+        'branch',
+        'manager',
+        undefined,
+        'sales-unit',
+      ),
+    ).toEqual(['manager', 'peer']);
+    expect(
+      await service.callCenterRequestTeam(
+        'branch',
+        'manager',
+        undefined,
+        'wrong-unit',
+      ),
+    ).toBeNull();
+    employees[0]!.unit = 'HR';
+    expect(
+      await service.callCenterRequestTeam(
+        'branch',
+        'manager',
+        undefined,
+        'sales-unit',
+      ),
+    ).toBeNull();
+    expect(await service.callCenterRequestTeam('branch', 'manager')).toEqual([
+      'foreign-unit',
+      'manager',
+    ]);
+    const tx = {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValueOnce(employees)
+        .mockResolvedValueOnce(units),
+    };
+    expect(
+      await service.callCenterRequestTeam(
+        'branch',
+        'manager',
+        tx as never,
+        'sales-unit',
+      ),
+    ).toBeNull();
+    expect(tx.$queryRaw.mock.calls[1]![0].join('')).toContain('SELECT id,');
+  });
   it('returns only linked active same-unit/company staff IDs with no HR/private fields', async () => {
     const { service, hrEmployee } = setup();
     expect(await service.callCenterRequestTeam('branch', 'manager')).toEqual([
