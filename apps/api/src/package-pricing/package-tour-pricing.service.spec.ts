@@ -183,6 +183,29 @@ describe('PackageTourPricingService', () => {
     expect(result.roomPrices).toHaveLength(1);
     expect(result.familyChildren).toBe(1);
     expect(result.priceFields).toEqual(priceFields);
+    Object.assign(draft, {
+      rialConversion: { IRR: '1', EUR: '100', GBP: '200' },
+    });
+    const rial = await new PackageTourPricingService(database, pricing).publish(
+      'draft-1',
+      { version: 1, expectedDraftVersion: 1, reason: 'rial conversion' },
+      actor,
+    );
+    expect(rial.currencyCode).toBe('IRR');
+    expect(rial.roomPrices[0]?.currencyCode).toBe('IRR');
+    expect(rial.roomPrices[0]?.currencyAmounts).toEqual([
+      {
+        currencyCode: 'IRR',
+        sale: '20068500',
+        purchase: '16060000',
+        commission: '1003426',
+        profit: '3005074',
+      },
+    ]);
+    expect(rial.priceFields?.find((f) => f.id === 'visa')).toMatchObject({
+      currencyCode: 'IRR',
+      amount: '2500',
+    });
   });
   it('validates the current source for the last draft editor too', async () => {
     const database = {
@@ -348,6 +371,61 @@ it('persists dynamic fields, canonicalizes deleted defaults, and reads them back
   expect(empty.priceFields).toEqual([]);
   expect(empty.selectedHotelRateIds).toEqual([]);
   expect(tourPriceFields(empty)).toEqual([]);
+  const quotes = vi
+    .spyOn(service, 'buyRates')
+    .mockResolvedValue({ IRR: '1', EUR: '600000', GBP: '700000' });
+  const converted = await service.save(
+    {
+      ...saveInput,
+      expectedVersion: 3,
+      convertToRial: true,
+      selectedHotelRateIds: ['rate-1'],
+      priceFields,
+    },
+    actor,
+  );
+  expect(converted.convertToRial).toBe(true);
+  expect(converted.rialConversion).toEqual({
+    IRR: '1',
+    EUR: '600000',
+    GBP: '700000',
+  });
+  quotes.mockResolvedValue({ IRR: '1', EUR: '900000' });
+  expect(
+    (await service.get('tour-1', 'batch-1', actor))?.rialConversion?.EUR,
+  ).toBe('600000');
+  quotes.mockResolvedValue({ IRR: '1' });
+  await expect(
+    service.save(
+      {
+        ...saveInput,
+        expectedVersion: 4,
+        convertToRial: true,
+        selectedHotelRateIds: ['rate-1'],
+      },
+      actor,
+    ),
+  ).rejects.toThrow('EUR');
+});
+it('uses only the latest active approved BUY rates directed to IRR', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    { fromCurrency: { code: 'EUR' }, rate: new Prisma.Decimal('600000') },
+    { fromCurrency: { code: 'EUR' }, rate: new Prisma.Decimal('500000') },
+  ]);
+  const service = new PackageTourPricingService(
+    {
+      client: { masterDraftExchangeRate: { findMany } },
+    } as unknown as DatabaseService,
+    {} as PackagePricingService,
+  );
+  expect(await service.buyRates()).toEqual({ IRR: '1', EUR: '600000' });
+  expect(findMany.mock.calls[0]?.[0].where).toMatchObject({
+    rateType: 'BUY',
+    status: 'APPROVED',
+    isActive: true,
+    toCurrency: { code: 'IRR', isActive: true },
+    validFrom: { lte: expect.any(Date) },
+  });
 });
 it('rejects malformed dynamic fields before source or persistence access', async () => {
   const pricing = { tourCostGrid: vi.fn() } as unknown as PackagePricingService;
@@ -531,6 +609,24 @@ it.each([
       expect(result.adultFlightSale).toBe('100');
       expect(result.childFlightSale).toBe('50');
     }
+    Object.assign(draft, { rialConversion: { IRR: '1', EUR: '100' } });
+    const rial = await service.publish(
+      'draft',
+      { version: 1, expectedDraftVersion: 1, reason: 'rial' },
+      actor,
+    );
+    expect(
+      rial.roomPrices.every(
+        (p) =>
+          p.currencyCode === 'IRR' &&
+          p.currencyAmounts?.every((c) => c.currencyCode === 'IRR'),
+      ),
+    ).toBe(true);
+    expect(
+      rial.roomPrices.find((p) => p.roomCode === 'double')?.packageSale,
+    ).toBe('65000');
+    expect(rial.adultFlightSaleCurrencyCode).toBe('IRR');
+    expect(rial.adultFlightSale).toBe('10000');
     Object.assign(draft, { selectedHotelRateIds: [] });
     await expect(
       service.publish(
@@ -539,6 +635,6 @@ it.each([
         actor,
       ),
     ).rejects.toThrow('هتل‌های منتخب');
-    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(2);
   },
 );

@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import type { DocumentListItemV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { paymentReceiptsApi } from '@/modules/sales/api/payment-receipts';
-import { paymentDocumentScanLabel } from '@/modules/sales/model/payment-evidence';
 
 export function FinanceRequestReceipts({
   contractId,
@@ -90,7 +89,10 @@ function Receipt({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const allowed =
-    item.capabilities.download && item.currentVersion.scanStatus === 'CLEAN';
+    item.capabilities.download &&
+    ['CLEAN', 'PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+      item.currentVersion.scanStatus,
+    );
   const image = ['image/jpeg', 'image/png'].includes(
     item.currentVersion.detectedMimeType,
   );
@@ -163,9 +165,6 @@ function Receipt({
       )}
       <p className="break-words text-sm font-medium">
         {item.currentVersion.originalFileName}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        {paymentDocumentScanLabel(item.currentVersion.scanStatus)}
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">

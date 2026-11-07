@@ -230,12 +230,12 @@ describe('default ticket manifest', () => {
       '2026-10-01',
       'TEST-1',
       'SYNTHETIC AIR',
-      'بزرگسال',
+      'ADULT',
       'IRN',
-      '1990-01-01',
+      '1990/01/01',
       'MR',
       'DESTINATION',
-      'BUSINESS',
+      '>B<',
       '0012345678',
     ]) {
       expect(xml).toContain(value);
@@ -277,7 +277,7 @@ describe('default ticket manifest', () => {
     expect(sheet(result.bytes)).toContain('s="1" t="inlineStr"');
   });
 
-  it.each(['CHD', 'INF'])(
+  it.each(['CHD', 'CHD_2_TO_6', 'CHD_6_TO_12', 'INF'])(
     'exports the assigned %s age and female title',
     async (age) => {
       const f = fixture();
@@ -287,7 +287,9 @@ describe('default ticket manifest', () => {
         data: { ...customer, gender: 'F' },
       });
       const result = await f.service.exportTicket('offer', range, 'key', actor);
-      expect(sheet(result.bytes)).toContain(age === 'CHD' ? 'کودک' : 'نوزاد');
+      expect(sheet(result.bytes)).toContain(
+        age.startsWith('CHD') ? 'CHILD' : 'INFANT',
+      );
       expect(sheet(result.bytes)).toContain('>MRS<');
     },
   );
@@ -301,14 +303,14 @@ describe('default ticket manifest', () => {
     });
     expect(
       sheet((await f.service.exportTicket('offer', range, 'key', actor)).bytes),
-    ).toContain('کودک');
+    ).toContain('CHILD');
   });
 
   it.each([
-    ['2024-10-02', 'نوزاد'],
-    ['2024-10-01', 'کودک'],
-    ['2014-10-02', 'کودک'],
-    ['2014-10-01', 'بزرگسال'],
+    ['2024-10-02', 'INFANT'],
+    ['2024-10-01', 'CHILD'],
+    ['2014-10-02', 'CHILD'],
+    ['2014-10-01', 'ADULT'],
   ])('derives legacy age on the actual travel day for %s', (birth, label) => {
     expect(defaultManifestAge(undefined, birth, '2026-10-01')).toBe(label);
   });
@@ -357,7 +359,7 @@ describe('default ticket manifest', () => {
         'تاریخ حرکت',
         'GROUND-1',
         'SYNTHETIC OPERATOR',
-        'کودک',
+        'CHILD',
         'MR',
         '0012345678',
       ])
@@ -429,7 +431,7 @@ describe('default ticket manifest', () => {
       'شماره پاسپورت',
       'تاریخ انقضای پاسپورت',
       'X000123',
-      '2030-01-01',
+      '2030/01/01',
       'ALI',
       'EXAMPLE',
     ])
@@ -586,14 +588,14 @@ describe('default ticket manifest', () => {
       flightDate: '2026-10-01',
       ticket: 'TEST',
       airline: 'Synthetic',
-      ageCategory: 'کودک',
+      ageCategory: 'CHILD',
       nationality: 'IRN',
-      birthDate: '',
+      birthDate: '2018-02-03',
       gender: '',
       cabinClass: 'ECONOMY',
       nationalId: '0012345678',
       passportNumber: '',
-      passportExpiryDate: '',
+      passportExpiryDate: '2030-04-05',
     };
     const xml = sheet(
       buildDefaultManifest(
@@ -605,7 +607,11 @@ describe('default ticket manifest', () => {
     expect(xml).toContain('0012345678');
     expect(xml).toContain('SYNTHETIC DESTINATION');
     expect(xml).toContain('SYNTHETIC');
-    expect(xml).toContain('ECONOMY');
+    expect(xml).toContain('>Y<');
+    expect(xml).toContain('2018/02/03');
+    const international = sheet(buildDefaultManifest([row], true));
+    expect(international).toContain('2030/04/05');
+    expect(international).not.toContain('2030-04-05');
     expect(xml).toContain('IRN');
     expect(xml).toContain('&lt;&amp;&gt;');
     expect(xml).toContain('=HYPERLINK(&quot;X&quot;)');

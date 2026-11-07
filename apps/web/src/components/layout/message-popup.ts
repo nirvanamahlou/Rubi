@@ -3,7 +3,10 @@ import {
   type AuthenticatedActor,
   type NotificationItemV1,
 } from '@nora/contracts';
-import { notificationKind } from './notification-presentation';
+import {
+  isCallCenterAssignment,
+  notificationKind,
+} from './notification-presentation';
 export function newMessagePopup(
   items: readonly NotificationItemV1[],
   seen: ReadonlySet<string> | null,
@@ -18,8 +21,11 @@ export function newMessagePopup(
           !seen.has(item.id) &&
           item.occurredAt >= receivedAfter &&
           !item.isRead &&
-          notificationKind(item) === 'message' &&
-          item.href?.startsWith('/workbench?tab=messages&conversation=') &&
+          ((notificationKind(item) === 'message' &&
+            item.href?.startsWith('/workbench?tab=messages&conversation=')) ||
+            (isCallCenterAssignment(item) &&
+              item.href ===
+                '/customer-affairs/call-center#cc-follow-up-queue')) &&
           canViewRoute(permissions, item.href),
       )
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null

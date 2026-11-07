@@ -37,6 +37,33 @@ const config = () => ({
     },
   ],
 });
+it('creates the initial setting without an invalid zero system version', async () => {
+  const branchId = randomUUID();
+  const writeSetting = vi.fn();
+  const service = new InsuranceSettingsService(
+    { writeSetting, resolveSetting: async () => null } as never,
+    {} as never,
+  );
+  const actor = {
+    branchIds: [branchId],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  await service.save(
+    branchId,
+    { expectedVersion: 0, config: { schemaVersion: 1, countries: [] } },
+    actor,
+  );
+  expect(writeSetting).toHaveBeenCalledWith(
+    expect.objectContaining({
+      scope: 'BRANCH',
+      scopeId: branchId,
+    }),
+    actor,
+    {},
+  );
+  expect(writeSetting.mock.calls[0]?.[0]).not.toHaveProperty('expectedVersion');
+});
+
 describe('insurance issuance configuration', () => {
   it('retains exact decimal money and explicit inclusive boundaries', () => {
     const input = config();
@@ -96,4 +123,121 @@ describe('insurance issuance configuration', () => {
       service.save(branchId, { config: config(), expectedVersion: 0 }, actor),
     ).rejects.toThrow();
   });
+});
+
+it('imports plan 76 while preserving unrelated saved countries and plans', async () => {
+  const branchId = randomUUID();
+  const existing = insuranceConfiguration(config());
+  const countryId = randomUUID(),
+    planId = randomUUID();
+  const actor = {
+    branchIds: [branchId],
+    permissions: ['reservations.read', 'system.settings.manage'],
+  } as AuthenticatedActor;
+  const master = {
+    list: vi.fn(async (resource: string) => ({
+      data:
+        resource === 'countries'
+          ? [{ id: countryId, code: 'TR', name: 'Turkey' }]
+          : [{ id: planId, code: '76', name: 'Festival' }],
+      meta: { total: 1 },
+    })),
+    create: vi.fn(),
+  };
+  const provider = {
+    configured: () => true,
+    festivalRates: vi.fn(async () => [
+      {
+        code: 'TR',
+        id: 5,
+        name: 'Turkey',
+        title: 'Festival',
+        unsupported: 6,
+        rates: [
+          {
+            minDays: 1,
+            maxDays: 7,
+            minAge: 0,
+            maxAge: 12,
+            amount: '399000',
+            currencyCode: 'IRR',
+          },
+        ],
+      },
+    ]),
+  };
+  const service = new InsuranceSettingsService(
+    {
+      resolveSetting: async () => ({
+        scope: 'BRANCH',
+        scopeRef: branchId,
+        value: existing,
+        version: 2,
+      }),
+    } as never,
+    master as never,
+    provider as never,
+  );
+  vi.spyOn(service, 'read').mockResolvedValue({
+    config: existing,
+    version: 2,
+    canManage: true,
+    providerStatus: 'SANDBOX_CONFIGURED',
+  });
+  const save = vi
+    .spyOn(service, 'save')
+    .mockImplementation(async (_branch, input) => ({
+      config: insuranceConfiguration((input as { config: unknown }).config),
+      version: 3,
+      canManage: true,
+      providerStatus: 'SANDBOX_CONFIGURED',
+    }));
+  const result = await service.importFestival(branchId, 2, actor);
+  expect(result.config.countries[0]).toEqual(existing.countries[0]);
+  expect(result.config.countries[1]!.plans[0]).toMatchObject({
+    masterPlanId: planId,
+    providerPlanCode: '76',
+    rates: [
+      {
+        amount: '399000',
+        currencyCode: 'IRR',
+        minDays: 1,
+        maxDays: 7,
+        minAge: 0,
+        maxAge: 12,
+      },
+    ],
+  });
+  expect(result.unsupportedBands).toBe(6);
+  expect(save).toHaveBeenCalledWith(
+    branchId,
+    expect.objectContaining({ expectedVersion: 2 }),
+    actor,
+  );
+  expect(master.create).not.toHaveBeenCalled();
+  await expect(service.importFestival(branchId, 1, actor)).rejects.toThrow();
+  expect(provider.festivalRates).toHaveBeenCalledTimes(1);
+});
+
+it('allows dedicated insurance managers without granting system settings management', () => {
+  const service = new InsuranceSettingsService({} as never, {} as never);
+  const actor = {
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  expect(service.canManage(actor)).toBe(true);
+  expect(actor.permissions).not.toContain('system.settings.manage');
+  expect(
+    service.canManage({ ...actor, permissions: ['reservations.read'] }),
+  ).toBe(false);
+  expect(
+    service.canManage({
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.system-settings.operations.insurance-issuance',
+      ],
+    }),
+  ).toBe(false);
+  expect(() => service.authorize(actor, 'other', true)).toThrow();
 });

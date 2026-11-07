@@ -9,6 +9,7 @@ import { SalesController } from '../sales/sales.controller';
 import { SalesService } from '../sales/sales.service';
 import { SalesOutputService } from '../sales/sales-output.service';
 import { TravelWorkflowService } from './travel-workflow.service';
+import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { IamService } from '../iam/iam.service';
 const id = '11111111-1111-4111-8111-111111111111';
@@ -17,6 +18,24 @@ describe('finance gate on passenger documents', () => {
   const detail = vi.fn();
   const forContract = vi.fn();
   const readCustomerContract = vi.fn();
+  const floatingDocumentOutput = vi.fn(
+    async (value: { workflow: Record<string, unknown> }) => ({
+      ...value,
+      workflow: {
+        ...value.workflow,
+        branding: { kind: 'OWN', logoFileId: null },
+        voucherIssued: true,
+      },
+    }),
+  );
+  const issueFloatingForDelivery = vi.fn().mockResolvedValue([
+    {
+      customerId: 'passenger',
+      number: '100001',
+      source: 'AUTO',
+      issuedAt: '2026-11-07T00:00:00Z',
+    },
+  ]);
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
@@ -25,7 +44,14 @@ describe('finance gate on passenger documents', () => {
         { provide: SalesProfitService, useValue: {} },
         { provide: SalesService, useValue: { detail } },
         { provide: SalesOutputService, useValue: {} },
-        { provide: TravelWorkflowService, useValue: { forContract } },
+        {
+          provide: TravelWorkflowService,
+          useValue: { forContract, floatingDocumentOutput },
+        },
+        {
+          provide: ReservationTicketDocumentsService,
+          useValue: { issueFloatingForDelivery },
+        },
         { provide: FinanceDeliveryService, useValue: { readCustomerContract } },
         {
           provide: IamService,
@@ -61,7 +87,7 @@ describe('finance gate on passenger documents', () => {
     expect(forContract).not.toHaveBeenCalled();
   });
   it('does not return passenger content while Finance is blocked or revoked', async () => {
-    detail.mockResolvedValue({});
+    detail.mockResolvedValue({ data: { status: 'CONFIRMED' } });
     forContract.mockResolvedValue({
       id,
       snapshot: { secret: 'passenger data' },
@@ -84,9 +110,29 @@ describe('finance gate on passenger documents', () => {
     forContract.mockResolvedValue({
       id,
       workflow: { supplierStatus: 'CONFIRMED', voucherIssued: true },
+      snapshot: { serviceSelections: [] },
     });
     const response = await get().expect(200);
     expect(response.headers['cache-control']).toBe('private, no-store');
     expect(response.body.data.id).toBe(id);
+  });
+  it('automatically prepares financially approved floating documents through the real HTTP controller', async () => {
+    forContract.mockResolvedValue({
+      id,
+      branchId: 'allowed-branch',
+      snapshot: {
+        serviceSelections: [
+          { kind: 'FLIGHT', metadata: { purchaseSupplyType: 'FLOATING' } },
+        ],
+      },
+      workflow: { supplierStatus: 'NEW' },
+    });
+    const response = await get().expect(200);
+    expect(response.body.data.workflow.voucherIssued).toBe(true);
+    expect(response.body.data.ticketDocuments[0].number).toBe('100001');
+    expect(issueFloatingForDelivery).toHaveBeenCalledTimes(1);
+    readCustomerContract.mockResolvedValue({ approved: false });
+    await get().expect(403);
+    expect(issueFloatingForDelivery).toHaveBeenCalledTimes(1);
   });
 });

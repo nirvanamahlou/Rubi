@@ -158,7 +158,7 @@ it('does not fetch at startup and switches from quarter-hour to hourly slots', a
   vi.stubEnv('HR_RADAN_ENABLED', 'true');
   vi.stubEnv('HR_RADAN_BRANCH_ID', 'branch');
   const iam = {
-    authenticateSessionReferenceV1: vi.fn().mockResolvedValue(actor),
+    authenticateAttendanceConnectorV1: vi.fn().mockResolvedValue(actor),
   };
   const service = new HrRadanDeviceService({} as never, iam as never);
   const sync = vi.spyOn(service, 'sync').mockResolvedValue({ state: 'ready' });
@@ -182,7 +182,7 @@ it('reschedules at the next clock slot after failure rather than retrying every 
   vi.stubEnv('HR_RADAN_ENABLED', 'true');
   vi.stubEnv('HR_RADAN_BRANCH_ID', 'branch');
   const iam = {
-    authenticateSessionReferenceV1: vi
+    authenticateAttendanceConnectorV1: vi
       .fn()
       .mockRejectedValue(new Error('synthetic')),
   };
@@ -194,9 +194,9 @@ it('reschedules at the next clock slot after failure rather than retrying every 
     nextSyncAt: '2026-11-01T13:45:00.000Z',
   });
   await vi.advanceTimersByTimeAsync(14 * 60000);
-  expect(iam.authenticateSessionReferenceV1).toHaveBeenCalledTimes(1);
+  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(1);
   await vi.advanceTimersByTimeAsync(60000);
-  expect(iam.authenticateSessionReferenceV1).toHaveBeenCalledTimes(2);
+  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(2);
   service.onModuleDestroy();
 });
 
@@ -253,4 +253,29 @@ it('normalizes the raw provider date once and reconciles both affected days', as
     true,
     ['e'],
   );
+});
+
+it('recovers attendance synchronization on a later valid login without restarting the API', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-01T05:29:00Z'));
+  vi.stubEnv('HR_RADAN_ENABLED', 'true');
+  vi.stubEnv('HR_RADAN_BRANCH_ID', 'branch');
+  vi.stubEnv('HR_RADAN_ACTOR_ID', 'configured-actor');
+  const iam = {
+    authenticateAttendanceConnectorV1: vi
+      .fn()
+      .mockRejectedValueOnce(new Error('no active session'))
+      .mockResolvedValue(actor),
+  };
+  const service = new HrRadanDeviceService({} as never, iam as never);
+  const sync = vi.spyOn(service, 'sync').mockResolvedValue({ state: 'ready' });
+  service.onModuleInit();
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(sync).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(15 * 60000);
+  expect(sync).toHaveBeenCalledOnce();
+  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenLastCalledWith(
+    'configured-actor',
+  );
+  service.onModuleDestroy();
 });

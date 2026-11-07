@@ -1,8 +1,10 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
 } from '@/modules/reservations/model/supplier-document-scope';
 import { reservationHotelStays } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
@@ -33,9 +35,19 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const kind = new URL(request.url).searchParams.get('kind');
+  const parameters = new URL(request.url).searchParams;
+  const salesContractId = parameters.get('salesContractId');
+  if (
+    salesContractId &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      salesContractId,
+    )
+  )
+    return fail('شناسه قرارداد معتبر نیست.', 400);
+  const kind = parameters.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  if (salesContractId && !voucher) return fail('نوع سند معتبر نیست.', 400);
   const formScope =
     new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
   if (
@@ -52,14 +64,27 @@ export async function GET(
   const base = getPublicApiBaseUrl();
   if (!base) return fail('سرویس PDF پیکربندی نشده است.', 503);
   const get = (path: string) =>
-    fetch(base + path, {
-      headers: { cookie: request.headers.get('cookie') ?? '' },
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(15000),
-    });
+    fetch(
+      base +
+        (path.startsWith('/master-data/')
+          ? path.replace(
+              '/master-data/',
+              `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+            )
+          : path),
+      {
+        headers: { cookie: request.headers.get('cookie') ?? '' },
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
+      },
+    );
   try {
-    const response = await get(`/reservations/requests/${id}/workflow`);
+    const response = await get(
+      salesContractId
+        ? `/sales/contracts/${salesContractId}/travel-documents`
+        : `/reservations/requests/${id}/workflow`,
+    );
     if (!response.ok)
       return fail(
         'دریافت فرم مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
@@ -68,6 +93,11 @@ export async function GET(
     const { data: rawIntake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    if (
+      salesContractId &&
+      (rawIntake.id !== id || rawIntake.snapshot.contractId !== salesContractId)
+    )
+      return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
     let intake = rawIntake;
     if (hotelStayKey) {
       try {
@@ -94,12 +124,15 @@ export async function GET(
       return fail('واچر هنوز صادر نشده است.', 409);
     if (
       voucher &&
+      !isFloatingSalesContract(intake.snapshot.serviceSelections) &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.voucherSettings?.brokerId ||
         !intake.workflow.voucherSettings?.leaderId)
     )
       return fail('ابتدا کارگزار و تورلیدر واچر را انتخاب کنید.', 409);
     if (
       !voucher &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.supplierFormSettings?.brokerId ||
         !intake.workflow.supplierFormSettings?.text.broker?.trim())
     )

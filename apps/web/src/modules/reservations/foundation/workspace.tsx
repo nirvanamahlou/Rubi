@@ -829,7 +829,24 @@ export function ReservationOperationsWorkspace({
                                   access={access}
                                 />
                               ) : (
-                                <bdi>{value}</bdi>
+                                <bdi
+                                  title={
+                                    index === 1 ? String(value) : undefined
+                                  }
+                                  style={
+                                    index === 1
+                                      ? {
+                                          display: 'block',
+                                          maxWidth: 120,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {value}
+                                </bdi>
                               )}
                             </td>
                           ))}

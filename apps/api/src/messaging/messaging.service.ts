@@ -102,6 +102,32 @@ export class MessagingService {
     return { data: { id: conversationId } };
   }
 
+  async manageGroupMember(
+    id: string,
+    memberId: string,
+    action: 'REMOVE' | 'PROMOTE',
+    actor: AuthenticatedActor,
+  ) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    const targetId = validate.uuid(memberId, 'عضو');
+    const conversation = await this.assertConversation(conversationId, actor);
+    if (
+      conversation.type !== 'GROUP' ||
+      !conversation.members.some(
+        (member) => member.userId === actor.userId && member.role === 'OWNER',
+      )
+    )
+      throw new ForbiddenException('ویرایش گروه فقط برای مدیر گروه مجاز است.');
+    const row = await this.repository.manageGroupMember(
+      conversationId,
+      actor.userId,
+      actor.branchIds,
+      targetId,
+      action,
+    );
+    return { data: await this.mapConversation(row, actor.userId) };
+  }
+
   async updateGroup(id: string, body: unknown, actor: AuthenticatedActor) {
     const conversationId = validate.uuid(id, 'گفت‌وگو');
     const conversation = await this.assertConversation(conversationId, actor);
@@ -328,6 +354,7 @@ export class MessagingService {
         row.senderUserId,
         ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
         ...(row.replyTo ? [row.replyTo.senderUserId] : []),
+        ...(row.reactions ?? []).map((reaction) => reaction.userId),
       ]),
     );
     return rows.map((row) => {
@@ -366,7 +393,18 @@ export class MessagingService {
               .filter((reaction) => reaction.emoji === emoji)
               .map(({ userId }) => userId);
             return userIds.length
-              ? [{ emoji, count: userIds.length, userIds }]
+              ? [
+                  {
+                    emoji,
+                    count: userIds.length,
+                    userIds,
+                    users: userIds.map((id) => ({
+                      id,
+                      displayName: (names.get(id) ?? this.fallback(id))
+                        .displayName,
+                    })),
+                  },
+                ]
               : [];
           },
         ),

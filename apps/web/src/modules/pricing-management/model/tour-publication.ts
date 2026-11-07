@@ -23,6 +23,7 @@ const sorted = (rows: readonly unknown[]) =>
 function comparable(
   value: Pick<
     PackageTourDraftSaveV1,
+    | 'convertToRial'
     | 'selectedRoomKeys'
     | 'roomSaleOverrides'
     | 'selectedHotelRateIds'
@@ -34,6 +35,7 @@ function comparable(
 ) {
   return JSON.stringify(
     stable({
+      convertToRial: value.convertToRial ?? false,
       rooms: [...(value.selectedRoomKeys ?? [])].sort(),
       sales: sorted(value.roomSaleOverrides ?? []),
       hotels: [...(value.selectedHotelRateIds ?? [])].sort(),

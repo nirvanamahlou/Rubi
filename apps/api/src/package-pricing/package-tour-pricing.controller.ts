@@ -29,6 +29,13 @@ export class PackageTourPricingController {
     private readonly drafts: PackageTourPricingService,
   ) {}
 
+  @Get('buy-rates')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('package_pricing.read')
+  buyRates() {
+    return this.drafts.buyRates();
+  }
+
   @Get('sale-catalog')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('sales.contracts.create')

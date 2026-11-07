@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { isFloatingSalesContract } from '@nora/contracts';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
@@ -122,9 +123,15 @@ export function SalesTravelDocuments({
                 <p>سربرگ باید در رزرواسیون ثبت شود.</p>
               )}
               {intake.workflow.voucherIssued ? (
-                <TravelDocument intake={intake} voucher />
+                <TravelDocument
+                  intake={intake}
+                  voucher
+                  salesContractId={contractId}
+                />
               ) : (
-                <p>واچر هنوز صادر نشده است.</p>
+                !isFloatingSalesContract(intake.snapshot.serviceSelections) && (
+                  <p>واچر هنوز صادر نشده است.</p>
+                )
               )}
             </>
           )}

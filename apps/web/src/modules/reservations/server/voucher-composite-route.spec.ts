@@ -74,6 +74,6 @@ it('loads every hotel city and room reference before rendering the full issued v
   for (const id of ['second-hotel', 'second-city', 'second-room'])
     expect(references[id]?.name).toBe(id.toUpperCase());
   expect(fetcher.mock.calls.map((call) => call[0])).toContain(
-    'http://api.test/api/v1/master-data/room-types/second-room',
+    'http://api.test/api/v1/master-data/selections/reservations/room-types/second-room',
   );
 });

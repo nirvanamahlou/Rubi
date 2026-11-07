@@ -865,13 +865,48 @@ describe('DocumentsService security and persistence flow', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(storage.openQuarantined).toHaveBeenCalledOnce();
+    const seller = {
+      ...reader,
+      permissions: [
+        'sales.contracts.read.own',
+      ] as AuthenticatedActor['permissions'],
+    };
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales' },
+        seller,
+        {},
+      ),
+    ).resolves.toMatchObject({ mimeType: 'image/png' });
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales', recordId: 'another' },
+        seller,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales', resource: 'organizations' },
+        seller,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales' },
+        { ...seller, permissions: [] },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    storage.openQuarantined.mockClear();
     storage.openQuarantined.mockRejectedValueOnce(
       Object.assign(new Error('missing'), { code: 'ENOENT' }),
     );
     await expect(
       service.previewMasterDataLogo(input, reader, {}),
     ).rejects.toThrow('فایل لوگو در آرشیو موجود نیست');
-    expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
+    expect(storage.openQuarantined).toHaveBeenCalledTimes(1);
   });
 
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {
@@ -1936,6 +1971,78 @@ describe('DocumentsService security and persistence flow', () => {
       ForbiddenException,
     );
   });
+
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'INFECTED',
+    'QUARANTINED',
+  ] as const)(
+    'downloads source-authorized receipt without waiting for scanner, but rejects malicious files (%s)',
+    async (scanStatus) => {
+      const receipt = row({
+        domain: 'FINANCE',
+        confidentiality: 'RESTRICTED',
+        mimeType: 'application/pdf',
+        scanStatus,
+      });
+      receipt.sourceEntityType = 'SalesContractPaymentEntry';
+      receipt.documentType.code = 'RECEIPT';
+      const source = {
+        sourceModule: 'sales',
+        sourceEntityType: 'SalesContractPaymentEntry',
+        sourceEntityId: receipt.sourceEntityId!,
+      };
+      repository.findDetail.mockResolvedValue(receipt);
+      repository.appendAudit.mockResolvedValue({});
+      storage.openQuarantined.mockResolvedValue(
+        Readable.from(Buffer.from('%PDF-1.4')),
+      );
+      const reader = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.finance.read',
+          'documents.file.read',
+          'documents.download',
+          'documents.sensitive.read',
+          'documents.sensitive.download',
+        ],
+      } as AuthenticatedActor;
+      const operation = () =>
+        service.download(
+          receipt.id,
+          reader,
+          { sensitiveReason: 'بررسی رسید' },
+          source,
+        );
+      if (['INFECTED', 'QUARANTINED'].includes(scanStatus)) {
+        await expect(operation()).rejects.toThrow();
+        expect(storage.openQuarantined).not.toHaveBeenCalled();
+      } else {
+        await expect(operation()).resolves.toMatchObject({
+          mimeType: 'application/pdf',
+        });
+        expect(repository.appendAudit).toHaveBeenCalledWith(
+          expect.objectContaining({ outcome: 'SUCCESS' }),
+        );
+        // The generic document route does not gain this exception.
+        await expect(
+          service.download(receipt.id, reader, {
+            sensitiveReason: 'بررسی رسید',
+          }),
+        ).rejects.toThrow();
+        await expect(
+          service.download(
+            receipt.id,
+            reader,
+            {},
+            { ...source, sourceEntityId: 'foreign' },
+          ),
+        ).rejects.toThrow();
+      }
+    },
+  );
 
   it('fails closed for an unscanned download and appends a denial audit', async () => {
     repository.findDetail.mockResolvedValue(row());

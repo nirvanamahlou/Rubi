@@ -284,6 +284,8 @@ export function SalesWorkspace() {
   const [exportNotice, setExportNotice] = useState('');
   const dateFilterApplied = hasContractDateFilter(query);
   const filtersApplied = Boolean(
+    query.ownerUserId ||
+    (query.supplyType && query.supplyType !== 'ALL') ||
     query.search ||
     query.settlementStatus ||
     query.originId ||

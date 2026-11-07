@@ -25,6 +25,7 @@ export async function readTicketAirlineMarks(
         );
         if (!response.ok) return;
         type Item = {
+          id: string;
           name: string;
           code: string;
           attributes: { englishName?: string; logoFileReference?: string };
@@ -50,9 +51,7 @@ export async function readTicketAirlineMarks(
           name: item.attributes.englishName || item.name,
           code: item.code,
         };
-        const id = item.attributes.logoFileReference;
-        if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
-        const logo = await get(`/documents/${id}/preview`);
+        const logo = await get(`/master-data/airlines/${item.id}/logo`);
         const mime = logo.headers.get('content-type')?.split(';')[0];
         if (
           !logo.ok ||

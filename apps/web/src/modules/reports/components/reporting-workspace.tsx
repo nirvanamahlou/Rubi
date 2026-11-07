@@ -1733,11 +1733,6 @@ export function ReportResultPanel({
               مجاز را نمایش می‌دهد.
             </div>
           )}
-          <p className="text-xs leading-6 text-muted-foreground">
-            منبع: <span dir="ltr">{result.sourceProjection}</span> · نسخه گزارش{' '}
-            {result.reportVersion.toLocaleString('fa-IR')} · تطبیق مبلغ با نمای
-            مرجع: تأییدشده
-          </p>
         </div>
       ) : (
         <div className="mt-5">
@@ -2495,9 +2490,6 @@ export function ReportingWorkspace({
                   <Clock3 aria-hidden="true" className="size-4 text-primary" />
                   <div>
                     <h2 className="font-bold">خلاصه فیلترها</h2>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Filter Snapshot · تنظیمات جاری برای اجرای بعدی
-                    </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -2554,20 +2546,6 @@ export function ReportingWorkspace({
                   </div>
                 ))}
               </dl>
-              <p className="mt-3 text-xs leading-6 text-muted-foreground">
-                موارد بالا انتخاب‌های فعلی کاربر هستند. در اجرای واقعی، فقط
-                فیلترهای پشتیبانی‌شده به Producer ارسال می‌شوند و نسخه View،
-                Scope و Snapshot تأییدشده در پاسخ سرور ثبت می‌شود. محدوده‌های
-                غیرهویتی در URL و مقادیر هویتی فقط در نشست همین مرورگر نگه‌داری
-                می‌شوند.
-                {result ? (
-                  <span className="mt-1 block font-semibold text-emerald-700">
-                    Snapshot سرور در{' '}
-                    <span dir="ltr">{result.filterSnapshot.capturedAtUtc}</span>{' '}
-                    تأیید شد.
-                  </span>
-                ) : null}
-              </p>
             </section>
             <section
               aria-labelledby="report-workspace-filters"
@@ -2577,9 +2555,6 @@ export function ReportingWorkspace({
                 <h2 className="font-bold" id="report-workspace-filters">
                   فیلترهای گزارش
                 </h2>
-                <span className="text-xs text-muted-foreground">
-                  «همه» یعنی این بُعد محدود نشده است.
-                </span>
               </div>
               <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(14rem,1fr)]">
                 <ReportDateRangeFields
@@ -2761,10 +2736,6 @@ export function ReportingWorkspace({
                     نادرست، آن فیلتر را روی «همه» بگذارید.
                   </p>
                 ) : null}
-                <p className="mt-3 text-xs leading-6 text-muted-foreground">
-                  Pagination، مرتب‌سازی، سقف ۱۰۰ رکورد پیش‌نمایش، UTC و Scope
-                  مجاز فقط سمت سرور enforce می‌شوند.
-                </p>
               </aside>
               <section aria-label="محل نمایش نمایه نتیجه">
                 <ReportResultPanel

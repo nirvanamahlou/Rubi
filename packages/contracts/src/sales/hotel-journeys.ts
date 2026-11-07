@@ -31,7 +31,8 @@ export interface HotelJourneyV1 {
   mode: keyof typeof HOTEL_JOURNEY_MODES;
   departureDate: string;
   departureTime: string;
-  arrivalDate: string;
+  /** Legacy explicit date; new journeys derive the day from the travel clocks. */
+  arrivalDate?: string;
   arrivalTime: string;
   airport?: SalesFlightAirportV1 | undefined;
   flight?: {
@@ -65,18 +66,27 @@ const airportValid = (a: SalesFlightAirportV1 | undefined) =>
   /^[A-Z]{3}$/.test(a.code) &&
   text(a.name, 200);
 
+export function hotelJourneyArrivalDate(leg: HotelJourneyV1): string {
+  if (leg.arrivalDate) return leg.arrivalDate;
+  if (!date(leg.departureDate)) return '';
+  if (leg.arrivalTime >= leg.departureTime) return leg.departureDate;
+  const next = new Date(leg.departureDate + 'T00:00:00Z');
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}
+
 export function hotelJourneyError(leg: HotelJourneyV1): string | undefined {
   if (!leg || !Object.hasOwn(HOTEL_JOURNEY_MODES, leg.mode))
     return 'روش جابه‌جایی را انتخاب کنید.';
   if (
     !date(leg.departureDate) ||
-    !date(leg.arrivalDate) ||
+    (leg.arrivalDate && !date(leg.arrivalDate)) ||
     !clock(leg.departureTime) ||
     !clock(leg.arrivalTime)
   )
-    return 'تاریخ و ساعت حرکت و رسیدن جابه‌جایی را کامل کنید.';
+    return 'تاریخ حرکت و ساعت‌های حرکت و رسیدن جابه‌جایی را کامل کنید.';
   if (
-    leg.arrivalDate + leg.arrivalTime <=
+    hotelJourneyArrivalDate(leg) + leg.arrivalTime <=
     leg.departureDate + leg.departureTime
   )
     return 'زمان رسیدن جابه‌جایی باید بعد از زمان حرکت باشد.';
@@ -160,7 +170,7 @@ export function validateHotelJourneys(
     used.add(leg.fromHotelId);
     if (
       leg.departureDate < stays[index]!.checkOutDate.slice(0, 10) ||
-      (next && leg.arrivalDate > next.checkInDate.slice(0, 10))
+      (next && hotelJourneyArrivalDate(leg) > next.checkInDate.slice(0, 10))
     )
       throw Error(
         'تاریخ جابه‌جایی باید بین خروج از هتل قبلی و ورود به هتل بعدی باشد.',
@@ -168,8 +178,9 @@ export function validateHotelJourneys(
     if (
       leg.toHotelId === null &&
       returnDepartureAt &&
-      Date.parse(leg.arrivalDate + 'T' + leg.arrivalTime + '+03:30') >=
-        Date.parse(returnDepartureAt)
+      Date.parse(
+        hotelJourneyArrivalDate(leg) + 'T' + leg.arrivalTime + '+03:30',
+      ) >= Date.parse(returnDepartureAt)
     )
       throw Error('رسیدن به فرودگاه باید قبل از حرکت بلیت برگشت باشد.');
   }

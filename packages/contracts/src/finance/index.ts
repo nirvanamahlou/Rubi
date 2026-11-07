@@ -737,6 +737,8 @@ export interface FinanceHistoryV1 {
 }
 
 export interface FinanceInboxQueryV1 {
+  /** Finance review grouping, applied before pagination and export. */
+  approvalGroup?: 'PENDING' | 'APPROVED' | undefined;
   category?: 'PURCHASE' | 'RECEIPT' | undefined;
   sortBy?: 'createdAt' | 'dueAt' | 'amount';
   sortDirection?: 'asc' | 'desc';

@@ -121,8 +121,8 @@ it('prints the actual total rooms, distinct room types/categories and guest coun
   expect(hotel).not.toContain('>99<');
   expect(hotel).toContain('DELUXE · Double');
   expect(hotel).toContain('FAMILY SUITE · Family');
-  expect(hotel).toContain('<td>2</td><td>5</td><td>3</td>');
-  expect(hotel).toContain('<td>3</td><td>8, 10</td><td>5</td>');
+  expect(hotel).toContain('<td>2</td><td>1</td><td>0</td><td>3</td>');
+  expect(hotel).toContain('<td>3</td><td>0</td><td>2</td><td>5</td>');
   expect(hotel).toContain('تعداد نفرات اتاق');
   expect(hotel).not.toContain('مبلغ توافق‌شدهٔ اتاق');
 });

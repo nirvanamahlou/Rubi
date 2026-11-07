@@ -133,7 +133,6 @@ it('keeps composite hotel stays ordered with explicit independent dates and no d
     toHotelId: input.hotelSelection.additionalStays![0]!.hotelId,
     mode: 'BUS',
     departureDate: '2026-10-06',
-    arrivalDate: '2026-10-06',
     departureTime: '09:00',
     arrivalTime: '13:00',
   };

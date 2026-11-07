@@ -1,3 +1,4 @@
+import { salesSupplyWhere } from './sales-supply-filter';
 import { isFloatingSalesContract } from '@nora/contracts';
 import { contractPassengerAgeCategory } from './sales.domain';
 import {
@@ -806,6 +807,8 @@ export class SalesService {
     if (!has(actor, 'sales.export'))
       throw new ForbiddenException('مجوز دریافت خروجی قرارداد وجود ندارد.');
     const validated = Joi.object({
+      ownerUserId: Joi.string().guid(),
+      supplyType: Joi.string().valid('ALL', 'FLOATING', 'CHARTER'),
       search: Joi.string().trim().max(160).allow(''),
       settlementStatus: Joi.string().valid(
         'UNPAID',
@@ -914,6 +917,17 @@ export class SalesService {
         };
       }
     }
+    const selection = Joi.object({
+      ownerUserId: Joi.string().guid(),
+      supplyType: Joi.string().valid('ALL', 'FLOATING', 'CHARTER'),
+    }).validate({
+      ownerUserId: query.ownerUserId,
+      supplyType: query.supplyType,
+    });
+    if (selection.error)
+      throw new BadRequestException('فیلتر قرارداد معتبر نیست.');
+    if (query.supplyType && query.supplyType !== 'ALL')
+      scope = { AND: [scope, salesSupplyWhere(query.supplyType)] };
     const result = await this.repository.list(
       query,
       scope,
@@ -1087,13 +1101,17 @@ export class SalesService {
 
   async financeInbox(
     actor: AuthenticatedActor,
+    includeConfirmed = false,
   ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
     if (!has(actor, 'finance.read'))
       throw new ForbiddenException({
         code: 'FINANCE_INBOX_FORBIDDEN',
         message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
       });
-    const rows = await this.repository.pendingFinancePayments(actor.branchIds);
+    const rows = await this.repository.pendingFinancePayments(
+      actor.branchIds,
+      includeConfirmed,
+    );
     const names = new Map(
       (
         await this.repository.findUserDisplayNames(
@@ -1103,6 +1121,7 @@ export class SalesService {
     );
     return rows.map((row) => ({
       version: 1,
+      financeConfirmed: row.status === 'FINANCE_CONFIRMED',
       paymentId: row.id,
       contractId: row.contract.id,
       contractNumber: row.contract.contractNumber,
@@ -2097,6 +2116,8 @@ export class SalesService {
           : helpers.error('any.invalid');
       });
     const validated = Joi.object({
+      ownerUserId: Joi.string().guid(),
+      supplyType: Joi.string().valid('ALL', 'FLOATING', 'CHARTER'),
       search: Joi.string().trim().max(160).allow(''),
       settlementStatus: Joi.string().valid(
         'UNPAID',
@@ -2126,6 +2147,18 @@ export class SalesService {
     const rows = (
       await this.repository.dashboardRows(this.readScope(actor))
     ).filter((row) => row.status !== 'CANCELLED');
+    const sellerNames = new Map(
+      (
+        (await this.identities?.displayNames(
+          [...new Set(rows.map((r) => r.ownerUserId))],
+          [...new Set(rows.map((r) => r.branchId))],
+        )) ?? []
+      ).map((user) => [user.id, user.displayName]),
+    );
+    const sellers = [...new Set(rows.map((r) => r.ownerUserId))].map((id) => ({
+      id,
+      name: sellerNames.get(id) ?? id,
+    }));
     const buyers = await this.customers.partyKinds(
       [...new Set(rows.map((row) => row.customerId))],
       actor,
@@ -2171,6 +2204,11 @@ export class SalesService {
         .toISOString()
         .slice(0, 10);
       return (
+        (!filters.ownerUserId || row.ownerUserId === filters.ownerUserId) &&
+        (!filters.supplyType ||
+          filters.supplyType === 'ALL' ||
+          isFloatingSalesContract(row.services ?? []) ===
+            (filters.supplyType === 'FLOATING')) &&
         (!filters.search ||
           [
             row.contractNumber,
@@ -2218,6 +2256,7 @@ export class SalesService {
                 .map((balance) => balance.outstanding),
             ),
           })),
+        sellers: sellers.sort((a, b) => a.name.localeCompare(b.name, 'fa')),
         contractCount: matched.length,
         routes: [...routes.values()].sort((a, b) =>
           a.label.localeCompare(b.label, 'fa'),
