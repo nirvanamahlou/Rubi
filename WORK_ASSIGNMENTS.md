@@ -1,6 +1,8 @@
-## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
+## COMBINED-HOTEL-NEXT-1107 — PC-C — DONE
 
 COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
+
+Closeout: PR1470 final source dd4e8e92e859f4c3122a1324ed66e8a9dc9bd77f passed all 8 exact-head push/PR checks and merged into develop as e3ca5977c075aee6699a83dca49b44e155c2866c. Local Sales suite788 passed, one existing skip; final focused parent/model31 and translation44 passed. Scoped ESLint, standalone Web TypeScript and production Web build (Webpack,67 routes) passed; local Turbopack rejects cross-worktree dependency junctions, while hosted standard production builds both passed. Same-day previous checkout/next check-in is explicitly accepted and tested. Source reservations released; no migration or server deployment. Completion-only handoff is pushed on the closed task branch.
 
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
 
