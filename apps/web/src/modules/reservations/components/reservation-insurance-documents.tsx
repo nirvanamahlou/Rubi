@@ -26,13 +26,14 @@ type Summary = {
   }[];
 };
 export async function insuranceResponse(path: string) {
+  const base = getPublicApiBaseUrl();
   const send = () =>
-    fetch(getPublicApiBaseUrl() + '/' + path, {
+    fetch(base + '/' + path, {
       credentials: 'include',
       cache: 'no-store',
     });
   let response = await send();
-  if (response.status === 401 && (await refreshAuthenticatedSession()))
+  if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await send();
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
