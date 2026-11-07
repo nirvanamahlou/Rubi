@@ -35,6 +35,18 @@ export function isClosedFinanceItem(item: FinanceInboxItemV1) {
     ? item.kind === 'HR_REFERRAL'
     : CLOSED_FINANCE_STATUSES.has(item.status);
 }
+/** Reservation purchases are ready on handoff, before any Finance decision. */
+export function isFinanceApproved(item: FinanceInboxItemV1) {
+  if (item.source === 'RESERVATIONS' && item.status === 'READY_FOR_PAYMENT')
+    return false;
+  return [
+    'APPROVED',
+    'READY_FOR_PAYMENT',
+    'PAYING',
+    'PAID',
+    'RECEIPT_CONFIRMED',
+  ].includes(item.status);
+}
 /** Eight fractional digits, compared without binary floating-point conversion. */
 export function decimalUnits(value: string): bigint {
   if (!/^\d{1,24}(?:\.\d{1,8})?$/.test(value))
@@ -65,6 +77,7 @@ export function validateInboxQuery(
   actor: AuthenticatedActor,
 ) {
   for (const key of [
+    'approvalGroup',
     'category',
     'search',
     'source',
@@ -86,6 +99,8 @@ export function validateInboxQuery(
   if (query.branchId && !actor.branchIds.includes(query.branchId))
     throw new ForbiddenException('شعبه خارج از دسترسی است.');
   if (
+    (query.approvalGroup &&
+      !['PENDING', 'APPROVED'].includes(query.approvalGroup)) ||
     (query.category && !['PURCHASE', 'RECEIPT'].includes(query.category)) ||
     (query.sortBy &&
       !['createdAt', 'dueAt', 'amount'].includes(query.sortBy)) ||
@@ -161,6 +176,8 @@ export function filterFinanceInbox(
             : item.status === query.status);
       return (
         status &&
+        (!query.approvalGroup ||
+          (query.approvalGroup === 'APPROVED') === isFinanceApproved(item)) &&
         (!query.category ||
           (query.category === 'RECEIPT'
             ? item.kind === 'RECEIPT_VERIFICATION'

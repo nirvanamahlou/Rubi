@@ -97,3 +97,97 @@ describe('insurance issuance configuration', () => {
     ).rejects.toThrow();
   });
 });
+
+it('imports plan 76 while preserving unrelated saved countries and plans', async () => {
+  const branchId = randomUUID();
+  const existing = insuranceConfiguration(config());
+  const countryId = randomUUID(),
+    planId = randomUUID();
+  const actor = {
+    branchIds: [branchId],
+    permissions: ['reservations.read', 'system.settings.manage'],
+  } as AuthenticatedActor;
+  const master = {
+    list: vi.fn(async (resource: string) => ({
+      data:
+        resource === 'countries'
+          ? [{ id: countryId, code: 'TR', name: 'Turkey' }]
+          : [{ id: planId, code: '76', name: 'Festival' }],
+      meta: { total: 1 },
+    })),
+    create: vi.fn(),
+  };
+  const provider = {
+    configured: () => true,
+    festivalRates: vi.fn(async () => [
+      {
+        code: 'TR',
+        id: 5,
+        name: 'Turkey',
+        title: 'Festival',
+        unsupported: 6,
+        rates: [
+          {
+            minDays: 1,
+            maxDays: 7,
+            minAge: 0,
+            maxAge: 12,
+            amount: '399000',
+            currencyCode: 'IRR',
+          },
+        ],
+      },
+    ]),
+  };
+  const service = new InsuranceSettingsService(
+    {
+      resolveSetting: async () => ({
+        scope: 'BRANCH',
+        scopeRef: branchId,
+        value: existing,
+        version: 2,
+      }),
+    } as never,
+    master as never,
+    provider as never,
+  );
+  vi.spyOn(service, 'read').mockResolvedValue({
+    config: existing,
+    version: 2,
+    canManage: true,
+    providerStatus: 'SANDBOX_CONFIGURED',
+  });
+  const save = vi
+    .spyOn(service, 'save')
+    .mockImplementation(async (_branch, input) => ({
+      config: insuranceConfiguration((input as { config: unknown }).config),
+      version: 3,
+      canManage: true,
+      providerStatus: 'SANDBOX_CONFIGURED',
+    }));
+  const result = await service.importFestival(branchId, 2, actor);
+  expect(result.config.countries[0]).toEqual(existing.countries[0]);
+  expect(result.config.countries[1]!.plans[0]).toMatchObject({
+    masterPlanId: planId,
+    providerPlanCode: '76',
+    rates: [
+      {
+        amount: '399000',
+        currencyCode: 'IRR',
+        minDays: 1,
+        maxDays: 7,
+        minAge: 0,
+        maxAge: 12,
+      },
+    ],
+  });
+  expect(result.unsupportedBands).toBe(6);
+  expect(save).toHaveBeenCalledWith(
+    branchId,
+    expect.objectContaining({ expectedVersion: 2 }),
+    actor,
+  );
+  expect(master.create).not.toHaveBeenCalled();
+  await expect(service.importFestival(branchId, 1, actor)).rejects.toThrow();
+  expect(provider.festivalRates).toHaveBeenCalledTimes(1);
+});

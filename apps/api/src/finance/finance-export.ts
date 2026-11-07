@@ -85,7 +85,7 @@ export async function financeExportSnapshot(
     ),
   };
   if (scope === 'INBOX') {
-    const result = await inbox.list(actor);
+    const result = await inbox.list(actor, !!query.approvalGroup);
     if (result.sources.some((source) => source.connection === 'UNAVAILABLE'))
       throw new ServiceUnavailableException(
         'یکی از منابع مالی در دسترس نیست؛ خروجی ناقص ساخته نمی‌شود.',

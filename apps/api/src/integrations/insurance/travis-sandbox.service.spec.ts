@@ -115,3 +115,85 @@ it('requires branch and settings permission before any provider request', async 
   expect(settings.providerStatus).toBe('SANDBOX_CONFIGURED');
   expect(JSON.stringify(settings)).not.toContain(key);
 });
+
+it('creates and confirms only a fixed synthetic sandbox policy', async () => {
+  const fetcher = vi.fn(async (url: string) =>
+    response(
+      url.endsWith('Create')
+        ? { policyId: 123, redirectUrl: 'ignored' }
+        : { policyId: 123, pdfUrl: 'ignored' },
+    ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  expect(await new TravisSandboxService().testIssuance()).toEqual({
+    providerStatus: 'SANDBOX_CONNECTED',
+    sandboxOnly: true,
+    policyId: 123,
+    confirmed: true,
+  });
+  const calls = fetcher.mock.calls as unknown as [string, RequestInit][];
+  expect(calls[0]![0]).toBe('https://sandboxapi.travis.ir/api/Policies/Create');
+  expect(JSON.parse(calls[0]![1].body as string).person.nationalCode).toBe(
+    'SANDBOXTEST',
+  );
+  expect(calls[1]).toEqual([
+    'https://sandboxapi.travis.ir/api/Policies/Confirm',
+    expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ policyId: 123 }),
+    }),
+  ]);
+});
+it('rejects mismatched confirmation identity', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      response({ policyId: url.endsWith('Create') ? 123 : 124 }),
+    ),
+  );
+  await expect(new TravisSandboxService().testIssuance()).rejects.toThrow(
+    'اطلاعات بیمه دریافت نشد.',
+  );
+});
+it('imports supported provider rates without inventing zero prices for unavailable bands', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, options: RequestInit) => {
+      if (url.endsWith('Countries'))
+        return response([
+          { id: 5, title: 'Turkey', standardCode: 'TR' },
+          { id: 59, title: 'China', standardCode: 'CN' },
+          { id: 29, title: 'Georgia', standardCode: 'GE' },
+          { id: 30, title: 'Malaysia', standardCode: 'MY' },
+        ]);
+      if (url.endsWith('Duration-Of-Stays'))
+        return response([
+          { toDOS: 7, display: '7' },
+          { toDOS: 15, display: '15' },
+          { toDOS: 45, display: '45' },
+        ]);
+      const body = JSON.parse(options.body as string);
+      if (!body.planId) return response([{ id: 76, title: 'Festival' }]);
+      return response(
+        body.durationOfStay > 15
+          ? []
+          : [{ id: 76, priceTotal: 399000, premiumCurrencyCode: 'IRR' }],
+      );
+    }),
+  );
+  const rows = await new TravisSandboxService().festivalRates();
+  expect(rows).toHaveLength(4);
+  for (const row of rows) {
+    expect(row.unsupported).toBe(6);
+    expect(row.rates).toHaveLength(12);
+    expect(
+      row.rates.every(
+        (r) =>
+          r.amount === '399000' && r.currencyCode === 'IRR' && r.maxDays <= 15,
+      ),
+    ).toBe(true);
+    expect(row.rates.some((r) => r.minDays === 8 && r.maxDays === 15)).toBe(
+      true,
+    );
+  }
+});
