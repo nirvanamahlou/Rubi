@@ -1,4 +1,6 @@
 {
+  "درخواست‌های تأییدشده": "Approved requests",
+  "درخواست‌های در انتظار": "Pending requests",
   "اطلاعات پرواز با روش جابه‌جایی انتخاب‌شده سازگار نیست.": "The flight details do not match the selected transport method.",
   "اطلاعات جابه‌جایی هتل‌ها معتبر نیست.": "The hotel transport details are invalid.",
   "افزودن جابه‌جایی به این هتل": "Add transport to this hotel",
