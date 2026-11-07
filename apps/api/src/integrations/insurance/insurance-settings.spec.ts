@@ -191,3 +191,26 @@ it('imports plan 76 while preserving unrelated saved countries and plans', async
   await expect(service.importFestival(branchId, 1, actor)).rejects.toThrow();
   expect(provider.festivalRates).toHaveBeenCalledTimes(1);
 });
+
+it('allows dedicated insurance managers without granting system settings management', () => {
+  const service = new InsuranceSettingsService({} as never, {} as never);
+  const actor = {
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  expect(service.canManage(actor)).toBe(true);
+  expect(actor.permissions).not.toContain('system.settings.manage');
+  expect(
+    service.canManage({ ...actor, permissions: ['reservations.read'] }),
+  ).toBe(false);
+  expect(
+    service.canManage({
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.system-settings.operations.insurance-issuance',
+      ],
+    }),
+  ).toBe(false);
+  expect(() => service.authorize(actor, 'other', true)).toThrow();
+});

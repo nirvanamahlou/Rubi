@@ -113,7 +113,8 @@ export class InsuranceSettingsService {
   }
   canManage(actor: AuthenticatedActor) {
     return (
-      actor.permissions.includes('system.settings.manage') &&
+      (actor.permissions.includes('system.settings.manage') ||
+        actor.permissions.includes('reservations.insurance.manage')) &&
       hasAccessControl(actor.permissions, 'system.module.operations') &&
       hasAccessControl(
         actor.permissions,
