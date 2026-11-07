@@ -15,6 +15,7 @@ export interface MessagingMessageReactionV1 {
   emoji: MessagingReactionEmojiV1;
   count: number;
   userIds: string[];
+  users?: Array<{ id: string; displayName: string }>;
 }
 export interface SetMessagingReactionInputV1 {
   emoji: MessagingReactionEmojiV1 | null;

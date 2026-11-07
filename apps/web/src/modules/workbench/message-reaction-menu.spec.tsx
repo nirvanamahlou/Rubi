@@ -86,6 +86,31 @@ describe('message context actions', () => {
     state.change!(false);
     expect(props.onClose).toHaveBeenCalledOnce();
   });
+  it('shows server-resolved reaction names even when users are not in the current directory', () => {
+    const markup = renderToStaticMarkup(
+      <MessageReactionMenu
+        message={{
+          ...message,
+          reactions: [
+            {
+              emoji: '❤️',
+              count: 1,
+              userIds: ['former'],
+              users: [{ id: 'former', displayName: 'همکار پیشین' }],
+            },
+          ],
+        }}
+        position={{ x: 0, y: 0 }}
+        currentUserId="self"
+        disabled={false}
+        onClose={() => {}}
+        onReply={() => {}}
+        onReact={() => {}}
+      />,
+    );
+    expect(markup).toContain('همکار پیشین');
+    expect(markup).toContain('❤️');
+  });
   it('disables mutations while a request is pending', () => {
     render(true);
     expect(state.items.every((item) => item.disabled)).toBe(true);

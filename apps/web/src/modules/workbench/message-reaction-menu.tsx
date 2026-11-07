@@ -23,6 +23,7 @@ export const reactionNames: Record<MessagingReactionEmojiV1, string> = {
 };
 export function MessageReactionMenu({
   message,
+  people = [],
   position,
   currentUserId,
   disabled,
@@ -31,6 +32,7 @@ export function MessageReactionMenu({
   onReact,
 }: {
   message: MessagingMessageV1;
+  people?: Array<{ id: string; displayName: string }>;
   position: { x: number; y: number };
   currentUserId: string;
   disabled: boolean;
@@ -100,6 +102,41 @@ export function MessageReactionMenu({
             );
           })}
         </div>
+        <section
+          className="max-h-52 overflow-y-auto border-t p-2"
+          aria-label="افراد و واکنش‌ها"
+        >
+          <p className="mb-2 text-xs font-semibold">افراد و واکنش‌ها</p>
+          {message.reactions?.some((reaction) => reaction.userIds.length) ? (
+            <ul className="space-y-2">
+              {message.reactions.flatMap((reaction) =>
+                reaction.userIds.map((id) => (
+                  <li
+                    key={`${reaction.emoji}-${id}`}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span aria-label={reactionNames[reaction.emoji]}>
+                      {reaction.emoji}
+                    </span>
+                    <span>
+                      {id === currentUserId
+                        ? 'شما'
+                        : (reaction.users?.find((person) => person.id === id)
+                            ?.displayName ??
+                          people.find((person) => person.id === id)
+                            ?.displayName ??
+                          'عضو پیشین گفتگو')}
+                    </span>
+                  </li>
+                )),
+              )}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              هنوز واکنشی ثبت نشده است.
+            </p>
+          )}
+        </section>
         <DropdownMenuItem
           disabled={disabled}
           onSelect={() => {

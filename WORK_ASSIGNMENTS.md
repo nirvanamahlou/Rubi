@@ -1,3 +1,7 @@
+## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
+
+User authorizes conversation search, latest-message opening, Enter send, chat resizing and reaction participant display; push and develop merge. Reserve Workbench message-composer, reaction menu and focused helpers/tests; additive optional reaction users contract and MessagingService IAM name projection with API regressions. Names remain behind existing conversation authorization; old userIds consumers remain supported. No schema, permissions, dependency or deployment changes. Validation: 92 Workbench Web tests, 27 Messaging API tests and scoped API/Web ESLint passed. Final-head hosted type checks, production builds, full suite and PostgreSQL tests precede merge.
+
 ## AMIN-PR-CALL-RELEASE-1105 — PC-C — DONE
 
 Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
