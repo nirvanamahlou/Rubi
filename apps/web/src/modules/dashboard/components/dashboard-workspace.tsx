@@ -2775,6 +2775,21 @@ function VisualDetailsPanel({
   trendCalendarSystem: TrendCalendarSystem;
   visualId: string;
 }) {
+  const permissionLabel =
+    (
+      {
+        'reports.dashboard.sales.read': 'مشاهده گزارش‌های فروش',
+        'reports.dashboard.finance.read': 'مشاهده گزارش‌های مالی',
+        'reports.dashboard.profit.read': 'مشاهده گزارش‌های سودآوری',
+        'reports.dashboard.balance.read': 'مشاهده گزارش‌های مانده حساب',
+        'reports.dashboard.operations.read': 'مشاهده گزارش‌های عملیات سفر',
+        'reports.dashboard.crm.read': 'مشاهده گزارش‌های امور مشتریان',
+        'reports.dashboard.hr.read': 'مشاهده گزارش‌های منابع انسانی',
+        'reports.dashboard.marketing.read': 'مشاهده گزارش‌های بازاریابی',
+        'reports.dashboard.procurement.read': 'مشاهده گزارش‌های خرید و تأمین',
+        'reports.dashboard.b2b.read': 'مشاهده گزارش‌های همکاری با آژانس‌ها',
+      } as Record<string, string>
+    )[permission] ?? 'مشاهده گزارش‌های این بخش';
   const temporalGrain =
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
@@ -2909,12 +2924,9 @@ function VisualDetailsPanel({
                 محدودیت‌ها و دسترسی
               </h3>
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
-                فقط دادهٔ مجازِ Projection در محدودهٔ انتخاب‌شده نمایش داده
-                می‌شود. مجوز موردنیاز:{' '}
-                <bdi className="font-mono text-xs font-bold" dir="ltr">
-                  {permission}
-                </bdi>
-                .
+                فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
+                مجوز موردنیاز:{' '}
+                <span className="font-bold">{permissionLabel}</span>.
               </p>
             </section>
           </div>

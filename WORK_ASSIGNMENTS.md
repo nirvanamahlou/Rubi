@@ -1,3 +1,7 @@
+## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. User requests Persian equivalents throughout KPI/chart exclusions and limitations. Reserve registry exclusion text, chart limitation paragraph, matching English keys, existing registry assertions and own notes. Continue own draft PR1436; preserve all source lineage, computation and permission enforcement. No API/schema/dependencies/deployment. Latest develop inspected; relevant differences are own pending changes only.
+
 ## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.

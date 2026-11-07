@@ -1,3 +1,7 @@
+## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+Translated 49 mixed-language exclusions; all 84 KPI exclusion strings are Persian-only. Chart limitations display Persian report/permission wording instead of projection jargon and an internal permission code. Existing access checks preserved. 58 Dashboard/i18n tests passed (one existing skip); formatting, lint and Web build/TypeScript validate this copy change. Extends PR1436; no API/schema/data change or deployment.
+
 ## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
 
 Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).

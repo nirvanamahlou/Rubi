@@ -1,5 +1,13 @@
 # Dashboard KPI business definitions — 2026-11-07
 
+Exclusions follow-up: translated the 49 exclusion strings that still contained
+English words. All 84 KPI exclusion texts are now Persian-only; existing registry
+coverage checks this alongside the formula text. Chart limitations replace the
+English projection word and internal permission code with a Persian permission
+description (with a Persian fallback). Permission enforcement is unchanged.
+Dashboard/i18n suites: 58 passed, one pre-existing skip; scoped lint/format and
+production build including TypeScript passed. No deployment.
+
 Follow-up: all 84 KPI calculation rules use Persian words. Forty-one mixed-language
 rules were translated without changing calculation logic. KPI drawers and chart
 display rules share a contextual glossary of 32 short Persian explanations below

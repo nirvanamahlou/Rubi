@@ -43,6 +43,7 @@ describe('dashboard registry', () => {
       expect(kpi.rule).not.toBe('');
       expect(kpi.rule).not.toMatch(/[A-Za-z]/);
       expect(kpi.exclusions).not.toBe('');
+      expect(kpi.exclusions).not.toMatch(/[A-Za-z]/);
       expect(kpi.source.length).toBeGreaterThan(0);
       expect(kpi.permission).toMatch(/^reports\.dashboard\./);
       expect(['required', 'not-applicable']).toContain(kpi.currency);
