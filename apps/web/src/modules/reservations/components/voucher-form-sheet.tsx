@@ -238,30 +238,32 @@ function VoucherHotelSheet({
               <div
                 className={`${styles.brand} ${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? styles.jahanBrand : ''}`}
               >
-                {logo && settings?.flags.withLetterhead !== false && (
-                  <Image
-                    className={
-                      intake.workflow.branding?.kind === 'OWN'
-                        ? intake.workflow.branding.companyCode ===
-                          'JAHAN_BASTAN'
-                          ? styles.jahanLogo
-                          : intake.workflow.branding.companyCode ===
-                              'GHESATI_RO'
-                            ? styles.ghesatiLogo
-                            : styles.logo
-                        : styles.agencyLogo
-                    }
-                    src={
-                      logo === '/brand/niyayesh-seir-full.png'
-                        ? '/brand/niyayesh.png'
-                        : logo
-                    }
-                    alt={data.brand}
-                    width={196}
-                    height={64}
-                    unoptimized
-                  />
-                )}
+                {!intake.unbranded &&
+                  logo &&
+                  settings?.flags.withLetterhead !== false && (
+                    <Image
+                      className={
+                        intake.workflow.branding?.kind === 'OWN'
+                          ? intake.workflow.branding.companyCode ===
+                            'JAHAN_BASTAN'
+                            ? styles.jahanLogo
+                            : intake.workflow.branding.companyCode ===
+                                'GHESATI_RO'
+                              ? styles.ghesatiLogo
+                              : styles.logo
+                          : styles.agencyLogo
+                      }
+                      src={
+                        logo === '/brand/niyayesh-seir-full.png'
+                          ? '/brand/niyayesh.png'
+                          : logo
+                      }
+                      alt={data.brand}
+                      width={196}
+                      height={64}
+                      unoptimized
+                    />
+                  )}
               </div>
             </header>
             <div className={styles.meta}>
@@ -580,29 +582,31 @@ function VoucherHotelSheet({
                 </div>
               )}
             </div>
-            <footer className={styles.footer}>
-              {
-                <div
-                  data-reservation-footer
-                  dangerouslySetInnerHTML={{
-                    __html: reservationFormFooterHtml(
-                      intake.id,
-                      origin,
-                      intake.workflow.branding?.companyCode,
-                      data.brand,
-                      publicDocumentUrl,
-                      voucher,
-                    ),
-                  }}
-                />
-              }
-              <div>
-                <span>{''}</span>
-              </div>
-              <b>
-                {pageOffset + page + 1} / {pageCount}
-              </b>
-            </footer>
+            {!intake.unbranded && (
+              <footer className={styles.footer}>
+                {
+                  <div
+                    data-reservation-footer
+                    dangerouslySetInnerHTML={{
+                      __html: reservationFormFooterHtml(
+                        intake.id,
+                        origin,
+                        intake.workflow.branding?.companyCode,
+                        data.brand,
+                        publicDocumentUrl,
+                        voucher,
+                      ),
+                    }}
+                  />
+                }
+                <div>
+                  <span>{''}</span>
+                </div>
+                <b>
+                  {pageOffset + page + 1} / {pageCount}
+                </b>
+              </footer>
+            )}
           </article>
         );
       })}
@@ -641,11 +645,13 @@ function VoucherHotelSheet({
               ))}
             </tbody>
           </table>
-          <footer className={styles.footer}>
-            <b>
-              {pageOffset + pages.length + index + 1} / {pageCount}
-            </b>
-          </footer>
+          {!intake.unbranded && (
+            <footer className={styles.footer}>
+              <b>
+                {pageOffset + pages.length + index + 1} / {pageCount}
+              </b>
+            </footer>
+          )}
         </article>
       ))}
     </div>

@@ -30,6 +30,8 @@ import type {
   TravelWorkflowStateV1,
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
+  /** Transient output option; never persisted to the reservation workflow. */
+  unbranded?: boolean;
   contractDetails?: ReservationContractDetailsV1;
   workflow: TravelWorkflowStateV1;
   supplierFormUseSent?: boolean;

@@ -70,6 +70,45 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
+  it('renders an unbranded issued voucher without altering the saved branding', async () => {
+    publishing.enabled = true;
+    const issued = structuredClone(intake);
+    issued.workflow.voucherIssued = true;
+    issued.workflow.voucherSettings = defaultVoucherSettings(issued, {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('/workflow')
+          ? Response.json({ data: issued })
+          : new Response('{}', { status: 403 }),
+      ),
+    );
+    const result = await GET(
+      new Request(
+        `http://localhost/reservations/requests/${id}/pdf?kind=voucher&unbranded=true`,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(result.status).toBe(200);
+    expect(publishing.html).toBe('');
+    const [output, refs, logo, css] = renderer.mock.calls[0]!;
+    expect(logo).toBe('');
+    const html = reservationPdfHtml(output, refs, logo, css, true);
+    expect(html).toContain('HOTEL VOUCHER');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<footer');
+    expect(html).not.toContain('data-reservation-footer');
+    expect(issued.unbranded).toBeUndefined();
+    expect(
+      reservationPdfHtml(
+        issued,
+        {},
+        'data:image/png;base64,c2FmZQ==',
+        '',
+        true,
+      ),
+    ).toContain('data-reservation-footer');
+  });
   it('downloads an issued voucher through the contract release gate without reservation permissions', async () => {
     const contractId = '00000000-0000-4000-8000-000000000099';
     const issued = structuredClone(intake);
