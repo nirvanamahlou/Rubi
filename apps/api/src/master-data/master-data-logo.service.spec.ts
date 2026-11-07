@@ -62,6 +62,45 @@ function setup(current = record()) {
 }
 
 describe('MasterDataLogoService', () => {
+  it('allows a contract reader to read only airline logos through sales display references', async () => {
+    const { service, documents } = setup(
+      record({ logoFileReference: 'logo-document' }),
+    );
+    const reader = {
+      ...actor,
+      permissions: [
+        'sales.contracts.read.own',
+      ] as AuthenticatedActor['permissions'],
+    };
+    await service.preview('airlines', record().id, reader, {}, 'sales');
+    expect(documents.previewMasterDataLogo).toHaveBeenCalledWith(
+      {
+        documentId: 'logo-document',
+        resource: 'airlines',
+        recordId: record().id,
+        workflow: 'sales',
+      },
+      reader,
+      {},
+    );
+  });
+  it('rejects unrelated resources or unauthorized workflows before reading records', async () => {
+    const { service, masterData, documents } = setup();
+    await expect(
+      service.preview('organizations', record().id, actor, {}, 'sales'),
+    ).rejects.toThrow();
+    await expect(
+      service.preview(
+        'airlines',
+        record().id,
+        { ...actor, permissions: [] },
+        {},
+        'sales',
+      ),
+    ).rejects.toThrow();
+    expect(masterData.detail).not.toHaveBeenCalled();
+    expect(documents.previewMasterDataLogo).not.toHaveBeenCalled();
+  });
   it.each(['CLEAN', 'PENDING_SCAN', 'INFECTED', 'SCAN_FAILED'] as const)(
     'preserves the saved reference and reports scan state %s',
     async (scanStatus) => {

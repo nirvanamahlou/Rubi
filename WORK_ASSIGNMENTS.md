@@ -1,3 +1,11 @@
+## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
+
+Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
+
+## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
+
+User authorizes conversation search, latest-message opening, Enter send, chat resizing and reaction participant display; push and develop merge. Reserve Workbench message-composer, reaction menu and focused helpers/tests; additive optional reaction users contract and MessagingService IAM name projection with API regressions. Names remain behind existing conversation authorization; old userIds consumers remain supported. No schema, permissions, dependency or deployment changes. Validation: 92 Workbench Web tests, 27 Messaging API tests and scoped API/Web ESLint passed. Final-head hosted type checks, production builds, full suite and PostgreSQL tests precede merge.
+
 ## AMIN-PR-CALL-RELEASE-1105 — PC-C — DONE
 
 Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
@@ -11374,6 +11382,14 @@ User authorizes removal of selected request history/source identifier and FX sum
 
 User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
 
+## FINANCE-APPROVAL-DOWNLOAD-1107 — PC-B — ACTIVE
+
+Owner authorizes pending/approved inbox tabs and direct receipt download, push/develop merge. Reserve Finance query/controller/export and inbox UI, additive query/Sales projection contracts and scoped Sales read methods, Documents source-bound receipt pending-scan policy and focused tests, own notes. Prior Finance redesign is merged/frozen. Shared contract producer/consumer ship together; no schema/dependency/runtime data changes. Preserve branch/source authorization, malicious-file denial, custom confidential codes and audits.
+
+FINANCE-APPROVAL-DOWNLOAD-1107 validation:169 API and18 Web checks, scoped API/Web lint and full Web TypeScript pass. Shared runtime database artifacts resolved only via external test alias; no dependency edits. Source frozen on push; all final-head hosted gates required before user-authorized develop merge. No deployment.
+
+FINANCE-APPROVAL-DOWNLOAD-1107 CI recovery reserves exactly two native English UI labels in en-overrides.json. All full build/quality/migration gates passed; the full-suite coverage gate found the missing new tab translations. No behavior or gate changes.
+
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
@@ -11382,6 +11398,20 @@ PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests r
 
 PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
 
-## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — IN_PROGRESS
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
 
 PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
+
+## CALL-REQUEST-TOAST-1107 — PC-C — IN_PROGRESS
+
+Reserve message-popup.ts/spec only: show existing recipient-scoped call-center.assigned notices in the existing bottom-right message popup, preserving route access and no historical replay. No API/schema/dependency changes; existing producer/queue hash contract unchanged.
+
+Bounded central notification-center.tsx lease: reuse existing call-center:open-queue event on popup click, including same-route/same-hash navigation. No other center behavior changes.
+`nCALL-REQUEST-TOAST-1107: implementation complete;8 focused tests pass. Source frozen on push; no server deployment in this work item.
+CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
+
+## CALL-HR-MANAGER-AUTHORITY-1107 — PC-C — IN_PROGRESS
+
+PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-1107. Owner explicitly replaces manual per-manager request-assignment capability with live active HR grade manager/current organization. Reserve HrUserUnitDirectory public projection and tests, IamCallCenterDirectory assignee/management policy and tests, native PostgreSQL policy fixtures if needed, own docs/DECISIONS entry and bounded API release. Preserve UI, base Call Center access, branch/company/unit isolation, ordinary self scope and pinned executive exception. Previous same-owner Call Center scopes frozen/merged; HR form/service mutations, schema, dependencies and general role contracts excluded. No active overlapping writer found for these leaf files. No direct cross-module table access: HR owns managerial grade/membership projection, IAM intersects active linked accounts/branch authority.
+
+`nDOC-REPORT-1107 | PC-C | codex/pc-c-document-report-access-1107 | document-reporting.public.ts + targeted regression | IN_PROGRESS | origin/develop

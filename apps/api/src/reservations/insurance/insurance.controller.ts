@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Put,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -67,6 +68,27 @@ export class ReservationInsuranceController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.settings.save(branchId, body, req.actor);
+  }
+  @Header('Cache-Control', 'private, no-store')
+  @Put('settings/festival')
+  importFestival(
+    @Query('branchId', ParseUUIDPipe) branchId: string,
+    @Body() body: { expectedVersion: number },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.settings.importFestival(
+      branchId,
+      body?.expectedVersion,
+      req.actor,
+    );
+  }
+  @Header('Cache-Control', 'private, no-store')
+  @Post('provider/test-issuance')
+  testIssuance(
+    @Query('branchId', ParseUUIDPipe) branchId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.settings.testProviderIssuance(branchId, req.actor);
   }
   @Header('Cache-Control', 'private, no-store')
   @Get('provider/catalog')

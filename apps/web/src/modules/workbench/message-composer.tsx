@@ -51,6 +51,11 @@ import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
 import { MessageReactionMenu, reactionNames } from './message-reaction-menu';
 
+import {
+  matchesConversationSearch,
+  shouldSendOnEnter,
+} from './chat-interaction';
+
 type SidebarMode = 'units' | 'contacts' | 'groups' | 'conversations';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
 const messageTime = (value: string) =>
@@ -89,6 +94,10 @@ export function MessageComposer({
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = conversations.find((item) => item.id === activeId) ?? null;
   const [messages, setMessages] = useState<MessagingMessageV1[]>([]);
+  const [conversationSearch, setConversationSearch] = useState('');
+  const [chatHeight, setChatHeight] = useState(352);
+  const messageViewport = useRef<HTMLElement>(null);
+  const followLatest = useRef(true);
   const [contactSearch, setContactSearch] = useState('');
   const [unitSearch, setUnitSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -145,6 +154,31 @@ export function MessageComposer({
         <Trash2 className="size-4" aria-hidden="true" />
       </Button>
     );
+  }
+  async function manageMember(memberId: string, action: 'REMOVE' | 'PROMOTE') {
+    if (!active || !canEditGroup || busy) return;
+    setBusy(true);
+    setError('');
+    conversationEpoch.current++;
+    try {
+      const response =
+        action === 'REMOVE'
+          ? await messagingApi.removeMember(active.id, memberId)
+          : await messagingApi.promoteMember(active.id, memberId);
+      conversationEpoch.current++;
+      setConversations((current) =>
+        current.map((item) =>
+          item.id === response.data.id ? response.data : item,
+        ),
+      );
+      setAddMembers((current) => current.filter((id) => id !== memberId));
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ویرایش گروه انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   async function saveGroup() {
     if (!active || busy) return;
@@ -231,6 +265,7 @@ export function MessageComposer({
   useLayoutEffect(() => {
     if (activeId === previousConversationId.current) return;
     previousConversationId.current = activeId;
+    followLatest.current = true;
     setText('');
     setAttachments([]);
     setMessages([]);
@@ -243,6 +278,12 @@ export function MessageComposer({
     messageSubmissionId.current = '';
     selection.current = { start: 0, end: 0 };
   }, [activeId]);
+
+  useLayoutEffect(() => {
+    const viewport = messageViewport.current;
+    if (viewport && followLatest.current)
+      viewport.scrollTop = viewport.scrollHeight;
+  }, [messages, chatHeight]);
 
   const reloadConversations = useCallback(
     async (selected?: string) => {
@@ -442,7 +483,7 @@ export function MessageComposer({
   }
 
   async function sendMessage() {
-    if (!active || busy) return;
+    if (!active || busy || (!text.trim() && !attachments.length)) return;
     setBusy(true);
     setError('');
     try {
@@ -464,6 +505,7 @@ export function MessageComposer({
         attachmentDocumentIds,
         ...(replying ? { replyToMessageId: replying.id } : {}),
       });
+      followLatest.current = true;
       setMessages((current) => [...current, response.data]);
       setText('');
       setReplying(null);
@@ -530,6 +572,16 @@ export function MessageComposer({
     }
   }
 
+  const visibleConversations = conversations.filter((conversation) =>
+    matchesConversationSearch(
+      [
+        conversation.title,
+        conversation.lastMessage?.body ?? '',
+        ...conversation.participants.map((person) => person.displayName),
+      ],
+      conversationSearch,
+    ),
+  );
   const visibleEmojis = messageEmojis.filter(
     ([emoji, label]) =>
       label.includes(emojiSearch.trim()) || emoji.includes(emojiSearch.trim()),
@@ -580,6 +632,14 @@ export function MessageComposer({
               گفت‌وگوها
             </Button>
           </div>
+          {(sidebarMode === 'conversations' || sidebarMode === 'groups') && (
+            <Input
+              aria-label="جست‌وجوی گفتگوها"
+              placeholder="جست‌وجوی گفتگو، نام یا آخرین پیام…"
+              value={conversationSearch}
+              onChange={(event) => setConversationSearch(event.target.value)}
+            />
+          )}
           {sidebarMode === 'units' ? (
             <>
               <Input
@@ -693,7 +753,7 @@ export function MessageComposer({
                 className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
                 aria-label="گروه‌های من"
               >
-                {conversations
+                {visibleConversations
                   .filter((conversation) => conversation.type === 'GROUP')
                   .map((conversation) => (
                     <div
@@ -746,7 +806,7 @@ export function MessageComposer({
               className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2"
               aria-label="گفت‌وگوهای من"
             >
-              {conversations.map((conversation) => (
+              {visibleConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   className="flex min-w-0 items-center gap-1"
@@ -834,8 +894,43 @@ export function MessageComposer({
                   </span>
                 )}
               </header>
+              <div
+                className="flex items-center justify-end gap-2"
+                aria-label="اندازه پنجره گفتگو"
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={chatHeight <= 240}
+                  onClick={() =>
+                    setChatHeight((height) => Math.max(240, height - 112))
+                  }
+                >
+                  کوچک‌تر
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={chatHeight >= 800}
+                  onClick={() =>
+                    setChatHeight((height) => Math.min(800, height + 112))
+                  }
+                >
+                  بزرگ‌تر
+                </Button>
+              </div>
               <section
-                className="relative isolate flex h-[22rem] min-h-0 min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
+                ref={messageViewport}
+                style={{ height: chatHeight }}
+                onScroll={(event) => {
+                  const viewport = event.currentTarget;
+                  followLatest.current =
+                    viewport.scrollHeight -
+                      viewport.scrollTop -
+                      viewport.clientHeight <
+                    80;
+                }}
+                className="relative isolate flex min-h-[240px] max-h-[800px] resize-y min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
                 {messages.map((message) => {
@@ -1062,12 +1157,27 @@ export function MessageComposer({
                     setError('');
                     rememberSelection();
                   }}
+                  onKeyDown={(event) => {
+                    if (
+                      shouldSendOnEnter({
+                        key: event.key,
+                        shiftKey: event.shiftKey,
+                        repeat: event.repeat,
+                        isComposing: event.nativeEvent.isComposing,
+                        keyCode: event.nativeEvent.keyCode,
+                      })
+                    ) {
+                      event.preventDefault();
+                      void sendMessage();
+                    }
+                  }}
                   onSelect={rememberSelection}
                   onBlur={rememberSelection}
                   className="leading-8"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {text.length.toLocaleString('fa-IR')} از ۴٬۰۰۰
+                  {text.length.toLocaleString('fa-IR')} از ۴٬۰۰۰ · Enter ارسال،
+                  Shift+Enter خط بعد
                 </p>
               </div>
               <section
@@ -1280,6 +1390,7 @@ export function MessageComposer({
             </div>
           </header>
           <div className="min-h-0 overflow-y-auto p-5">
+            {error && <Alert tone="error" title={error} />}
             <div className={groupEditing ? 'grid gap-5 sm:grid-cols-2' : ''}>
               <section className="min-w-0">
                 <h3 className="mb-3 text-sm font-semibold">اعضای گروه</h3>
@@ -1298,6 +1409,42 @@ export function MessageComposer({
                       <span className="min-w-0 flex-1 break-words text-sm">
                         {member.displayName}
                       </span>
+                      {canEditGroup && member.id !== currentUserId && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          {member.role !== 'OWNER' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={busy}
+                              aria-label={`مدیر کردن ${member.displayName}`}
+                              title="مدیر کردن عضو"
+                              onClick={() =>
+                                void manageMember(member.id, 'PROMOTE')
+                              }
+                            >
+                              <Sparkles
+                                className="size-4 text-amber-500"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={busy}
+                            aria-label={`حذف عضو ${member.displayName}`}
+                            title="حذف عضو از گروه"
+                            onClick={() =>
+                              void manageMember(member.id, 'REMOVE')
+                            }
+                          >
+                            <Trash2
+                              className="size-4 text-destructive"
+                              aria-hidden="true"
+                            />
+                          </Button>
+                        </div>
+                      )}
                       {member.role === 'OWNER' && (
                         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
                           مدیر گروه
@@ -1422,7 +1569,11 @@ export function MessageComposer({
       </Dialog>
       {messageMenu && (
         <MessageReactionMenu
-          message={messageMenu.message}
+          message={
+            messages.find((item) => item.id === messageMenu.message.id) ??
+            messageMenu.message
+          }
+          people={[...(active?.participants ?? []), ...contacts]}
           position={messageMenu.position}
           currentUserId={currentUserId}
           disabled={busy || reactionPending}

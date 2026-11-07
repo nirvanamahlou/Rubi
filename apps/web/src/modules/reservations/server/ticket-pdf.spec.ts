@@ -150,7 +150,7 @@ describe('reservation ticket PDF', () => {
           });
         if (
           url.endsWith('/passengers') ||
-          url.includes('/master-data/airlines?')
+          url.includes('/master-data/selections/reservations/airlines?')
         )
           return Response.json({ data: [] });
         return Response.json({
@@ -187,7 +187,7 @@ describe('reservation ticket PDF', () => {
         Response.json({
           data: url.endsWith('/workflow')
             ? saved
-            : url.includes('/master-data/airlines?')
+            : url.includes('/master-data/selections/reservations/airlines?')
               ? []
               : url.endsWith('/passengers')
                 ? []
@@ -275,7 +275,7 @@ describe('reservation ticket PDF', () => {
         return Promise.resolve(Response.json({ data: intake }));
       if (url.includes('/master-data/cities/'))
         return Promise.reject(new Error('city service unavailable'));
-      if (url.includes('/master-data/airlines?'))
+      if (url.includes('/master-data/selections/reservations/airlines?'))
         return Promise.resolve(
           Response.json({
             data: [],
@@ -293,6 +293,53 @@ describe('reservation ticket PDF', () => {
     expect(renderer.mock.calls[0]?.[0]).toContain('—');
   });
 
+  it('loads city and airport display references with sales read authority', async () => {
+    const airportId = '00000000-0000-4000-8000-000000000090';
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith('/travel-documents'))
+        return Response.json({ data: intake, delivery: { approved: true } });
+      if (url.includes('/ticket-catalog/offers/'))
+        return Response.json({
+          data: {
+            id: 'offer',
+            originId: cityOne,
+            destinationId: cityTwo,
+            destinationAirportId: airportId,
+          },
+        });
+      if (url.endsWith(`/selections/sales/airports/${airportId}`))
+        return Response.json({
+          data: {
+            code: 'IKA',
+            name: 'Imam Khomeini International Airport',
+            attributes: { cityId: cityTwo },
+          },
+        });
+      if (url.includes('/selections/sales/cities/'))
+        return Response.json({
+          data: {
+            id: url.split('/').at(-1),
+            name: 'Tehran',
+            code: 'THR',
+            attributes: { englishName: 'TEHRAN' },
+          },
+        });
+      return new Response('{}', { status: 403 });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(
+      request(`?salesContractId=${intake.snapshot.contractId}`),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]?.[0] as string;
+    expect(html).toContain('Imam Khomeini International Airport');
+    expect(html).toContain('IKA');
+    expect(html).toContain('TEHRAN');
+    expect(
+      fetcher.mock.calls.some(([url]) => url.includes('/master-data/cities/')),
+    ).toBe(false);
+  });
   it('uses the passenger passport spelling and the matching airline logo through public APIs', async () => {
     const logoId = '00000000-0000-4000-8000-000000000010';
     const fetcher = vi.fn().mockImplementation((url: string) => {
@@ -311,7 +358,7 @@ describe('reservation ticket PDF', () => {
             ],
           }),
         );
-      if (url.includes('/master-data/airlines?'))
+      if (url.includes('/master-data/selections/reservations/airlines?'))
         return Promise.resolve(
           Response.json({
             data: [
@@ -327,7 +374,11 @@ describe('reservation ticket PDF', () => {
             meta: { page: 1, pageSize: 25, total: 1 },
           }),
         );
-      if (url.endsWith(`/documents/${logoId}/preview`))
+      if (
+        url.endsWith(
+          `/master-data/selections/reservations/airlines/${logoId}/logo`,
+        )
+      )
         return Promise.resolve(
           new Response(Buffer.from('safe'), {
             headers: { 'content-type': 'image/png' },
@@ -351,7 +402,9 @@ describe('reservation ticket PDF', () => {
     expect(html).toContain('class="airline-logo"');
     expect(
       fetcher.mock.calls.some(([url]) =>
-        String(url).endsWith(`/documents/${logoId}/preview`),
+        String(url).endsWith(
+          `/master-data/selections/reservations/airlines/${logoId}/logo`,
+        ),
       ),
     ).toBe(true);
   });
@@ -365,7 +418,7 @@ describe('reservation ticket PDF', () => {
     const fetcher = vi.fn().mockImplementation((url: string) => {
       if (url.endsWith('/workflow'))
         return Promise.resolve(Response.json({ data: variant }));
-      if (url.includes('/master-data/airlines?')) {
+      if (url.includes('/master-data/selections/reservations/airlines?')) {
         const fallback = !new URL(url).searchParams.has('search');
         return Promise.resolve(
           Response.json({
@@ -388,7 +441,11 @@ describe('reservation ticket PDF', () => {
           }),
         );
       }
-      if (url.endsWith('/documents/' + logoId + '/preview'))
+      if (
+        url.endsWith(
+          '/master-data/selections/reservations/airlines/' + logoId + '/logo',
+        )
+      )
         return Promise.resolve(
           new Response(Buffer.from('safe'), {
             headers: { 'content-type': 'image/png' },

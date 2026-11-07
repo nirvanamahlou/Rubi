@@ -224,7 +224,7 @@ describe('owning producer permissions and source-specific predicates', () => {
     const findMany = vi.fn().mockResolvedValue([]);
     await readDocumentComplianceReporting(
       db({ document: { findMany } }),
-      { ...actor, permissions: ['documents.read'] },
+      { ...actor, permissions: ['documents.list'] },
       query,
     );
     expect(findMany.mock.calls[0]?.[0].where).toMatchObject({

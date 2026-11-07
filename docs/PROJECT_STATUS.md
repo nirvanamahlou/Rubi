@@ -1,3 +1,11 @@
+## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
+
+Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
+
+## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
+
+User authorizes conversation search, latest-message opening, Enter send, chat resizing and reaction participant display; push and develop merge. Reserve Workbench message-composer, reaction menu and focused helpers/tests; additive optional reaction users contract and MessagingService IAM name projection with API regressions. Names remain behind existing conversation authorization; old userIds consumers remain supported. No schema, permissions, dependency or deployment changes. Validation: 92 Workbench Web tests, 27 Messaging API tests and scoped API/Web ESLint passed. Final-head hosted type checks, production builds, full suite and PostgreSQL tests precede merge.
+
 ## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
 
 Finance reservation requests resolve persisted purchase actor IDs through the scoped IAM public directory, deduplicating names for grouped purchases. No guessed requester or source-data rewrite. Request cards expose requester and emphasize amount; details use responsive semantic fact cards, grouped FX metrics, and aligned purchase actions. Prior source-ID/history removals remain. Existing permissions, payments and evidence are preserved. Focused Finance API/UI tests, lint and type checks precede full hosted gates. No schema, dependency or deployment.
@@ -9089,6 +9097,14 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
 
+## FINANCE-APPROVAL-DOWNLOAD-1107 — 2026-11-07
+
+PC-B: owner-requested inbox approval groups and receipt download implemented. Default pending / approved controls filter server-side before pagination, totals and Excel export; switches reset selection/page. Completed Sales receipts and paid reservation groups are retained through their public source projections; Sales branch scope and legacy callers preserved. Reservation ready-on-handoff alone is not financial approval. Confirmed receipts no longer show approve/correction commands.
+
+Receipt PDF/JPEG/PNG downloads can proceed from the source-bound Sales endpoint while antivirus is pending/unavailable. Generic Documents access does not acquire this exception; wrong-source/branch, infected/quarantined files, custom confidential codes and access audits remain enforced. No schema, migration, dependency, operational data or deployment changes.
+
+Validation:169 focused API and18 Web tests pass; Web typecheck caught and corrected the native Button primary variant. Shared local dependency artifacts require API tests to resolve the existing generated database package and current Contracts source through a temporary external test config. Final-head hosted full build/type/test/migration gates remain required before authorized develop merge. Source reservation freezes on push.
+
 
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 
@@ -9101,6 +9117,17 @@ PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests r
 
 PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
 
-## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — IN_PROGRESS
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
 
 PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
+
+## CALL-REQUEST-TOAST-1107
+Existing recipient-scoped call-center.assigned events now use the same bottom-right popup as internal messages. Exact queue link and same-page open-queue event retained; read/seen/historical/inaccessible items excluded.8 focused tests pass against current Contracts sources. No API/schema/migration changes; production publication pending.
+
+CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
+
+## CALL-HR-MANAGER-AUTHORITY-1107 — PC-C — IN_PROGRESS
+
+PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-1107. Owner explicitly replaces manual per-manager request-assignment capability with live active HR grade manager/current organization. Reserve HrUserUnitDirectory public projection and tests, IamCallCenterDirectory assignee/management policy and tests, native PostgreSQL policy fixtures if needed, own docs/DECISIONS entry and bounded API release. Preserve UI, base Call Center access, branch/company/unit isolation, ordinary self scope and pinned executive exception. Previous same-owner Call Center scopes frozen/merged; HR form/service mutations, schema, dependencies and general role contracts excluded. No active overlapping writer found for these leaf files. No direct cross-module table access: HR owns managerial grade/membership projection, IAM intersects active linked accounts/branch authority.
+
+`n2026-11-07 PC-C: Document compliance producer used nonexistent documents.read; corrected to native documents.list. Runtime regression passed with mocked DB; no production activation yet. Local suite blocked by missing @nestjs/common in shared dependencies.
