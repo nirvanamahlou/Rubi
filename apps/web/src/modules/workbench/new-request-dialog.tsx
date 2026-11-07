@@ -23,7 +23,8 @@ type NewRequestDialogProps = {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   branchId?: string;
-  onCreated?: () => void;
+  initialDate?: string;
+  onCreated?: (request: { id: string; title: string }) => void;
 };
 
 export function NewRequestDialog(props: NewRequestDialogProps) {
@@ -35,6 +36,7 @@ function NewRequestForm({
   onOpenChange,
   branchId,
   onCreated,
+  initialDate,
 }: NewRequestDialogProps) {
   const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
   const [title, setTitle] = useState('');
@@ -162,7 +164,7 @@ function NewRequestForm({
                 setSuccess(
                   `درخواست برای ${member.displayName} ارسال شد. کد پیگیری: ${response.data.trackingNumber}`,
                 );
-                onCreated?.();
+                onCreated?.({ id: response.data.id, title: title.trim() });
               })
               .catch((reason) =>
                 setError(
@@ -241,8 +243,8 @@ function NewRequestForm({
                     leave
                       ? null
                       : {
-                          from: '',
-                          to: '',
+                          from: initialDate ?? '',
+                          to: initialDate ?? '',
                           mode: 'روزانه',
                           reason: '',
                           leaveType: 'استحقاقی',

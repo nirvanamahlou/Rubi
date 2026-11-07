@@ -47,6 +47,8 @@ import {
   CalendarEventDialog,
   type CalendarEventDraft,
 } from './calendar-event-dialog';
+import { NoteEditor } from './note-editor';
+import { NewRequestDialog } from './new-request-dialog';
 import { workbenchPersonalApi } from './workbench-personal-api';
 
 const views = [
@@ -80,6 +82,10 @@ export function WorkbenchCalendar({
   sourceReady?: boolean;
   branchId?: string;
 }) {
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [noteEntries, setNoteEntries] = useState<CalendarEntry[]>([]);
   const [today, setToday] = useState(calendarToday);
   const [anchor, setAnchor] = useState(calendarToday);
   const [selected, setSelected] = useState(() => toIsoDate(calendarToday()));
@@ -97,7 +103,13 @@ export function WorkbenchCalendar({
     query: '',
     status: 'open',
   });
-  const allEntries = [...entries, ...connectedEntries, ...localEntries];
+  const requestBranchId = branchId ?? availableBranchId;
+  const allEntries = [
+    ...entries,
+    ...connectedEntries,
+    ...localEntries,
+    ...noteEntries,
+  ];
   const filtered = filterCalendar(allEntries, filter);
   const visible = entriesInView(filtered, anchor, view);
   const days = calendarDays(anchor, view);
@@ -112,6 +124,19 @@ export function WorkbenchCalendar({
     setError('');
     try {
       const personal = await workbenchPersonalApi.calendar();
+      const notes = await workbenchPersonalApi.notes();
+      setNoteEntries(
+        notes.data
+          .filter((n) => n.reminderAt)
+          .map((n) => ({
+            id: `note-${n.id}`,
+            title: `یادداشت: ${n.title}`,
+            dueAt: n.reminderAt,
+            status: 'planned',
+            priority: 'normal',
+            href: '/workbench?tab=notes',
+          })),
+      );
       setAvailableBranchId(personal.availableBranchIds?.[0]);
       setLocalEntries(
         personal.data.map((row) => ({
@@ -544,7 +569,32 @@ export function WorkbenchCalendar({
                       type="button"
                       aria-label={`${dateLabel(iso)}${isToday ? '، امروز' : ''}، ${items.length.toLocaleString('fa-IR')} برنامه`}
                       aria-pressed={selected === iso}
-                      onClick={() => setSelected(iso)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setSelected(iso);
+                        setMenu({
+                          x: Math.min(event.clientX, window.innerWidth - 210),
+                          y: Math.min(event.clientY, window.innerHeight - 160),
+                        });
+                      }}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === 'ContextMenu' ||
+                          (event.shiftKey && event.key === 'F10')
+                        ) {
+                          event.preventDefault();
+                          setSelected(iso);
+                          const r = event.currentTarget.getBoundingClientRect();
+                          setMenu({
+                            x: Math.min(r.left, window.innerWidth - 210),
+                            y: Math.min(r.top, window.innerHeight - 160),
+                          });
+                        }
+                      }}
+                      onClick={() => {
+                        setSelected(iso);
+                        setMenu(null);
+                      }}
                       className={cn(
                         'flex min-h-28 min-w-0 flex-col items-start justify-start border-b border-e border-border p-2 text-start transition hover:bg-primary/5 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:min-h-32',
                         parts.month !== selectedMonth.month && view === 'month'
@@ -593,6 +643,98 @@ export function WorkbenchCalendar({
           {renderEntries(selectedEntries)}
         </Card>
       ) : null}
+      {menu && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setMenu(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setMenu(null);
+          }}
+        >
+          <div
+            role="menu"
+            aria-label="افزودن برنامه"
+            style={{ left: menu.x, top: menu.y }}
+            className="absolute grid w-48 gap-1 rounded-xl border bg-surface p-2 shadow-xl"
+            dir="rtl"
+          >
+            <Button
+              role="menuitem"
+              variant="ghost"
+              autoFocus
+              onClick={() => {
+                setMenu(null);
+                setNoteOpen(true);
+              }}
+            >
+              یادداشت جدید
+            </Button>
+            <Button
+              role="menuitem"
+              variant="ghost"
+              onClick={() => {
+                setMenu(null);
+                setEditingEvent(null);
+                setEventDialogOpen(true);
+              }}
+            >
+              رویداد جدید
+            </Button>
+            <Button
+              role="menuitem"
+              variant="ghost"
+              onClick={() => {
+                setMenu(null);
+                setRequestOpen(true);
+              }}
+            >
+              درخواست جدید
+            </Button>
+          </div>
+        </div>
+      )}
+      {noteOpen && (
+        <NoteEditor
+          open
+          initialDate={selected}
+          onOpenChange={setNoteOpen}
+          onApply={async (draft) => {
+            await workbenchPersonalApi.createNote({
+              title: draft.title,
+              body: draft.body,
+              folder: draft.folder,
+              tags: draft.tags,
+              items: draft.items,
+              pinned: draft.pinned,
+              reminderAt: draft.reminderAt ?? null,
+            });
+            setNoteOpen(false);
+            await load();
+          }}
+        />
+      )}
+      <NewRequestDialog
+        open={requestOpen}
+        initialDate={selected}
+        {...(requestBranchId ? { branchId: requestBranchId } : {})}
+        onOpenChange={setRequestOpen}
+        onCreated={(request) => {
+          setRequestOpen(false);
+          void createEvent({
+            title: `درخواست: ${request.title}`.slice(0, 120),
+            date: selected,
+            description: '',
+            linkUrl: new URL(
+              `/workbench?tab=requests&ticket=${encodeURIComponent(request.id)}`,
+              window.location.origin,
+            ).href,
+            attachment: null,
+            status: 'planned',
+          }).catch(() =>
+            setError('درخواست ثبت شد، اما افزودن آن به تقویم انجام نشد.'),
+          );
+        }}
+      />
       <CalendarEventDialog
         key={`${editingEvent?.id ?? 'new'}-${selected}-${eventDialogOpen ? 'open' : 'closed'}`}
         open={eventDialogOpen}
