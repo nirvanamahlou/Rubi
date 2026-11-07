@@ -11507,3 +11507,9 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from la
 RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
+
+## DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-chart-labels-1107` from latest `origin/develop`. Remove only the blue chart-kind badge shared by Dashboard visual cards so every chart is cleaner. Keep chart-kind wording in accessible figure names, captions and explanatory details, and retain amber DEC-OPEN decision badges. Reserve only the shared card presentation and its Dashboard source regression plus bounded task/status notes. No calculation, data, API, permission, dependency, deployment or other badge changes.
+
+اعتبارسنجی DASHBOARD-REMOVE-CHART-KIND-TAGS-1107: آزمون داشبورد ۱۹ پاس و ۱ مورد از قبل skip؛ ESLint محدود، build قراردادها، typecheck وب، build تولیدی وب (۶۷ مسیر) و diff check موفق. نوع نمودار از همه کارت‌ها حذف شد؛ DEC-OPEN حفظ شد. بدون تغییر داده، محاسبات، مجوز، API، وابستگی یا runtime.
