@@ -4,6 +4,8 @@ User authorizes in-conversation message search beside resize controls, push and 
 
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
 
+MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete expense helper and approval inputs/column hidden without moving persisted positions. Standalone expense form shares mission petty-cash fields, supports parent mission, evidence and currency. Mission row opens all child expenses with edit/delete controls. Procurement-owned transaction port retains original debits and writes idempotent linked reversal credits on HR expense edit/delete, preserving branch/custodian controls and atomic balance rollback. Local isolated PostgreSQL test passes create, replay, edit, stale version, dependent delete guard, claim debit and full reversal; three focused port tests pass. No schema/dependency change. Hosted final-head gates required.
+
 Automatic primary checkout previously followed the trip return even after a subsequent hotel was added, causing overlapping stays and a silently disabled pricing navigation button. Automatic checkout now follows the next stay check-in; explicit manual dates remain authoritative. The same hotel validation result drives both navigation and an actionable message, preserving all existing room/date/journey guards. Added model/payload and actual parent-button regressions for hotel-only, flight+hotel, manual overlap, incomplete rooms and invalid itineraries. Sales suite:788 passed, one existing skip; final added flight+hotel case and focused combined checks pass (31). Scoped lint and Web TypeScript passed; final build and exact-head hosted gates remain required. No API, schema, migration, dependency or deployment changes.
 
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS

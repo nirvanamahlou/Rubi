@@ -4,6 +4,8 @@ User authorizes in-conversation message search beside resize controls, push and 
 
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
 
+MISSION-EXPENSE-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve HR expense forms, expense petty-cash integration via Procurement port, mission child operations, and Sales travel document spacing; preserve persisted column positions.
+
 COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
 
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS

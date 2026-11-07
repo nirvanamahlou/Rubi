@@ -37,6 +37,37 @@ const brand = { name: 'Synthetic Agency', logoDataUrl: '/brand/niyayesh.png' };
 const cities = { teh: 'TEHRAN', ayt: 'ANTALYA' };
 const airlines = { 'ایران ایرتور': { name: 'Iran Airtour', code: 'B9' } };
 describe('flight ticket placement and English carrier', () => {
+  it('removes agency identity and footer QR while preserving flight and passenger facts', () => {
+    const ticket = {
+      ...data,
+      contractNumber: 'QA-123',
+      publicDocumentUrl: 'https://example.test/d/' + 'a'.repeat(32),
+    };
+    const html = ticketPageHtml(
+      ticket,
+      cities,
+      { ...brand, unbranded: true },
+      airlines,
+    );
+    expect(html).not.toContain('Synthetic Agency');
+    expect(html).not.toContain('agency-logo"');
+    expect(html).not.toContain('<footer>');
+    expect(html).not.toContain('ticket-qr"');
+    expect(html).not.toContain('BRIGHTER');
+    expect(html).toContain('Synthetic Passenger');
+    expect(html).toContain('4512');
+    expect(html).toContain('QA-123');
+    expect(ticketPageHtml(ticket, cities, brand, airlines)).toContain(
+      'ticket-qr"',
+    );
+    expect(() =>
+      ticketDocumentHtml([ticket], cities, {
+        ...brand,
+        logoDataUrl: '',
+        unbranded: true,
+      }),
+    ).not.toThrow();
+  });
   it('uses English names consistently and actual airport codes on each leg', () => {
     const html = ticketPageHtml(data, cities, brand, airlines);
     expect(html).toContain('B9 — Iran Airtour');

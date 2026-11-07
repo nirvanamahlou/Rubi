@@ -98,7 +98,10 @@ export async function GET(
       (rawIntake.id !== id || rawIntake.snapshot.contractId !== salesContractId)
     )
       return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
-    let intake = rawIntake;
+    let intake: ReservationFormIntake =
+      voucher && parameters.get('unbranded') === 'true'
+        ? { ...rawIntake, unbranded: true }
+        : rawIntake;
     if (hotelStayKey) {
       try {
         intake = hotelFormScope(rawIntake, hotelStayKey);
@@ -147,7 +150,8 @@ export async function GET(
     let logo: string;
     if (
       voucher &&
-      (branding.voucherWithoutLogo === true ||
+      (intake.unbranded ||
+        branding.voucherWithoutLogo === true ||
         intake.workflow.voucherSettings?.flags.withLetterhead === false)
     ) {
       logo = '';
@@ -256,7 +260,7 @@ export async function GET(
       ),
       'utf8',
     );
-    const share = createPublicDocument();
+    const share = intake.unbranded ? undefined : createPublicDocument();
     const language = languageFromCookies(request.headers.get('cookie'));
     if (share) {
       const html = await prepareReservationHtml(

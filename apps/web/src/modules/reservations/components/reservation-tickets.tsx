@@ -39,11 +39,13 @@ export function ReservationTickets({
   request: suppliedRequest,
   branding = null,
   salesContractId,
+  unbranded = false,
   onClose,
 }: {
   request: ReservationIntakeV1;
   branding?: TravelBrandingV1 | null;
   salesContractId?: string;
+  unbranded?: boolean;
   onClose: () => void;
 }) {
   const [currentRequest, setCurrentRequest] =
@@ -61,7 +63,7 @@ export function ReservationTickets({
   }, []);
   const { logo } = useTravelLogo(
     branding,
-    branding?.ticketWithoutLogo === true,
+    unbranded || branding?.ticketWithoutLogo === true,
   );
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
@@ -124,6 +126,7 @@ export function ReservationTickets({
     flightNumbers,
   ).map((ticket) => ({
     ...ticket,
+    unbranded,
     ...(documents.find((doc) => doc.customerId === ticket.passengerId)
       ? {
           eTicketNumber: documents.find(
@@ -238,7 +241,7 @@ export function ReservationTickets({
   const [downloading, setDownloading] = useState(false);
   const ticket = tickets.find((item) => item.passengerId === selected);
   const shared = usePublicDocumentLink(
-    branding && documents.length
+    !unbranded && branding && documents.length
       ? '/reservations/requests/' +
           encodeURIComponent(request.id) +
           '/tickets/pdf?' +
@@ -249,7 +252,9 @@ export function ReservationTickets({
     JSON.stringify([request.snapshot, documents, flightNumbers]),
   );
   const documentUrl = (passengerId: string) =>
-    shared?.documents?.find((item) => item.passengerId === passengerId)?.url;
+    !unbranded
+      ? shared?.documents?.find((item) => item.passengerId === passengerId)?.url
+      : undefined;
   useEffect(() => {
     let active = true;
     const ids = [
@@ -373,6 +378,7 @@ export function ReservationTickets({
     try {
       await ensureNumbers(all);
       const parameters = new URLSearchParams();
+      if (unbranded) parameters.set('unbranded', 'true');
       if (passengerId) parameters.set('passengerId', passengerId);
       if (salesContractId) parameters.set('salesContractId', salesContractId);
       const path = `/reservations/requests/${encodeURIComponent(request.id)}/tickets/pdf${parameters.size ? `?${parameters}` : ''}`;
@@ -527,6 +533,7 @@ export function ReservationTickets({
                   <FlightTicketSheet
                     data={{
                       ...ticket,
+                      unbranded,
                       publicDocumentUrl: documentUrl(ticket.passengerId),
                       gender: passengerGender[ticket.passengerId] ?? null,
                       airlines: airlineMarks,
@@ -568,6 +575,7 @@ export function ReservationTickets({
                 <FlightTicketSheet
                   data={{
                     ...item,
+                    unbranded,
                     publicDocumentUrl: documentUrl(item.passengerId),
                     ...(branding
                       ? {
