@@ -371,6 +371,29 @@ describe('MessagingService', () => {
     );
   });
 
+  it('searches only an authorized conversation without acknowledging unrelated unread messages', async () => {
+    repository.messages!.mockResolvedValue([]);
+    await service.messages(
+      conversationId,
+      { search: '  قرارداد  ', limit: 2 },
+      actor,
+    );
+    expect(repository.messages).toHaveBeenCalledWith(
+      conversationId,
+      undefined,
+      3,
+      'قرارداد',
+    );
+    expect(repository.markRead).not.toHaveBeenCalled();
+    await expect(
+      service.messages(conversationId, { search: 'x'.repeat(101) }, actor),
+    ).rejects.toThrow();
+    repository.conversation!.mockResolvedValue(null);
+    await expect(
+      service.messages(conversationId, { search: 'قرارداد' }, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('returns the same saved text and attachment to the recipient', async () => {
     const documentId = '88888888-8888-4888-8888-888888888888';
     repository.messages!.mockResolvedValue([

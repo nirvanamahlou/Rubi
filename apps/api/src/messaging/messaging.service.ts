@@ -169,12 +169,14 @@ export class MessagingService {
       query.cursor === undefined
         ? undefined
         : validate.uuid(query.cursor, 'نشانگر');
+    const search = validate.search(query.search);
     const rows = await this.repository.messages(
       conversationId,
       cursor,
       requestedLimit + 1,
+      search,
     );
-    await this.repository.markRead(conversationId, actor.userId);
+    if (!search) await this.repository.markRead(conversationId, actor.userId);
     const hasMore = rows.length > requestedLimit;
     const page = rows.slice(0, requestedLimit);
     return {

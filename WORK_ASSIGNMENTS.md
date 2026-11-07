@@ -1,3 +1,7 @@
+## CHAT-MESSAGE-SEARCH-1107 — PC-B — READY_FOR_CI
+
+User authorizes in-conversation message search beside resize controls, push and develop merge. Reserve Messaging list search query/repository filtering, client and composer search results/pagination, tests and translations. Server-side history search stays within authorized conversation; search does not mark unrelated messages read. No schema/dependency/deployment. Validation: 97 Web/translation tests, 30 API tests and all 8 real PostgreSQL messaging tests passed; scoped lint passed. The first simultaneous local database run timed out in the existing attachment upload; an isolated rerun passed all cases. Coverage includes history beyond the current feed, non-overlapping cursor pages, authorization and unread preservation. Final-head hosted gates precede merge.
+
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
