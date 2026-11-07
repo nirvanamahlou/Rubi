@@ -113,7 +113,12 @@ function relativeApiPath(requestUrl: string, apiBaseUrl: string) {
 }
 
 function isIgnoredMutation(path: string, method: string) {
-  if (method === 'POST' && callCenterReadPaths.has(path.replace(/\/+$/, '')))
+  const normalizedPath = path.replace(/\/+$/, '');
+  if (
+    method === 'POST' &&
+    (callCenterReadPaths.has(normalizedPath) ||
+      normalizedPath === 'customer-affairs/call-center/telephony/lease')
+  )
     return true;
   if (path === 'iam/auth' || path.startsWith('iam/auth/')) return true;
   if (

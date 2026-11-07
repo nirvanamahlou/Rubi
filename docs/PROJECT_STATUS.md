@@ -1,3 +1,11 @@
+## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
+
+User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
+
+## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
+
+Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
+
 ## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
 
 User authorizes conversation search, latest-message opening, Enter send, chat resizing and reaction participant display; push and develop merge. Reserve Workbench message-composer, reaction menu and focused helpers/tests; additive optional reaction users contract and MessagingService IAM name projection with API regressions. Names remain behind existing conversation authorization; old userIds consumers remain supported. No schema, permissions, dependency or deployment changes. Validation: 92 Workbench Web tests, 27 Messaging API tests and scoped API/Web ESLint passed. Final-head hosted type checks, production builds, full suite and PostgreSQL tests precede merge.
@@ -9121,6 +9129,15 @@ PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner exte
 Existing recipient-scoped call-center.assigned events now use the same bottom-right popup as internal messages. Exact queue link and same-page open-queue event retained; read/seen/historical/inaccessible items excluded.8 focused tests pass against current Contracts sources. No API/schema/migration changes; production publication pending.
 
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
+
+
+## NOTIFICATION-HR-REFRESH-1107 — 2026-11-07
+
+PC-B: fixed recurring generic bell creation from telephony leadership lease polling/release (the lease still functions; real call workflow alerts remain). Existing persistent read/dismiss behavior is retained. Added exact موقت label alongside historical موقت (مدت معین), retained آزمایشی in shared live contract options and exposed both in contextual fallback.
+
+Production read-only attendance diagnosis confirmed repeated scheduled sync failures: configured session anchor is ROTATED with no active family session, although that same native account has newer active sessions. Dedicated internal IAM attendance resolver now selects and revalidates a current ACTIVE/unexpired session of the explicitly configured account on every tick, checks active account/current HR management grant, and restricts branches to configured source intersection. No session/grant creation or expiration/revocation bypass; browser authentication and other protocol adapters stay unchanged. When all sessions expire/logout, it safely waits for that configured account to log in again and resumes on the next scheduled slot without deployment/restart. Existing HR UI already refreshes every minute; device schedule retained.
+
+Validation:31 focused IAM/Radan checks and51 Web notification/HR checks passed with current Contracts source and existing generated database artifact via external local test config. No schema, dependencies, production writes or deployment. Full final-head CI gates required before requested develop merge.
 
 ## CALL-HR-MANAGER-AUTHORITY-1107 — PC-C — IN_PROGRESS
 

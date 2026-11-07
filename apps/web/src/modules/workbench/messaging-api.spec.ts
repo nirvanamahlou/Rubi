@@ -21,6 +21,21 @@ describe('Workbench messaging API client', () => {
     );
   });
 
+  it('removes and promotes group members through authenticated encoded routes', async () => {
+    await messagingApi.removeMember('group/id', 'member/id');
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/conversations/group%2Fid/members/member%2Fid'),
+      expect.objectContaining({ method: 'DELETE', credentials: 'include' }),
+    );
+    await messagingApi.promoteMember('group/id', 'member/id');
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining(
+        '/conversations/group%2Fid/members/member%2Fid/owner',
+      ),
+      expect.objectContaining({ method: 'PUT', credentials: 'include' }),
+    );
+  });
+
   it('loads branch-scoped contacts with authenticated cookies', async () => {
     await messagingApi.contacts('رضا');
 

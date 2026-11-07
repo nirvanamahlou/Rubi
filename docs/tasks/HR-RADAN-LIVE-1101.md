@@ -15,7 +15,7 @@ COMPUTER_ID=PC-B. Owner requests local3100 activation for Niyayesh Seir Sahar; R
 
 ## Configuration and operation
 
-Set private environment values `HR_RADAN_ENABLED`, `HR_RADAN_BASE_URL`, `HR_RADAN_USERNAME`, `HR_RADAN_PASSWORD`, `HR_RADAN_BRANCH_ID`, `HR_RADAN_ACTOR_ID`, `HR_RADAN_SESSION_ID`. Do not commit their values. The actor/session must be an existing authorized native HR manager; expiration/revocation requires selecting a renewed session. A manual authorized sync does not depend on the polling session.
+Set private environment values `HR_RADAN_ENABLED`, `HR_RADAN_BASE_URL`, `HR_RADAN_USERNAME`, `HR_RADAN_PASSWORD`, `HR_RADAN_BRANCH_ID`, `HR_RADAN_ACTOR_ID`, `HR_RADAN_SESSION_ID`. Do not commit their values. The actor must be an existing authorized native HR manager. Scheduled sync resolves a currently valid session of that same configured account on each tick; HR_RADAN_SESSION_ID is retained only for compatibility with older releases. A manual authorized sync does not depend on the polling session.
 
 The owner-approved workstation bridge supplies local port3333 and the read-only company API. The PC must remain running and connected. No Windows startup persistence was added in this task. No schema/migration/dependency change or production application deployment.
 
@@ -38,3 +38,8 @@ Calculation reads source punches only in the bounded date window required for tw
 ## Owner-requested synchronization schedule
 
 Automatic reads run at09:00,09:15,09:30,09:45,10:00 and17:00,17:15,17:30,17:45,18:00 in Asia/Tehran; all other reads run at each full hour. A strict-future one-shot timer avoids off-slot startup requests and two-minute error retries. After a long pull or failure, select the next future clock slot instead of issuing catch-up bursts. Shutdown clears the timer and prevents rescheduling. Explicit manual sync is unchanged. Scoped status reports the UTC nextSyncAt and timeZone. Sixteen focused schedule/authorization/lifecycle checks pass, including clock boundaries and failure/shutdown behavior. No UI/schema/dependency change. Owner explicitly authorizes push and develop merge after exact-head hosted gates.
+
+
+### Attendance session refresh repair — 2026-11-07
+
+Scheduled sync resolves a currently ACTIVE, unexpired native session of HR_RADAN_ACTOR_ID through the dedicated internal IAM method on each tick. HR_RADAN_SESSION_ID is no longer pinned by scheduled attendance. Current active-user status, HR management grant and intersection with configured source branches are rechecked; no browser session, role or grant is created. If all sessions expire or are revoked, synchronization remains denied until that configured account logs in again; the next scheduled tick resumes without an API restart. Manual scoped sync is unchanged. Existing hourly/09:00 and17:00 quarter-hour schedule is unchanged. Production diagnosis read only: pinned ROTATED family had no live session while the same configured user had live sessions in newer families; no device or personnel data exported.
