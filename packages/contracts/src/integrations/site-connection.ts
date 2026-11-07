@@ -12,6 +12,11 @@ export interface SiteConnectionInputV1 {
 }
 
 export interface SiteConnectionStatusV1 {
+  protocol?: 'jahan-bastan.nora.v1';
+  lifecycle?: 'ACTIVE' | 'DISCONNECTED' | 'DELETED';
+  expiresAt?: string;
+  renewalState?: string;
+  remoteControlPending?: boolean;
   contract: 'integrations.site-connection.v1';
   systemId: string;
   configured: boolean;

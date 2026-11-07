@@ -473,12 +473,24 @@ export function NiyayeshEditor({
   branchId,
   systemId,
   onSaved,
+  siteName = 'نیایش',
+  availableResources,
+  canFilter = false,
 }: {
   branchId: string;
   systemId?: string;
   onSaved: () => void;
+  siteName?: string;
+  availableResources?: string[];
+  canFilter?: boolean;
 }) {
-  const [resource, setResource] = useState('tours');
+  const [resource, setResource] = useState(() =>
+    availableResources
+      ? (Object.keys(resources).find((key) =>
+          availableResources.includes(key),
+        ) ?? '')
+      : 'tours',
+  );
   const [id, setId] = useState('');
   const [records, setRecords] = useState<{ id: string; title: string }[]>([]);
   const [next, setNext] = useState(0);
@@ -495,6 +507,8 @@ export function NiyayeshEditor({
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [command, setCommand] = useState('');
+  const [query, setQuery] = useState('');
+  const [recordStatus, setRecordStatus] = useState('');
   useEffect(() => {
     const control = new AbortController();
     void (async () => {
@@ -584,12 +598,14 @@ export function NiyayeshEditor({
         undefined,
         undefined,
         systemId,
+        canFilter ? { query, status: recordStatus } : undefined,
       )
       .then((page) => {
+        if (control.signal.aborted) return;
         setRecords((old) => [
           ...(next ? old : []),
           ...page.items
-            .filter((i) => !i.archived)
+            .filter((i) => canFilter || !i.archived)
             .map((i) => ({
               id: i.externalId,
               title: String(i.data?.title ?? i.data?.name ?? i.externalId),
@@ -600,7 +616,16 @@ export function NiyayeshEditor({
       })
       .catch(() => {});
     return () => control.abort();
-  }, [branchId, systemId, resource, next, revision]);
+  }, [
+    branchId,
+    systemId,
+    resource,
+    next,
+    revision,
+    canFilter,
+    query,
+    recordStatus,
+  ]);
   async function save() {
     if (!contract) return;
     const payload = catalogueChanges(value, original);
@@ -620,7 +645,7 @@ export function NiyayeshEditor({
         contract.record ?? undefined,
         systemId,
       );
-      setNotice('اطلاعات در سایت نیایش ثبت شد.');
+      setNotice(`اطلاعات در سایت ${siteName} ثبت شد.`);
       onSaved();
       setId(String(saved.id));
       setRevision((v) => v + 1);
@@ -644,12 +669,44 @@ export function NiyayeshEditor({
       <div>
         <h3 className="text-lg font-bold">تعریف و ویرایش اطلاعات سایت</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          فرم کامل از قرارداد واقعی نیایش دریافت می‌شود. ثبت و اعتبارسنجی روی
-          همان سایت انجام می‌شود؛ اطلاعات موجود با نسخهٔ جدیدتر جایگزین
+          فرم کامل از قرارداد واقعی {siteName} دریافت می‌شود. ثبت و اعتبارسنجی
+          روی همان سایت انجام می‌شود؛ اطلاعات موجود با نسخهٔ جدیدتر جایگزین
           نمی‌شوند.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
+        {canFilter ? (
+          <>
+            <label className="grid gap-2 text-sm">
+              جستجوی نام در سایت
+              <Input
+                value={query}
+                maxLength={100}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setNext(0);
+                  setRecords([]);
+                }}
+              />
+            </label>
+            <label className="grid gap-2 text-sm">
+              فیلتر وضعیت رکورد
+              <NativeSearchSelect
+                value={recordStatus}
+                onChange={(event) => {
+                  setRecordStatus(event.target.value);
+                  setNext(0);
+                  setRecords([]);
+                }}
+              >
+                <option value="">همه وضعیت‌ها</option>
+                <option value="draft">پیش‌نویس</option>
+                <option value="published">منتشرشده</option>
+                <option value="archived">بایگانی‌شده</option>
+              </NativeSearchSelect>
+            </label>
+          </>
+        ) : null}
         <label className="grid gap-2 text-sm">
           بخش سایت
           <NativeSearchSelect
@@ -663,11 +720,16 @@ export function NiyayeshEditor({
               setNotice('');
             }}
           >
-            {Object.entries(resources).map(([key, title]) => (
-              <option key={key} value={key}>
-                {title}
-              </option>
-            ))}
+            {Object.entries(resources)
+              .filter(
+                ([key]) =>
+                  !availableResources || availableResources.includes(key),
+              )
+              .map(([key, title]) => (
+                <option key={key} value={key}>
+                  {title}
+                </option>
+              ))}
           </NativeSearchSelect>
         </label>
         <label className="grid gap-2 text-sm">
@@ -776,7 +838,7 @@ export function NiyayeshEditor({
                 busy || (id ? !contract.canUpdate : !contract.canCreate)
               }
             >
-              {busy ? 'در حال ثبت…' : 'ثبت در سایت نیایش'}
+              {busy ? 'در حال ثبت…' : `ثبت در سایت ${siteName}`}
             </Button>
             <Button
               type="button"

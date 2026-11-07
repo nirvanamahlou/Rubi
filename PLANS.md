@@ -598,3 +598,12 @@ The earlier package-three UI test guide requires restoration of this section bef
 - [x] Explicit native outbound adapter and isolated PostgreSQL acceptance.
 - [ ] Production extension/account and trunk configuration on the deployment PC.
 - [ ] Controlled real inbound/outbound call acceptance after deployment.
+
+## JAHAN-BASTAN-NORA-1107
+
+- [x] Dedicated secure producer/consumer and native services/workbooks.
+- [x] Durable rotation, offline revocation and personal/site/branch isolation.
+- [x] Synthetic HTTP/PostgreSQL acceptance; future business effects disabled.
+- [ ] Two develop PRs with every exact-head CI check green.
+- [ ] Separate owner-approved deployment; producer/migration before consumer,
+      then real production bundle import and explicit connection test.

@@ -18,6 +18,20 @@ const purpose = 'nora.integrations.site-connection.v1';
 
 /** Adapter-owned persistent storage; no site credentials enter the registry. */
 export class SiteConnectionStore {
+  async scopes(): Promise<{ branch: string; site: string }[]> {
+    if (!this.ready()) return [];
+    let files: string[];
+    try {
+      files = await readdir(join(this.directory()!, 'scopes'));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw error;
+    }
+    return files.flatMap((name) => {
+      const match = /^([a-f\d-]{36})--([a-z\d-]{1,80})\.json$/i.exec(name);
+      return match ? [{ branch: match[1]!, site: match[2]! }] : [];
+    });
+  }
   private directory() {
     const explicit = process.env.NORA_SITE_CONNECTIONS_CONFIG_DIR;
     const fallback = process.env.NORA_GHESTIROO_CONFIG_DIR;
@@ -136,6 +150,18 @@ export class SiteConnectionStore {
     )
       throw new ConflictException('نسخه اتصال معتبر نیست.');
     await mkdir(scope.directory, { recursive: true, mode: 0o700 });
+    const scopeDirectory = join(scope.directory, 'scopes');
+    await mkdir(scopeDirectory, { recursive: true, mode: 0o700 });
+    const marker = await open(
+      join(scopeDirectory, `${branch}--${site}.json`),
+      'a',
+      0o600,
+    );
+    try {
+      await marker.sync();
+    } finally {
+      await marker.close();
+    }
     const current = await this.read(branch, site);
     if ((current?.version ?? 0) !== expectedVersion)
       throw new ConflictException(
@@ -183,11 +209,13 @@ export class SiteConnectionStore {
         throw error;
       }
       if (process.platform !== 'win32') {
-        const dir = await open(scope.directory, 'r');
-        try {
-          await dir.sync();
-        } finally {
-          await dir.close();
+        for (const directory of [scopeDirectory, scope.directory]) {
+          const dir = await open(directory, 'r');
+          try {
+            await dir.sync();
+          } finally {
+            await dir.close();
+          }
         }
       }
     } finally {

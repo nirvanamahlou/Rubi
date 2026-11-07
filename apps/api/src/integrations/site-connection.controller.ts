@@ -69,4 +69,53 @@ export class SiteConnectionController {
       throw new BadRequestException('درخواست آزمون اتصال معتبر نیست.');
     return this.service.test(request.actor, branch, systemId);
   }
+  @Post('bundle')
+  @Header('Cache-Control', 'private, no-store')
+  async bundle(
+    @Req() request: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Param('systemId') systemId: string,
+    @Body() input: unknown,
+  ) {
+    if (request.headers['x-nora-site-connection'] !== '1')
+      throw new BadRequestException();
+    const result = await this.service.saveBundle(
+      request.actor,
+      branch,
+      systemId,
+      input,
+      request.headers.origin,
+    );
+    await this.iam.recordSelfActivity(
+      request.actor,
+      'integrations.jahan-bastan.configure',
+      'external_connection',
+      `${branch}:${systemId}`,
+    );
+    return result;
+  }
+  @Post('lifecycle')
+  @Header('Cache-Control', 'private, no-store')
+  async lifecycle(
+    @Req() request: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Param('systemId') systemId: string,
+    @Body() input: unknown,
+  ) {
+    if (request.headers['x-nora-site-connection'] !== '1')
+      throw new BadRequestException();
+    const result = await this.service.lifecycle(
+      request.actor,
+      branch,
+      systemId,
+      input,
+    );
+    await this.iam.recordSelfActivity(
+      request.actor,
+      'integrations.jahan-bastan.lifecycle',
+      'external_connection',
+      `${branch}:${systemId}`,
+    );
+    return result;
+  }
 }

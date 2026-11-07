@@ -5,6 +5,27 @@ import { request as httpsRequest } from 'node:https';
 import { BlockList } from 'node:net';
 
 export interface NiyayeshConnection {
+  protocol?: 'jahan-bastan.nora.v1';
+  jahan?: {
+    siteId: 'jahan-bastan';
+    connectionId: string;
+    branchId: string;
+    noraOrigin: string;
+    expiresAt: string;
+    signingKey: string;
+    resources: string[];
+    actorId: string;
+    remoteVersion: number;
+    state: 'ACTIVE' | 'DISCONNECTED' | 'DELETED';
+    pendingRenewal?: string;
+    renewalRetryAt?: string;
+    lastRenewedAt?: string;
+    lifecyclePending?: {
+      action: 'disconnect' | 'delete';
+      operationId: string;
+      expectedVersion: number;
+    };
+  };
   registrySystemId?: string;
   reportConnections?: Omit<NiyayeshConnection, 'reportConnections'>[];
   origin: string;
@@ -146,6 +167,10 @@ export async function niyayeshRead(
     ifMatch?: string;
   } = {},
 ): Promise<unknown> {
+  if (c.protocol === 'jahan-bastan.nora.v1') {
+    const { jahanRequest } = await import('./jahan-bastan.client.js');
+    return jahanRequest(c, subject, path, options);
+  }
   if (
     !/^\/api\/v1\/integration\/(capabilities$|dashboard$|presence$|report\?from=|catalogue\/[a-z-]+\/(?:schema$|value\/\d+$)|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
       path,

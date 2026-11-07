@@ -3,6 +3,16 @@ import type {
   IntegrationSystemConfigV1,
 } from '@nora/contracts';
 
+export function isJahanBastanSystem(
+  system: IntegrationSystemConfigV1,
+  registry: Pick<IntegrationRegistryV1, 'brands'>,
+) {
+  return (
+    registry.brands.find((brand) => brand.id === system.brandId)?.code ===
+    'jahan-bastan'
+  );
+}
+
 /** Route by registered identity or exact site host, never a translated display name. */
 export function isGhestirooSystem(
   system: IntegrationSystemConfigV1,
