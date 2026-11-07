@@ -1,3 +1,4 @@
+import type { InsuranceRateBandV1 } from '@nora/contracts';
 import {
   Injectable,
   ServiceUnavailableException,
@@ -13,7 +14,7 @@ const origin = 'https://sandboxapi.travis.ir';
 const unavailable = () =>
   new ServiceUnavailableException('اتصال آزمایشی بیمه تنظیم نشده است.');
 const invalid = () => new BadGatewayException('اطلاعات بیمه دریافت نشد.');
-/** Read-only sandbox transport. Never accepts URLs, credentials or policy actions from a browser. */
+/** Fixed sandbox transport. Never accepts URLs, credentials or customer policy payloads from a browser. */
 @Injectable()
 export class TravisSandboxService {
   configured() {
@@ -23,17 +24,20 @@ export class TravisSandboxService {
       Boolean(process.env.TRAVIS_SANDBOX_API_KEY?.trim())
     );
   }
-  private async read(
+  private async request(
     path:
       | '/api/General/Countries'
       | '/api/General/Duration-Of-Stays'
-      | '/api/Plans/Search',
+      | '/api/Plans/Search'
+      | '/api/Policies/Create'
+      | '/api/Policies/Confirm',
     body?: object,
-  ): Promise<Record<string, unknown>[]> {
+    method: 'POST' | 'PUT' = 'POST',
+  ): Promise<unknown> {
     if (!this.configured()) throw unavailable();
     try {
       const response = await fetch(origin + path, {
-        method: 'POST',
+        method,
         redirect: 'error',
         cache: 'no-store',
         headers: {
@@ -62,18 +66,173 @@ export class TravisSandboxService {
         code?: number;
         data?: unknown;
       };
-      if (
-        value.code !== 200 ||
-        !Array.isArray(value.data) ||
-        value.data.length > 5000 ||
-        value.data.some((v) => !v || typeof v !== 'object' || Array.isArray(v))
-      )
+      if (value.code !== 200 || value.data === undefined || value.data === null)
         throw invalid();
-      return value.data as Record<string, unknown>[];
+      return value.data;
     } catch {
       throw invalid();
     } // Never expose upstream bodies, URLs or credentials in an error.
   }
+  private async read(
+    path:
+      | '/api/General/Countries'
+      | '/api/General/Duration-Of-Stays'
+      | '/api/Plans/Search',
+    body?: object,
+  ): Promise<Record<string, unknown>[]> {
+    const data = await this.request(path, body);
+    if (
+      !Array.isArray(data) ||
+      data.length > 5000 ||
+      data.some((v) => !v || typeof v !== 'object' || Array.isArray(v))
+    )
+      throw invalid();
+    return data as Record<string, unknown>[];
+  }
+
+  /** Explicit synthetic sandbox smoke test. Never reads or writes a customer's policy. */
+  async testIssuance() {
+    const created = (await this.request('/api/Policies/Create', {
+      sourceCountryId: 1,
+      destinationCountryId: 5,
+      durationOfStay: 7,
+      travelKind: 1,
+      planId: 76,
+      travelTypeId: 1,
+      passportNo: 'SANDBOXTEST',
+      person: {
+        nationalCode: 'SANDBOXTEST',
+        isIranian: false,
+        firstName: 'آزمایشی',
+        lastName: 'سامانه',
+        firstNameLatin: 'SANDBOX',
+        lastNameLatin: 'TEST',
+        gender: 1,
+        birthDate: '1990-01-01T00:00:00Z',
+        mobile: '00000000000',
+        email: 'insurance-test@example.invalid',
+      },
+    })) as { policyId?: number };
+    if (
+      !Number.isSafeInteger(created?.policyId) ||
+      !created.policyId ||
+      created.policyId < 1
+    )
+      throw invalid();
+    const confirmed = (await this.request(
+      '/api/Policies/Confirm',
+      { policyId: created.policyId },
+      'PUT',
+    )) as { policyId?: number };
+    if (confirmed?.policyId !== created.policyId) throw invalid();
+    return {
+      providerStatus: 'SANDBOX_CONNECTED' as const,
+      sandboxOnly: true as const,
+      policyId: created.policyId,
+      confirmed: true as const,
+    };
+  }
+
+  async festivalRates() {
+    const catalog = await this.catalog();
+    const plan = catalog.plans.find((p) => p.id === 76);
+    if (!plan) throw invalid();
+    const destinations = [
+      { code: 'TR', id: 5 },
+      { code: 'CN', id: 59 },
+      { code: 'GE', id: 29 },
+      { code: 'MY', id: 30 },
+    ];
+    const ages = [
+      [0, 12],
+      [13, 65],
+      [66, 70],
+      [71, 75],
+      [76, 80],
+      [81, 120],
+    ] as const;
+    const caps = [...new Set(catalog.durations.map((d) => d.days))]
+      .filter((d) => d <= 365)
+      .sort((a, b) => a - b);
+    const jobs = destinations.flatMap((destination) =>
+      ages.flatMap(([minAge, maxAge]) =>
+        caps.map((maxDays, i) => ({
+          destination,
+          minAge,
+          maxAge,
+          minDays: i ? caps[i - 1]! + 1 : 1,
+          maxDays,
+        })),
+      ),
+    );
+    const output = destinations.map((d) => {
+      const country = catalog.countries.find(
+        (c) => c.id === d.id && c.standardCode === d.code,
+      );
+      if (!country) throw invalid();
+      return {
+        ...d,
+        name: country.title,
+        title: plan.title,
+        rates: [] as InsuranceRateBandV1[],
+        unsupported: 0,
+      };
+    });
+    let cursor = 0;
+    await Promise.all(
+      Array.from({ length: 4 }, async () => {
+        for (;;) {
+          const job = jobs[cursor++];
+          if (!job) return;
+          const birthDate =
+            String(new Date().getUTCFullYear() - job.minAge) +
+            '-01-01T00:00:00Z';
+          const quote = (durationOfStay: number) =>
+            this.read('/api/Plans/Search', {
+              sourceCountryId: 1,
+              destinationCountryId: job.destination.id,
+              planId: 76,
+              birthDate,
+              durationOfStay,
+            });
+          const values = await quote(job.maxDays);
+          const found = values.find((v) => v.id === 76);
+          const target = output.find((d) => d.id === job.destination.id)!;
+          if (!found) {
+            target.unsupported++;
+            continue;
+          }
+          const lower =
+            job.minDays === job.maxDays
+              ? found
+              : (await quote(job.minDays)).find((v) => v.id === 76);
+          if (!lower || lower.priceTotal !== found.priceTotal) throw invalid();
+          const amount = String(found.priceTotal);
+          if (
+            found.premiumCurrencyCode !== 'IRR' ||
+            !/^\d{1,15}(?:\.\d{1,4})?$/.test(amount)
+          )
+            throw invalid();
+          target.rates.push({
+            minAge: job.minAge,
+            maxAge: job.maxAge,
+            minDays: job.minDays,
+            maxDays: job.maxDays,
+            amount,
+            currencyCode: 'IRR',
+          });
+        }
+      }),
+    );
+    for (const destination of output) {
+      destination.rates.sort(
+        (a, b) => a.minDays - b.minDays || a.minAge - b.minAge,
+      );
+      if (!destination.rates.length) throw invalid();
+    }
+    return output;
+  }
+
   async catalog(): Promise<TravisSandboxCatalog> {
     const [countries, durations, plans] = await Promise.all([
       this.read('/api/General/Countries', {}),
