@@ -190,22 +190,57 @@ it('applies an unsaved selected broker immediately without adding a manual suppl
   expect(html).toContain('Reservation@niyayehseir.com');
 });
 
-it('hides the reservation preview without a selected broker', () => {
+it('renders brokerless reservation forms and leaderless issued vouchers for contracts without transfer', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  delete settings.brokerId;
+  delete settings.leaderId;
+  settings.text.broker = '';
+  const noTransfer = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      supplierFormSettings: settings,
+      voucherSettings: settings,
+      voucherIssued: true,
+      supplierStatus: 'CONFIRMED' as const,
+    },
+  };
+  expect(
+    renderToStaticMarkup(<TravelDocument intake={noTransfer} />),
+  ).toContain('data-document-preview');
+  expect(
+    renderToStaticMarkup(<TravelDocument intake={noTransfer} voucher />),
+  ).toContain('data-document-preview');
+});
+it('hides the reservation preview without a selected broker when the contract has transfer', () => {
   const workflow = { ...intake.workflow };
   delete workflow.supplierFormSettings;
   const html = renderToStaticMarkup(
-    <TravelDocument intake={{ ...intake, workflow }} />,
+    <TravelDocument
+      intake={{
+        ...intake,
+        snapshot: {
+          ...intake.snapshot,
+          serviceSelections: [{ kind: 'TRANSFER' }] as never,
+        },
+        workflow,
+      }}
+    />,
   );
   expect(html).not.toContain('data-document-preview');
   expect(html).toContain('disabled');
 });
-it('hides an issued voucher without a selected directory leader', () => {
+it('hides an issued voucher without a selected directory leader when the contract has transfer', () => {
   const settings = defaultVoucherSettings(intake, {});
   settings.brokerId = 'broker';
   const html = renderToStaticMarkup(
     <TravelDocument
       intake={{
         ...intake,
+        snapshot: {
+          ...intake.snapshot,
+          serviceSelections: [{ kind: 'TRANSFER' }] as never,
+        },
         workflow: {
           ...intake.workflow,
           voucherIssued: true,

@@ -1,6 +1,7 @@
 import { SalesPartyCorrectionService } from './sales-party-correction.service';
 import { SalesProfitService } from './sales-profit.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -34,6 +35,7 @@ describe('authenticated Sales XLSX HTTP route', () => {
         { provide: SalesPartyCorrectionService, useValue: {} },
         { provide: SalesProfitService, useValue: {} },
         { provide: TravelWorkflowService, useValue: {} },
+        { provide: ReservationTicketDocumentsService, useValue: {} },
         { provide: FinanceDeliveryService, useValue: {} },
         { provide: SalesService, useValue: service },
         { provide: SalesOutputService, useValue: {} },

@@ -7,6 +7,8 @@ import { requestDisplayLanguage } from '../common/i18n/language';
 import { SalesProfitService } from './sales-profit.service';
 import { ForbiddenException } from '@nestjs/common';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import {
   Body,
@@ -55,6 +57,8 @@ export class SalesController {
     private readonly travel: TravelWorkflowService,
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
+    @Inject(ReservationTicketDocumentsService)
+    private readonly ticketDocuments?: ReservationTicketDocumentsService,
   ) {}
 
   @Patch('contracts/:id/amend')
@@ -93,16 +97,26 @@ export class SalesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    await this.service.detail(id, req.actor);
+    const { data: contract } = await this.service.detail(id, req.actor);
     const intake = await this.travel.forContract(id, req.actor.branchIds);
     const authorization = await this.delivery.readCustomerContract(id);
     if (
       !authorization.approved ||
+      contract.status === 'CANCELLED' ||
       intake.workflow.supplierStatus === 'CANCELLED'
     )
       throw new ForbiddenException(
         'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
       );
+    if (isFloatingSalesContract(intake.snapshot.serviceSelections)) {
+      const output = await this.travel.floatingDocumentOutput(
+        intake,
+        req.actor,
+      );
+      const ticketDocuments =
+        await this.ticketDocuments!.issueFloatingForDelivery(output, req.actor);
+      return { data: { ...output, ticketDocuments }, delivery: authorization };
+    }
     return { data: intake, delivery: authorization };
   }
   @Get('contracts/:id/output')

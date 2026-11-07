@@ -1,3 +1,4 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
@@ -6,6 +7,7 @@ import {
   salesContractFlights,
   readLegacyServiceParties,
   reservationFlightOutputKey,
+  isFloatingSalesContract,
 } from '@nora/contracts';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
@@ -48,6 +50,42 @@ export class TravelWorkflowService {
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
   ) {}
+  /** Read-only document defaults; never manufacture a supplier confirmation. */
+  async floatingDocumentOutput<
+    T extends {
+      snapshot: SalesReservationRequestV1;
+      workflow: TravelWorkflowStateV1;
+    },
+  >(intake: T, actor: AuthenticatedActor): Promise<T> {
+    if (
+      !isFloatingSalesContract(intake.snapshot.serviceSelections) ||
+      intake.workflow.supplierStatus === 'CANCELLED'
+    )
+      return intake;
+    let branding = intake.workflow.branding;
+    if (!branding) {
+      const { data } = await this.entities.current(actor);
+      if (!data.legalEntity)
+        throw new BadRequestException('ابتدا شرکت صادرکننده را انتخاب کنید.');
+      branding = {
+        kind: 'OWN',
+        referenceId: data.legalEntity.id,
+        name: data.legalEntity.persianName,
+        logoFileId: data.legalEntity.logoFileId,
+        companyCode: data.legalEntity.code,
+      };
+    }
+    return {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        branding,
+        voucherIssued:
+          intake.workflow.voucherIssued ||
+          Boolean(intake.snapshot.hotelSelection),
+      },
+    };
+  }
   async detail(
     id: string,
     branchIds: readonly string[],
@@ -264,6 +302,8 @@ export class TravelWorkflowService {
                 readLegacyServiceParties(intake.snapshot.serviceSelections) !==
                   null),
             reservationHotelStays(intake.snapshot).map((stay) => stay.key),
+            true,
+            reservationHasTransfer(intake.snapshot),
           );
         } catch (error) {
           throw new BadRequestException(

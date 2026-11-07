@@ -1,8 +1,10 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
 } from '@/modules/reservations/model/supplier-document-scope';
 import { reservationHotelStays } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
@@ -36,6 +38,14 @@ export async function GET(
   const kind = new URL(request.url).searchParams.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  const salesContractId = new URL(request.url).searchParams.get(
+    'salesContractId',
+  );
+  if (
+    salesContractId &&
+    (!voucher || !/^[0-9a-f-]{36}$/i.test(salesContractId))
+  )
+    return fail('شناسه درخواست معتبر نیست.', 400);
   const formScope =
     new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
   if (
@@ -59,7 +69,11 @@ export async function GET(
       signal: AbortSignal.timeout(15000),
     });
   try {
-    const response = await get(`/reservations/requests/${id}/workflow`);
+    const response = await get(
+      salesContractId
+        ? `/sales/contracts/${salesContractId}/travel-documents`
+        : `/reservations/requests/${id}/workflow`,
+    );
     if (!response.ok)
       return fail(
         'دریافت فرم مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
@@ -69,6 +83,8 @@ export async function GET(
       data: ReservationFormIntake;
     };
     let intake = rawIntake;
+    if (salesContractId && intake.id !== id)
+      return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
     if (hotelStayKey) {
       try {
         intake = hotelFormScope(rawIntake, hotelStayKey);
@@ -94,12 +110,15 @@ export async function GET(
       return fail('واچر هنوز صادر نشده است.', 409);
     if (
       voucher &&
+      !isFloatingSalesContract(intake.snapshot.serviceSelections) &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.voucherSettings?.brokerId ||
         !intake.workflow.voucherSettings?.leaderId)
     )
       return fail('ابتدا کارگزار و تورلیدر واچر را انتخاب کنید.', 409);
     if (
       !voucher &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.supplierFormSettings?.brokerId ||
         !intake.workflow.supplierFormSettings?.text.broker?.trim())
     )

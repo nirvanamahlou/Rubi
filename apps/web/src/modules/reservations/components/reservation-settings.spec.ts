@@ -65,6 +65,22 @@ describe('reservation supplier directory', () => {
 });
 
 import { sendSavedReservationForm } from './reservation-settings';
+it('sends a brokerless saved form when the contract has no transfer', async () => {
+  request.mockClear();
+  request.mockResolvedValueOnce({
+    data: { version: 6, supplierStatus: 'REQUESTED' },
+  });
+  await sendSavedReservationForm(
+    'r',
+    { version: 5, supplierFormSettings: {} } as never,
+    undefined,
+    false,
+  );
+  expect(request).toHaveBeenCalledWith(
+    'reservations/requests/r/workflow',
+    expect.objectContaining({ action: 'REQUEST_SUPPLIER', expectedVersion: 5 }),
+  );
+});
 it('requires a saved broker before sending and uses the newly saved version', async () => {
   request.mockClear();
   await expect(

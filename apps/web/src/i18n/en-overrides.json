@@ -1,6 +1,8 @@
 {
   "درخواست‌های تأییدشده": "Approved requests",
   "درخواست‌های در انتظار": "Pending requests",
+  "کودکان ۲ تا ۶ سال": "Children aged 2 to under 6",
+  "کودکان ۶ تا ۱۲ سال": "Children aged 6 to under 12",
   "اطلاعات پرواز با روش جابه‌جایی انتخاب‌شده سازگار نیست.": "The flight details do not match the selected transport method.",
   "اطلاعات جابه‌جایی هتل‌ها معتبر نیست.": "The hotel transport details are invalid.",
   "افزودن جابه‌جایی به این هتل": "Add transport to this hotel",

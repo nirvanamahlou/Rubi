@@ -339,6 +339,9 @@ TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, life
 ## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
 One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107
+Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with insert-only migration. Preserve configured IDs, policies and deactivation. Isolated PostgreSQL regression exercises missing references and replay preservation under existing receipt-reference CI gate. No operational data changes or deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9040,6 +9043,10 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 
 Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
 
+## CALL-CENTER-RELEASE-1107 — PC-C — DEPLOYED_AND_VERIFIED
+
+All initially open Amin-tech11 PRs were repaired/integrated and merged after their complete current-head quality/test/build/PostgreSQL gates. On2026-11-07 only the three backup directories specifically approved by the owner were retired after a retained complete backup passed digest/decryption/archive checks. Develop7000f7b1b API/Web/Worker became active through the concurrent exact-version rollout; this task reused that release and independently matched177 Call Center/Issabel/notification source files. Both request-review/outcome migrations are applied;109 focused tests pass in the deployed image (13 opt-in PostgreSQL cases skipped in this isolated runtime invocation; hosted PostgreSQL gate already successful). Existing-role access to the review table and foreign-key/check constraints verified. An encrypted verified database backup precedes audited reconciliation of exactly four saved historical completion flags; repeated preview reports no eligible repairs. Worker authentication, recent AMI connection, recording timer, HTTPS, runtime restart counters and static assets pass. Real caller/recording contents were not copied into Git or off-server. No additional application deployment is needed for this documentation closeout. Evidence: tasks/CALL-CENTER-RELEASE-1107.md.
+
 ## CALL-COMPLETION-1105 — PC-C — SOURCE_READY
 
 Corrected shared completion criteria: optional caller name and unknown immutable phone no longer keep an otherwise completed call incomplete. All staff use the same producer; existing report/drilldown refresh preserved. Added preview-first audited reconciliation for saved terminal historical calls and revision invalidation for filtered pages.66 targeted tests pass, including disposable PostgreSQL preservation, concurrent replay and report/filter checks. Production read-only inspection identified4 identity-only mismatches among181 flagged calls; no live data or release changed. Full CI/build and backed-up rollout with reconciliation remain required. See tasks/CALL-COMPLETION-1105.md.
@@ -9089,3 +9096,19 @@ PC-B: owner-requested inbox approval groups and receipt download implemented. De
 Receipt PDF/JPEG/PNG downloads can proceed from the source-bound Sales endpoint while antivirus is pending/unavailable. Generic Documents access does not acquire this exception; wrong-source/branch, infected/quarantined files, custom confidential codes and access audits remain enforced. No schema, migration, dependency, operational data or deployment changes.
 
 Validation:169 focused API and18 Web tests pass; Web typecheck caught and corrected the native Button primary variant. Shared local dependency artifacts require API tests to resolve the existing generated database package and current Contracts source through a temporary external test config. Final-head hosted full build/type/test/migration gates remain required before authorized develop merge. Source reservation freezes on push.
+
+
+## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
+
+PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
+
+
+
+
+## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
+
+PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
+
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — IN_PROGRESS
+
+PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
