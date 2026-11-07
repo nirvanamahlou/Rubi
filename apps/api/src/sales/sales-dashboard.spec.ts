@@ -216,6 +216,38 @@ describe('filtered receivables', () => {
     );
     return { service, dashboardRows, partyKinds };
   }
+  it('filters balances by seller and saved floating metadata, retaining all authorized seller choices', async () => {
+    const { service, dashboardRows } = setup();
+    const source = await dashboardRows();
+    const seller = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    source[0].ownerUserId = seller;
+    source[0].services = [
+      { kind: 'FLIGHT', metadata: { contractFlightVersion: 1 } },
+    ] as never;
+    source[1].ownerUserId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    dashboardRows.mockResolvedValue(source);
+    const result = await service.receivables(
+      { ownerUserId: seller, supplyType: 'FLOATING' },
+      actor,
+    );
+    expect(result.data.contractCount).toBe(1);
+    expect(result.data.balances).toEqual([
+      { currencyCode: 'IRR', amount: '80.25' },
+    ]);
+    expect(result.data.sellers).toHaveLength(2);
+    expect(
+      (
+        await service.receivables(
+          { ownerUserId: seller, supplyType: 'CHARTER' },
+          actor,
+        )
+      ).data.contractCount,
+    ).toBe(0);
+    expect(
+      (await service.receivables({ supplyType: 'ALL' }, actor)).data
+        .contractCount,
+    ).toBe(2);
+  });
   it('omits cancelled rows from filtered counts, balances and route/agency choices', async () => {
     const { service, dashboardRows, partyKinds } = setup();
     const source = await dashboardRows();
