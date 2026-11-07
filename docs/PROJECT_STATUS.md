@@ -9040,6 +9040,10 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 
 Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
 
+## CALL-CENTER-RELEASE-1107 — PC-C — DEPLOYED_AND_VERIFIED
+
+All initially open Amin-tech11 PRs were repaired/integrated and merged after their complete current-head quality/test/build/PostgreSQL gates. On2026-11-07 only the three backup directories specifically approved by the owner were retired after a retained complete backup passed digest/decryption/archive checks. Develop7000f7b1b API/Web/Worker became active through the concurrent exact-version rollout; this task reused that release and independently matched177 Call Center/Issabel/notification source files. Both request-review/outcome migrations are applied;109 focused tests pass in the deployed image (13 opt-in PostgreSQL cases skipped in this isolated runtime invocation; hosted PostgreSQL gate already successful). Existing-role access to the review table and foreign-key/check constraints verified. An encrypted verified database backup precedes audited reconciliation of exactly four saved historical completion flags; repeated preview reports no eligible repairs. Worker authentication, recent AMI connection, recording timer, HTTPS, runtime restart counters and static assets pass. Real caller/recording contents were not copied into Git or off-server. No additional application deployment is needed for this documentation closeout. Evidence: tasks/CALL-CENTER-RELEASE-1107.md.
+
 ## CALL-COMPLETION-1105 — PC-C — SOURCE_READY
 
 Corrected shared completion criteria: optional caller name and unknown immutable phone no longer keep an otherwise completed call incomplete. All staff use the same producer; existing report/drilldown refresh preserved. Added preview-first audited reconciliation for saved terminal historical calls and revision invalidation for filtered pages.66 targeted tests pass, including disposable PostgreSQL preservation, concurrent replay and report/filter checks. Production read-only inspection identified4 identity-only mismatches among181 flagged calls; no live data or release changed. Full CI/build and backed-up rollout with reconciliation remain required. See tasks/CALL-COMPLETION-1105.md.
@@ -9080,6 +9084,8 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 ## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
 
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
+
+
 
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 

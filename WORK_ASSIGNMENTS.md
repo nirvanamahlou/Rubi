@@ -1,6 +1,8 @@
-## AMIN-PR-CALL-RELEASE-1105 — PC-C — IN_PROGRESS
+## AMIN-PR-CALL-RELEASE-1105 — PC-C — DONE
 
 Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
+
+Closeout 2026-11-07: PR1397/1406/1407/1419 integrated and merge-committed after all exact-head hosted gates; PR1429/1430 also merged. Resume publication authorized after integrity-verifying a retained complete backup and retiring only the three explicitly owner-named old backups. Reused the concurrent exact develop7000f7b1b rollout, then independently verified177 relevant Call Center/Issabel/notification sources, both additive Call Center migrations,109 runtime-image tests and Worker/AMI/recording/HTTPS/assets. Backed-up audited reconciliation repaired exactly four historical completion flags; subsequent preview has zero eligible repairs. No new feature, dependency, permission grant or contact fact change in closeout. Reserve only this completion paragraph, own appended Project Status and tasks/CALL-CENTER-RELEASE-1107.md on codex/pc-c-call-center-release-1107; release on verified merge.
 
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
 
