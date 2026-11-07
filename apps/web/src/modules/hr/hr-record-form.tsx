@@ -78,7 +78,7 @@ interface HrRecordFormProps {
 export function HrRecordForm(props: HrRecordFormProps) {
   if (
     props.target.source.section === 'expenses' &&
-    props.target.source.tab === 'mission'
+    ['mission', 'claims'].includes(props.target.source.tab)
   )
     return <HrMissionForm {...props} />;
   if (
@@ -660,13 +660,6 @@ function HrRecordFormFields({
                   </option>
                 ))}
               </NativeSearchSelect>
-              {missionExpense && !references.loading && !parents.length ? (
-                <span className={ui.muted}>
-                  برای شرکت و کارمند انتخاب‌شده مأموریتی ثبت نشده است. شرکت یا
-                  کارمند را بررسی کنید یا از بخش مأموریت‌ها درخواست مأموریت ثبت
-                  کنید.
-                </span>
-              ) : null}
             </label>
           ) : null}
         </div>

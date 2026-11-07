@@ -1,10 +1,11 @@
 'use client';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
-import { Plus, RefreshCw } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import type { HrSectionId } from './hr.model';
 import { screenMeta, sectionTabs } from './hr.model';
@@ -77,6 +78,10 @@ function AccessibleHrSection({
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
+  const [missionCosts, setMissionCosts] = useState<{
+    mission: HrRecordDto;
+    items: HrRecordDto[];
+  } | null>(null);
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [status, setStatus] = useState('');
@@ -584,6 +589,27 @@ function AccessibleHrSection({
           <>
             <HrTable
               data={dataset}
+              {...(source.section === 'expenses' && source.tab === 'mission'
+                ? {
+                    rowActions: (index: number) => (
+                      <HrButton
+                        aria-label="ریزهزینه‌های مأموریت"
+                        onClick={() => {
+                          const mission = currentItems[index]!;
+                          void allHrRecords({
+                            section: 'expenses',
+                            tab: 'claims',
+                            parentId: mission.id,
+                          })
+                            .then((r) => setMissionCosts({ mission, items: r }))
+                            .catch((e) => setError(e.message));
+                        }}
+                      >
+                        <ChevronDown size={16} aria-hidden="true" />
+                      </HrButton>
+                    ),
+                  }
+                : {})}
               {...(source.section === 'recruitment' &&
               source.tab === 'applicants' &&
               writable
@@ -622,6 +648,50 @@ function AccessibleHrSection({
                   }
                 : {})}
             />
+            {missionCosts && (
+              <Dialog
+                open
+                onOpenChange={(v) => {
+                  if (!v) setMissionCosts(null);
+                }}
+              >
+                <DialogContent
+                  dir="rtl"
+                  className="max-h-[85dvh] max-w-4xl overflow-auto"
+                >
+                  <DialogTitle>
+                    ریزهزینه‌های مأموریت {missionCosts.mission.code}
+                  </DialogTitle>
+                  <HrTable
+                    data={recordsDataset(
+                      'expenses',
+                      'claims',
+                      missionCosts.items,
+                    )}
+                    {...(writable
+                      ? {
+                          onEdit: (i: number) => {
+                            onForm({
+                              source: {
+                                section: 'expenses',
+                                tab: 'claims',
+                                label: 'هزینه مستقل',
+                                action: 'ویرایش',
+                              },
+                              record: missionCosts.items[i]!,
+                            });
+                            setMissionCosts(null);
+                          },
+                          onDelete: (i: number) => {
+                            setRemoving(missionCosts.items[i]!);
+                            setMissionCosts(null);
+                          },
+                        }
+                      : {})}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
             <div className={ui.pagination}>
               <span>{total.toLocaleString('fa-IR')} نتیجه</span>
               <HrButton disabled={page === 1} onClick={() => setPage(page - 1)}>

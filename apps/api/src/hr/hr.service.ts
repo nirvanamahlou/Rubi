@@ -2178,6 +2178,20 @@ export class HrService {
     if (Array.isArray(submitted) && employee && canonicalEmployeeColumn >= 0)
       submitted[canonicalEmployeeColumn] = employee.name;
     const values = validate.recordValues(submitted, schema);
+    if (schema.key === 'expenses.claims' && data.missionExpense) {
+      const expense = data.missionExpense;
+      if (
+        !new Prisma.Decimal(expense.amount).equals(values[4]!) ||
+        (data.currency && data.currency !== values[3]) ||
+        !data.startsAt ||
+        validate.localClockParts(new Date(data.startsAt)).date !== values[2]
+      )
+        throw new BadRequestException(
+          'اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.',
+        );
+      data.currency = values[3]!;
+    }
+
     const employeeColumn = schema.columns.indexOf('کارمند');
     if (employeeColumn >= 0 && employee) values[employeeColumn] = employee.name;
     if (
@@ -2876,7 +2890,10 @@ export class HrService {
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
     this.chartCoordinates(schema, data);
-    if (data.missionExpense && schema.key !== 'expenses.mission')
+    if (
+      data.missionExpense &&
+      !['expenses.mission', 'expenses.claims'].includes(schema.key)
+    )
       throw new BadRequestException('هزینه فقط برای مأموریت مجاز است.');
     const networkPassword = this.devicePassword(
       input.privateData,
@@ -3122,7 +3139,7 @@ export class HrService {
           });
         }
         if (
-          schema.key === 'expenses.mission' &&
+          ['expenses.mission', 'expenses.claims'].includes(schema.key) &&
           data.missionExpense?.referToPetty
         ) {
           if (!validate.APPROVED.has(state))
@@ -3146,6 +3163,7 @@ export class HrService {
               ...(expense.receipt ? { receipt: expense.receipt } : {}),
             },
             actor,
+            data.currency,
           );
           await tx.hrRecord.update({
             where: { id: row.id },
@@ -3206,10 +3224,7 @@ export class HrService {
       : undefined;
     const saved = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
-      if ((row.data as HrWorkflowData).pettyRegistrationId)
-        throw new ConflictException(
-          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
-        );
+
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
@@ -3220,8 +3235,7 @@ export class HrService {
       if (providedData?.missionExpense) {
         if (
           row.section !== 'expenses' ||
-          row.tab !== 'mission' ||
-          providedData.missionExpense.referToPetty
+          !['mission', 'claims'].includes(row.tab)
         )
           throw new BadRequestException(
             'ارجاع هزینه تنها هنگام ثبت مأموریت مجاز است.',
@@ -3381,7 +3395,13 @@ export class HrService {
         await this.approve(tx, schema, actor, employee);
       else this.writeResource(schema, actor, employee);
       const cancel = state === 'لغوشده' && validate.APPROVED.has(row.status);
-      if (schema.approval && validate.FINAL.has(row.status) && !cancel)
+      if (
+        schema.approval &&
+        validate.FINAL.has(row.status) &&
+        !cancel &&
+        (!['expenses.mission', 'expenses.claims'].includes(schema.key) ||
+          (input.parentId !== undefined && input.parentId !== row.parentId))
+      )
         throw new ConflictException(
           'رکورد نهایی تغییرپذیر نیست؛ اصلاحیه مرتبط ثبت کنید.',
         );
@@ -3657,6 +3677,38 @@ export class HrService {
             `${row.branchId}:${row.id}:time.biometric`,
           ),
         };
+      if (['expenses.mission', 'expenses.claims'].includes(schema.key)) {
+        const previous = (row.data as HrWorkflowData).pettyRegistrationId;
+        const expense = data.missionExpense;
+        if ((previous || expense?.referToPetty) && !this.missionPetty)
+          throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+        if (previous)
+          await this.missionPetty!.reverse(tx, previous, row.branchId, actor);
+        delete (persistedData as HrWorkflowData).pettyRegistrationId;
+        if (expense?.referToPetty) {
+          if (!validate.APPROVED.has(state))
+            throw new BadRequestException(
+              'ارجاع به تنخواه نیازمند مأموریت تأییدشده است.',
+            );
+          const posted = await this.missionPetty!.register(
+            tx,
+            {
+              id: randomUUID(),
+              branchId: row.branchId,
+              title: expense.title,
+              occurredAt: data.startsAt,
+              amount: expense.amount,
+              costCenter: expense.costCenter,
+              fee: expense.fee,
+              description: expense.description,
+              ...(expense.receipt ? { receipt: expense.receipt } : {}),
+            },
+            actor,
+            data.currency,
+          );
+          (persistedData as HrWorkflowData).pettyRegistrationId = posted.id;
+        }
+      }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
         data: {
@@ -3895,10 +3947,7 @@ export class HrService {
     let affected: RecordRow | undefined;
     const result = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
-      if ((row.data as HrWorkflowData).pettyRegistrationId)
-        throw new ConflictException(
-          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
-        );
+
       affected = row;
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
@@ -3983,12 +4032,22 @@ export class HrService {
         ? await this.employee(tx, row.employeeId, actor)
         : null;
       this.writeResource(schema, actor, employee);
-      if (schema.approval && validate.FINAL.has(row.status))
+      if (
+        schema.approval &&
+        validate.FINAL.has(row.status) &&
+        !['expenses.mission', 'expenses.claims'].includes(schema.key)
+      )
         throw new ConflictException(
           'تاریخچه نهایی حذف نمی‌شود؛ از لغو یا اصلاحیه استفاده کنید.',
         );
       if (await tx.hrRecord.count({ where: { parentId: id, deletedAt: null } }))
         throw new ConflictException('پرونده دارای رکورد وابسته فعال است.');
+      const pettyId = (row.data as HrWorkflowData).pettyRegistrationId;
+      if (pettyId) {
+        if (!this.missionPetty)
+          throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+        await this.missionPetty.reverse(tx, pettyId, row.branchId, actor);
+      }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: v, deletedAt: null },
         data: { deletedAt: new Date(), version: { increment: 1 } },

@@ -7878,5 +7878,7 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "ارز هزینه با تنخواه یکسان نیست.": "The expense currency must match the petty-cash fund.",
+  "اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.": "Expense details do not match the submitted values."
 }

@@ -92,7 +92,7 @@ export function SalesTravelDocuments({
       >
         <DialogContent
           dir="rtl"
-          className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
+          className="max-h-[85dvh] space-y-5 overflow-y-auto p-5 sm:max-w-3xl sm:p-6"
         >
           <DialogTitle>مدارک مجاز برای تحویل به مسافر</DialogTitle>
           <DialogDescription>
@@ -124,6 +124,7 @@ export function SalesTravelDocuments({
                 بدون لوگو، نام شرکت، فوتر و بارکد
               </label>
               <Button
+                className="min-h-11 w-full sm:w-auto"
                 disabled={busy || !intake.workflow.branding}
                 onClick={() => void load(true)}
               >
