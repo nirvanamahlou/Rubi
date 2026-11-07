@@ -1,3 +1,4 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   reservationPurchaseRegistered,
   reservationPurchasesComplete,
@@ -619,17 +620,26 @@ export class ReservationRequestsController {
     }
     if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
       const current = await this.workflow.detail(id, req.actor.branchIds);
-      if (!current.workflow.sentSupplierFormSettings?.brokerId)
+      const requiresParty = reservationHasTransfer(current.snapshot);
+      if (
+        requiresParty
+          ? !current.workflow.sentSupplierFormSettings?.brokerId
+          : !(
+              current.workflow.sentSupplierFormVersion &&
+              current.workflow.sentSupplierFormSettings
+            )
+      )
         throw new BadRequestException(
           'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
         );
       const settings = current.workflow.voucherSettings;
-      if (!settings?.brokerId)
+      if (requiresParty && !settings?.brokerId)
         throw new BadRequestException('کارگزار را انتخاب کنید.');
-      await this.directory!.voucherBrokerName(settings.brokerId);
-      if (settings.transferBrokerId)
+      if (settings?.brokerId)
+        await this.directory!.voucherBrokerName(settings.brokerId);
+      if (settings?.transferBrokerId)
         await this.directory!.voucherBrokerName(settings.transferBrokerId);
-      if (settings.leaderId)
+      if (settings?.leaderId && settings.brokerId)
         await this.directory!.voucherLeaderContact(
           settings.transferBrokerId ?? settings.brokerId,
           settings.leaderId,

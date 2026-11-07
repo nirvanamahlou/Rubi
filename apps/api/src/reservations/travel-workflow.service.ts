@@ -1,3 +1,4 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
@@ -264,6 +265,8 @@ export class TravelWorkflowService {
                 readLegacyServiceParties(intake.snapshot.serviceSelections) !==
                   null),
             reservationHotelStays(intake.snapshot).map((stay) => stay.key),
+            true,
+            reservationHasTransfer(intake.snapshot),
           );
         } catch (error) {
           throw new BadRequestException(

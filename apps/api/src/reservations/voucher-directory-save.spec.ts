@@ -229,6 +229,38 @@ it('validates a separate transfer supplier while preserving explicit per-voucher
 });
 
 it.each(['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'] as const)(
+  'permits %s without broker or leader only for a sent contract form without transfer',
+  async (action) => {
+    const s = setup();
+    s.detail.mockResolvedValue({
+      snapshot: { serviceSelections: [] },
+      workflow: { sentSupplierFormVersion: 2, sentSupplierFormSettings: {} },
+    });
+    await s.controller.workflowUpdate(
+      'intake',
+      { action, expectedVersion: 2, note: '' },
+      s.request,
+    );
+    expect(s.update).toHaveBeenCalled();
+    expect(s.voucherLeaderContact).not.toHaveBeenCalled();
+    s.detail.mockResolvedValue({
+      snapshot: { serviceSelections: [{ kind: 'TRANSFER' }] },
+      workflow: {
+        sentSupplierFormVersion: 2,
+        sentSupplierFormSettings: {},
+        voucherSettings: { flags: { transfer: false } },
+      },
+    });
+    await expect(
+      s.controller.workflowUpdate(
+        'intake',
+        { action, expectedVersion: 2, note: '' },
+        s.request,
+      ),
+    ).rejects.toThrow('فرم');
+  },
+);
+it.each(['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'] as const)(
   'permits %s without a leader for a voucher without transfer',
   async (action) => {
     const s = setup();

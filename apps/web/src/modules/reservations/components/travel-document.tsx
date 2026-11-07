@@ -1,4 +1,5 @@
 'use client';
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   supplierDocumentKinds,
   supplierDocumentScope,
@@ -106,6 +107,7 @@ export function TravelDocument({
   const formReferences = useReservationFormReferences(intake, true);
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
   const supplierReady =
+    !reservationHasTransfer(intake.snapshot) ||
     historical ||
     (voucher
       ? !!state.voucherSettings?.brokerId && !!state.voucherSettings?.leaderId
