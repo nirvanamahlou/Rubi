@@ -250,6 +250,65 @@ describe('FinanceInboxService', () => {
     });
   });
 
+  it('retains confirmed Sales receipts and fully paid reservation groups in the two-tab view', async () => {
+    const financeInbox = vi.fn().mockResolvedValue([
+      {
+        paymentId: 'receipt',
+        contractId: 'contract',
+        contractNumber: 'SYNTHETIC',
+        amount: '10',
+        currencyCode: 'IRR',
+        financeConfirmed: true,
+        dueAt: '2026-11-01T00:00:00Z',
+        createdAt: '2026-11-01T00:00:00Z',
+      },
+    ]);
+    const service = new FinanceInboxService(
+      { financeInbox } as never,
+      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      {
+        listForFinance: vi.fn().mockResolvedValue([
+          {
+            id: 'intake',
+            snapshot: { contractNumber: 'SYNTHETIC' },
+            servicePurchases: [
+              {
+                id: 'purchase',
+                amount: '10',
+                currencyCode: 'IRR',
+                createdAt: '2026-11-01T00:00:00Z',
+                finance: {
+                  status: 'PAID',
+                  paidAmount: '10',
+                  remainingAmount: '0',
+                  version: 1,
+                },
+              },
+            ],
+          },
+        ]),
+      } as never,
+      {} as never,
+      emptyOperationalDatabase() as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+    const result = await service.list(actor, true);
+    expect(financeInbox).toHaveBeenCalledWith(actor, true);
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'sales:receipt',
+          status: 'RECEIPT_CONFIRMED',
+        }),
+        expect.objectContaining({
+          id: 'reservations:purchase',
+          status: 'PAID',
+        }),
+      ]),
+    );
+  });
+
   it('combines persisted Sales, HR, Procurement and Reservations sources', async () => {
     const sales = {
       financeInbox: vi.fn().mockResolvedValue([

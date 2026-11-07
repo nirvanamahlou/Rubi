@@ -2548,6 +2548,19 @@ export class DocumentsService {
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const receiptPendingAllowed =
+      expectedSource?.sourceModule === 'sales' &&
+      expectedSource.sourceEntityType === 'SalesContractPaymentEntry' &&
+      row.sourceModule === 'sales' &&
+      row.sourceEntityType === 'SalesContractPaymentEntry' &&
+      row.documentType.domain === 'FINANCE' &&
+      row.documentType.code === 'RECEIPT' &&
+      ['application/pdf', 'image/jpeg', 'image/png'].includes(
+        row.currentVersion.detectedMimeType,
+      ) &&
+      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+        row.currentVersion.scanStatus,
+      );
     const packagePendingAllowed =
       expectedSource?.sourceModule === 'WORKBENCH' &&
       expectedSource.sourceEntityType === 'WorkbenchDailyPackage' &&
@@ -2570,6 +2583,7 @@ export class DocumentsService {
       row.archiveStatus === 'ACTIVE' &&
       (row.currentVersion.scanStatus === 'CLEAN' ||
         packagePendingAllowed ||
+        receiptPendingAllowed ||
         (row.isIncomingLetter &&
           imagePreviewScanAllowed(row.currentVersion.scanStatus)));
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
@@ -2603,6 +2617,7 @@ export class DocumentsService {
       if (
         row.currentVersion.scanStatus !== 'CLEAN' &&
         !packagePendingAllowed &&
+        !receiptPendingAllowed &&
         !(
           row.isIncomingLetter &&
           imagePreviewScanAllowed(row.currentVersion.scanStatus)

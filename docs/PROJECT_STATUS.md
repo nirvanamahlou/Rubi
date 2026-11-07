@@ -9089,6 +9089,14 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
 
+## FINANCE-APPROVAL-DOWNLOAD-1107 — 2026-11-07
+
+PC-B: owner-requested inbox approval groups and receipt download implemented. Default pending / approved controls filter server-side before pagination, totals and Excel export; switches reset selection/page. Completed Sales receipts and paid reservation groups are retained through their public source projections; Sales branch scope and legacy callers preserved. Reservation ready-on-handoff alone is not financial approval. Confirmed receipts no longer show approve/correction commands.
+
+Receipt PDF/JPEG/PNG downloads can proceed from the source-bound Sales endpoint while antivirus is pending/unavailable. Generic Documents access does not acquire this exception; wrong-source/branch, infected/quarantined files, custom confidential codes and access audits remain enforced. No schema, migration, dependency, operational data or deployment changes.
+
+Validation:169 focused API and18 Web tests pass; Web typecheck caught and corrected the native Button primary variant. Shared local dependency artifacts require API tests to resolve the existing generated database package and current Contracts source through a temporary external test config. Final-head hosted full build/type/test/migration gates remain required before authorized develop merge. Source reservation freezes on push.
+
 
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 

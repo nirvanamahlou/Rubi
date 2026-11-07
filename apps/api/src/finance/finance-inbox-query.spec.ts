@@ -199,3 +199,86 @@ describe('Finance inbox ordering before pagination', () => {
     ).toEqual(['a', 'b']);
   });
 });
+
+describe('Finance approval groups', () => {
+  it('moves a confirmed receipt out of pending and includes it in approved with matching exports', () => {
+    const pending = {
+      ...item,
+      id: 'pending',
+      kind: 'RECEIPT_VERIFICATION',
+      source: 'SALES',
+      status: 'NEW',
+    } as FinanceInboxItemV1;
+    const confirmed = {
+      ...pending,
+      id: 'confirmed',
+      status: 'RECEIPT_CONFIRMED',
+    } as FinanceInboxItemV1;
+    expect(
+      filterFinanceInbox([pending, confirmed], {
+        approvalGroup: 'PENDING',
+      }).map((r) => r.id),
+    ).toEqual(['pending']);
+    expect(
+      filterFinanceInbox([pending, confirmed], {
+        approvalGroup: 'APPROVED',
+      }).map((r) => r.id),
+    ).toEqual(['confirmed']);
+    expect(
+      filterFinanceInbox([confirmed], {
+        approvalGroup: 'APPROVED',
+        search: 'missing',
+      }),
+    ).toEqual([]);
+  });
+  it.each([
+    'NEW',
+    'UNDER_REVIEW',
+    'CORRECTION_REQUIRED',
+    'REJECTED',
+    'CANCELLED',
+    'RETURNED',
+  ] as const)('keeps %s outside approved', (status) => {
+    expect(
+      filterFinanceInbox([{ ...item, status }], { approvalGroup: 'APPROVED' }),
+    ).toEqual([]);
+  });
+  it.each([
+    'APPROVED',
+    'READY_FOR_PAYMENT',
+    'PAYING',
+    'PAID',
+    'RECEIPT_CONFIRMED',
+  ] as const)('retains %s in approved', (status) => {
+    expect(
+      filterFinanceInbox([{ ...item, status }], { approvalGroup: 'APPROVED' }),
+    ).toHaveLength(1);
+  });
+  it.each(['unknown', ['PENDING'], null])(
+    'rejects malformed approval group %s',
+    (approvalGroup) => {
+      expect(() =>
+        validateInboxQuery({ approvalGroup } as never, actor),
+      ).toThrow();
+    },
+  );
+});
+
+it('keeps reservation handoffs awaiting Finance despite their ready-for-payment state', () => {
+  const request = {
+    ...item,
+    source: 'RESERVATIONS',
+    status: 'READY_FOR_PAYMENT',
+  } as FinanceInboxItemV1;
+  expect(
+    filterFinanceInbox([request], { approvalGroup: 'PENDING' }),
+  ).toHaveLength(1);
+  expect(
+    filterFinanceInbox([request], { approvalGroup: 'APPROVED' }),
+  ).toHaveLength(0);
+  expect(
+    filterFinanceInbox([{ ...request, status: 'PAYING' }], {
+      approvalGroup: 'APPROVED',
+    }),
+  ).toHaveLength(1);
+});
