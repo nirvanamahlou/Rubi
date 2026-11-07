@@ -203,7 +203,9 @@ describe('explicit additional request assignees', () => {
   function policy() {
     vi.stubEnv(
       'CALL_CENTER_REQUEST_EXTRA_ASSIGNEES',
-      JSON.stringify({ [managerId]: [extraId] }),
+      JSON.stringify({
+        [managerId]: { unitId: managerId, userIds: [extraId] },
+      }),
     );
     vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
     return { ...actor, userId: managerId } as AuthenticatedActor;
@@ -266,6 +268,21 @@ describe('explicit additional request assignees', () => {
       false,
     );
   });
+  it('preserves the new unit base list while removing extras after a manager transfers', async () => {
+    const manager = policy();
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam.mockImplementation(
+      async (...args: unknown[]) =>
+        args[3] ? null : [managerId, 'new-unit-peer'],
+    );
+    await directory.requestAssignees(manager, 'branch');
+    expect(user.findMany.mock.calls[0]![0].where.id).toEqual({
+      in: [managerId, 'new-unit-peer'],
+    });
+    expect(await directory.canManageRequest(manager, 'branch', extraId)).toBe(
+      false,
+    );
+  });
   it.each(['{', '[]', 'null', JSON.stringify({ [managerId]: ['invalid'] })])(
     'fails closed for malformed policy %s',
     async (value) => {
@@ -284,7 +301,7 @@ import { CallCenterAccessService } from '../customer-affairs/call-center-access.
 it('keeps creator access limited to their configured-target requests, without exposing contact history', async () => {
   vi.stubEnv(
     'CALL_CENTER_REQUEST_EXTRA_ASSIGNEES',
-    JSON.stringify({ [managerId]: [extraId] }),
+    JSON.stringify({ [managerId]: { unitId: managerId, userIds: [extraId] } }),
   );
   const accounts = {
     additionalRequestAssigneeIds: vi.fn().mockResolvedValue([extraId]),

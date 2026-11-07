@@ -11,7 +11,10 @@ import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
-import { extraRequestAssignees } from './call-request-extra-assignees';
+import {
+  extraRequestAssignees,
+  extraRequestPolicy,
+} from './call-request-extra-assignees';
 import { hrCallRoutes, hrCallRoutingEnabled } from './hr-call-routing';
 import {
   answeredCallAccess,
@@ -22,6 +25,22 @@ import {
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
 export class IamCallCenterDirectory {
+  private async eligibleExtraAssignees(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const policy = extraRequestPolicy(actor.userId);
+    if (!policy) return [];
+    return (await this.personnel.callCenterRequestTeam(
+      branchId,
+      actor.userId,
+      tx,
+      policy.unitId,
+    ))
+      ? policy.userIds
+      : [];
+  }
   async employeeCallRoutes(branchId: string, tx?: Prisma.TransactionClient) {
     return hrCallRoutes(this.database, branchId, tx);
   }
@@ -174,12 +193,9 @@ export class IamCallCenterDirectory {
       responsibleUserId &&
       actor.permissions.includes('customer_affairs.call_center.read') &&
       canViewRoute(actor.permissions, '/customer-affairs/call-center') &&
-      extraRequestAssignees(actor.userId).includes(responsibleUserId) &&
-      (await this.personnel.callCenterRequestTeam(
-        branchId,
-        actor.userId,
-        tx,
-      )) &&
+      (await this.eligibleExtraAssignees(actor, branchId, tx)).includes(
+        responsibleUserId,
+      ) &&
       (await client.user.findFirst({
         where: {
           id: responsibleUserId,
@@ -269,7 +285,9 @@ export class IamCallCenterDirectory {
     const team = global
       ? null
       : await this.personnel.callCenterRequestTeam(branchId, actor.userId, tx);
-    const extra = team ? extraRequestAssignees(actor.userId) : [];
+    const extra = team
+      ? await this.eligibleExtraAssignees(actor, branchId, tx)
+      : [];
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',

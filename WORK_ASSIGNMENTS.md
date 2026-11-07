@@ -1,6 +1,6 @@
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — IN_PROGRESS
 
-Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies.
+Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Coordinated with the HR authority owner after PR1459 merge: reserve optional expected-unit ID projection and focused HR tests (existing callers unchanged). Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies.
 
 ## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
 

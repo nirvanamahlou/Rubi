@@ -24,6 +24,7 @@ export class HrUserUnitDirectory {
     branchId: string,
     userId: string,
     tx?: Prisma.TransactionClient,
+    expectedUnitId?: string,
   ): Promise<string[] | null> {
     type Member = {
       userId: string | null;
@@ -31,7 +32,7 @@ export class HrUserUnitDirectory {
       unit: string;
       grade: string;
     };
-    type Unit = { values: unknown; data: unknown };
+    type Unit = { id: string; values: unknown; data: unknown };
     const employees: Member[] = tx
       ? await tx.$queryRaw<
           Member[]
@@ -56,7 +57,7 @@ export class HrUserUnitDirectory {
     const units: Unit[] = tx
       ? await tx.$queryRaw<
           Unit[]
-        >`SELECT "values", data FROM hr_records WHERE branch_id=${branchId}::uuid AND section='organization' AND tab='units' AND status='فعال' AND deleted_at IS NULL ORDER BY id FOR SHARE`
+        >`SELECT id, "values", data FROM hr_records WHERE branch_id=${branchId}::uuid AND section='organization' AND tab='units' AND status='فعال' AND deleted_at IS NULL ORDER BY id FOR SHARE`
       : await this.database.client.hrRecord.findMany({
           where: {
             branchId,
@@ -65,7 +66,7 @@ export class HrUserUnitDirectory {
             status: 'فعال',
             deletedAt: null,
           },
-          select: { values: true, data: true },
+          select: { id: true, values: true, data: true },
         });
     const matches = units.filter((unit) => {
       const company = (unit.data as { organizationBranchId?: string } | null)
@@ -77,6 +78,7 @@ export class HrUserUnitDirectory {
       );
     });
     if (matches.length !== 1) return null;
+    if (expectedUnitId && matches[0]!.id !== expectedUnitId) return null;
     if (tx && manager.organizationBranchId)
       await tx.$queryRaw`SELECT id FROM hr_records WHERE id=${manager.organizationBranchId}::uuid AND branch_id=${branchId}::uuid ORDER BY id FOR SHARE`;
     if (
