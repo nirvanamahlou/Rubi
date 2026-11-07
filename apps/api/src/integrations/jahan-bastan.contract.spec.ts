@@ -153,6 +153,24 @@ describe.skipIf(process.env.NORA_JAHAN_SYNTHETIC_CONTRACT !== '1')(
         ),
       ]);
       expect(first).toEqual(repeated);
+      expect(
+        await native.resources(
+          actor,
+          branch,
+          'countries',
+          '0',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'bastan',
+          'Synthetic HTTP',
+          'draft',
+        ),
+      ).toMatchObject({
+        items: [expect.objectContaining({ externalId: String(first.id) })],
+      });
       await expect(
         native.saveCatalogue(
           actor,
