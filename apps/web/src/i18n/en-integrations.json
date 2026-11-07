@@ -802,5 +802,6 @@
   "فیلتر وضعیت رکورد": "Filter record status",
   "همه وضعیت‌ها": "All statuses",
   "مجوز این داده در سایت انتخاب‌شده فعال نیست.": "You do not have permission for this data on the selected website.",
-  "جهان باستان پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.": "Jahan Bastan did not return a valid response; check its service and connection settings."
+  "جهان باستان پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.": "Jahan Bastan did not return a valid response; check its service and connection settings.",
+  "برای هر شعبه یا اتصال، بسته مستقل جهان باستان بسازید.": "Generate a separate Jahan Bastan bundle for each branch or connection."
 }

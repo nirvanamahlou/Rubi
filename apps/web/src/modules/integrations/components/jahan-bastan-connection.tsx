@@ -109,6 +109,9 @@ export function JahanBastanConnection({
         بسته را از تنظیمات جهان باستان، بخش اتصال به نورا دریافت کنید. محدودیت
         کاربران از مدیریت دسترسی نورا اعمال می‌شود.
       </p>
+      <p className="text-sm text-muted-foreground">
+        برای هر شعبه یا اتصال، بسته مستقل جهان باستان بسازید.
+      </p>
       {status?.protocol ? (
         <Badge>
           {verified

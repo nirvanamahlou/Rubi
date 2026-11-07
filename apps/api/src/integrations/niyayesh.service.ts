@@ -164,6 +164,7 @@ export class NiyayeshService {
       activeWindowSeconds: number;
       heartbeatSeconds: number;
       total: number | null;
+      groups: unknown[];
       nodes: unknown[];
       edges: unknown[];
     };

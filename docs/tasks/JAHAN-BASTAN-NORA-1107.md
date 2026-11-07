@@ -91,3 +91,5 @@ Exchange rates preserve the exact decimal rate and IRT quote currency. Source
 records remain external site-scoped data; they never create Nora business records.
 
 Before publication, unpublished task commits were rebased onto producer origin/maine3efa9bb and consumer origin/develop5c72bc48b. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the samee3efa9bb main snapshot when absent.
+
+Each remote credential is durably bound to one Nora branch/site coordinator. Reusing the same rotating credential in two scopes is rejected atomically, including concurrent imports, to prevent independent rotations from invalidating another branch. Generate one initial bundle per branch/site connection; user access still follows existing Nora IAM. No branch/user allowlist is introduced.

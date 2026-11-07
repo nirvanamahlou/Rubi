@@ -146,6 +146,11 @@ export class JahanConnectionService {
     const previous = await this.store.read(branch, site);
     if ((previous?.version ?? 0) !== value.expectedVersion)
       throw new ConflictException();
+    await this.store.claimJahanConnection(
+      `${JAHAN_CONTRACT}\0${bundle.organizationId}\0${bundle.connectionId}`,
+      branch,
+      site,
+    );
     const resources = bundle.resources as string[];
     await this.store.write(
       branch,

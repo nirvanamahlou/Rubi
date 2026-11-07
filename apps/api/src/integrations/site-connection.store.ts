@@ -18,6 +18,44 @@ const purpose = 'nora.integrations.site-connection.v1';
 
 /** Adapter-owned persistent storage; no site credentials enter the registry. */
 export class SiteConnectionStore {
+  /** A remote rotating credential has exactly one local coordinator scope. */
+  async claimJahanConnection(identity: string, branch: string, site: string) {
+    const scope = this.scope(branch, site);
+    const directory = join(scope.directory, 'jahan-bindings');
+    await mkdir(directory, { recursive: true, mode: 0o700 });
+    const name = createHash('sha256').update(identity).digest('hex');
+    const path = join(directory, `${name}.json`);
+    const temporary = `${path}.${randomBytes(8).toString('hex')}.tmp`;
+    const binding = JSON.stringify([branch, site]);
+    try {
+      const file = await open(temporary, 'wx', 0o600);
+      try {
+        await file.writeFile(binding);
+        await file.sync();
+      } finally {
+        await file.close();
+      }
+      try {
+        await link(temporary, path);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+        if ((await readFile(path, 'utf8')) !== binding)
+          throw new ConflictException(
+            'برای هر شعبه یا اتصال، بسته مستقل جهان باستان بسازید.',
+          );
+      }
+      if (process.platform !== 'win32') {
+        const folder = await open(directory, 'r');
+        try {
+          await folder.sync();
+        } finally {
+          await folder.close();
+        }
+      }
+    } finally {
+      await unlink(temporary).catch(() => undefined);
+    }
+  }
   async scopes(): Promise<{ branch: string; site: string }[]> {
     if (!this.ready()) return [];
     let files: string[];

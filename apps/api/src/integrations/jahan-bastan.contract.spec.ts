@@ -132,9 +132,10 @@ describe.skipIf(process.env.NORA_JAHAN_SYNTHETIC_CONTRACT !== '1')(
         ),
       ).rejects.toThrow();
       const command = randomUUID();
+      const unique = randomUUID().slice(0, 8);
       const value = {
-        name: 'Synthetic HTTP country',
-        slug: `synthetic-${randomUUID().slice(0, 8)}`,
+        name: `Synthetic HTTP country ${unique}`,
+        slug: `synthetic-${unique}`,
       };
       const [first, repeated] = await Promise.all([
         native.saveCatalogue(
@@ -165,11 +166,15 @@ describe.skipIf(process.env.NORA_JAHAN_SYNTHETIC_CONTRACT !== '1')(
           undefined,
           undefined,
           'bastan',
-          'Synthetic HTTP',
+          value.name,
           'draft',
         ),
       ).toMatchObject({
-        items: [expect.objectContaining({ externalId: String(first.id) })],
+        items: [
+          expect.objectContaining({
+            data: expect.objectContaining({ title: value.name }),
+          }),
+        ],
       });
       await expect(
         native.saveCatalogue(

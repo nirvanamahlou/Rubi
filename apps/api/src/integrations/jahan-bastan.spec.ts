@@ -102,6 +102,16 @@ describe('Dedicated Jahan contract security', () => {
       ),
     ).rejects.toThrow();
     expect(await current.store.read(branch, 'other-site')).toBeNull();
+    const otherBranch = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+    await expect(
+      current.save(
+        { ...actor, branchIds: [branch, otherBranch] },
+        otherBranch,
+        'bastan',
+        { bundle: JSON.stringify(bundle), expectedVersion: 0 },
+        'https://nora.example',
+      ),
+    ).rejects.toThrow('برای هر شعبه');
     expect(
       await new SiteConnectionStore().read(
         'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
@@ -129,5 +139,28 @@ describe('Dedicated Jahan contract security', () => {
         '/api/v1/integration/capabilities',
       ),
     ).rejects.toThrow('HTTPS_REQUIRED');
+  });
+  it('atomically selects one coordinator when different branches import the same credential concurrently', async () => {
+    directory = await mkdtemp(join(tmpdir(), 'nora-jahan-claim-'));
+    vi.stubEnv('NORA_SITE_CONNECTIONS_CONFIG_DIR', directory);
+    vi.stubEnv(
+      'NORA_SITE_CONNECTIONS_STORAGE_KEY',
+      Buffer.alloc(32, 9).toString('base64'),
+    );
+    const store = new SiteConnectionStore();
+    const results = await Promise.allSettled([
+      store.claimJahanConnection(
+        'synthetic-remote-connection',
+        branch,
+        'bastan',
+      ),
+      store.claimJahanConnection(
+        'synthetic-remote-connection',
+        'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+        'bastan',
+      ),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
   });
 });
