@@ -56,6 +56,29 @@ export class MasterDataLogoController {
     private readonly logos: MasterDataLogoService,
   ) {}
 
+  @Get('selections/:workflow/airlines/:id/logo')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async selectionLogo(
+    @Param('workflow') workflow: string,
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const result = await this.logos.preview(
+      'airlines',
+      id,
+      request.actor,
+      requestMetadata(request),
+      workflow,
+    );
+    return new StreamableFile(result.stream, {
+      type: result.mimeType,
+      length: result.sizeBytes,
+      disposition: 'inline',
+    });
+  }
+
   @Get(':resource/:id/logo')
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')

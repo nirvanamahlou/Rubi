@@ -865,13 +865,48 @@ describe('DocumentsService security and persistence flow', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(storage.openQuarantined).toHaveBeenCalledOnce();
+    const seller = {
+      ...reader,
+      permissions: [
+        'sales.contracts.read.own',
+      ] as AuthenticatedActor['permissions'],
+    };
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales' },
+        seller,
+        {},
+      ),
+    ).resolves.toMatchObject({ mimeType: 'image/png' });
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales', recordId: 'another' },
+        seller,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales', resource: 'organizations' },
+        seller,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.previewMasterDataLogo(
+        { ...input, workflow: 'sales' },
+        { ...seller, permissions: [] },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    storage.openQuarantined.mockClear();
     storage.openQuarantined.mockRejectedValueOnce(
       Object.assign(new Error('missing'), { code: 'ENOENT' }),
     );
     await expect(
       service.previewMasterDataLogo(input, reader, {}),
     ).rejects.toThrow('فایل لوگو در آرشیو موجود نیست');
-    expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
+    expect(storage.openQuarantined).toHaveBeenCalledTimes(1);
   });
 
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {

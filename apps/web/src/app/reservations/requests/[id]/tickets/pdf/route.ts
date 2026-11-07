@@ -49,12 +49,21 @@ export async function GET(
   const base = getPublicApiBaseUrl();
   if (!base) return fail('سرویس PDF پیکربندی نشده است.', 503);
   const get = (path: string) =>
-    fetch(base + path, {
-      headers: { cookie: request.headers.get('cookie') ?? '' },
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(15000),
-    });
+    fetch(
+      base +
+        (path.startsWith('/master-data/') && !path.includes('/logo')
+          ? path.replace(
+              '/master-data/',
+              `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+            )
+          : path),
+      {
+        headers: { cookie: request.headers.get('cookie') ?? '' },
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
+      },
+    );
   try {
     const workflowResponse = await get(
       salesContractId
@@ -242,11 +251,9 @@ export async function GET(
           name: String(airline.attributes.englishName || airline.name),
           code: airline.code,
         };
-        const logoId = airline.attributes.logoFileReference;
-        if (typeof logoId !== 'string' || !uuid.test(logoId)) return;
-        const logo = await get(`/documents/${logoId}/preview`).catch(
-          () => null,
-        );
+        const logo = await get(
+          `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/airlines/${airline.id}/logo`,
+        ).catch(() => null);
         if (!logo?.ok) return;
         const mime = logo.headers.get('content-type')?.split(';')[0];
         if (!mime || !['image/png', 'image/jpeg', 'image/webp'].includes(mime))

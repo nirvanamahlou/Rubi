@@ -70,6 +70,75 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
+  it('downloads an issued voucher through the contract release gate without reservation permissions', async () => {
+    const contractId = '00000000-0000-4000-8000-000000000099';
+    const issued = structuredClone(intake);
+    issued.snapshot.contractId = contractId;
+    issued.workflow.voucherIssued = true;
+    issued.workflow.voucherSettings = {
+      ...issued.workflow.supplierFormSettings!,
+      leaderId: id,
+    };
+    const fetcher = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        url.endsWith(`/sales/contracts/${contractId}/travel-documents`)
+          ? Promise.resolve(
+              Response.json({ data: issued, delivery: { approved: true } }),
+            )
+          : Promise.resolve(new Response('{}', { status: 403 })),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(
+      new Request(
+        `http://localhost/reservations/requests/${id}/pdf?kind=voucher&salesContractId=${contractId}`,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toContain('no-store');
+    expect(
+      fetcher.mock.calls.some(([url]) => String(url).endsWith('/workflow')),
+    ).toBe(false);
+    expect(renderer).toHaveBeenCalledOnce();
+  });
+  it.each([403, 404])(
+    'does not bypass the contract release gate after denial (%s)',
+    async (status) => {
+      const fetcher = vi.fn().mockResolvedValue(new Response('{}', { status }));
+      vi.stubGlobal('fetch', fetcher);
+      const response = await GET(
+        new Request(
+          `http://localhost/reservations/requests/${id}/pdf?kind=voucher&salesContractId=${id}`,
+        ),
+        { params: Promise.resolve({ id }) },
+      );
+      expect(response.status).toBe(status);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(renderer).not.toHaveBeenCalled();
+    },
+  );
+  it('rejects a different contract and prevents supplier purchase form downloads from sales', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ data: intake })),
+    );
+    const result = await GET(
+      new Request(
+        `http://localhost/reservations/requests/${id}/pdf?kind=voucher&salesContractId=${id}`,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(result.status).toBe(403);
+    const supplier = await GET(
+      new Request(
+        `http://localhost/reservations/requests/${id}/pdf?salesContractId=${id}`,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(supplier.status).toBe(400);
+    expect(renderer).not.toHaveBeenCalled();
+  });
   it('downloads the sent price snapshot even if an unsent edit has different amounts', async () => {
     const sent = {
       ...intake.workflow.supplierFormSettings!,

@@ -122,7 +122,11 @@ export function SalesTravelDocuments({
                 <p>سربرگ باید در رزرواسیون ثبت شود.</p>
               )}
               {intake.workflow.voucherIssued ? (
-                <TravelDocument intake={intake} voucher />
+                <TravelDocument
+                  intake={intake}
+                  voucher
+                  salesContractId={contractId}
+                />
               ) : (
                 <p>واچر هنوز صادر نشده است.</p>
               )}

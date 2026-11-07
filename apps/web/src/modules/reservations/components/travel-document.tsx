@@ -80,6 +80,7 @@ export function TravelDocument({
   previewSettings: sourcePreviewSettings,
   dirty = false,
   downloadLabel,
+  salesContractId,
 }: {
   intake: ReservationFormIntake;
   formScope?: SupplierDocumentKind;
@@ -88,6 +89,7 @@ export function TravelDocument({
   previewSettings?: VoucherSettingsV1 | undefined;
   dirty?: boolean;
   downloadLabel?: string;
+  salesContractId?: string;
 }) {
   const intake = voucher
     ? sourceIntake
@@ -103,7 +105,11 @@ export function TravelDocument({
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
-  const formReferences = useReservationFormReferences(intake, true);
+  const formReferences = useReservationFormReferences(
+    intake,
+    true,
+    salesContractId,
+  );
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
   const supplierReady =
     historical ||
@@ -135,6 +141,7 @@ export function TravelDocument({
           encodeURIComponent(intake.id) +
           '/pdf?' +
           new URLSearchParams({
+            ...(salesContractId ? { salesContractId } : {}),
             ...(voucher ? { kind: 'voucher' } : {}),
             ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}),
             ...(!voucher && intake.hotelStayKey
@@ -160,7 +167,7 @@ export function TravelDocument({
     try {
       const send = () =>
         fetch(
-          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(salesContractId ? { salesContractId } : {}), ...(voucher ? { kind: 'voucher' } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
           {
             credentials: 'include',
             cache: 'no-store',
