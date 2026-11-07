@@ -113,8 +113,10 @@ export class InsuranceSettingsService {
   }
   canManage(actor: AuthenticatedActor) {
     return (
-      actor.permissions.includes('system.settings.manage') &&
-      hasAccessControl(actor.permissions, 'system.module.operations') &&
+      (actor.permissions.includes('system.settings.manage') ||
+        actor.permissions.includes('reservations.insurance.manage')) &&
+      (actor.permissions.includes('reservations.insurance.manage') ||
+        hasAccessControl(actor.permissions, 'system.module.operations')) &&
       hasAccessControl(
         actor.permissions,
         systemSettingControlId('operations', 'insurance-issuance'),
@@ -185,7 +187,9 @@ export class InsuranceSettingsService {
         valueType: 'JSON',
         status: 'ACTIVE',
         value: config,
-        expectedVersion: input.expectedVersion,
+        ...(input.expectedVersion > 0
+          ? { expectedVersion: input.expectedVersion }
+          : {}),
         reason: 'Insurance issuance settings',
       },
       actor,
