@@ -1,3 +1,7 @@
+## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
+
+User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
+
 ## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
 
 Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
