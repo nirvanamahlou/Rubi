@@ -104,6 +104,8 @@ describe('sales dashboard loading', () => {
     expect(html.match(/<form/g)).toHaveLength(1);
     expect(html).toContain('جست‌وجوی قرارداد');
     expect(html).toContain('نوع مشتری');
+    expect(html).toContain('فروشنده قرارداد');
+    expect(html).toContain('نوع بلیط قرارداد');
     expect(html).toContain('مبنای تاریخ');
   });
   it('uses expanded server-side pages for travel dates too', async () => {

@@ -1,3 +1,4 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
@@ -110,12 +111,14 @@ export async function GET(
     if (
       voucher &&
       !isFloatingSalesContract(intake.snapshot.serviceSelections) &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.voucherSettings?.brokerId ||
         !intake.workflow.voucherSettings?.leaderId)
     )
       return fail('ابتدا کارگزار و تورلیدر واچر را انتخاب کنید.', 409);
     if (
       !voucher &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.supplierFormSettings?.brokerId ||
         !intake.workflow.supplierFormSettings?.text.broker?.trim())
     )

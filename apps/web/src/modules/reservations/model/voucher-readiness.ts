@@ -3,6 +3,7 @@ type Readiness = Pick<
   TravelWorkflowStateV1,
   'supplierStatus' | 'voucherIssued'
 > & {
+  sentSupplierFormVersion?: number | undefined;
   hotelSupplierForms?: TravelWorkflowStateV1['hotelSupplierForms'] | undefined;
   sentSupplierFormSettings?:
     { brokerId?: string | undefined } | null | undefined;
@@ -10,9 +11,11 @@ type Readiness = Pick<
 
 export function hasSentReservationForm(state: Readiness) {
   return (
-    (Boolean(state.sentSupplierFormSettings?.brokerId) ||
+    ((Number.isSafeInteger(state.sentSupplierFormVersion) &&
+      (state.sentSupplierFormVersion ?? 0) > 0) ||
+      Boolean(state.sentSupplierFormSettings?.brokerId) ||
       Object.values(state.hotelSupplierForms ?? {}).some(
-        (entry) => entry.sentSettings?.brokerId,
+        (entry) => (entry.sentVersion ?? 0) > 0 || entry.sentSettings?.brokerId,
       )) &&
     ['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus)
   );

@@ -422,9 +422,10 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).not.toContain('<img');
 });
 
-it('requires a saved recipient before issuing the supplier reservation PDF', async () => {
+it('requires a saved recipient before issuing a supplier PDF for a transfer contract', async () => {
   const value = {
     ...intake,
+    snapshot: { ...intake.snapshot, serviceSelections: [{ kind: 'TRANSFER' }] },
     workflow: { ...intake.workflow, supplierFormSettings: undefined },
   };
   vi.stubGlobal(
@@ -540,7 +541,7 @@ it('keeps six selected passengers on one compact hotel voucher page', () => {
   expect(html).toContain('1 / 1');
 });
 
-it('rejects supplier PDF with a typed name but no directory broker', async () => {
+it('rejects a transfer contract supplier PDF with a typed name but no directory broker', async () => {
   const settings = { ...intake.workflow.supplierFormSettings! };
   delete settings.brokerId;
   vi.stubGlobal(
@@ -549,6 +550,10 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
       Response.json({
         data: {
           ...intake,
+          snapshot: {
+            ...intake.snapshot,
+            serviceSelections: [{ kind: 'TRANSFER' }],
+          },
           workflow: { ...intake.workflow, supplierFormSettings: settings },
         },
       }),
@@ -559,6 +564,34 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
   ).toBe(409);
   expect(renderer).not.toHaveBeenCalled();
 });
+it.each([false, true])(
+  'downloads reservation/voucher=%s without a broker or leader for a contract without transfer',
+  async (voucher) => {
+    const settings = defaultVoucherSettings(intake, {});
+    delete settings.brokerId;
+    delete settings.leaderId;
+    settings.text.broker = '';
+    const value = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+        voucherIssued: voucher,
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ data: value })),
+    );
+    const response = await GET(
+      new Request(request().url + (voucher ? '?kind=voucher' : '')),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(200);
+    expect(renderer).toHaveBeenCalled();
+  },
+);
 
 it.each([false, true])(
   'prints the Niyayesh website in the reservation/voucher=%s footer',

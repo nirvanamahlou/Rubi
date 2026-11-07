@@ -113,6 +113,10 @@ function queryString(query: PackageListQueryV1) {
 }
 
 export const packagePricingApi = {
+  tourBuyRates: (
+    activeSession: LoginResponse,
+  ): Promise<Record<string, string>> =>
+    request('/tour-drafts/buy-rates', activeSession),
   session,
   hotelRegisteredPeriods: (
     query: HotelRegisteredPeriodsQueryV1,

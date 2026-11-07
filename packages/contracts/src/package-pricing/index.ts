@@ -362,6 +362,7 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  convertToRial?: boolean;
   selectedRoomKeys?: readonly string[];
   roomSaleOverrides?: readonly PackageRoomSaleOverrideV1[];
   selectedHotelRateIds?: readonly string[];
@@ -387,6 +388,7 @@ export interface PackageTourDraftSaveV1 {
 }
 
 export interface PackageTourDraftV1 extends PackageTourDraftSaveV1 {
+  rialConversion?: Record<string, string> | null;
   id: string;
   draftVersion: number;
   lastEditorUserId: string;
@@ -411,6 +413,7 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  rialConversion?: Record<string, string> | null;
   selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
@@ -525,3 +528,10 @@ export {
 } from './published-sale-quote';
 
 export { packageTourSelectionBatch } from './selection-batch';
+
+export {
+  packageAmountToRial,
+  packageRoomToRial,
+  packageFieldsToRial,
+} from './rial-conversion';
+export type { PackageRialRates } from './rial-conversion';

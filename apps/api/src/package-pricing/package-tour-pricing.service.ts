@@ -1,3 +1,8 @@
+import {
+  packageRoomToRial,
+  packageFieldsToRial,
+  packageAmountToRial,
+} from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 import {
@@ -70,6 +75,28 @@ export class PackageTourPricingService {
     @Inject(PackagePricingService)
     private readonly pricing: PackagePricingService,
   ) {}
+
+  async buyRates() {
+    const now = new Date();
+    const rows = await this.database.client.masterDraftExchangeRate.findMany({
+      where: {
+        isActive: true,
+        status: 'APPROVED',
+        rateType: 'BUY',
+        fromCurrency: { isActive: true },
+        toCurrency: { code: 'IRR', isActive: true },
+        validFrom: { lte: now },
+        OR: [{ validTo: null }, { validTo: { gt: now } }],
+      },
+      include: { fromCurrency: true },
+      orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'desc' }],
+    });
+    const rates: Record<string, string> = { IRR: '1' };
+    for (const row of rows)
+      if (!rates[row.fromCurrency.code] && row.rate.greaterThan(0))
+        rates[row.fromCurrency.code] = row.rate.toString();
+    return rates;
+  }
 
   async assertContractSale(
     input: SalesContractCreateRequest,
@@ -396,6 +423,31 @@ export class PackageTourPricingService {
         ))
     )
       throw new BadRequestException('قیمت فروش معتبر نیست.');
+    if (
+      input.convertToRial !== undefined &&
+      typeof input.convertToRial !== 'boolean'
+    )
+      throw new BadRequestException('پیش‌نویس قیمت معتبر نیست.');
+    const rialConversion = input.convertToRial ? await this.buyRates() : null;
+    if (rialConversion) {
+      try {
+        packageFieldsToRial(tourPriceFields(input), rialConversion);
+        for (const row of batch.rows.filter(
+          (r) =>
+            !input.selectedHotelRateIds ||
+            input.selectedHotelRateIds.includes(r.id),
+        ))
+          packageAmountToRial(
+            '1',
+            row.currencyCode ?? batch.currencyCode,
+            rialConversion,
+          );
+      } catch (error) {
+        throw new BadRequestException(
+          error instanceof Error ? error.message : 'نرخ خرید ارز موجود نیست.',
+        );
+      }
+    }
     let roomSaleOverrides;
     try {
       roomSaleOverrides =
@@ -407,6 +459,7 @@ export class PackageTourPricingService {
         if (!row) throw Error('قیمت فروش باید متعلق به همین بازه باشد.');
         const allowed = new Set([
           row.currencyCode ?? batch.currencyCode,
+          ...(rialConversion ? ['IRR'] : []),
           adultCurrency,
           childCurrency,
           businessCurrency,
@@ -564,6 +617,7 @@ export class PackageTourPricingService {
               commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
+              rialConversion: rialConversion ?? Prisma.DbNull,
               ...fieldsData,
               ...roomSalesData,
               ...selectedData,
@@ -590,6 +644,7 @@ export class PackageTourPricingService {
               commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
+              rialConversion: rialConversion ?? Prisma.DbNull,
               ...fieldsData,
               ...roomSalesData,
               ...selectedData,
@@ -694,6 +749,30 @@ export class PackageTourPricingService {
     const byRow = new Map(
       draft.adjustments.map((item) => [item.hotelRateId, item]),
     );
+    const rialRates =
+      draft.rialConversion &&
+      typeof draft.rialConversion === 'object' &&
+      !Array.isArray(draft.rialConversion)
+        ? (draft.rialConversion as Record<string, string>)
+        : null;
+    const publicationFields = rialRates
+      ? packageFieldsToRial(
+          tourPriceFields({
+            ...draft,
+            commissionMode: (draft.commissionMode ?? 'percent') as
+              'percent' | 'fixed',
+            adultFlightSale: draft.adultFlightSale.toString(),
+            childFlightSale: draft.childFlightSale.toString(),
+            businessUplift: draft.businessUplift.toString(),
+            commissionPercent: draft.commissionPercent.toString(),
+            commissionAmount: draft.commissionAmount?.toString() ?? '0',
+            priceFields: Array.isArray(draft.priceFields)
+              ? validateTourPriceFields(draft.priceFields)
+              : undefined,
+          }),
+          rialRates,
+        )
+      : null;
     const legacyPrices = () =>
       batch.rows.flatMap((row) => {
         const sellableRooms =
@@ -724,7 +803,7 @@ export class PackageTourPricingService {
             );
           const adjustment = byRow.get(row.id);
           try {
-            const calculated = calculateTourRoom({
+            const originalCalculated = calculateTourRoom({
               infantFlight: Array.isArray(draft.priceFields)
                 ? validateTourPriceFields(draft.priceFields).find(
                     (field) => field.kind === 'infantFlight',
@@ -770,6 +849,15 @@ export class PackageTourPricingService {
               },
               flightCosts,
             });
+            const calculated = rialRates
+              ? packageRoomToRial(
+                  {
+                    ...originalCalculated,
+                    currencyCode: row.currencyCode ?? batch.currencyCode,
+                  },
+                  rialRates,
+                )
+              : originalCalculated;
             const single =
               calculated.currencyAmounts.length === 1
                 ? calculated.currencyAmounts[0]
@@ -783,7 +871,9 @@ export class PackageTourPricingService {
               packageSale: single?.sale ?? null,
               commissionAmount: single?.commission ?? null,
               netProfit: single?.profit ?? null,
-              currencyCode: row.currencyCode ?? batch.currencyCode,
+              currencyCode: rialRates
+                ? 'IRR'
+                : (row.currencyCode ?? batch.currencyCode),
               currencyAmounts:
                 calculated.currencyAmounts as unknown as Prisma.InputJsonValue,
             };
@@ -895,7 +985,12 @@ export class PackageTourPricingService {
                 )
                 .map((raw) => {
                   const item = applyPackageRoomSales(
-                    raw,
+                    rialRates
+                      ? packageRoomToRial(
+                          applyPackageRoomSales(raw, overrides, 'percent', '0'),
+                          rialRates,
+                        )
+                      : raw,
                     overrides,
                     (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
                     Array.isArray(draft.selectedRoomKeys)
@@ -932,6 +1027,17 @@ export class PackageTourPricingService {
       ? validatePackageRoomSales(draft.roomSaleOverrides)
       : [];
     for (const sale of frozenSales) {
+      if (
+        rialRates &&
+        sale.currencyCode !== 'IRR' &&
+        prices.some(
+          (p) =>
+            p.hotelRateId === sale.hotelRateId && p.roomCode === sale.roomCode,
+        ) &&
+        (batch.rows.find((r) => r.id === sale.hotelRateId)?.currencyCode ??
+          batch.currencyCode) === sale.currencyCode
+      )
+        continue;
       const price = prices.find(
         (item) =>
           item.hotelRateId === sale.hotelRateId &&
@@ -960,6 +1066,7 @@ export class PackageTourPricingService {
       adjustments: draft.adjustments,
       roomSaleOverrides: draft.roomSaleOverrides,
       selectedRoomKeys: draft.selectedRoomKeys,
+      rialConversion: draft.rialConversion,
       priceFields: draft.priceFields,
       selectedHotelRateIds: draft.selectedHotelRateIds,
       prices: prices.map((item) => ({
@@ -1016,6 +1123,15 @@ export class PackageTourPricingService {
           familyAdults: draft.familyAdults,
           familyChildren: draft.familyChildren,
           currencyCode: draft.currencyCode,
+          ...(rialRates
+            ? {
+                rialConversion: rialRates as Prisma.InputJsonValue,
+                currencyCode: 'IRR',
+                priceFields:
+                  publicationFields as unknown as Prisma.InputJsonValue,
+                ...tourPriceFieldValues(publicationFields!),
+              }
+            : {}),
           publishedByUserId: actor.userId,
           roomPrices: {
             create: prices.map((item) => ({ id: randomUUID(), ...item })),
@@ -1061,6 +1177,8 @@ export class PackageTourPricingService {
   ): PackageTourDraftV1 {
     return {
       version: 1,
+      convertToRial: !!row.rialConversion,
+      rialConversion: row.rialConversion as Record<string, string> | null,
       expectedVersion: row.version,
       id: row.id,
       draftVersion: row.version,
@@ -1115,6 +1233,7 @@ export class PackageTourPricingService {
       version: 1,
       id: row.id,
       draftId: row.draftId,
+      rialConversion: row.rialConversion as Record<string, string> | null,
       priceVersion: row.version,
       draftVersion: row.draftVersion,
       tourVersion: row.tourVersion,
