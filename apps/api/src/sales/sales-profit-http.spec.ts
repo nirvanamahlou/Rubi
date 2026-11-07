@@ -9,6 +9,7 @@ import { SalesProfitService } from './sales-profit.service';
 import { SalesService } from './sales.service';
 import { SalesOutputService } from './sales-output.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
+import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { IamService } from '../iam/iam.service';
 const id = '11111111-1111-4111-8111-111111111111';
@@ -49,6 +50,7 @@ beforeAll(async () => {
       { provide: SalesService, useValue: sales },
       { provide: SalesOutputService, useValue: {} },
       { provide: TravelWorkflowService, useValue: {} },
+      { provide: ReservationTicketDocumentsService, useValue: {} },
       { provide: FinanceDeliveryService, useValue: {} },
       {
         provide: IamService,

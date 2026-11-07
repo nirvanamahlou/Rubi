@@ -3,6 +3,7 @@ import {
   reservationPurchaseRegistered,
   reservationPurchasesComplete,
 } from './reservation-purchase-completion';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { TravisSandboxService } from '../integrations/insurance/travis-sandbox.service';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { validateSupplierFormPrices } from './voucher-settings';
@@ -447,11 +448,31 @@ export class ReservationRequestsController {
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(
+    const savedIntake = await this.workflow.detail(
       id,
       req.actor.branchIds,
       historical !== '1',
     );
+    let intake =
+      historical === '1' ||
+      !isFloatingSalesContract(savedIntake.snapshot.serviceSelections)
+        ? savedIntake
+        : await this.workflow.floatingDocumentOutput(savedIntake, req.actor);
+    const delivery = await this.delivery.read(id);
+    if (
+      historical !== '1' &&
+      delivery.approved &&
+      this.ticketDocuments &&
+      isFloatingSalesContract(intake.snapshot.serviceSelections) &&
+      intake.workflow.supplierStatus !== 'CANCELLED'
+    )
+      intake = {
+        ...intake,
+        ticketDocuments: await this.ticketDocuments.issueFloatingForDelivery(
+          intake,
+          req.actor,
+        ),
+      };
     const summaries = this.table
       ? await this.table.read([intake.contractId], req.actor)
       : new Map();
@@ -466,7 +487,7 @@ export class ReservationRequestsController {
           req.actor,
         ),
       },
-      delivery: await this.delivery.read(id),
+      delivery,
     };
   }
   @Get(':id/contract-versions')
@@ -929,6 +950,7 @@ export class ReservationRequestsController {
     ReservationManifestService,
   ],
   exports: [
+    ReservationTicketDocumentsService,
     ReservationServicePurchaseService,
     ReservationsPublicService,
     TravelWorkflowService,
