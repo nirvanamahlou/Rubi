@@ -1,3 +1,33 @@
+## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
+
+## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
+
+## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. User requests Persian equivalents throughout KPI/chart exclusions and limitations. Reserve registry exclusion text, chart limitation paragraph, matching English keys, existing registry assertions and own notes. Continue own draft PR1436; preserve all source lineage, computation and permission enforcement. No API/schema/dependencies/deployment. Latest develop inspected; relevant differences are own pending changes only.
+
+## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.
+
+## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. Extend own draft PR1436 with owner-requested Persian-only KPI calculation text and short contextual term explanations below KPI/chart rules. Reserve Dashboard registry rule strings, employee rule strings if needed, shared definition renderer, new local calculation glossary and additive English translation keys; preserve prior definitions and all calculations. Latest develop inspected; no competing change to these leaves. No API, schema, dependency or deployment. Same scoped validation as KPI copy.
+
+## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-kpi-copy-1107 from develop4f36df206. User requests individual plain-language business definitions for every Dashboard KPI, using travel-service terminology. Reserve Dashboard registry.ts, employee-commercial-performance.ts, the definition paragraph in dashboard-workspace.tsx, existing dashboard.spec.ts expectations, own task/status notes and additive new KPI translation keys in Web en-overrides.json only. Earlier Dashboard source scopes are merged (PR1335/1348/1377/1419); preserve their behavior and peer translation additions. No calculations, producers, contracts, permissions, schema, dependencies or live data changes. Validate existing Dashboard/i18n suites, lint, typecheck and Web build; deliver draft develop PR.
+
+Implemented all 84 unique definitions and English translations. Independent semantic review and metadata-preservation comparison passed. Existing Dashboard/i18n suites: 54 passed, one existing skipped; scoped ESLint, Web TypeScript, Prettier and production Web build passed. Frozen offline dependency install did not change the lockfile. No migration, merge or production deployment.
+
+## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
+
+User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
+
 ## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
 
 Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
@@ -29,6 +59,10 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
+
+Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Coordinated with the HR authority owner after PR1459 merge: reserve optional expected-unit ID projection and focused HR tests (existing callers unchanged). Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies. Closeout: PR1457 merged after all exact-head hosted gates. Protected production policy enabled for exactly two verified current Sales managers and three active recipients; read-only live selector/transactional save/management and negative-account acceptance passed. Fresh encrypted DB/config backup, unchanged Web/environment/mount checks and Worker/AMI/recording/HTTPS passed. Reservation released; no migration.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -11410,8 +11444,54 @@ Bounded central notification-center.tsx lease: reuse existing call-center:open-q
 `nCALL-REQUEST-TOAST-1107: implementation complete;8 focused tests pass. Source frozen on push; no server deployment in this work item.
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
 
+## NOTIFICATION-HR-REFRESH-1107 — PC-B — ACTIVE
+
+Owner authorizes recurring bell alerts repair, probationary/temporary employment contract options and automatic attendance updates, push/develop merge. Reserve change-notifications classifier/regressions, shared HR contract options/contextual fallback, IAM trusted attendance actor resolution and tests, Radan scheduled caller/regressions, HR store visible refresh trigger if needed and own notes. Existing Call Center toast branch is confined to assignment toast; preserve real call workflows/UI. Production read-only diagnosis: recurring telephony lease POST is tracked as create; scheduled sync fails with a ROTATED configured anchor whose family has zero active sessions despite16 current active sessions for that same user. Resolve a currently valid native session for the explicitly configured active HR actor and re-evaluate native grants/branches; never bypass session expiry/revocation, broaden branches, create sessions or write production data. No migrations/dependencies/deployment.
+
+NOTIFICATION-HR-REFRESH-1107 validation:31 focused API and51 Web checks, scoped lint and full Web TypeScript pass. Added native-session selection/revalidation/denial, configured branch intersection and schedule recovery checks; lease acquire/renew/release produces no generic alerts while genuine workflow commands still notify. No source ownership conflict found; current actor/telephony toast work is separate and preserved. Freeze on push; all final-head CI gates required before develop merge.
+
 ## CALL-HR-MANAGER-AUTHORITY-1107 — PC-C — IN_PROGRESS
 
 PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-1107. Owner explicitly replaces manual per-manager request-assignment capability with live active HR grade manager/current organization. Reserve HrUserUnitDirectory public projection and tests, IamCallCenterDirectory assignee/management policy and tests, native PostgreSQL policy fixtures if needed, own docs/DECISIONS entry and bounded API release. Preserve UI, base Call Center access, branch/company/unit isolation, ordinary self scope and pinned executive exception. Previous same-owner Call Center scopes frozen/merged; HR form/service mutations, schema, dependencies and general role contracts excluded. No active overlapping writer found for these leaf files. No direct cross-module table access: HR owns managerial grade/membership projection, IAM intersects active linked accounts/branch authority.
 
 `nDOC-REPORT-1107 | PC-C | codex/pc-c-document-report-access-1107 | document-reporting.public.ts + targeted regression | IN_PROGRESS | origin/develop
+
+## BACKGROUND-NOTIFICATIONS-1107 — PC-D — RESERVED
+
+COMPUTER_ID=PC-D; branch codex/pc-d-background-notifications-1107 from
+origin/develop@5c72bc48b. The owner explicitly authorizes this focused fix,
+push, hosted CI, a PR targeting develop and merge only after all checks pass.
+This task-specific instruction supersedes the local PC-D-Integration default.
+Reserve only the global change-notifications classifier and focused regressions,
+one Call Center tracker integration regression, and this task's status notes.
+Exclude technical telephony lease renew/release requests and existing POST query
+reads from business-change announcements; preserve genuine mutations and all
+recipient-scoped persistent feeds, permissions, polling and read/clear behavior.
+Call Center business announcements must identify/link their owning workspace.
+Earlier CALL-KPI-NOTIFICATIONS-1105 source is merged/frozen; notification-center
+and the other active notification work remain untouched. No API/schema,
+migration, dependency/lockfile, operational data deletion or deployment changes.
+Historical generic local entries lack request provenance and must be preserved.
+Source freezes on push; release reservation after verified merge.
+
+Compatibility check: peer PR1461 (PC-B, source frozen on push at25815dadf)
+contains the same exact lease exclusion alongside unrelated HR work. Reuse that
+published exclusion verbatim in this isolated branch; do not modify the peer
+branch, HR changes or notification-center. The additional PC-D change is the
+more-specific Call Center label/route and real-client integration coverage.
+Both branch orders must retain the compatible exclusion; refresh develop before
+publication/merge and preserve the peer's test and work records if it lands first.
+
+## DASHBOARD-RANGE-HOVER-CONTRAST-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.
+
+## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
+
+RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must appear as TOUR LEADER in the top service summary, remove OTHER SERVICES passenger column from preview/PDF, and verify entered base amount/ratio in output. Extend reservation-form.ts, reservation-form-sheet.tsx and reservation-pdf-html.ts leaf reservation with focused output checks; no other active owner on these same-owner leaf files.
+
+RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
+
+RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.

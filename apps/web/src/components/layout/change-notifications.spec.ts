@@ -119,7 +119,46 @@ describe('global change notifications', () => {
         apiBaseUrl,
         options,
       ),
-    ).toMatchObject({ href: '/customer-affairs', readAt: null });
+    ).toMatchObject({
+      href: '/customer-affairs/call-center',
+      title: expect.stringContaining('کال سنتر'),
+      readAt: null,
+    });
+  });
+
+  it.each(['leads', 'tickets'])(
+    'keeps non-Call-Center Customer Affairs %s notifications in their own workspace',
+    (path) => {
+      expect(
+        buildChangeNotification(
+          {
+            method: 'POST',
+            requestUrl: `${apiBaseUrl}/customer-affairs/${path}`,
+            responseOk: true,
+          },
+          apiBaseUrl,
+          options,
+        ),
+      ).toMatchObject({
+        href: '/customer-affairs',
+        title: 'ثبت اطلاعات جدید در امور مشتریان',
+        readAt: null,
+      });
+    },
+  );
+
+  it('does not suppress real mutations with a similar technical path name', () => {
+    expect(
+      buildChangeNotification(
+        {
+          method: 'POST',
+          requestUrl: `${apiBaseUrl}/customer-affairs/call-center/telephony/lease-settings`,
+          responseOk: true,
+        },
+        apiBaseUrl,
+        options,
+      ),
+    ).toMatchObject({ href: '/customer-affairs/call-center', readAt: null });
   });
 
   it.each([
@@ -169,4 +208,35 @@ describe('global change notifications', () => {
     expect(limited).toHaveLength(CHANGE_NOTIFICATIONS_LIMIT);
     expect(limited[0]?.id).toBe('notification-64');
   });
+});
+
+it('never recreates generic alerts for recurring telephony lease acquire, renew or release', async () => {
+  const response = new Response(JSON.stringify({ leader: true }));
+  const original = vi.fn().mockResolvedValue(response);
+  const notify = vi.fn();
+  const tracked = createTrackedFetch(
+    original,
+    apiBaseUrl,
+    notify,
+    () => crypto.randomUUID(),
+    () => new Date(),
+  );
+  for (const release of [false, false, true]) {
+    await expect(
+      tracked(
+        `${apiBaseUrl}/customer-affairs/call-center/telephony/lease/?branchId=synthetic`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ tabId: 'test', release }),
+        },
+      ),
+    ).resolves.toBe(response);
+  }
+  expect(notify).not.toHaveBeenCalled();
+  // A genuine call workflow command must still notify normally.
+  await tracked(
+    `${apiBaseUrl}/customer-affairs/call-center/contacts/contact/requests`,
+    { method: 'POST' },
+  );
+  expect(notify).toHaveBeenCalledOnce();
 });

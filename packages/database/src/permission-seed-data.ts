@@ -439,6 +439,11 @@ export const PERMISSION_SEED_DATA = [
   ['finance.financial_release.read', 'finance', 'مشاهده مجوز تحویل مدارک'],
   ['finance.financial_release.approve', 'finance', 'تأیید یا لغو تحویل مدارک'],
   ['reservations.read', 'reservations', 'مشاهده صف رزرواسیون شعبه'],
+  [
+    'reservations.insurance.manage',
+    'reservations',
+    'مدیریت تنظیمات و تعرفه بیمه رزرواسیون',
+  ],
   ['reporting.read', 'reporting', 'مشاهده کاتالوگ و داده‌های گزارش'],
   ['reporting.sales.read', 'reporting', 'مشاهده گزارش‌های فروش و سفر'],
   ['reporting.procurement.read', 'reporting', 'مشاهده گزارش‌های خرید و تأمین'],

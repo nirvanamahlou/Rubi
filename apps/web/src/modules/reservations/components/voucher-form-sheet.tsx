@@ -1,5 +1,9 @@
 'use client';
 import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
+import {
+  voucherHotelJourneyRows,
+  voucherJourneyColumns,
+} from '../model/voucher-hotel-journeys';
 import { SupplierPriceTable } from './supplier-price-table';
 import {
   voucherPassengerServices,
@@ -188,6 +192,7 @@ function VoucherHotelSheet({
   const data = voucher
     ? voucherFormData(intake, references)
     : supplierFormData(intake, references);
+  const journeys = voucher ? voucherHotelJourneyRows(intake, references) : [];
   const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
     ? voucherPassengerServices(intake, data)
     : {};
@@ -202,7 +207,7 @@ function VoucherHotelSheet({
   const pages = voucher
     ? reservationPassengerPages(
         data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
+        voucherPassengerPageUnits(settings, data.notes, journeys.length > 0),
       )
     : [data.passengers];
   const roomAppendices =
@@ -433,6 +438,45 @@ function VoucherHotelSheet({
                   </table>
                 ) : null}
               </>
+            )}
+            {page === 0 && journeys.length > 0 && (
+              <section style={{ breakInside: 'avoid' }} data-hotel-journeys>
+                <Heading
+                  number="03"
+                  title="HOTEL TRANSPORT"
+                  note="Tehran time"
+                />
+                <table
+                  className={styles.table}
+                  style={{ tableLayout: 'fixed', width: '100%' }}
+                >
+                  <thead>
+                    <tr>
+                      {voucherJourneyColumns.map((label) => (
+                        <th key={label}>{label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {journeys.map((row, index) => (
+                      <tr key={index}>
+                        {row.map((cell, column) => (
+                          <td
+                            key={column}
+                            dir="ltr"
+                            style={{
+                              overflowWrap: 'anywhere',
+                              whiteSpace: 'pre-line',
+                            }}
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
             )}
             <Heading number="04" title="TOUR SERVICES" note="Leader & board" />
             <table className={styles.table}>

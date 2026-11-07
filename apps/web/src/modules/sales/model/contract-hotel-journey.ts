@@ -1,4 +1,8 @@
-import { HOTEL_JOURNEY_MODES, type HotelJourneyV1 } from '@nora/contracts';
+import {
+  HOTEL_JOURNEY_MODES,
+  hotelJourneyArrivalDate,
+  type HotelJourneyV1,
+} from '@nora/contracts';
 
 const escape = (value: string) =>
   value.replace(
@@ -26,7 +30,7 @@ export function contractHotelJourneyHtml(
     <h3>${leg.toHotelId === null ? 'مسیر تا فرودگاه برگشت' : 'جابه‌جایی بین اقامت‌ها'}</h3>
     <p><bdi>${escape(from)}</bdi> ← <bdi>${escape(leg.toHotelId === null ? airport(leg.airport) : to)}</bdi> · <b>${escape(HOTEL_JOURNEY_MODES[leg.mode])}</b></p>
     <table><thead><tr><th>حرکت</th><th>رسیدن</th>${flight ? '<th>ایرلاین / شماره پرواز</th><th>کلاس</th>' : ''}</tr></thead>
-    <tbody><tr><td><bdi dir="ltr">${escape(day(leg.departureDate))} · ${escape(leg.departureTime)}</bdi></td><td><bdi dir="ltr">${escape(day(leg.arrivalDate))} · ${escape(leg.arrivalTime)}</bdi></td>${flight ? `<td><bdi>${escape(flight.airline)} · ${escape(flight.number)}</bdi></td><td>${escape({ ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست کلاس' }[flight.cabinClass])}</td>` : ''}</tr></tbody></table>
+    <tbody><tr><td><bdi dir="ltr">${escape(day(leg.departureDate))} · ${escape(leg.departureTime)}</bdi></td><td><bdi dir="ltr">${escape(day(hotelJourneyArrivalDate(leg)))} · ${escape(leg.arrivalTime)}</bdi></td>${flight ? `<td><bdi>${escape(flight.airline)} · ${escape(flight.number)}</bdi></td><td>${escape({ ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست کلاس' }[flight.cabinClass])}</td>` : ''}</tr></tbody></table>
     ${flight ? `<p>مسیر پرواز: <bdi>${escape(airport(flight.originAirport))}</bdi> ← <bdi>${escape(airport(flight.destinationAirport))}</bdi></p>` : ''}
     <small>ساعت‌های جابه‌جایی به وقت تهران هستند.</small>
   </section>`;

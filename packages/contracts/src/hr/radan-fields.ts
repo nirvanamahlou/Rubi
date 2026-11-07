@@ -1,4 +1,4 @@
-/** Options observed in the Radan UI. No payroll formula or unobserved provider behavior. */
+/** Radan options plus owner-requested contract labels; no payroll formula changes. */
 export const HR_RADAN_CONTRACT_TYPES = [
   'قراردادی',
   'رسمی',
@@ -7,6 +7,7 @@ export const HR_RADAN_CONTRACT_TYPES = [
   'خدماتی-مشاوره‌ای',
   'دائمی (غیر موقت)',
   'موقت (مدت معین)',
+  'موقت',
   'معین',
   'آزمایشی',
   'آموزشی',

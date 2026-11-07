@@ -71,13 +71,10 @@ it('starts optional and exposes independent editable travel dates without flight
   h.dates[0]!.onChange('2027-01-09');
   expect(change.mock.lastCall![0]).toMatchObject({
     departureDate: '2027-01-09',
-    arrivalDate: '2027-01-09',
   });
-  h.dates[1]!.onChange('2027-01-07');
-  expect(change.mock.lastCall![0]).toMatchObject({
-    departureDate: '2027-01-06',
-    arrivalDate: '2027-01-07',
-  });
+  expect(h.dates).toHaveLength(1);
+  expect(html).not.toContain('تاریخ رسیدن جابه‌جایی');
+  expect(change.mock.lastCall![0]).not.toHaveProperty('arrivalDate');
 });
 it('creates independent flight fields and determines the countries from the two hotel cities', () => {
   const change = vi.fn();

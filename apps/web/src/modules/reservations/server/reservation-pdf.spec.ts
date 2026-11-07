@@ -35,7 +35,10 @@ vi.mock('node:fs/promises', () => ({
 }));
 import { GET } from '@/app/reservations/requests/[id]/pdf/route';
 import { reservationPdfHtml } from './reservation-pdf-html';
-import { defaultVoucherSettings } from '../model/voucher-settings';
+import {
+  defaultVoucherSettings,
+  supplierFormData,
+} from '../model/voucher-settings';
 import type { ReservationFormIntake } from '../model/reservation-form';
 const id = '00000000-0000-4000-8000-000000000001';
 const intake = {
@@ -909,7 +912,10 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain(
     'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );
-  expect(html).toContain('INSURANCE');
+  expect(html).not.toContain('<th>OTHER SERVICES</th>');
+  expect(
+    supplierFormData(value).passengers.find((p) => p.id === 'b')?.otherServices,
+  ).toBe('INSURANCE');
   expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
   expect(html).toContain('margin:8.5mm');
   expect(html.match(/<div data-reservation-contact/g)).toHaveLength(1);

@@ -72,10 +72,8 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   private async tick() {
     if (this.running) return;
     try {
-      const actor = await this.iam.authenticateSessionReferenceV1(
+      const actor = await this.iam.authenticateAttendanceConnectorV1(
         process.env.HR_RADAN_ACTOR_ID ?? '',
-        process.env.HR_RADAN_SESSION_ID ?? '',
-        true,
       );
       await this.sync(actor);
     } catch {

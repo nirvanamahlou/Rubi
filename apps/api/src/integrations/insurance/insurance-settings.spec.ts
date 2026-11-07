@@ -37,6 +37,33 @@ const config = () => ({
     },
   ],
 });
+it('creates the initial setting without an invalid zero system version', async () => {
+  const branchId = randomUUID();
+  const writeSetting = vi.fn();
+  const service = new InsuranceSettingsService(
+    { writeSetting, resolveSetting: async () => null } as never,
+    {} as never,
+  );
+  const actor = {
+    branchIds: [branchId],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  await service.save(
+    branchId,
+    { expectedVersion: 0, config: { schemaVersion: 1, countries: [] } },
+    actor,
+  );
+  expect(writeSetting).toHaveBeenCalledWith(
+    expect.objectContaining({
+      scope: 'BRANCH',
+      scopeId: branchId,
+    }),
+    actor,
+    {},
+  );
+  expect(writeSetting.mock.calls[0]?.[0]).not.toHaveProperty('expectedVersion');
+});
+
 describe('insurance issuance configuration', () => {
   it('retains exact decimal money and explicit inclusive boundaries', () => {
     const input = config();
@@ -190,4 +217,27 @@ it('imports plan 76 while preserving unrelated saved countries and plans', async
   expect(master.create).not.toHaveBeenCalled();
   await expect(service.importFestival(branchId, 1, actor)).rejects.toThrow();
   expect(provider.festivalRates).toHaveBeenCalledTimes(1);
+});
+
+it('allows dedicated insurance managers without granting system settings management', () => {
+  const service = new InsuranceSettingsService({} as never, {} as never);
+  const actor = {
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  expect(service.canManage(actor)).toBe(true);
+  expect(actor.permissions).not.toContain('system.settings.manage');
+  expect(
+    service.canManage({ ...actor, permissions: ['reservations.read'] }),
+  ).toBe(false);
+  expect(
+    service.canManage({
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.system-settings.operations.insurance-issuance',
+      ],
+    }),
+  ).toBe(false);
+  expect(() => service.authorize(actor, 'other', true)).toThrow();
 });

@@ -507,6 +507,45 @@ export class IamService implements IamStepUpPort {
     };
   }
 
+  /** Server-configured attendance connector only; never an HTTP authentication route.
+   * Select a live session of the bound account rather than pinning a browser
+   * refresh family forever. Native authentication still rejects revoked/expired
+   * sessions and re-evaluates account status and current access on every tick. */
+  async authenticateAttendanceConnectorV1(
+    userId: string,
+  ): Promise<AuthenticatedActor> {
+    if (
+      process.env.HR_RADAN_ENABLED !== 'true' ||
+      userId !== process.env.HR_RADAN_ACTOR_ID ||
+      !/^[0-9a-f-]{36}$/i.test(userId)
+    )
+      throw new UnauthorizedException('دسترسی معتبر نیست.');
+    const session = await this.database.client.session.findFirst({
+      where: {
+        userId,
+        status: SessionStatus.ACTIVE,
+        expiresAt: { gt: new Date() },
+        user: { status: UserStatus.ACTIVE },
+      },
+      select: { id: true },
+      orderBy: [{ expiresAt: 'desc' }, { id: 'asc' }],
+    });
+    if (!session) throw new UnauthorizedException('دسترسی معتبر نیست.');
+    const actor = await this.authenticateSessionReferenceV1(userId, session.id);
+    if (!actor.permissions.includes('hr.manage'))
+      throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
+    const configuredBranches = [
+      process.env.HR_RADAN_BRANCH_ID,
+      process.env.HR_RADAN_SECONDARY_BRANCH_ID,
+    ];
+    const branchIds = actor.branchIds.filter((id) =>
+      configuredBranches.includes(id),
+    );
+    if (!branchIds.length)
+      throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
+    return { ...actor, branchIds };
+  }
+
   assertPermissions(
     actor: AuthenticatedActor,
     required: IamPermissionCode[],

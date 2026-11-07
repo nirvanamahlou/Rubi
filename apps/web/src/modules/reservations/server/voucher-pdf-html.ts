@@ -1,4 +1,8 @@
 import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
+import {
+  voucherHotelJourneyRows,
+  voucherJourneyColumns,
+} from '../model/voucher-hotel-journeys';
 import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { localizeDocumentHtml } from '@/i18n/document';
 import {
@@ -94,13 +98,14 @@ function voucherHotelPdfHtml(
   const data = voucher
     ? voucherFormData(intake, refs)
     : supplierFormData(intake, refs);
+  const journeys = voucher ? voucherHotelJourneyRows(intake, refs) : [];
   const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
     ? voucherPassengerServices(intake, data)
     : {};
   const pages = voucher
     ? reservationPassengerPages(
         data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
+        voucherPassengerPageUnits(settings, data.notes, journeys.length > 0),
       )
     : [data.passengers];
   const heading = (n: string, title: string, note: string) =>
@@ -217,6 +222,7 @@ function voucherHotelPdfHtml(
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
     ${hotelHtml}
+    ${index === 0 && journeys.length ? `<section data-hotel-journeys style="break-inside:avoid">${heading('03', 'HOTEL TRANSPORT', 'Tehran time')}${table(voucherJourneyColumns, journeys).replace('<table ', '<table style="table-layout:fixed;width:100%;overflow-wrap:anywhere;white-space:pre-line" ')}</section>` : ''}
     ${heading('04', 'TOUR SERVICES', 'Leader & board')}${table(['TRANSFER', 'TOUR LEADER', 'BOARD'], [[data.transfer, data.leader, settings?.text.transferBoard?.trim() || '-']])}
     ${heading('05', voucher ? 'PASSENGER SERVICES' : 'PASSENGERS', 'Passenger manifest')}${
       voucher

@@ -2,12 +2,14 @@ import type { DatePickerProps } from '@/components/ui/date-picker';
 import type * as React from 'react';
 import {
   emptySalesForm,
+  withSalesHotelDates,
   salesPayload,
   type SalesFormState,
 } from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesContractForm } from './sales-contract-form';
+import { combinedHotelDraft } from '../model/combined-hotel-next.fixtures';
 
 const fixture = vi.hoisted(() => ({
   flight: false,
@@ -622,5 +624,64 @@ it('shows historical prices once in the customer table, with rial, foreign, disc
   } finally {
     fixture.step = 0;
     fixture.ticketDraft = null;
+  }
+});
+
+it.each([false, true])(
+  'enables pricing navigation for complete combined hotels, while explaining a manual overlap (%s)',
+  (manualOverlap) => {
+    const state = combinedHotelDraft();
+    state.hotel.checkOutManual = manualOverlap;
+    fixture.ticketDraft = withSalesHotelDates(state, state);
+    fixture.step = 0;
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      const next = [
+        ...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g),
+      ].find((m) => m[0].includes('تأیید مسیر و خدمات'))?.[0];
+      expect(next).toBeDefined();
+      expect(Boolean(next?.match(/ disabled(?:=|>|\s)/))).toBe(manualOverlap);
+      expect(html.includes('تاریخ خروج هتل قبلی را اصلاح کنید.')).toBe(
+        manualOverlap,
+      );
+    } finally {
+      fixture.ticketDraft = null;
+      fixture.step = 0;
+    }
+  },
+);
+
+it('enables pricing for a complete flight-plus-combined-hotel itinerary', () => {
+  const state = combinedHotelDraft();
+  state.serviceKinds = ['FLIGHT', 'HOTEL'];
+  state.tripType = 'ROUND_TRIP';
+  state.contractFlights = {
+    OUTBOUND: {
+      departureAt: '2099-01-01T10:00:00',
+      arrivalAt: '2099-01-01T13:00:00',
+      carrierName: 'Synthetic Air',
+      serviceNumber: 'TEST1',
+      cabinClassCode: 'ECONOMY',
+    },
+    RETURN: {
+      departureAt: '2099-01-10T10:00:00',
+      arrivalAt: '2099-01-10T13:00:00',
+      carrierName: 'Synthetic Air',
+      serviceNumber: 'TEST2',
+      cabinClassCode: 'ECONOMY',
+    },
+  };
+  fixture.ticketDraft = withSalesHotelDates(state, state);
+  fixture.step = 0;
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const next = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].find(
+      (m) => m[0].includes('تأیید مسیر و خدمات'),
+    )?.[0];
+    expect(next).toBeDefined();
+    expect(next).not.toMatch(/ disabled(?:=|>|\s)/);
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
   }
 });

@@ -7,6 +7,7 @@ import {
 } from './reservation-form';
 import { defaultVoucherSettings, voucherFormData } from './voucher-settings';
 import { voucherPassengerPageUnits } from './voucher-passenger-services';
+import { voucherHotelJourneyRows } from './voucher-hotel-journeys';
 
 /** Read-only hotel documents. Primary voucher overrides never become another hotel's facts. */
 export function voucherHotelDocuments(
@@ -24,6 +25,8 @@ export function voucherHotelDocuments(
             hotelStayKey: stay.key,
             hotelStayOrdinal: stay.ordinal,
             snapshot: scopeReservationHotel(intake.snapshot, stay.key),
+            hotelJourneySourceSnapshot:
+              intake.hotelJourneySourceSnapshot ?? intake.snapshot,
             workflow: { ...intake.workflow },
           };
           if (!index) return scoped;
@@ -75,7 +78,11 @@ export function voucherHotelDocuments(
     const count =
       reservationPassengerPages(
         data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
+        voucherPassengerPageUnits(
+          settings,
+          data.notes,
+          voucherHotelJourneyRows(scope, refs).length > 0,
+        ),
       ).length +
       (settings?.flags.hotel === false
         ? 0

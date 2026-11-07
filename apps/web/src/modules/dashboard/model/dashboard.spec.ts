@@ -39,8 +39,11 @@ describe('dashboard registry', () => {
     );
     for (const kpi of dashboardKpis) {
       expect(kpi.grain).not.toBe('');
+      expect(kpi.businessDefinition.trim()).not.toBe('');
       expect(kpi.rule).not.toBe('');
+      expect(kpi.rule).not.toMatch(/[A-Za-z]/);
       expect(kpi.exclusions).not.toBe('');
+      expect(kpi.exclusions).not.toMatch(/[A-Za-z]/);
       expect(kpi.source.length).toBeGreaterThan(0);
       expect(kpi.permission).toMatch(/^reports\.dashboard\./);
       expect(['required', 'not-applicable']).toContain(kpi.currency);
@@ -241,7 +244,7 @@ describe('dashboard registry', () => {
     ).toHaveLength(1);
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'net-profit')?.rule,
-    ).toContain('حساب‌های درآمد Posted');
+    ).toContain('حساب‌های درآمد قطعی‌شده');
   });
 
   it('covers sales and travel-service analysis without duplicating time-grain charts', () => {
@@ -335,7 +338,7 @@ describe('dashboard registry', () => {
     ).toContain('در صورت صفر بودن مخرج نتیجه ناموجود است');
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'discount-amount')?.rule,
-    ).toContain('DISCOUNT');
+    ).toContain('تخفیف');
   });
 
   it('uses donut only for explicit low-cardinality share visuals', () => {
@@ -753,6 +756,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain(
       'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground',
     );
+    expect(source).toContain(
+      'data-[highlighted]:!text-white [&[data-highlighted]>span]:!text-white',
+    );
     expect(source).toContain('xl:grid-cols-3 2xl:grid-cols-6');
     expect(source).toContain('dashboardVisualIsWide(');
     expect(source).toContain("kind === 'line'");
@@ -760,15 +766,13 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain("kind === 'queue'");
     expect(source).not.toContain('grid-flow-row-dense');
     expect(source).toContain('فیچرهای استفاده‌شده در فرمول');
-    expect(source).toContain('calculationFeatureFor(source)');
+    expect(source).toContain('map(calculationFeatureFor)');
     expect(source).toContain('aria-haspopup="dialog"');
     expect(source).not.toContain('جزئیات تعریف شاخص');
     expect(source).toContain('<Drawer');
     expect(source).toContain('id="kpi-definition-panel"');
     expect(source).toContain('تعریف و هدف کسب‌وکار');
-    expect(source).toContain(
-      'این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای',
-    );
+    expect(source).toContain('{definition.businessDefinition}');
     expect(source).toContain('این شاخص برای پاسخ به این تصمیم استفاده می‌شود:');
     expect(source).not.toContain('تصمیم: </span>');
     const kpiCardSource = source.slice(
@@ -813,7 +817,7 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('[&_svg]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('فیچرهای استفاده‌شده در فرمول');
     expect(kpiDefinitionPanelSource).toContain('definition.source.map');
-    expect(kpiDefinitionPanelSource).toContain('calculationFeatureFor(source)');
+    expect(kpiDefinitionPanelSource).toContain('map(calculationFeatureFor)');
     expect(source).toContain('recognized sale revenue');
     expect(source).toContain('matched purchase cost');
     expect(source).toContain('فرمول و قاعده محاسبه');
