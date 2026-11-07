@@ -482,7 +482,10 @@ export function contractPrintHtml(
           ?.metadata?.businessOutput === true;
       const facts: TicketDocumentFacts | undefined = t.offerId
         ? refs.flightFacts?.[t.offerId]
-        : { destinationAirport: t.destinationAirport };
+        : {
+            originAirport: t.originAirport,
+            destinationAirport: t.destinationAirport,
+          };
       const endpoint = (
         airport: TicketDocumentFacts['originAirport'],
         id: string,

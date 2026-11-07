@@ -17,6 +17,8 @@ import {
   type ManifestTicketRouteFilters,
 } from '../model/manifest-ticket-filters';
 import { ManifestReferenceFilter } from './manifest-reference-filter';
+import { manifestReferenceQuery } from './manifest-reference-filter';
+import { masterDataApi } from '@/modules/master-data/api/client';
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -101,6 +103,57 @@ export function ManifestExport() {
   const [destinationCountry, setDestinationCountry] =
     useState<MasterDataRecord>();
   const [originFilter, setOriginFilter] = useState<MasterDataRecord>();
+  const originEdited = useRef(false);
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const countries = await masterDataApi.list(
+          'countries',
+          manifestReferenceQuery('ایران'),
+          'reservations',
+        );
+        const iran = countries.data.find(
+          (record) =>
+            record.status === 'active' &&
+            [
+              record.name,
+              record.code,
+              record.attributes.englishName,
+              record.attributes.iso2Code,
+            ].some(
+              (value) =>
+                typeof value === 'string' &&
+                ['ایران', 'iran', 'ir', 'irn'].includes(
+                  value.trim().toLowerCase(),
+                ),
+            ),
+        );
+        if (!iran || !active || originEdited.current) return;
+        setOriginCountry(iran);
+        const cities = await masterDataApi.list(
+          'cities',
+          manifestReferenceQuery('تهران', iran.id),
+          'reservations',
+        );
+        const tehran = cities.data.find(
+          (record) =>
+            record.status === 'active' &&
+            [record.name, record.attributes.englishName].some(
+              (value) =>
+                typeof value === 'string' &&
+                ['تهران', 'tehran'].includes(value.trim().toLowerCase()),
+            ),
+        );
+        if (tehran && active && !originEdited.current) setOriginFilter(tehran);
+      } catch {
+        // Defaults are optional; the user can still select the route manually.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
   const [destinationFilter, setDestinationFilter] =
     useState<MasterDataRecord>();
   const [loaded, setLoaded] = useState(false);
@@ -287,6 +340,7 @@ export function ManifestExport() {
           resource="countries"
           value={originCountry}
           onSelect={(country) => {
+            originEdited.current = true;
             setOriginCountry(country);
             setOriginFilter(undefined);
           }}
@@ -297,7 +351,10 @@ export function ManifestExport() {
           resource="cities"
           value={originFilter}
           countryId={originCountry?.id}
-          onSelect={setOriginFilter}
+          onSelect={(city) => {
+            originEdited.current = true;
+            setOriginFilter(city);
+          }}
         />
         <ManifestReferenceFilter
           id="manifest-destination-country"

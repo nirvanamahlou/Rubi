@@ -294,6 +294,7 @@ export interface SalesFormState {
 }
 
 export interface ContractFlightDraft {
+  originAirport?: SalesFlightSnapshotV1['originAirport'] | undefined;
   destinationAirport?: SalesFlightSnapshotV1['destinationAirport'] | undefined;
   confirmation?: 'saved' | 'invalid' | undefined;
   departureAt: string;
@@ -552,6 +553,9 @@ export function salesFlightSelection(
             carrierNameSnapshot: manual.carrierName.trim(),
             serviceNumberSnapshot: manual.serviceNumber.trim(),
             cabinClassCode: manual.cabinClassCode,
+            ...(manual.originAirport
+              ? { originAirport: manual.originAirport }
+              : {}),
             ...(manual.destinationAirport
               ? { destinationAirport: manual.destinationAirport }
               : {}),

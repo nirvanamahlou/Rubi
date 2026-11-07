@@ -29,6 +29,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [search, setSearch] = useState('');
   const [providerCatalog, setProviderCatalog] =
     useState<InsuranceProviderCatalog | null>(null);
@@ -66,6 +67,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
     fn: (config: InsuranceConfigurationV1) => InsuranceConfigurationV1,
   ) {
     setMessage('');
+    setDirty(true);
     setValue((old) => (old ? { ...old, config: fn(old.config) } : old));
   }
   function updateMapping(patch: Partial<InsuranceCountryMappingV1>) {
@@ -102,6 +104,62 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
       setProviderBusy(false);
     }
   }
+  async function importFestival() {
+    if (!value || busy || dirty) return;
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await insuranceRequest<
+        InsuranceSettingsResponse & { unsupportedBands: number }
+      >('settings/festival?' + new URLSearchParams({ branchId }), {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ expectedVersion: value.version }),
+      });
+      setValue(result);
+      const [countryRows, planRows] = await Promise.all([
+        insuranceReferences(branchId, 'countries'),
+        insuranceReferences(branchId, 'insurance-plans'),
+      ]);
+      setCountries(countryRows);
+      setPlans(planRows);
+      setSelected(result.config.countries[0]?.countryId ?? '');
+      setPlanIndex(0);
+      setMessage(
+        'کشورها و نرخ‌های طرح ۷۶ از API آزمایشی ثبت شدند.' +
+          (result.unsupportedBands
+            ? ' بازه‌های بدون نرخ بیمه‌گر وارد نشدند.'
+            : ''),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'اطلاعات بیمه دریافت نشد.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function testIssuance() {
+    if (providerBusy) return;
+    setProviderBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await insuranceRequest<{
+        sandboxOnly: true;
+        confirmed: true;
+        policyId: number;
+      }>('provider/test-issuance?' + new URLSearchParams({ branchId }), {
+        method: 'POST',
+      });
+      setMessage(
+        'ساخت و تأیید آزمایشی موفق بود؛ شناسهٔ آزمایشی: ' + result.policyId,
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'اطلاعات بیمه دریافت نشد.');
+    } finally {
+      setProviderBusy(false);
+    }
+  }
   async function save() {
     if (!value) return;
     setBusy(true);
@@ -121,6 +179,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
           },
         ),
       );
+      setDirty(false);
       setMessage('تنظیمات بیمه ذخیره شد.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
@@ -169,6 +228,35 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
             >
               {providerBusy ? 'در حال دریافت…' : 'دریافت اطلاعات بیمه‌گر'}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !editable ||
+                dirty ||
+                providerBusy ||
+                value.providerStatus !== 'SANDBOX_CONFIGURED'
+              }
+              title={dirty ? 'ابتدا تغییرات تنظیمات را ذخیره کنید.' : undefined}
+              onClick={() => void importFestival()}
+            >
+              دریافت و ثبت کشورها و نرخ‌های طرح ۷۶
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !editable ||
+                providerBusy ||
+                value.providerStatus !== 'SANDBOX_CONFIGURED'
+              }
+              onClick={() => void testIssuance()}
+            >
+              آزمایش صدور با اطلاعات ساختگی
+            </Button>
+            <p className={styles.muted}>
+              این آزمایش بیمه‌نامهٔ واقعی مسافر ایجاد نمی‌کند.
+            </p>
             {providerCatalog && (
               <p role="status">
                 {providerCatalog.countries.length} کشور ·{' '}

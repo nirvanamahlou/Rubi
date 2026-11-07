@@ -327,6 +327,10 @@ COMPUTER_ID=PC-A; codex/pc-a-shared-broker-form-1105 from develop1caf96d8. Owner
 
 SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTURE output vocabulary in place of OUTBOUND/RETURN. Reserve only supplier-form output label projection, price-table labels and corresponding render regression; stored enums and routing are unchanged. Existing sent quotation selection stays immutable. Synthetic combined PDF visually verified; all final-head hosted gates precede authorized develop merge. Scope freezes on push and releases on verified merge.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
+
+Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
@@ -11374,6 +11378,14 @@ User authorizes removal of selected request history/source identifier and FX sum
 
 User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
 
+## FINANCE-APPROVAL-DOWNLOAD-1107 — PC-B — ACTIVE
+
+Owner authorizes pending/approved inbox tabs and direct receipt download, push/develop merge. Reserve Finance query/controller/export and inbox UI, additive query/Sales projection contracts and scoped Sales read methods, Documents source-bound receipt pending-scan policy and focused tests, own notes. Prior Finance redesign is merged/frozen. Shared contract producer/consumer ship together; no schema/dependency/runtime data changes. Preserve branch/source authorization, malicious-file denial, custom confidential codes and audits.
+
+FINANCE-APPROVAL-DOWNLOAD-1107 validation:169 API and18 Web checks, scoped API/Web lint and full Web TypeScript pass. Shared runtime database artifacts resolved only via external test alias; no dependency edits. Source frozen on push; all final-head hosted gates required before user-authorized develop merge. No deployment.
+
+FINANCE-APPROVAL-DOWNLOAD-1107 CI recovery reserves exactly two native English UI labels in en-overrides.json. All full build/quality/migration gates passed; the full-suite coverage gate found the missing new tab translations. No behavior or gate changes.
+
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
@@ -11381,3 +11393,9 @@ PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests r
 ## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
 
 PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
+
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
+
+PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
+
+CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.

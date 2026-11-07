@@ -339,6 +339,9 @@ TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, life
 ## SHARED-BROKER-FORM-1105 — PC-A — READY_FOR_CI
 One shared-broker editor now contains all hotel quotation panels, dates and room summaries, with a single shared broker/notice and existing scoped workflow commands saved under returned CAS versions. Every monetary column is normalized before the first quotation write; a failure stops subsequent writes/sending and preserves the last successful revision for reload/retry. Shared preview/PDF use consolidated hotel, room and purchase tables; legacy column quotes and per-room factors/currencies/nights remain distinct and historical sent snapshots are preserved. Owner follow-up changes output wording to ARRIVAL/DEPARTURE only; persisted flight/transfer directions remain unchanged. Synthetic actual A4 PDF rendered and visually checked. Reservations suite593 checks passed before wording follow-up; updated focused tests, lint, typecheck and Web production build pass. Final-head hosted gates required before authorized develop merge. No schema, migration, dependency, production data write or deployment.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107
+Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with insert-only migration. Preserve configured IDs, policies and deactivation. Isolated PostgreSQL regression exercises missing references and replay preservation under existing receipt-reference CI gate. No operational data changes or deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9090,11 +9093,28 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
 
+## FINANCE-APPROVAL-DOWNLOAD-1107 — 2026-11-07
+
+PC-B: owner-requested inbox approval groups and receipt download implemented. Default pending / approved controls filter server-side before pagination, totals and Excel export; switches reset selection/page. Completed Sales receipts and paid reservation groups are retained through their public source projections; Sales branch scope and legacy callers preserved. Reservation ready-on-handoff alone is not financial approval. Confirmed receipts no longer show approve/correction commands.
+
+Receipt PDF/JPEG/PNG downloads can proceed from the source-bound Sales endpoint while antivirus is pending/unavailable. Generic Documents access does not acquire this exception; wrong-source/branch, infected/quarantined files, custom confidential codes and access audits remain enforced. No schema, migration, dependency, operational data or deployment changes.
+
+Validation:169 focused API and18 Web tests pass; Web typecheck caught and corrected the native Button primary variant. Shared local dependency artifacts require API tests to resolve the existing generated database package and current Contracts source through a temporary external test config. Final-head hosted full build/type/test/migration gates remain required before authorized develop merge. Source reservation freezes on push.
+
 
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
 
+
+
+
 ## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
 
 PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
+
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
+
+PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
+
+CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.

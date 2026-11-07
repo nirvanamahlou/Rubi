@@ -114,7 +114,7 @@ export class FinanceInboxController {
     @Req() request: AuthenticatedRequest,
   ) {
     const { page, pageSize } = validateInboxQuery(query, request.actor);
-    const result = await this.inbox.list(request.actor);
+    const result = await this.inbox.list(request.actor, !!query.approvalGroup);
     const items = filterFinanceInbox(result.items, query);
     const open = items.filter((item) => !isClosedFinanceItem(item));
     return {

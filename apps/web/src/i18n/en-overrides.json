@@ -1,4 +1,6 @@
 {
+  "درخواست‌های تأییدشده": "Approved requests",
+  "درخواست‌های در انتظار": "Pending requests",
   "کودکان ۲ تا ۶ سال": "Children aged 2 to under 6",
   "کودکان ۶ تا ۱۲ سال": "Children aged 6 to under 12",
   "اطلاعات پرواز با روش جابه‌جایی انتخاب‌شده سازگار نیست.": "The flight details do not match the selected transport method.",
@@ -5250,5 +5252,13 @@
   "مبنای تبدیل: نرخ خرید ارز در اطلاعات پایه": "Conversion basis: the purchase exchange rate in master data",
   "دریافت نرخ خرید ارز ناموفق بود.": "Could not load purchase exchange rates.",
   "نرخ خرید ارز موجود نیست.": "No purchase exchange rate is available.",
-  "نرخ خرید معتبر برای تبدیل ارز به ریال موجود نیست:": "No valid purchase exchange rate to IRR is available:"
+  "نرخ خرید معتبر برای تبدیل ارز به ریال موجود نیست:": "No valid purchase exchange rate to IRR is available:",
+  "آزمایش صدور با اطلاعات ساختگی": "Test issuance with synthetic data",
+  "کشورها و نرخ‌های طرح ۷۶ از API آزمایشی ثبت شدند.": "Countries and plan 76 rates were imported from the sandbox API.",
+  "دریافت و ثبت کشورها و نرخ‌های طرح ۷۶": "Import countries and rates for plan 76",
+  "این آزمایش بیمه‌نامهٔ واقعی مسافر ایجاد نمی‌کند.": "This test does not issue a real passenger policy.",
+  "حالت آزمایشی تراویس؛ نتیجهٔ آزمایش، بیمه‌نامهٔ واقعی مسافر نیست.": "Travis sandbox mode; test results are not real passenger policies.",
+  "بازه‌های بدون نرخ بیمه‌گر وارد نشدند.": "Bands without insurer rates were not imported.",
+  "ساخت و تأیید آزمایشی موفق بود؛ شناسهٔ آزمایشی:": "Sandbox creation and confirmation succeeded; test ID:",
+  "ابتدا تغییرات تنظیمات را ذخیره کنید.": "Save settings changes first."
 }
