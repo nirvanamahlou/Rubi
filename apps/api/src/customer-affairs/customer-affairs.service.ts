@@ -2441,7 +2441,7 @@ export class CustomerAffairsService {
         ? (JSON.parse(event.summary) as WorkbenchLeaveInputV1)
         : undefined;
       if (workbenchReviewStatus(row) === input.status)
-        return { branchId: row.branchId, leave };
+        return { branchId: row.branchId, leave, senderId: row.createdByUserId };
       if (
         row.version !== input.version ||
         ['APPROVED', 'REJECTED'].includes(workbenchReviewStatus(row))
@@ -2519,13 +2519,14 @@ export class CustomerAffairsService {
         entityId: id,
         href: `/workbench?tab=requests&request=${id}`,
       });
-      return { branchId: row.branchId, leave };
+      return { branchId: row.branchId, leave, senderId: row.createdByUserId };
     });
     if (input.status === 'APPROVED' && result.leave)
       await this.hr!.reconcileWorkbenchLeave(
         result.branchId,
         result.leave,
         actor,
+        result.senderId,
       );
     return { data: { id, status: input.status } };
   }

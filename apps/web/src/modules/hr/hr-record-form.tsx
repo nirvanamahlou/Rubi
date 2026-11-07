@@ -903,9 +903,9 @@ function HrRecordFormFields({
               if (
                 target.source.section === 'time' &&
                 target.source.tab === 'leavePolicies' &&
-                values[3] === 'خیر'
+                values[5] === 'خیر'
               )
-                values[4] = '';
+                values[6] = '0';
               const field = (...labels: string[]) => {
                 for (const label of labels) {
                   const i = definition.columns.indexOf(label);

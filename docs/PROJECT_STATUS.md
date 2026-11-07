@@ -1,3 +1,7 @@
+## HR leave and mission fixes — 2026-11-07
+
+Both monthly leave notice controls now accept integer days (0–365), with legacy hourly cutoff compatibility. HR mission fund previews use a narrow HR-manage port retaining custodian/manager and branch enforcement, without requiring purchase-list access. Workbench leave resolves the explicitly linked active sender employee independently of request destination, and approval/reconciliation use that personnel branch; missing links are never guessed. Focused unit/form tests and two isolated PostgreSQL workflows pass, including canonical cross-branch persistence and fund preview. Production account mapping remains pending for unlinked accounts.
+
 ## CHAT-MESSAGE-SEARCH-1107 — PC-B — READY_FOR_CI
 
 User authorizes in-conversation message search beside resize controls, push and develop merge. Reserve Messaging list search query/repository filtering, client and composer search results/pagination, tests and translations. Server-side history search stays within authorized conversation; search does not mark unrelated messages read. No schema/dependency/deployment. Validation: 97 Web/translation tests, 30 API tests and all 8 real PostgreSQL messaging tests passed; scoped lint passed. The first simultaneous local database run timed out in the existing attachment upload; an isolated rerun passed all cases. Coverage includes history beyond the current feed, non-overlapping cursor pages, authorization and unread preservation. Final-head hosted gates precede merge.

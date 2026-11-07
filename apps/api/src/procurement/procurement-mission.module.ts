@@ -15,6 +15,25 @@ export class ProcurementMissionPort {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
   ) {}
+  async summary(branchId: string, actor: AuthenticatedActor) {
+    if (
+      !actor.permissions.includes('hr.manage') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const fund = await this.database.client.procurementPettyFund.findUnique({
+      where: { branchId },
+    });
+    return fund
+      ? {
+          balance: fund.balance.toString(),
+          currencyCode: fund.currencyCode,
+          canRegister:
+            fund.custodianId === actor.userId ||
+            actor.permissions.includes('procurement.assign'),
+        }
+      : null;
+  }
   validateReceipt(
     receipt: unknown,
     branchId: string,

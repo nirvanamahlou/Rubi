@@ -262,6 +262,7 @@ const fieldOptions = (
 };
 
 const fieldType = (label: string): ContextualFieldType => {
+  if (/^مهلت ثبت (روزانه|ساعتی) \(روز قبل\)$/.test(label)) return 'number';
   if (
     /رزومه|فایل پیوست|^فایل$|^مدرک هزینه$|فایل قرارداد|مدارک مرخصی/.test(label)
   )
@@ -1077,7 +1078,9 @@ export function ContextualHrForm({
                           field.label,
                         )
                           ? '0.01'
-                          : undefined
+                          : field.label.startsWith('مهلت ثبت ')
+                            ? '1'
+                            : undefined
                       }
                       max={
                         workingHours &&
@@ -1085,7 +1088,9 @@ export function ContextualHrForm({
                           field.label,
                         )
                           ? '48'
-                          : undefined
+                          : field.label.startsWith('مهلت ثبت ')
+                            ? '365'
+                            : undefined
                       }
                       onChange={(event) => update(field.id, event.target.value)}
                       placeholder={field.placeholder}

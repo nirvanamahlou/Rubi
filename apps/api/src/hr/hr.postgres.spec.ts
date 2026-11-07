@@ -298,6 +298,11 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           balance: '1000',
         },
       });
+      expect(await service.missionPettyFund(branchId, manager)).toEqual({
+        balance: '1000',
+        currencyCode: 'IRR',
+        canRegister: true,
+      });
       const date = '2026-11-03';
       await service.createRecord(
         {
@@ -589,7 +594,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         '2.5',
         '3',
         '1',
-        '14:00',
+        '0',
       ]);
       await service.createRecord(
         {
@@ -613,9 +618,69 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         key(),
         manager,
       );
-      const date = new Date(Date.now() + 5 * 86400000)
-        .toISOString()
-        .slice(0, 10);
+      const leaveDate = new Date(Date.now() + 5 * 86400000);
+      while ([4, 5].includes(leaveDate.getUTCDay()))
+        leaveDate.setUTCDate(leaveDate.getUTCDate() + 1);
+      const date = leaveDate.toISOString().slice(0, 10);
+      const destinationBranch = randomUUID();
+      await client.branch.create({
+        data: {
+          id: destinationBranch,
+          code: destinationBranch,
+          name: 'Synthetic request destination',
+        },
+      });
+      await client.userBranch.createMany({
+        data: [owner.userId, manager.userId].map((userId) => ({
+          userId,
+          branchId: destinationBranch,
+        })),
+      });
+      const scopedOwner = await iam.authenticateSessionReferenceV1(
+        owner.userId,
+        owner.sessionId,
+        true,
+      );
+      const scopedManager = await iam.authenticateSessionReferenceV1(
+        manager.userId,
+        manager.sessionId,
+        true,
+      );
+      const crossBranchLeave = {
+        from: date,
+        to: date,
+        mode: 'ساعتی' as const,
+        startTime: '14:00',
+        endTime: '15:00',
+        reason: 'Synthetic canonical identity',
+        leaveType: 'استحقاقی' as const,
+        substituteUserId: substitute.userId,
+      };
+      await service.validateWorkbenchLeaveSubmission(
+        client,
+        destinationBranch,
+        owner.userId,
+        crossBranchLeave,
+        scopedOwner,
+      );
+      await expect(
+        client.$transaction(async (tx) => {
+          const id = await service.approveWorkbenchLeave(
+            tx,
+            randomUUID(),
+            destinationBranch,
+            owner.userId,
+            crossBranchLeave,
+            scopedManager,
+          );
+          const recorded = await tx.hrRecord.findUniqueOrThrow({
+            where: { id },
+          });
+          expect(recorded.branchId).toBe(branchId);
+          expect(recorded.employeeId).toBe(person.id);
+          throw new Error('Synthetic canonical rollback');
+        }),
+      ).rejects.toThrow('Synthetic canonical rollback');
       await service.createRecord(
         {
           branchId,

@@ -17689,5 +17689,9 @@
   "هزینه مستقل": "Standalone expense",
   "ارز هزینه با تنخواه یکسان نیست.": "The expense currency must match the petty-cash fund.",
   "اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.": "Expense details do not match the submitted values.",
-  "ترانسفر همراه رزرو هتل": "Transfer included with hotel booking"
+  "ترانسفر همراه رزرو هتل": "Transfer included with hotel booking",
+  "مهلت ثبت ساعتی (روز قبل)": "Hourly leave notice (days before)",
+  "مهلت ثبت مرخصی ساعتی گذشته است.": "The hourly leave submission deadline has passed.",
+  "فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.": "Only the fund custodian or purchasing manager may register an expense.",
+  "مهلت ثبت": "Submission deadline"
 }

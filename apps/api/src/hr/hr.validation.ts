@@ -212,6 +212,12 @@ export function recordValues(
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
   if (
+    schema.key === 'time.leavePolicies' &&
+    typeof padded[4] === 'string' &&
+    /^([01]\d|2[0-3]):[0-5]\d$/.test(digits(padded[4]))
+  )
+    padded[4] = '0';
+  if (
     schema.key === 'organization.positions' &&
     !padded[1] &&
     typeof padded[0] === 'string'

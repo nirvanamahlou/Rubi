@@ -45,7 +45,37 @@ describe('monthly leave policy', () => {
     ).toBeNull();
     expect(
       leavePolicyValues(['old', 'استحقاقی', '30', 'خیر', '0', '1405']),
-    ).toEqual(['استحقاقی', '', '', '1', '14:00', 'خیر', '0']);
+    ).toEqual(['استحقاقی', '', '', '1', '0', 'خیر', '0']);
+  });
+  it('uses integer days for both notice fields and retains legacy cutoff compatibility', () => {
+    const numeric = parseMonthlyLeavePolicy([
+      'استحقاقی',
+      '2',
+      '8',
+      '1',
+      '2',
+      'خیر',
+      '0',
+    ])!;
+    expect(numeric.hourlyNoticeDays).toBe(2);
+    const hourly = {
+      ...leave,
+      mode: 'ساعتی' as const,
+      startTime: '14:00',
+      endTime: '16:00',
+    };
+    expect(() =>
+      assertLeaveDeadline(hourly, numeric, new Date('2026-11-05T08:00:00Z')),
+    ).toThrow();
+    expect(() =>
+      assertLeaveDeadline(hourly, numeric, new Date('2026-11-04T08:00:00Z')),
+    ).not.toThrow();
+    expect(
+      leavePolicyValues(['استحقاقی', '2', '8', '1', '14:00', 'خیر', '0'])[4],
+    ).toBe('0');
+    expect(() =>
+      parseMonthlyLeavePolicy(['استحقاقی', '2', '8', '1', '366', 'خیر', '0']),
+    ).toThrow();
   });
   it('uses Tehran calendar days rather than UTC or rolling 24 hours', () => {
     expect(() =>
