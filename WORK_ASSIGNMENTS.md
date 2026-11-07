@@ -11368,6 +11368,8 @@ User authorizes removal of selected request history/source identifier and FX sum
 
 User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
 
-## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
+## REPORT-COPY-CLEANUP-1107 — PC-C — MERGED_AND_DEPLOYED
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
+
+REPORT-COPY-CLEANUP-1107: PR1442 merged deabda226 after all8 final-source gates passed on a6fbf45ca.19 local workspace tests and scoped lint/format pass; candidate full Web build/types,72 report/i18n tests and canary pass. Both selected live report routes verified with all5 fragments absent and working filter/result controls. Image rubi-production:report-copy-cleanup-1107 healthy; fresh encrypted backup, exact source/assets and unrelated-service checks verified. No API/schema/migration/dependency/business-data changes. Ownership released; docs/tasks/REPORT-COPY-CLEANUP-1107.md.

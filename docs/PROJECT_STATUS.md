@@ -9081,6 +9081,8 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
-## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
+## REPORT-COPY-CLEANUP-1107 — PC-C — MERGED_AND_DEPLOYED
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
+
+REPORT-COPY-CLEANUP-1107: PR1442 merged deabda226 after all8 final-source gates passed on a6fbf45ca.19 local workspace tests and scoped lint/format pass; candidate full Web build/types,72 report/i18n tests and canary pass. Both selected live report routes verified with all5 fragments absent and working filter/result controls. Image rubi-production:report-copy-cleanup-1107 healthy; fresh encrypted backup, exact source/assets and unrelated-service checks verified. No API/schema/migration/dependency/business-data changes. Ownership released; docs/tasks/REPORT-COPY-CLEANUP-1107.md.
