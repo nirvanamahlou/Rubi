@@ -1,3 +1,25 @@
+## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
+
+## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. User requests Persian equivalents throughout KPI/chart exclusions and limitations. Reserve registry exclusion text, chart limitation paragraph, matching English keys, existing registry assertions and own notes. Continue own draft PR1436; preserve all source lineage, computation and permission enforcement. No API/schema/dependencies/deployment. Latest develop inspected; relevant differences are own pending changes only.
+
+## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.
+
+## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. Extend own draft PR1436 with owner-requested Persian-only KPI calculation text and short contextual term explanations below KPI/chart rules. Reserve Dashboard registry rule strings, employee rule strings if needed, shared definition renderer, new local calculation glossary and additive English translation keys; preserve prior definitions and all calculations. Latest develop inspected; no competing change to these leaves. No API, schema, dependency or deployment. Same scoped validation as KPI copy.
+
+## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-kpi-copy-1107 from develop4f36df206. User requests individual plain-language business definitions for every Dashboard KPI, using travel-service terminology. Reserve Dashboard registry.ts, employee-commercial-performance.ts, the definition paragraph in dashboard-workspace.tsx, existing dashboard.spec.ts expectations, own task/status notes and additive new KPI translation keys in Web en-overrides.json only. Earlier Dashboard source scopes are merged (PR1335/1348/1377/1419); preserve their behavior and peer translation additions. No calculations, producers, contracts, permissions, schema, dependencies or live data changes. Validate existing Dashboard/i18n suites, lint, typecheck and Web build; deliver draft develop PR.
+
+Implemented all 84 unique definitions and English translations. Independent semantic review and metadata-preservation comparison passed. Existing Dashboard/i18n suites: 54 passed, one existing skipped; scoped ESLint, Web TypeScript, Prettier and production Web build passed. Frozen offline dependency install did not change the lockfile. No migration, merge or production deployment.
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.

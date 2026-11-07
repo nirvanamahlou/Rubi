@@ -1,3 +1,23 @@
+## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
+
+## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+Translated 49 mixed-language exclusions; all 84 KPI exclusion strings are Persian-only. Chart limitations display Persian report/permission wording instead of projection jargon and an internal permission code. Existing access checks preserved. 58 Dashboard/i18n tests passed (one existing skip); formatting, lint and Web build/TypeScript validate this copy change. Extends PR1436; no API/schema/data change or deployment.
+
+## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
+
+Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).
+
+## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+All 84 KPI rules are Persian-only; 41 mixed-language rules translated. Added 32 short contextual calculation explanations below KPI/chart rules and localized the chart projection wording. Existing calculation logic and shared translations preserved. Dashboard/i18n: 54 passed, one existing skip; scoped lint and TypeScript passed. Continues draft PR1436; no production deployment.
+
+## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
+
+Replaced the generic business-definition paragraph with individual travel-service explanations for all 84 Dashboard KPIs, including employee commercial metrics, with matching English translations. Formulas, source availability, filters and permissions are preserved. Independent semantic review, 54 Dashboard/i18n tests (one existing skipped), scoped lint, Web TypeScript, formatting and production Web build passed. No data or schema changes, merge or production deployment. Draft develop PR delivery. See [scope and delivery](tasks/DASHBOARDS-KPI-COPY-1107.md).
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
