@@ -11497,3 +11497,9 @@ RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must app
 RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
 
 RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.
+
+## RESERVATION-TRANSFER-COMBINED-1107 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from latest `origin/develop`. Owner requests the pre-issuance hotel purchase form to populate transfer passenger quantity from the contract and keep transfer pricing inside the hotel form unless the existing separate-broker checkbox is selected, then push and merge to `develop`. Reserve `reservation-hotel-purchase.tsx` and its focused purchase/transfer regressions plus this task note. Preserve immutable Sales allocations, saved purchase values, exact Decimal arithmetic, supplier defaults, authorization and all unrelated reservation outputs. No schema, migration, dependency, lockfile, operational data or deployment changes.
+
+RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
