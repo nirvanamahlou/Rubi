@@ -90,4 +90,4 @@ Catalog filters use bounded native name/status queries and keyset pagination.
 Exchange rates preserve the exact decimal rate and IRT quote currency. Source
 records remain external site-scoped data; they never create Nora business records.
 
-Before publication, unpublished task commits were rebased onto producer origin/main4d22a0a8 and consumer origin/develop5c72bc48b. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the same4d22a0a8 main snapshot when absent.
+Before publication, unpublished task commits were rebased onto producer origin/maine3efa9bb and consumer origin/develop5c72bc48b. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the samee3efa9bb main snapshot when absent.
