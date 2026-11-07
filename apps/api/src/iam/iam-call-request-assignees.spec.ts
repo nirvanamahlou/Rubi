@@ -301,3 +301,105 @@ it('preserves only explicitly configured global authority', async () => {
   const { directory } = setup('danial');
   expect(await directory.canManageRequest(actor, 'branch', null)).toBe(true);
 });
+
+const managerId = '00000000-0000-4000-8000-000000000010';
+const extraId = '00000000-0000-4000-8000-000000000020';
+describe('explicit additional request assignees', () => {
+  function policy() {
+    vi.stubEnv(
+      'CALL_CENTER_REQUEST_EXTRA_ASSIGNEES',
+      JSON.stringify({ [managerId]: [extraId] }),
+    );
+    vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
+    return { ...actor, userId: managerId } as AuthenticatedActor;
+  }
+  it('adds only configured targets while retaining active internal branch guards', async () => {
+    const manager = policy();
+    const { directory, user } = setup();
+    await directory.requestAssignees(manager, 'branch');
+    expect(user.findMany.mock.calls[0]![0].where).toMatchObject({
+      id: { in: [managerId, extraId] },
+      status: 'ACTIVE',
+      b2bOrganizationUser: null,
+      branches: { some: { branchId: 'branch', branch: { isActive: true } } },
+    });
+  });
+  it('does not extend a different manager or ordinary account', async () => {
+    policy();
+    const { directory, user } = setup();
+    await directory.requestAssignees(actor, 'branch');
+    expect(user.findMany.mock.calls[0]![0].where.id).toBe(actor.userId);
+  });
+  it('authorizes management only for an eligible configured target', async () => {
+    const manager = policy();
+    const { directory, user } = setup();
+    user.findFirst
+      .mockResolvedValueOnce({ username: 'manager', profile: null })
+      .mockResolvedValueOnce({ id: extraId });
+    expect(await directory.canManageRequest(manager, 'branch', extraId)).toBe(
+      true,
+    );
+    expect(user.findFirst.mock.calls[1]![0].where).toMatchObject({
+      id: extraId,
+      status: 'ACTIVE',
+      b2bOrganizationUser: null,
+      branches: { some: { branchId: 'branch', branch: { isActive: true } } },
+    });
+  });
+  it('denies an inactive, external or foreign-branch configured target', async () => {
+    const manager = policy();
+    const { directory, user } = setup();
+    user.findFirst
+      .mockResolvedValueOnce({ username: 'manager', profile: null })
+      .mockResolvedValueOnce(null);
+    expect(await directory.canManageRequest(manager, 'branch', extraId)).toBe(
+      false,
+    );
+    expect(await directory.canManageRequest(manager, 'other', extraId)).toBe(
+      false,
+    );
+  });
+  it.each(['{', '[]', 'null', JSON.stringify({ [managerId]: ['invalid'] })])(
+    'fails closed for malformed policy %s',
+    async (value) => {
+      vi.stubEnv('CALL_CENTER_REQUEST_EXTRA_ASSIGNEES', value);
+      const { directory, user } = setup();
+      await directory.requestAssignees(
+        { ...actor, userId: managerId },
+        'branch',
+      );
+      expect(user.findMany.mock.calls[0]![0].where.id).toBe(managerId);
+    },
+  );
+});
+
+import { CallCenterAccessService } from '../customer-affairs/call-center-access.service';
+it('keeps creator access limited to their configured-target requests, without exposing contact history', async () => {
+  vi.stubEnv(
+    'CALL_CENTER_REQUEST_EXTRA_ASSIGNEES',
+    JSON.stringify({ [managerId]: [extraId] }),
+  );
+  const accounts = {
+    additionalRequestAssigneeIds: vi.fn().mockResolvedValue([extraId]),
+  };
+  const access = new CallCenterAccessService(
+    {} as never,
+    {} as never,
+    accounts as never,
+  );
+  vi.spyOn(access, 'users').mockResolvedValue([managerId]);
+  vi.spyOn(access, 'where').mockResolvedValue({ id: 'visible-contact' });
+  vi.spyOn(access, 'canReviewCreatedRequest').mockResolvedValue(false);
+  const where = await access.requestWhere(
+    { ...actor, userId: managerId },
+    'branch',
+  );
+  expect(where.branchId).toBe('branch');
+  expect(where.OR).toContainEqual({
+    createdByUserId: managerId,
+    executionOwnerUserId: { in: [extraId] },
+  });
+  expect(where.OR).toContainEqual(
+    expect.objectContaining({ callCenterContact: { id: 'visible-contact' } }),
+  );
+});

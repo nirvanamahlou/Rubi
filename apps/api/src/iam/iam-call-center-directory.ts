@@ -11,6 +11,7 @@ import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
+import { extraRequestAssignees } from './call-request-extra-assignees';
 import { hrCallRoutes, hrCallRoutingEnabled } from './hr-call-routing';
 import {
   answeredCallAccess,
@@ -170,6 +171,22 @@ export class IamCallCenterDirectory {
     });
     if (!account) return false;
     if (
+      responsibleUserId &&
+      actor.permissions.includes('customer_affairs.call_center.read') &&
+      canViewRoute(actor.permissions, '/customer-affairs/call-center') &&
+      extraRequestAssignees(actor.userId).includes(responsibleUserId) &&
+      (await client.user.findFirst({
+        where: {
+          id: responsibleUserId,
+          status: 'ACTIVE',
+          b2bOrganizationUser: null,
+          branches: { some: { branchId, branch: { isActive: true } } },
+        },
+        select: { id: true },
+      }))
+    )
+      return true;
+    if (
       !answeredCallAccess() &&
       (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
         .split(',')
@@ -260,6 +277,7 @@ export class IamCallCenterDirectory {
       (await this.personnel.callCenterUnit(branchId, unitId, tx))
         ? unitId
         : null;
+    const extra = extraRequestAssignees(actor.userId);
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',
@@ -267,8 +285,17 @@ export class IamCallCenterDirectory {
         branches: { some: { branchId, branch: { isActive: true } } },
         ...(!global
           ? team
-            ? { profile: { organizationUnitId: team } }
-            : { id: actor.userId }
+            ? extra.length
+              ? {
+                  OR: [
+                    { profile: { organizationUnitId: team } },
+                    { id: { in: extra } },
+                  ],
+                }
+              : { profile: { organizationUnitId: team } }
+            : extra.length
+              ? { id: { in: [actor.userId, ...extra] } }
+              : { id: actor.userId }
           : {}),
       },
       select: { id: true, displayName: true },
@@ -287,6 +314,18 @@ export class IamCallCenterDirectory {
         ? { position: names.get(user.id)?.position || null, showPosition: true }
         : {}),
     }));
+  }
+
+  async additionalRequestAssigneeIds(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const extra = extraRequestAssignees(actor.userId);
+    if (!extra.length) return [];
+    return (await this.requestAssignees(actor, branchId, tx))
+      .filter((user) => extra.includes(user.id))
+      .map((user) => user.id);
   }
 
   async resolveRequestAssignee(

@@ -1,3 +1,7 @@
+## SALES-REQUEST-ASSIGNEES-1107 — PC-C — IN_PROGRESS
+
+Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies.
+
 ## AMIN-PR-CALL-RELEASE-1105 — PC-C — DONE
 
 Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
