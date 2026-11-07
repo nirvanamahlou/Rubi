@@ -32,6 +32,7 @@ import {
   SalesCustomersPublicAdapter,
 } from './sales.adapters';
 import { SalesController } from './sales.controller';
+import { SalesInsuranceDocumentsController } from './sales-insurance-documents.controller';
 import { SalesAssistantController } from './sales-assistant.controller';
 import { SalesAssistantConfirmationService } from './sales-assistant-confirmation.service';
 import { SalesRepository } from './sales.repository';
@@ -58,6 +59,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    SalesInsuranceDocumentsController,
     SalesPurchaseDraftController,
     SalesFloatingPurchasesController,
     FlightLoadController,

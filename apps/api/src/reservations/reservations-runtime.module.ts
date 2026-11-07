@@ -11,6 +11,9 @@ import { SystemManagementModule } from '../system-management/system-management.m
 import { InsuranceSettingsService } from '../integrations/insurance/insurance-settings';
 import { ReservationInsuranceController } from './insurance/insurance.controller';
 import { ReservationInsuranceService } from './insurance/insurance.service';
+import { InsuranceAutomation } from './insurance/insurance-automation';
+import { InsuranceDocumentsController } from './insurance/insurance-documents.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { reservationOutputPassengers } from './reservation-passenger-output';
 import {
   BrokerPurchaseHistory,
@@ -49,7 +52,6 @@ import {
   ReservationPassengerFilesService,
 } from './reservation-passenger-files';
 import { HotelRatesModule } from './hotel-rates.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { MasterDataModule } from '../master-data/master-data.module';
@@ -925,6 +927,7 @@ export class ReservationRequestsController {
   ],
   controllers: [
     ReservationInsuranceController,
+    InsuranceDocumentsController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,
@@ -936,6 +939,7 @@ export class ReservationRequestsController {
     TravisSandboxService,
     InsuranceSettingsService,
     ReservationInsuranceService,
+    InsuranceAutomation,
     BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,
@@ -950,6 +954,7 @@ export class ReservationRequestsController {
     ReservationManifestService,
   ],
   exports: [
+    InsuranceAutomation,
     ReservationTicketDocumentsService,
     ReservationServicePurchaseService,
     ReservationsPublicService,

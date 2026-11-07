@@ -1,4 +1,5 @@
 import { MasterDataModule } from '../master-data/master-data.module';
+import { CustomerInsuranceIdentity } from './customer-insurance-identity';
 import { SalesPeopleController } from './sales-people.controller';
 import { Module } from '@nestjs/common';
 
@@ -26,7 +27,8 @@ import { CustomerSelectionController } from './customer-selection.controller';
     CustomerNationalIdProtector,
     CustomerRepository,
     CustomerService,
+    CustomerInsuranceIdentity,
   ],
-  exports: [CustomerService],
+  exports: [CustomerService, CustomerInsuranceIdentity],
 })
 export class CustomersModule {}

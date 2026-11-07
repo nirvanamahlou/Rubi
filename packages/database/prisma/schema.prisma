@@ -8278,6 +8278,13 @@ model ReservationInsurancePolicy {
   version         Int                            @default(1)
   issuedAt        DateTime?                      @db.Timestamptz(3)
   cancelledAt     DateTime?                      @db.Timestamptz(3)
+  automatic       Boolean                        @default(false)
+  sandbox         Boolean                        @default(false)
+  automation      Json?
+  lastError       String?                        @db.VarChar(500)
+  pdfUrl          String?                        @db.VarChar(2000)
+  processingUntil DateTime?                      @db.Timestamptz(3)
+  nextAttemptAt   DateTime?                      @db.Timestamptz(3)
   createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
   contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
@@ -8289,6 +8296,7 @@ model ReservationInsurancePolicy {
   @@unique([provider, providerId])
   @@unique([provider, policyNumber])
   @@index([intakeId, status, createdAt])
+  @@index([automatic, status, nextAttemptAt], map: "reservation_insurance_auto_due_idx")
   @@map("reservation_insurance_policies")
 }
 

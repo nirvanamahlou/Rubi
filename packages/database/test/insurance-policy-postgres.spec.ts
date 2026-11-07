@@ -53,6 +53,23 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
           'INSERT INTO reservation_insurance_policies (id,"contractId","intakeId","customerId","destinationCode","planCode","departureDate","durationDays","updatedAt") VALUES ($1,$2,$3,$4,\'90\',\'P1\',\'2027-02-20\',7,NOW())';
         const id = randomUUID();
         await client.query(insert, [id, contract, intake, customer]);
+        await client.query(
+          readFileSync(
+            resolve(
+              __dirname,
+              '../prisma/migrations/20261107110000_insurance_automation/migration.sql',
+            ),
+            'utf8',
+          ),
+        );
+        expect(
+          (
+            await client.query(
+              'SELECT automatic, sandbox FROM reservation_insurance_policies WHERE id=$1',
+              [id],
+            )
+          ).rows[0],
+        ).toEqual({ automatic: false, sandbox: false });
         expect(
           (
             await client.query(
@@ -68,6 +85,10 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
           await client.query('RELEASE SAVEPOINT probe');
         };
         await deny(insert, [randomUUID(), contract, intake, customer]);
+        await deny(
+          'UPDATE reservation_insurance_policies SET automatic=true WHERE id=$1',
+          [id],
+        );
         await deny(insert, [randomUUID(), randomUUID(), intake, customer]);
         await deny(insert, [
           randomUUID(),
@@ -99,6 +120,10 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
             )
           ).rows[0].amount,
         ).toBe('123456789012345.1234');
+        await deny(
+          'UPDATE reservation_insurance_policies SET automatic=true,sandbox=true WHERE id=$1',
+          [id],
+        );
         await deny(
           'UPDATE reservation_insurance_policies SET "currencyCode"=NULL WHERE id=$1',
           [id],

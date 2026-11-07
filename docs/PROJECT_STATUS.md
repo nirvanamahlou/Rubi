@@ -9233,3 +9233,13 @@ RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pas
 RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
 
 RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.
+## 2026-11-07 — Ticket multi-airline marks and leg-date typography
+
+- PC-A reserved the shared presentation-only flight-ticket layout and focused
+  regression on `codex/pc-a-ticket-multi-airline-labels-1107`.
+- Scope is limited to one header mark per distinct ticket carrier and matching
+  ARRIVAL/DEPARTURE date typography; no data, API, schema or runtime change.
+- Implemented deduplicated multi-carrier marks with compact two-airline sizing;
+  dates now share the row label's 13pt/700 inherited-color typography.
+- Layout tests 9/9 and related consumers 43/43 pass with one existing optional
+  skip; scoped lint, Web TypeScript and the 67-route production build pass.
