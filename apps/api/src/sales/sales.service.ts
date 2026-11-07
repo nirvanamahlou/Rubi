@@ -1101,13 +1101,17 @@ export class SalesService {
 
   async financeInbox(
     actor: AuthenticatedActor,
+    includeConfirmed = false,
   ): Promise<readonly SalesFinanceInboxPaymentV1[]> {
     if (!has(actor, 'finance.read'))
       throw new ForbiddenException({
         code: 'FINANCE_INBOX_FORBIDDEN',
         message: 'مجوز مشاهده کارتابل مالی وجود ندارد.',
       });
-    const rows = await this.repository.pendingFinancePayments(actor.branchIds);
+    const rows = await this.repository.pendingFinancePayments(
+      actor.branchIds,
+      includeConfirmed,
+    );
     const names = new Map(
       (
         await this.repository.findUserDisplayNames(
@@ -1117,6 +1121,7 @@ export class SalesService {
     );
     return rows.map((row) => ({
       version: 1,
+      financeConfirmed: row.status === 'FINANCE_CONFIRMED',
       paymentId: row.id,
       contractId: row.contract.id,
       contractNumber: row.contract.contractNumber,

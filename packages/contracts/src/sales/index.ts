@@ -488,6 +488,7 @@ export interface SalesFinanceSubmissionV1 {
 }
 
 export interface SalesFinanceInboxPaymentV1 {
+  financeConfirmed?: boolean;
   /** Existing Sales declaration; optional for historical payments. */
   destinationAccountTitle?: string | null;
   destinationAccountId?: string | null;
