@@ -178,29 +178,22 @@ export class IamCallCenterDirectory {
         .includes(account.username)
     )
       return true;
-    if (
-      !actor.permissions.includes(
-        'customer_affairs.call_center.workflow.manage.team',
-      ) ||
-      !account.profile?.organizationUnitId ||
-      !responsibleUserId
-    )
-      return false;
-    if (
-      !(await this.personnel.callCenterUnit(
-        branchId,
-        account.profile.organizationUnitId,
-        tx,
-      ))
-    )
-      return false;
-    const target = await client.user.findFirst({
-      where: { id: responsibleUserId, branches: { some: { branchId } } },
-      select: { profile: { select: { organizationUnitId: true } } },
-    });
-    return (
-      target?.profile?.organizationUnitId === account.profile.organizationUnitId
+    if (!responsibleUserId) return false;
+    const team = await this.personnel.callCenterRequestTeam(
+      branchId,
+      actor.userId,
+      tx,
     );
+    if (!team?.includes(responsibleUserId)) return false;
+    return !!(await client.user.findFirst({
+      where: {
+        id: responsibleUserId,
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true },
+    }));
   }
 
   /** Request execution ownership is independent of telephony recipient eligibility. */
@@ -251,15 +244,9 @@ export class IamCallCenterDirectory {
               .map((value) => value.trim())
               .filter(Boolean),
           ).has(account.username)));
-    const unitId = account.profile?.organizationUnitId;
-    const team =
-      actor.permissions.includes(
-        'customer_affairs.call_center.workflow.manage.team',
-      ) &&
-      unitId &&
-      (await this.personnel.callCenterUnit(branchId, unitId, tx))
-        ? unitId
-        : null;
+    const team = global
+      ? null
+      : await this.personnel.callCenterRequestTeam(branchId, actor.userId, tx);
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',
@@ -267,7 +254,7 @@ export class IamCallCenterDirectory {
         branches: { some: { branchId, branch: { isActive: true } } },
         ...(!global
           ? team
-            ? { profile: { organizationUnitId: team } }
+            ? { id: { in: team } }
             : { id: actor.userId }
           : {}),
       },
