@@ -1427,9 +1427,7 @@ function KpiDefinitionPanel({
                 تعریف و هدف کسب‌وکار
               </h3>
               <p className="mt-2 leading-7 text-muted-foreground">
-                این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای
-                انتخاب‌شده چه وضعیتی دارد. از آن برای بررسی سریع عملکرد و تشخیص
-                موارد نیازمند پیگیری استفاده می‌شود.
+                {definition.businessDefinition}
               </p>
               <p className="mt-3 leading-7 text-muted-foreground">
                 این شاخص برای پاسخ به این تصمیم استفاده می‌شود:{' '}

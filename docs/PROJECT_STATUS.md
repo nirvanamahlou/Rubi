@@ -1,3 +1,7 @@
+## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
+
+Replaced the generic business-definition paragraph with individual travel-service explanations for all 84 Dashboard KPIs, including employee commercial metrics, with matching English translations. Formulas, source availability, filters and permissions are preserved. Independent semantic review, 54 Dashboard/i18n tests (one existing skipped), scoped lint, Web TypeScript, formatting and production Web build passed. No data or schema changes, merge or production deployment. Draft develop PR delivery. See [scope and delivery](tasks/DASHBOARDS-KPI-COPY-1107.md).
+
 ## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
 
 Finance reservation requests resolve persisted purchase actor IDs through the scoped IAM public directory, deduplicating names for grouped purchases. No guessed requester or source-data rewrite. Request cards expose requester and emphasize amount; details use responsive semantic fact cards, grouped FX metrics, and aligned purchase actions. Prior source-ID/history removals remain. Existing permissions, payments and evidence are preserved. Focused Finance API/UI tests, lint and type checks precede full hosted gates. No schema, dependency or deployment.

@@ -39,6 +39,7 @@ describe('dashboard registry', () => {
     );
     for (const kpi of dashboardKpis) {
       expect(kpi.grain).not.toBe('');
+      expect(kpi.businessDefinition.trim()).not.toBe('');
       expect(kpi.rule).not.toBe('');
       expect(kpi.exclusions).not.toBe('');
       expect(kpi.source.length).toBeGreaterThan(0);
@@ -766,9 +767,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain('<Drawer');
     expect(source).toContain('id="kpi-definition-panel"');
     expect(source).toContain('تعریف و هدف کسب‌وکار');
-    expect(source).toContain(
-      'این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای',
-    );
+    expect(source).toContain('{definition.businessDefinition}');
     expect(source).toContain('این شاخص برای پاسخ به این تصمیم استفاده می‌شود:');
     expect(source).not.toContain('تصمیم: </span>');
     const kpiCardSource = source.slice(

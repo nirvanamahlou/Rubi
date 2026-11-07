@@ -15,6 +15,7 @@ export interface DashboardKpiDefinition {
   id: string;
   title: string;
   technicalName: string;
+  businessDefinition: string;
   grain: string;
   source: readonly string[];
   rule: string;
@@ -82,6 +83,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'gross-sales',
     title: 'فروش ناخالص',
     technicalName: 'Gross Sales',
+    businessDefinition:
+      'مبلغ فروش نهایی‌شدهٔ خدماتی مثل بلیت، تور، هتل و ویزا، پیش از کم کردن تخفیف‌ها و استردادهای تکمیل‌شده است. این عدد حجم اولیهٔ فروش خدمات را نشان می‌دهد؛ به معنی دریافت کامل پول از مشتری نیست.',
     grain: 'یک قرارداد فروش یا قلم خدمت، پیش از refund',
     source: [salesContract, serviceItem],
     rule: 'جمع sale total رکوردهای واجد وضعیت فروش در grain منبع',
@@ -98,6 +101,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'net-sales',
     title: 'فروش خالص',
     technicalName: 'Net Sales',
+    businessDefinition:
+      'مبلغ فروش خدمات سفر پس از کم کردن تخفیف‌ها و استردادهای تکمیل‌شده است. به زبان ساده، فروش باقی‌ماندهٔ شرکت پیش از کسر هزینهٔ تأمین خدمات و سایر هزینه‌هاست؛ ممکن است بخشی از آن هنوز از مشتری دریافت نشده باشد.',
     grain: 'قرارداد/قلم خدمت با refund allocation تأییدشده',
     source: [salesContract, serviceItem, payment],
     rule: 'Gross Sales منهای completed refund و تخفیف طبق policy',
@@ -115,6 +120,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'collected',
     title: 'وصول',
     technicalName: 'Collected Amount',
+    businessDefinition:
+      'پولی است که بابت فروش خدمات از مشتریان دریافت شده و دریافت آن به تأیید مالی رسیده است. با این عدد می‌بینیم چه مقدار از فروش به دریافت تأییدشده تبدیل شده؛ پرداخت‌های در انتظار تأیید در آن حساب نمی‌شوند.',
     grain: 'یک تراکنش پرداخت',
     source: [payment],
     rule: 'فقط paymentهای VERIFIED یا SETTLED پس از reversal',
@@ -131,6 +138,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'refunded',
     title: 'استرداد',
     technicalName: 'Refunded Amount',
+    businessDefinition:
+      'مبلغی است که بازپرداخت آن به مشتری بابت لغو یا اصلاح خدمات سفر کامل شده است. درخواست استردادی که هنوز پرداخت نشده در این مبلغ نیست؛ این عدد کمک می‌کند خروج پول بابت استرداد را پیگیری کنیم.',
     grain: 'یک refund/payment transaction',
     source: [payment],
     rule: 'فقط refundهای COMPLETED',
@@ -147,6 +156,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'gross-profit',
     title: 'سود ناخالص',
     technicalName: 'Gross Profit',
+    businessDefinition:
+      'مبلغی است که از فروش خدمات، پس از کم کردن هزینهٔ مستقیم و تأییدشدهٔ تأمین همان خدمات باقی می‌ماند؛ مثل هزینهٔ خرید بلیت یا رزرو هتل. هزینه‌های عمومی شرکت هنوز از آن کم نشده‌اند و بدون هزینهٔ معتبر، سود قابل محاسبه نیست.',
     grain: 'یک قلم خدمت قرارداد',
     source: [serviceItem, 'reporting_purchase_request_facts'],
     rule: 'recognized sale revenue منهای matched purchase cost و تعدیلات مستقیم',
@@ -165,6 +176,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'net-profit',
     title: 'سود خالص',
     technicalName: 'Net Profit',
+    businessDefinition:
+      'مبلغی است که پس از کم کردن همهٔ هزینه‌های ثبت‌شدهٔ شرکت از درآمد ثبت‌شده باقی می‌ماند. برخلاف سود ناخالص، هزینه‌هایی مثل حقوق، اجاره و تبلیغات را هم در نظر می‌گیرد؛ تا ثبت هزینه‌ها کامل نباشد، سود نهایی قابل اتکا نیست.',
     grain: 'شرکت، دوره مالی و ارز پایه',
     source: [journalBalance],
     rule: 'خالص حساب‌های درآمد Posted منهای خالص حساب‌های هزینه Posted در همان شرکت، دوره مالی و ارز پایه',
@@ -184,6 +197,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'operating-expenses',
     title: 'هزینه‌ها',
     technicalName: 'Operating Expenses',
+    businessDefinition:
+      'جمع هزینه‌های شرکت است که در بازهٔ انتخابی به‌طور قطعی در حسابداری ثبت شده‌اند؛ مثل حقوق، اجاره و هزینه‌های اداری. برای شناخت محل مصرف منابع و کنترل هزینه‌هاست، نه صرفاً جمع پول‌های پرداخت‌شده از بانک.',
     grain: 'حساب هزینه، مرکز هزینه، دوره و ارز پایه',
     source: [journalBalance],
     rule: 'جمع خالص بدهکار حساب‌های هزینه از اسناد Posted در بازه انتخابی، به تفکیک سرفصل و مرکز هزینه',
@@ -201,6 +216,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'paid-commissions',
     title: 'کمیسیون پرداختی',
     technicalName: 'Paid Commissions',
+    businessDefinition:
+      'مبلغ کمیسیونی است که به کارشناسان یا همکاران بابت فروش خدمات پرداخت شده و ثبت مالی قطعی دارد. کمیسیون محاسبه‌شده‌ای که هنوز پرداخت نشده حساب نمی‌شود؛ این عدد هزینهٔ واقعی پرداخت کمیسیون را نشان می‌دهد.',
     grain: 'ذی‌نفع، سند پرداخت کمیسیون و ارز',
     source: [journalBalance, payment],
     rule: 'جمع مبالغ کمیسیون دارای پرداخت تأییدشده و ثبت Posted در حساب هزینه کمیسیون، به تفکیک کارشناس یا همکار',
@@ -218,6 +235,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'receivables',
     title: 'مطالبات',
     technicalName: 'Receivables',
+    businessDefinition:
+      'پولی است که طبق اسناد مالی قطعی، مشتریان یا طرف‌های حساب هنوز به شرکت بدهکارند. برای برنامه‌ریزی وصول مطالبات است؛ ماندهٔ پرداخت یک قرارداد به‌تنهایی جای ثبت مالی معتبر را نمی‌گیرد.',
     grain: 'حساب/طرف حساب در زمان as-of',
     source: [journalBalance],
     rule: 'مانده فقط از invoice/journal posted معتبر',
@@ -235,6 +254,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'provider-payables',
     title: 'بدهی Provider',
     technicalName: 'Provider Payables',
+    businessDefinition:
+      'مبلغ بدهی قطعی شرکت به تأمین‌کنندگان خدمات سفر، مثل ایرلاین، هتل یا کارگزار است که هنوز تسویه نشده است. برای برنامه‌ریزی پرداخت‌هاست؛ درخواست خرید یا فاکتور تأییدنشده هنوز بدهی قطعی محسوب نمی‌شود.',
     grain: 'Provider/account در زمان as-of',
     source: ['reporting_purchase_request_facts', journalBalance],
     rule: 'Purchase Invoice تأییدشده با reconciliation معتبر',
@@ -251,6 +272,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'account-balance',
     title: 'مانده حساب',
     technicalName: 'Account Balance',
+    businessDefinition:
+      'مانده‌ای است که پس از ثبت بدهکار و بستانکارهای قطعی در حساب انتخاب‌شده باقی می‌ماند. وضعیت هر حساب را جداگانه نشان می‌دهد؛ ماندهٔ یک حساب غیرنقدی لزوماً پول قابل خرج در بانک نیست.',
     grain: 'account/currency/day',
     source: [journalBalance],
     rule: 'جمع posted journal lines در همان account/currency',
@@ -268,6 +291,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'new-orders',
     title: 'قراردادهای جدید',
     technicalName: 'New Orders / Contracts',
+    businessDefinition:
+      'تعداد قراردادهای خدمات سفر است که در بازهٔ انتخابی تازه ایجاد شده‌اند. نشان می‌دهد چه حجم کار جدیدی وارد مسیر فروش شده؛ ایجاد قرارداد به‌تنهایی به معنی فروش قطعی یا دریافت پول نیست.',
     grain: 'یک قرارداد فروش',
     source: [salesContract],
     rule: 'تعداد قرارداد ایجادشده در بازه',
@@ -284,6 +309,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'finalized-sales-count',
     title: 'تعداد فروش',
     technicalName: 'Finalized Sales Count',
+    businessDefinition:
+      'تعداد قراردادهایی است که فروش آن‌ها در بازهٔ انتخابی نهایی شده است. هر قرارداد یک‌بار شمرده می‌شود، حتی اگر چند مسافر یا چند خدمت داشته باشد؛ برای سنجش تعداد معاملات موفق است.',
     grain: 'یک قرارداد فروش نهایی‌شده',
     source: [salesContract],
     rule: 'تعداد یکتای قراردادهایی که در بازه انتخابی به وضعیت نهایی فروش واجد محاسبه رسیده‌اند',
@@ -301,6 +328,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'average-sale-value',
     title: 'میانگین مبلغ هر فروش',
     technicalName: 'Average Sale Value',
+    businessDefinition:
+      'نشان می‌دهد فروش خالص هر قرارداد نهایی‌شده، به‌طور متوسط چقدر بوده است. مبلغ فروش پس از تخفیف و استرداد بر تعداد قراردادهای نهایی همان ارز تقسیم می‌شود؛ برای مقایسهٔ ارزش معاملات است، نه تعداد مسافران.',
     grain: 'قرارداد فروش نهایی‌شده و ارز',
     source: [salesContract],
     rule: 'مجموع مبلغ فروش نهایی‌شده تقسیم بر تعداد یکتای فروش نهایی‌شده در همان ارز؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
@@ -319,6 +348,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'discount-amount',
     title: 'تخفیف داده‌شده',
     technicalName: 'Granted Discount Amount',
+    businessDefinition:
+      'جمع تخفیف‌هایی است که در فروش نهایی خدمات سفر به مشتری داده شده است. نشان می‌دهد چه مقدار از مبلغ فروش با تخفیف کم شده تا اثر تخفیف‌ها بر درآمد بررسی شود؛ پیشنهاد یا کوپن استفاده‌نشده حساب نمی‌شود.',
     grain: 'جزء قیمت تخفیف، قرارداد و ارز',
     source: [salesContract, serviceItem],
     rule: 'جمع قدرمطلق اجزای قیمت از نوع DISCOUNT برای فروش‌های نهایی‌شده در همان ارز',
@@ -336,6 +367,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'awaiting-payment',
     title: 'در انتظار پرداخت',
     technicalName: 'Awaiting Payment',
+    businessDefinition:
+      'بخش پرداخت‌نشدهٔ مبلغ قراردادهای فعال خدمات سفر است که هنوز باید از مشتری دریافت شود. کمک می‌کند قراردادهای نیازمند پیگیری پرداخت مشخص شوند؛ قرارداد لغوشده در این صف قرار نمی‌گیرد.',
     grain: 'یک قرارداد فعال',
     source: [salesContract, payment],
     rule: 'قرارداد فعال با outstanding amount تأییدشده',
@@ -352,6 +385,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'awaiting-issue',
     title: 'در انتظار صدور',
     technicalName: 'Awaiting Issue',
+    businessDefinition:
+      'تعداد رزروهایی است که شرایط لازم و پرداخت معتبر را دارند، اما بلیت یا سند نهایی خدمت آن‌ها هنوز صادر نشده است. برای دیدن حجم صف صدور و تقسیم کار تیم رزرواسیون استفاده می‌شود.',
     grain: 'یک reservation واجد شرایط',
     source: [reservation],
     rule: 'reservation پرداخت‌شده بدون issue نهایی',
@@ -368,6 +403,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'paid-not-issued',
     title: 'پرداخت موفق بدون صدور',
     technicalName: 'Paid Not Issued',
+    businessDefinition:
+      'تعداد مواردی است که پرداخت مشتری تأیید شده، اما پس از گذشت مهلت تعیین‌شده هنوز بلیت یا سند خدمت صادر نشده است. این موارد نسبت به صف عادی صدور نیازمند پیگیری فوری‌تری هستند تا مشتری بدون خدمت نماند.',
     grain: 'یک قرارداد/reservation',
     source: [payment, reservation],
     rule: 'verified allocated payment و issue غیر ISSUED پس از threshold',
@@ -384,6 +421,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'issued-documents',
     title: 'اسناد صادرشده',
     technicalName: 'Issued Documents',
+    businessDefinition:
+      'تعداد اسناد نهایی صادرشده برای مسافران در بازهٔ انتخابی است، مثل بلیت معتبر. هر سند جداگانه شمرده می‌شود؛ بنابراین این عدد می‌تواند با تعداد قراردادها یا مسافران متفاوت باشد و حجم صدور را نشان می‌دهد.',
     grain: 'یک سند صادرشده برای هر مسافر',
     source: [ticket],
     rule: 'تعداد issued document نهایی در بازه',
@@ -400,6 +439,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'cancelled-orders',
     title: 'قراردادهای لغوشده',
     technicalName: 'Cancelled Orders',
+    businessDefinition:
+      'تعداد رخدادهای لغو قرارداد در بازهٔ انتخابی است. کمک می‌کند میزان از دست رفتن فروش و علت‌های لغو بررسی شود؛ لغو قرارداد به معنی انجام شدن استرداد پول نیست.',
     grain: 'یک transition لغو قرارداد',
     source: [salesContract],
     rule: 'تعداد transitionهای cancellation در بازه',
@@ -416,6 +457,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'cancelled-reservations',
     title: 'رزروهای لغوشده',
     technicalName: 'Cancelled Reservations',
+    businessDefinition:
+      'تعداد رزروهایی است که در بازهٔ انتخابی لغو شده‌اند، مثل رزرو پرواز یا هتل. وضعیت عملیات سفر را نشان می‌دهد و با تعداد قراردادهای لغوشده یا مبلغ استرداد یکی نیست.',
     grain: 'یک رخداد لغو رزرو',
     source: [reservation],
     rule: 'تعداد رزروهایی که در بازه انتخابی به وضعیت لغوشده منتقل شده‌اند',
@@ -433,6 +476,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'average-ticket-price',
     title: 'متوسط قیمت بلیت',
     technicalName: 'Average Ticket Price',
+    businessDefinition:
+      'میانگین مبلغ فروش هر بلیت نهایی‌شده در بازهٔ انتخابی است. برای مقایسهٔ قیمت فروش بلیت در مسیرها و ایرلاین‌های مختلف استفاده می‌شود؛ هزینهٔ خرید بلیت و خدماتی مثل هتل در آن حساب نمی‌شوند.',
     grain: 'بلیت نهایی‌شده و ارز',
     source: [travelFacts, ticket],
     rule: 'مبلغ فروش اقلام بلیت نهایی‌شده تقسیم بر تعداد بلیت‌های همان بازه و ارز؛ در صورت صفر بودن تعداد نتیجه ناموجود است',
@@ -450,6 +495,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'ticket-cancellation-rate',
     title: 'نرخ لغو بلیت',
     technicalName: 'Ticket Cancellation Rate',
+    businessDefinition:
+      'سهم بلیت‌های لغوشده از مجموع بلیت‌های صادرشده یا لغوشدهٔ همان گروه بررسی است. به زبان ساده، نشان می‌دهد از هر صد بلیت چند مورد لغو شده تا مسیرها یا ایرلاین‌های پرریسک‌تر مشخص شوند.',
     grain: 'بلیت واجد ارزیابی لغو',
     source: [travelFacts, ticket],
     rule: 'تعداد بلیت‌های لغوشده در بازه تقسیم بر کل بلیت‌های صادرشده یا لغوشده همان cohort؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
@@ -467,6 +514,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'new-customers',
     title: 'مشتریان جدید',
     technicalName: 'New Customers',
+    businessDefinition:
+      'تعداد مشتریانی است که اولین خرید موفق آن‌ها از شرکت در بازهٔ انتخابی اتفاق افتاده است؛ خرید وقتی موفق حساب می‌شود که قرارداد قطعی و اولین پرداخت آن به تأیید مالی رسیده باشد. اگر قرارداد زودتر بسته شده باشد، ماه تأیید اولین پرداخت ملاک است؛ مشتری دارای خرید موفق قبلی، حتی در شعبه‌ای دیگر، دوباره جدید شمرده نمی‌شود.',
     grain: 'یک مشتری در تاریخ اولین خرید موفق',
     source: [salesContract, payment],
     rule: 'تعداد یکتای مشتریانی که نخستین خرید پرداخت‌شده آن‌ها در بازه انتخابی ثبت شده است',
@@ -484,6 +533,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'returning-customers',
     title: 'مشتریان بازگشتی',
     technicalName: 'Returning Customers',
+    businessDefinition:
+      'تعداد مشتریانی است که پیش از شروع بازه خرید موفق داشته‌اند و در این بازه هم دوباره خرید دارای پرداخت تأییدشده انجام داده‌اند. هر مشتری فقط یک‌بار شمرده می‌شود تا میزان بازگشت مشتریان برای خرید خدمات شرکت مشخص شود.',
     grain: 'یک مشتری دارای خرید پیشین و خرید موفق در بازه',
     source: [salesContract, payment],
     rule: 'تعداد یکتای مشتریانی که پیش از شروع بازه حداقل یک خرید موفق و در بازه انتخابی نیز خرید موفق داشته‌اند',
@@ -501,6 +552,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'customer-interest-coverage',
     title: 'مشتریان دارای علاقه ثبت‌شده',
     technicalName: 'Customer Interest Coverage',
+    businessDefinition:
+      'تعداد مشتریانی است که علاقهٔ آن‌ها به یک مقصد یا خدمت از روی درخواست ثبت‌شده یا خرید موفق مشخص است. مثلاً درخواست تور استانبول یا خرید هتل می‌تواند نشانهٔ علاقه باشد؛ این اطلاعات برای پیشنهادهای مرتبط‌تر به مشتری کمک می‌کند.',
     grain: 'یک مشتری با حداقل یک سیگنال علاقه معتبر در بازه',
     source: [leadPipeline, salesContract, serviceItem],
     rule: 'تعداد یکتای مشتریانی که در بازه انتخابی حداقل یک مقصد یا خدمت را در لید متصل به مشتری درخواست کرده‌اند یا خرید موفق همان مقصد یا خدمت را داشته‌اند',
@@ -519,6 +572,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'customer-destination-demand',
     title: 'سفارش‌های دارای مقصد',
     technicalName: 'Orders With Destination',
+    businessDefinition:
+      'تعداد سفارش‌های معتبر و دارای مقصد مشخص در بازهٔ انتخابی است. هر سفارش یک‌بار شمرده می‌شود، نه به تعداد مسافرانش؛ برای شناخت مقصدهای پرتقاضا و برنامه‌ریزی عرضهٔ سفر کاربرد دارد.',
     grain: 'یک سفارش یا رزرو معتبر و مقصد',
     source: [travelFacts],
     rule: 'تعداد سفارش‌های یکتای معتبر دارای مقصد در بازه انتخابی؛ تعداد مسافر به‌عنوان اندازه تقاضای مکمل و جداگانه نمایش داده می‌شود',
@@ -536,6 +591,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'customer-service-usage',
     title: 'مشتریان استفاده‌کننده از خدمات',
     technicalName: 'Customers Using Services',
+    businessDefinition:
+      'تعداد مشتریانی است که از هر نوع خدمت، مثل پرواز، هتل یا تور، خرید موفق داشته‌اند. یک مشتری در هر نوع خدمت فقط یک‌بار حساب می‌شود؛ نشان می‌دهد هر خدمت چه تعداد مشتری را پوشش داده است.',
     grain: 'یک مشتری و نوع خدمت در خرید موفق',
     source: [salesContract, serviceItem],
     rule: 'تعداد یکتای مشتریان دارای حداقل یک قلم خدمت در خرید موفق، به تفکیک نوع خدمت در بازه انتخابی',
@@ -553,6 +610,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'customers-by-acquisition-channel',
     title: 'مشتریان منتسب به کانال جذب',
     technicalName: 'Customers by Acquisition Channel',
+    businessDefinition:
+      'تعداد مشتریانی است که روش آشنایی آن‌ها با شرکت ثبت شده، مثل معرفی دوستان، سایت یا شبکه‌های اجتماعی. برای بررسی سهم هر راه جذب مشتری است؛ مشتری با روش آشنایی نامشخص به کانالی نسبت داده نمی‌شود.',
     grain: 'یک مشتری و روش آشنایی معتبر',
     source: [customerPortfolio],
     rule: 'تعداد یکتای مشتریان فعال یا جدید دارای روش آشنایی ثبت‌شده، به تفکیک کانال جذب در بازه انتخابی',
@@ -570,6 +629,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'open-tickets',
     title: 'Ticketهای باز',
     technicalName: 'Open Tickets',
+    businessDefinition:
+      'تعداد درخواست‌های پشتیبانی مشتریان است که هنوز رسیدگی به آن‌ها تمام نشده، مثل مشکل رزرو، اصلاح سفر یا شکایت. اینجا «تیکت» یعنی پروندهٔ پشتیبانی، نه بلیت هواپیما؛ برای دیدن حجم کار باز تیم پشتیبانی است.',
     grain: 'یک Ticket در زمان as-of',
     source: ['approved_customer_affairs_ticket_projection'],
     rule: 'Ticket غیرنهایی در زمان as-of',
@@ -587,6 +648,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'overdue-tasks',
     title: 'وظایف عقب‌افتاده',
     technicalName: 'Overdue Tasks',
+    businessDefinition:
+      'تعداد کارهای بازی است که موعد انجام آن‌ها گذشته، اما هنوز تکمیل نشده‌اند. مثلاً پیگیری مدارک یا هماهنگی سفر که عقب افتاده است؛ کمک می‌کند کارهای عقب‌مانده زودتر با مسئول مربوط پیگیری شوند.',
     grain: 'یک وظیفه در زمان as-of',
     source: ['approved_task_projection'],
     rule: 'وظیفهٔ باز با due_at پیش از زمان جاری',
@@ -603,6 +666,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'due-checks',
     title: 'چک‌های نزدیک سررسید',
     technicalName: 'Due Checks',
+    businessDefinition:
+      'مبلغ چک‌های فعالی است که سررسیدشان در بازهٔ انتخابی قرار دارد و هنوز تسویه نشده‌اند. چک دریافتی نیاز به پیگیری وصول و چک پرداختی نیاز به تأمین وجه دارد؛ این شاخص برای برنامه‌ریزی این تعهدهاست.',
     grain: 'یک چک فعال',
     source: ['approved_finance_check_projection'],
     rule: 'چک فعال با due date در بازه انتخابی',
@@ -619,6 +684,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'collection-rate',
     title: 'نرخ وصول',
     technicalName: 'Collection Rate',
+    businessDefinition:
+      'نشان می‌دهد چه درصدی از مبلغ قابل وصولِ فروش‌های مورد بررسی، واقعاً دریافت و تأیید شده است. مثلاً نرخ ۸۰ درصد یعنی از هر صد واحد مبلغ قابل وصول، هشتاد واحد وصول شده؛ برای سنجش پیگیری پرداخت مشتریان است.',
     grain: 'قرارداد و ارز در بازه یکسان',
     source: [salesContract, payment],
     rule: 'مبلغ وصول‌شده تأییدشده تقسیم بر فروش قابل وصول همان cohort و ارز',
@@ -635,6 +702,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'refund-rate',
     title: 'نرخ استرداد',
     technicalName: 'Refund Rate',
+    businessDefinition:
+      'نشان می‌دهد چه درصدی از مبلغ فروشِ مورد بررسی به مشتریان برگردانده شده است. فقط استردادهای تکمیل‌شده حساب می‌شوند؛ بالا رفتن این نسبت می‌تواند نیاز به بررسی لغوها یا کیفیت خدمات سفر را نشان دهد.',
     grain: 'تراکنش تکمیل‌شده در cohort فروش',
     source: [payment, travelFacts],
     rule: 'مبلغ refund تکمیل‌شده تقسیم بر فروش واجد شرایط همان ارز',
@@ -651,6 +720,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'pipeline-age',
     title: 'میانگین توقف در مرحله',
     technicalName: 'Average Stage Age',
+    businessDefinition:
+      'میانگین زمانی است که قراردادهای فعال در مرحلهٔ فعلی خود مانده‌اند؛ مثلاً منتظر تأیید یا پرداخت هستند. نشان می‌دهد کار در کدام مرحلهٔ فروش کند شده تا همان مرحله پیگیری شود.',
     grain: 'یک قرارداد در آخرین وضعیت معتبر',
     source: [salesPipeline],
     rule: 'میانگین مدت از آخرین transition تا زمان گزارش برای قراردادهای فعال',
@@ -667,6 +738,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'reservation-failure-rate',
     title: 'نرخ خطای رزرو',
     technicalName: 'Reservation Failure Rate',
+    businessDefinition:
+      'درصد تلاش‌های واقعی رزرو است که به نتیجهٔ موفق نرسیده‌اند. برای تشخیص مشکل در عملیات یا ارتباط با تأمین‌کننده استفاده می‌شود؛ اشتباه در پر کردن فرم و تکرار یک تلاش، خطای تازه حساب نمی‌شود.',
     grain: 'یک تلاش عملیاتی رزرو',
     source: [travelFacts],
     rule: 'تلاش‌های ناموفق تقسیم بر کل تلاش‌های واجد شرایط در همان عملیات',
@@ -683,6 +756,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'delivery-blockers',
     title: 'رزروهای دارای مانع تحویل',
     technicalName: 'Delivery Blockers',
+    businessDefinition:
+      'تعداد رزروهای در جریانی است که به‌دلیل مانعی در خرید، عملیات یا تأیید مالی هنوز قابل تحویل به مشتری نیستند. هر رزرو با هر تعداد مانع یک‌بار شمرده می‌شود تا کارهای گیرکرده برای رفع مشکل مشخص شوند.',
     grain: 'یک Reservation Intake',
     source: [deliveryReadiness],
     rule: 'تعداد رزروهای در جریان با حداقل یک مانع خرید، عملیات یا تأیید مالی',
@@ -699,6 +774,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'issue-success-rate',
     title: 'نرخ موفقیت صدور',
     technicalName: 'Issue Success Rate',
+    businessDefinition:
+      'نشان می‌دهد چه درصدی از رزروهای دارای شرایط صدور، به بلیت یا سند نهایی رسیده‌اند. برای سنجش موفقیت تیم و سامانهٔ صدور است؛ رزرو لغوشده یا فاقد پرداخت معتبر در این مقایسه وارد نمی‌شود.',
     grain: 'یک رزرو واجد صدور',
     source: [travelFacts],
     rule: 'رزروهای صادرشده تقسیم بر رزروهای واجد صدور در بازه',
@@ -715,6 +792,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'active-offers',
     title: 'پیشنهادهای فعال سفر',
     technicalName: 'Active Travel Offers',
+    businessDefinition:
+      'تعداد پیشنهادهای منتشرشده و فعال پرواز برای تاریخ حرکت انتخابی است. هر پیشنهاد می‌تواند مسیر، زمان یا شرایط فروش مشخصی داشته باشد؛ این عدد تنوع عرضهٔ قابل فروش را نشان می‌دهد، نه تعداد صندلی‌های باقی‌مانده.',
     grain: 'یک Published Ticket Offer',
     source: [ticketCapacity],
     rule: 'تعداد پیشنهادهای ACTIVE در بازه حرکت انتخابی',
@@ -731,6 +810,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'sell-through-rate',
     title: 'نرخ تکمیل ظرفیت',
     technicalName: 'Sell-through Rate',
+    businessDefinition:
+      'درصد ظرفیت هر پیشنهاد پرواز است که اکنون به رزروهای فعال اختصاص یافته است. کمک می‌کند سرعت پر شدن ظرفیت مسیرها را بسنجیم؛ ظرفیت آزادشده دوباره جزو ظرفیت مصرف‌شده حساب نمی‌شود.',
     grain: 'یک پیشنهاد پرواز و جهت',
     source: [ticketCapacity],
     rule: 'تخصیص فعال تقسیم بر ظرفیت کل همان پیشنهاد',
@@ -747,6 +828,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'remaining-capacity',
     title: 'ظرفیت باقی‌مانده',
     technicalName: 'Remaining Capacity',
+    businessDefinition:
+      'تعداد صندلی‌هایی است که از ظرفیت هر پیشنهاد پرواز پس از کسر تخصیص‌های فعال باقی مانده است. برای تصمیم‌گیری دربارهٔ ادامهٔ فروش یا تأمین ظرفیت بیشتر استفاده می‌شود.',
     grain: 'یک پیشنهاد پرواز و جهت',
     source: [ticketCapacity],
     rule: 'ظرفیت کل منهای مجموع تخصیص فعال همان پیشنهاد',
@@ -763,6 +846,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'low-capacity-offers',
     title: 'عرضه‌های نزدیک تکمیل',
     technicalName: 'Low Capacity Offers',
+    businessDefinition:
+      'تعداد پیشنهادهای فعال پرواز است که ظرفیت باقی‌ماندهٔ آن‌ها از حد تعیین‌شده کمتر شده است. برای شناسایی سریع مسیرهای نزدیک به تکمیل ظرفیت و تصمیم دربارهٔ تأمین ظرفیت یا کنترل فروش کاربرد دارد.',
     grain: 'یک Published Ticket Offer',
     source: [ticketCapacity],
     rule: 'پیشنهاد فعال زیر آستانه ظرفیت باقی‌مانده مصوب',
@@ -779,6 +864,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'tour-reservations',
     title: 'تعداد رزرو تور',
     technicalName: 'Tour Reservations',
+    businessDefinition:
+      'تعداد قراردادهای نهایی‌شده‌ای است که رزرو تور دارند. هر قرارداد برای تور مربوط یک‌بار حساب می‌شود، نه به تعداد مسافران؛ برای مقایسهٔ میزان استقبال از تورها استفاده می‌شود.',
     grain: 'یک قرارداد نهایی و تور مرجع',
     source: [salesContract, serviceItem],
     rule: 'تعداد یکتای قراردادهای نهایی دارای خدمت TOUR، به تفکیک referenceId یا عنوان snapshot تور در بازه انتخابی',
@@ -796,6 +883,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'tour-remaining-capacity',
     title: 'ظرفیت باقی‌مانده تور',
     technicalName: 'Tour Remaining Capacity',
+    businessDefinition:
+      'ظرفیت قابل اتکای باقی‌مانده برای هر حرکت تور است که از ظرفیت پروازهای رفت و برگشت متصل به آن به دست می‌آید. سمتی که جای کمتری دارد ظرفیت تور را محدود می‌کند؛ برای برنامه‌ریزی فروش یا تأمین صندلی بیشتر کاربرد دارد.',
     grain: 'یک حرکت تور و ظرفیت پیشنهادهای متصل',
     source: [serviceItem, ticketCapacity],
     rule: 'حداقل ظرفیت باقی‌مانده قابل اتکای پیشنهادهای رفت و برگشت متصل به هر حرکت تور پس از کسر تخصیص‌های فعال',
@@ -813,6 +902,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'tour-sell-through-rate',
     title: 'درصد تکمیل ظرفیت تور',
     technicalName: 'Tour Sell-through Rate',
+    businessDefinition:
+      'نشان می‌دهد چه درصدی از ظرفیت قابل فروش هر حرکت تور به رزروهای فعال اختصاص یافته است. برای مقایسهٔ میزان تکمیل تورها تا تاریخ حرکت است؛ رزرو لغوشده یا ظرفیت آزادشده جزو ظرفیت پرشده نیست.',
     grain: 'یک حرکت تور و ظرفیت قابل فروش',
     source: [serviceItem, ticketCapacity],
     rule: 'تخصیص فعال معتبر حرکت تور تقسیم بر ظرفیت کل قابل فروش همان حرکت؛ در صورت نامعتبر بودن ظرفیت نتیجه ناموجود است',
@@ -829,6 +920,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'hotel-reservations',
     title: 'تعداد رزرو هتل',
     technicalName: 'Hotel Reservations',
+    businessDefinition:
+      'تعداد قراردادهای نهایی‌شده‌ای است که رزرو معتبر هتل دارند، به تفکیک هتل. این شمارش بر اساس قرارداد است، نه تعداد اتاق یا شب اقامت؛ کمک می‌کند هتل‌ها و شهرهای پرتقاضا مشخص شوند.',
     grain: 'یک قرارداد نهایی و انتخاب هتل',
     source: [salesContract, serviceItem],
     rule: 'تعداد یکتای قراردادهای نهایی دارای انتخاب HOTEL معتبر، به تفکیک هتل در بازه انتخابی',
@@ -845,6 +938,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'average-stay-length',
     title: 'میانگین اقامت',
     technicalName: 'Average Length of Stay',
+    businessDefinition:
+      'میانگین تعداد شب اقامت در رزروهای معتبر هتل است؛ از فاصلهٔ تاریخ ورود تا خروج به دست می‌آید. نشان می‌دهد مشتریان معمولاً چند شب می‌مانند تا بسته‌های سفر و پیشنهادهای هتل متناسب‌تر تنظیم شوند.',
     grain: 'یک انتخاب هتل نهایی‌شده',
     source: [salesContract, serviceItem],
     rule: 'مجموع تعداد شب بین check-in و check-out تقسیم بر تعداد انتخاب‌های معتبر هتل در بازه؛ در صورت صفر بودن مخرج نتیجه ناموجود است',
@@ -861,6 +956,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'supplier-spend',
     title: 'خرید خالص تأییدشده',
     technicalName: 'Approved Net Purchase',
+    businessDefinition:
+      'جمع مبلغ خالص خرید خدمات از تأمین‌کنندگان، بر اساس آخرین نسخهٔ تأییدشدهٔ هر خرید است. نشان می‌دهد تأمین خدمات سفر چقدر هزینه دارد؛ ممکن است بخشی از آن هنوز پرداخت نشده باشد.',
     grain: 'یک خرید خدمت و ارز',
     source: [travelFacts],
     rule: 'جمع خرید خالص آخرین نسخه تأییدشده در همان ارز',
@@ -877,6 +974,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'pending-supplier-payments',
     title: 'خریدهای منتظر پرداخت',
     technicalName: 'Pending Supplier Payments',
+    businessDefinition:
+      'تعداد خریدهای خدمات است که کار پرداخت آن‌ها هنوز به وضعیت نهایی نرسیده است. برای پیگیری تعهد به هتل، کارگزار یا سایر تأمین‌کنندگان است؛ هر خرید فقط با آخرین وضعیت پرداختش حساب می‌شود.',
     grain: 'آخرین نسخه پرداخت هر خرید خدمت',
     source: [supplierPayments],
     rule: 'تعداد خریدهای دارای آخرین وضعیت غیرنهایی پرداخت',
@@ -893,6 +992,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'supplier-payment-wait',
     title: 'میانگین انتظار پرداخت تأمین‌کننده',
     technicalName: 'Supplier Payment Wait',
+    businessDefinition:
+      'میانگین مدت از ثبت خرید خدمت تا نهایی شدن وضعیت پرداخت آن است؛ برای موارد باز، زمان انتظار تا همین لحظه حساب می‌شود. کمک می‌کند تأخیر در تأیید یا پرداخت به تأمین‌کنندگان پیدا شود.',
     grain: 'آخرین نسخه پرداخت هر خرید خدمت',
     source: [supplierPayments],
     rule: 'میانگین زمان از ثبت خرید تا وضعیت نهایی یا زمان گزارش',
@@ -909,6 +1010,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'overdue-balance',
     title: 'مانده سررسیدگذشته',
     technicalName: 'Overdue Balance',
+    businessDefinition:
+      'ماندهٔ تعهدهای مالی ثبت‌شده‌ای است که موعد وصول یا پرداخت آن‌ها گذشته، اما هنوز تسویه نشده‌اند. برای اولویت‌بندی مطالبات قابل وصول و بدهی‌های نیازمند پرداخت، به تفکیک طرف حساب استفاده می‌شود.',
     grain: 'طرف حساب، حساب و ارز در زمان as-of',
     source: ['reporting_counterparty_balance_facts_v1'],
     rule: 'جمع مانده Posted با سررسید قبل از زمان گزارش در همان ارز',
@@ -925,6 +1028,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'lead-volume',
     title: 'لیدهای فعال',
     technicalName: 'Active Leads',
+    businessDefinition:
+      'تعداد فرصت‌های فروش باز است؛ یعنی درخواست‌های علاقه‌مندان به خدمات سفر که بررسی یا پیگیری آن‌ها هنوز تمام نشده است. برای دیدن حجم کار جاری تیم فروش است و فقط به لیدهای تازه‌وارد محدود نمی‌شود.',
     grain: 'یک لید امور مشتریان',
     source: [leadPipeline],
     rule: 'تعداد لیدهای غیرنهایی در زمان گزارش',
@@ -941,6 +1046,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'new-leads',
     title: 'لیدهای جدید',
     technicalName: 'New Leads',
+    businessDefinition:
+      'تعداد لیدهایی است که در بازهٔ انتخابی ثبت شده‌اند و تا پایان همان بازه به خرید موفق تبدیل نشده‌اند؛ مثل درخواست تازه برای قیمت تور یا ویزا. با ثبت خرید موفقِ مرتبط تا پایان بازه، آن لید از این شمارش خارج می‌شود و اولین خرید واجد شرایط در مشتریان جدید بررسی می‌شود.',
     grain: 'یک لید ایجادشده در بازه',
     source: [leadPipeline],
     rule: 'تعداد لیدهای ایجادشده در بازه انتخابی که هنوز به خرید موفق منتسب نشده‌اند',
@@ -957,6 +1064,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'lead-growth-rate',
     title: 'نرخ رشد لیدها',
     technicalName: 'Lead Growth Rate',
+    businessDefinition:
+      'درصد افزایش یا کاهش تعداد لیدهای جدید نسبت به دورهٔ قبل با همان طول است. نشان می‌دهد ورودی فرصت‌های فروش بهتر شده یا کمتر شده؛ اگر دورهٔ قبل هیچ لیدی نداشته باشد، درصد رشد قابل محاسبه نیست.',
     grain: 'یک بازه و دوره پیشین هم‌طول',
     source: [leadPipeline],
     rule: '(تعداد لید جدید بازه جاری منهای تعداد لید جدید دوره قبل) تقسیم بر تعداد لید جدید دوره قبل؛ اگر مخرج صفر باشد نتیجه ناموجود است',
@@ -973,6 +1082,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'lead-conversion-rate',
     title: 'نرخ تبدیل لید به سفارش',
     technicalName: 'Lead-to-order Conversion',
+    businessDefinition:
+      'نشان می‌دهد چه درصدی از لیدهای قابل بررسی به سفارش مرتبط با همان لید رسیده‌اند. برای سنجش تبدیل علاقه‌مندی به سفارش و مقایسهٔ منابع جذب است؛ صرف ایجاد سفارش به معنی تأیید دریافت پول نیست.',
     grain: 'cohort لید با انتساب سفارش معتبر',
     source: [leadPipeline, travelFacts],
     rule: 'لیدهای منتسب به سفارش تقسیم بر لیدهای واجد شرایط همان cohort',
@@ -989,6 +1100,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'overdue-followups',
     title: 'پیگیری‌های عقب‌افتاده',
     technicalName: 'Overdue Lead Follow-ups',
+    businessDefinition:
+      'تعداد لیدهای فعالی است که موعد اقدام بعدی آن‌ها گذشته و پیگیری هنوز انجام نشده است. مثلاً تماس دوباره برای پیشنهاد سفر که عقب افتاده؛ کمک می‌کند فرصت فروش به‌دلیل تأخیر از دست نرود.',
     grain: 'یک لید با موعد اقدام بعدی',
     source: [leadPipeline],
     rule: 'لید فعال با next action قبل از زمان گزارش',
@@ -1005,6 +1118,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'sla-breach-rate',
     title: 'نرخ نقض SLA',
     technicalName: 'SLA Breach Rate',
+    businessDefinition:
+      'درصد درخواست‌های پشتیبانی است که رسیدگی به آن‌ها از مهلت تعیین‌شدهٔ شرکت عبور کرده است. این مهلت همان تعهد زمانی پاسخ‌گویی یا رسیدگی است؛ برای یافتن بخش‌هایی که به بهبود خدمت نیاز دارند استفاده می‌شود.',
     grain: 'یک Ticket واجد SLA',
     source: [supportTickets],
     rule: 'Ticketهای ناقض SLA تقسیم بر Ticketهای واجد SLA',
@@ -1022,6 +1137,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'first-response-time',
     title: 'میانگین زمان پاسخ نخست',
     technicalName: 'First Response Time',
+    businessDefinition:
+      'میانگین زمانی است که مشتری از ثبت درخواست پشتیبانی تا گرفتن اولین پاسخ واقعی منتظر مانده است. پیام خودکار پاسخ واقعی محسوب نمی‌شود و درخواست‌های هنوز بی‌پاسخ وارد این میانگین نمی‌شوند؛ برای سنجش سرعت پاسخ‌گویی است.',
     grain: 'یک Ticket دارای اولین پاسخ',
     source: [supportTickets],
     rule: 'میانگین فاصله ایجاد Ticket تا اولین پاسخ واجد شرایط',
@@ -1039,6 +1156,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'low-satisfaction',
     title: 'رضایت پایین نیازمند اقدام',
     technicalName: 'Low Satisfaction Actions',
+    businessDefinition:
+      'تعداد پاسخ‌های رضایت‌سنجی با امتیاز پایین است که هنوز اقدام اصلاحی آن‌ها باز مانده است. به تیم نشان می‌دهد کدام تجربهٔ نامطلوب سفر یا خدمت به رسیدگی و جبران نیاز دارد.',
     grain: 'یک پاسخ رضایت معتبر',
     source: [customerSatisfaction],
     rule: 'تعداد پاسخ‌های زیر آستانه مصوب با اقدام اصلاحی باز',
@@ -1055,6 +1174,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'agency-sales',
     title: 'فروش آژانس‌ها',
     technicalName: 'Agency Sales',
+    businessDefinition:
+      'مبلغ فروش خدمات سفر است که به هر آژانس همکار نسبت داده شده است. برای شناخت سهم شرکا در فروش شرکت استفاده می‌شود؛ این عدد مبلغ فروش است، نه کمیسیون آژانس یا پول وصول‌شده از آن.',
     grain: 'قلم سفارش، آژانس و ارز',
     source: [travelFacts],
     rule: 'جمع فروش اقلام منتسب به آژانس در همان ارز',
@@ -1071,6 +1192,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'agency-profit',
     title: 'سود ناخالص آژانس‌ها',
     technicalName: 'Agency Gross Profit',
+    businessDefinition:
+      'مبلغی است که از فروش منتسب به آژانس‌های همکار، پس از کسر هزینهٔ خالص و تأییدشدهٔ تأمین همان خدمات باقی می‌ماند. برای مقایسهٔ سودآوری همکاری‌هاست؛ هزینه‌های عمومی شرکت هنوز کسر نشده‌اند و بدون هزینهٔ معتبر نمی‌توان سود را محاسبه کرد.',
     grain: 'قلم سفارش، آژانس و ارز',
     source: [travelFacts],
     rule: 'فروش مصوب منهای خرید خالص مصوب اقلام منتسب به آژانس',
@@ -1088,6 +1211,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'credit-at-risk',
     title: 'اعتبار در معرض ریسک',
     technicalName: 'Credit at Risk',
+    businessDefinition:
+      'مجموع سقف اعتبار همکاری‌های فعالی است که به‌دلیل نزدیک شدن انقضا یا اقدام عقب‌افتاده نیازمند بازبینی‌اند. این مبلغ لزوماً بدهی مصرف‌شده یا زیان قطعی نیست؛ برای اولویت‌بندی بررسی اعتبار آژانس‌هاست.',
     grain: 'قرارداد آژانس و ارز',
     source: [agencyRisk],
     rule: 'مبلغ سقف اعتبار سیاست‌های فعال دارای ریسک انقضا یا اقدام overdue',
@@ -1105,6 +1230,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'expiring-guarantees',
     title: 'تضمین‌های نزدیک انقضا',
     technicalName: 'Expiring Guarantees',
+    businessDefinition:
+      'تعداد تضمین‌های فعال آژانس‌های همکار است که در بازهٔ انتخابی منقضی می‌شوند. برای پیگیری تمدید تضمین پیش از ادامهٔ همکاری اعتباری است؛ تضمین آزادشده یا ردشده حساب نمی‌شود.',
     grain: 'یک تضمین قرارداد آژانس',
     source: [agencyRisk],
     rule: 'تعداد تضمین فعال با تاریخ انقضا در پنجره انتخابی',
@@ -1121,6 +1248,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'attributed-sales',
     title: 'فروش منتسب به کمپین',
     technicalName: 'Attributed Campaign Sales',
+    businessDefinition:
+      'مبلغ فروش خدماتی است که طبق روش انتساب مصوب، به یک کمپین تبلیغاتی نسبت داده می‌شود. کمک می‌کند سهم هر کمپین در فروش دیده شود؛ صرف مشاهدهٔ تبلیغ به‌تنهایی برای نسبت دادن فروش کافی نیست.',
     grain: 'کمپین، touchpoint و ارز',
     source: [campaign],
     rule: 'جمع فروش منتسب طبق مدل attribution مصوب در همان ارز',
@@ -1138,6 +1267,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'advertising-spend',
     title: 'هزینه تبلیغات',
     technicalName: 'Advertising Spend',
+    businessDefinition:
+      'مبلغ هزینهٔ ثبت‌شده و تأییدشده برای تبلیغات خدمات شرکت در بازهٔ انتخابی است. نشان می‌دهد برای جذب مشتری در هر کمپین یا کانال چقدر هزینه شده؛ بودجه‌ای که هنوز مصرف نشده در آن حساب نمی‌شود.',
     grain: 'کمپین، کانال و ارز',
     source: [campaign],
     rule: 'جمع هزینه ثبت‌شده و تأییدشده کمپین‌ها در بازه انتخابی، بدون تجمیع ارزهای فاقد نرخ تبدیل مصوب',
@@ -1156,6 +1287,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'campaign-conversion',
     title: 'نرخ تبدیل کمپین',
     technicalName: 'Campaign Conversion Rate',
+    businessDefinition:
+      'درصد مخاطبانی است که پیام کمپین را دریافت کرده‌اند و اقدام هدف آن، مثل ثبت درخواست سفر، را انجام داده‌اند. نوع اقدام هدف را خود کمپین مشخص می‌کند؛ برای مقایسهٔ اثر پیام‌ها و کانال‌هاست و همیشه به معنی خرید نیست.',
     grain: 'کمپین و مخاطب واجد consent',
     source: [campaign],
     rule: 'conversionهای معتبر تقسیم بر مخاطبان تحویل‌شده واجد اندازه‌گیری',
@@ -1172,6 +1305,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'campaign-roas',
     title: 'بازده هزینه تبلیغات',
     technicalName: 'ROAS',
+    businessDefinition:
+      'نشان می‌دهد به ازای هر واحد هزینهٔ تبلیغ، چند واحد فروش به همان کمپین نسبت داده شده است. مثلاً عدد ۴ یعنی چهار برابر هزینهٔ تبلیغ فروش منتسب داشته‌ایم؛ این نسبت سود نیست، چون هزینهٔ تأمین خدمات و سایر هزینه‌ها از فروش کم نشده‌اند.',
     grain: 'کمپین و ارز',
     source: [campaign],
     rule: 'فروش منتسب تقسیم بر هزینه ثبت‌شده کمپین در همان ارز/FX basis',
@@ -1189,6 +1324,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'consent-coverage',
     title: 'پوشش رضایت بازاریابی',
     technicalName: 'Marketing Consent Coverage',
+    businessDefinition:
+      'درصد مشتریان قابل ارتباط است که برای هدف و کانال موردنظر، اجازهٔ معتبر دریافت پیام بازاریابی دارند. برای مشخص شدن تعداد مخاطبان مجاز تبلیغات استفاده می‌شود؛ رضایت لغوشده یا نامشخص اجازهٔ ارسال محسوب نمی‌شود.',
     grain: 'مشتری، هدف و کانال',
     source: [customerConsent],
     rule: 'مشتریان دارای آخرین consent معتبر تقسیم بر مشتریان واجد ارتباط',
@@ -1205,6 +1342,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-workdays',
     title: 'روزهای کارکرد',
     technicalName: 'Employee Workdays',
+    businessDefinition:
+      'جمع روزهای کارکرد ثبت‌شده و تأییدشدهٔ کارکنان در دورهٔ انتخابی است. برای دیدن ظرفیت کاری واقعی واحدها، مثل فروش و رزرواسیون، استفاده می‌شود؛ تعداد روزهای تقویم یا تعداد کارکنان نیست.',
     grain: 'کارمند و دوره گزارش',
     source: [employeePerformance],
     rule: 'جمع روزهای کارکرد ثبت‌شده و تأییدشده در دوره',
@@ -1221,6 +1360,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-leave',
     title: 'بار مرخصی',
     technicalName: 'Leave Load',
+    businessDefinition:
+      'جمع روزهای مرخصی تأییدشدهٔ کارکنان در دورهٔ انتخابی است. کمک می‌کند نبود نیرو در واحدها پیش‌بینی و پوشش کارها برنامه‌ریزی شود؛ درخواست مرخصی ردشده یا لغوشده حساب نمی‌شود.',
     grain: 'کارمند، نوع مرخصی و سال',
     source: [employeePerformance],
     rule: 'جمع روزهای مرخصی تأییدشده در دوره انتخابی',
@@ -1237,6 +1378,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-overtime',
     title: 'اضافه‌کاری',
     technicalName: 'Overtime',
+    businessDefinition:
+      'مجموع زمان کار اضافه بر برنامهٔ عادی است که برای کارکنان ثبت و تأیید شده است. برای شناخت فشار کاری یا کمبود نیرو کاربرد دارد؛ این عدد زمان اضافه‌کاری است، نه مبلغ پرداخت آن.',
     grain: 'کارمند و دوره گزارش',
     source: [employeePerformance],
     rule: 'جمع اضافه‌کاری ثبت‌شده و تأییدشده در دوره',
@@ -1253,6 +1396,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-performance',
     title: 'امتیاز ارزیابی عملکرد',
     technicalName: 'Performance Score',
+    businessDefinition:
+      'خلاصهٔ امتیاز آخرین ارزیابی معتبر کارکنان در دوره است که با روش و وزن‌های مصوب محاسبه می‌شود. برای دیدن نیازهای آموزشی و بهبود عملکرد تیم‌هاست؛ تعداد فروش به‌تنهایی جای ارزیابی کامل عملکرد را نمی‌گیرد.',
     grain: 'آخرین ارزیابی معتبر هر کارمند در دوره',
     source: [employeePerformance],
     rule: 'میانگین وزنی فقط طبق روش ارزیابی منتشرشده در Projection',
@@ -1269,6 +1414,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'expiring-hr-records',
     title: 'سوابق نزدیک انقضا',
     technicalName: 'Expiring HR Records',
+    businessDefinition:
+      'تعداد سوابق فعال کارکنان است که اعتبارشان در بازهٔ انتخابی تمام می‌شود، مثل قرارداد همکاری یا گواهینامهٔ دارای تاریخ اعتبار. برای پیگیری تمدید مدارک و جلوگیری از وقفه در کار استفاده می‌شود.',
     grain: 'یک HR Record فعال',
     source: [hrRecordExpiry],
     rule: 'تعداد سوابق فعال با expiresAt در پنجره انتخابی',
@@ -1285,6 +1432,8 @@ export const dashboardKpis: readonly DashboardKpiDefinition[] = [
     id: 'incomplete-hr-records',
     title: 'سوابق ناقص کارکنان',
     technicalName: 'Incomplete HR Records',
+    businessDefinition:
+      'تعداد سوابق فعال پرسنلی است که هنوز اطلاعات یا وضعیت الزامی آن‌ها کامل نشده است. برای مشخص شدن پرونده‌های نیازمند تکمیل استفاده می‌شود؛ خالی بودن یک فیلد اختیاری به معنی نقص پرونده نیست.',
     grain: 'یک HR Record فعال',
     source: [hrRecordExpiry],
     rule: 'تعداد سوابق فعال دارای وضعیت یا فیلد تکمیل‌نشده در Projection',
