@@ -5541,6 +5541,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  rialConversion              Json?
   selectedRoomKeys            Json?
   roomSaleOverrides           Json?
   selectedHotelRateIds        Json?
@@ -5596,6 +5597,7 @@ model PackagePricingTourAdjustment {
  * Immutable publication. Hotel alternatives are separate, never summed together.
  */
 model PackagePricingTourPublishedVersion {
+  rialConversion              Json?
   selectedHotelRateIds        Json?
   priceFields                 Json?
   familyAdults                Int?
