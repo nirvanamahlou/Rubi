@@ -323,6 +323,10 @@ COMPUTER_ID=PC-A; codex/pc-a-shared-broker-form-1105 from develop1caf96d8. Owner
 
 SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTURE output vocabulary in place of OUTBOUND/RETURN. Reserve only supplier-form output label projection, price-table labels and corresponding render regression; stored enums and routing are unchanged. Existing sent quotation selection stays immutable. Synthetic combined PDF visually verified; all final-head hosted gates precede authorized develop merge. Scope freezes on push and releases on verified merge.
 
+## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
+
+Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
