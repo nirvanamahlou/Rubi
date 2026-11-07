@@ -1,6 +1,10 @@
-## SALES-REQUEST-ASSIGNEES-1107 — PC-C — IN_PROGRESS
+## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
-Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Coordinated with the HR authority owner after PR1459 merge: reserve optional expected-unit ID projection and focused HR tests (existing callers unchanged). Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies.
+User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.
+
+## GROUP-MEMBER-ACTIONS-1107 — PC-B — READY_FOR_CI
+
+Owner authorizes group member removal and promotion to manager from member rows, restricted to group managers; push and develop merge. Reserve Messaging controller/service/repository and regression tests, Web messaging client/member actions and translations. Additive DELETE member and PUT owner routes reuse conversation response. Serialize against existing membership/send lock, preserve at least the acting owner and all messages. No schema/dependency/deployment. Validation: 93 Web tests, 29 API tests, scoped lint and all 7 real PostgreSQL messaging tests passed, including owner-only actions, promoted-owner authority, retained history, revoked access and concurrent mutual removals leaving exactly one owner. Six UI/error translations added with API catalogue mirroring. Final-head hosted gates precede merge.
 
 ## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
 
@@ -29,6 +33,10 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## SALES-REQUEST-ASSIGNEES-1107 — PC-C — IN_PROGRESS
+
+Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Coordinated with the HR authority owner after PR1459 merge: reserve optional expected-unit ID projection and focused HR tests (existing callers unchanged). Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -11409,6 +11417,12 @@ Reserve message-popup.ts/spec only: show existing recipient-scoped call-center.a
 Bounded central notification-center.tsx lease: reuse existing call-center:open-queue event on popup click, including same-route/same-hash navigation. No other center behavior changes.
 `nCALL-REQUEST-TOAST-1107: implementation complete;8 focused tests pass. Source frozen on push; no server deployment in this work item.
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
+
+## NOTIFICATION-HR-REFRESH-1107 — PC-B — ACTIVE
+
+Owner authorizes recurring bell alerts repair, probationary/temporary employment contract options and automatic attendance updates, push/develop merge. Reserve change-notifications classifier/regressions, shared HR contract options/contextual fallback, IAM trusted attendance actor resolution and tests, Radan scheduled caller/regressions, HR store visible refresh trigger if needed and own notes. Existing Call Center toast branch is confined to assignment toast; preserve real call workflows/UI. Production read-only diagnosis: recurring telephony lease POST is tracked as create; scheduled sync fails with a ROTATED configured anchor whose family has zero active sessions despite16 current active sessions for that same user. Resolve a currently valid native session for the explicitly configured active HR actor and re-evaluate native grants/branches; never bypass session expiry/revocation, broaden branches, create sessions or write production data. No migrations/dependencies/deployment.
+
+NOTIFICATION-HR-REFRESH-1107 validation:31 focused API and51 Web checks, scoped lint and full Web TypeScript pass. Added native-session selection/revalidation/denial, configured branch intersection and schedule recovery checks; lease acquire/renew/release produces no generic alerts while genuine workflow commands still notify. No source ownership conflict found; current actor/telephony toast work is separate and preserved. Freeze on push; all final-head CI gates required before develop merge.
 
 ## CALL-HR-MANAGER-AUTHORITY-1107 — PC-C — IN_PROGRESS
 

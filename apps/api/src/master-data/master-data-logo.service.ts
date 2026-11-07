@@ -1,5 +1,7 @@
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -59,7 +61,13 @@ export class MasterDataLogoService {
     id: string,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    workflow?: string,
   ) {
+    if (
+      workflow &&
+      (resourceValue !== 'airlines' || !canSelectForWorkflow(actor, workflow))
+    )
+      throw new ForbiddenException();
     const resource = this.masterData.resource(resourceValue);
     if (!logoResources.has(resource))
       throw new NotFoundException('این بخش لوگو ندارد.');
@@ -67,7 +75,12 @@ export class MasterDataLogoService {
     const documentId = String(record.attributes.logoFileReference ?? '').trim();
     if (!documentId) throw new NotFoundException('لوگوی این رکورد پیدا نشد.');
     return this.documents.previewMasterDataLogo(
-      { documentId, resource, recordId: record.id },
+      {
+        documentId,
+        resource,
+        recordId: record.id,
+        ...(workflow ? { workflow } : {}),
+      },
       actor,
       metadata,
     );

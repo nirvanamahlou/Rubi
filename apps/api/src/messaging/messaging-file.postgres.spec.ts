@@ -361,6 +361,104 @@ describe.skipIf(!enabled)(
       },
       30000,
     );
+    it('allows only current group managers to remove or promote members and retains message history', async () => {
+      const http = app.getHttpServer();
+      const group = await client.messagingConversation.create({
+        data: {
+          type: 'GROUP',
+          branchId,
+          creatorUserId: senderId,
+          title: 'Member actions test',
+          createRequestId: `group:${randomUUID()}`,
+          members: {
+            create: [
+              { userId: senderId, role: 'OWNER' },
+              { userId: recipientId, role: 'MEMBER' },
+              { userId: outsiderId, role: 'MEMBER' },
+            ],
+          },
+        },
+      });
+      const path = `/messaging/conversations/${group.id}/members`;
+      await request(http)
+        .delete(`${path}/${outsiderId}`)
+        .set('x-test-actor', recipientId)
+        .expect(403);
+      await request(http)
+        .put(`${path}/${recipientId}/owner`)
+        .set('x-test-actor', recipientId)
+        .expect(403);
+      await request(http)
+        .put(
+          `/messaging/conversations/${conversationId}/members/${recipientId}/owner`,
+        )
+        .set('x-test-actor', senderId)
+        .expect(403);
+      await request(http)
+        .delete(`${path}/${senderId}`)
+        .set('x-test-actor', senderId)
+        .expect(400);
+      const sent = await request(http)
+        .post(`/messaging/conversations/${group.id}/messages`)
+        .set('x-test-actor', outsiderId)
+        .send({
+          body: 'Preserved history',
+          clientRequestId: `message:${randomUUID()}`,
+        })
+        .expect(201);
+      const promoted = await request(http)
+        .put(`${path}/${recipientId}/owner`)
+        .set('x-test-actor', senderId)
+        .expect(200);
+      expect(promoted.body.data.participants).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: recipientId, role: 'OWNER' }),
+          expect.objectContaining({ id: senderId, role: 'OWNER' }),
+        ]),
+      );
+      await request(http)
+        .put(`${path}/${recipientId}/owner`)
+        .set('x-test-actor', senderId)
+        .expect(200);
+      await request(http)
+        .delete(`${path}/${outsiderId}`)
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      await request(http)
+        .get(`/messaging/conversations/${group.id}/messages`)
+        .set('x-test-actor', outsiderId)
+        .expect(403);
+      await request(http)
+        .put(`${path}/${senderId}/owner`)
+        .set('x-test-actor', outsiderId)
+        .expect(403);
+      expect(
+        await client.messagingMessage.findUnique({
+          where: { id: sent.body.data.id },
+        }),
+      ).not.toBeNull();
+      // Competing owners cannot both remove each other: the shared row lock rechecks authority.
+      const outcomes = await Promise.all([
+        request(http)
+          .delete(`${path}/${recipientId}`)
+          .set('x-test-actor', senderId),
+        request(http)
+          .delete(`${path}/${senderId}`)
+          .set('x-test-actor', recipientId),
+      ]);
+      expect(outcomes.filter((result) => result.status === 200)).toHaveLength(
+        1,
+      );
+      expect(
+        outcomes.filter((result) => [403, 404].includes(result.status)),
+      ).toHaveLength(1);
+      expect(
+        await client.messagingMember.count({
+          where: { conversationId: group.id, role: 'OWNER' },
+        }),
+      ).toBe(1);
+    });
+
     it('persists group edits, restricts editors, transfers ownership and revokes access after leaving', async () => {
       const http = app.getHttpServer();
       await request(http)

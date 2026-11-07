@@ -78,6 +78,34 @@ export class MessagingController {
     return this.service.remove(id, request.actor);
   }
 
+  @Delete('conversations/:id/members/:memberId')
+  removeGroupMember(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.manageGroupMember(
+      id,
+      memberId,
+      'REMOVE',
+      request.actor,
+    );
+  }
+
+  @Put('conversations/:id/members/:memberId/owner')
+  promoteGroupMember(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.manageGroupMember(
+      id,
+      memberId,
+      'PROMOTE',
+      request.actor,
+    );
+  }
+
   @Patch('conversations/:id')
   updateGroup(
     @Param('id') id: string,

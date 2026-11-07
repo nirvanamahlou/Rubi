@@ -47,6 +47,7 @@ describe('MessagingService', () => {
       createDirect: vi.fn().mockResolvedValue(conversation),
       createGroup: vi.fn(),
       updateGroup: vi.fn(),
+      manageGroupMember: vi.fn(),
       removeMembership: vi.fn(),
       messages: vi.fn(),
       createMessage: vi.fn(),
@@ -81,6 +82,45 @@ describe('MessagingService', () => {
       documents as never,
     );
   });
+
+  it.each(['REMOVE', 'PROMOTE'] as const)(
+    'restricts %s to group owners and forwards the scoped action',
+    async (action) => {
+      await expect(
+        service.manageGroupMember(conversationId, recipientId, action, actor),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      repository.conversation!.mockResolvedValue({
+        ...conversation,
+        type: 'GROUP',
+        members: [{ userId: actor.userId, role: 'MEMBER' }],
+      });
+      await expect(
+        service.manageGroupMember(conversationId, recipientId, action, actor),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.manageGroupMember).not.toHaveBeenCalled();
+      repository.conversation!.mockResolvedValue({
+        ...conversation,
+        type: 'GROUP',
+      });
+      repository.manageGroupMember!.mockResolvedValue({
+        ...conversation,
+        type: 'GROUP',
+      });
+      await service.manageGroupMember(
+        conversationId,
+        recipientId,
+        action,
+        actor,
+      );
+      expect(repository.manageGroupMember).toHaveBeenCalledWith(
+        conversationId,
+        actor.userId,
+        actor.branchIds,
+        recipientId,
+        action,
+      );
+    },
+  );
 
   it('removes only the authenticated membership in its allowed branches', async () => {
     await service.remove(conversationId, actor);

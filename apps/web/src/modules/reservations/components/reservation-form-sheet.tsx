@@ -32,6 +32,7 @@ import styles from './reservation-form-sheet.module.css';
 export function useReservationFormReferences(
   intake: ReservationFormIntake,
   active: boolean,
+  salesContractId?: string,
 ) {
   const [loaded, setLoaded] = useState<{
     key: string;
@@ -91,7 +92,7 @@ export function useReservationFormReferences(
                 page: 1,
                 pageSize: 100,
               },
-              'reservations',
+              salesContractId ? 'sales' : 'reservations',
             );
             const data = result.data.find((record) =>
               [record.name, record.attributes.englishName].includes(id),
@@ -101,7 +102,7 @@ export function useReservationFormReferences(
           const { data } = await masterDataApi.detail(
             resource,
             id,
-            'reservations',
+            salesContractId ? 'sales' : 'reservations',
           );
           return { id, data };
         } catch {
@@ -110,10 +111,19 @@ export function useReservationFormReferences(
       }),
     ).then(async (results) => {
       const extra = await loadOutputReferences(async (path) => {
-        const response = await fetch(getPublicApiBaseUrl() + path, {
-          credentials: 'include',
-          cache: 'no-store',
-        });
+        const response = await fetch(
+          getPublicApiBaseUrl() +
+            (path.startsWith('/master-data/')
+              ? path.replace(
+                  '/master-data/',
+                  `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+                )
+              : path),
+          {
+            credentials: 'include',
+            cache: 'no-store',
+          },
+        );
         return response.ok ? response.json() : {};
       }, intake.id).catch(() => ({}));
       if (live)
@@ -133,7 +143,7 @@ export function useReservationFormReferences(
     return () => {
       live = false;
     };
-  }, [key, active, intake.id]);
+  }, [key, active, intake.id, salesContractId]);
   return {
     references: loaded?.key === key ? loaded.references : {},
     ready: !active || loaded?.key === key,

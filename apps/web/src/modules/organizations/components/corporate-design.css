@@ -315,7 +315,7 @@
   .kpi,
   .panel,
   .card {
-    background: rgba(255, 255, 255, 0.96);
+    background: light-dark(rgba(255, 255, 255, 0.96), var(--surface));
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: var(--shadow);
@@ -413,7 +413,7 @@
   .panel-head {
     min-height: 60px;
     padding: 11px 16px;
-    border-bottom: 1px solid #e5edf8;
+    border-bottom: 1px solid light-dark(#e5edf8, var(--line));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -512,7 +512,7 @@
   }
   td {
     padding: 12px;
-    border-bottom: 1px solid #e8eff8;
+    border-bottom: 1px solid light-dark(#e8eff8, var(--line));
     white-space: nowrap;
     color: light-dark(#294b79, var(--foreground));
   }
@@ -865,7 +865,7 @@
     justify-content: space-between;
     gap: 15px;
     padding: 11px 2px;
-    border-bottom: 1px solid #edf2f8;
+    border-bottom: 1px solid light-dark(#edf2f8, var(--line));
   }
   .summary-row:last-child {
     border-bottom: 0;
@@ -1136,19 +1136,19 @@
     border-color: var(--line);
     border-radius: 14px;
     box-shadow: var(--shadow);
-    background: white;
+    background: light-dark(white, var(--surface));
   }
   .directory-filters {
     padding: 12px 15px;
     border-radius: 14px 14px 0 0;
     border: 1px solid var(--line);
-    background: white;
+    background: light-dark(white, var(--surface));
   }
   .directory-table {
     border: 1px solid var(--line);
     border-top: 0;
     border-radius: 0 0 14px 14px;
-    background: white;
+    background: light-dark(white, var(--surface));
     padding: 0 12px 10px;
   }
   .directory-table th,
@@ -1284,7 +1284,7 @@
   }
   &.organization-logo-modal {
     max-width: 480px;
-    background: white;
+    background: light-dark(white, var(--surface));
   }
   .logo-editor-preview {
     display: grid;
@@ -1387,7 +1387,7 @@
     padding: 10px 12px;
     border: 0;
     border-bottom: 1px solid var(--line);
-    background: white;
+    background: light-dark(white, var(--surface));
     text-align: right;
     cursor: pointer;
   }
@@ -1425,7 +1425,7 @@
   .excel-preview {
     overflow: auto;
     max-height: 45dvh;
-    background: white;
+    background: light-dark(white, var(--surface));
     border: 1px solid var(--line);
     border-radius: 12px;
     margin-top: 16px;
@@ -1440,17 +1440,17 @@
   }
   .organization-review-row,
   .excel-preview tr.organization-review-row {
-    background: #fff2f2;
+    background: light-dark(#fff2f2, #351a24);
   }
   .organization-review-row:hover,
   .excel-preview tr.organization-review-row:hover {
-    background: #ffe8e8;
+    background: light-dark(#ffe8e8, #462332);
   }
   .organization-review-notice {
-    border: 1px solid #fecaca;
+    border: 1px solid light-dark(#fecaca, #7f334a);
     border-radius: 8px;
-    background: #fff2f2;
-    color: #9f1239;
+    background: light-dark(#fff2f2, #351a24);
+    color: light-dark(#9f1239, #fda4af);
     padding: 10px 12px;
   }
   .wizard .boundary-note {
