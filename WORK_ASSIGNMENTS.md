@@ -11500,6 +11500,7 @@ RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-
 
 SERVICE-ROUTE-CURRENCIES-1107 | PC-C | codex/pc-c-service-route-currencies-1107 | native-sales + multicurrency helper + regressions | IN_PROGRESS | owner request; no FX calculation, migration or deploy
 SERVICE-ROUTE-CURRENCIES-1107 READY_FOR_CI: scoped implementation + 13 regression tests passed; preserve per-currency chart series, no FX assumptions.
+
 ## RESERVATION-TRANSFER-COMBINED-1107 — PC-A — DONE/MERGED
 
 COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from latest `origin/develop`. Owner requests the pre-issuance hotel purchase form to populate transfer passenger quantity from the contract and keep transfer pricing inside the hotel form unless the existing separate-broker checkbox is selected, then push and merge to `develop`. Reserve `reservation-hotel-purchase.tsx` and its focused purchase/transfer regressions plus this task note. Preserve immutable Sales allocations, saved purchase values, exact Decimal arithmetic, supplier defaults, authorization and all unrelated reservation outputs. No schema, migration, dependency, lockfile, operational data or deployment changes.
