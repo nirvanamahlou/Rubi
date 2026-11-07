@@ -11489,3 +11489,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin
 RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must appear as TOUR LEADER in the top service summary, remove OTHER SERVICES passenger column from preview/PDF, and verify entered base amount/ratio in output. Extend reservation-form.ts, reservation-form-sheet.tsx and reservation-pdf-html.ts leaf reservation with focused output checks; no other active owner on these same-owner leaf files.
 
 RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
+
+RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.
