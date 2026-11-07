@@ -1195,6 +1195,28 @@ data. User explicitly authorizes push, merge to develop and local Web3000/API400
 refresh after checks. Preserve the dirty primary checkout and existing database.
 Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
 
+## TICKET-MULTI-AIRLINE-LABELS-1107 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-multi-airline-labels-1107` from
+`origin/develop@5f5f6ec8`. Owner requests every distinct airline used on the same
+flight ticket to have its own header mark, and the date beside ARRIVAL/DEPARTURE
+to use the same font weight, size and color as that row label. Reserve only the
+shared presentation-only flight-ticket layout and its focused regression, plus
+bounded own assignment/status entries. Preserve leg direction, itinerary data,
+airline public references, issuer branding, PDF/preview parity and escaping. No
+API, shared contract, schema/migration, dependency/lockfile, permission,
+operational data or runtime change. User explicitly authorizes push and exact-head
+CI-gated merge to develop. Prior ticket layout reservations are released.
+
+Delivered one escaped header mark per distinct carrier on each ticket page,
+deduplicating repeated same-airline legs and using a compact two-airline layout
+beside unchanged issuer branding. ARRIVAL/DEPARTURE dates now inherit the exact
+13pt/700 label typography and color. Shared PDF/preview source remains identical.
+Focused layout9 and consumer43 tests pass (one existing optional skip), scoped
+ESLint, Web TypeScript and the 67-route production build pass. No API, schema,
+migration, dependency, data or runtime change. Bounded source locks release with
+the reviewed commit; exact-head hosted CI gates the authorized develop merge.
+
 ## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
