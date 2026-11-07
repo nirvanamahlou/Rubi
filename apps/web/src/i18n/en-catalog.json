@@ -17677,5 +17677,11 @@
   "· سن کودکان": "· Child ages",
   "نیازمند مجوز مشاهده مالی": "Financial viewing permission required",
   "در حال بررسی قالب…": "Inspecting template…",
-  "فایل قالب پس از بررسی و تبدیل به XLSX در اسناد ذخیره می‌شود.": "The template is inspected, converted to XLSX and stored in Documents."
+  "فایل قالب پس از بررسی و تبدیل به XLSX در اسناد ذخیره می‌شود.": "The template is inspected, converted to XLSX and stored in Documents.",
+  "افزودن برنامه": "Add an item",
+  "تاریخ (اختیاری)": "Date (optional)",
+  "درخواست ثبت شد، اما افزودن آن به تقویم انجام نشد.": "The request was submitted, but could not be added to the calendar.",
+  "رویداد جدید": "New event",
+  "ساعت (اختیاری)": "Time (optional)",
+  "یادداشت:": "Note:"
 }
