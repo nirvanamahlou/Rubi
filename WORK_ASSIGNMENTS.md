@@ -11497,3 +11497,5 @@ RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must app
 RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
 
 RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.
+
+MISSION-EXPENSE-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve HR expense forms, expense petty-cash integration via Procurement port, mission child operations, and Sales travel document spacing; preserve persisted column positions.
