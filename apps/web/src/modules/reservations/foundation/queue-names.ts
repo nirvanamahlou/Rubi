@@ -45,6 +45,36 @@ export function useQueueNames(
           );
           const english = data.attributes.englishName;
           if (resource === 'hotels') {
+            let cityIds = [data.attributes.cityId];
+            try {
+              const members: unknown = JSON.parse(
+                String(data.attributes.memberHotels ?? '[]'),
+              );
+              if (Array.isArray(members) && members.length)
+                cityIds = members.map((member) => member?.cityId);
+            } catch {
+              /* Retain the ordinary hotel's city. */
+            }
+            const cityNames: string[] = [];
+            for (const cityId of new Set(cityIds)) {
+              if (typeof cityId !== 'string' || !cityId) continue;
+              try {
+                const { data: city } = await masterDataApi.detail(
+                  'cities',
+                  cityId,
+                  'reservations',
+                );
+                const latin = city.attributes.englishName;
+                cityNames.push(
+                  typeof latin === 'string' && latin.trim()
+                    ? latin.trim()
+                    : city.name,
+                );
+              } catch {
+                // Keep the contract destination when this lookup is unavailable.
+              }
+            }
+            names[`hotel-city:${id}`] = cityNames.join(' / ');
             names[`hotel-meals:${id}`] = hotelMealLabel(data.attributes);
             const stars = data.attributes.starRating ?? data.attributes.stars;
             if (typeof stars === 'number' || typeof stars === 'string')
@@ -80,9 +110,19 @@ export function useQueueNames(
       mealServiceName: queueMealName(row, names),
       hotelStars: row.hotelStars || names[`hotel-stars:${row.hotelId}`],
       hotelName: queueHotelName(row, names),
-      ...(names[`cities:${row.destinationId}`]
-        ? { destination: names[`cities:${row.destinationId}`]! }
-        : {}),
+      destination:
+        [
+          ...new Set(
+            queueHotels(row)
+              .flatMap((hotel) =>
+                (names[`hotel-city:${hotel.hotelId}`] ?? '').split(' / '),
+              )
+              .filter(Boolean),
+          ),
+        ].join(' / ') ||
+        names[`cities:${row.destinationId}`] ||
+        row.destination ||
+        '',
     })),
   };
 }
