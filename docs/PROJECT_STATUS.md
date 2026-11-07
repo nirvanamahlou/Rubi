@@ -9188,3 +9188,27 @@ without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
 ## 2026-11-07 — DASHBOARD-RANGE-HOVER-CONTRAST-1107 — READY_FOR_REVIEW
 
 Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
+
+## 2026-11-07 — RESERVATION-CONTRACT-VALUES-1107 — READY_FOR_CI
+
+PC-A; branch codex/pc-a-reservation-contract-values-1107, base cbc8d334b.
+Reservation supplier defaults retain the contract flight's Tehran calendar date
+without parsing a human-readable date through local midnight. Initial transfer
+counts follow allocated non-infant passengers and declared contract leg counts;
+missing historical service fields inherit canonical marks while explicit saved
+false/zero choices remain intact. Canonical TOUR_GUIDE appears as TOUR LEADER in
+the supplier service summary, including older form revisions. OTHER SERVICES is
+removed from passenger headers/cells in both preview and PDF.
+
+Supplier tables retain entered P.P/base amounts and dimensionless factors and
+show exact hotel/transfer totals, grouped by currency. Only supplier-form inputs
+are used: no actual contract sale or historical purchase amount is substituted.
+Incomplete same-currency rows cannot produce a misleading partial grand total.
+The preview and PDF share the same price projection. Separate hotel/transfer
+scope and sent revisions remain independent. No migration, dependency, business
+record update or deployment. Focused API settings/save/send checks:22 passed;
+new output/date/base-factor/transfer regressions and full reservation Web checks,
+scoped lint, full Web typecheck/build are part of the final release gate.
+User explicitly authorizes push and develop merge after green final-head CI.
+
+RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pass (one existing skipped);22 API settings/save/send checks pass. Three timezone midnight-date proofs and both HTML/PDF base/factor/total/guide/column regressions pass. Source-only change; contract sale amounts and historical purchase totals remain untouched. Final hosted gates remain mandatory.

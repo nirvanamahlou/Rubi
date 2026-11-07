@@ -91,7 +91,15 @@ it('prints separate hotel, outbound and return forms with only their own supplie
   const hotel = supplierDocumentScope(intake, 'HOTEL');
   const out = supplierDocumentScope(intake, 'OUTBOUND');
   const back = supplierDocumentScope(intake, 'RETURN');
-  expect(supplierPriceTableData(hotel).rows).toHaveLength(1);
+  expect(supplierPriceTableData(hotel).rows).toHaveLength(2);
+  expect(supplierPriceTableData(hotel).rows.at(-1)).toEqual([
+    'TOTAL',
+    '',
+    '',
+    '',
+    '',
+    '600 EUR',
+  ]);
   expect(supplierPriceTableData(out).rows).toEqual([['10 EUR', '2', '20 EUR']]);
   expect(supplierPriceTableData(back).rows).toEqual([
     ['20 USD', '1', '20 USD'],
