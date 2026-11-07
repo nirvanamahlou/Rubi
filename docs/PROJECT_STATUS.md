@@ -1,3 +1,7 @@
+## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
+
+Automatic primary checkout previously followed the trip return even after a subsequent hotel was added, causing overlapping stays and a silently disabled pricing navigation button. Automatic checkout now follows the next stay check-in; explicit manual dates remain authoritative. The same hotel validation result drives both navigation and an actionable message, preserving all existing room/date/journey guards. Added model/payload and actual parent-button regressions for hotel-only, flight+hotel, manual overlap, incomplete rooms and invalid itineraries. Sales suite:788 passed, one existing skip; final added flight+hotel case and focused combined checks pass (31). Scoped lint and Web TypeScript passed; final build and exact-head hosted gates remain required. No API, schema, migration, dependency or deployment changes.
+
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.

@@ -155,7 +155,7 @@ import {
   salesStandaloneServiceDatesValid,
   withSalesHotelDates,
   withFirstPassengerCustomer,
-  salesHotelValid,
+  salesHotelValidationError,
   salesDetailSteps,
   withSalesRouteDefaults,
   toggleSalesDirectionalService,
@@ -720,6 +720,9 @@ export function SalesContractForm() {
     : hotelOccupancySaleDefaults(state, occupancyRoom, hotelRoomRates);
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
+  const hotelStepError = state.serviceKinds.includes('HOTEL')
+    ? salesHotelValidationError(state) || hotelCapacityError
+    : null;
   const hotelGuestIds = salesHotelGuestIds(state);
   const passengerStepError = salesPassengerStepError(
     state,
@@ -880,8 +883,7 @@ export function SalesContractForm() {
             (state.tour || salesSelectedFlightsReady(state)))) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0) &&
         (!state.serviceKinds.includes('FLIGHT') || salesFlightsValid(state)) &&
-        (!state.serviceKinds.includes('HOTEL') ||
-          (salesHotelValid(state) && !hotelCapacityError)) &&
+        (!state.serviceKinds.includes('HOTEL') || !hotelStepError) &&
         (!state.serviceKinds.includes('VISA') ||
           Boolean(state.visaReferenceId)) &&
         (!state.serviceKinds.includes('INSURANCE') ||
@@ -2789,6 +2791,11 @@ export function SalesContractForm() {
           className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
         >
           {error}
+        </p>
+      ) : null}
+      {step === 0 && hotelStepError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {hotelStepError}
         </p>
       ) : null}
       <div className="sticky bottom-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/95 p-3 shadow-lg backdrop-blur sm:p-4">

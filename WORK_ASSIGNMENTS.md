@@ -1,3 +1,7 @@
+## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
+
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
