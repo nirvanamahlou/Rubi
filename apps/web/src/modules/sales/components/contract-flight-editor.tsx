@@ -18,6 +18,8 @@ export function ContractFlightEditor({
   value,
   flightDate = '',
   airlines = [],
+  originCityId = '',
+  originCountryId = '',
   destinationCityId = '',
   destinationCountryId = '',
   workflow = 'sales',
@@ -27,6 +29,8 @@ export function ContractFlightEditor({
   international?: boolean;
   flightDate?: string;
   airlines?: readonly MasterDataRecord[];
+  originCityId?: string;
+  originCountryId?: string;
   destinationCityId?: string;
   destinationCountryId?: string;
   workflow?: 'sales' | 'reservations';
@@ -157,6 +161,16 @@ export function ContractFlightEditor({
               { value: 'BUSINESS', label: 'بیزینس' },
               { value: 'FIRST', label: 'فرست کلاس' },
             ]}
+          />
+        </FormField>
+        <FormField label="فرودگاه مبدأ">
+          <FloatingFlightAirport
+            label="فرودگاه مبدأ"
+            cityId={originCityId}
+            countryId={originCountryId}
+            workflow={workflow}
+            value={value.originAirport}
+            onChange={(originAirport) => patch({ originAirport })}
           />
         </FormField>
         <FormField label="فرودگاه مقصد">

@@ -361,6 +361,20 @@ export function ReservationSalesAmendment({
             )}
             {
               <ContractFlightEditor
+                originCityId={
+                  direction === 'OUTBOUND'
+                    ? draft.originId
+                    : draft.destinationId
+                }
+                originCountryId={String(
+                  refs.cities?.find(
+                    (city) =>
+                      city.id ===
+                      (direction === 'OUTBOUND'
+                        ? draft.originId
+                        : draft.destinationId),
+                  )?.attributes.countryId || '',
+                )}
                 destinationCityId={
                   direction === 'OUTBOUND'
                     ? draft.destinationId

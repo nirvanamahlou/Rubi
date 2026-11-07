@@ -144,9 +144,18 @@ describe('Contract-only flight form and consumers', () => {
       code: 'AYT',
       name: 'Antalya Airport',
     };
+    const originAirport = {
+      ...destinationAirport,
+      id: '10000000-0000-4000-8000-000000000006',
+      cityId: originId,
+      code: 'IKA',
+      name: 'Imam Khomeini Airport',
+    };
     const selectedState = {
       ...state,
-      contractFlights: { OUTBOUND: { ...draft, destinationAirport } },
+      contractFlights: {
+        OUTBOUND: { ...draft, originAirport, destinationAirport },
+      },
     };
     const flight = salesFlightSelection(selectedState, 'OUTBOUND')!;
     expect(
@@ -172,12 +181,16 @@ describe('Contract-only flight form and consumers', () => {
         metadata: contractFlightMetadata({ ...flight, version: 1 }),
       },
     ];
+    expect(contractPrintHtml(output, printReferences)).toContain(
+      'Imam Khomeini Airport (IKA)',
+    );
     expect(contractPrintHtml(output, printReferences)).toContain('FLOAT123');
     expect(contractPrintHtml(output, printReferences)).toContain(
       'Antalya Airport (AYT)',
     );
     const saved = { ...output.contract, originId, destinationId };
     const manual = manualAmendmentFlights(saved);
+    expect(manual.OUTBOUND?.originAirport).toEqual(originAirport);
     expect(manual.OUTBOUND?.destinationAirport).toEqual(destinationAirport);
     const amended = applyManualAmendmentFlights(
       amendmentFromContract(saved),
@@ -228,6 +241,7 @@ describe('Contract-only flight form and consumers', () => {
       serviceNumber: 'FLOAT123',
       contractOnly: true,
       destinationAirport,
+      originAirport,
     });
   });
 });
