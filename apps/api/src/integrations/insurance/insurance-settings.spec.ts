@@ -55,13 +55,13 @@ it('creates the initial setting without an invalid zero system version', async (
   );
   expect(writeSetting).toHaveBeenCalledWith(
     expect.objectContaining({
-      expectedVersion: undefined,
       scope: 'BRANCH',
       scopeId: branchId,
     }),
     actor,
     {},
   );
+  expect(writeSetting.mock.calls[0]?.[0]).not.toHaveProperty('expectedVersion');
 });
 
 describe('insurance issuance configuration', () => {
