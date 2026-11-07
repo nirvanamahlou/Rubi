@@ -121,7 +121,8 @@ export function useQueueNames(
           ),
         ].join(' / ') ||
         names[`cities:${row.destinationId}`] ||
-        row.destination,
+        row.destination ||
+        '',
     })),
   };
 }
