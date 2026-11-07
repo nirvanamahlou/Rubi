@@ -6,6 +6,57 @@ import {
 } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints child counts in separate half-open age bands for every hotel room', () => {
+    const output = structuredClone(printFixture);
+    output.contract.hotelSelection!.rooms = [
+      {
+        ordinal: 1,
+        roomTypeId: 'family',
+        roomTypeNameSnapshot: 'FAMILY ROOM',
+        adults: 2,
+        childAges: [0, 1, 2, 5, 6, 11, 12, 14],
+      },
+      {
+        ordinal: 2,
+        roomTypeId: 'single',
+        roomTypeNameSnapshot: 'SINGLE ROOM',
+        adults: 1,
+        childAges: [],
+      },
+    ];
+    output.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'second-hotel',
+        hotelNameSnapshot: 'SECOND HOTEL',
+        cityId: 'antalya',
+        checkInDate: '2026-09-25',
+        checkOutDate: '2026-09-26',
+      },
+    ];
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, printReferences);
+    const tables = [
+      ...html.matchAll(/<table class="hotel-rooms">(.*?)<\/table>/g),
+    ];
+    expect(tables).toHaveLength(2);
+    for (const [, table] of tables) {
+      expect(table).toContain('<th>کودکان ۲ تا ۶ سال</th>');
+      expect(table).toContain('<th>کودکان ۶ تا ۱۲ سال</th>');
+      expect(table).toContain('<td>2</td><td>2</td><td>2</td><td>10</td>');
+      expect(table).toContain('<td>1</td><td>0</td><td>0</td><td>1</td>');
+      expect(table).not.toContain('سن کودکان');
+      expect(table).not.toContain('0, 1, 2, 5, 6, 11, 12, 14');
+    }
+    expect(output).toEqual(before);
+  });
+
+  it('spans all seven room columns for contracts without detailed room rows', () => {
+    const html = contractPrintHtml(printFixture, printReferences);
+    const table = html.match(/<table class="hotel-rooms">(.*?)<\/table>/)![1];
+    expect(table).toContain('colspan="7"');
+    expect(table).not.toContain('colspan="6"');
+  });
+
   it('keeps international flight dates in day month year order inside RTL output', () => {
     const html = contractPrintHtml(printFixture, {
       ...printReferences,
