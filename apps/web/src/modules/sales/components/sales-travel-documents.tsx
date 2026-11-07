@@ -43,6 +43,7 @@ export function SalesTravelDocuments({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [ticket, setTicket] = useState(false);
+  const [unbranded, setUnbranded] = useState(false);
   const [open, setOpen] = useState(false);
   async function load(showTicket = false) {
     setBusy(true);
@@ -85,6 +86,7 @@ export function SalesTravelDocuments({
           if (!value) {
             setIntake(undefined);
             setTicket(false);
+            setUnbranded(false);
           }
         }}
       >
@@ -113,6 +115,14 @@ export function SalesTravelDocuments({
                 </p>
                 <SalesContractTermsDownload />
               </section>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={unbranded}
+                  onChange={(event) => setUnbranded(event.target.checked)}
+                />
+                بدون لوگو، نام شرکت، فوتر و بارکد
+              </label>
               <Button
                 disabled={busy || !intake.workflow.branding}
                 onClick={() => void load(true)}
@@ -126,6 +136,7 @@ export function SalesTravelDocuments({
                 <TravelDocument
                   intake={intake}
                   voucher
+                  unbranded={unbranded}
                   salesContractId={contractId}
                 />
               ) : (
@@ -140,6 +151,7 @@ export function SalesTravelDocuments({
       {ticket && intake && (
         <ReservationTickets
           request={intake}
+          unbranded={unbranded}
           branding={intake.workflow.branding}
           salesContractId={contractId}
           onClose={() => setTicket(false)}

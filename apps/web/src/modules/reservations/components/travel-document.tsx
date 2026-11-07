@@ -83,6 +83,7 @@ export function TravelDocument({
   dirty = false,
   downloadLabel,
   salesContractId,
+  unbranded = false,
 }: {
   intake: ReservationFormIntake;
   formScope?: SupplierDocumentKind;
@@ -92,9 +93,10 @@ export function TravelDocument({
   dirty?: boolean;
   downloadLabel?: string;
   salesContractId?: string;
+  unbranded?: boolean;
 }) {
   const intake = voucher
-    ? sourceIntake
+    ? { ...sourceIntake, unbranded }
     : supplierDocumentScope(sourceIntake, formScope, sourcePreviewSettings);
   const previewSettings =
     sourcePreviewSettings && !voucher
@@ -102,7 +104,8 @@ export function TravelDocument({
       : undefined;
   const { logo, error } = useTravelLogo(
     intake.workflow.branding,
-    voucher && intake.workflow.branding?.voucherWithoutLogo === true,
+    voucher &&
+      (unbranded || intake.workflow.branding?.voucherWithoutLogo === true),
   );
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -126,7 +129,8 @@ export function TravelDocument({
           )?.text.broker?.trim() || savedSupplier
         ));
   const enabled =
-    (!!logo ||
+    ((voucher && unbranded) ||
+      !!logo ||
       (voucher && state.branding?.voucherWithoutLogo === true) ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
     !!state.branding &&
@@ -140,7 +144,7 @@ export function TravelDocument({
         }
       : intake;
   const publicDocument = usePublicDocumentLink(
-    !historical && enabled && supplierReady && !dirty
+    !unbranded && !historical && enabled && supplierReady && !dirty
       ? '/reservations/requests/' +
           encodeURIComponent(intake.id) +
           '/pdf?' +
@@ -161,7 +165,7 @@ export function TravelDocument({
       logo={logo}
       references={formReferences.references}
       voucher={voucher}
-      publicDocumentUrl={publicDocument?.url}
+      publicDocumentUrl={unbranded ? undefined : publicDocument?.url}
     />
   );
   async function downloadPdf() {
@@ -171,7 +175,7 @@ export function TravelDocument({
     try {
       const send = () =>
         fetch(
-          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(voucher && salesContractId ? { salesContractId } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(voucher && unbranded ? { unbranded: 'true' } : {}), ...(voucher && salesContractId ? { salesContractId } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
           {
             credentials: 'include',
             cache: 'no-store',
@@ -227,7 +231,8 @@ export function TravelDocument({
       )}
       {enabled &&
         supplierReady &&
-        (historical ||
+        (unbranded ||
+        historical ||
         dirty ||
         publicDocument?.status === 'ready' ||
         publicDocument?.status === 'disabled' ? (
