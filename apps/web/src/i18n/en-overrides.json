@@ -5546,5 +5546,11 @@
   "مشاهده گزارش‌های خرید و تأمین": "View procurement reports",
   "مشاهده گزارش‌های همکاری با آژانس‌ها": "View agency partnerships reports",
   "مشاهده گزارش‌های این بخش": "View this section reports",
-  "فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود. مجوز موردنیاز:": "Only authorized report data within the selected scope is displayed. Required permission:"
+  "فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود. مجوز موردنیاز:": "Only authorized report data within the selected scope is displayed. Required permission:",
+  "اطلاعات هتل بعدی را تکمیل کنید.": "Complete the next hotel details.",
+  "اطلاعات هتل بعدی و تاریخ اقامت آن را تکمیل کنید.": "Complete the next hotel details and stay dates.",
+  "تاریخ ورود هتل بعدی نباید قبل از خروج هتل قبلی باشد؛ تاریخ خروج هتل قبلی را اصلاح کنید.": "The next hotel check-in cannot precede the previous hotel checkout. Correct the previous hotel checkout date.",
+  "نوع اتاق و ترکیب مهمانان هتل بعدی را تکمیل کنید.": "Complete the next hotel room types and guest composition.",
+  "حداکثر ۵۰ هتل قابل انتخاب است.": "You can select up to 50 hotels.",
+  "اطلاعات هتل اول، تاریخ اقامت و اتاق‌ها را تکمیل کنید.": "Complete the first hotel details, stay dates and rooms."
 }
