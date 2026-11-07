@@ -11485,3 +11485,13 @@ publication/merge and preserve the peer's test and work records if it lands firs
 ## DASHBOARD-RANGE-HOVER-CONTRAST-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.
+
+## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
+
+RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must appear as TOUR LEADER in the top service summary, remove OTHER SERVICES passenger column from preview/PDF, and verify entered base amount/ratio in output. Extend reservation-form.ts, reservation-form-sheet.tsx and reservation-pdf-html.ts leaf reservation with focused output checks; no other active owner on these same-owner leaf files.
+
+RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
+
+RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.

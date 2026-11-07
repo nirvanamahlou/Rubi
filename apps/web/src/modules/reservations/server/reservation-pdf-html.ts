@@ -100,7 +100,6 @@ export function reservationPdfHtml(
                 p.checkOut ?? '-',
                 p.outboundTransfer ? '✓' : '-',
                 p.returnTransfer ? '✓' : '-',
-                p.otherServices,
               ]
             : []),
           ...(voucher && data.passengers.some((p) => p.checkIn !== undefined)
@@ -218,7 +217,6 @@ ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRI
               'CHECK-OUT',
               'TRF IN',
               'TRF OUT',
-              'OTHER SERVICES',
             ]
           : []),
         ...(voucher && data.passengers.some((p) => p.checkIn !== undefined)
@@ -233,7 +231,7 @@ ${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRI
               data.contractPartyName || '-',
               '-',
               '-',
-              ...Array(7).fill('-'),
+              ...Array(6).fill('-'),
             ],
           ],
       'passengers',

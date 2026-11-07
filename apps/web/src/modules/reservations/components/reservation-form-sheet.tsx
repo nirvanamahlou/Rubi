@@ -556,7 +556,7 @@ export function ReservationFormSheet({
                   <col style={{ width: voucher ? '17%' : '5%' }} />
                   <col style={{ width: voucher ? '21%' : '7%' }} />
                   {!voucher &&
-                    Array.from({ length: 7 }, (_, index) => (
+                    Array.from({ length: 6 }, (_, index) => (
                       <col key={index} />
                     ))}
                 </colgroup>
@@ -574,7 +574,6 @@ export function ReservationFormSheet({
                         'CHECK-OUT',
                         'TRF IN',
                         'TRF OUT',
-                        'OTHER SERVICES',
                       ].map((label) => <th key={label}>{label}</th>)}
                     {voucher &&
                       data.passengers.some((p) => p.checkIn !== undefined) && (
@@ -617,7 +616,6 @@ export function ReservationFormSheet({
                             </td>
                             <td>{p.outboundTransfer ? '✓' : '-'}</td>
                             <td>{p.returnTransfer ? '✓' : '-'}</td>
-                            <td>{p.otherServices}</td>
                           </>
                         )}
                         {voucher &&
@@ -633,7 +631,7 @@ export function ReservationFormSheet({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={11}>
+                      <td colSpan={10}>
                         {data.contractPartyName
                           ? `CONTRACT PARTY: ${data.contractPartyName}`
                           : '-'}

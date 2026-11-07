@@ -1,6 +1,8 @@
 import { contractRoomDefaults } from './contract-room-defaults';
+import { reservationTransferCounts } from './reservation-transfer-counts';
 import {
   hotelTransferChargeableCount,
+  salesContractFlights,
   salesRoomCategoryLabel,
 } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -8,6 +10,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  reservationHasTourLeader,
   isAggregateReservationForm,
   englishOutputName,
   reservationFormDate,
@@ -40,6 +43,10 @@ export function defaultVoucherSettings(
     leaderLanguage: 'Persian',
     excursionDescription: d.excursion === '-' ? '' : d.excursion,
   });
+  const flights = salesContractFlights(
+    intake.snapshot.serviceSelections,
+    intake.snapshot.ticketSelections ?? [],
+  );
   for (const [prefix, f] of [
     ['arrival', d.flights.find((f) => f.leg === 'OUTBOUND')],
     ['departure', d.flights.find((f) => f.leg === 'RETURN')],
@@ -47,13 +54,24 @@ export function defaultVoucherSettings(
     if (f) {
       text[`${prefix}Airline`] = f.airline;
       text[`${prefix}Flight`] = f.number;
-      text[`${prefix}Date`] = Number.isFinite(Date.parse(f.date))
-        ? new Date(f.date).toISOString().slice(0, 10)
+      // Calendar dates must not round-trip through a browser-local midnight.
+      const flight = flights.find((flight) => flight.direction === f.leg);
+      text[`${prefix}Date`] = flight
+        ? new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            timeZone: 'Asia/Tehran',
+          }).format(new Date(flight.departureAt))
         : '';
       text[`${prefix}Time`] = f.time;
     }
+  const transferCounts = reservationTransferCounts(intake, d.passengers);
   const defaults: VoucherSettingsV1 = {
-    hotelTransferCounts: { outbound: 0, returning: 0 },
+    hotelTransferCounts: {
+      outbound: transferCounts.outbound ?? 0,
+      returning: transferCounts.returning ?? 0,
+    },
     ...(h?.rooms?.length
       ? {
           rooms: h.rooms.map((room) => ({
@@ -82,7 +100,7 @@ export function defaultVoucherSettings(
       transfer: intake.snapshot.serviceSelections.some(
         (s) => s.kind === 'TRANSFER',
       ),
-      tourLeader: d.leader !== '-',
+      tourLeader: reservationHasTourLeader(intake),
       excursion: d.excursion !== '-',
       specialRoom: false,
     },
@@ -182,6 +200,10 @@ export function defaultVoucherSettings(
     passengers: defaults.passengers.map((passenger) => ({
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
+      services: {
+        ...passenger.services,
+        ...saved.passengers?.find((item) => item.id === passenger.id)?.services,
+      } as NonNullable<typeof passenger.services>,
       sex:
         saved.passengers?.find((item) => item.id === passenger.id)?.sex ||
         passenger.sex ||
@@ -384,25 +406,33 @@ export function supplierFormData(
   refs: ReservationFormReferences = {},
 ) {
   const settings = intake.workflow.supplierFormSettings;
+  const data = settings
+    ? voucherFormData(
+        {
+          ...intake,
+          workflow: { ...intake.workflow, voucherSettings: settings },
+        },
+        refs,
+      )
+    : reservationFormData(intake, refs);
   return settings
     ? {
-        ...voucherFormData(
-          {
-            ...intake,
-            workflow: { ...intake.workflow, voucherSettings: settings },
-          },
-          refs,
-        ),
+        ...data,
         notes: [settings.text.stayNotes, settings.text.remarks]
           .filter(Boolean)
           .join('\n'),
-        passengers: voucherFormData(
-          {
-            ...intake,
-            workflow: { ...intake.workflow, voucherSettings: settings },
-          },
-          refs,
-        ).passengers.map((person) => {
+        services: [
+          data.services,
+          reservationHasTourLeader(intake) &&
+          (!intake.supplierDocumentKind ||
+            intake.supplierDocumentKind === 'HOTEL') &&
+          !settings.flags.tourLeader
+            ? 'TOUR LEADER'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' / '),
+        passengers: data.passengers.map((person) => {
           const saved = settings.passengers.find((p) => p.id === person.id);
           return {
             ...person,
@@ -413,10 +443,14 @@ export function supplierFormData(
               : {}),
             ...(saved?.services
               ? {
-                  outboundFlight: saved.services.outboundFlight,
-                  returnFlight: saved.services.returnFlight,
-                  outboundTransfer: saved.services.outboundTransfer,
-                  returnTransfer: saved.services.returnTransfer,
+                  outboundFlight:
+                    saved.services.outboundFlight ?? person.outboundFlight,
+                  returnFlight:
+                    saved.services.returnFlight ?? person.returnFlight,
+                  outboundTransfer:
+                    saved.services.outboundTransfer ?? person.outboundTransfer,
+                  returnTransfer:
+                    saved.services.returnTransfer ?? person.returnTransfer,
                   checkIn: saved.services.hotel
                     ? person.checkIn && person.checkIn !== '-'
                       ? person.checkIn
@@ -456,13 +490,11 @@ export function supplierFormData(
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
     : {
-        ...reservationFormData(intake, refs),
-        passengers: reservationFormData(intake, refs).passengers.map(
-          (person) => ({
-            ...person,
-            hotelChildAgeBand: person.hotelChildAgeBand,
-          }),
-        ),
+        ...data,
+        passengers: data.passengers.map((person) => ({
+          ...person,
+          hotelChildAgeBand: person.hotelChildAgeBand,
+        })),
         leader: 'Persian',
       };
 }
