@@ -60,6 +60,8 @@ export class MasterDataLogoController {
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'same-origin')
+  @Header('Content-Security-Policy', "default-src 'none'; sandbox")
   async selectionLogo(
     @Param('workflow') workflow: string,
     @Param('id') id: string,
