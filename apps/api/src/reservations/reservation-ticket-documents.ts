@@ -11,14 +11,21 @@ import {
   Injectable,
   Optional,
 } from '@nestjs/common';
-import { salesContractFlights, type AuthenticatedActor } from '@nora/contracts';
+import {
+  isFloatingSalesContract,
+  salesContractFlights,
+  type AuthenticatedActor,
+} from '@nora/contracts';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import {
   reportRange,
   issuedRows,
   filterIssuedRows,
 } from './issued-ticket-report';
-import type { SalesReservationRequestV1 } from '@nora/contracts';
+import type {
+  ReservationTicketDocumentV1,
+  SalesReservationRequestV1,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
@@ -301,6 +308,49 @@ export class ReservationTicketDocumentsService {
       throw new BadRequestException(
         'شماره بلیط را با ۶ رقم انگلیسی وارد کنید.',
       );
+    return this.writeNumber(id, choice.customerId, input, actor);
+  }
+  /** Called only after Sales row authorization and the Finance delivery permit. */
+  async issueFloatingForDelivery(
+    intake: Awaited<ReturnType<TravelWorkflowService['forContract']>>,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.branchIds.includes(intake.branchId) ||
+      intake.workflow.supplierStatus === 'CANCELLED' ||
+      !isFloatingSalesContract(intake.snapshot.serviceSelections)
+    )
+      throw new ForbiddenException();
+    const flights = salesContractFlights(
+      intake.snapshot.serviceSelections,
+      intake.snapshot.ticketSelections ?? [],
+    );
+    const passengers = [
+      ...new Set(
+        (intake.snapshot.passengerAssignments ?? [])
+          .filter(
+            (person) =>
+              intake.snapshot.passengerIds.includes(person.customerId) &&
+              flights.some((flight) =>
+                person.serviceClientKeys.includes(flight.serviceClientKey),
+              ),
+          )
+          .map((person) => person.customerId),
+      ),
+    ];
+    const documents = [];
+    for (const customerId of passengers)
+      documents.push(await this.writeNumber(intake.id, customerId, {}, actor));
+    return documents;
+  }
+  private async writeNumber(
+    id: string,
+    customerId: string,
+    input: { number?: unknown; expectedNumber?: unknown },
+    actor: AuthenticatedActor,
+  ): Promise<ReservationTicketDocumentV1> {
+    const supplied =
+      typeof input.number === 'string' ? input.number.trim() : '';
     return this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id},0))`,
@@ -320,7 +370,7 @@ export class ReservationTicketDocumentsService {
         throw new BadRequestException('درخواست موجود نیست یا ابطال شده است.');
       const old = await tx.reservationTicketDocument.findUnique({
         where: {
-          intakeId_customerId: { intakeId: id, customerId: choice.customerId },
+          intakeId_customerId: { intakeId: id, customerId },
         },
       });
       if (old) {
@@ -359,7 +409,12 @@ export class ReservationTicketDocumentsService {
         return {
           customerId: old.customerId,
           number: supplied || old.number,
-          source: supplied && supplied !== old.number ? 'MANUAL' : old.source,
+          source:
+            supplied && supplied !== old.number
+              ? 'MANUAL'
+              : old.source === 'MANUAL'
+                ? 'MANUAL'
+                : 'AUTO',
           issuedAt: old.issuedAt.toISOString(),
         };
       }
@@ -386,7 +441,7 @@ export class ReservationTicketDocumentsService {
       const doc = await tx.reservationTicketDocument.create({
         data: {
           intakeId: id,
-          customerId: choice.customerId,
+          customerId,
           number,
           source: supplied ? 'MANUAL' : 'AUTO',
           actorUserId: actor.userId,
@@ -395,7 +450,7 @@ export class ReservationTicketDocumentsService {
       return {
         customerId: doc.customerId,
         number: doc.number,
-        source: doc.source,
+        source: doc.source === 'MANUAL' ? 'MANUAL' : 'AUTO',
         issuedAt: doc.issuedAt.toISOString(),
       };
     });

@@ -77,6 +77,42 @@ function fixture(automatic = true) {
   return { service, tx, rows, database };
 }
 describe('persisted ticket numbering', () => {
+  it('automatically numbers allocated floating passengers idempotently without a manual manage permission', async () => {
+    const { service, tx } = fixture();
+    const intake = {
+      id: 'intake',
+      branchId: 'branch',
+      workflow: { supplierStatus: 'NEW' },
+      snapshot: {
+        serviceSelections: [
+          { kind: 'FLIGHT', metadata: { purchaseSupplyType: 'FLOATING' } },
+        ],
+        ticketSelections: [
+          {
+            serviceClientKey: 'out',
+            direction: 'OUTBOUND',
+            departureAt: '2026-11-07T10:00:00Z',
+          },
+        ],
+        passengerIds: ['passenger', 'hotel-only'],
+        passengerAssignments: [
+          { customerId: 'passenger', serviceClientKeys: ['out'] },
+          { customerId: 'hotel-only', serviceClientKeys: ['hotel'] },
+          { customerId: 'outsider', serviceClientKeys: ['out'] },
+        ],
+      },
+    } as never;
+    const salesActor = {
+      ...actor,
+      permissions: [],
+    } as unknown as AuthenticatedActor;
+    const first = await service.issueFloatingForDelivery(intake, salesActor),
+      second = await service.issueFloatingForDelivery(intake, salesActor);
+    expect(first).toEqual(second);
+    expect(first).toHaveLength(1);
+    expect(first[0]?.number).toBe('100000');
+    expect(tx.reservationTicketDocument.create).toHaveBeenCalledTimes(1);
+  });
   it('replays concurrent company issuance with the same six-digit number and original UTC issue time', async () => {
     const { service, tx } = fixture();
     const [a, b] = await Promise.all([

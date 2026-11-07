@@ -1,4 +1,5 @@
 'use client';
+import { reservationHasTransfer } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -185,6 +186,7 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  const requiresParty = reservationHasTransfer(intake.snapshot);
   const SupplierDocument =
     reservationHotelStays(intake.snapshot).length > 1
       ? SupplierHotelDocuments
@@ -344,7 +346,7 @@ export function TravelWorkflowForm({
       )}
       {(action === 'واچر' || action === 'Confirmation') && (
         <>
-          {!closed && hasSentReservationForm(state) && (
+          {!closed && requiresParty && hasSentReservationForm(state) && (
             <section className="grid gap-2 rounded border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -374,7 +376,9 @@ export function TravelWorkflowForm({
             </section>
           )}
           {(state.voucherIssued || hasSentReservationForm(state)) &&
-            (state.voucherIssued || state.voucherSettings?.brokerId) &&
+            (state.voucherIssued ||
+              !requiresParty ||
+              state.voucherSettings?.brokerId) &&
             !settingsDirty && (
               <TravelDocument
                 key={`${intake.id}:${state.version}`}
@@ -413,6 +417,7 @@ export function TravelWorkflowForm({
         />
       )}
       {action === 'Confirmation' &&
+        requiresParty &&
         !closed &&
         hasSentReservationForm(state) && (
           <VoucherLeaderEditor
@@ -533,7 +538,7 @@ export function TravelWorkflowForm({
                   disabled={
                     busy ||
                     settingsDirty ||
-                    !state.voucherSettings?.brokerId ||
+                    (requiresParty && !state.voucherSettings?.brokerId) ||
                     !hasSentReservationForm(state) ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
@@ -557,7 +562,7 @@ export function TravelWorkflowForm({
                 disabled={
                   busy ||
                   settingsDirty ||
-                  !state.voucherSettings?.brokerId ||
+                  (requiresParty && !state.voucherSettings?.brokerId) ||
                   !hasSentReservationForm(state) ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)

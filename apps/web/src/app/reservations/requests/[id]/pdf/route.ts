@@ -1,8 +1,10 @@
+import { reservationHasTransfer } from '@nora/contracts';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
 } from '@/modules/reservations/model/supplier-document-scope';
 import { reservationHotelStays } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
 import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
@@ -122,12 +124,15 @@ export async function GET(
       return fail('واچر هنوز صادر نشده است.', 409);
     if (
       voucher &&
+      !isFloatingSalesContract(intake.snapshot.serviceSelections) &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.voucherSettings?.brokerId ||
         !intake.workflow.voucherSettings?.leaderId)
     )
       return fail('ابتدا کارگزار و تورلیدر واچر را انتخاب کنید.', 409);
     if (
       !voucher &&
+      reservationHasTransfer(intake.snapshot) &&
       (!intake.workflow.supplierFormSettings?.brokerId ||
         !intake.workflow.supplierFormSettings?.text.broker?.trim())
     )

@@ -1,6 +1,8 @@
-## AMIN-PR-CALL-RELEASE-1105 — PC-C — IN_PROGRESS
+## AMIN-PR-CALL-RELEASE-1105 — PC-C — DONE
 
 Owner authorizes repair and develop merge of all open Amin-tech11 PRs, then production publication of remaining Call Center changes. Integrate current develop into PR1397/1406/1407/1419; preserve peer notification popups and all source changes. Reserve only conflict-resolution hunks, existing task files and formatting fixes plus these notes; no new dependency/schema work. PR1429 is concurrently frozen with another authorized release; read-only monitor until completion. Use exact-SHA full hosted gates and merge commits, no force push/bypass. Server deployment uses existing global lease, verified backup, source comparison, migration review, rollback and health/Worker/AMI/recording checks; preserve all peer overlays.
+
+Closeout 2026-11-07: PR1397/1406/1407/1419 integrated and merge-committed after all exact-head hosted gates; PR1429/1430 also merged. Resume publication authorized after integrity-verifying a retained complete backup and retiring only the three explicitly owner-named old backups. Reused the concurrent exact develop7000f7b1b rollout, then independently verified177 relevant Call Center/Issabel/notification sources, both additive Call Center migrations,109 runtime-image tests and Worker/AMI/recording/HTTPS/assets. Backed-up audited reconciliation repaired exactly four historical completion flags; subsequent preview has zero eligible repairs. No new feature, dependency, permission grant or contact fact change in closeout. Reserve only this completion paragraph, own appended Project Status and tasks/CALL-CENTER-RELEASE-1107.md on codex/pc-c-call-center-release-1107; release on verified merge.
 
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI
 
@@ -320,6 +322,10 @@ TOUR-PERIODS-GRID-1103 validation: nullable draft/client, grouped overview, life
 COMPUTER_ID=PC-A; codex/pc-a-shared-broker-form-1105 from develop1caf96d8. Owner requests one shared-broker reservation editor and one consolidated supplier PDF containing every hotel and its purchase quotation, then develop merge. Reserve Reservations reservation-settings, shared-hotel supplier presentation/model, reservation-form-sheet/PDF HTML, scoped tests and translation/status notes. Preserve existing per-hotel quotations, historical sent snapshots and scoped/versioned workflow commands; no schema, migration, permission, dependency or production rollout. Saving the one editor orchestrates existing public commands with current CAS and reports any partial saved revision before retry; sending occurs only after every quotation is saved. PDF preview and download use the same consolidated data model. No active overlapping Reservations form writer found in current published assignments.
 
 SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTURE output vocabulary in place of OUTBOUND/RETURN. Reserve only supplier-form output label projection, price-table labels and corresponding render regression; stored enums and routing are unchanged. Existing sent quotation selection stays immutable. Synthetic combined PDF visually verified; all final-head hosted gates precede authorized develop merge. Scope freezes on push and releases on verified merge.
+
+## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
+
+Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -11367,3 +11373,15 @@ User authorizes removal of selected request history/source identifier and FX sum
 ## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
 
 User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
+
+## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
+
+PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
+
+## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
+
+PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User identifies atena and mahsa and authorizes own-unit request assignment repair and server publication. Read-only native-directory reconciliation reproduces atena1/self versus6 same-unit with missing workflow.manage.team; mahsa already6. Reserve generic audited IAM manual-access repair operator script, guard regressions and own deployment/docs. Preserve all other permissions/branches/unit links and ordinary-user/cross-unit restrictions. Use existing IAM service with revision/audit, fresh backup, native operator authority and exact-delta validation; no migration, application UI/API or contact/request writes.
+
+## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — IN_PROGRESS
+
+PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.

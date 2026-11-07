@@ -139,6 +139,24 @@ describe('reservation PDF route', () => {
     expect(supplier.status).toBe(400);
     expect(renderer).not.toHaveBeenCalled();
   });
+  it('rejects a different reservation request even when its contract ID matches', async () => {
+    const unrelated = structuredClone(intake);
+    unrelated.id = '00000000-0000-4000-8000-000000000088';
+    unrelated.snapshot.contractId = id;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(Response.json({ data: unrelated }));
+    vi.stubGlobal('fetch', fetcher);
+    const result = await GET(
+      new Request(
+        `http://localhost/reservations/requests/${id}/pdf?kind=voucher&salesContractId=${id}`,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(result.status).toBe(403);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(renderer).not.toHaveBeenCalled();
+  });
   it('downloads the sent price snapshot even if an unsent edit has different amounts', async () => {
     const sent = {
       ...intake.workflow.supplierFormSettings!,
@@ -346,6 +364,76 @@ it('rejects unissued direct voucher downloads before rendering', async () => {
   expect(response.status).toBe(409);
   expect(renderer).not.toHaveBeenCalled();
 });
+it('downloads an authorized floating voucher without manual broker or leader settings through the Sales finance gate', async () => {
+  const value = {
+    ...intake,
+    snapshot: {
+      ...intake.snapshot,
+      contractId: '00000000-0000-4000-8000-000000000002',
+      serviceSelections: [
+        {
+          kind: 'HOTEL',
+          clientKey: 'hotel',
+          metadata: { purchaseSupplyType: 'FLOATING' },
+          titleSnapshot: 'SYNTHETIC HOTEL',
+        },
+      ],
+      hotelSelection: {
+        hotelNameSnapshot: 'SYNTHETIC HOTEL',
+        checkInDate: '2026-11-07',
+        checkOutDate: '2026-11-10',
+      },
+    },
+    workflow: {
+      ...intake.workflow,
+      voucherIssued: true,
+      voucherSettings: null,
+    },
+  };
+  const fetcher = vi.fn().mockResolvedValue(Response.json({ data: value }));
+  vi.stubGlobal('fetch', fetcher);
+  const contractId = '00000000-0000-4000-8000-000000000002';
+  const response = await GET(
+    new Request(request().url + '?kind=voucher&salesContractId=' + contractId),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(200);
+  expect(fetcher.mock.calls[0]?.[0]).toContain(
+    '/sales/contracts/' + contractId + '/travel-documents',
+  );
+  expect(renderer).toHaveBeenCalled();
+});
+it.each([403, 409])(
+  'does not render a Sales voucher when server authorization fails with %i',
+  async (status) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('', { status })),
+    );
+    const response = await GET(
+      new Request(request().url + '?kind=voucher&salesContractId=' + id),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(status);
+    expect(renderer).not.toHaveBeenCalled();
+  },
+);
+it('rejects a different intake returned for the requested Sales voucher', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ data: { ...intake, id: 'another-intake' } }),
+      ),
+  );
+  const response = await GET(
+    new Request(request().url + '?kind=voucher&salesContractId=' + id),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(403);
+  expect(renderer).not.toHaveBeenCalled();
+});
 it('downloads an issued voucher using saved voucher settings and a voucher filename', async () => {
   const value = {
     ...intake,
@@ -422,9 +510,10 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).not.toContain('<img');
 });
 
-it('requires a saved recipient before issuing the supplier reservation PDF', async () => {
+it('requires a saved recipient before issuing a supplier PDF for a transfer contract', async () => {
   const value = {
     ...intake,
+    snapshot: { ...intake.snapshot, serviceSelections: [{ kind: 'TRANSFER' }] },
     workflow: { ...intake.workflow, supplierFormSettings: undefined },
   };
   vi.stubGlobal(
@@ -540,7 +629,7 @@ it('keeps six selected passengers on one compact hotel voucher page', () => {
   expect(html).toContain('1 / 1');
 });
 
-it('rejects supplier PDF with a typed name but no directory broker', async () => {
+it('rejects a transfer contract supplier PDF with a typed name but no directory broker', async () => {
   const settings = { ...intake.workflow.supplierFormSettings! };
   delete settings.brokerId;
   vi.stubGlobal(
@@ -549,6 +638,10 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
       Response.json({
         data: {
           ...intake,
+          snapshot: {
+            ...intake.snapshot,
+            serviceSelections: [{ kind: 'TRANSFER' }],
+          },
           workflow: { ...intake.workflow, supplierFormSettings: settings },
         },
       }),
@@ -559,6 +652,34 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
   ).toBe(409);
   expect(renderer).not.toHaveBeenCalled();
 });
+it.each([false, true])(
+  'downloads reservation/voucher=%s without a broker or leader for a contract without transfer',
+  async (voucher) => {
+    const settings = defaultVoucherSettings(intake, {});
+    delete settings.brokerId;
+    delete settings.leaderId;
+    settings.text.broker = '';
+    const value = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+        voucherIssued: voucher,
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ data: value })),
+    );
+    const response = await GET(
+      new Request(request().url + (voucher ? '?kind=voucher' : '')),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(200);
+    expect(renderer).toHaveBeenCalled();
+  },
+);
 
 it.each([false, true])(
   'prints the Niyayesh website in the reservation/voucher=%s footer',

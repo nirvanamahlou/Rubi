@@ -790,3 +790,14 @@ export type {
 
 /** Reserved purchase identity for the final aggregate cost of a floating contract. */
 export const CONTRACT_TOTAL_PURCHASE_KEY = 'contract-total-purchase';
+
+/** Transfer requirements come from the saved contract, never editable document flags. */
+export function reservationHasTransfer(snapshot: {
+  serviceSelections: readonly { kind: string }[];
+}) {
+  return (
+    snapshot?.serviceSelections?.some(
+      (service) => service.kind === 'TRANSFER',
+    ) ?? true
+  );
+}

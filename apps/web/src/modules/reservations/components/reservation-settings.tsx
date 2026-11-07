@@ -5,7 +5,7 @@ import {
 } from '../model/shared-hotel-supplier-editor';
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { hotelFormScope } from '../model/hotel-form-scope';
-import { reservationHotelStays } from '@nora/contracts';
+import { reservationHasTransfer, reservationHotelStays } from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
@@ -392,7 +392,11 @@ export function ReservationSettingsForm({
       );
       return;
     }
-    if (sendToBroker && !draft.brokerId) {
+    if (
+      sendToBroker &&
+      reservationHasTransfer(intake.snapshot) &&
+      !draft.brokerId
+    ) {
       setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
       return;
     }
@@ -480,7 +484,12 @@ export function ReservationSettingsForm({
         },
       );
       const result = sendToBroker
-        ? await sendSavedReservationForm(intake.id, r.data, intake.hotelStayKey)
+        ? await sendSavedReservationForm(
+            intake.id,
+            r.data,
+            intake.hotelStayKey,
+            reservationHasTransfer(intake.snapshot),
+          )
         : r;
       onSaved(result.data);
       setPreviewDirty(false);
@@ -648,7 +657,9 @@ export function ReservationSettingsForm({
         busy ||
         activeDirectory.loading ||
         (!selected.length && !aggregateForm) ||
-        (showDocument && !draft.brokerId)
+        (showDocument &&
+          reservationHasTransfer(intake.snapshot) &&
+          !draft.brokerId)
       }
     >
       {busy
@@ -911,47 +922,48 @@ export function ReservationSettingsForm({
         className="grid gap-4"
       >
         {section === 'OTHER' && textField('broker')}
-        {showDocument && draft.brokerId && (
-          <div className="grid gap-3">
-            {
-              <label className="grid gap-2">
-                یادداشت فرم رزرواسیون (NOTICE)
-                <Textarea
-                  value={draft.text.remarks || ''}
-                  maxLength={500}
-                  onChange={(event) =>
-                    update({
-                      ...draft,
-                      text: { ...draft.text, remarks: event.target.value },
-                    })
-                  }
-                />
-              </label>
-            }
-            {saveButton}
-            {past && (
-              <Button variant="outline" onClick={() => setPast(undefined)}>
-                بازگشت به نسخهٔ فعلی
-              </Button>
-            )}
-            <SupplierScopedDocuments
-              intake={past ? { ...intake, workflow: past } : previewIntake}
-              historical={Boolean(past)}
-              {...(!past
-                ? {
-                    previewSettings: draft,
-                    dirty:
-                      previewDirty ||
-                      (sharedHotelBroker !== undefined &&
-                        sharedHotelBroker !==
-                          (intake.workflow.supplierFormSettings
-                            ?.sharedHotelBroker ===
-                            true)),
-                  }
-                : {})}
-            />
-          </div>
-        )}
+        {showDocument &&
+          (draft.brokerId || !reservationHasTransfer(intake.snapshot)) && (
+            <div className="grid gap-3">
+              {
+                <label className="grid gap-2">
+                  یادداشت فرم رزرواسیون (NOTICE)
+                  <Textarea
+                    value={draft.text.remarks || ''}
+                    maxLength={500}
+                    onChange={(event) =>
+                      update({
+                        ...draft,
+                        text: { ...draft.text, remarks: event.target.value },
+                      })
+                    }
+                  />
+                </label>
+              }
+              {saveButton}
+              {past && (
+                <Button variant="outline" onClick={() => setPast(undefined)}>
+                  بازگشت به نسخهٔ فعلی
+                </Button>
+              )}
+              <SupplierScopedDocuments
+                intake={past ? { ...intake, workflow: past } : previewIntake}
+                historical={Boolean(past)}
+                {...(!past
+                  ? {
+                      previewSettings: draft,
+                      dirty:
+                        previewDirty ||
+                        (sharedHotelBroker !== undefined &&
+                          sharedHotelBroker !==
+                            (intake.workflow.supplierFormSettings
+                              ?.sharedHotelBroker ===
+                              true)),
+                    }
+                  : {})}
+              />
+            </div>
+          )}
         <div
           className={
             section === 'ALL' || section === 'HOTEL' ? 'grid gap-4' : 'hidden'
@@ -1601,8 +1613,10 @@ export async function sendSavedReservationForm(
   id: string,
   state: TravelWorkflowStateV1,
   hotelStayKey?: string,
+  requiresBroker = true,
 ) {
   if (
+    requiresBroker &&
     !(
       hotelStayKey
         ? state.hotelSupplierForms?.[hotelStayKey]?.settings
