@@ -5566,5 +5566,11 @@
   "دانلود PDF بیمه‌نامه": "Download insurance policy PDF",
   "دانلود همهٔ بیمه‌نامه‌ها": "Download all insurance policies",
   "بیمه‌نامه‌های مسافران": "Passenger insurance policies",
-  "در انتظار صدور": "Awaiting issuance"
+  "در انتظار صدور": "Awaiting issuance",
+  "جست‌وجو در پیام‌های گفتگو": "Search conversation messages",
+  "جست‌وجو در پیام‌های گفتگو…": "Search conversation messages…",
+  "پاک‌کردن جست‌وجوی پیام": "Clear message search",
+  "در حال جست‌وجوی پیام‌ها…": "Searching messages…",
+  "پیامی با این عبارت پیدا نشد.": "No messages match this search.",
+  "نتایج قدیمی‌تر": "Older results"
 }
