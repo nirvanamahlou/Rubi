@@ -155,14 +155,34 @@ export function ReservationTickets({
         ticket.offers.map((offer) => offer.carrierName),
       ),
       (path) =>
-        fetch(base + path, { credentials: 'include', cache: 'no-store' }),
+        fetch(
+          base +
+            (path.startsWith('/master-data/') &&
+            !path.startsWith('/master-data/selections/')
+              ? path.replace(
+                  '/master-data/',
+                  `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+                )
+              : path),
+          { credentials: 'include', cache: 'no-store' },
+        ),
     ).then((marks) => {
       if (active) setAirlineMarks(marks);
     });
     void readTicketDocumentFacts(
       reservationTickets(request.snapshot).flatMap((ticket) => ticket.offers),
       (path) =>
-        fetch(base + path, { credentials: 'include', cache: 'no-store' }),
+        fetch(
+          base +
+            (path.startsWith('/master-data/') &&
+            !path.startsWith('/master-data/selections/')
+              ? path.replace(
+                  '/master-data/',
+                  `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+                )
+              : path),
+          { credentials: 'include', cache: 'no-store' },
+        ),
     ).then(async (facts) => {
       await marksReady;
       if (active) {
@@ -175,7 +195,7 @@ export function ReservationTickets({
     return () => {
       active = false;
     };
-  }, [request]);
+  }, [request, salesContractId]);
   const [selected, setSelected] = useState(tickets[0]?.passengerId ?? '');
   const [names, setNames] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
@@ -246,7 +266,7 @@ export function ReservationTickets({
           const { data } = await masterDataApi.detail(
             'cities',
             id,
-            'reservations',
+            salesContractId ? 'sales' : 'reservations',
           );
           return [
             id,
@@ -268,7 +288,7 @@ export function ReservationTickets({
     return () => {
       active = false;
     };
-  }, [request]);
+  }, [request, salesContractId]);
   useEffect(() => {
     let active = true;
     void passengerFilesRequest<PassengersResponse>(request.id, 'passengers')

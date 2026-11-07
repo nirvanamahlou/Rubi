@@ -35,17 +35,19 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const kind = new URL(request.url).searchParams.get('kind');
-  if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
-  const voucher = kind === 'voucher';
-  const salesContractId = new URL(request.url).searchParams.get(
-    'salesContractId',
-  );
+  const parameters = new URL(request.url).searchParams;
+  const salesContractId = parameters.get('salesContractId');
   if (
     salesContractId &&
-    (!voucher || !/^[0-9a-f-]{36}$/i.test(salesContractId))
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      salesContractId,
+    )
   )
-    return fail('شناسه درخواست معتبر نیست.', 400);
+    return fail('شناسه قرارداد معتبر نیست.', 400);
+  const kind = parameters.get('kind');
+  if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
+  const voucher = kind === 'voucher';
+  if (salesContractId && !voucher) return fail('نوع سند معتبر نیست.', 400);
   const formScope =
     new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
   if (
@@ -62,12 +64,21 @@ export async function GET(
   const base = getPublicApiBaseUrl();
   if (!base) return fail('سرویس PDF پیکربندی نشده است.', 503);
   const get = (path: string) =>
-    fetch(base + path, {
-      headers: { cookie: request.headers.get('cookie') ?? '' },
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(15000),
-    });
+    fetch(
+      base +
+        (path.startsWith('/master-data/')
+          ? path.replace(
+              '/master-data/',
+              `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+            )
+          : path),
+      {
+        headers: { cookie: request.headers.get('cookie') ?? '' },
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
+      },
+    );
   try {
     const response = await get(
       salesContractId
@@ -82,9 +93,12 @@ export async function GET(
     const { data: rawIntake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
-    let intake = rawIntake;
-    if (salesContractId && intake.id !== id)
+    if (
+      salesContractId &&
+      (rawIntake.id !== id || rawIntake.snapshot.contractId !== salesContractId)
+    )
       return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
+    let intake = rawIntake;
     if (hotelStayKey) {
       try {
         intake = hotelFormScope(rawIntake, hotelStayKey);
