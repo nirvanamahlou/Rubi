@@ -34,6 +34,7 @@ export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
   supplierFormUseSent?: boolean;
   supplierHotelSourceSnapshot?: ReservationFormIntake['snapshot'];
+  hotelJourneySourceSnapshot?: ReservationFormIntake['snapshot'];
   hotelStayKey?: string;
   supplierDocumentKind?: 'HOTEL' | 'TRANSFER' | 'OUTBOUND' | 'RETURN';
   hotelStayOrdinal?: number;

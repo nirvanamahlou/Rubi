@@ -139,3 +139,34 @@ it('prints connecting flight details and the last hotel airport route without ex
   expect(returning).toContain('Last hotel');
   expect(returning).toContain('Istanbul airport (IST)');
 });
+
+it('prints overnight journeys without a separate arrival date and omits absent routes entirely', () => {
+  const { arrivalDate: _legacy, ...withoutDate } = leg;
+  void _legacy;
+  const payload = salesPayload({
+    ...state,
+    hotel: {
+      ...state.hotel,
+      additionalStays: state.hotel.additionalStays!.map((stay) => ({
+        ...stay,
+        checkInDate: '2027-01-07',
+      })),
+      journeys: [
+        { ...withoutDate, departureTime: '23:00', arrivalTime: '05:00' },
+      ],
+    },
+  });
+  const output = structuredClone(printFixture);
+  output.contract.hotelSelection = payload.hotelSelection!;
+  output.contract.servicesDetail = payload.services;
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('07/01/2027');
+  expect(html).toContain('23:00');
+  output.contract.servicesDetail = payload.services.map((s) => ({
+    ...s,
+    metadata: {},
+  }));
+  const absent = contractPrintHtml(output, printReferences);
+  expect(absent).not.toContain('hotel-journey');
+  expect(absent).not.toContain('جابه‌جایی بین اقامت‌ها');
+});
