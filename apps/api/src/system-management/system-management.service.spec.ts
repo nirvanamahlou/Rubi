@@ -55,7 +55,7 @@ it('limits dedicated insurance management to insurance in an assigned branch', a
     status: 'ACTIVE' as const,
     value: { schemaVersion: 1, countries: [] },
     reason: 'insurance settings',
-    expectedVersion: 0,
+    expectedVersion: 1,
   };
   await expect(service.writeSetting(input, manager, {})).rejects.toThrow(
     'transaction reached',

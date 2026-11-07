@@ -187,7 +187,7 @@ export class InsuranceSettingsService {
         valueType: 'JSON',
         status: 'ACTIVE',
         value: config,
-        expectedVersion: input.expectedVersion,
+        expectedVersion: input.expectedVersion || undefined,
         reason: 'Insurance issuance settings',
       },
       actor,

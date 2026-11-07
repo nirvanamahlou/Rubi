@@ -37,6 +37,33 @@ const config = () => ({
     },
   ],
 });
+it('creates the initial setting without an invalid zero system version', async () => {
+  const branchId = randomUUID();
+  const writeSetting = vi.fn();
+  const service = new InsuranceSettingsService(
+    { writeSetting, resolveSetting: async () => null } as never,
+    {} as never,
+  );
+  const actor = {
+    branchIds: [branchId],
+    permissions: ['reservations.read', 'reservations.insurance.manage'],
+  } as AuthenticatedActor;
+  await service.save(
+    branchId,
+    { expectedVersion: 0, config: { schemaVersion: 1, countries: [] } },
+    actor,
+  );
+  expect(writeSetting).toHaveBeenCalledWith(
+    expect.objectContaining({
+      expectedVersion: undefined,
+      scope: 'BRANCH',
+      scopeId: branchId,
+    }),
+    actor,
+    {},
+  );
+});
+
 describe('insurance issuance configuration', () => {
   it('retains exact decimal money and explicit inclusive boundaries', () => {
     const input = config();
