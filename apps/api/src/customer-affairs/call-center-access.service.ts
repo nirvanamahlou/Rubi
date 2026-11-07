@@ -294,9 +294,22 @@ export class CallCenterAccessService {
   ): Promise<Prisma.CustomerAffairsTicketWhereInput> {
     const users = await this.users(actor, branchId, 'workflow', tx);
     if (users === null) return { branchId };
+    const extra = await this.accounts.additionalRequestAssigneeIds(
+      actor,
+      branchId,
+      tx,
+    );
     return {
       branchId,
       OR: [
+        ...(extra.length
+          ? [
+              {
+                createdByUserId: actor.userId,
+                executionOwnerUserId: { in: extra },
+              },
+            ]
+          : []),
         ...((await this.canReviewCreatedRequest(actor, branchId, tx))
           ? [{ createdByUserId: actor.userId, callCenterReviews: { some: {} } }]
           : []),

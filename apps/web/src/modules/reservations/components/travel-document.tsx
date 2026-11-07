@@ -107,7 +107,11 @@ export function TravelDocument({
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
-  const formReferences = useReservationFormReferences(intake, true);
+  const formReferences = useReservationFormReferences(
+    intake,
+    true,
+    salesContractId,
+  );
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
   const supplierReady =
     !reservationHasTransfer(intake.snapshot) ||

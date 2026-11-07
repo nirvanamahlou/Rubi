@@ -1,3 +1,4 @@
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
   createHash,
@@ -1183,11 +1184,22 @@ export class DocumentsService {
 
   /** Reads only the active BRAND image attached to this exact Master Data row. */
   async previewMasterDataLogo(
-    input: { documentId: string; resource: string; recordId: string },
+    input: {
+      documentId: string;
+      resource: string;
+      recordId: string;
+      workflow?: string;
+    },
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    this.assertPermission(actor.permissions, 'master_data.read');
+    if (input.workflow) {
+      if (
+        input.resource !== 'airlines' ||
+        !canSelectForWorkflow(actor, input.workflow)
+      )
+        throw new ForbiddenException();
+    } else this.assertPermission(actor.permissions, 'master_data.read');
     const row = await this.repository.findDetail(
       input.documentId,
       actor.branchIds,
@@ -2548,6 +2560,19 @@ export class DocumentsService {
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
+    const receiptPendingAllowed =
+      expectedSource?.sourceModule === 'sales' &&
+      expectedSource.sourceEntityType === 'SalesContractPaymentEntry' &&
+      row.sourceModule === 'sales' &&
+      row.sourceEntityType === 'SalesContractPaymentEntry' &&
+      row.documentType.domain === 'FINANCE' &&
+      row.documentType.code === 'RECEIPT' &&
+      ['application/pdf', 'image/jpeg', 'image/png'].includes(
+        row.currentVersion.detectedMimeType,
+      ) &&
+      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+        row.currentVersion.scanStatus,
+      );
     const packagePendingAllowed =
       expectedSource?.sourceModule === 'WORKBENCH' &&
       expectedSource.sourceEntityType === 'WorkbenchDailyPackage' &&
@@ -2570,6 +2595,7 @@ export class DocumentsService {
       row.archiveStatus === 'ACTIVE' &&
       (row.currentVersion.scanStatus === 'CLEAN' ||
         packagePendingAllowed ||
+        receiptPendingAllowed ||
         (row.isIncomingLetter &&
           imagePreviewScanAllowed(row.currentVersion.scanStatus)));
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
@@ -2603,6 +2629,7 @@ export class DocumentsService {
       if (
         row.currentVersion.scanStatus !== 'CLEAN' &&
         !packagePendingAllowed &&
+        !receiptPendingAllowed &&
         !(
           row.isIncomingLetter &&
           imagePreviewScanAllowed(row.currentVersion.scanStatus)

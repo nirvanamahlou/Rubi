@@ -175,7 +175,10 @@ export class FinanceInboxService {
     return items;
   }
 
-  async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
+  async list(
+    actor: AuthenticatedActor,
+    includeCompleted = false,
+  ): Promise<FinanceInboxV1> {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
         code: 'FINANCE_INBOX_FORBIDDEN',
@@ -190,7 +193,7 @@ export class FinanceInboxService {
       invoiceResult,
       correctionResult,
     ] = await Promise.allSettled([
-      this.sales.financeInbox(actor),
+      this.sales.financeInbox(actor, includeCompleted),
       this.completeHrInbox(actor),
       this.completeReservationInbox(actor),
       this.procurement
@@ -236,7 +239,8 @@ export class FinanceInboxService {
             return [...groups]
               .filter(([, purchases]) =>
                 purchases.some(
-                  (purchase) => purchase.finance.status !== 'PAID',
+                  (purchase) =>
+                    includeCompleted || purchase.finance.status !== 'PAID',
                 ),
               )
               .map(([groupId, purchases]) => ({ intake, groupId, purchases }));
@@ -355,7 +359,7 @@ export class FinanceInboxService {
           currencyCode: item.currencyCode,
         },
         settlement: null,
-        status: 'NEW',
+        status: item.financeConfirmed ? 'RECEIPT_CONFIRMED' : 'NEW',
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: item.createdByName,
@@ -436,17 +440,21 @@ export class FinanceInboxService {
                     )
                   : '0',
             },
-            status: purchases.some(
-              (purchase) => purchase.finance.status === 'REJECTED',
+            status: purchases.every(
+              (purchase) => purchase.finance.status === 'PAID',
             )
-              ? 'CORRECTION_REQUIRED'
+              ? 'PAID'
               : purchases.some(
-                    (purchase) =>
-                      purchase.finance.status === 'PARTIALLY_PAID' ||
-                      purchase.finance.status === 'PAID',
+                    (purchase) => purchase.finance.status === 'REJECTED',
                   )
-                ? 'PAYING'
-                : 'READY_FOR_PAYMENT',
+                ? 'CORRECTION_REQUIRED'
+                : purchases.some(
+                      (purchase) =>
+                        purchase.finance.status === 'PARTIALLY_PAID' ||
+                        purchase.finance.status === 'PAID',
+                    )
+                  ? 'PAYING'
+                  : 'READY_FOR_PAYMENT',
             dueAt: null,
             createdAt: first.createdAt,
             requesterDisplaySnapshot:

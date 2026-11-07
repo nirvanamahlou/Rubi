@@ -563,7 +563,11 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
             </button>
             <Link
               href={messagePopup.href!}
-              onClick={() => setMessagePopup(null)}
+              onClick={() => {
+                setMessagePopup(null);
+                if (isCallCenterAssignment(messagePopup))
+                  window.dispatchEvent(new Event('call-center:open-queue'));
+              }}
               className="block space-y-2 pl-5"
             >
               <span className="flex items-center gap-2 font-bold text-primary">

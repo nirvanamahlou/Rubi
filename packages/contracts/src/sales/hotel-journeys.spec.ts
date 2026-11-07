@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import {
   HOTEL_JOURNEYS,
+  hotelJourneyArrivalDate,
   hotelJourneyError,
   readHotelJourneys,
   retainHotelJourneyRoutes,
@@ -45,6 +46,38 @@ const airport = {
   code: 'IST',
   name: 'Istanbul',
 };
+it.each(['BUS', 'CAR', 'FLIGHT'] as const)(
+  'accepts %s journeys without an arrival date, including overnight travel',
+  (mode) => {
+    const { arrivalDate: _legacyDate, ...rest } = leg;
+    void _legacyDate;
+    const journey: HotelJourneyV1 = {
+      ...rest,
+      mode,
+      ...(mode === 'FLIGHT'
+        ? {
+            flight: {
+              airline: 'Test Air',
+              number: '123',
+              cabinClass: 'ECONOMY',
+              originAirport: airport,
+              destinationAirport: {
+                ...airport,
+                id: '10000000-0000-4000-8000-000000000004',
+                code: 'CDG',
+              },
+            },
+          }
+        : {}),
+    };
+    expect(hotelJourneyError(journey)).toBeUndefined();
+    expect(hotelJourneyArrivalDate(journey)).toBe('2027-01-07');
+    expect(() => validateHotelJourneys([journey], hotel)).not.toThrow();
+    expect(
+      hotelJourneyArrivalDate({ ...journey, departureTime: '03:00' }),
+    ).toBe('2027-01-06');
+  },
+);
 it('keeps journeys optional and permits independent dates several days after checkout and overnight travel', () => {
   expect(() => validateHotelJourneys([], undefined)).not.toThrow();
   expect(() => validateHotelJourneys([leg], hotel)).not.toThrow();

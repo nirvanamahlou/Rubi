@@ -122,6 +122,7 @@ export function voucherPassengerCells(
 export function voucherPassengerPageUnits(
   settings?: VoucherSettingsV1,
   notes = '',
+  hasHotelJourney = false,
 ) {
   const textLength = settings
     ? Object.values(settings.text).join('').length
@@ -133,6 +134,7 @@ export function voucherPassengerPageUnits(
   return Math.max(
     2,
     6 -
+      (hasHotelJourney ? 2 : 0) -
       roomPenalty -
       Math.ceil(Math.max(0, Math.max(textLength, notes.length) - 350) / 350),
   );

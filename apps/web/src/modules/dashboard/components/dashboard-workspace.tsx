@@ -4,6 +4,8 @@ import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-loc
 import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 import { currencyMetricParts } from '../model/currency-metric';
+import { calculationTermsFor } from '../model/calculation-terms';
+import { nativeCalculationFeatures } from '../model/calculation-lineage';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1365,6 +1367,21 @@ function KpiCard({
   );
 }
 
+function CalculationHelp({ rule }: { rule: string }) {
+  const terms = calculationTermsFor(rule);
+  if (!terms.length) return null;
+  return (
+    <dl className="mt-3 space-y-2 border-t border-border pt-3 text-xs leading-6 text-muted-foreground">
+      {terms.map(([term, explanation]) => (
+        <div key={term}>
+          <dt className="inline font-semibold text-foreground">{term}: </dt>
+          <dd className="inline">{explanation}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function KpiDefinitionPanel({
   definition,
   metric,
@@ -1427,9 +1444,7 @@ function KpiDefinitionPanel({
                 تعریف و هدف کسب‌وکار
               </h3>
               <p className="mt-2 leading-7 text-muted-foreground">
-                این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای
-                انتخاب‌شده چه وضعیتی دارد. از آن برای بررسی سریع عملکرد و تشخیص
-                موارد نیازمند پیگیری استفاده می‌شود.
+                {definition.businessDefinition}
               </p>
               <p className="mt-3 leading-7 text-muted-foreground">
                 این شاخص برای پاسخ به این تصمیم استفاده می‌شود:{' '}
@@ -1472,6 +1487,7 @@ function KpiDefinitionPanel({
                 فرمول و قاعده محاسبه
               </h3>
               <p className="mt-2 leading-7">{definition.rule}</p>
+              <CalculationHelp rule={definition.rule} />
             </section>
 
             <section aria-labelledby="kpi-calculation-features-title">
@@ -1481,11 +1497,18 @@ function KpiDefinitionPanel({
               >
                 فیچرهای استفاده‌شده در فرمول
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(definition.id)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمایش عدد به دسترسی و داده معتبر وابسته است.'
+                  : 'منابع موردنیاز این شاخص؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {definition.source.map((source) => {
-                  const feature = calculationFeatureFor(source);
+                {(
+                  nativeCalculationFeatures(definition.id) ??
+                  definition.source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={source}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -1493,7 +1516,7 @@ function KpiDefinitionPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
@@ -2752,6 +2775,21 @@ function VisualDetailsPanel({
   trendCalendarSystem: TrendCalendarSystem;
   visualId: string;
 }) {
+  const permissionLabel =
+    (
+      {
+        'reports.dashboard.sales.read': 'مشاهده گزارش‌های فروش',
+        'reports.dashboard.finance.read': 'مشاهده گزارش‌های مالی',
+        'reports.dashboard.profit.read': 'مشاهده گزارش‌های سودآوری',
+        'reports.dashboard.balance.read': 'مشاهده گزارش‌های مانده حساب',
+        'reports.dashboard.operations.read': 'مشاهده گزارش‌های عملیات سفر',
+        'reports.dashboard.crm.read': 'مشاهده گزارش‌های امور مشتریان',
+        'reports.dashboard.hr.read': 'مشاهده گزارش‌های منابع انسانی',
+        'reports.dashboard.marketing.read': 'مشاهده گزارش‌های بازاریابی',
+        'reports.dashboard.procurement.read': 'مشاهده گزارش‌های خرید و تأمین',
+        'reports.dashboard.b2b.read': 'مشاهده گزارش‌های همکاری با آژانس‌ها',
+      } as Record<string, string>
+    )[permission] ?? 'مشاهده گزارش‌های این بخش';
   const temporalGrain =
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
@@ -2827,12 +2865,13 @@ function VisualDetailsPanel({
                 قاعدهٔ نمایش
               </h3>
               <p className="mt-2 leading-7">
-                خروجی از Projection تأییدشده و با فیلترهای فعال نمایش داده
+                خروجی از داده آماده‌شده گزارش و با فیلترهای فعال نمایش داده
                 می‌شود. نوع نمایش: {visualLabels[kind]}.
                 {temporalGrain
                   ? ` تفکیک زمانی: ${trendTemporalLabels[temporalGrain]} (${trendCalendarSystem === 'persian' ? 'تقویم شمسی' : 'تقویم میلادی'}).`
                   : ''}
               </p>
+              <CalculationHelp rule="داده آماده‌شده گزارش" />
             </section>
 
             <section aria-labelledby={`visual-sources-${visualId}`}>
@@ -2842,11 +2881,18 @@ function VisualDetailsPanel({
               >
                 فیچرهای استفاده‌شده در نمودار
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(visualId)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمودار ممکن است فقط سری‌های دارای داده معتبر را نمایش دهد.'
+                  : 'منابع موردنیاز این نمودار؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {source.map((sourceId) => {
-                  const feature = calculationFeatureFor(sourceId);
+                {(
+                  nativeCalculationFeatures(visualId) ??
+                  source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={sourceId}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -2854,7 +2900,7 @@ function VisualDetailsPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
@@ -2878,12 +2924,9 @@ function VisualDetailsPanel({
                 محدودیت‌ها و دسترسی
               </h3>
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
-                فقط دادهٔ مجازِ Projection در محدودهٔ انتخاب‌شده نمایش داده
-                می‌شود. مجوز موردنیاز:{' '}
-                <bdi className="font-mono text-xs font-bold" dir="ltr">
-                  {permission}
-                </bdi>
-                .
+                فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
+                مجوز موردنیاز:{' '}
+                <span className="font-bold">{permissionLabel}</span>.
               </p>
             </section>
           </div>

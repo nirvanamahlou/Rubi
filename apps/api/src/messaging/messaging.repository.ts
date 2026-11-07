@@ -102,6 +102,48 @@ export class MessagingRepository {
     });
   }
 
+  async manageGroupMember(
+    id: string,
+    actorId: string,
+    branchIds: string[],
+    memberId: string,
+    action: 'REMOVE' | 'PROMOTE',
+  ) {
+    return this.database.client.$transaction(async (tx) => {
+      const locked = await tx.messagingConversation.updateMany({
+        where: { id, type: 'GROUP', branchId: { in: branchIds } },
+        data: { updatedAt: new Date() },
+      });
+      if (!locked.count) throw new NotFoundException('گفت‌وگو پیدا نشد.');
+      const members = await tx.messagingMember.findMany({
+        where: { conversationId: id },
+      });
+      if (
+        !members.some(
+          (member) => member.userId === actorId && member.role === 'OWNER',
+        )
+      )
+        throw new ForbiddenException(
+          'ویرایش گروه فقط برای مدیر گروه مجاز است.',
+        );
+      if (action === 'REMOVE' && memberId === actorId)
+        throw new BadRequestException(
+          'برای خروج خودتان از گروه، از گزینه خروج از گروه استفاده کنید.',
+        );
+      if (!members.some((member) => member.userId === memberId))
+        throw new NotFoundException('عضو گروه پیدا نشد.');
+      const where = {
+        conversationId_userId: { conversationId: id, userId: memberId },
+      };
+      if (action === 'REMOVE') await tx.messagingMember.delete({ where });
+      else await tx.messagingMember.update({ where, data: { role: 'OWNER' } });
+      return tx.messagingConversation.findUniqueOrThrow({
+        where: { id },
+        include: conversationInclusion,
+      });
+    });
+  }
+
   async updateGroup(
     id: string,
     userId: string,

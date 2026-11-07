@@ -55,7 +55,6 @@ export function HotelJourneyEditor({
             toHotelId,
             mode: 'BUS',
             departureDate: defaultDate.slice(0, 10),
-            arrivalDate: defaultDate.slice(0, 10),
             departureTime: '',
             arrivalTime: '',
           })
@@ -66,8 +65,11 @@ export function HotelJourneyEditor({
           : 'افزودن جابه‌جایی به این هتل'}
       </Button>
     );
-  const patch = (next: Partial<HotelJourneyV1>) =>
-    onChange({ ...value, ...next });
+  const patch = (next: Partial<HotelJourneyV1>) => {
+    const { arrivalDate: _legacyArrivalDate, ...rest } = value;
+    void _legacyArrivalDate;
+    onChange({ ...rest, ...next });
+  };
   const flight = value.flight ?? {
     airline: '',
     number: '',
@@ -151,27 +153,15 @@ export function HotelJourneyEditor({
             />
           </FormField>
         )}
-        <FormField label="تاریخ حرکت جابه‌جایی" required>
-          <SalesDatePicker
-            calendarSystem="gregorian"
-            value={value.departureDate}
-            onChange={(departureDate) =>
-              patch({
-                departureDate,
-                ...(value.arrivalDate === value.departureDate
-                  ? { arrivalDate: departureDate }
-                  : {}),
-              })
-            }
-          />
-        </FormField>
-        <FormField label="تاریخ رسیدن جابه‌جایی" required>
-          <SalesDatePicker
-            calendarSystem="gregorian"
-            value={value.arrivalDate}
-            onChange={(arrivalDate) => patch({ arrivalDate })}
-          />
-        </FormField>
+        <div className="sm:col-span-2">
+          <FormField label="تاریخ حرکت جابه‌جایی" required>
+            <SalesDatePicker
+              calendarSystem="gregorian"
+              value={value.departureDate}
+              onChange={(departureDate) => patch({ departureDate })}
+            />
+          </FormField>
+        </div>
         <FormField label="ساعت حرکت جابه‌جایی" required>
           <TimePicker
             aria-label="ساعت حرکت جابه‌جایی"
@@ -264,7 +254,8 @@ export function HotelJourneyEditor({
       </div>
       <p className="text-xs text-muted-foreground">
         تاریخ جابه‌جایی مستقل از اقامت قابل تغییر است. ساعت‌ها به وقت تهران
-        هستند؛ برای رسیدن روز بعد، تاریخ رسیدن را تغییر دهید.
+        هستند؛ اگر ساعت رسیدن قبل از ساعت حرکت باشد، رسیدن روز بعد محاسبه
+        می‌شود.
       </p>
       {error && (
         <p role="status" className="text-sm text-amber-700">

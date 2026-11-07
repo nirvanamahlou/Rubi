@@ -10,6 +10,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-lead-count',
     title: 'تعداد لید کارشناس',
     technicalName: 'Employee Lead Count',
+    businessDefinition:
+      'تعداد درخواست‌های اولیه خرید خدمات سفر است که در بازه انتخابی ثبت شده و به هر کارشناس نسبت داده شده‌اند. برای مثال، درخواست قیمت تور یا بلیت یک فرصت فروش است؛ این عدد نشان می‌دهد چه تعداد فرصت در اختیار هر کارشناس قرار گرفته است.',
     grain: 'یک لید و کارشناس منتسب در زمان ثبت',
     source: [employeeActivity],
     rule: 'تعداد لیدهای یکتا با انتساب معتبر به کارشناس در بازه ثبت لید؛ ثبت‌کننده و مالک لید به‌صورت جداگانه قابل بررسی‌اند.',
@@ -27,6 +29,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-call-count',
     title: 'تعداد تماس کارشناس',
     technicalName: 'Employee Call Count',
+    businessDefinition:
+      'تعداد تماس‌های ورودی و خروجی ثبت‌شده برای هر کارشناس در بازه انتخابی است. با بررسی نتیجه تماس‌ها در کنار این عدد می‌توان دید ارتباط با مسافران چقدر فعال بوده است؛ هر تماس لزوماً به گفت‌وگو یا فروش منجر نشده است.',
     grain: 'یک تماس ثبت‌شده و کارشناس',
     source: [employeeActivity],
     rule: 'تعداد تماس‌های یکتای ثبت‌شده با زمان وقوع در بازه، به تفکیک ورودی/خروجی و نتیجه تماس.',
@@ -44,6 +48,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-followup-count',
     title: 'تعداد پیگیری کارشناس',
     technicalName: 'Employee Follow-up Count',
+    businessDefinition:
+      'تعداد پیگیری‌های ثبت‌شده برای مشتریان یا متقاضیان سفر است که مسئول آن‌ها هر کارشناس است. وضعیت انجام‌شده یا عقب‌افتاده این پیگیری‌ها کمک می‌کند فرصت‌های فروش و درخواست‌های مسافران فراموش نشوند.',
     grain: 'یک فعالیت پیگیری و کارشناس مسئول',
     source: [employeeActivity],
     rule: 'تعداد فعالیت‌های پیگیری یکتای ثبت‌شده برای لید یا مشتری در بازه، با تفکیک انجام‌شده و معوق.',
@@ -61,6 +67,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-finalized-sales-count',
     title: 'تعداد فروش کارشناس',
     technicalName: 'Employee Finalized Sales Count',
+    businessDefinition:
+      'تعداد قراردادهای خدمات سفر است که در بازه انتخابی نهایی شده و فروش آن‌ها به هر کارشناس تعلق دارد. یک قرارداد شامل بلیت، هتل و تور فقط یک فروش شمرده می‌شود؛ این عدد حجم معاملات نهایی هر کارشناس را نشان می‌دهد.',
     grain: 'یک قرارداد فروش نهایی و کارشناس فروش منتسب',
     source: [employeeSales, employeeActivity],
     rule: 'تعداد قراردادهای فروش یکتای نهایی‌شده در بازه، منتسب به کارشناس طبق مالکیت مصوب در زمان تأیید.',
@@ -78,6 +86,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-sales-amount',
     title: 'مبلغ فروش کارشناس',
     technicalName: 'Employee Sales Amount',
+    businessDefinition:
+      'مجموع مبلغ قراردادهای نهایی خدمات سفر است که فروش آن‌ها به هر کارشناس نسبت داده شده است. سهم کارشناسان از فروش را در هر ارز جداگانه نشان می‌دهد؛ دریافت واقعی پول این قراردادها در شاخص وصول بررسی می‌شود.',
     grain: 'قرارداد فروش نهایی، کارشناس و ارز',
     source: [employeeSales, employeeActivity],
     rule: 'جمع مبلغ فروش قراردادهای نهایی‌شده منتسب به کارشناس، جداگانه برای هر ارز و در بازه تأیید فروش.',
@@ -95,6 +105,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-lead-conversion',
     title: 'نرخ تبدیل لید کارشناس',
     technicalName: 'Employee Lead Conversion Rate',
+    businessDefinition:
+      'از هر صد متقاضی خرید خدمات سفر که به یک کارشناس سپرده شده‌اند، چند نفر در مهلت بررسی به اولین فروش نهایی رسیده‌اند. این درصد نشان می‌دهد پیگیری فرصت‌های فروش چقدر نتیجه داده است؛ چند قرارداد یک متقاضی، چند تبدیل محسوب نمی‌شود.',
     grain: 'کوهورت لیدهای یکتای منتسب به کارشناس',
     source: [employeeActivity],
     rule: 'تعداد لیدهای یکتای واجد شرایط که در پنجره تبدیل به نخستین فروش نهایی رسیدند ÷ تعداد کل همان لیدهای واجد شرایط × ۱۰۰؛ تعداد قرارداد به‌جای تعداد لید تبدیل‌شده استفاده نمی‌شود.',
@@ -112,6 +124,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-average-sale',
     title: 'میانگین مبلغ فروش کارشناس',
     technicalName: 'Employee Average Sale Value',
+    businessDefinition:
+      'متوسط مبلغ هر قرارداد نهایی خدمات سفر برای هر کارشناس است؛ یعنی مبلغ فروش او تقسیم بر تعداد قراردادهای نهایی همان ارز. برای مقایسه ارزش معاملات کارشناسان کاربرد دارد و بهتر است همراه با نوع خدمات فروخته‌شده بررسی شود.',
     grain: 'کارشناس، بازه و ارز',
     source: [employeeSales, employeeActivity],
     rule: 'مبلغ فروش نهایی همان کارشناس و ارز ÷ تعداد قراردادهای فروش نهایی همان کارشناس؛ از جمع صورت و مخرج باز‌محاسبه می‌شود.',
@@ -129,6 +143,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-contract-count',
     title: 'تعداد قرارداد کارشناس',
     technicalName: 'Employee Contract Count',
+    businessDefinition:
+      'تعداد قراردادهایی است که در بازه انتخابی برای هر کارشناس ثبت شده‌اند، با وضعیت‌های مختلف مثل پیش‌نویس یا نهایی. حجم پرونده‌های فروش او را نشان می‌دهد؛ فقط بخشی که نهایی شده در تعداد فروش کارشناس حساب می‌شود.',
     grain: 'یک قرارداد ثبت‌شده و کارشناس مالک',
     source: [employeeSales, employeeActivity],
     rule: 'تعداد قراردادهای یکتای ثبت‌شده در بازه، به تفکیک وضعیت؛ فروش نهایی زیرمجموعه جداگانه آن است.',
@@ -145,6 +161,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-cancellation-count',
     title: 'تعداد لغو کارشناس',
     technicalName: 'Employee Cancellation Count',
+    businessDefinition:
+      'تعداد قراردادها یا رزروهای مرتبط با هر کارشناس است که لغو آن‌ها در بازه انتخابی نهایی شده است. برای بررسی علت لغو سفرها و پیدا کردن مشکلات خدمات کاربرد دارد؛ نسبت‌دادن لغو به کارشناس به معنی مقصر بودن او نیست.',
     grain: 'یک قرارداد یا رزرو لغوشده و کارشناس منتسب',
     source: [employeeActivity],
     rule: 'تعداد لغوهای یکتای ثبت‌شده در بازه وقوع لغو، منتسب به مالک فروش در زمان رخداد، با تفکیک دلیل.',
@@ -162,6 +180,8 @@ export const employeeCommercialKpis: readonly DashboardKpiDefinition[] = [
     id: 'employee-sales-rank',
     title: 'رتبه فروش کارشناس',
     technicalName: 'Employee Sales Rank',
+    businessDefinition:
+      'جایگاه هر کارشناس در مقایسه با همکارانِ محدوده انتخابی است؛ معیار پیش‌فرض، مبلغ فروش نهایی در یک ارز مشخص است. مبلغ برابر، رتبه برابر دارد و رتبه فروش به‌تنهایی کیفیت پاسخ‌گویی یا رضایت مسافران را نشان نمی‌دهد.',
     grain: 'کارشناس، بازه و ارز',
     source: [employeeSales, employeeActivity],
     rule: 'رتبه بر اساس مبلغ فروش نهایی در همان ارز و دامنه مجاز؛ معیار رتبه‌بندی قابل انتخاب است و تساوی رتبه یکسان می‌گیرد.',

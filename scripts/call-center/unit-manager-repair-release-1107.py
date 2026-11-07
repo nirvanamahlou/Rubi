@@ -25,10 +25,11 @@ with (ROOT/'avina-deploy.lock').open('a') as lock:
   assert ci['merged'] and ci['allChecksSuccessful']
   assert time.time()-record['createdAt']<900 and snapshot()==record['state'] and filehash(COMPOSE)==record['composeHash']
   assert filehash(Path(record['folder'])/'database.dump.enc')==record['databaseHash']
-  for name,digest in ci['scripts'].items():
-   assert name in ['repair-manager-unit-link.cjs','repair-request-manager-access.cjs'] and filehash(WORK/name)==digest
+  for name,expected_hash in ci['scripts'].items():
+   assert name in ['repair-manager-unit-link.cjs','repair-request-manager-access.cjs'] and filehash(WORK/name)==expected_hash
    run(['docker','cp',str(WORK/name),'rubi-production-api-1:/tmp/'+name])
   assert len(ci['scripts'])==2
+  assert callable(digest)
   args=['docker','exec','rubi-production-api-1','node']
   # Owner explicitly selects native HR grade as the managerial authority source.
   for mode in ['plan','apply']:

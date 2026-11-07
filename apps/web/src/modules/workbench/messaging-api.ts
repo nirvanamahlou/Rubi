@@ -90,6 +90,16 @@ function json<T>(body: T): RequestInit {
 }
 
 export const messagingApi = {
+  removeMember: (id: string, memberId: string) =>
+    request<MessagingConversationResponseV1>(
+      `/conversations/${encodeURIComponent(id)}/members/${encodeURIComponent(memberId)}`,
+      { method: 'DELETE' },
+    ),
+  promoteMember: (id: string, memberId: string) =>
+    request<MessagingConversationResponseV1>(
+      `/conversations/${encodeURIComponent(id)}/members/${encodeURIComponent(memberId)}/owner`,
+      { method: 'PUT' },
+    ),
   downloadAttachment,
   contacts(search = '') {
     const query = new URLSearchParams({ limit: '50' });
