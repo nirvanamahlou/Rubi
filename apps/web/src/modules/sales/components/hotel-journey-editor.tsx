@@ -153,17 +153,15 @@ export function HotelJourneyEditor({
             />
           </FormField>
         )}
-        <FormField
-          label="تاریخ حرکت جابه‌جایی"
-          required
-          className="sm:col-span-2"
-        >
-          <SalesDatePicker
-            calendarSystem="gregorian"
-            value={value.departureDate}
-            onChange={(departureDate) => patch({ departureDate })}
-          />
-        </FormField>
+        <div className="sm:col-span-2">
+          <FormField label="تاریخ حرکت جابه‌جایی" required>
+            <SalesDatePicker
+              calendarSystem="gregorian"
+              value={value.departureDate}
+              onChange={(departureDate) => patch({ departureDate })}
+            />
+          </FormField>
+        </div>
         <FormField label="ساعت حرکت جابه‌جایی" required>
           <TimePicker
             aria-label="ساعت حرکت جابه‌جایی"
