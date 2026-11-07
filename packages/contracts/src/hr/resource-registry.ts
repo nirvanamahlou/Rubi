@@ -140,13 +140,13 @@ export function getHrResource(
         ? 'employee'
         : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
           ? 'date'
-          : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label) ||
-              label === 'مهلت ثبت ساعتی (ساعت روز مرخصی)'
+          : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label)
             ? 'time'
             : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
                 !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
               ? 'money'
-              : ['تعداد روز', 'ظرفیت'].includes(label)
+              : ['تعداد روز', 'ظرفیت'].includes(label) ||
+                  label.startsWith('مهلت ثبت ')
                 ? 'decimal'
                 : 'text',
     required:

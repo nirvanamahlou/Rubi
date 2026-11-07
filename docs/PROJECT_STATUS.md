@@ -1,3 +1,7 @@
+## HR leave and mission fixes — 2026-11-07
+
+Both monthly leave notice controls now accept integer days (0–365), with legacy hourly cutoff compatibility. HR mission fund previews use a narrow HR-manage port retaining custodian/manager and branch enforcement, without requiring purchase-list access. Workbench leave resolves the explicitly linked active sender employee independently of request destination, and approval/reconciliation use that personnel branch; missing links are never guessed. Focused unit/form tests and two isolated PostgreSQL workflows pass, including canonical cross-branch persistence and fund preview. Production account mapping remains pending for unlinked accounts.
+
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
 
 MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete expense helper and approval inputs/column hidden without moving persisted positions. Standalone expense form shares mission petty-cash fields, supports parent mission, evidence and currency. Mission row opens all child expenses with edit/delete controls. Procurement-owned transaction port retains original debits and writes idempotent linked reversal credits on HR expense edit/delete, preserving branch/custodian controls and atomic balance rollback. Local isolated PostgreSQL test passes create, replay, edit, stale version, dependent delete guard, claim debit and full reversal; three focused port tests pass. No schema/dependency change. Hosted final-head gates required.
