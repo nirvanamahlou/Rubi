@@ -1,5 +1,10 @@
 'use client';
 import {
+  packageAmountToRial,
+  packageRoomToRial,
+  packageFieldsToRial,
+} from '@nora/contracts';
+import {
   tourDraftChanged,
   tourPublicationBlockers,
 } from '../model/tour-publication';
@@ -103,6 +108,11 @@ const defaultAdjustment = (): Adjustment => ({
 });
 
 export function TourPricingWorkspace() {
+  const [convertToRial, setConvertToRial] = useState(false);
+  const [rialRates, setRialRates] = useState<Record<string, string>>({
+    IRR: '1',
+  });
+  const [rialError, setRialError] = useState('');
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [tours, setTours] = useState<readonly TourDepartureV1[]>([]);
   const [tourPackageId, setTourPackageId] = useState('');
@@ -226,8 +236,30 @@ export function TourPricingWorkspace() {
     return () => globalThis.clearTimeout(timer);
   }, [loadTours]);
 
+  useEffect(() => {
+    if (!convertToRial || !session || draft?.rialConversion) return;
+    let active = true;
+    void packagePricingApi
+      .tourBuyRates(session)
+      .then((rates) => {
+        if (active) {
+          setRialRates(rates);
+          setRialError('');
+        }
+      })
+      .catch(() => {
+        if (active) setRialError('دریافت نرخ خرید ارز ناموفق بود.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [convertToRial, session, draft]);
+
   function applyDraft(value: PackageTourDraftV1 | null) {
     setDraft(value);
+    setConvertToRial(value?.convertToRial ?? false);
+    setRialRates(value?.rialConversion ?? { IRR: '1' });
+    setRialError('');
     setSelectedRoomKeys([...(value?.selectedRoomKeys ?? [])]);
     setRoomSaleOverrides([...(value?.roomSaleOverrides ?? [])]);
     setSelectedHotelRateIds([...(value?.selectedHotelRateIds ?? [])]);
@@ -378,7 +410,7 @@ export function TourPricingWorkspace() {
   ) => {
     if (!batch || !grid) return [];
     try {
-      const prices = buildHotelOnlyPackageCompositions({
+      const rawPrices = buildHotelOnlyPackageCompositions({
         row,
         checkIn: grid.tour.startsOn,
         checkOut: grid.tour.endsOn,
@@ -418,6 +450,23 @@ export function TourPricingWorkspace() {
             : grid.flightPurchaseCosts,
         },
       });
+      const adjustedPrices = withOverrides
+        ? rawPrices.map((price) =>
+            applyPackageRoomSales(
+              price,
+              roomSaleOverrides.filter((s) =>
+                selectedRoomKeys.includes(
+                  compositionSelectionKey(s.hotelRateId, s.roomCode),
+                ),
+              ),
+              'percent',
+              '0',
+            ),
+          )
+        : rawPrices;
+      const prices = convertToRial
+        ? adjustedPrices.map((price) => packageRoomToRial(price, rialRates))
+        : adjustedPrices;
       return withOverrides
         ? prices.map((price) =>
             applyPackageRoomSales(
@@ -436,15 +485,37 @@ export function TourPricingWorkspace() {
       return [];
     }
   };
+  const conversionError = (() => {
+    if (!convertToRial) return '';
+    if (rialError) return rialError;
+    try {
+      packageFieldsToRial(priceFields, rialRates);
+      for (const row of batch?.rows.filter((r) =>
+        selectedHotelRateIds.includes(r.id),
+      ) ?? [])
+        packageAmountToRial(
+          '1',
+          row.currencyCode ?? batch!.currencyCode,
+          rialRates,
+        );
+      return '';
+    } catch (cause) {
+      return cause instanceof Error
+        ? cause.message
+        : 'نرخ خرید ارز موجود نیست.';
+    }
+  })();
   const invalidFields = (() => {
     try {
       validateTourPriceFields(priceFields);
+      if (convertToRial) packageFieldsToRial(priceFields, rialRates);
       return false;
     } catch {
       return true;
     }
   })();
   const invalidSale =
+    !!conversionError ||
     invalidFields ||
     !selectedRoomKeys.length ||
     selectedHotelRateIds.some(
@@ -492,6 +563,7 @@ export function TourPricingWorkspace() {
     });
   })();
   const unsaved = tourDraftChanged(draft, {
+    convertToRial,
     selectedRoomKeys,
     roomSaleOverrides,
     selectedHotelRateIds,
@@ -524,6 +596,7 @@ export function TourPricingWorkspace() {
         {
           version: 1,
           expectedVersion: draft?.draftVersion ?? 0,
+          convertToRial,
           priceFields,
           selectedHotelRateIds,
           selectedRoomKeys: selectedRoomKeys.filter((key) =>
@@ -548,9 +621,10 @@ export function TourPricingWorkspace() {
                   tablePrices(row, false).some(
                     (price) =>
                       price.roomCode === item.roomCode &&
-                      price.currencyAmounts.some(
-                        (part) => part.currencyCode === item.currencyCode,
-                      ),
+                      (convertToRial ||
+                        price.currencyAmounts.some(
+                          (part) => part.currencyCode === item.currencyCode,
+                        )),
                   ),
               ),
           ),
@@ -745,6 +819,24 @@ export function TourPricingWorkspace() {
             </label>
           </div>
         ) : null}
+        <label className="flex justify-self-end items-center gap-2 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={convertToRial}
+            disabled={!grid || saving}
+            onChange={(e) => {
+              setConvertToRial(e.target.checked);
+              setRialError('');
+            }}
+          />
+          تبدیل به ریالی
+        </label>
+        {convertToRial ? (
+          <p className="text-xs text-muted-foreground">
+            مبنای تبدیل: نرخ خرید ارز در اطلاعات پایه
+          </p>
+        ) : null}
+        {conversionError ? <Alert title={conversionError} /> : null}
         {grid ? (
           <div className="flex flex-wrap gap-2">
             <Badge>{grid.tour.package.name}</Badge>
