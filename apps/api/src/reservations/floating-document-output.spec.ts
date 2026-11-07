@@ -17,18 +17,16 @@ const snapshot = {
   hotelSelection: { hotelId: 'hotel' },
 } as unknown as SalesReservationRequestV1;
 function setup() {
-  const current = vi
-    .fn()
-    .mockResolvedValue({
-      data: {
-        legalEntity: {
-          id: 'company',
-          code: 'JAHAN_BASTAN',
-          persianName: 'Synthetic company',
-          logoFileId: null,
-        },
+  const current = vi.fn().mockResolvedValue({
+    data: {
+      legalEntity: {
+        id: 'company',
+        code: 'JAHAN_BASTAN',
+        persianName: 'Synthetic company',
+        logoFileId: null,
       },
-    });
+    },
+  });
   return {
     current,
     service: new TravelWorkflowService(

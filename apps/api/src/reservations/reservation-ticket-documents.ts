@@ -22,7 +22,10 @@ import {
   issuedRows,
   filterIssuedRows,
 } from './issued-ticket-report';
-import type { SalesReservationRequestV1 } from '@nora/contracts';
+import type {
+  ReservationTicketDocumentV1,
+  SalesReservationRequestV1,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
@@ -345,7 +348,7 @@ export class ReservationTicketDocumentsService {
     customerId: string,
     input: { number?: unknown; expectedNumber?: unknown },
     actor: AuthenticatedActor,
-  ) {
+  ): Promise<ReservationTicketDocumentV1> {
     const supplied =
       typeof input.number === 'string' ? input.number.trim() : '';
     return this.db.client.$transaction(async (tx) => {
@@ -406,7 +409,12 @@ export class ReservationTicketDocumentsService {
         return {
           customerId: old.customerId,
           number: supplied || old.number,
-          source: supplied && supplied !== old.number ? 'MANUAL' : old.source,
+          source:
+            supplied && supplied !== old.number
+              ? 'MANUAL'
+              : old.source === 'MANUAL'
+                ? 'MANUAL'
+                : 'AUTO',
           issuedAt: old.issuedAt.toISOString(),
         };
       }
@@ -442,7 +450,7 @@ export class ReservationTicketDocumentsService {
       return {
         customerId: doc.customerId,
         number: doc.number,
-        source: doc.source,
+        source: doc.source === 'MANUAL' ? 'MANUAL' : 'AUTO',
         issuedAt: doc.issuedAt.toISOString(),
       };
     });
