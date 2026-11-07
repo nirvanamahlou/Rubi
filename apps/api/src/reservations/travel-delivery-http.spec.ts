@@ -28,16 +28,14 @@ describe('finance gate on passenger documents', () => {
       },
     }),
   );
-  const issueFloatingForDelivery = vi
-    .fn()
-    .mockResolvedValue([
-      {
-        customerId: 'passenger',
-        number: '100001',
-        source: 'AUTO',
-        issuedAt: '2026-11-07T00:00:00Z',
-      },
-    ]);
+  const issueFloatingForDelivery = vi.fn().mockResolvedValue([
+    {
+      customerId: 'passenger',
+      number: '100001',
+      source: 'AUTO',
+      issuedAt: '2026-11-07T00:00:00Z',
+    },
+  ]);
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
