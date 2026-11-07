@@ -9184,3 +9184,7 @@ authorized develop merge. No migration, dependency, production write or deploy.
 Historical generic local items are retained because their source cannot be
 identified safely. Peer PR1461's published/frozen exact lease exclusion is reused
 without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
+
+## 2026-11-07 — DASHBOARD-RANGE-HOVER-CONTRAST-1107 — READY_FOR_REVIEW
+
+Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
