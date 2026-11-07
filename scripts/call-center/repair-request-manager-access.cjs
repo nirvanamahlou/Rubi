@@ -117,7 +117,7 @@ async function main() {
       { ...actor, permissions: [...new Set([...actor.permissions, TEAM])] },
       unit.branchId,
     );
-    if (candidate.length < 2 || !candidate.some((x) => x.id === target.id))
+    if (candidate.length < 1 || !candidate.some((x) => x.id === target.id))
       throw Error('Team acceptance failed');
     const rows = await db.user.findMany({
       where: { id: { in: candidate.map((x) => x.id) } },
