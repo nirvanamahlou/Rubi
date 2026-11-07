@@ -515,7 +515,23 @@ describe('MessagingService', () => {
       );
       expect(response.data.reactions).toEqual(
         emoji
-          ? [{ emoji, count: 2, userIds: [actor.userId, recipientId] }]
+          ? [
+              expect.objectContaining({
+                emoji,
+                count: 2,
+                userIds: [actor.userId, recipientId],
+                users: [
+                  expect.objectContaining({
+                    id: actor.userId,
+                    displayName: expect.any(String),
+                  }),
+                  expect.objectContaining({
+                    id: recipientId,
+                    displayName: expect.any(String),
+                  }),
+                ],
+              }),
+            ]
           : [],
       );
     },

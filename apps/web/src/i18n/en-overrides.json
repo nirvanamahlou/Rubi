@@ -5260,5 +5260,15 @@
   "حالت آزمایشی تراویس؛ نتیجهٔ آزمایش، بیمه‌نامهٔ واقعی مسافر نیست.": "Travis sandbox mode; test results are not real passenger policies.",
   "بازه‌های بدون نرخ بیمه‌گر وارد نشدند.": "Bands without insurer rates were not imported.",
   "ساخت و تأیید آزمایشی موفق بود؛ شناسهٔ آزمایشی:": "Sandbox creation and confirmation succeeded; test ID:",
-  "ابتدا تغییرات تنظیمات را ذخیره کنید.": "Save settings changes first."
+  "ابتدا تغییرات تنظیمات را ذخیره کنید.": "Save settings changes first.",
+  "از ۴٬۰۰۰ · Enter ارسال، Shift+Enter خط بعد": "of 4,000 · Enter to send, Shift+Enter for a new line",
+  "افراد و واکنش‌ها": "People and reactions",
+  "اندازه پنجره گفتگو": "Chat window size",
+  "بزرگ‌تر": "Larger",
+  "جست‌وجوی گفتگو، نام یا آخرین پیام…": "Search conversations, names or latest messages…",
+  "جست‌وجوی گفتگوها": "Search conversations",
+  "شما": "You",
+  "عضو پیشین گفتگو": "Former conversation member",
+  "کوچک‌تر": "Smaller",
+  "هنوز واکنشی ثبت نشده است.": "No reactions yet."
 }

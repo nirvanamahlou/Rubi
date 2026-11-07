@@ -1,3 +1,7 @@
+## CHAT-USABILITY-1107 — PC-B — READY_FOR_CI
+
+User authorizes conversation search, latest-message opening, Enter send, chat resizing and reaction participant display; push and develop merge. Reserve Workbench message-composer, reaction menu and focused helpers/tests; additive optional reaction users contract and MessagingService IAM name projection with API regressions. Names remain behind existing conversation authorization; old userIds consumers remain supported. No schema, permissions, dependency or deployment changes. Validation: 92 Workbench Web tests, 27 Messaging API tests and scoped API/Web ESLint passed. Final-head hosted type checks, production builds, full suite and PostgreSQL tests precede merge.
+
 ## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
 
 Finance reservation requests resolve persisted purchase actor IDs through the scoped IAM public directory, deduplicating names for grouped purchases. No guessed requester or source-data rewrite. Request cards expose requester and emphasize amount; details use responsive semantic fact cards, grouped FX metrics, and aligned purchase actions. Prior source-ID/history removals remain. Existing permissions, payments and evidence are preserved. Focused Finance API/UI tests, lint and type checks precede full hosted gates. No schema, dependency or deployment.
