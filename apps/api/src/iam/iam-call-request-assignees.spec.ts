@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IamCallCenterDirectory } from './iam-call-center-directory';
 import type { AuthenticatedActor } from '@nora/contracts';
-
 const actor = {
   userId: 'self',
   branchIds: ['branch'],
@@ -10,294 +9,190 @@ const actor = {
     'customer_affairs.call_center.workflow.manage',
   ],
 } as AuthenticatedActor;
-function setup(username = 'ordinary', unitBranch = 'branch') {
-  const account = {
-    username,
-    profile: {
-      organizationUnitId: 'unit-a',
-      organizationUnit: {
-        branchId: unitBranch,
-        status: 'فعال',
-        deletedAt: null,
-      },
-    },
-  };
+const oldTeam = {
+  ...actor,
+  permissions: [
+    ...actor.permissions,
+    'customer_affairs.call_center.workflow.manage.team',
+  ],
+} as AuthenticatedActor;
+function setup(username = 'ordinary') {
   const user = {
-    findFirst: vi.fn().mockResolvedValue(account),
+    findFirst: vi.fn().mockResolvedValue({
+      id: 'self',
+      username,
+      profile: { organizationUnitId: 'stale-iam-unit' },
+    }),
     findMany: vi
       .fn()
-      .mockResolvedValue([{ id: 'self', displayName: 'Short name' }]),
+      .mockResolvedValue([{ id: 'self', displayName: 'Account name' }]),
   };
   const tx = { user, $queryRaw: vi.fn().mockResolvedValue([]) };
   const personnel = {
-    callCenterUnit: vi.fn().mockResolvedValue(unitBranch === 'branch'),
+    callCenterRequestTeam: vi.fn().mockResolvedValue(null),
     callCenterStaff: vi
       .fn()
       .mockResolvedValue([
-        { userId: 'self', name: 'Full employee name', position: 'Sales agent' },
+        { userId: 'self', name: 'HR name', position: 'Expert' },
       ]),
   };
   const directory = new IamCallCenterDirectory(
     { client: tx } as never,
     personnel as never,
   );
-  return { directory, user, personnel, tx, account };
+  return { directory, user, tx, personnel };
 }
 afterEach(() => vi.unstubAllEnvs());
-describe('request assignee organizational authorization', () => {
-  it('restricts ordinary and legacy broad accounts to self, with HR full name', async () => {
-    const { directory, user } = setup();
-    expect(await directory.requestAssignees(actor, 'branch')).toEqual([
-      { id: 'self', displayName: 'Full employee name' },
-    ]);
+describe('live HR request assignment authority', () => {
+  it.each([actor, oldTeam])(
+    'keeps ordinary/demoted staff self-only even with stale manual team grants',
+    async (current) => {
+      const { directory, user } = setup();
+      expect(await directory.requestAssignees(current, 'branch')).toEqual([
+        { id: 'self', displayName: 'HR name' },
+      ]);
+      expect(user.findMany.mock.calls[0]![0].where.id).toBe('self');
+    },
+  );
+  it('grants a current HR manager the exact projected account IDs without a manual team permission', async () => {
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue(['self', 'colleague']);
+    await directory.requestAssignees(actor, 'branch');
     expect(user.findMany.mock.calls[0]![0].where).toMatchObject({
-      id: 'self',
+      id: { in: ['self', 'colleague'] },
       status: 'ACTIVE',
       b2bOrganizationUser: null,
       branches: { some: { branchId: 'branch', branch: { isActive: true } } },
     });
+    expect(user.findMany.mock.calls[0]![0].where.profile).toBeUndefined();
   });
-  it('uses exact organization ID for managers, never a department name', async () => {
-    const { directory, user } = setup();
-    await directory.requestAssignees(
-      {
-        ...actor,
-        permissions: [
-          ...actor.permissions,
-          'customer_affairs.call_center.workflow.manage.team',
-        ],
-      },
-      'branch',
-    );
-    expect(user.findMany.mock.calls[0]![0].where.profile).toEqual({
-      organizationUnitId: 'unit-a',
+  it('recomputes after promotion, demotion and unit transfer with the same authenticated actor', async () => {
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam
+      .mockResolvedValueOnce(['self', 'sales'])
+      .mockResolvedValueOnce(['self', 'reservations'])
+      .mockResolvedValueOnce(null);
+    for (let i = 0; i < 3; i++)
+      await directory.requestAssignees(oldTeam, 'branch');
+    expect(user.findMany.mock.calls.map((c) => c[0].where.id)).toEqual([
+      { in: ['self', 'sales'] },
+      { in: ['self', 'reservations'] },
+      'self',
+    ]);
+  });
+  it('ignores callback/global triage privileges for a non-executive manager', async () => {
+    const { directory, user, personnel } = setup('unit-manager');
+    vi.spyOn(directory, 'globalCallCenter').mockResolvedValue(true);
+    personnel.callCenterRequestTeam.mockResolvedValue(['self', 'peer']);
+    await directory.requestAssignees(actor, 'branch');
+    expect(user.findMany.mock.calls[0]![0].where.id).toEqual({
+      in: ['self', 'peer'],
     });
-    expect(user.findMany.mock.calls[0]![0].where.id).toBeUndefined();
   });
-  it('fails closed when a manager unit is from another branch', async () => {
-    const { directory, user } = setup('manager', 'other');
-    await directory.requestAssignees(
-      {
-        ...actor,
-        permissions: [
-          ...actor.permissions,
-          'customer_affairs.call_center.workflow.manage.team',
-        ],
-      },
-      'branch',
-    );
-    expect(user.findMany.mock.calls[0]![0].where.id).toBe('self');
-  });
-  it.each(['executive-test', 'demo-test'])(
-    'does not treat legacy configured %s as the company director',
+  it.each(['demo', 'claimed-director'])(
+    'does not infer executive authority from configured %s',
     async (username) => {
       vi.stubEnv(
         'CALL_CENTER_REQUEST_GLOBAL_USERNAMES',
-        'executive-test,demo-test',
+        'demo,claimed-director',
       );
       const { directory, user } = setup(username);
       await directory.requestAssignees(actor, 'branch');
       expect(user.findMany.mock.calls[0]![0].where.id).toBe('self');
     },
   );
-  it('retains all active branch accounts and position labels for the verified company director', async () => {
+  it('preserves verified executive choices and labels', async () => {
     vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
-    const { directory, user } = setup('danial');
+    const { directory, user, personnel } = setup('danial');
     vi.spyOn(directory, 'globalCallCenter').mockResolvedValue(true);
     expect(await directory.requestAssignees(actor, 'branch')).toEqual([
       {
         id: 'self',
-        displayName: 'Full employee name',
-        position: 'Sales agent',
+        displayName: 'HR name',
+        position: 'Expert',
         showPosition: true,
       },
     ]);
     expect(user.findMany.mock.calls[0]![0].where.id).toBeUndefined();
-    expect(user.findMany.mock.calls[0]![0].where.profile).toBeUndefined();
-    expect(user.findMany.mock.calls[0]![0].where).toMatchObject({
-      status: 'ACTIVE',
-      b2bOrganizationUser: null,
-      branches: { some: { branchId: 'branch', branch: { isActive: true } } },
-    });
+    expect(personnel.callCenterRequestTeam).not.toHaveBeenCalled();
   });
-  it('does not authorize a company-wide assignee list from a director display name alone', async () => {
-    vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
-    const { directory, user } = setup('danial');
-    vi.spyOn(directory, 'globalCallCenter').mockResolvedValue(false);
-    await directory.requestAssignees(actor, 'branch');
-    expect(user.findMany.mock.calls[0]![0].where.id).toBe('self');
+  it('rejects foreign branches and missing route/workflow gates before HR reads', async () => {
+    const { directory, personnel } = setup();
+    for (const current of [
+      actor,
+      { ...actor, permissions: [] },
+    ] as AuthenticatedActor[])
+      await expect(
+        directory.requestAssignees(
+          current,
+          current === actor ? 'other' : 'branch',
+        ),
+      ).rejects.toThrow();
+    expect(personnel.callCenterRequestTeam).not.toHaveBeenCalled();
   });
-  it.each([
-    'sales-unit',
-    'reservations-unit',
-    'finance-unit',
-    'support-unit',
-    'hr-unit',
-  ])(
-    'restricts a callback manager in %s to the exact current unit even with broad read authority',
-    async (unit) => {
-      vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
-      vi.stubEnv(
-        'CALL_CENTER_CALLBACK_MANAGER_IDS',
-        '00000000-0000-4000-8000-000000000001',
-      );
-      const { directory, user, account } = setup('department-manager');
-      account.profile.organizationUnitId = unit;
-      vi.spyOn(directory, 'globalCallCenter').mockResolvedValue(true);
-      await directory.requestAssignees(
-        {
-          ...actor,
-          userId: '00000000-0000-4000-8000-000000000001',
-          permissions: [
-            ...actor.permissions,
-            'customer_affairs.call_center.workflow.manage.team',
-          ],
-        },
-        'branch',
-      );
-      expect(user.findMany.mock.calls[0]![0].where.profile).toEqual({
-        organizationUnitId: unit,
-      });
-      expect(user.findMany.mock.calls[0]![0].where.id).toBeUndefined();
-    },
-  );
-  it('does not let callback triage alone expand an ordinary employee beyond self', async () => {
-    vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
-    vi.stubEnv(
-      'CALL_CENTER_CALLBACK_MANAGER_IDS',
-      '00000000-0000-4000-8000-000000000001',
-    );
-    const { directory, user } = setup();
-    await directory.requestAssignees(
-      { ...actor, userId: '00000000-0000-4000-8000-000000000001' },
-      'branch',
-    );
-    expect(user.findMany.mock.calls[0]![0].where.id).toBe(
-      '00000000-0000-4000-8000-000000000001',
-    );
-  });
-  it('requires a real active authenticated account, not a claimed username', async () => {
-    const { directory, user } = setup();
+  it('requires an active native account', async () => {
+    const { directory, user, personnel } = setup();
     user.findFirst.mockResolvedValue(null);
     await expect(directory.requestAssignees(actor, 'branch')).rejects.toThrow();
-    expect(user.findMany).not.toHaveBeenCalled();
+    expect(personnel.callCenterRequestTeam).not.toHaveBeenCalled();
   });
-  it('denies foreign branches before querying identities', async () => {
-    const { directory, user } = setup();
-    await expect(directory.requestAssignees(actor, 'other')).rejects.toThrow();
-    expect(user.findFirst).not.toHaveBeenCalled();
-  });
-  it('rejects forged recipients at save time and locks account membership', async () => {
-    const { directory, tx } = setup();
-    await expect(
-      directory.resolveRequestAssignee(
-        tx as never,
-        actor,
-        'branch',
-        'foreign-user',
-      ),
-    ).rejects.toThrow('خارج از محدوده');
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(3);
-    expect(
-      await directory.resolveRequestAssignee(
-        tx as never,
-        actor,
-        'branch',
-        'self',
-      ),
-    ).toMatchObject({ id: 'self' });
-  });
-  it('does not invent job titles when personnel records are absent', async () => {
-    vi.stubEnv('CALL_CENTER_REQUEST_GLOBAL_USERNAMES', 'danial');
-    const { directory, personnel } = setup('danial');
-    personnel.callCenterStaff.mockResolvedValue([]);
-    expect(await directory.requestAssignees(actor, 'branch')).toEqual([
-      {
-        id: 'self',
-        displayName: 'Short name',
-        position: null,
-        showPosition: true,
-      },
-    ]);
-  });
-  it('revalidates department restrictions at save time for a callback manager with a forged recipient', async () => {
-    vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
-    vi.stubEnv(
-      'CALL_CENTER_CALLBACK_MANAGER_IDS',
-      '00000000-0000-4000-8000-000000000001',
-    );
-    const { directory, tx, user } = setup('department-manager');
-    const manager = {
-      ...actor,
-      userId: '00000000-0000-4000-8000-000000000001',
-      permissions: [
-        ...actor.permissions,
-        'customer_affairs.call_center.workflow.manage.team',
-      ],
-    } as AuthenticatedActor;
-    const candidates = [
-      { id: 'same-unit', displayName: 'Same department', unit: 'unit-a' },
-      { id: 'foreign-unit', displayName: 'Other department', unit: 'unit-b' },
-    ];
+  it('revalidates HR authority at save so stale choices after demotion are rejected', async () => {
+    const { directory, personnel, user, tx } = setup();
+    personnel.callCenterRequestTeam
+      .mockResolvedValueOnce(['self', 'peer'])
+      .mockResolvedValueOnce(null);
     user.findMany.mockImplementation(
-      async (query: { where: { profile?: { organizationUnitId: string } } }) =>
-        candidates.filter(
-          (u) =>
-            !query.where.profile ||
-            u.unit === query.where.profile.organizationUnitId,
+      async (q: { where: { id: string | { in: string[] } } }) =>
+        [{ id: 'peer', displayName: 'Peer' }].filter((x) =>
+          typeof q.where.id === 'string'
+            ? x.id === q.where.id
+            : q.where.id.in.includes(x.id),
         ),
     );
+    expect(await directory.requestAssignees(actor, 'branch')).toHaveLength(1);
     await expect(
-      directory.resolveRequestAssignee(
-        tx as never,
-        manager,
-        'branch',
-        'foreign-unit',
-      ),
+      directory.resolveRequestAssignee(tx as never, oldTeam, 'branch', 'peer'),
     ).rejects.toThrow('خارج از محدوده');
+    expect(personnel.callCenterRequestTeam).toHaveBeenLastCalledWith(
+      'branch',
+      'self',
+      tx,
+    );
+  });
+  it('accepts same-unit recipients and rejects forged foreign-unit recipients at save', async () => {
+    const { directory, personnel, user, tx } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue(['self', 'peer']);
+    user.findMany.mockResolvedValue([{ id: 'peer', displayName: 'Peer' }]);
     await expect(
-      directory.resolveRequestAssignee(
-        tx as never,
-        manager,
-        'branch',
-        'same-unit',
-      ),
-    ).resolves.toMatchObject({ id: 'same-unit' });
+      directory.resolveRequestAssignee(tx as never, actor, 'branch', 'peer'),
+    ).resolves.toMatchObject({ id: 'peer' });
+    await expect(
+      directory.resolveRequestAssignee(tx as never, actor, 'branch', 'foreign'),
+    ).rejects.toThrow('خارج از محدوده');
     expect(tx.$queryRaw).toHaveBeenCalledTimes(6);
   });
-});
-
-it('denies management fields to ordinary staff even on their own request', async () => {
-  const { directory } = setup();
-  expect(await directory.canManageRequest(actor, 'branch', 'self')).toBe(false);
-});
-it('allows only a manager of the responsible employee unit', async () => {
-  const { directory, user } = setup();
-  const manager: AuthenticatedActor = {
-    ...actor,
-    permissions: [
-      ...actor.permissions,
-      'customer_affairs.call_center.workflow.manage.team',
-    ],
-  };
-  expect(await directory.canManageRequest(manager, 'branch', 'employee')).toBe(
-    true,
-  );
-  user.findFirst
-    .mockResolvedValueOnce({
-      username: 'manager',
-      profile: { organizationUnitId: 'unit-a' },
-    })
-    .mockResolvedValueOnce({ profile: { organizationUnitId: 'unit-b' } });
-  expect(await directory.canManageRequest(manager, 'branch', 'employee')).toBe(
-    false,
-  );
-  expect(await directory.canManageRequest(manager, 'other', 'employee')).toBe(
-    false,
-  );
-});
-it('preserves only explicitly configured global authority', async () => {
-  vi.stubEnv('CALL_CENTER_REQUEST_GLOBAL_USERNAMES', 'danial,demo');
-  const { directory } = setup('danial');
-  expect(await directory.canManageRequest(actor, 'branch', null)).toBe(true);
+  it('uses the same live HR membership for management fields and revokes demoted managers', async () => {
+    const { directory, personnel } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue(['self', 'peer']);
+    expect(await directory.canManageRequest(actor, 'branch', 'peer')).toBe(
+      true,
+    );
+    expect(await directory.canManageRequest(actor, 'branch', 'foreign')).toBe(
+      false,
+    );
+    personnel.callCenterRequestTeam.mockResolvedValue(null);
+    expect(await directory.canManageRequest(oldTeam, 'branch', 'peer')).toBe(
+      false,
+    );
+    expect(await directory.canManageRequest(actor, 'other', 'peer')).toBe(
+      false,
+    );
+  });
+  it('does not invent HR names for unlinked accounts', async () => {
+    const { directory, personnel } = setup();
+    personnel.callCenterStaff.mockResolvedValue([]);
+    expect(await directory.requestAssignees(actor, 'branch')).toEqual([
+      { id: 'self', displayName: 'Account name' },
+    ]);
+  });
 });
