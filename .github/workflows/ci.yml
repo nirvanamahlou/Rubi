@@ -203,7 +203,7 @@ jobs:
       - name: Prove contract receipt reference repair preserves existing policies
         env:
           CONTRACT_RECEIPT_POSTGRES_TEST: '1'
-        run: pnpm --filter @nora/database exec vitest run test/contract-receipt-references-postgres.spec.ts
+        run: pnpm --filter @nora/database exec vitest run test/contract-receipt-references-postgres.spec.ts test/manifest-document-references-postgres.spec.ts
 
       - name: Prove seed repeatability
         run: |
