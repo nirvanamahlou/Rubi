@@ -45,3 +45,39 @@ it('ignores inaccessible and historical messages that newly enter the feed', () 
     newMessagePopup([message], new Set(), permissions, '2026-11-05T11:00:00Z'),
   ).toBeNull();
 });
+
+it('shows a new assigned call-center request with its queue link', () => {
+  const request = {
+    ...message,
+    id: 'request-1',
+    sourceModule: 'customer-affairs',
+    eventType: 'call-center.assigned',
+    href: '/customer-affairs/call-center#cc-follow-up-queue',
+  };
+  expect(newMessagePopup([request], new Set(), permissions)).toEqual(request);
+  expect(newMessagePopup([request], null, permissions)).toBeNull();
+  expect(
+    newMessagePopup([request], new Set([request.id]), permissions),
+  ).toBeNull();
+  expect(
+    newMessagePopup([{ ...request, isRead: true }], new Set(), permissions),
+  ).toBeNull();
+  expect(newMessagePopup([request], new Set(), [])).toBeNull();
+  expect(
+    newMessagePopup([request], new Set(), permissions, '2026-11-06T00:00:00Z'),
+  ).toBeNull();
+  expect(
+    newMessagePopup(
+      [{ ...request, href: 'https://example.test' }],
+      new Set(),
+      permissions,
+    ),
+  ).toBeNull();
+  expect(
+    newMessagePopup(
+      [{ ...request, eventType: 'call-center.closed' }],
+      new Set(),
+      permissions,
+    ),
+  ).toBeNull();
+});
