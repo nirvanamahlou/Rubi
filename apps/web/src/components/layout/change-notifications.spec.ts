@@ -170,3 +170,34 @@ describe('global change notifications', () => {
     expect(limited[0]?.id).toBe('notification-64');
   });
 });
+
+it('never recreates generic alerts for recurring telephony lease acquire, renew or release', async () => {
+  const response = new Response(JSON.stringify({ leader: true }));
+  const original = vi.fn().mockResolvedValue(response);
+  const notify = vi.fn();
+  const tracked = createTrackedFetch(
+    original,
+    apiBaseUrl,
+    notify,
+    () => crypto.randomUUID(),
+    () => new Date(),
+  );
+  for (const release of [false, false, true]) {
+    await expect(
+      tracked(
+        `${apiBaseUrl}/customer-affairs/call-center/telephony/lease/?branchId=synthetic`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ tabId: 'test', release }),
+        },
+      ),
+    ).resolves.toBe(response);
+  }
+  expect(notify).not.toHaveBeenCalled();
+  // A genuine call workflow command must still notify normally.
+  await tracked(
+    `${apiBaseUrl}/customer-affairs/call-center/contacts/contact/requests`,
+    { method: 'POST' },
+  );
+  expect(notify).toHaveBeenCalledOnce();
+});
