@@ -32,7 +32,7 @@ with (ROOT/'avina-deploy.lock').open('a') as lock:
   for name in manifest['baseline']:dockerfile+='COPY source/'+name+' /workspace/apps/api/src/'+name+'\n'
   (WORK/'Dockerfile').write_text(dockerfile)
   run(['docker','build','--network','none','-t',image,str(WORK)])
-  base_config=inspect('api')['Config'];new_config=json.loads(capture(['docker','image','inspect',image]))[0]['Config']
+  base_config=json.loads(capture(['docker','image','inspect',before['api']['imageId']]))[0]['Config'];new_config=json.loads(capture(['docker','image','inspect',image]))[0]['Config']
   for key in ['Env','Cmd','Entrypoint','User','WorkingDir']:assert base_config[key]==new_config[key]
   assert snapshot()==before
   image_id=json.loads(capture(['docker','image','inspect',image]))[0]['Id']
