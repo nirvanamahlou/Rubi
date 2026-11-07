@@ -3,6 +3,62 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { InsuranceSettingsService } from './insurance-settings';
 import { TravisSandboxService } from './travis-sandbox.service';
 const key = 'synthetic-sandbox-test-key';
+it('accepts only a verified active policy and upgrades its fixed PDF host to HTTPS', async () => {
+  const fetcher = vi.fn(async () =>
+    response([
+      {
+        policyId: 123,
+        policyNo: 'VERIFIED-123',
+        lastStatus: 'Active',
+        payablePremium: 399000,
+        plan: { premiumCurrencyCode: 'IRR' },
+        pdfUrl:
+          'http://sandbox.travis.ir/Print/PolicyPdf/11111111-1111-4111-8111-111111111111/true',
+        person: { nationalCode: 'not-exposed' },
+      },
+    ]),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const provider = new TravisSandboxService();
+  const result = await provider.policy(123);
+  expect(result).toMatchObject({
+    providerId: '123',
+    active: true,
+    policyNumber: 'VERIFIED-123',
+    amount: '399000',
+    pdfUrl:
+      'https://sandbox.travis.ir/Print/PolicyPdf/11111111-1111-4111-8111-111111111111/true',
+  });
+  expect(JSON.stringify(result)).not.toContain('not-exposed');
+  for (const url of [
+    'https://evil.test/a.pdf',
+    'http://127.0.0.1/a.pdf',
+    'https://sandbox.travis.ir/other',
+    'https://sandbox.travis.ir/Print/PolicyPdf/11111111-1111-4111-8111-111111111111/true?token=x',
+  ])
+    expect(() => provider.policyPdfUrl(url)).toThrow();
+});
+it('downloads the original bounded PDF without forwarding the API credential to the print host', async () => {
+  const fetcher = vi
+    .fn<(url: string, options?: RequestInit) => Promise<Response>>()
+    .mockResolvedValue(new Response('%PDF-synthetic'));
+  vi.stubGlobal('fetch', fetcher);
+  const provider = new TravisSandboxService();
+  expect(
+    (
+      await provider.policyPdf(
+        'http://sandbox.travis.ir/Print/PolicyPdf/11111111-1111-4111-8111-111111111111/true',
+      )
+    ).toString(),
+  ).toBe('%PDF-synthetic');
+  expect(fetcher.mock.calls[0]?.[1]).not.toHaveProperty('headers');
+  fetcher.mockResolvedValueOnce(new Response('<html>not a PDF</html>'));
+  await expect(
+    provider.policyPdf(
+      'https://sandbox.travis.ir/Print/PolicyPdf/11111111-1111-4111-8111-111111111111/true',
+    ),
+  ).rejects.toThrow();
+});
 const countries = [
   { id: 1, title: 'Synthetic', standardCode: 'IR', ignored: 'not exposed' },
 ];

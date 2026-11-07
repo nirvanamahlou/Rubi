@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import Joi from 'joi';
+import { insurancePassengerIds } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
@@ -38,25 +39,7 @@ const draftSchema = Joi.object({
   expectedVersion: Joi.number().integer().min(0).required(),
 });
 
-export function insurancePassengerIds(snapshot: SalesReservationRequestV1) {
-  const keys = new Set(
-    snapshot.serviceSelections
-      .filter((s) => s.kind === 'INSURANCE')
-      .map((s) => s.clientKey),
-  );
-  if (!keys.size) return [];
-  return [
-    ...new Set(
-      (snapshot.passengerAssignments ?? [])
-        .filter(
-          (p) =>
-            p.serviceClientKeys.some((k) => keys.has(k)) &&
-            snapshot.passengerIds.includes(p.customerId),
-        )
-        .map((p) => p.customerId),
-    ),
-  ];
-}
+export { insurancePassengerIds } from '@nora/contracts';
 
 export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
   const result = draftSchema.validate(raw, { convert: false });
@@ -314,6 +297,9 @@ export class ReservationInsuranceService {
       createdAt: row.createdAt.toISOString(),
       notes: row.notes,
       version: row.version,
+      automatic: row.automatic,
+      sandbox: row.sandbox,
+      lastError: row.lastError,
     };
   }
 
@@ -351,6 +337,10 @@ export class ReservationInsuranceService {
           },
         },
       });
+      if (current?.automatic)
+        throw new ConflictException(
+          'برای اصلاح درخواست خودکار بیمه، پرونده مسافر و تنظیمات بیمه را بررسی کنید.',
+        );
       if ((current?.version ?? 0) !== input.expectedVersion)
         throw new ConflictException(
           'اطلاعات بیمه تغییر کرده است؛ دوباره دریافت کنید.',
