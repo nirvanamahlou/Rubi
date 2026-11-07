@@ -145,6 +145,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
   }
   async process(id: string) {
     const now = new Date();
+    const leaseUntil = new Date(now.getTime() + 300000);
     const claimed = await this.db.client.reservationInsurancePolicy.updateMany({
       where: {
         id,
@@ -153,14 +154,14 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         status: { in: ['DRAFT', 'INPUT_ERROR', 'PROVIDER_ERROR'] },
         OR: [{ processingUntil: null }, { processingUntil: { lt: now } }],
       },
-      data: { processingUntil: new Date(now.getTime() + 300000) },
+      data: { processingUntil: leaseUntil },
     });
     if (!claimed.count) return;
     let error: string = message.pending;
     try {
       const row =
         await this.db.client.reservationInsurancePolicy.findUniqueOrThrow({
-          where: { id },
+          where: { id, processingUntil: leaseUntil },
         });
       const state = (row.automation ?? {}) as State;
       error = message.input;
@@ -262,7 +263,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       }
       const save = async (data: Prisma.ReservationInsurancePolicyUpdateInput) =>
         this.db.client.reservationInsurancePolicy.update({
-          where: { id },
+          where: {
+            id,
+            processingUntil: leaseUntil,
+            AND: [{ processingUntil: { gt: new Date() } }],
+          },
           data,
         });
       let providerId = row.providerId;
@@ -320,7 +325,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         throw new Error();
       await this.db.client.$transaction(async (tx) => {
         const saved = await tx.reservationInsurancePolicy.update({
-          where: { id },
+          where: {
+            id,
+            processingUntil: leaseUntil,
+            AND: [{ processingUntil: { gt: new Date() } }],
+          },
           data: {
             status: 'ISSUED',
             policyNumber: result!.policyNumber,
@@ -362,7 +371,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       });
     } catch {
       await this.db.client.reservationInsurancePolicy.updateMany({
-        where: { id, status: { not: 'ISSUED' } },
+        where: { id, processingUntil: leaseUntil, status: { not: 'ISSUED' } },
         data: {
           status:
             error === message.input || error === message.config

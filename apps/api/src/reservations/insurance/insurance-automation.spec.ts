@@ -57,9 +57,15 @@ function fixture() {
         where,
         data,
       }: {
-        where: { status?: { not?: string } };
+        where: { status?: { not?: string }; processingUntil?: Date };
         data: Record<string, unknown>;
       }) => {
+        if (
+          where.processingUntil &&
+          (!(row.processingUntil instanceof Date) ||
+            row.processingUntil.getTime() !== where.processingUntil.getTime())
+        )
+          return { count: 0 };
         if (where.status?.not === 'ISSUED' && row.status === 'ISSUED')
           return { count: 0 };
         Object.assign(row, data);
@@ -71,10 +77,18 @@ function fixture() {
     upsert: vi.fn(),
     update: vi.fn(
       async ({
+        where,
         data,
       }: {
+        where: { processingUntil?: Date };
         data: Record<string, unknown> & { version?: { increment: number } };
       }) => {
+        if (
+          where.processingUntil &&
+          (!(row.processingUntil instanceof Date) ||
+            row.processingUntil.getTime() !== where.processingUntil.getTime())
+        )
+          throw new Error('Lease is no longer owned');
         const { version, ...rest } = data;
         Object.assign(row, rest);
         if (version?.increment)
@@ -293,4 +307,19 @@ it('downloads each original PDF independently without a financial gate, enforcin
   await expect(
     f.service.download('intake', f.actor, 'policy'),
   ).rejects.toBeInstanceOf(ForbiddenException);
+});
+
+it('does not submit or overwrite state after another worker acquires the lease', async () => {
+  const f = fixture();
+  const catalog = await f.provider.catalog();
+  const newerLease = new Date('2999-01-01');
+  f.provider.catalog.mockImplementationOnce(async () => {
+    f.row.processingUntil = newerLease;
+    return catalog;
+  });
+  await f.service.process('policy');
+  expect(f.provider.createPolicy).not.toHaveBeenCalled();
+  expect(f.row.status).toBe('DRAFT');
+  expect(f.row.processingUntil).toBe(newerLease);
+  expect(f.notifications.createWithinTransaction).not.toHaveBeenCalled();
 });
