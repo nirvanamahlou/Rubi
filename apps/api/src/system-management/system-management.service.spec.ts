@@ -31,6 +31,48 @@ const setting = (scopeKey: string, value: string) => ({
   ],
 });
 
+it('limits dedicated insurance management to insurance in an assigned branch', async () => {
+  const transaction = vi
+    .fn()
+    .mockRejectedValue(new Error('transaction reached'));
+  const service = new SystemManagementService(
+    { client: { $transaction: transaction } } as never,
+    {} as never,
+  );
+  const manager = {
+    ...actor,
+    permissions: [
+      'reservations.insurance.manage',
+      'ui.deny.system.module.operations',
+    ],
+  } as never;
+  const input = {
+    namespace: 'operations',
+    key: 'insurance-issuance',
+    scope: 'BRANCH' as const,
+    scopeId: actor.branchIds[0]!,
+    valueType: 'JSON' as const,
+    status: 'ACTIVE' as const,
+    value: { schemaVersion: 1, countries: [] },
+    reason: 'insurance settings',
+    expectedVersion: 0,
+  };
+  await expect(service.writeSetting(input, manager, {})).rejects.toThrow(
+    'transaction reached',
+  );
+  transaction.mockClear();
+  for (const patch of [
+    { key: 'other-setting' },
+    { scope: 'GLOBAL' as const, scopeId: null },
+    { scopeId: '00000000-0000-4000-8000-000000000004' },
+  ]) {
+    await expect(
+      service.writeSetting({ ...input, ...patch } as never, manager, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  }
+  expect(transaction).not.toHaveBeenCalled();
+});
+
 describe('SystemManagementService', () => {
   it('blocks a denied setting change but treats a canonical no-op as non-mutating', async () => {
     const current = {
