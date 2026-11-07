@@ -788,3 +788,7 @@ Owner clarification retains first paid confirmed contract and selects the Financ
 ## CALL-HR-MANAGER-AUTHORITY-1107 — 2026-11-07
 
 Owner explicitly supersedes manually granted Call Center team-assignment authority with the active native HR employee grade «مدیر» and current HR organizational assignment. Recompute at directory reads and transactional saves; never cache the managerial decision in sessions or persist automatic role changes. Legacy manual team permission must not preserve authority after demotion or unit transfer. Retain existing base route/read/workflow and account/branch gates and pinned executive scope. HR exposes only active same-branch/company/unit linked account IDs; no names, job titles or fuzzy identity matching grants authority. Native HR currently stores a validated unit label and organizationBranchId rather than a unit FK; HR projection must resolve an unambiguous active native unit in that company/branch and fail closed on missing or ambiguous mapping. IAM profile unit is no longer the source for this request authority. HR-owned row locks at save revalidate manager grade/current unit and candidate membership; unlinked personnel do not gain privileges. No schema or automatic HR-account linking is implied.
+
+## JAHAN-BASTAN-NORA-1107
+
+The explicit 2026-11-07 task selects develop as Nora base and both PR destinations for this task. Push/CI/PR are authorized; merge/deployment are excluded. Existing worktrees/remotes are preserved.

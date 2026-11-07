@@ -1,3 +1,14 @@
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
+encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
+Excel, anonymous presence and read-only reports. Future commerce and SSO remain
+DISABLED. Synthetic producer/consumer and existing connector regressions pass;
+GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
+See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.

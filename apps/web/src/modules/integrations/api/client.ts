@@ -79,6 +79,35 @@ export interface GhestirooStatus {
 const siteBranchQuery = (branchId: string, systemId?: string) =>
   `${branchQuery(branchId)}${systemId ? `&systemId=${encodeURIComponent(systemId)}` : ''}`;
 export const siteConnectionApi = {
+  bundle: (
+    branch: string,
+    site: string,
+    bundle: string,
+    expectedVersion: number,
+  ) =>
+    request<SiteConnectionStatusV1>(
+      `/sites/${encodeURIComponent(site)}/bundle${branchQuery(branch)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ bundle, expectedVersion }),
+        headers: { 'X-Nora-Site-Connection': '1' },
+      },
+    ),
+  lifecycle: (
+    branch: string,
+    site: string,
+    action: 'disconnect' | 'delete',
+    operationId: string,
+    expectedVersion: number,
+  ) =>
+    request<SiteConnectionStatusV1>(
+      `/sites/${encodeURIComponent(site)}/lifecycle${branchQuery(branch)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ action, operationId, expectedVersion }),
+        headers: { 'X-Nora-Site-Connection': '1' },
+      },
+    ),
   status: (branch: string, site: string, signal?: AbortSignal) =>
     request<SiteConnectionStatusV1>(
       `/sites/${encodeURIComponent(site)}/connection${branchQuery(branch)}`,
@@ -242,7 +271,7 @@ export const integrationsApi = {
     resource: string,
     value: Record<string, unknown>,
     command: string,
-    record?: { externalId: string; version: number },
+    record?: { externalId: string; version: number | string },
     systemId?: string,
   ) =>
     request<Record<string, unknown>>(
@@ -279,7 +308,7 @@ export const integrationsApi = {
         value: number | null;
         state: string;
       }[];
-      imports: { kind: string; canApply: boolean }[];
+      imports: { kind: string; canApply: boolean; canExport?: boolean }[];
     }>(
       `/niyayesh/dashboard${siteBranchQuery(branchId, systemId)}`,
       signal ? { signal } : {},
@@ -366,6 +395,7 @@ export const integrationsApi = {
     metric?: string,
     report?: { metric: string; from: string; to: string; systemId?: string },
     systemId?: string,
+    filter?: { query?: string; status?: string },
   ) =>
     request<{
       schemaVersion: number;
@@ -378,7 +408,7 @@ export const integrationsApi = {
       nextId: number;
       hasMore: boolean;
     }>(
-      `/niyayesh/resources${siteBranchQuery(branchId, systemId ?? report?.systemId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}` : ''}`,
+      `/niyayesh/resources${siteBranchQuery(branchId, systemId ?? report?.systemId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}` : ''}${filter?.query ? `&q=${encodeURIComponent(filter.query)}` : ''}${filter?.status ? `&status=${encodeURIComponent(filter.status)}` : ''}`,
       signal ? { signal } : {},
     ),
   async branches(): Promise<BranchReference[]> {
@@ -450,7 +480,7 @@ export type EditorContract = {
   groups: Record<string, string[]>;
   record: {
     externalId: string;
-    version: number;
+    version: number | string;
     value: Record<string, unknown>;
     data: Record<string, unknown>;
   } | null;

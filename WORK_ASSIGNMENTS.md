@@ -1,3 +1,9 @@
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+
 ## ORGANIZATIONS-DARK-1107 — PC-B — READY_FOR_CI
 
 User authorizes correcting Organizations B2B dark-mode contrast, push and develop merge. Reserve corporate-design.css theme surfaces/borders only and own notes. Preserve light appearance, layout and all behavior/data. No API/schema/dependency/deployment. Validation: all 276 Organizations tests passed (one pre-existing optional test skipped), formatting and diff checks passed. Final-head hosted checks precede merge.

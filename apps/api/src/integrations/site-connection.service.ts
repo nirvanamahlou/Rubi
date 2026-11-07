@@ -17,15 +17,44 @@ import {
   siteConnectionInput,
   siteIdentityFields,
 } from './site-connection.validation';
+import { JahanConnectionService } from './jahan-bastan.service';
 
 @Injectable()
 export class SiteConnectionService {
+  readonly jahan: JahanConnectionService;
   readonly store = new SiteConnectionStore();
   constructor(
     @Inject(IntegrationRegistryService)
     private readonly registry: IntegrationRegistryService,
     @Inject(NiyayeshService) private readonly site: NiyayeshService,
-  ) {}
+  ) {
+    this.jahan = new JahanConnectionService(registry);
+  }
+  onModuleInit() {
+    this.jahan.renewal.start();
+  }
+  onModuleDestroy() {
+    this.jahan.renewal.stop();
+  }
+  async saveBundle(
+    actor: AuthenticatedActor,
+    branch: string,
+    systemId: string,
+    input: unknown,
+    origin: string | undefined,
+  ) {
+    await this.jahan.save(actor, branch, systemId, input, origin);
+    return this.status(actor, branch, systemId);
+  }
+  async lifecycle(
+    actor: AuthenticatedActor,
+    branch: string,
+    systemId: string,
+    input: unknown,
+  ) {
+    await this.jahan.lifecycle(actor, branch, systemId, input);
+    return this.status(actor, branch, systemId);
+  }
   private async authorize(
     actor: AuthenticatedActor,
     branch: string,
@@ -99,6 +128,20 @@ export class SiteConnectionService {
           }
         : null,
       secretConfigured: !!config?.secret,
+      ...(config?.protocol === 'jahan-bastan.nora.v1' && config.jahan
+        ? {
+            protocol: config.protocol,
+            lifecycle: config.jahan.state,
+            expiresAt: config.jahan.expiresAt,
+            renewalState:
+              Date.parse(config.jahan.expiresAt) <= Date.now()
+                ? 'expired'
+                : config.jahan.pendingRenewal
+                  ? 'pending'
+                  : 'active',
+            remoteControlPending: !!config.jahan.lifecyclePending,
+          }
+        : {}),
       ...('updatedAt' in (config ?? {})
         ? { updatedAt: (config as { updatedAt: string }).updatedAt }
         : {}),
@@ -113,6 +156,10 @@ export class SiteConnectionService {
     await this.authorize(actor, branch, systemId, true);
     const value = siteConnectionInput(input);
     const { config, version } = await this.existing(branch, systemId);
+    if (config?.protocol === 'jahan-bastan.nora.v1')
+      throw new BadRequestException(
+        'برای این اتصال، بسته جهان باستان را وارد کنید.',
+      );
     if (version !== value.expectedVersion)
       throw new ConflictException(
         'اتصال تغییر کرده است؛ دوباره بارگذاری کنید.',
@@ -161,6 +208,9 @@ export class SiteConnectionService {
   }
   async test(actor: AuthenticatedActor, branch: string, systemId: string) {
     await this.authorize(actor, branch, systemId);
+    const { config } = await this.existing(branch, systemId);
+    if (config?.protocol === 'jahan-bastan.nora.v1')
+      return this.jahan.test(actor, branch, systemId);
     return this.site.status(actor, branch, systemId);
   }
 }
