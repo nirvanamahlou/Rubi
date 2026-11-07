@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
   downloadInsurancePolicies,
   ReservationInsuranceDocuments,
@@ -10,6 +11,29 @@ vi.mock('@/lib/auth-session', () => ({
   refreshAuthenticatedSession: vi.fn(async () => false),
 }));
 afterEach(() => vi.unstubAllGlobals());
+it('refreshes an expired session against the API origin and retries the PDF without reloading the page', async () => {
+  vi.mocked(refreshAuthenticatedSession).mockResolvedValueOnce(
+    {} as NonNullable<Awaited<ReturnType<typeof refreshAuthenticatedSession>>>,
+  );
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockResolvedValueOnce(
+      new Response('%PDF-synthetic', {
+        headers: { 'content-type': 'application/pdf' },
+      }),
+    );
+  vi.stubGlobal('fetch', fetcher);
+  const save = vi.fn();
+  await downloadInsurancePolicies(
+    'sales/contracts/contract/insurance',
+    [{ id: 'policy' }],
+    save,
+  );
+  expect(refreshAuthenticatedSession).toHaveBeenCalledWith('/api/v1');
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenCalledTimes(1);
+});
 it.each([
   'reservations/requests/request/insurance',
   'sales/contracts/contract/insurance',
