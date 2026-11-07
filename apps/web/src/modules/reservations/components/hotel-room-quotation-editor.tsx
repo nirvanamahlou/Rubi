@@ -174,7 +174,26 @@ export function HotelRoomQuotationEditor({
         </bdi>
       </p>
       <fieldset className="grid gap-2 rounded-xl border border-border p-3">
-        <legend>ترانسفر مستقل این هتل</legend>
+        <legend>ترانسفر این هتل</legend>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
+            checked={draft.hotelTransferSeparate === true}
+            onChange={(event) => {
+              const next = {
+                ...draft,
+                hotelTransferSeparate: event.target.checked,
+              };
+              if (!event.target.checked) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+              }
+              update(next);
+            }}
+          />
+          کارگزار ترانسفر جدا از هتل
+        </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -202,25 +221,27 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={
-              busy || !canSplitTransfers || draft.hotelTransferRoundTrip
+              busy ||
+              !draft.hotelTransferSeparate ||
+              !canSplitTransfers ||
+              draft.hotelTransferRoundTrip
             }
             checked={draft.hotelTransferSplit ?? false}
-            onChange={(event) =>
-              update({
+            onChange={(event) => {
+              const next = {
                 ...draft,
                 hotelTransferSplit: event.target.checked,
-                ...(event.target.checked
-                  ? {
-                      hotelTransferSeparate: true,
-                      hotelTransferRoundTrip: false,
-                      hotelTransferReturn: draft.hotelTransferReturn ?? {
-                        amount: transfer.amount,
-                        currencyCode: transfer.currencyCode,
-                      },
-                    }
-                  : {}),
-              })
-            }
+              };
+              if (event.target.checked) {
+                next.hotelTransferSeparate = true;
+                next.hotelTransferRoundTrip = false;
+                next.hotelTransferReturn = draft.hotelTransferReturn ?? {
+                  amount: transfer.amount,
+                  currencyCode: transfer.currencyCode,
+                };
+              } else delete next.hotelTransferReturn;
+              update(next);
+            }}
           />
           {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
@@ -251,9 +272,6 @@ export function HotelRoomQuotationEditor({
             onChange={(value) => {
               const next = {
                 ...draft,
-                hotelTransferSeparate: Boolean(
-                  value && value.id !== (hotelBroker?.id ?? draft.brokerId),
-                ),
               };
               if (value) {
                 next.transferBrokerId = value.id;
