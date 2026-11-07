@@ -1,5 +1,7 @@
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
 
+MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete expense helper and approval inputs/column hidden without moving persisted positions. Standalone expense form shares mission petty-cash fields, supports parent mission, evidence and currency. Mission row opens all child expenses with edit/delete controls. Procurement-owned transaction port retains original debits and writes idempotent linked reversal credits on HR expense edit/delete, preserving branch/custodian controls and atomic balance rollback. Local isolated PostgreSQL test passes create, replay, edit, stale version, dependent delete guard, claim debit and full reversal; three focused port tests pass. No schema/dependency change. Hosted final-head gates required.
+
 Automatic primary checkout previously followed the trip return even after a subsequent hotel was added, causing overlapping stays and a silently disabled pricing navigation button. Automatic checkout now follows the next stay check-in; explicit manual dates remain authoritative. The same hotel validation result drives both navigation and an actionable message, preserving all existing room/date/journey guards. Added model/payload and actual parent-button regressions for hotel-only, flight+hotel, manual overlap, incomplete rooms and invalid itineraries. Sales suite:788 passed, one existing skip; final added flight+hotel case and focused combined checks pass (31). Scoped lint and Web TypeScript passed; final build and exact-head hosted gates remain required. No API, schema, migration, dependency or deployment changes.
 
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
@@ -2115,6 +2117,12 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## 2026-11-07 — فرم ترکیبی هتل و ترانسفر
+
+- `RESERVATION-TRANSFER-COMBINED-1107` روی `PC-A` با Commit `e71be45f7` در `develop` ادغام شد: تعداد نفرات ترانسفر در فرم قبل از صدور از snapshot قرارداد مقداردهی می‌شود و خرید ذخیره‌شده همچنان اولویت دارد.
+- قیمت‌گذاری ترانسفر به‌صورت پیش‌فرض داخل همان فرم هتل نمایش داده می‌شود و فقط با انتخاب کارگزار جدا به ردیف‌های مستقل رفت و برگشت تبدیل می‌شود.
+- ۱۹ تست هدفمند Web، ESLint محدود، TypeScript کامل Web و build تولیدی ۶۷ مسیر پاس شدند؛ Schema، Migration، Dependency، داده عملیاتی و استقرار تغییر نکرده‌اند.
 
 REPORT-CANCELLED-TOTALS-1029 (PC-C): pipeline confirmed-sales currency totals now
 exclude cancelled/draft status rows while retaining their separate amounts.
@@ -9193,6 +9201,7 @@ without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
 
 Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
 
+CALENDAR-DAY-ACTIONS-1107: day context actions open existing note/event/request forms with selected date; note reminder date/time optional and persisted through existing personal Notes API. Calendar includes dated notes and linked request entries. No schema migration. Focused calendar/note/submission tests:11 passed; scoped lint passed. Final Web typecheck and scoped ESLint passed. Hosted checks required before merge.
 ## 2026-11-07 — RESERVATION-CONTRACT-VALUES-1107 — READY_FOR_CI
 
 PC-A; branch codex/pc-a-reservation-contract-values-1107, base cbc8d334b.

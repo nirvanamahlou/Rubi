@@ -117,6 +117,40 @@ beforeEach(() => {
 });
 
 describe('reservation ticket PDF', () => {
+  it('downloads unbranded tickets without loading an agency logo or publishing a barcode document', async () => {
+    publishing.enabled = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('/workflow')
+          ? Response.json({ data: intake })
+          : new Response('{}', { status: 403 }),
+      ),
+    );
+    const result = await GET(request('?unbranded=true'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(result.status).toBe(200);
+    expect(brandAssetReader).not.toHaveBeenCalled();
+    expect(publishing.documents).toHaveLength(0);
+    const html = renderer.mock.calls[0]![0] as string;
+    expect(html).not.toContain('agency-logo"');
+    expect(html).not.toContain('<footer>');
+    expect(html).not.toContain('ticket-qr"');
+    expect(html).toContain('TEST-01');
+  });
+  it('still enforces financial release for unbranded sales downloads', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('{}', { status: 403 })),
+    );
+    const result = await GET(
+      request('?unbranded=true&salesContractId=' + intake.snapshot.contractId),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(result.status).toBe(403);
+    expect(renderer).not.toHaveBeenCalled();
+  });
   it.each([false, true])(
     'downloads current flight facts for an already issued ticket (Sales=%s)',
     async (sales) => {

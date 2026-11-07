@@ -18,6 +18,7 @@ import {
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
+  unbranded?: boolean;
   publicDocumentUrl?: string | undefined;
   branding?: { name: string; logo: string; companyCode?: string };
   airlines?: Readonly<Record<string, TicketLayoutAirline>>;
@@ -129,6 +130,7 @@ export function FlightTicketSheet({
       .map((id) => [id, cityName(id)]),
   );
   const brand = {
+    unbranded: data.unbranded === true,
     name: data.branding?.name ?? 'Niyayesh Seir',
     logoDataUrl: data.branding?.logo ?? '/brand/niyayesh-seir-full.png',
     companyCode: data.branding?.companyCode ?? 'NIYAYESH_SEIR_SAHAR',

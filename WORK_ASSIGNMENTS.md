@@ -1,5 +1,7 @@
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — IN_PROGRESS
 
+MISSION-EXPENSE-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve HR expense forms, expense petty-cash integration via Procurement port, mission child operations, and Sales travel document spacing; preserve persisted column positions.
+
 COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
 
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
@@ -11486,6 +11488,8 @@ publication/merge and preserve the peer's test and work records if it lands firs
 
 COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.
 
+CALENDAR-DAY-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve workbench calendar, note editor and request initial date wiring; existing APIs only, no migration/dependency changes.
+
 ## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
@@ -11495,3 +11499,11 @@ RESERVATION-CONTRACT-VALUES-1107 owner refinement: canonical TOUR_GUIDE must app
 RESERVATION-CONTRACT-VALUES-1107 READY_FOR_CI: implementation and focused output regressions complete. No schema, migration, dependencies or operational data changes. Source freezes on push; release scoped reservation after verified develop merge. Final-head hosted full gates required.
 
 RESERVATION-CONTRACT-VALUES-1107 CI alignment: reserve the existing reservation-pdf.spec.ts assertion only; the owner-requested removed OTHER SERVICES column must stay absent while the model retains the passenger insurance allocation. No production-source change.
+
+## RESERVATION-TRANSFER-COMBINED-1107 — PC-A — DONE/MERGED
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from latest `origin/develop`. Owner requests the pre-issuance hotel purchase form to populate transfer passenger quantity from the contract and keep transfer pricing inside the hotel form unless the existing separate-broker checkbox is selected, then push and merge to `develop`. Reserve `reservation-hotel-purchase.tsx` and its focused purchase/transfer regressions plus this task note. Preserve immutable Sales allocations, saved purchase values, exact Decimal arithmetic, supplier defaults, authorization and all unrelated reservation outputs. No schema, migration, dependency, lockfile, operational data or deployment changes.
+
+RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
+
+RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
