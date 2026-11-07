@@ -328,6 +328,7 @@ export class MessagingService {
         row.senderUserId,
         ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
         ...(row.replyTo ? [row.replyTo.senderUserId] : []),
+        ...(row.reactions ?? []).map((reaction) => reaction.userId),
       ]),
     );
     return rows.map((row) => {
@@ -366,7 +367,18 @@ export class MessagingService {
               .filter((reaction) => reaction.emoji === emoji)
               .map(({ userId }) => userId);
             return userIds.length
-              ? [{ emoji, count: userIds.length, userIds }]
+              ? [
+                  {
+                    emoji,
+                    count: userIds.length,
+                    userIds,
+                    users: userIds.map((id) => ({
+                      id,
+                      displayName: (names.get(id) ?? this.fallback(id))
+                        .displayName,
+                    })),
+                  },
+                ]
               : [];
           },
         ),

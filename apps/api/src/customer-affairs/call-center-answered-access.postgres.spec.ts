@@ -390,6 +390,157 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       vi.unstubAllEnvs();
     });
 
+    it('derives request authority from live HR grade and unit, including stale-session revocation', async () => {
+      const rollback = 'rollback-synthetic-hr-manager-test';
+      await expect(
+        db.$transaction(
+          async (tx) => {
+            const firstUnit = 'Synthetic request A ' + randomUUID();
+            const secondUnit = 'Synthetic request B ' + randomUUID();
+            for (const name of [firstUnit, secondUnit])
+              await tx.hrRecord.create({
+                data: {
+                  code: randomUUID(),
+                  branchId,
+                  section: 'organization',
+                  tab: 'units',
+                  status: 'فعال',
+                  values: [name],
+                },
+              });
+            await tx.hrEmployee.update({
+              where: { userId: manager },
+              data: { grade: 'کارشناس', unit: firstUnit },
+            });
+            await tx.hrEmployee.update({
+              where: { userId: expert },
+              data: { unit: firstUnit },
+            });
+            await tx.hrEmployee.update({
+              where: { userId: peer },
+              data: { unit: secondUnit },
+            });
+            const current = {
+              ...actor(manager),
+              permissions: actor(manager).permissions.filter(
+                (p) =>
+                  p !== 'customer_affairs.call_center.workflow.manage.team',
+              ),
+            };
+            const ids = async () =>
+              (await directory.requestAssignees(current, branchId, tx))
+                .map((u) => u.id)
+                .sort();
+            expect(await ids()).toEqual([manager]);
+            await tx.hrEmployee.update({
+              where: { userId: manager },
+              data: { grade: 'مدیر' },
+            });
+            expect(await ids()).toEqual([manager, expert].sort());
+            expect(
+              await directory.resolveRequestAssignee(
+                tx,
+                current,
+                branchId,
+                expert,
+              ),
+            ).toMatchObject({ id: expert });
+            await expect(
+              directory.resolveRequestAssignee(tx, current, branchId, peer),
+            ).rejects.toThrow('خارج از محدوده');
+            expect(
+              await directory.canManageRequest(current, branchId, expert, tx),
+            ).toBe(true);
+            await tx.hrEmployee.update({
+              where: { userId: manager },
+              data: { grade: 'کارشناس' },
+            });
+            expect(
+              (
+                await directory.requestAssignees(actor(manager), branchId, tx)
+              ).map((u) => u.id),
+            ).toEqual([manager]);
+            expect(
+              await directory.canManageRequest(
+                actor(manager),
+                branchId,
+                expert,
+                tx,
+              ),
+            ).toBe(false);
+            await tx.hrEmployee.update({
+              where: { userId: manager },
+              data: { grade: 'مدیر', unit: secondUnit },
+            });
+            expect(await ids()).toEqual([manager, peer].sort());
+            await expect(
+              directory.resolveRequestAssignee(tx, current, branchId, expert),
+            ).rejects.toThrow('خارج از محدوده');
+            await tx.hrEmployee.update({
+              where: { userId: expert },
+              data: { unit: secondUnit },
+            });
+            expect(await ids()).toEqual([manager, peer, expert].sort());
+            await tx.hrEmployee.update({
+              where: { userId: peer },
+              data: { status: 'غیرفعال' },
+            });
+            expect(await ids()).toEqual([manager, expert].sort());
+            const sharedLabel = 'Synthetic shared company unit ' + randomUUID();
+            const companies = [randomUUID(), randomUUID()] as const;
+            for (const company of companies) {
+              await tx.hrRecord.create({
+                data: {
+                  id: company,
+                  code: randomUUID(),
+                  branchId,
+                  section: 'organization',
+                  tab: 'branches',
+                  status: 'فعال',
+                  values: [company],
+                },
+              });
+              await tx.hrRecord.create({
+                data: {
+                  code: randomUUID(),
+                  branchId,
+                  section: 'organization',
+                  tab: 'units',
+                  status: 'فعال',
+                  values: [sharedLabel],
+                  data: { organizationBranchId: company },
+                },
+              });
+            }
+            for (const id of [manager, expert])
+              await tx.hrEmployee.update({
+                where: { userId: id },
+                data: { unit: sharedLabel, organizationBranchId: companies[0] },
+              });
+            await tx.hrEmployee.update({
+              where: { userId: peer },
+              data: {
+                unit: sharedLabel,
+                organizationBranchId: companies[1],
+                status: 'فعال',
+              },
+            });
+            expect(await ids()).toEqual([manager, expert].sort());
+            await expect(
+              directory.resolveRequestAssignee(tx, current, branchId, peer),
+            ).rejects.toThrow('خارج از محدوده');
+            await tx.hrRecord.update({
+              where: { id: companies[0] },
+              data: { status: 'غیرفعال' },
+            });
+            expect(await ids()).toEqual([manager]);
+            throw new Error(rollback);
+          },
+          { timeout: 30000 },
+        ),
+      ).rejects.toThrow(rollback);
+    }, 40000);
+
     it('shows unanswered outbound calls to the validated originating account in ORM and SQL lists', async () => {
       await db.integrationTelephonyMapping.create({
         data: { connectionId, extension: '404', userId: expert },
@@ -1075,6 +1226,26 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
     });
     it('routes retained missed calls, grants only the assigned employee and clears resolved callbacks without fabricating answers', async () => {
+      // Assignment authority comes from current HR grade/unit, not callback or role grants.
+      const callbackUnit = 'Synthetic callback unit ' + randomUUID();
+      await db.hrRecord.create({
+        data: {
+          code: randomUUID(),
+          branchId,
+          section: 'organization',
+          tab: 'units',
+          status: 'فعال',
+          values: [callbackUnit],
+        },
+      });
+      await db.hrEmployee.update({
+        where: { userId: manager },
+        data: { grade: 'مدیر', unit: callbackUnit, updatedAt: past },
+      });
+      await db.hrEmployee.update({
+        where: { userId: expert },
+        data: { unit: callbackUnit, updatedAt: past },
+      });
       vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', manager + ',' + peer);
       const database = { client: db } as never;
       const policy = new CallCenterAccessService(
