@@ -168,16 +168,16 @@ export function HotelStayPurchase({
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
           transferBrokerName: transfer.supplierName,
-          hotelTransferSeparate:
-            Boolean(returnPurchase) ||
-            quote.hotelTransferSeparate === true ||
-            transfer.supplierOrganizationId !==
-              purchase?.supplierOrganizationId,
-          hotelTransferSplit: Boolean(returnPurchase),
+          hotelTransferSeparate: quote.hotelTransferSeparate === true,
+          hotelTransferSplit:
+            quote.hotelTransferSeparate === true &&
+            quote.hotelTransferSplit === true,
           hotelTransferRoundTrip: transfer.hotelTransferRoundTrip ?? false,
         }
       : {}),
-    ...(returnPurchase?.pricingCalculation
+    ...(returnPurchase?.pricingCalculation &&
+    quote.hotelTransferSeparate === true &&
+    quote.hotelTransferSplit === true
       ? {
           hotelTransferSplit: true,
           hotelTransferSeparate: true,

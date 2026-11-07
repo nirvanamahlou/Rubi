@@ -58,6 +58,7 @@ vi.mock('./reservation-currencies', () => ({
 vi.mock('../model/voucher-settings', async (original) => ({
   ...(await original<Record<string, unknown>>()),
   defaultVoucherSettings: () => structuredClone(h.draft),
+  defaultSupplierFormSettings: () => structuredClone(h.draft),
 }));
 const intake = {
   id: 'request',

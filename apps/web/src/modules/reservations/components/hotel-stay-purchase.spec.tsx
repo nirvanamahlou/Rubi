@@ -498,9 +498,9 @@ it('round-trip checkbox uses one population input and disables split pricing', (
         nights: 3,
       }),
     );
-  const checkbox = renderEditor().find(
+  const checkbox = renderEditor().filter(
     (n) => n.type === 'input' && n.props.type === 'checkbox',
-  )!;
+  )[1]!;
   (checkbox.props.onChange as (event: unknown) => void)({
     target: { checked: true },
   });
@@ -632,8 +632,84 @@ it.each([undefined, 'sales/contracts/contract/purchases'])(
     expect(update).toHaveBeenLastCalledWith(
       expect.objectContaining({
         transferBrokerId: 'other',
-        hotelTransferSeparate: true,
       }),
     );
   },
 );
+
+it('combines output when the explicit separate checkbox is cleared and retains the quoted prices', () => {
+  const draft = defaultVoucherSettings(request, {});
+  Object.assign(draft, {
+    brokerId: 'shared',
+    transferBrokerId: 'other',
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: {
+      amount: '20',
+      currencyCode: 'IRR',
+      brokerId: 'other',
+    },
+  });
+  const update = vi.fn();
+  const controls = nodes(
+    HotelRoomQuotationEditor({
+      draft,
+      requestId: request.id,
+      update,
+      currencies: [],
+      busy: false,
+      nights: 6,
+      hotelBroker: { id: 'shared', name: 'SHARED' },
+    }),
+  ).filter((node) => node.props.type === 'checkbox');
+  (controls[0]!.props.onChange as (event: unknown) => void)({
+    target: { checked: false },
+  });
+  expect(update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      hotelTransferSeparate: false,
+      hotelTransferSplit: false,
+    }),
+  );
+  expect(update.mock.calls[0]![0].hotelTransferReturn).toBeUndefined();
+});
+
+it('does not infer separate supplier forms from existing transfer purchases with different suppliers', () => {
+  const input = structuredClone(request);
+  input.snapshot.serviceSelections = [
+    ...input.snapshot.serviceSelections,
+    {
+      clientKey: 'out',
+      kind: 'TRANSFER',
+      titleSnapshot: 'Outbound',
+      metadata: { direction: 'OUTBOUND' },
+    } as never,
+  ];
+  input.servicePurchases = [
+    {
+      serviceClientKey: 'out',
+      supplierOrganizationId: 'other',
+      supplierName: 'OTHER',
+      finance: { status: 'UNPAID' },
+      amount: '20',
+      currencyCode: 'IRR',
+      pricingCalculation: {
+        baseAmount: '10',
+        factor: '2',
+        chargeablePassengerCount: 2,
+      },
+    },
+  ] as never;
+  delete input.workflow.supplierFormSettings!.hotelTransferSeparate;
+  const editor = render(input).find(
+    (node) => node.type === HotelRoomQuotationEditor,
+  )!;
+  expect(
+    (editor.props.draft as ReturnType<typeof defaultVoucherSettings>)
+      .hotelTransferSeparate,
+  ).toBe(false);
+  expect(
+    (editor.props.draft as ReturnType<typeof defaultVoucherSettings>)
+      .hotelTransferSplit,
+  ).toBe(false);
+});
