@@ -210,7 +210,8 @@ describe('explicit additional request assignees', () => {
   }
   it('adds only configured targets while retaining active internal branch guards', async () => {
     const manager = policy();
-    const { directory, user } = setup();
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue([managerId]);
     await directory.requestAssignees(manager, 'branch');
     expect(user.findMany.mock.calls[0]![0].where).toMatchObject({
       id: { in: [managerId, extraId] },
@@ -227,7 +228,8 @@ describe('explicit additional request assignees', () => {
   });
   it('authorizes management only for an eligible configured target', async () => {
     const manager = policy();
-    const { directory, user } = setup();
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue([managerId]);
     user.findFirst
       .mockResolvedValueOnce({ username: 'manager', profile: null })
       .mockResolvedValueOnce({ id: extraId });
@@ -243,7 +245,8 @@ describe('explicit additional request assignees', () => {
   });
   it('denies an inactive, external or foreign-branch configured target', async () => {
     const manager = policy();
-    const { directory, user } = setup();
+    const { directory, user, personnel } = setup();
+    personnel.callCenterRequestTeam.mockResolvedValue([managerId]);
     user.findFirst
       .mockResolvedValueOnce({ username: 'manager', profile: null })
       .mockResolvedValueOnce(null);
@@ -251,6 +254,15 @@ describe('explicit additional request assignees', () => {
       false,
     );
     expect(await directory.canManageRequest(manager, 'other', extraId)).toBe(
+      false,
+    );
+  });
+  it('removes the configured exception immediately after HR manager authority ends', async () => {
+    const manager = policy();
+    const { directory, user } = setup();
+    await directory.requestAssignees(manager, 'branch');
+    expect(user.findMany.mock.calls[0]![0].where.id).toBe(managerId);
+    expect(await directory.canManageRequest(manager, 'branch', extraId)).toBe(
       false,
     );
   });

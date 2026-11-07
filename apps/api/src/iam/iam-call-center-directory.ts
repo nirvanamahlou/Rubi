@@ -175,6 +175,11 @@ export class IamCallCenterDirectory {
       actor.permissions.includes('customer_affairs.call_center.read') &&
       canViewRoute(actor.permissions, '/customer-affairs/call-center') &&
       extraRequestAssignees(actor.userId).includes(responsibleUserId) &&
+      (await this.personnel.callCenterRequestTeam(
+        branchId,
+        actor.userId,
+        tx,
+      )) &&
       (await client.user.findFirst({
         where: {
           id: responsibleUserId,
@@ -264,7 +269,7 @@ export class IamCallCenterDirectory {
     const team = global
       ? null
       : await this.personnel.callCenterRequestTeam(branchId, actor.userId, tx);
-    const extra = extraRequestAssignees(actor.userId);
+    const extra = team ? extraRequestAssignees(actor.userId) : [];
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',
