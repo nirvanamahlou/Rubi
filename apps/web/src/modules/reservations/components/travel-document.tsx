@@ -7,6 +7,7 @@ import {
 import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { hotelFormScope } from '../model/hotel-form-scope';
 import { reservationHotelStays } from '@nora/contracts';
+import { isFloatingSalesContract } from '@nora/contracts';
 import type { ReservationFormIntake } from '../model/reservation-form';
 import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import {
@@ -80,6 +81,7 @@ export function TravelDocument({
   previewSettings: sourcePreviewSettings,
   dirty = false,
   downloadLabel,
+  salesContractId,
 }: {
   intake: ReservationFormIntake;
   formScope?: SupplierDocumentKind;
@@ -88,6 +90,7 @@ export function TravelDocument({
   previewSettings?: VoucherSettingsV1 | undefined;
   dirty?: boolean;
   downloadLabel?: string;
+  salesContractId?: string;
 }) {
   const intake = voucher
     ? sourceIntake
@@ -107,6 +110,7 @@ export function TravelDocument({
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
   const supplierReady =
     historical ||
+    (voucher && isFloatingSalesContract(intake.snapshot.serviceSelections)) ||
     (voucher
       ? !!state.voucherSettings?.brokerId && !!state.voucherSettings?.leaderId
       : !!(previewSettings ?? state.supplierFormSettings)?.brokerId &&
@@ -136,6 +140,7 @@ export function TravelDocument({
           '/pdf?' +
           new URLSearchParams({
             ...(voucher ? { kind: 'voucher' } : {}),
+            ...(voucher && salesContractId ? { salesContractId } : {}),
             ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}),
             ...(!voucher && intake.hotelStayKey
               ? { hotelStayKey: intake.hotelStayKey }
@@ -160,7 +165,7 @@ export function TravelDocument({
     try {
       const send = () =>
         fetch(
-          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(voucher && salesContractId ? { salesContractId } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
           {
             credentials: 'include',
             cache: 'no-store',
