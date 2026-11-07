@@ -753,6 +753,9 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain(
       'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground',
     );
+    expect(source).toContain(
+      'data-[highlighted]:!text-white [&[data-highlighted]>span]:!text-white',
+    );
     expect(source).toContain('xl:grid-cols-3 2xl:grid-cols-6');
     expect(source).toContain('dashboardVisualIsWide(');
     expect(source).toContain("kind === 'line'");
