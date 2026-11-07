@@ -795,7 +795,7 @@ export function SalesDashboardMetrics({
             <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
           </div>
           <p
-            className={`mt-3 font-black tabular-nums ${index === 3 ? 'whitespace-nowrap text-[clamp(0.875rem,6cqi,1.25rem)] leading-8 tracking-tight' : 'break-words text-3xl'}`}
+            className={`mt-3 ${index === 3 ? 'whitespace-nowrap text-[clamp(0.875rem,6cqi,1.25rem)] leading-8 tracking-tight' : 'break-words text-3xl'} font-black tabular-nums`}
           >
             {value}
           </p>
