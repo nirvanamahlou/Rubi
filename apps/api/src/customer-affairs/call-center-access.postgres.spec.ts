@@ -102,7 +102,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           branchId,
           section: 'organization',
           tab: 'units',
-          values: ['Synthetic team'],
+          values: [id === unitId ? 'Synthetic team' : 'Synthetic other team'],
           status: 'فعال',
         })),
       });
@@ -120,6 +120,20 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
                 organizationUnitId: id === outsiderId ? otherUnit : unitId,
               },
             },
+          },
+        });
+        await db.hrEmployee.create({
+          data: {
+            branchId,
+            userId: id,
+            personnelCode: randomUUID(),
+            name: 'Synthetic employee',
+            kind: 'staff',
+            unit: id === outsiderId ? 'Synthetic other team' : 'Synthetic team',
+            position: 'Synthetic position',
+            grade: [managerId, outsiderId].includes(id) ? 'مدیر' : 'کارشناس',
+            status: 'فعال',
+            startedAt: new Date(),
           },
         });
         const codes =
@@ -308,9 +322,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           (u) => u.id === peerId,
         ),
       ).toBe(true);
-      await db.iamUserProfile.update({
+      await db.hrEmployee.update({
         where: { userId: peerId },
-        data: { organizationUnitId: otherUnit },
+        data: { unit: 'Synthetic other team' },
       });
       try {
         expect(
@@ -324,9 +338,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           ),
         ).rejects.toThrow('خارج از محدوده');
       } finally {
-        await db.iamUserProfile.update({
+        await db.hrEmployee.update({
           where: { userId: peerId },
-          data: { organizationUnitId: unitId },
+          data: { unit: 'Synthetic team' },
         });
       }
     });
