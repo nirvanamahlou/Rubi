@@ -1,3 +1,7 @@
+## HR-ATTENDANCE-CURRENT-1107 — PC-A — ACTIVE
+
+Reserve HR attendance current-employee filtering, Radan Saturday synchronization diagnosis and bounded operational recovery. Preserve historical data, personnel mappings, branch authorization and existing shifts. No schema/dependency changes.
+
 ## CHAT-MESSAGE-SEARCH-1107 — PC-B — READY_FOR_CI
 
 User authorizes in-conversation message search beside resize controls, push and develop merge. Reserve Messaging list search query/repository filtering, client and composer search results/pagination, tests and translations. Server-side history search stays within authorized conversation; search does not mark unrelated messages read. No schema/dependency/deployment. Validation: 97 Web/translation tests, 30 API tests and all 8 real PostgreSQL messaging tests passed; scoped lint passed. The first simultaneous local database run timed out in the existing attachment upload; an isolated rerun passed all cases. Coverage includes history beyond the current feed, non-overlapping cursor pages, authorization and unread preservation. Final-head hosted gates precede merge.

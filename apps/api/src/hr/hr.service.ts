@@ -824,6 +824,12 @@ export class HrService {
       filters.section = validate.text(input.section, 'بخش', 40);
     if (input.tab) filters.tab = validate.text(input.tab, 'نوع', 40);
     if (input.employeeId) filters.employeeId = validate.uuid(input.employeeId);
+    if (
+      input.section === 'time' &&
+      input.tab === 'attendance' &&
+      !input.employeeId
+    )
+      filters.employee = { status: 'فعال', deletedAt: null };
     if (input.parentId) filters.parentId = validate.uuid(input.parentId);
     if (input.status) filters.status = validate.text(input.status, 'وضعیت', 80);
     if (input.from || input.to) {

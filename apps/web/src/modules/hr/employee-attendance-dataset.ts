@@ -97,8 +97,17 @@ function attendanceClock(value: string | null) {
 }
 export function recentAttendanceDataset(
   records: readonly HrRecordDto[],
-  employees: readonly { id: string; personnelCode: string; name: string }[],
+  employees: readonly {
+    id: string;
+    personnelCode: string;
+    name: string;
+    status?: string;
+  }[],
 ) {
+  const inactive = new Set(
+    employees.filter((e) => e.status && e.status !== 'فعال').map((e) => e.id),
+  );
+  records = records.filter((r) => !r.employeeId || !inactive.has(r.employeeId));
   const data = employeeAttendanceDataset(records, true);
   const rows = records.filter(
     (r) => r.section === 'time' && r.tab === 'attendance' && !r.deletedAt,

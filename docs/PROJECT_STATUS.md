@@ -1,3 +1,7 @@
+## HR attendance freshness and current employees — 2026-11-07
+
+Production read-only diagnosis: both workstation tunnels respond; primary Radan has nine raw 2026-11-06 punches mapped once to 2026-11-07, and Nora contains eighteen daily rows for Saturday with last processing at 12:30 UTC. Secondary Radan returns no Saturday punches (latest raw 2026-11-05). Add one startup catch-up before resuming unchanged clock slots, current-employee scope for shared attendance list/count, current-only selector/projection, and visible-page refresh each minute. Preserve explicit personnel-profile historical queries and stored records. Focused connector/query tests:21 pass; projection tests:6 pass; scoped lint passes. No schema or dependency change.
+
 ## HR leave and mission fixes — 2026-11-07
 
 Both monthly leave notice controls now accept integer days (0–365), with legacy hourly cutoff compatibility. HR mission fund previews use a narrow HR-manage port retaining custodian/manager and branch enforcement, without requiring purchase-list access. Workbench leave resolves the explicitly linked active sender employee independently of request destination, and approval/reconciliation use that personnel branch; missing links are never guessed. Focused unit/form tests and two isolated PostgreSQL workflows pass, including canonical cross-branch persistence and fund preview. Production account mapping remains pending for unlinked accounts.

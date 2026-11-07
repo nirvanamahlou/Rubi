@@ -166,3 +166,26 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ['002', 'second', '34'],
   ]);
 });
+
+it('hides former employees from the current list without removing profile history', () => {
+  const active = record(
+    'attendance',
+    ['Current', '2026-11-07', '', '', '0', '0'],
+    'current',
+  );
+  const former = record(
+    'attendance',
+    ['Former', '2026-11-07', '', '', '0', '0'],
+    'former',
+  );
+  const data = recentAttendanceDataset(
+    [active, former],
+    [
+      { id: 'current', personnelCode: '1', name: 'Current', status: 'فعال' },
+      { id: 'former', personnelCode: '2', name: 'Former', status: 'غیرفعال' },
+    ],
+  );
+  expect(data.recordIds).toEqual([active.id]);
+  expect(data.rows).toHaveLength(1);
+  expect(employeeAttendanceDataset([former]).recordIds).toEqual([former.id]);
+});
