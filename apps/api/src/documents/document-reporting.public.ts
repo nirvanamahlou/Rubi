@@ -17,7 +17,7 @@ export async function readDocumentComplianceReporting(
   actor: ReportSourceActor,
   query: ReportSourceQuery,
 ): Promise<ReportSource> {
-  requireSourcePermission(actor, ['documents.read']);
+  requireSourcePermission(actor, ['documents.list']);
   const { scalar, range } = sourceFilters(query, [
     'fromUtc',
     'toUtc',
