@@ -9229,3 +9229,8 @@ RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pas
 RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
 
 RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.
+## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — READY_FOR_REVIEW
+
+عنوان «فیچرهای استفاده‌شده در فرمول» در پنل تعریف KPI با وزن قلم ملایم‌تر و هماهنگ با متن این بخش نمایش داده می‌شود؛ سایر عنوان‌ها و رفتار محاسبه ثابت می‌مانند.
+
+اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint محدود، build قراردادها، typecheck کامل وب، build تولیدی وب (۶۷ مسیر) و بررسی diff موفق شدند. بررسی Prettier برای دو فایل بزرگ TypeScript هشدار قالب‌بندی داد؛ برای تغییر یک کلاس، بازنویسی گسترده اعمال نشد.
