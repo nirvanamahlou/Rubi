@@ -11431,12 +11431,6 @@ PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User id
 ## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
 
 PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
-<<<<<<< HEAD
-
-## DASHBOARD-RANGE-HOVER-CONTRAST-1107 — PC-C — READY_FOR_REVIEW
-
-COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.
-=======
 
 ## CALL-REQUEST-TOAST-1107 — PC-C — IN_PROGRESS
 
@@ -11484,4 +11478,6 @@ more-specific Call Center label/route and real-client integration coverage.
 Both branch orders must retain the compatible exclusion; refresh develop before
 publication/merge and preserve the peer's test and work records if it lands first.
 
-> > > > > > > eb3f3d72201b5543ef60364c48eb45740a79f082
+## DASHBOARD-RANGE-HOVER-CONTRAST-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `origin/develop`. Owner requests the Dashboard date-range dropdown options to render white text while hovered/highlighted. Reserve only the date-range SelectItem in `dashboard-workspace.tsx`, its existing scoped source regression in `dashboard.spec.ts`, and these bounded task/status notes. Preserve selected/default state, other dropdowns, range behavior and theme/background. No API, schema, permissions, dependencies, deployment or unrelated UI changes.

@@ -9148,11 +9148,6 @@ PC-C; base developdeabda226; branch codex/pc-c-call-owner-unit-fix-1107. User id
 ## CALL-UNIT-MANAGER-AUDIT-1107 — PC-C — APPLIED_SOURCE_FOLLOWUP
 
 PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner extends the production responsible-expert repair to every unit manager. Reserve own operational audit/repair scripts and release documentation only; preserve application authorization, UI, account branches, ordinary staff and existing grants. Read-only reconciliation identifies reservation manager with missing team grant and HR manager with missing team grant/native unit FK. Use native HR managerial grade/reporting relations and explicit owner clarification, never infer authority from a username or job label. Existing merged public IAM repair remains reusable; unit correction must use revision-bound audited IamService.updateUserDetails. No migrations/dependencies/application deployment.
-<<<<<<< HEAD
-## 2026-11-07 — DASHBOARD-RANGE-HOVER-CONTRAST-1107 — READY_FOR_REVIEW
-
-Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
-=======
 
 ## CALL-REQUEST-TOAST-1107
 Existing recipient-scoped call-center.assigned events now use the same bottom-right popup as internal messages. Exact queue link and same-page open-queue event retained; read/seen/historical/inaccessible items excluded.8 focused tests pass against current Contracts sources. No API/schema/migration changes; production publication pending.
@@ -9189,4 +9184,7 @@ authorized develop merge. No migration, dependency, production write or deploy.
 Historical generic local items are retained because their source cannot be
 identified safely. Peer PR1461's published/frozen exact lease exclusion is reused
 without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
->>>>>>> eb3f3d72201b5543ef60364c48eb45740a79f082
+
+## 2026-11-07 — DASHBOARD-RANGE-HOVER-CONTRAST-1107 — READY_FOR_REVIEW
+
+Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
