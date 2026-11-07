@@ -386,6 +386,7 @@ export function InsurancePolicies({
                       >
                         {insuranceStatusLabels[row.status]}
                       </span>
+                      {row.lastError && <small>{row.lastError}</small>}
                     </td>
                     <td>
                       {countryNames[row.destinationCode] ?? row.destinationCode}
@@ -414,6 +415,7 @@ export function InsurancePolicies({
                         <Button
                           variant="outline"
                           disabled={
+                            row.automatic ||
                             !result.canManage ||
                             ![
                               'DRAFT',
