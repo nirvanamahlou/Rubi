@@ -9190,3 +9190,30 @@ without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
 Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
 
 CALENDAR-DAY-ACTIONS-1107: day context actions open existing note/event/request forms with selected date; note reminder date/time optional and persisted through existing personal Notes API. Calendar includes dated notes and linked request entries. No schema migration. Focused calendar/note/submission tests:11 passed; scoped lint passed. Final Web typecheck and scoped ESLint passed. Hosted checks required before merge.
+## 2026-11-07 — RESERVATION-CONTRACT-VALUES-1107 — READY_FOR_CI
+
+PC-A; branch codex/pc-a-reservation-contract-values-1107, base cbc8d334b.
+Reservation supplier defaults retain the contract flight's Tehran calendar date
+without parsing a human-readable date through local midnight. Initial transfer
+counts follow allocated non-infant passengers and declared contract leg counts;
+missing historical service fields inherit canonical marks while explicit saved
+false/zero choices remain intact. Canonical TOUR_GUIDE appears as TOUR LEADER in
+the supplier service summary, including older form revisions. OTHER SERVICES is
+removed from passenger headers/cells in both preview and PDF.
+
+Supplier tables retain entered P.P/base amounts and dimensionless factors and
+show exact hotel/transfer totals, grouped by currency. Only supplier-form inputs
+are used: no actual contract sale or historical purchase amount is substituted.
+Incomplete same-currency rows cannot produce a misleading partial grand total.
+The preview and PDF share the same price projection. Separate hotel/transfer
+scope and sent revisions remain independent. No migration, dependency, business
+record update or deployment. Focused API settings/save/send checks:22 passed;
+new output/date/base-factor/transfer regressions and full reservation Web checks,
+scoped lint, full Web typecheck/build are part of the final release gate.
+User explicitly authorizes push and develop merge after green final-head CI.
+
+RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pass (one existing skipped);22 API settings/save/send checks pass. Three timezone midnight-date proofs and both HTML/PDF base/factor/total/guide/column regressions pass. Source-only change; contract sale amounts and historical purchase totals remain untouched. Final hosted gates remain mandatory.
+
+RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
+
+RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.

@@ -58,6 +58,15 @@ export function isAggregateReservationForm(intake: ReservationFormIntake) {
   );
 }
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
+export function reservationHasTourLeader(intake: ReservationFormIntake) {
+  return intake.snapshot.serviceSelections.some(
+    (service) =>
+      service.metadata?.additionalServiceRole === 'TOUR_GUIDE' ||
+      service.clientKey === 'tour-guide' ||
+      (typeof service.metadata?.tourLeader === 'string' &&
+        !!service.metadata.tourLeader.trim()),
+  );
+}
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : '-';
 
@@ -291,7 +300,12 @@ export function reservationFormData(
         ...new Set(
           services
             .filter((s) => s.metadata?.insuranceAgeSurcharge !== true)
-            .map((s) => labels[s.kind] ?? s.kind),
+            .map((s) =>
+              s.metadata?.additionalServiceRole === 'TOUR_GUIDE' ||
+              s.clientKey === 'tour-guide'
+                ? 'TOUR LEADER'
+                : (labels[s.kind] ?? s.kind),
+            ),
         ),
       ].join(' / ') || '-',
     destination: name(city),
