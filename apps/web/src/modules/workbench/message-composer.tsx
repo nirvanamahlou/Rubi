@@ -311,7 +311,7 @@ export function MessageComposer({
       void messagingApi
         .messages(activeId, {
           search: messageSearch.trim(),
-          cursor: searchCursor,
+          ...(searchCursor ? { cursor: searchCursor } : {}),
         })
         .then((response) => {
           if (cancelled) return;
