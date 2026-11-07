@@ -377,13 +377,42 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         lateMinutes: 0,
         earlyMinutes: 0,
       });
+      const edited = await service.updateRecord(
+        record.id,
+        {
+          version: record.version,
+          values: input.values,
+          data: {
+            ...input.data,
+            missionExpense: { ...input.data.missionExpense, amount: '300' },
+          },
+        },
+        manager,
+      );
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
       await expect(
         service.updateRecord(
           record.id,
           { version: record.version, values: input.values },
           manager,
         ),
-      ).rejects.toThrow('تنخواه');
+      ).rejects.toThrow();
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
+      expect(edited.data.pettyRegistrationId).not.toBe(
+        record.data.pettyRegistrationId,
+      );
       const count = await client.hrRecord.count({
         where: { employeeId: employee.id, tab: 'mission' },
       });
@@ -452,6 +481,72 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           manager,
         ),
       ).rejects.toThrow('نسخه');
+      const claim = await service.createRecord(
+        {
+          section: 'expenses',
+          tab: 'claims',
+          branchId,
+          employeeId: employee.id,
+          parentId: record.id,
+          values: [
+            employee.name,
+            'عادی',
+            date,
+            'IRR',
+            '50',
+            'Synthetic proof',
+            'ثبت اولیه',
+          ],
+          status: 'تأییدشده',
+          data: {
+            currency: 'IRR',
+            startsAt: `${date}T08:30:00.000Z`,
+            missionExpense: {
+              amount: '50',
+              title: 'Synthetic claim',
+              costCenter: 'Synthetic',
+              fee: '0',
+              description: 'Synthetic',
+              referToPetty: true,
+            },
+          },
+        },
+        key(),
+        manager,
+      );
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('650');
+      await expect(
+        service.deleteRecord(record.id, edited.version, manager),
+      ).rejects.toThrow();
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('650');
+      await service.deleteRecord(claim.id, claim.version, manager);
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
+      await service.deleteRecord(record.id, edited.version, manager);
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('1000');
     });
     it('enforces monthly leave deadlines, substitute consent and hourly attendance in one persisted workflow', async () => {
       const branchId = randomUUID();

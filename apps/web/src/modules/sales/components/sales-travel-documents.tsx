@@ -43,6 +43,7 @@ export function SalesTravelDocuments({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [ticket, setTicket] = useState(false);
+  const [unbranded, setUnbranded] = useState(false);
   const [open, setOpen] = useState(false);
   async function load(showTicket = false) {
     setBusy(true);
@@ -85,12 +86,13 @@ export function SalesTravelDocuments({
           if (!value) {
             setIntake(undefined);
             setTicket(false);
+            setUnbranded(false);
           }
         }}
       >
         <DialogContent
           dir="rtl"
-          className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl"
+          className="max-h-[85dvh] space-y-5 overflow-y-auto p-5 sm:max-w-3xl sm:p-6"
         >
           <DialogTitle>مدارک مجاز برای تحویل به مسافر</DialogTitle>
           <DialogDescription>
@@ -113,7 +115,16 @@ export function SalesTravelDocuments({
                 </p>
                 <SalesContractTermsDownload />
               </section>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={unbranded}
+                  onChange={(event) => setUnbranded(event.target.checked)}
+                />
+                بدون لوگو، نام شرکت، فوتر و بارکد
+              </label>
               <Button
+                className="min-h-11 w-full sm:w-auto"
                 disabled={busy || !intake.workflow.branding}
                 onClick={() => void load(true)}
               >
@@ -126,6 +137,7 @@ export function SalesTravelDocuments({
                 <TravelDocument
                   intake={intake}
                   voucher
+                  unbranded={unbranded}
                   salesContractId={contractId}
                 />
               ) : (
@@ -140,6 +152,7 @@ export function SalesTravelDocuments({
       {ticket && intake && (
         <ReservationTickets
           request={intake}
+          unbranded={unbranded}
           branding={intake.workflow.branding}
           salesContractId={contractId}
           onClose={() => setTicket(false)}
