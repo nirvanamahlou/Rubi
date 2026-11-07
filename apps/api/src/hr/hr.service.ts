@@ -3399,7 +3399,8 @@ export class HrService {
         schema.approval &&
         validate.FINAL.has(row.status) &&
         !cancel &&
-        !['expenses.mission', 'expenses.claims'].includes(schema.key)
+        (!['expenses.mission', 'expenses.claims'].includes(schema.key) ||
+          (input.parentId !== undefined && input.parentId !== row.parentId))
       )
         throw new ConflictException(
           'رکورد نهایی تغییرپذیر نیست؛ اصلاحیه مرتبط ثبت کنید.',

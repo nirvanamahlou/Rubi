@@ -242,6 +242,10 @@ export function HrMissionForm({
                   مأموریت مرجع
                   <NativeSearchSelect
                     value={parentId}
+                    disabled={
+                      record?.status === 'تأییدشده' ||
+                      record?.status === 'تاییدشده'
+                    }
                     onChange={(e) => setParentId(e.target.value)}
                   >
                     <option value="">بدون مأموریت (هزینه مستقل)</option>
