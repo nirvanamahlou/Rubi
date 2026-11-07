@@ -279,6 +279,16 @@ describe.skipIf(!enabled)(
             emoji: '👍',
             count: 2,
             userIds: expect.arrayContaining([senderId, recipientId]),
+            users: expect.arrayContaining([
+              expect.objectContaining({
+                id: senderId,
+                displayName: expect.any(String),
+              }),
+              expect.objectContaining({
+                id: recipientId,
+                displayName: expect.any(String),
+              }),
+            ]),
           },
         ]);
         const changed = await reaction(senderId, '❤️').expect(200);
@@ -292,7 +302,17 @@ describe.skipIf(!enabled)(
         ]);
         const removed = await reaction(senderId, null).expect(200);
         expect(removed.body.data.reactions).toEqual([
-          { emoji: '👍', count: 1, userIds: [recipientId] },
+          expect.objectContaining({
+            emoji: '👍',
+            count: 1,
+            userIds: [recipientId],
+            users: [
+              expect.objectContaining({
+                id: recipientId,
+                displayName: expect.any(String),
+              }),
+            ],
+          }),
         ]);
         await reaction(senderId, null).expect(200);
         await reaction(outsiderId, '👍').expect(403);
