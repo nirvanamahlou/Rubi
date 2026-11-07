@@ -119,7 +119,46 @@ describe('global change notifications', () => {
         apiBaseUrl,
         options,
       ),
-    ).toMatchObject({ href: '/customer-affairs', readAt: null });
+    ).toMatchObject({
+      href: '/customer-affairs/call-center',
+      title: expect.stringContaining('کال سنتر'),
+      readAt: null,
+    });
+  });
+
+  it.each(['leads', 'tickets'])(
+    'keeps non-Call-Center Customer Affairs %s notifications in their own workspace',
+    (path) => {
+      expect(
+        buildChangeNotification(
+          {
+            method: 'POST',
+            requestUrl: `${apiBaseUrl}/customer-affairs/${path}`,
+            responseOk: true,
+          },
+          apiBaseUrl,
+          options,
+        ),
+      ).toMatchObject({
+        href: '/customer-affairs',
+        title: 'ثبت اطلاعات جدید در امور مشتریان',
+        readAt: null,
+      });
+    },
+  );
+
+  it('does not suppress real mutations with a similar technical path name', () => {
+    expect(
+      buildChangeNotification(
+        {
+          method: 'POST',
+          requestUrl: `${apiBaseUrl}/customer-affairs/call-center/telephony/lease-settings`,
+          responseOk: true,
+        },
+        apiBaseUrl,
+        options,
+      ),
+    ).toMatchObject({ href: '/customer-affairs/call-center', readAt: null });
   });
 
   it.each([

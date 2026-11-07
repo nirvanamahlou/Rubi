@@ -9127,3 +9127,19 @@ CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, me
 PC-C; base origin/develop817b9c706; branch codex/pc-c-call-hr-manager-authority-1107. Owner explicitly replaces manual per-manager request-assignment capability with live active HR grade manager/current organization. Reserve HrUserUnitDirectory public projection and tests, IamCallCenterDirectory assignee/management policy and tests, native PostgreSQL policy fixtures if needed, own docs/DECISIONS entry and bounded API release. Preserve UI, base Call Center access, branch/company/unit isolation, ordinary self scope and pinned executive exception. Previous same-owner Call Center scopes frozen/merged; HR form/service mutations, schema, dependencies and general role contracts excluded. No active overlapping writer found for these leaf files. No direct cross-module table access: HR owns managerial grade/membership projection, IAM intersects active linked accounts/branch authority.
 
 `n2026-11-07 PC-C: Document compliance producer used nonexistent documents.read; corrected to native documents.list. Runtime regression passed with mocked DB; no production activation yet. Local suite blocked by missing @nestjs/common in shared dependencies.
+
+## BACKGROUND-NOTIFICATIONS-1107 — PC-D — READY_FOR_CI
+
+The global bell no longer announces successful telephony lease renew/release
+requests as Customer Affairs record creation. All six existing POST query reads
+remain silent. Real Call Center mutations now identify and link the Call Center
+workspace; regular leads/tickets and persistent recipient feeds retain their
+existing behavior. Real-client regressions first reproduced 31 false events per
+simulated minute in each language, then passed after the repair. All106 focused
+Web checks pass, including privacy, read/clear, failed/aborted requests and
+distinct real saves at identical timestamps. Exact-head hosted quality, full
+tests, production build and PostgreSQL gates are mandatory before the owner's
+authorized develop merge. No migration, dependency, production write or deploy.
+Historical generic local items are retained because their source cannot be
+identified safely. Peer PR1461's published/frozen exact lease exclusion is reused
+without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
