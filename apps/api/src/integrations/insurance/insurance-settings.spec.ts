@@ -160,7 +160,7 @@ it('imports plan 76 while preserving unrelated saved countries and plans', async
   const save = vi
     .spyOn(service, 'save')
     .mockImplementation(async (_branch, input) => ({
-      config: insuranceConfiguration(input.config),
+      config: insuranceConfiguration((input as { config: unknown }).config),
       version: 3,
       canManage: true,
       providerStatus: 'SANDBOX_CONFIGURED',
