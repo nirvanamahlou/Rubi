@@ -762,7 +762,7 @@ describe('dashboard permission and data states', () => {
     expect(source).toContain("kind === 'queue'");
     expect(source).not.toContain('grid-flow-row-dense');
     expect(source).toContain('فیچرهای استفاده‌شده در فرمول');
-    expect(source).toContain('calculationFeatureFor(source)');
+    expect(source).toContain('map(calculationFeatureFor)');
     expect(source).toContain('aria-haspopup="dialog"');
     expect(source).not.toContain('جزئیات تعریف شاخص');
     expect(source).toContain('<Drawer');
@@ -813,7 +813,7 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('[&_svg]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('فیچرهای استفاده‌شده در فرمول');
     expect(kpiDefinitionPanelSource).toContain('definition.source.map');
-    expect(kpiDefinitionPanelSource).toContain('calculationFeatureFor(source)');
+    expect(kpiDefinitionPanelSource).toContain('map(calculationFeatureFor)');
     expect(source).toContain('recognized sale revenue');
     expect(source).toContain('matched purchase cost');
     expect(source).toContain('فرمول و قاعده محاسبه');

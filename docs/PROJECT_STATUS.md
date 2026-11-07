@@ -1,3 +1,7 @@
+## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
+
+Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).
+
 ## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
 All 84 KPI rules are Persian-only; 41 mixed-language rules translated. Added 32 short contextual calculation explanations below KPI/chart rules and localized the chart projection wording. Existing calculation logic and shared translations preserved. Dashboard/i18n: 54 passed, one existing skip; scoped lint and TypeScript passed. Continues draft PR1436; no production deployment.

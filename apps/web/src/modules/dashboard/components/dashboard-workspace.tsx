@@ -5,6 +5,7 @@ import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 import { currencyMetricParts } from '../model/currency-metric';
 import { calculationTermsFor } from '../model/calculation-terms';
+import { nativeCalculationFeatures } from '../model/calculation-lineage';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1496,11 +1497,18 @@ function KpiDefinitionPanel({
               >
                 فیچرهای استفاده‌شده در فرمول
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(definition.id)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمایش عدد به دسترسی و داده معتبر وابسته است.'
+                  : 'منابع موردنیاز این شاخص؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {definition.source.map((source) => {
-                  const feature = calculationFeatureFor(source);
+                {(
+                  nativeCalculationFeatures(definition.id) ??
+                  definition.source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={source}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -1508,7 +1516,7 @@ function KpiDefinitionPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
@@ -2858,11 +2866,18 @@ function VisualDetailsPanel({
               >
                 فیچرهای استفاده‌شده در نمودار
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(visualId)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمودار ممکن است فقط سری‌های دارای داده معتبر را نمایش دهد.'
+                  : 'منابع موردنیاز این نمودار؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {source.map((sourceId) => {
-                  const feature = calculationFeatureFor(sourceId);
+                {(
+                  nativeCalculationFeatures(visualId) ??
+                  source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={sourceId}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -2870,7 +2885,7 @@ function VisualDetailsPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
