@@ -1,3 +1,7 @@
+## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C. Extend own draft PR1436 with owner-requested Persian-only KPI calculation text and short contextual term explanations below KPI/chart rules. Reserve Dashboard registry rule strings, employee rule strings if needed, shared definition renderer, new local calculation glossary and additive English translation keys; preserve prior definitions and all calculations. Latest develop inspected; no competing change to these leaves. No API, schema, dependency or deployment. Same scoped validation as KPI copy.
+
 ## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-kpi-copy-1107 from develop4f36df206. User requests individual plain-language business definitions for every Dashboard KPI, using travel-service terminology. Reserve Dashboard registry.ts, employee-commercial-performance.ts, the definition paragraph in dashboard-workspace.tsx, existing dashboard.spec.ts expectations, own task/status notes and additive new KPI translation keys in Web en-overrides.json only. Earlier Dashboard source scopes are merged (PR1335/1348/1377/1419); preserve their behavior and peer translation additions. No calculations, producers, contracts, permissions, schema, dependencies or live data changes. Validate existing Dashboard/i18n suites, lint, typecheck and Web build; deliver draft develop PR.

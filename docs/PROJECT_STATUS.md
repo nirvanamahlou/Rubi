@@ -1,3 +1,7 @@
+## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
+
+All 84 KPI rules are Persian-only; 41 mixed-language rules translated. Added 32 short contextual calculation explanations below KPI/chart rules and localized the chart projection wording. Existing calculation logic and shared translations preserved. Dashboard/i18n: 54 passed, one existing skip; scoped lint and TypeScript passed. Continues draft PR1436; no production deployment.
+
 ## DASHBOARD-KPI-COPY-1107 — PC-C — READY_FOR_REVIEW
 
 Replaced the generic business-definition paragraph with individual travel-service explanations for all 84 Dashboard KPIs, including employee commercial metrics, with matching English translations. Formulas, source availability, filters and permissions are preserved. Independent semantic review, 54 Dashboard/i18n tests (one existing skipped), scoped lint, Web TypeScript, formatting and production Web build passed. No data or schema changes, merge or production deployment. Draft develop PR delivery. See [scope and delivery](tasks/DASHBOARDS-KPI-COPY-1107.md).

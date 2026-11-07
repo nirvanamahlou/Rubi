@@ -4,6 +4,7 @@ import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-loc
 import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 import { currencyMetricParts } from '../model/currency-metric';
+import { calculationTermsFor } from '../model/calculation-terms';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1365,6 +1366,21 @@ function KpiCard({
   );
 }
 
+function CalculationHelp({ rule }: { rule: string }) {
+  const terms = calculationTermsFor(rule);
+  if (!terms.length) return null;
+  return (
+    <dl className="mt-3 space-y-2 border-t border-border pt-3 text-xs leading-6 text-muted-foreground">
+      {terms.map(([term, explanation]) => (
+        <div key={term}>
+          <dt className="inline font-semibold text-foreground">{term}: </dt>
+          <dd className="inline">{explanation}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function KpiDefinitionPanel({
   definition,
   metric,
@@ -1470,6 +1486,7 @@ function KpiDefinitionPanel({
                 فرمول و قاعده محاسبه
               </h3>
               <p className="mt-2 leading-7">{definition.rule}</p>
+              <CalculationHelp rule={definition.rule} />
             </section>
 
             <section aria-labelledby="kpi-calculation-features-title">
@@ -2825,12 +2842,13 @@ function VisualDetailsPanel({
                 قاعدهٔ نمایش
               </h3>
               <p className="mt-2 leading-7">
-                خروجی از Projection تأییدشده و با فیلترهای فعال نمایش داده
+                خروجی از داده آماده‌شده گزارش و با فیلترهای فعال نمایش داده
                 می‌شود. نوع نمایش: {visualLabels[kind]}.
                 {temporalGrain
                   ? ` تفکیک زمانی: ${trendTemporalLabels[temporalGrain]} (${trendCalendarSystem === 'persian' ? 'تقویم شمسی' : 'تقویم میلادی'}).`
                   : ''}
               </p>
+              <CalculationHelp rule="داده آماده‌شده گزارش" />
             </section>
 
             <section aria-labelledby={`visual-sources-${visualId}`}>

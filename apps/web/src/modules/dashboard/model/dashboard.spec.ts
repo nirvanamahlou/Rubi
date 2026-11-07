@@ -41,6 +41,7 @@ describe('dashboard registry', () => {
       expect(kpi.grain).not.toBe('');
       expect(kpi.businessDefinition.trim()).not.toBe('');
       expect(kpi.rule).not.toBe('');
+      expect(kpi.rule).not.toMatch(/[A-Za-z]/);
       expect(kpi.exclusions).not.toBe('');
       expect(kpi.source.length).toBeGreaterThan(0);
       expect(kpi.permission).toMatch(/^reports\.dashboard\./);
@@ -242,7 +243,7 @@ describe('dashboard registry', () => {
     ).toHaveLength(1);
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'net-profit')?.rule,
-    ).toContain('حساب‌های درآمد Posted');
+    ).toContain('حساب‌های درآمد قطعی‌شده');
   });
 
   it('covers sales and travel-service analysis without duplicating time-grain charts', () => {
@@ -336,7 +337,7 @@ describe('dashboard registry', () => {
     ).toContain('در صورت صفر بودن مخرج نتیجه ناموجود است');
     expect(
       dashboardKpis.find((kpi) => kpi.id === 'discount-amount')?.rule,
-    ).toContain('DISCOUNT');
+    ).toContain('تخفیف');
   });
 
   it('uses donut only for explicit low-cardinality share visuals', () => {

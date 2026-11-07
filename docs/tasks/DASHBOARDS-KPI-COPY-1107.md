@@ -1,5 +1,13 @@
 # Dashboard KPI business definitions — 2026-11-07
 
+Follow-up: all 84 KPI calculation rules use Persian words. Forty-one mixed-language
+rules were translated without changing calculation logic. KPI drawers and chart
+display rules share a contextual glossary of 32 short Persian explanations below
+the rule text. The chart display rule also replaces the English projection term.
+Existing shared translations are preserved; new phrases have English equivalents.
+The existing registry check now rejects Latin letters in every KPI rule. Existing
+Dashboard/i18n tests: 54 passed, one prior skip; scoped lint and TypeScript passed.
+
 Owner: PC-C. Branch: `codex/pc-c-dashboard-kpi-copy-1107`.
 Base: `4f36df206e7f359ee7d869e32635b2a8c4a1437b` (`origin/develop`).
 
