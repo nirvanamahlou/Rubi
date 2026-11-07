@@ -155,6 +155,31 @@ export function MessageComposer({
       </Button>
     );
   }
+  async function manageMember(memberId: string, action: 'REMOVE' | 'PROMOTE') {
+    if (!active || !canEditGroup || busy) return;
+    setBusy(true);
+    setError('');
+    conversationEpoch.current++;
+    try {
+      const response =
+        action === 'REMOVE'
+          ? await messagingApi.removeMember(active.id, memberId)
+          : await messagingApi.promoteMember(active.id, memberId);
+      conversationEpoch.current++;
+      setConversations((current) =>
+        current.map((item) =>
+          item.id === response.data.id ? response.data : item,
+        ),
+      );
+      setAddMembers((current) => current.filter((id) => id !== memberId));
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ویرایش گروه انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function saveGroup() {
     if (!active || busy) return;
     setBusy(true);
@@ -1365,6 +1390,7 @@ export function MessageComposer({
             </div>
           </header>
           <div className="min-h-0 overflow-y-auto p-5">
+            {error && <Alert tone="error" title={error} />}
             <div className={groupEditing ? 'grid gap-5 sm:grid-cols-2' : ''}>
               <section className="min-w-0">
                 <h3 className="mb-3 text-sm font-semibold">اعضای گروه</h3>
@@ -1383,6 +1409,42 @@ export function MessageComposer({
                       <span className="min-w-0 flex-1 break-words text-sm">
                         {member.displayName}
                       </span>
+                      {canEditGroup && member.id !== currentUserId && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          {member.role !== 'OWNER' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={busy}
+                              aria-label={`مدیر کردن ${member.displayName}`}
+                              title="مدیر کردن عضو"
+                              onClick={() =>
+                                void manageMember(member.id, 'PROMOTE')
+                              }
+                            >
+                              <Sparkles
+                                className="size-4 text-amber-500"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={busy}
+                            aria-label={`حذف عضو ${member.displayName}`}
+                            title="حذف عضو از گروه"
+                            onClick={() =>
+                              void manageMember(member.id, 'REMOVE')
+                            }
+                          >
+                            <Trash2
+                              className="size-4 text-destructive"
+                              aria-hidden="true"
+                            />
+                          </Button>
+                        </div>
+                      )}
                       {member.role === 'OWNER' && (
                         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
                           مدیر گروه
