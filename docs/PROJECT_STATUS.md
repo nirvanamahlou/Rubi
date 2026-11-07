@@ -9212,3 +9212,6 @@ scoped lint, full Web typecheck/build are part of the final release gate.
 User explicitly authorizes push and develop merge after green final-head CI.
 
 RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pass (one existing skipped);22 API settings/save/send checks pass. Three timezone midnight-date proofs and both HTML/PDF base/factor/total/guide/column regressions pass. Source-only change; contract sale amounts and historical purchase totals remain untouched. Final hosted gates remain mandatory.
+
+RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
+
