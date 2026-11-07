@@ -279,6 +279,7 @@ export interface SalesPaymentCreateRequest extends SalesPaymentInput {
 }
 
 export interface SalesContractListQuery {
+  supplyType?: 'ALL' | 'FLOATING' | 'CHARTER' | undefined;
   customerType?: SalesReceivablesQuery['customerType'];
   agencyCustomerId?: string | undefined;
   search?: string;
@@ -427,6 +428,8 @@ export interface SalesDashboard {
 }
 
 export interface SalesReceivablesQuery {
+  ownerUserId?: string | undefined;
+  supplyType?: 'ALL' | 'FLOATING' | 'CHARTER' | undefined;
   search?: string | undefined;
   settlementStatus?: SalesSettlementStatus | undefined;
   from?: string | undefined;
@@ -440,6 +443,7 @@ export interface SalesReceivablesQuery {
 
 export interface SalesReceivables {
   data: {
+    sellers?: readonly { id: string; name: string }[];
     balances: readonly SalesMoney[];
     contractCount: number;
     routes: readonly {

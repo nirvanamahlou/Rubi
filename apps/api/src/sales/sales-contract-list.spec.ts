@@ -199,3 +199,26 @@ describe('contract list route and buyer phone', () => {
     expect(resolvePhone).not.toHaveBeenCalled();
   });
 });
+
+it('intersects supply selection with ownership scope before pagination', async () => {
+  const list = vi
+    .fn()
+    .mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 20 });
+  const service = new SalesService({ list } as never, {} as never, {} as never);
+  await service.list(
+    {
+      supplyType: 'FLOATING',
+      ownerUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    },
+    actor,
+  );
+  expect(list.mock.calls[0]![1]).toMatchObject({
+    AND: [
+      { branchId: { in: ['branch'] }, ownerUserId: 'owner' },
+      { services: { some: { OR: expect.any(Array) } } },
+    ],
+  });
+  await expect(
+    service.list({ supplyType: 'INVALID' } as never, actor),
+  ).rejects.toThrow();
+});

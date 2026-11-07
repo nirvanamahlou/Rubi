@@ -36,6 +36,8 @@ export function SalesReceivablesCard({
     destinationId: listQuery.destinationId,
     agencyCustomerId: listQuery.agencyCustomerId,
     search: listQuery.search,
+    ownerUserId: listQuery.ownerUserId,
+    supplyType: listQuery.supplyType ?? 'ALL',
     settlementStatus: listQuery.settlementStatus,
   });
   const [query, setQuery] = useState(draft);
@@ -74,6 +76,9 @@ export function SalesReceivablesCard({
   function apply(next: SalesReceivablesQuery) {
     setQuery(next);
     const result: SalesContractListQuery = { page: 1 };
+    if (next.ownerUserId) result.ownerUserId = next.ownerUserId;
+    if (next.supplyType && next.supplyType !== 'ALL')
+      result.supplyType = next.supplyType;
     if (next.search?.trim()) result.search = next.search.trim();
     if (next.settlementStatus) result.settlementStatus = next.settlementStatus;
     if (next.originId) result.originId = next.originId;
@@ -202,6 +207,42 @@ export function SalesReceivablesCard({
             value={draft.to ?? ''}
             onChange={(to) =>
               setDraft((current) => ({ ...current, to: to || undefined }))
+            }
+          />
+        </FormField>
+        <FormField label="فروشنده">
+          <SearchCombobox
+            label="فروشنده قرارداد"
+            value={draft.ownerUserId ?? ''}
+            options={[
+              { value: '', label: 'همه فروشنده‌ها' },
+              ...(data?.sellers ?? []).map((s) => ({
+                value: s.id,
+                label: s.name,
+              })),
+            ]}
+            onValueChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                ownerUserId: value || undefined,
+              }))
+            }
+          />
+        </FormField>
+        <FormField label="نوع بلیط">
+          <SalesThemedSelect
+            label="نوع بلیط قرارداد"
+            value={draft.supplyType ?? 'ALL'}
+            options={[
+              { value: 'ALL', label: 'همه' },
+              { value: 'FLOATING', label: 'شناوری' },
+              { value: 'CHARTER', label: 'چارتری' },
+            ]}
+            onValueChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                supplyType: value as SalesReceivablesQuery['supplyType'],
+              }))
             }
           />
         </FormField>

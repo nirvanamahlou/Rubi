@@ -5,6 +5,30 @@ import {
 } from './voucher-readiness';
 
 describe('voucher form readiness', () => {
+  it('recognizes an explicitly sent brokerless form but never an unsent draft', () => {
+    expect(
+      hasSentReservationForm({
+        supplierStatus: 'REQUESTED',
+        voucherIssued: false,
+        sentSupplierFormVersion: 3,
+        sentSupplierFormSettings: {},
+      }),
+    ).toBe(true);
+    expect(
+      hasSentReservationForm({
+        supplierStatus: 'NEW',
+        voucherIssued: false,
+        sentSupplierFormVersion: 3,
+      }),
+    ).toBe(false);
+    expect(
+      hasSentReservationForm({
+        supplierStatus: 'REQUESTED',
+        voucherIssued: false,
+        sentSupplierFormVersion: 0,
+      }),
+    ).toBe(false);
+  });
   it('requires a saved sent form, not only a requested/confirmed flag', () => {
     for (const supplierStatus of [
       'NEW',

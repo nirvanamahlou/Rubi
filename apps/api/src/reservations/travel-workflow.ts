@@ -31,6 +31,7 @@ export function transitionTravelWorkflow(
   allowAggregateSupplierForm = false,
   hotelKeys: readonly string[] = [],
   allowSharedGroup = true,
+  requiresTransferParty = true,
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -72,14 +73,15 @@ export function transitionTravelWorkflow(
   ) {
     const brokerId = primarySettings.brokerId;
     if (
-      !brokerId ||
-      hotelKeys.some(
-        (key, index) =>
-          (
-            current.hotelSupplierForms?.[key]?.settings ??
-            (index === 0 ? current.supplierFormSettings : undefined)
-          )?.brokerId !== brokerId,
-      )
+      requiresTransferParty &&
+      (!brokerId ||
+        hotelKeys.some(
+          (key, index) =>
+            (
+              current.hotelSupplierForms?.[key]?.settings ??
+              (index === 0 ? current.supplierFormSettings : undefined)
+            )?.brokerId !== brokerId,
+        ))
     )
       throw Error('ابتدا فرم همه هتل‌ها را با کارگزار مشترک ذخیره کنید.');
     let grouped = current;
@@ -92,6 +94,7 @@ export function transitionTravelWorkflow(
         allowAggregateSupplierForm,
         hotelKeys,
         false,
+        requiresTransferParty,
       );
     grouped.version = current.version + 1;
     grouped.sentSupplierFormVersion = grouped.version;
@@ -136,6 +139,9 @@ export function transitionTravelWorkflow(
       passengerIds,
       flightKeys,
       allowAggregateSupplierForm,
+      [],
+      true,
+      requiresTransferParty,
     );
     return {
       ...current,
@@ -288,7 +294,12 @@ export function transitionTravelWorkflow(
     case 'BRANDING':
       break;
     case 'REQUEST_SUPPLIER':
+      if (!requiresTransferParty && !current.supplierFormSettings)
+        throw Error(
+          'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
+        );
       if (
+        requiresTransferParty &&
         current.supplierFormSettings?.hotelTransferSeparate &&
         (!current.supplierFormSettings.transferBrokerId ||
           (current.supplierFormSettings.hotelTransferSplit &&
@@ -297,7 +308,7 @@ export function transitionTravelWorkflow(
         throw Error(
           'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
         );
-      if (!current.supplierFormSettings?.brokerId)
+      if (requiresTransferParty && !current.supplierFormSettings?.brokerId)
         throw new Error(
           'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
         );
@@ -328,7 +339,7 @@ export function transitionTravelWorkflow(
     case 'CONFIRM_SUPPLIER':
       if (current.supplierStatus !== 'REQUESTED')
         throw new Error('ابتدا ارسال درخواست برای کارگزار را ثبت کنید.');
-      if (!current.voucherSettings?.brokerId)
+      if (requiresTransferParty && !current.voucherSettings?.brokerId)
         throw new Error(
           'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
         );
@@ -338,6 +349,7 @@ export function transitionTravelWorkflow(
       )
         throw new Error('مرجع تأیید کارگزار باید حداکثر ۲۰۰ نویسه باشد.');
       if (
+        requiresTransferParty &&
         current.sentSupplierFormSettings?.brokerId &&
         current.voucherSettings?.brokerId !==
           current.sentSupplierFormSettings.brokerId
@@ -377,11 +389,12 @@ export function transitionTravelWorkflow(
     case 'ISSUE_VOUCHER':
       if (current.supplierStatus !== 'CONFIRMED')
         throw new Error('ابتدا تأیید کارگزار را ثبت کنید.');
-      if (!current.voucherSettings?.brokerId)
+      if (requiresTransferParty && !current.voucherSettings?.brokerId)
         throw new Error(
           'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
         );
       if (
+        requiresTransferParty &&
         current.sentSupplierFormSettings?.brokerId &&
         current.voucherSettings?.brokerId !==
           current.sentSupplierFormSettings.brokerId

@@ -234,6 +234,8 @@ export const salesApi = {
   exportXlsx: (query: SalesContractListQuery) => {
     // Export the applied list filters, never just the visible page or unsubmitted input.
     const filters: SalesContractListQuery = {
+      ...(query.ownerUserId ? { ownerUserId: query.ownerUserId } : {}),
+      ...(query.supplyType ? { supplyType: query.supplyType } : {}),
       ...(query.search ? { search: query.search } : {}),
       ...(query.settlementStatus
         ? { settlementStatus: query.settlementStatus }

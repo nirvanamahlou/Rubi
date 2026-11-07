@@ -127,7 +127,7 @@ it('keeps mixed room occupancies consistent in reservation, voucher and customer
   expect(contract).toContain('تعداد اتاق‌ها: <b>3</b>');
   expect(contract).toContain('مجموع مهمانان هتل: <b>7</b>');
   expect(contract).toContain(
-    '<td class="room-type"><bdi>Sea Double</bdi></td><td>1</td><td>7</td><td>2</td>',
+    '<td class="room-type"><bdi>Sea Double</bdi></td><td>1</td><td>0</td><td>1</td><td>2</td>',
   );
   expect(intake).toEqual(original);
 });
