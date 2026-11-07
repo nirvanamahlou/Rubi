@@ -27,6 +27,7 @@ type Summary = {
 };
 export async function insuranceResponse(path: string) {
   const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
   const send = () =>
     fetch(base + '/' + path, {
       credentials: 'include',
