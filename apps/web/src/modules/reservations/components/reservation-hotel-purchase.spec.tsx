@@ -11,6 +11,7 @@ import {
   hotelPassengerPurchaseInput,
   transferPurchaseTotal,
   reservationHotelPassengers,
+  reservationTransferContractCount,
   reservationTransferPassengers,
   reservationPurchaseServices,
   SupplierFormPurchaseContext,
@@ -268,6 +269,60 @@ it('counts a passenger assigned to both transfer directions only once', () => {
     { id: 'one', name: 'مسافر اول', age: 'ADT' },
     { id: 'two', name: 'مسافر دوم', age: 'CHD' },
   ]);
+});
+
+it('defaults transfer quantity from allocated contract passengers and excludes infants or removed rows', () => {
+  const snapshot = {
+    passengerIds: ['adult', 'child', 'infant'],
+    passengerAssignments: [
+      {
+        customerId: 'adult',
+        displayNameSnapshot: 'Adult',
+        ageCategory: 'ADT',
+        serviceClientKeys: ['outbound', 'return'],
+      },
+      {
+        customerId: 'child',
+        displayNameSnapshot: 'Child',
+        ageCategory: 'CHD',
+        serviceClientKeys: ['outbound'],
+      },
+      {
+        customerId: 'infant',
+        displayNameSnapshot: 'Infant',
+        ageCategory: 'INF',
+        serviceClientKeys: ['outbound', 'return'],
+      },
+      {
+        customerId: 'removed',
+        displayNameSnapshot: 'Removed',
+        ageCategory: 'ADT',
+        serviceClientKeys: ['outbound', 'return'],
+      },
+    ],
+    serviceSelections: [
+      { clientKey: 'outbound', kind: 'TRANSFER' },
+      { clientKey: 'return', kind: 'TRANSFER' },
+    ],
+  } as unknown as ReservationIntakeV1['snapshot'];
+  expect(
+    reservationTransferContractCount(snapshot, ['outbound', 'return']),
+  ).toBe(2);
+});
+
+it('uses the contract transfer count when passenger allocation rows are not available yet', () => {
+  const snapshot = {
+    passengerIds: ['one', 'two', 'three'],
+    passengerAssignments: [],
+    serviceSelections: [
+      {
+        clientKey: 'transfer',
+        kind: 'TRANSFER',
+        metadata: { passengerCount: 3 },
+      },
+    ],
+  } as unknown as ReservationIntakeV1['snapshot'];
+  expect(reservationTransferContractCount(snapshot, ['transfer'])).toBe(3);
 });
 
 it('calculates transfer by integer passenger count with exact money arithmetic', () => {

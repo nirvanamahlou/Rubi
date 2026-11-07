@@ -2120,6 +2120,12 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+## 2026-11-07 — فرم ترکیبی هتل و ترانسفر
+
+- `RESERVATION-TRANSFER-COMBINED-1107` روی `PC-A` با Commit `e71be45f7` در `develop` ادغام شد: تعداد نفرات ترانسفر در فرم قبل از صدور از snapshot قرارداد مقداردهی می‌شود و خرید ذخیره‌شده همچنان اولویت دارد.
+- قیمت‌گذاری ترانسفر به‌صورت پیش‌فرض داخل همان فرم هتل نمایش داده می‌شود و فقط با انتخاب کارگزار جدا به ردیف‌های مستقل رفت و برگشت تبدیل می‌شود.
+- ۱۹ تست هدفمند Web، ESLint محدود، TypeScript کامل Web و build تولیدی ۶۷ مسیر پاس شدند؛ Schema، Migration، Dependency، داده عملیاتی و استقرار تغییر نکرده‌اند.
+
 REPORT-CANCELLED-TOTALS-1029 (PC-C): pipeline confirmed-sales currency totals now
 exclude cancelled/draft status rows while retaining their separate amounts.
 Legacy revenue/profit/agency/attribution totals exclude cancelled contracts;

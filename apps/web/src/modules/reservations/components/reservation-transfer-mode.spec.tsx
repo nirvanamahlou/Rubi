@@ -55,11 +55,28 @@ function nodes(node: ReactNode): Record<string, unknown>[] {
   if (!isValidElement<Record<string, unknown>>(node)) return [];
   return [node.props, ...nodes(node.props.children as ReactNode)];
 }
-function render(value = request, onSaved = vi.fn()) {
+function text(node: ReactNode): string {
+  if (Array.isArray(node)) return node.map(text).join(' ');
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (!isValidElement<Record<string, unknown>>(node)) return '';
+  return text(node.props.children as ReactNode);
+}
+function sectionTexts(node: ReactNode): string[] {
+  if (Array.isArray(node)) return node.flatMap(sectionTexts);
+  if (!isValidElement<Record<string, unknown>>(node)) return [];
+  return [
+    ...(node.type === 'section' ? [text(node)] : []),
+    ...sectionTexts(node.props.children as ReactNode),
+  ];
+}
+function renderNode(value = request, onSaved = vi.fn()) {
   state.index = 0;
-  return nodes(
-    canonicalTestTree(ReservationHotelPurchase({ request: value, onSaved })),
+  return canonicalTestTree(
+    ReservationHotelPurchase({ request: value, onSaved }),
   );
+}
+function render(value = request, onSaved = vi.fn()) {
+  return nodes(renderNode(value, onSaved));
 }
 function change(label: string, value: unknown, source = request) {
   const control =
@@ -74,6 +91,61 @@ beforeEach(() => {
   state.index = 0;
   state.values = [];
   vi.restoreAllMocks();
+});
+it('keeps transfer pricing inside the hotel form until separate brokers are selected', () => {
+  const combined = {
+    ...request,
+    snapshot: {
+      ...request.snapshot,
+      serviceSelections: [
+        { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel One' },
+        { clientKey: 'out', kind: 'TRANSFER', titleSnapshot: 'Outbound' },
+        { clientKey: 'back', kind: 'TRANSFER', titleSnapshot: 'Return' },
+      ],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelNameSnapshot: 'Hotel One',
+        checkInDate: '2026-11-10',
+        checkOutDate: '2026-11-12',
+      },
+      passengerAssignments: [
+        {
+          customerId: 'one',
+          displayNameSnapshot: 'One',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['hotel', 'out', 'back'],
+        },
+        {
+          customerId: 'two',
+          displayNameSnapshot: 'Two',
+          ageCategory: 'CHD',
+          serviceClientKeys: ['hotel', 'out', 'back'],
+        },
+      ],
+    },
+  } as unknown as ReservationIntakeV1;
+  const initial = sectionTexts(renderNode(combined));
+  expect(
+    initial.some(
+      (value) =>
+        value.includes('هتل:') && value.includes('ترانسفر همراه رزرو هتل'),
+    ),
+  ).toBe(true);
+  expect(
+    initial.filter((value) => value.includes('ترانسفر رفت‌وبرگشت')),
+  ).toHaveLength(1);
+
+  const checkbox = render(combined).find((props) => props.type === 'checkbox');
+  expect(checkbox?.onChange).toBeTypeOf('function');
+  (checkbox!.onChange as (value: unknown) => void)({
+    target: { checked: true },
+  });
+  const split = sectionTexts(renderNode(combined));
+  expect(
+    split.some(
+      (value) => value.includes('Outbound') && value.includes('Return'),
+    ),
+  ).toBe(true);
 });
 it('submits a new hotel purchase before any supplier form has been sent', async () => {
   const unsent = {
