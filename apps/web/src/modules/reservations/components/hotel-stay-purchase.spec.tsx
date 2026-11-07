@@ -676,12 +676,15 @@ it('combines output when the explicit separate checkbox is cleared and retains t
 
 it('does not infer separate supplier forms from existing transfer purchases with different suppliers', () => {
   const input = structuredClone(request);
-  input.snapshot.serviceSelections.push({
-    clientKey: 'out',
-    kind: 'TRANSFER',
-    titleSnapshot: 'Outbound',
-    metadata: { direction: 'OUTBOUND' },
-  } as never);
+  input.snapshot.serviceSelections = [
+    ...input.snapshot.serviceSelections,
+    {
+      clientKey: 'out',
+      kind: 'TRANSFER',
+      titleSnapshot: 'Outbound',
+      metadata: { direction: 'OUTBOUND' },
+    } as never,
+  ];
   input.servicePurchases = [
     {
       serviceClientKey: 'out',
