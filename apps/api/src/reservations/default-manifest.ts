@@ -26,9 +26,10 @@ export function defaultManifestAge(
   birthDate: string | null | undefined,
   travelDay: string,
 ): string {
-  if (age === 'INF' || age === 'INFANT') return 'نوزاد';
-  if (age === 'CHD' || age === 'CHILD') return 'کودک';
-  if (age === 'ADT' || age === 'ADULT') return 'بزرگسال';
+  if (age === 'INF' || age === 'INFANT') return 'INFANT';
+  if (age === 'CHD' || age === 'CHILD' || age?.startsWith('CHD_'))
+    return 'CHILD';
+  if (age === 'ADT' || age === 'ADULT') return 'ADULT';
   if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return '';
   const birth = new Date(birthDate + 'T00:00:00Z');
   if (
@@ -39,7 +40,7 @@ export function defaultManifestAge(
     return '';
   let years = Number(travelDay.slice(0, 4)) - birth.getUTCFullYear();
   if (travelDay.slice(5) < birthDate.slice(5)) years -= 1;
-  return years < 2 ? 'نوزاد' : years < 12 ? 'کودک' : 'بزرگسال';
+  return years < 2 ? 'INFANT' : years < 12 ? 'CHILD' : 'ADULT';
 }
 
 const escapeXml = (value: string) =>
@@ -105,10 +106,23 @@ export function buildDefaultManifest(
         ] as [keyof DefaultManifestRow, string][])
       : []),
   ];
+  const outputRows = rows.map((row) => ({
+    ...row,
+    birthDate: row.birthDate.replace(/-/g, '/'),
+    passportExpiryDate: row.passportExpiryDate.replace(/-/g, '/'),
+    cabinClass:
+      transport === 'FLIGHT'
+        ? /^(ECONOMY|Y)$/i.test(row.cabinClass.trim())
+          ? 'Y'
+          : /^(BUSINESS|B)$/i.test(row.cabinClass.trim())
+            ? 'B'
+            : row.cabinClass
+        : row.cabinClass,
+  }));
   const lastColumn = String.fromCharCode(64 + columns.length);
   const sheetRows = [
     columns.map(([, label]) => label),
-    ...rows.map((row) => columns.map(([key]) => row[key])),
+    ...outputRows.map((row) => columns.map(([key]) => row[key])),
   ]
     .map(
       (values, i) =>
@@ -139,6 +153,6 @@ export function buildDefaultManifest(
       { level: 6 },
     ),
     columns.map(([, label]) => label),
-    rows.map((row) => columns.map(([key]) => row[key])),
+    outputRows.map((row) => columns.map(([key]) => row[key])),
   );
 }
