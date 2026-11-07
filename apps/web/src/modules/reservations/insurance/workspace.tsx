@@ -77,8 +77,7 @@ export function InsuranceWorkspace() {
         </button>
       </nav>
       <p className={styles.connection}>
-        اتصال بیمه‌گر هنوز فعال نشده است. تنظیمات و پیش‌نویس‌ها قابل ثبت‌اند؛
-        صدور و ابطال پس از اتصال فعال می‌شوند.
+        حالت آزمایشی تراویس؛ نتیجهٔ آزمایش، بیمه‌نامهٔ واقعی مسافر نیست.
       </p>
       {error && (
         <p role="alert" className={styles.error}>
