@@ -67,3 +67,40 @@ it('composes clocks with the previously selected date', () => {
     arrivalAt: '',
   });
 });
+
+it('offers an origin airport from the origin country and snapshots manual changes', () => {
+  const onChange = vi.fn();
+  const editor = ContractFlightEditor({
+    value: flight,
+    originCityId: 'origin-city',
+    originCountryId: 'origin-country',
+    destinationCityId: 'destination-city',
+    destinationCountryId: 'destination-country',
+    workflow: 'reservations',
+    onChange,
+  });
+  const fields = editor.props.children[2].props.children;
+  const origin = fields.find(
+    (field: { props: { label: string } }) =>
+      field.props.label === 'فرودگاه مبدأ',
+  ).props.children;
+  expect(origin.props).toMatchObject({
+    cityId: 'origin-city',
+    countryId: 'origin-country',
+    workflow: 'reservations',
+  });
+  const airport = {
+    id: 'airport',
+    cityId: 'origin-city',
+    countryId: 'origin-country',
+    name: 'Origin Airport',
+    code: 'ORG',
+  };
+  origin.props.onChange(airport);
+  expect(onChange).toHaveBeenCalledWith({ ...flight, originAirport: airport });
+  const destination = fields.find(
+    (field: { props: { label: string } }) =>
+      field.props.label === 'فرودگاه مقصد',
+  ).props.children;
+  expect(destination.props.countryId).toBe('destination-country');
+});
