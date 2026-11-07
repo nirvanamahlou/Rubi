@@ -203,11 +203,17 @@ export class SalesRepository {
     });
   }
 
-  pendingFinancePayments(branchIds: readonly string[]) {
+  pendingFinancePayments(
+    branchIds: readonly string[],
+    includeConfirmed = false,
+  ) {
     if (!branchIds.length) return Promise.resolve([]);
     return this.database.client.salesContractPaymentEntry.findMany({
       where: {
         OR: [
+          ...(includeConfirmed
+            ? [{ status: 'FINANCE_CONFIRMED' as const }]
+            : []),
           { status: 'PENDING_FINANCE_CONFIRMATION' },
           { status: 'SCHEDULED', dueAt: { lte: new Date() } },
         ],
@@ -226,7 +232,7 @@ export class SalesRepository {
         },
       },
       orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
-      take: 200,
+      ...(includeConfirmed ? {} : { take: 200 }),
     });
   }
 

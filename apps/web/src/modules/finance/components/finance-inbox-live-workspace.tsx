@@ -165,9 +165,12 @@ export function FinanceInboxLiveWorkspace() {
   const [category, setCategory] = useState<'ALL' | 'PURCHASE' | 'RECEIPT'>(
     'ALL',
   );
+  const [approvalGroup, setApprovalGroup] = useState<'PENDING' | 'APPROVED'>(
+    'PENDING',
+  );
   const [status, setStatus] = useState<
     'ALL' | 'OPEN' | 'CLOSED' | FinanceRequestStatus
-  >('OPEN');
+  >('ALL');
   const [currencyCode, setCurrencyCode] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
@@ -180,6 +183,8 @@ export function FinanceInboxLiveWorkspace() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const filterKey = JSON.stringify({
+    approvalGroup,
+    category,
     search,
     source,
     status,
@@ -246,6 +251,7 @@ export function FinanceInboxLiveWorkspace() {
   const [accountMaskedId, setAccountMaskedId] = useState('');
   const inboxQuery = useMemo<FinanceInboxQueryV1>(
     () => ({
+      approvalGroup,
       search,
       source: source === 'ALL' ? undefined : source,
       category: category === 'ALL' ? undefined : category,
@@ -261,6 +267,7 @@ export function FinanceInboxLiveWorkspace() {
       pageSize: 25,
     }),
     [
+      approvalGroup,
       search,
       source,
       category,
@@ -805,6 +812,7 @@ export function FinanceInboxLiveWorkspace() {
             <Button
               className="bg-white text-slate-900 hover:bg-blue-50"
               onClick={() => {
+                setApprovalGroup('PENDING');
                 setStatus('OPEN');
                 setCategory('ALL');
                 setSource('ALL');
@@ -952,7 +960,7 @@ export function FinanceInboxLiveWorkspace() {
                 <Button
                   onClick={() => {
                     setSource('SALES');
-                    setStatus('OPEN');
+                    setStatus('ALL');
                     setCategory('ALL');
                   }}
                   size="sm"
@@ -963,7 +971,7 @@ export function FinanceInboxLiveWorkspace() {
                 <Button
                   onClick={() => {
                     setSource('RESERVATIONS');
-                    setStatus('OPEN');
+                    setStatus('ALL');
                     setCategory('ALL');
                   }}
                   size="sm"
@@ -1110,7 +1118,7 @@ export function FinanceInboxLiveWorkspace() {
             onClick={() => {
               setSearch('');
               setSource('ALL');
-              setStatus('OPEN');
+              setStatus('ALL');
               setCategory('ALL');
               setFromDate('');
               setToDate('');
@@ -1184,10 +1192,35 @@ export function FinanceInboxLiveWorkspace() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-4">
             <div>
               <h3 className="font-bold">فهرست درخواست‌ها</h3>
+              <div
+                className="mt-3 flex flex-wrap gap-2"
+                role="group"
+                aria-label="وضعیت تأیید مالی"
+              >
+                {(
+                  [
+                    ['PENDING', 'درخواست‌های در انتظار'],
+                    ['APPROVED', 'درخواست‌های تأییدشده'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={approvalGroup === value ? 'primary' : 'outline'}
+                    aria-pressed={approvalGroup === value}
+                    onClick={() => {
+                      setApprovalGroup(value);
+                      setSelectedId(null);
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Badge className="px-3 py-1">
-                {items.length.toLocaleString('fa-IR')} درخواست
+                {data?.total.toLocaleString('fa-IR') ?? '—'} درخواست
               </Badge>
               <FinanceExportActions
                 showPdf={false}
@@ -1589,7 +1622,8 @@ export function FinanceInboxLiveWorkspace() {
                       onChanged={() => setRevision((value) => value + 1)}
                     />
                   ) : null}
-                  {selected.kind === 'RECEIPT_VERIFICATION' ? (
+                  {selected.kind === 'RECEIPT_VERIFICATION' &&
+                  selected.status !== 'RECEIPT_CONFIRMED' ? (
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       <Button
                         onClick={() => openReceiptAction(selected, 'APPROVE')}

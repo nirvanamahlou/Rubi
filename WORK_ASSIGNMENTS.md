@@ -11367,3 +11367,9 @@ User authorizes removal of selected request history/source identifier and FX sum
 ## FINANCE-REQUEST-REDESIGN-1105 — PC-A — READY_FOR_CI
 
 User authorizes persisted requester resolution and list/detail redesign, push and green-gate merge. Reserve Finance inbox API and tests, existing IAM display-name port consumption, Web inbox TSX/CSS and PurchaseFxSummary presentation. Producer already exposes actorUserId; no contract/schema change. Preserve payment authorization, prior hidden history/source IDs, document evidence and calculations. Prior same-owner Finance scopes merged/frozen. No deployment.
+
+## FINANCE-APPROVAL-DOWNLOAD-1107 — PC-B — ACTIVE
+
+Owner authorizes pending/approved inbox tabs and direct receipt download, push/develop merge. Reserve Finance query/controller/export and inbox UI, additive query/Sales projection contracts and scoped Sales read methods, Documents source-bound receipt pending-scan policy and focused tests, own notes. Prior Finance redesign is merged/frozen. Shared contract producer/consumer ship together; no schema/dependency/runtime data changes. Preserve branch/source authorization, malicious-file denial, custom confidential codes and audits.
+
+FINANCE-APPROVAL-DOWNLOAD-1107 validation:169 API and18 Web checks, scoped API/Web lint and full Web TypeScript pass. Shared runtime database artifacts resolved only via external test alias; no dependency edits. Source frozen on push; all final-head hosted gates required before user-authorized develop merge. No deployment.
