@@ -1,5 +1,11 @@
 ## RESERVATION-BROKER-EMAIL-1108 — PC-A — READY_FOR_REVIEW / IT PENDING
 
+## TRANSFER-BROKER-RATIO-1108 — PC-A — READY_FOR_CI
+
+Owner requests transfer broker lookup only for explicitly separate hotel/transfer mode and editable Ratio default2 in supplier form and purchase; push/develop merge authorized. Branch codex/pc-a-transfer-broker-ratio-1108 from381f86e20. Reserve shared hotel-room-quotation-editor.tsx, hotel-stay-purchase.tsx mode handling, their focused regression and own notes. Existing supplier email writer is frozen and its settings/save code is outside this unit. Checkbox controls mode; combined purchase inherits hotel supplier and ignores stale transfer-specific IDs. Saved explicit factors/prices remain authoritative. No API/schema/migration/dependency/mail/runtime changes.
+
+TRANSFER-BROKER-RATIO-1108 validation:39 focused tests, scoped ESLint, full Web TypeScript and67-route production build pass in an isolated network-disabled container. PR1503 to develop; final hosted gates precede authorized merge. Source freezes on publication and releases on verified merge. No operational deployment or data writes.
+
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-broker-email-1108 from origin/develop@628d53437; isolated worktree F:/Projects/Rubi-email-1108 preserves concurrent local changes in the original checkout. Owner explicitly released TRANSFER-SEPARATE-DEFAULT-1108 form scope for this work. Reserve Reservations workflow/email orchestration and tests, unchanged-layout Web send feedback, Integrations SMTP leaf/module, API manifest and pnpm lock for nodemailer, additive email-outbox schema/migration and own docs. Sole Dependency/Lockfile and Migration Owner PC-A for this bounded work; no current overlapping new migration/dependency scope found among latest tasks. Do not change hotel quotation editor or peer tests. Existing public MasterData detail/list/unmask ports resolve and audit the recipient; no Master Data internals/table access. Producer Reservations owns immutable PDF send intent; Integrations owns SMTP and credentials. Outbox state is distinct from existing operational sent-form state (legacy/manual semantics preserved); no claim of email delivery without SMTP acceptance. Default off until IT settings and controlled acceptance; no deployment, actual external send, merge or runtime/data mutation authorized. PDF attachment only, no email body. User awaiting IT details.
 
 ## HR-PENALTY-PERSIST-1108 — PC-A — ACTIVE
@@ -11718,11 +11724,9 @@ RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the 
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
 
-## TRANSFER-BROKER-RATIO-1108 — PC-A — READY_FOR_CI
+## REPORTING-BOOTSTRAP-CYCLE-1108 — PC-C — IN_PROGRESS
 
-Owner requests transfer broker lookup only for explicitly separate hotel/transfer mode and editable Ratio default2 in supplier form and purchase; push/develop merge authorized. Branch codex/pc-a-transfer-broker-ratio-1108 from381f86e20. Reserve shared hotel-room-quotation-editor.tsx, hotel-stay-purchase.tsx mode handling, their focused regression and own notes. Existing supplier email writer is frozen and its settings/save code is outside this unit. Checkbox controls mode; combined purchase inherits hotel supplier and ignores stale transfer-specific IDs. Saved explicit factors/prices remain authoritative. No API/schema/migration/dependency/mail/runtime changes.
-
-TRANSFER-BROKER-RATIO-1108 validation:39 focused tests, scoped ESLint, full Web TypeScript and67-route production build pass in an isolated network-disabled container. PR1503 to develop; final hosted gates precede authorized merge. Source freezes on publication and releases on verified merge. No operational deployment or data writes.
+Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, DashboardOperationalSources, a full application module-graph regression and bounded status/task notes. Production activation of a43bb8a failed on Reporting -> CustomerAffairs -> Sales -> Reservations -> System -> Reporting; reviewed rollback restored healthy 0c4cedf6b. Preserve all public call-report authorization and newly activated sources. No Sales/Customer Affairs private readers, schema, dependencies or operational data changes.
 
 ## UPLOAD-FILE-FORMATS-1108 — PC-B — READY_FOR_CI
 

@@ -1,5 +1,9 @@
 ## HR penalty settings persistence — 2026-11-08
 
+## TRANSFER-BROKER-RATIO-1108 — PC-A
+
+The shared supplier-form/purchase room editor now displays a separate transfer broker only after explicit separate-mode selection. Switching combined clears split-only broker/return settings; purchase submission uses the hotel supplier while combined even with a stale hidden broker ID. New room Ratio defaults to2 across initial rows, missing rows and row edits; saved factors remain editable and authoritative.39 focused Web tests pass, including toggle transitions, preserved quotations, exact batch totals and stale-broker inheritance. Scoped lint, full Web types and67-route production build pass. PR1503 requires successful final hosted gates before owner-authorized develop merge. No schema/dependency/API/mail/deployment/data changes.
+
 ## REPORT-MONEY-FORMAT-1108 — PC-C
 
 Report table/chart money and CSV/XLSX compound amounts use ASCII comma thousands separators. Raw decimal API values, sorting and per-currency calculations are unchanged; Excel numeric cells retain numeric values and their existing thousands number format, long decimals remain exact text. 132 API reporting tests and 18 Web model checks pass; scoped lint and clean CI validate the change. No data/schema/migration/dependency or deployment changes.
@@ -13,7 +17,6 @@ Reopening penalty settings resolves the saved record for the selected branch/org
 2026-11-08 PC-C REPORT-READINESS-1108: read-only production inventory completed; activate organizational Sales, future departures, real ticket SLA and own overdue calendar. HR expiry API uses explicit dates with an empty-data warning; existing HR-only catalog exclusion retained. All 16 blocked sources expose business reasons and required inputs before Run in the result panel. Readiness endpoint does not grant business-data execution. Details: docs/tasks/REPORT-SOURCE-READINESS-1108.md. No DB/schema/migration/seed/FX/deploy.
 
 REPORT-READINESS-1108: 124 targeted API and 24 Web tests pass; read-only live-source/XLSX validation passes for organization sales, future travel and SLA. Local full typecheck is blocked by stale shared generated contracts/Prisma artifacts; clean CI is required. Production unchanged.
-
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
@@ -9310,7 +9313,6 @@ DASHBOARD-DECISION-AUDIT-1108: 93 registry chart slots audited against native di
 
 2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.
 
-
 ATTENDANCE-ACTIVATION-1108 PC-B IN_PROGRESS: reversible attendance exclusion; preserves device punches.
 ## 2026-11-08 — PC-D — Detail type form visibility and reference layout
 
@@ -9356,8 +9358,8 @@ RESERVATION-BROKER-EMAIL-CI-1108: owner approved task-branch-only synchronizatio
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real PDF smoke pass. Task branch synchronized with develop; no PR merge conflicts. Two ledger formatting separators corrected after hosted quality feedback. Final-head hosted checks pending. Real email remains disabled; no deployment or merge to develop.
 
-## TRANSFER-BROKER-RATIO-1108 — PC-A
+## REPORTING-BOOTSTRAP-CYCLE-1108 — PC-C — IN_PROGRESS
 
-The shared supplier-form/purchase room editor now displays a separate transfer broker only after explicit separate-mode selection. Switching combined clears split-only broker/return settings; purchase submission uses the hotel supplier while combined even with a stale hidden broker ID. New room Ratio defaults to2 across initial rows, missing rows and row edits; saved factors remain editable and authoritative.39 focused Web tests pass, including toggle transitions, preserved quotations, exact batch totals and stale-broker inheritance. Scoped lint, full Web types and67-route production build pass. PR1503 requires successful final hosted gates before owner-authorized develop merge. No schema/dependency/API/mail/deployment/data changes.
+Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, DashboardOperationalSources, a full application module-graph regression and bounded status/task notes. Production activation of a43bb8a failed on Reporting -> CustomerAffairs -> Sales -> Reservations -> System -> Reporting; reviewed rollback restored healthy 0c4cedf6b. Preserve all public call-report authorization and newly activated sources. No Sales/Customer Affairs private readers, schema, dependencies or operational data changes.
 
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
