@@ -503,7 +503,11 @@ export function ReservationSettingsForm({
         : r;
       onSaved(result.data);
       setPreviewDirty(false);
-      setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
+      setMessage(
+        sendToBroker
+          ? 'درخواست ارسال ایمیل فایل PDF ثبت شد؛ نتیجه در اعلان‌ها نمایش داده می‌شود.'
+          : 'نسخهٔ جدید با موفقیت ثبت شد.',
+      );
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
       if (savedWorkflow) onSaved(savedWorkflow);
@@ -1630,8 +1634,8 @@ export async function sendSavedReservationForm(
   hotelStayKey?: string,
   requiresBroker = true,
 ) {
+  void requiresBroker; // Email always requires an explicit recipient, including hotel-only forms.
   if (
-    requiresBroker &&
     !(
       hotelStayKey
         ? state.hotelSupplierForms?.[hotelStayKey]?.settings
@@ -1641,13 +1645,25 @@ export async function sendSavedReservationForm(
     throw new Error(
       'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
     );
-  return travelRequest<{ data: TravelWorkflowStateV1 }>(
-    `reservations/requests/${id}/workflow`,
+  const response = await fetch(
+    `/reservations/requests/${encodeURIComponent(id)}/pdf`,
     {
-      action: 'REQUEST_SUPPLIER',
-      ...(hotelStayKey ? { hotelStayKey } : {}),
-      expectedVersion: state.version,
-      note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expectedVersion: state.version,
+        ...(hotelStayKey ? { hotelStayKey } : {}),
+      }),
     },
   );
+  const result = await response.json().catch(() => null);
+  if (!response.ok)
+    throw new Error(
+      result?.error?.message ??
+        result?.message ??
+        'عملیات انجام نشد؛ مجوز و اتصال را بررسی کنید.',
+    );
+  return result as { data: TravelWorkflowStateV1 };
 }

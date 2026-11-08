@@ -9281,3 +9281,26 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
 ## 2026-11-08 — PC-D — Detail type form visibility and reference layout
 
 The detail-type route now renders its own editor when no authorized accounting ledger exists, instead of silently substituting ledger creation. The compact two-column main tab matches the owner's Rahkaran reference fields, with title and 1–20 classification length required, optional second title/default-first-code/parent/enforce-parent, and full-width description. Missing-ledger state retains editable draft fields and notes, explains the prerequisite, links to ledger creation, and blocks commands/save actions. Existing ledger-scoped persistence, authorization and FK requirements remain unchanged. Four real-workspace rendering regressions cover empty/available/error book states and the ledger route. Thirteen focused tests, scoped ESLint, Web TypeScript, formatting and 67-route production build passed; a temporary local SSR preview confirmed the two-column layout. No schema, migration, dependencies or production data changes. Publication target and live rollout require the owner's explicit authorization.
+
+## RESERVATION-BROKER-EMAIL-1108 — PC-A — VALIDATED / IT CONFIGURATION PENDING
+
+User clarifies that NOTICE belongs only inside the reservation PDF; email contains
+one PDF attachment and no text/HTML body. Existing form appearance and PDF template
+are preserved. The authenticated Web route renders the saved current hotel form,
+checks version and signs the immutable PDF digest; API independently verifies the
+signature, permission, branch, selected company and designated audited broker email.
+Encrypted durable outbox and workflow revision commit together; PostgreSQL claims,
+bounded retries and UNKNOWN recovery avoid blind duplicate sends. Results reach
+the initiating employee through the existing notification center. Default off until
+IT supplies the SMTP identity/settings and a controlled mailbox acceptance is done.
+
+Validation:33 focused API tests,8 real PostgreSQL tests,92 Web/PDF/i18n tests and a
+real Chrome single/multipage PDF smoke test passed. Visual review confirms NOTICE
+in the existing final form section. All226 migrations apply on isolated PostgreSQL18;
+Prisma generation, Contracts/Database/Config builds, scoped API/Web lint and full
+API/Web typechecks pass. Final API/Web production builds and draft PR recorded in
+the task handoff. Additive migration must precede a coordinated API/Web rollout.
+No real email, operational data/settings/schema change, deployment or merge.
+See tasks/RESERVATION-BROKER-EMAIL-1108.md for IT intake and private configuration.
+
+RESERVATION-BROKER-EMAIL-1108 final local gates: API production build and Web production build (67 routes) both pass. SMTP remains disabled pending IT; draft branch publication only.
