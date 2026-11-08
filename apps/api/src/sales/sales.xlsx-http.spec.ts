@@ -86,7 +86,7 @@ describe('authenticated Sales XLSX HTTP route', () => {
     expect(result.headers['cache-control']).toBe('private, no-store');
     expect(list).toHaveBeenCalledWith(
       expect.objectContaining({ search: 'TRACK', settlementStatus: 'UNPAID' }),
-      expect.objectContaining({ branchId: { in: ['branch'] } }),
+      { AND: [expect.objectContaining({ branchId: { in: ['branch'] } }), {}] },
       true,
       2000,
     );

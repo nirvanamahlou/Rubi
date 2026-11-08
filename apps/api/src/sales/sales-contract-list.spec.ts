@@ -100,7 +100,7 @@ describe('contract list route and buyer phone', () => {
         permissions: ['sales.contracts.read.all', 'sales.contracts.create'],
       },
     );
-    expect(list).toHaveBeenCalledWith({}, {}, false);
+    expect(list).toHaveBeenCalledWith({}, { AND: [{}, {}] }, false);
     expect(result.data.map((item) => item.sellerName)).toEqual([
       'Synthetic Seller',
       'Synthetic Seller',
@@ -178,8 +178,7 @@ describe('contract list route and buyer phone', () => {
     expect(list).toHaveBeenCalledWith(
       {},
       {
-        branchId: { in: ['branch'] },
-        ownerUserId: 'owner',
+        AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
       },
       false,
     );
@@ -214,7 +213,7 @@ it('intersects supply selection with ownership scope before pagination', async (
   );
   expect(list.mock.calls[0]![1]).toMatchObject({
     AND: [
-      { branchId: { in: ['branch'] }, ownerUserId: 'owner' },
+      { AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}] },
       { services: { some: { OR: expect.any(Array) } } },
     ],
   });

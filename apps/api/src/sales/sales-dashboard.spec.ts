@@ -129,8 +129,7 @@ describe('Sales dashboard overpayments', () => {
       ],
     });
     expect(dashboardRows).toHaveBeenCalledWith({
-      branchId: { in: ['branch'] },
-      ownerUserId: 'owner',
+      AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
     });
   });
 
@@ -154,8 +153,7 @@ describe('Sales dashboard overpayments', () => {
     } as AuthenticatedActor;
     const result = await service.dashboard(actor);
     expect(dashboardRows).toHaveBeenCalledWith({
-      branchId: { in: ['branch'] },
-      ownerUserId: 'owner',
+      AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
     });
     expect(result.data.outstanding).toEqual([
       { currencyCode: 'IRR', amount: '-25' },
@@ -307,8 +305,7 @@ describe('filtered receivables', () => {
       {
         AND: [
           {
-            branchId: { in: ['branch'] },
-            ownerUserId: 'owner',
+            AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
           },
           { customerId: { in: [agencyId] } },
           { customerId: agencyId },
@@ -351,8 +348,7 @@ describe('filtered receivables', () => {
       actor,
     );
     expect(dashboardRows).toHaveBeenCalledWith({
-      branchId: { in: ['branch'] },
-      ownerUserId: 'owner',
+      AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
     });
     expect(result.data.balances).toEqual([
       { currencyCode: 'IRR', amount: '80.25' },
@@ -481,8 +477,7 @@ it.each(['120123', 'ABC'])(
     } as AuthenticatedActor;
     const result = await service.receivables({ search }, actor);
     expect(dashboardRows).toHaveBeenCalledWith({
-      branchId: { in: ['branch'] },
-      ownerUserId: 'owner',
+      AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'owner' }, {}],
     });
     expect(result.data.contractCount).toBe(1);
     expect(result.data.balances).toEqual([

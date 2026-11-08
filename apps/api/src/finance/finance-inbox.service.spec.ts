@@ -89,7 +89,9 @@ describe('FinanceInboxService', () => {
     expect(
       database.client.financeOperationalRequest.findMany,
     ).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { branchId: { in: actor.branchIds } } }),
+      expect.objectContaining({
+        where: { branchId: { in: actor.branchIds }, AND: [{}] },
+      }),
     );
   });
   it('loads every HR page, including referrals older than the first 25', async () => {
@@ -476,7 +478,7 @@ describe('FinanceInboxService', () => {
       result.items.some((item) => item.sourceReference === 'ticket-purchase-1'),
     ).toBe(false);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
-    expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
+    expect(reservations.list).toHaveBeenCalledWith(['branch-a'], { actor });
     expect(procurement.listFinanceTicketPurchases).toHaveBeenCalledWith([
       'branch-a',
     ]);

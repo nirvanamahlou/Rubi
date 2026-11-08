@@ -75,7 +75,7 @@ describe('complete reservation purchase inbox', () => {
       result.items.some((i) => i.sourceContextReference === 'earlier-intake'),
     ).toBe(true);
     expect(list).not.toHaveBeenCalled();
-    expect(listForFinance).toHaveBeenCalledWith(['branch']);
+    expect(listForFinance).toHaveBeenCalledWith(['branch'], actor);
   });
   it('fully pages compatible older adapters instead of silently stopping at 100', async () => {
     const rows = Array.from({ length: 126 }, (_, n) => intake(n));
@@ -85,7 +85,7 @@ describe('complete reservation purchase inbox', () => {
       .mockResolvedValueOnce(rows.slice(100));
     const result = await setup({ list }).service.list(actor);
     expect(result.items).toHaveLength(126);
-    expect(list).toHaveBeenNthCalledWith(2, ['branch'], { page: '2' });
+    expect(list).toHaveBeenNthCalledWith(2, ['branch'], { page: '2', actor });
   });
   it('marks an inconsistent page source unavailable rather than showing duplicate payable rows', async () => {
     const rows = Array.from({ length: 100 }, (_, n) => intake(n));
