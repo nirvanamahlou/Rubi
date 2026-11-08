@@ -734,7 +734,7 @@ export function AttendanceHistory({
         role="region"
         aria-label="جدول تردد روزانه"
       >
-        <table className="w-full min-w-[760px] text-right text-sm">
+        <table className="w-full min-w-[900px] text-right text-sm">
           <thead className="sticky top-0 bg-muted">
             <tr>
               {[
@@ -746,6 +746,7 @@ export function AttendanceHistory({
                 'تأخیر (دقیقه)',
                 'اضافه‌کاری (دقیقه)',
                 'کسری کار (دقیقه)',
+                'جریمه روز (تومان)',
               ].map((label) => (
                 <th
                   scope="col"
@@ -789,12 +790,17 @@ export function AttendanceHistory({
                     </td>
                   ),
                 )}
+                <td className="whitespace-nowrap px-4 py-3">
+                  {row.dailyPenaltyToman == null
+                    ? '—'
+                    : `${Number(row.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`}
+                </td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="p-8 text-center text-muted-foreground"
                 >
                   ترددی در این بازه ثبت نشده است.
