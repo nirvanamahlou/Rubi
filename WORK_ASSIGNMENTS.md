@@ -11710,6 +11710,8 @@ RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the 
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
 
-## TRANSFER-BROKER-RATIO-1108 — PC-A — RESERVED
+## TRANSFER-BROKER-RATIO-1108 — PC-A — READY_FOR_CI
 
 Owner requests transfer broker lookup only for explicitly separate hotel/transfer mode and editable Ratio default2 in supplier form and purchase; push/develop merge authorized. Branch codex/pc-a-transfer-broker-ratio-1108 from381f86e20. Reserve shared hotel-room-quotation-editor.tsx, hotel-stay-purchase.tsx mode handling, their focused regression and own notes. Existing supplier email writer is frozen and its settings/save code is outside this unit. Checkbox controls mode; combined purchase inherits hotel supplier and ignores stale transfer-specific IDs. Saved explicit factors/prices remain authoritative. No API/schema/migration/dependency/mail/runtime changes.
+
+TRANSFER-BROKER-RATIO-1108 validation:39 focused tests, scoped ESLint, full Web TypeScript and67-route production build pass in an isolated network-disabled container. PR1503 to develop; final hosted gates precede authorized merge. Source freezes on publication and releases on verified merge. No operational deployment or data writes.
