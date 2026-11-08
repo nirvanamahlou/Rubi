@@ -50,6 +50,7 @@
   gap: 7px;
   margin: 24px 0;
 }
+.tabs a,
 .workspace button {
   font: inherit;
   cursor: pointer;
@@ -58,6 +59,15 @@
   color: var(--foreground);
   padding: 10px 15px;
   border-radius: 12px;
+}
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.tabs a:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
 }
 .workspace button:focus-visible,
 .workspace input:focus-visible,
