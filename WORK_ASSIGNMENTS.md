@@ -1,28 +1,3 @@
-<<<<<<< HEAD
-
-## TRANSFER-SEPARATE-DEFAULT-1108 — PC-A — READY_FOR_CI
-
-COMPUTER_ID=PC-A; branch `codex/pc-a-transfer-separate-default-1108` from
-`origin/develop@a4e85b83f`. Owner requests hotel and transfer to share one broker
-and one supplier form by default, removes the explicit «کارگزار ترانسفر جدا از
-هتل» checkbox, and authorizes develop merge. Reserve the bounded Reservations
-hotel quotation editor, focused
-hotel-stay regressions and own status notes. New forms keep one hotel/transfer
-broker until the transfer broker is explicitly changed; saved modes remain readable
-and are not rewritten. Keep editable transfer broker, round-trip pricing and optional
-outbound/return split. No API/schema/migration/dependency/runtime or operational
-data change. Final-head checks gate merge; source freezes on publication and
-releases on verified merge.
-
-Delivered the combined default without the checkbox. The transfer lookup initially
-shows the hotel broker; selecting a genuinely different transfer broker records
-separate output automatically, and selecting the hotel broker retains combined
-output. Existing explicit saved modes remain unchanged. Focused 26 tests and the
-complete Reservations Web suite (664 passed, 4 existing skips), scoped ESLint,
-Web TypeScript and the production Web build (67 static pages/routes generated)
-pass. No data, API, schema, migration, dependency or runtime change.
-=======
-
 ## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
 
 Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.
@@ -11563,6 +11538,34 @@ COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `or
 
 CALENDAR-DAY-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve workbench calendar, note editor and request initial date wiring; existing APIs only, no migration/dependency changes.
 
+## TRANSFER-SEPARATE-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-transfer-separate-default-1108` from
+`origin/develop@a4e85b83f`. Owner requests hotel and transfer to share one broker
+and one supplier form by default, removes the explicit «کارگزار ترانسفر جدا از
+هتل» checkbox, and authorizes develop merge. Reserve the bounded Reservations
+hotel quotation editor, focused
+hotel-stay regressions and own status notes. New forms keep one hotel/transfer
+broker until the transfer broker is explicitly changed; saved modes remain readable
+and are not rewritten. Keep editable transfer broker, round-trip pricing and optional
+outbound/return split. No API/schema/migration/dependency/runtime or operational
+data change. Final-head checks gate merge; source freezes on publication and
+releases on verified merge.
+
+Delivered the combined default without the checkbox. The transfer lookup initially
+shows the hotel broker; selecting a genuinely different transfer broker records
+separate output automatically, and selecting the hotel broker retains combined
+output. Existing explicit saved modes remain unchanged. Focused 26 tests and the
+complete Reservations Web suite (664 passed, 4 existing skips), scoped ESLint,
+Web TypeScript and the production Web build (67 static pages/routes generated)
+pass. No data, API, schema, migration, dependency or runtime change.
+
+## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
+
+INTEGRATE-TRANSFER-DEFAULT-1108 bounded correctness extension: reproduced two failures when explicitly selecting the hotel broker or clearing a transfer broker after split mode; API rejects hotelTransferSplit=true with hotelTransferSeparate=false. Reserve minimal handler cleanup and two focused interaction regressions on the integration branch only. Preserve initial saved modes and original peer branch; no API/schema/dependency changes.
+
 ## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
@@ -11614,9 +11617,3 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
-
-## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — IN_PROGRESS
-
-Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
-
-INTEGRATE-TRANSFER-DEFAULT-1108 bounded correctness extension: reproduced two failures when explicitly selecting the hotel broker or clearing a transfer broker after split mode; API rejects hotelTransferSplit=true with hotelTransferSeparate=false. Reserve minimal handler cleanup and two focused interaction regressions on the integration branch only. Preserve initial saved modes and original peer branch; no API/schema/dependency changes.
