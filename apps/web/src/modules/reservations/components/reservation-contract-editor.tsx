@@ -215,7 +215,10 @@ export function ReservationContractEditor({
     );
 
   return (
-    <div className={styles.editor} dir="rtl">
+    <div
+      className={`${styles.editor} ${active === 'ویرایش مسافران' ? styles.passengerWorkspace : ''}`}
+      dir="rtl"
+    >
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <span className={styles.eyebrow}>ویرایش قرارداد</span>

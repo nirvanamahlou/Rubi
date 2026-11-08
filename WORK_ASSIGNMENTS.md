@@ -2,6 +2,14 @@
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
+## TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-transfer-count-guard-1108 from develop381f86e20. Owner requests removal of quotation helper text, transfer count bounds and exclusion of age 2–6 children, then develop merge. Reserve bounded reservation transfer count helpers/defaults, quotation editor, server supplier-settings/purchase validation and focused tests plus own task/status notes and additive error translations. Prior quotation/email scopes are merged; preserve their changes. No schema, dependency, operational data or deployment changes.
+
+Additive pure contracts helper is shared by Reservations Web/API; no API/Event payload change. Canonical booked rooms (or registered age bands when rooms are absent) bound each direction. Age 2–6 uses the existing under-six contract band; infants remain excluded. Preserve unknown historical child ages without inventing identities. Focused contracts, Web and API regressions pass; final-head hosted quality/build/full tests/PostgreSQL gates precede merge. Source scope freezes on publication and releases on verified merge.
+
+Bounded CI repair: reserve formatting only in the merged reservation-sales-amendment.tsx; upstream develop765072f5c introduced a Prettier failure. No semantic change to the peer airline-selector repair.
+
 ## RESERVATION-BROKER-EMAIL-1108 — PC-A — READY_FOR_REVIEW / IT PENDING
 
 ## TRANSFER-BROKER-RATIO-1108 — PC-A — READY_FOR_CI
@@ -11750,6 +11758,16 @@ Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. 
 
 UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.
 
+## VOUCHER-CONTINUITY-1108 — PC-A — DONE/MERGED
+
+Owner authorizes removing OTHER SERVICES from vouchers and continuous passenger/service tables without repeated hotel/service sections, tests and develop merge. Reserve voucher passenger columns/cells, preview/PDF pagination and print CSS, hotel output grouping counts and focused regressions. Preserve canonical allocations, per-hotel scope, all selected passengers/rooms, existing authorization and supplier forms. No schema/dependency/migration/deployment. Logical voucher count must not be printed as a physical page count after native pagination.
+
+Validation:56 focused output regressions and real Chrome/PDF text-order checks for6/40/80 synthetic passengers pass. Poppler renders of all five physical pages visually inspected: continuation starts at passenger34, headers repeat only column labels, names/rows retained exactly once; no clipping or reordered sections. Per-hotel grouping preserved, all rooms inline. Physical print flow uses named A4 pages with8mm margins and intact rows; internal grouping counters are not shown as physical page numbers. Local temporary smoke PDFs contain synthetic data only. Scoped lint, full Web TypeScript and67-route production build pass. Current develop additions retained; scoped reservation releases with the owner-authorized merge. No deployment.
+
+## PASSENGER-FULLSCREEN-1108 — PC-A — IN_PROGRESS
+
+User assigns PC-A and authorizes develop merge after tests. Branch codex/pc-a-passenger-fullscreen-1108; isolated checkout from 53cc0a538. Reserve contract-editor passenger-tab presentation, amendment compact passenger opt-in and passenger table styling only. Preserve identity permissions, pending membership and save behavior. No dependency, migration, data or deployment changes.
+
 ## EXTERNAL-BANK-SOURCE-1108 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-external-bank-source-1108 from develop d00a4b2e5. Owner requests external-source checkbox making all account form fields optional and explicitly confirms storing missing branch/currency as NULL, with no implicit defaults. Reserve CompanyBankAccounts UI/client/contracts, Finance bank-account commands/validation/tests and narrowly required nullable-account consumer guards; own translations and docs. Sole schema/migration reservation for additive isExternal flag and nullable FinanceSettlementAccount branch/currency, preserving existing rows/FKs, permission checks and financial use requirements. Prior broker email migration reservation released on frozen candidate. External unscoped accounts are bank-directory records visible under existing bank resource permission; financial commands still require matching explicit branch/currency. Used accounts cannot change scope/type. No dependency, operational data or deployment changes.
@@ -11765,3 +11783,11 @@ Owner requests exchange offices under currency/bank master data, title-only requ
 EXCHANGE-FUNDS-1108 extends reservation to the existing bank-account PostgreSQL CI step only, adding exchange-offices.postgres.spec.ts under the same disposable-DB flag. No CI policy/dependency changes. Existing payment sources remain backward compatible; only the requested Finance inbox picker changes.
 
 EXCHANGE-FUNDS-1108: native PostgreSQL tests pass for matching-currency debit, concurrent replay, insufficient funds, downstream rollback, precision, optimistic edits and immutable audit. Three payment producers tested; title-only form and retry tests added. Local API typecheck is blocked only by preexisting missing nodemailer in shared dependencies; clean hosted install/build remains authoritative. No dependency changes. Migration reservation releases on frozen publication.
+
+## INSURANCE-CORRECTION-1108 — PC-A — INTEGRATED / FINAL CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correction-1108 from origin/develop53cc0a538. Reserve insurance policies/documents correction entry points, shared correction dialog and requirements guidance, focused tests, bounded English keys and own task/status notes. Automatic identity corrections use existing authorized Customers public UI; manual draft correction retains current API. Preserve provider fingerprint/idempotency, issued-policy guards and sandbox restriction. Prior insurance selection source merged in PR1500. No schema/dependency or provider/runtime writes. User explicitly authorizes develop merge after final-head checks.
+
+Final fetch discovered concurrent PR1507 (codex/insurance-amend-1108), which changes the same policies editor plus identity/issuance API. Per repository overlap rule, stop source integration until its owner releases/coordinates scope. Local candidate preserved; 56 focused Web/customer regressions passed. No PR/develop merge or deployment performed by this task.
+
+Owner explicitly authorized coordination, preservation of both branches and green final-head develop merge. Coordination posted on PR1507. Integrated origin/develop and PR1507 at9ba91b1e4 preserving its direct passenger fields, versioned API correction and retry logic; document-summary correction dialog/requirements and exact-customer link remain. Policy list focus refresh retained. Original standalone Web lint/typecheck and full67-route production build passed; integrated tests/build and full hosted gates required before merge. No provider/runtime calls or deployment.

@@ -1,5 +1,6 @@
 import {
   readLegacyServiceParties,
+  reservationTransferPassengerLimit,
   reservationHotelTransferKeys,
   type SalesReservationRequestV1,
 } from '@nora/contracts';
@@ -45,11 +46,20 @@ export function contractHotelTransferCounts(
             (passenger) =>
               members.has(passenger.customerId) &&
               passenger.ageCategory !== 'INF' &&
+              passenger.childAgeBand !== 'AGE_2_6' &&
               passenger.serviceClientKeys.some((key) => serviceKeys.has(key)),
           )
           .map((passenger) => passenger.customerId),
       ).size;
     }
   }
+  const limit = reservationTransferPassengerLimit(snapshot, stayKey);
+  // Historical aggregate snapshots can lack both identities and room occupancy.
+  if (
+    snapshot.hotelSelection?.rooms?.length ||
+    (!parties && snapshot.passengerAssignments?.length)
+  )
+    for (const direction of ['outbound', 'returning'] as const)
+      counts[direction] = Math.min(counts[direction], limit);
   return counts;
 }

@@ -6,6 +6,7 @@ export function reservationTransferCounts(
   intake: ReservationFormIntake,
   passengers: readonly {
     age: string;
+    hotelChildAgeBand?: string | undefined;
     outboundTransfer: boolean;
     returnTransfer: boolean;
   }[],
@@ -36,6 +37,7 @@ export function reservationTransferCounts(
       const selected = passengers.filter(
         (person) =>
           person.age !== 'INF' &&
+          person.hotelChildAgeBand !== 'CHD_2_TO_6' &&
           (direction === 'OUTBOUND'
             ? person.outboundTransfer
             : person.returnTransfer),

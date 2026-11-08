@@ -1,13 +1,9 @@
 import { reservationHotelStays, scopeReservationHotel } from '@nora/contracts';
 import {
-  reservationPassengerPages,
-  reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from './reservation-form';
-import { defaultVoucherSettings, voucherFormData } from './voucher-settings';
-import { voucherPassengerPageUnits } from './voucher-passenger-services';
-import { voucherHotelJourneyRows } from './voucher-hotel-journeys';
+import { defaultVoucherSettings } from './voucher-settings';
 
 /** Read-only hotel documents. Primary voucher overrides never become another hotel's facts. */
 export function voucherHotelDocuments(
@@ -73,20 +69,8 @@ export function voucherHotelDocuments(
         });
   let offset = 0;
   const documents = scopes.map((scope) => {
-    const data = voucherFormData(scope, refs);
-    const settings = scope.workflow.voucherSettings;
-    const count =
-      reservationPassengerPages(
-        data.passengers,
-        voucherPassengerPageUnits(
-          settings,
-          data.notes,
-          voucherHotelJourneyRows(scope, refs).length > 0,
-        ),
-      ).length +
-      (settings?.flags.hotel === false
-        ? 0
-        : reservationRoomAppendices(data.roomBreakdown).length);
+    // One continuous document per hotel; the print engine owns physical pages.
+    const count = 1;
     const document = { intake: scope, pageOffset: offset, pageCount: count };
     offset += count;
     return document;

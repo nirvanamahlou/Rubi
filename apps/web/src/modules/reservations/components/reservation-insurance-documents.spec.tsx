@@ -86,5 +86,7 @@ it('offers insurance in Sales and clearly identifies the sandbox in Reservations
     <ReservationInsuranceDocuments id="intake" />,
   );
   expect(html).toContain('بیمه‌نامهٔ واقعی مسافر نیست');
+  expect(html).toContain('راهنمای اطلاعات لازم برای بیمه');
+  expect(html).toContain('شماره گذرنامه');
   expect(html).not.toContain('مجوز مالی');
 });

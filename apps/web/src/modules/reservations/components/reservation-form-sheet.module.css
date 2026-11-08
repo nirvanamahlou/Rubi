@@ -554,6 +554,37 @@
   padding: 7mm;
 }
 
+/* Passenger rows flow across physical pages without restarting the hotel form. */
+.page[data-voucher] .footer > b {
+  display: none;
+}
+@page voucher {
+  size: A4;
+  margin: 8mm;
+}
+@media print {
+  .page[data-voucher] {
+    page: voucher;
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    break-inside: auto;
+  }
+  .page[data-voucher] .table {
+    break-inside: auto;
+  }
+  .page[data-voucher] .table thead {
+    display: table-header-group;
+  }
+  .page[data-voucher] .table tr {
+    break-inside: avoid;
+  }
+  .page[data-voucher] .heading {
+    break-after: avoid;
+  }
+}
+
 .roomBreakdown th:nth-child(2),
 .roomBreakdown td:nth-child(2) {
   width: 48%;
