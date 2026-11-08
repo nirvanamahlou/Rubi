@@ -9409,3 +9409,7 @@ INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in th
 56 focused Web/Customer regressions passed. Final fetch discovered active overlapping PR1507 (codex/insurance-amend-1108), including the same policies.tsx editor and insurance APIs. Repository instructions require owner coordination before source integration; local candidate is preserved and no develop merge was attempted.
 
 Owner subsequently authorized coordination and integration preserving both branches. Coordination receipt: PR1507 issuecomment-6720292840. Integrated PR1507 at9ba91b1e4 with latest develop; policy-management inline identity editor and API/retry guards are retained alongside the document-summary correction dialog, exact passenger link, in-form requirements and list focus refresh. Standalone Web production build67 routes, typecheck/lint and56 focused tests passed; integrated verification and final hosted gates precede authorized merge. No deployment.
+
+
+## AMENDMENT-RESPONSIVE-1108
+Bound passenger amendment dialog to available viewport with border-box sizing and centered maximum width. Intrinsic grid/form/table widths can shrink; responsive tabs and padded sections retain all existing controls. Presentation-only, no API or migration.

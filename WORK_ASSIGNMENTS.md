@@ -11801,3 +11801,7 @@ Final fetch discovered concurrent PR1507 (codex/insurance-amend-1108), which cha
 Owner explicitly authorized coordination, preservation of both branches and green final-head develop merge. Coordination posted on PR1507. Integrated origin/develop and PR1507 at9ba91b1e4 preserving its direct passenger fields, versioned API correction and retry logic; document-summary correction dialog/requirements and exact-customer link remain. Policy list focus refresh retained. Original standalone Web lint/typecheck and full67-route production build passed; integrated tests/build and full hosted gates required before merge. No provider/runtime calls or deployment.
 
 EXCHANGE-FUNDS-1108 hosted follow-up: sync the bounded new visible API errors into the offline English catalogue and share one PageHeader across Finance master-data tabs, preserving navigation and the existing breadcrumb regression. No test relaxation or unrelated translations.
+
+## AMENDMENT-RESPONSIVE-1108 — PC-A
+
+Owner authorizes responsive redesign of Reservations passenger/room amendment and develop merge. Reserve editor CSS only and own notes. Remove viewport-plus-padding overflow, constrain grid/table/input intrinsic sizing, and improve section/card spacing. Existing commands, fields and permissions preserved; no schema/dependency/deployment.
