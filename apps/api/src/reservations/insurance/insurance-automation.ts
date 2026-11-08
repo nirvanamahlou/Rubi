@@ -460,6 +460,9 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
     return {
       sandbox: true,
+      selected: snapshot.serviceSelections.some(
+        (service) => service.kind === 'INSURANCE',
+      ),
       canPrepare: actor.permissions.includes('reservations.documents.manage'),
       total: ids.length,
       policies: ids.map((customerId) => {

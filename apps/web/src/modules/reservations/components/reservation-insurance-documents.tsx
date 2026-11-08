@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/overlays';
 
 type Summary = {
+  selected?: boolean;
   canPrepare?: boolean;
   sandbox: boolean;
   total: number;
@@ -144,7 +145,11 @@ export function ReservationInsuranceDocuments({
       {!data ? (
         <p role="status">در حال دریافت اطلاعات…</p>
       ) : !data.total ? (
-        <p>بیمه برای این قرارداد انتخاب نشده است.</p>
+        <p>
+          {data.selected
+            ? 'بیمه در قرارداد ثبت شده است؛ در ویرایش اسامی مسافران، بیمه را به مسافر تخصیص دهید.'
+            : 'بیمه برای این قرارداد انتخاب نشده است.'}
+        </p>
       ) : (
         <>
           {data.canPrepare && data.policies.some((p) => !p.id) && (

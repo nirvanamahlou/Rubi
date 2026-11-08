@@ -38,7 +38,10 @@ it('uses current insurance allocations and shows a reason for every missing poli
   expect(f.policies.upsert).toHaveBeenCalledTimes(1);
   expect(f.provider.createPolicy).not.toHaveBeenCalled();
   current.passengerAssignments[0]!.serviceClientKeys = [];
-  expect((await f.service.summary('intake', f.actor)).total).toBe(0);
+  expect(await f.service.summary('intake', f.actor)).toMatchObject({
+    total: 0,
+    selected: true,
+  });
 });
 
 function fixture() {

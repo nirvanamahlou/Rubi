@@ -1,4 +1,4 @@
-## HR fast attendance sync � 2026-11-08
+## HR fast attendance sync — 2026-11-08
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
@@ -2138,6 +2138,8 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 # وضعیت پروژه
 
 ## 2026-11-08 — انتخاب و وضعیت بیمه هر مسافر
+
+وضعیت: تکمیل و ادغام در develop؛ برای اعمال روی سرور، API و Web این نسخه باید با هم مستقر شوند. اگر بیمه در قرارداد ثبت شده ولی به هیچ مسافری تخصیص ندارد، پیام مشخص و راهنمای ویرایش اسامی نمایش داده می‌شود.
 
 `INSURANCE-SELECTION-1108` توسط PC-A: بیمه‌نامه و صف صدور، تخصیص فعلی بیمه در قرارداد را از سرویس عمومی فروش می‌خوانند. مسافر بدون رکورد صدور نیز همراه علت آماده‌نبودن نمایش داده می‌شود؛ بیمه‌نامه موجود با تغییر نسخه intake ناپدید نمی‌شود. آماده‌سازی درخواست‌های ثبت‌نشده با مجوز مدیریت اسناد و حفظ یکتایی درخواست ممکن است. در ویرایش قرارداد، خدمات بیمه هر مسافر قابل افزودن و برداشتن است.
 
