@@ -358,3 +358,55 @@ it('honors the confirmed source date correction only from its configured cutover
     ),
   ).toEqual(['2026-11-04', '2026-11-04']);
 });
+
+it('keeps the exit on the correction day with the previous offset morning and preserves source seconds', async () => {
+  const { service, hr } = dualSource();
+  vi.setSystemTime(new Date('2026-11-08T12:00:00Z'));
+  vi.stubEnv('HR_RADAN_DATE_CORRECTED_FROM', '2026-11-07');
+  vi.mocked(RadanDeviceClient.prototype.list).mockImplementation(
+    async (path) =>
+      (path === '/V1/Users'
+        ? [{ id: 1, profile: { personnel_id: '2001' } }]
+        : [
+            {
+              id: 1,
+              user_id: 1,
+              datetime: '2026-11-06 09:10:23',
+              entry_type: 'indeterminate',
+              status: 'accepted',
+            },
+            {
+              id: 2,
+              user_id: 1,
+              datetime: '2026-11-07 16:10:47',
+              entry_type: 'indeterminate',
+              status: 'accepted',
+            },
+            {
+              id: 3,
+              user_id: 1,
+              datetime: '2026-11-08 09:12:51',
+              entry_type: 'indeterminate',
+              status: 'accepted',
+            },
+          ]) as never,
+  );
+  await service.sync(actor);
+  expect(hr.importDevicePunches.mock.calls[0]![0].punches).toMatchObject([
+    {
+      date: '2026-11-07',
+      time: '09:10',
+      occurredAt: '2026-11-07T05:40:23.000Z',
+    },
+    {
+      date: '2026-11-07',
+      time: '16:10',
+      occurredAt: '2026-11-07T12:40:47.000Z',
+    },
+    {
+      date: '2026-11-08',
+      time: '09:12',
+      occurredAt: '2026-11-08T05:42:51.000Z',
+    },
+  ]);
+});

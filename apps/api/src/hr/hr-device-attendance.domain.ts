@@ -18,10 +18,17 @@ export function resolveDeviceDirections(
   events: AttendanceEvent[],
 ): AttendanceEvent[] {
   let inside = false;
+  const explicitTimes = new Set(
+    events
+      .filter((e) => e.kind === 'ورود' || e.kind === 'خروج')
+      .map((e) => e.at.getTime()),
+  );
   const seen = new Set<string>();
   return [...events]
     .sort((a, b) => a.at.getTime() - b.at.getTime())
     .flatMap((event) => {
+      if (event.kind === 'اعلام حضور' && explicitTimes.has(event.at.getTime()))
+        return [];
       const key = `${event.at.getTime()}:${event.kind}`;
       if (seen.has(key)) return [];
       seen.add(key);

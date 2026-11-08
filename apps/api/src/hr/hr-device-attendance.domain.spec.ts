@@ -148,3 +148,23 @@ it('applies the Thursday office end and the independent17:30 overtime boundary',
     overtimeMinutes: 0,
   });
 });
+
+it('does not let a neutral copy of an explicit punch create an early exit or swallow the real exit', () => {
+  for (const copies of [
+    [event('09:15', 'ورود'), event('09:15')],
+    [event('09:15'), event('09:15', 'ورود')],
+  ]) {
+    const resolved = resolve([
+      ...copies,
+      event('17:00', 'خروج'),
+      event('17:00'),
+    ]);
+    expect(resolved.map((e) => e.kind)).toEqual(['ورود', 'خروج']);
+    expect(metrics(resolved, start, end)).toMatchObject({
+      firstIn: start.toISOString(),
+      lastOut: end.toISOString(),
+      earlyMinutes: 0,
+      deficitMinutes: 0,
+    });
+  }
+});

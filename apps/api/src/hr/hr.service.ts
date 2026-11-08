@@ -6074,6 +6074,7 @@ export class HrService {
         time: string;
         kind: string;
         accepted: boolean;
+        occurredAt?: string;
       }[];
     },
     key: string,
@@ -6129,7 +6130,12 @@ export class HrService {
           }
           const id = deviceRecordId(input.source, punch.id);
           const existing = await tx.hrRecord.findUnique({ where: { id } });
-          if (existing?.deletedAt) {
+          const priorData =
+            (existing?.data as Record<string, unknown> | undefined) ?? {};
+          if (
+            existing?.deletedAt &&
+            priorData.attendanceProviderRejected !== true
+          ) {
             unchanged++;
             continue;
           }
@@ -6156,19 +6162,33 @@ export class HrService {
             reconcile.push({ date: oldDate, employeeId: employee.id });
           }
           if (!punch.accepted) {
-            if (existing) {
+            if (existing && !existing.deletedAt) {
               await tx.hrRecord.update({
                 where: { id },
-                data: { deletedAt: new Date(), version: { increment: 1 } },
+                data: {
+                  deletedAt: new Date(),
+                  data: json({
+                    ...priorData,
+                    attendanceProviderRejected: true,
+                  }),
+                  version: { increment: 1 },
+                },
               });
               dates.add(punch.date);
               imported++;
             }
             continue;
           }
-          const at = validate
-            .localClockToUtc(punch.date, punch.time)
-            .toISOString();
+          const timestamp =
+            punch.occurredAt === undefined
+              ? validate.localClockToUtc(punch.date, punch.time)
+              : new Date(punch.occurredAt);
+          if (!Number.isFinite(timestamp.getTime()))
+            throw new BadRequestException('ساعت معتبر نیست.');
+          const clock = validate.localClockParts(timestamp);
+          if (clock.date !== punch.date || clock.time !== punch.time)
+            throw new BadRequestException('ساعت معتبر نیست.');
+          const at = timestamp.toISOString();
           const values = [
             employee.name,
             punch.date,
@@ -6210,6 +6230,8 @@ export class HrService {
             reconcile.push({ date: previous, employeeId: employee.id });
           }
           const data = {
+            ...priorData,
+            attendanceProviderRejected: false,
             ...(previousDates.size
               ? { attendancePreviousDates: [...previousDates].sort() }
               : {}),
@@ -6220,15 +6242,19 @@ export class HrService {
           };
           if (
             existing &&
-            JSON.stringify(existing.values) === JSON.stringify(values)
+            !existing.deletedAt &&
+            JSON.stringify(existing.values) === JSON.stringify(values) &&
+            priorData.startsAt === at &&
+            priorData.sourceEntryType === punch.kind
           ) {
             unchanged++;
             dates.add(punch.date);
             continue;
           }
           const write = {
+            deletedAt: null,
             values,
-            data,
+            data: json(data),
             status: 'ثبت شده',
             effectiveAt: validate.isoDate(punch.date),
             searchText: values.join(' '),
