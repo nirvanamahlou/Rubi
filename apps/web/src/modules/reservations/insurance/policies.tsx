@@ -31,6 +31,11 @@ import {
 } from './client';
 import styles from './workspace.module.css';
 import { currencySymbol } from '@/lib/currency-symbol';
+import {
+  canCorrectInsurance,
+  InsuranceCorrection,
+  InsuranceRequirements,
+} from './correction';
 
 const emptyFilter = {
   search: '',
@@ -49,6 +54,11 @@ export function InsurancePolicies({
   const [query, setQuery] = useState(emptyFilter);
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setRevision((value) => value + 1);
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, []);
   const [result, setResult] = useState<InsuranceListResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -412,22 +422,32 @@ export function InsurancePolicies({
                     <td dir="ltr">{row.issuedAt?.slice(0, 10) ?? '—'}</td>
                     <td>
                       <div className={styles.actions}>
-                        <Button
-                          variant="outline"
-                          disabled={
-                            row.automatic ||
-                            !result.canManage ||
-                            ![
-                              'DRAFT',
-                              'INPUT_ERROR',
-                              'PROVIDER_ERROR',
-                            ].includes(row.status)
-                          }
-                          onClick={() => setTarget(row)}
-                        >
-                          <FilePenLine size={15} />
-                          اصلاح
-                        </Button>
+                        {row.automatic ? (
+                          <InsuranceCorrection
+                            customerId={row.customerId}
+                            passengerName={row.passengerName}
+                            disabled={
+                              !result.canManage ||
+                              !canCorrectInsurance(row.status)
+                            }
+                          />
+                        ) : (
+                          <Button
+                            variant="outline"
+                            disabled={
+                              !result.canManage ||
+                              ![
+                                'DRAFT',
+                                'INPUT_ERROR',
+                                'PROVIDER_ERROR',
+                              ].includes(row.status)
+                            }
+                            onClick={() => setTarget(row)}
+                          >
+                            <FilePenLine size={15} />
+                            اصلاح
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           onClick={() => void showHistory(row.id)}
@@ -656,6 +676,7 @@ function InsuranceDraft({
         void save();
       }}
     >
+      <InsuranceRequirements />
       {error && (
         <p role="alert" className={styles.error}>
           {error}

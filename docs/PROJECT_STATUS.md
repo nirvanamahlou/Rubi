@@ -1,3 +1,9 @@
+## Insurance correction — 2026-11-08 — PC-A — AWAITING OWNER COORDINATION
+
+INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in the document summary and policy management table, linked to the exact passenger's existing authorized Customer record. Shared in-form guidance covers identity/passport/contact/travel prerequisites; manual draft correction remains versioned, issued-policy and provider fingerprint guards remain unchanged. Policy management refreshes on returning to the tab. No migration, dependencies, provider calls or deployment. Validation and develop PR/merge pending; see tasks/INSURANCE-CORRECTION-1108.md.
+
+56 focused Web/Customer regressions passed. Final fetch discovered active overlapping PR1507 (codex/insurance-amend-1108), including the same policies.tsx editor and insurance APIs. Repository instructions require owner coordination before source integration; local candidate is preserved and no develop merge was attempted.
+
 ## HR penalty settings persistence — 2026-11-08
 
 ## REPORT-MONEY-FORMAT-1108 — PC-C
