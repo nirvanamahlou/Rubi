@@ -292,7 +292,11 @@ export async function readFinanceHistory(
       amount: row.paidAmount.toString(),
       currencyCode: row.cost.currencyCode,
       accountId: row.accountId,
-      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
+      accountTitle:
+        row.exchangeOfficeName ??
+        row.payingSupplierName ??
+        row.account?.title ??
+        null,
       method: row.paymentMethod.name,
       reference: row.paymentReference,
       installment: row.version,
@@ -309,7 +313,11 @@ export async function readFinanceHistory(
       amount: row.paidAmount!.toString(),
       currencyCode: row.paymentCurrencyCode ?? row.account?.currencyCode ?? '—',
       accountId: row.accountId,
-      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
+      accountTitle:
+        row.exchangeOfficeName ??
+        row.payingSupplierName ??
+        row.account?.title ??
+        null,
       method: row.paymentMethod?.name ?? null,
       reference: row.paymentReference,
       installment: null,
@@ -329,7 +337,11 @@ export async function readFinanceHistory(
       amount: row.paidAmount!.toString(),
       currencyCode: purchases.get(row.purchaseId)!.currencyCode,
       accountId: row.accountId,
-      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
+      accountTitle:
+        row.exchangeOfficeName ??
+        row.payingSupplierName ??
+        row.account?.title ??
+        null,
       method: row.paymentMethod?.name ?? null,
       reference: row.paymentReference,
       installment: null,

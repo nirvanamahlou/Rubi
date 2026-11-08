@@ -109,7 +109,7 @@ export const financeInboxApi = {
     id: string,
     command: FinanceProcurementInvoicePaymentCommandV1,
   ) {
-    return apiRequest(
+    return apiRequest<{ data: { id: string } }>(
       `/finance/inbox/purchases/invoices/${encodeURIComponent(id)}/payments`,
       { method: 'POST', body: JSON.stringify(command) },
     );
@@ -213,7 +213,7 @@ export const financeInboxApi = {
     purchaseId: string,
     input: FinanceSupplierPaymentCommandV1,
   ) =>
-    apiRequest<{ data: unknown }>(
+    apiRequest<{ data: { id: string } }>(
       `/finance/inbox/reservations/${encodeURIComponent(intakeId)}/purchases/${encodeURIComponent(purchaseId)}/payments`,
       { method: 'POST', body: JSON.stringify(input) },
     ),

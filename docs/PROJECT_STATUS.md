@@ -9392,6 +9392,12 @@ PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing 
 
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.
 
+## EXCHANGE-FUNDS-1108 — 2026-11-08 — PC-B
+
+Added Currency Funds to currency/bank master data: four requested KPIs, search/country/currency/status filters, title-only required exchange-office editor, multiple currency balances, versioned edit and soft delete. Finance inbox replaces the paying-supplier picker with active exchange offices carrying the payment currency. Payments atomically debit that currency; legacy supplier history/API remains compatible. Removed the fixed purchase-rate entry and partial-payment guidance. Optional payment evidence now covers ticket, reservation supplier and procurement invoice payments with independent upload retry.
+
+One additive migration creates office/balance/audit/movement records and nullable real links on the three payment revisions. Disposable PostgreSQL tests verify replay, concurrency, insufficient funds, transaction rollback and immutable audit; targeted payment integration and form tests also pass. No operational database or production runtime was changed. Deployment must apply the migration before serving the new API/Web. Exact-head hosted build and quality gates are required before merge.
+
 ## Insurance correction — 2026-11-08 — PC-A — INTEGRATED / FINAL CI
 
 INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in the document summary and policy management table, linked to the exact passenger's existing authorized Customer record. Shared in-form guidance covers identity/passport/contact/travel prerequisites; manual draft correction remains versioned, issued-policy and provider fingerprint guards remain unchanged. Policy management refreshes on returning to the tab. No migration, dependencies, provider calls or deployment. Validation and develop PR/merge pending; see tasks/INSURANCE-CORRECTION-1108.md.

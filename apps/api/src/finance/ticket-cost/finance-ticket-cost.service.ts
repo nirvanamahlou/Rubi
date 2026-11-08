@@ -1,3 +1,4 @@
+import { debitExchange } from '../exchange-offices/exchange-payment';
 import { recordPurchaseGroup } from './record-purchase-group';
 import { purchaseFlightGroup, readPurchasePool } from './ticket-purchase-group';
 import { financialDate } from '../accounting/accounting.financial-events';
@@ -433,7 +434,8 @@ export class FinanceTicketCostService {
         (!Number.isSafeInteger(input.expectedPaymentVersion) ||
           input.expectedPaymentVersion < 0)) ||
       (!/^[0-9a-f-]{36}$/i.test(input.accountId ?? '') &&
-        !/^[0-9a-f-]{36}$/i.test(input.payingSupplierId ?? '')) ||
+        !/^[0-9a-f-]{36}$/i.test(input.payingSupplierId ?? '') &&
+        !/^[0-9a-f-]{36}$/i.test(input.exchangeOfficeId ?? '')) ||
       !/^[0-9a-f-]{36}$/i.test(input.paymentMethodId ?? '') ||
       (input.paymentReference?.length ?? 0) > 160
     )
@@ -490,6 +492,8 @@ export class FinanceTicketCostService {
             replay.accountId !== (input.accountId || null) ||
             (replay.payingSupplierId ?? null) !==
               (input.payingSupplierId || null) ||
+            (replay.exchangeOfficeId ?? null) !==
+              (input.exchangeOfficeId || null) ||
             replay.paymentMethodId !== input.paymentMethodId ||
             !replay.paidAmount.equals(amount) ||
             !replay.exchangeRateToIrr.equals(rate) ||
@@ -528,15 +532,20 @@ export class FinanceTicketCostService {
       });
       if (latest?.id !== cost.id)
         throw new ConflictException('نسخه قیمت خرید تغییر کرده است.');
-      const { account, payingSupplierId, payingSupplierName } =
-        await paymentSource(
-          tx,
-          this.supplierDirectory,
-          input,
-          cost.currencyCode,
-          request.branchId,
-          'ACCOUNT_OR_SUPPLIER',
-        );
+      const {
+        account,
+        payingSupplierId,
+        payingSupplierName,
+        exchangeOfficeId,
+        exchangeOfficeName,
+      } = await paymentSource(
+        tx,
+        this.supplierDirectory,
+        input,
+        cost.currencyCode,
+        request.branchId,
+        'ACCOUNT_OR_SUPPLIER',
+      );
       const method = await tx.masterPaymentMethod.findFirst({
         where: {
           id: input.paymentMethodId,
@@ -572,6 +581,8 @@ export class FinanceTicketCostService {
           accountId: account?.id ?? null,
           payingSupplierId,
           payingSupplierName,
+          exchangeOfficeId,
+          exchangeOfficeName,
           paymentMethodId: method.id,
           paidAmount: amount,
           cumulativePaid: cumulative,
@@ -583,6 +594,13 @@ export class FinanceTicketCostService {
           reason: '',
           actorUserId: actor.userId,
         },
+      });
+      await debitExchange(tx, {
+        officeId: exchangeOfficeId,
+        currencyCode: cost.currencyCode,
+        amount: amount.toString(),
+        actorUserId: actor.userId,
+        ticketPaymentId: row.id,
       });
       if (!previous && (await isNewAccountingSource(tx, cost.createdAt)))
         await recordFinancialEvent(tx, {
@@ -618,7 +636,7 @@ export class FinanceTicketCostService {
           row.rialEquivalent?.toString(),
         ),
         settlementAccountId: account?.id ?? null,
-        partyId: `${requestId}:${payingSupplierId ?? ''}`,
+        partyId: `${requestId}:${exchangeOfficeId ?? payingSupplierId ?? ''}`,
         reference: row.paymentReference,
       });
       if (remaining.isZero())

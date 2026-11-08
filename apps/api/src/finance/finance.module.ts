@@ -1,3 +1,4 @@
+import { ExchangeOfficeModule } from './exchange-offices/exchange-office.module';
 import {
   FinancePartyReceipts,
   FinancePartyReceiptsController,
@@ -37,6 +38,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 @Module({
   imports: [
     BankAccountModule,
+    ExchangeOfficeModule,
     FinancePartnerModule,
     PurchaseFxModule,
     IamModule,
