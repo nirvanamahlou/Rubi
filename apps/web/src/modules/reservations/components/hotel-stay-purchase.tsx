@@ -5,6 +5,8 @@ import {
   moneyUnits,
   moneyDecimal,
   hotelNights,
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
   hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
@@ -304,6 +306,10 @@ export function HotelStayPurchase({
         )
       )
         throw Error('کارگزار، ارز و قیمت همه اتاق‌ها را تکمیل کنید.');
+      assertReservationTransferCounts(
+        draft.hotelTransferCounts,
+        reservationTransferPassengerLimit(request.snapshot, stayKey),
+      );
       const count = hotelTransferChargeableCount(
         draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
         draft.hotelTransferRoundTrip,
@@ -497,6 +503,10 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        transferLimit={reservationTransferPassengerLimit(
+          request.snapshot,
+          stayKey,
+        )}
         hotelBroker={broker}
         purchaseRoot={purchaseRoot}
         requestId={request.id}
