@@ -5,7 +5,7 @@ import type {
 } from '@nora/contracts';
 
 export function paymentDestinationIsRequired(payment: {
-  method?: SalesPaymentMethod;
+  method?: SalesPaymentMethod | undefined;
   currencyCode: string;
 }) {
   return (

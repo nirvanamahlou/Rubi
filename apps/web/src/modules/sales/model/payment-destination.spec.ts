@@ -68,7 +68,9 @@ it.each(['EUR', 'USD', 'AED'])(
     for (const destinationAccountId of [undefined, null, '']) {
       expect(
         paymentDestinationIsValid(
-          { ...transfer, destinationAccountId },
+          destinationAccountId === undefined
+            ? transfer
+            : { ...transfer, destinationAccountId },
           [],
           true,
           'Failed',
