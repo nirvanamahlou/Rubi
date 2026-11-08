@@ -409,11 +409,7 @@ export function ReservationSalesAmendment({
             <TicketOfferPicker
               enabled={!!day}
               emptyMessage={
-                matchesSavedAmendmentFlight(
-                  draft,
-                  direction,
-                  day,
-                )
+                matchesSavedAmendmentFlight(draft, direction, day)
                   ? 'بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.'
                   : undefined
               }

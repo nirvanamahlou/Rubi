@@ -117,3 +117,92 @@ it('requires actual contact details rather than manufacturing them for the provi
   f.person.contacts = [];
   await expect(f.service.read('intake', 'person')).rejects.toThrow('تکمیل');
 });
+
+it('saves correction with encrypted identifiers and contacts, optimistic concurrency, and metadata-only audit', async () => {
+  const f = fixture();
+  const protect = vi.fn(() => ({ nationalIdEncrypted: 'sealed-national' }));
+  const protectPassportNumber = vi.fn(() => ({
+    passportNumberEncrypted: 'sealed-passport',
+  }));
+  const protectContact = vi.fn((type: string) => ({
+    encryptedValue: 'sealed-' + type,
+    valueHash: 'hash-' + type,
+    maskedValue: 'masked',
+    valueFingerprint: 'fingerprint-' + type,
+  }));
+  Object.assign(f.ids, { protect, protectPassportNumber });
+  Object.assign(f.contacts, { protect: protectContact });
+  const tx = {
+    customer: { updateMany: vi.fn(async () => ({ count: 1 })) },
+    customerContact: { updateMany: vi.fn(), upsert: vi.fn() },
+    customerAuditEvent: { create: vi.fn() },
+  };
+  const input = {
+    version: 1,
+    firstName: 'Test',
+    lastName: 'Passenger',
+    firstNameLatin: 'TEST',
+    lastNameLatin: 'PASSENGER',
+    nationalityCode: 'IRN',
+    nationalCode: '0013547890',
+    passportNo: 'A12345678',
+    birthDate: '1990-01-01',
+    gender: 'M' as const,
+    mobile: '09123456789',
+    email: 'test@example.invalid',
+  };
+  await f.service.saveCorrection(
+    tx as never,
+    'person',
+    input,
+    { userId: 'operator' } as never,
+    'branch',
+  );
+  expect(tx.customer.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { id: 'person', version: 1, kind: 'PERSON', isActive: true },
+      data: expect.objectContaining({
+        nationalIdEncrypted: 'sealed-national',
+        passportNumberEncrypted: 'sealed-passport',
+      }),
+    }),
+  );
+  expect(tx.customerContact.upsert).toHaveBeenCalledTimes(2);
+  const audit = JSON.stringify(tx.customerAuditEvent.create.mock.calls);
+  for (const secret of [
+    input.nationalCode,
+    input.passportNo,
+    input.mobile,
+    input.email,
+  ])
+    expect(audit).not.toContain(secret);
+  tx.customer.updateMany.mockResolvedValue({ count: 0 });
+  await expect(
+    f.service.saveCorrection(
+      tx as never,
+      'person',
+      input,
+      { userId: 'operator' } as never,
+      'branch',
+    ),
+  ).rejects.toThrow();
+  expect(tx.customerContact.upsert).toHaveBeenCalledTimes(2);
+});
+it('reads incomplete correction fields without requiring issuance-ready identity', async () => {
+  const f = fixture();
+  f.person.contacts = [];
+  f.person.passportFirstName = '';
+  const result = await f.service.correction('intake', 'person', {
+    userId: 'operator',
+  } as never);
+  expect(result.firstNameLatin).toBe('');
+  expect(result.mobile).toBe('');
+  expect(f.repository.auditSensitiveRead).toHaveBeenCalledWith(
+    'person',
+    'operator',
+    'branch',
+    expect.any(String),
+    undefined,
+    expect.any(Array),
+  );
+});

@@ -51,7 +51,23 @@ export interface InsuranceConfigurationV1 {
   countries: InsuranceCountryMappingV1[];
 }
 
+export interface InsurancePassengerInputV1 {
+  version: number;
+  firstName: string;
+  lastName: string;
+  firstNameLatin: string;
+  lastNameLatin: string;
+  nationalityCode: string;
+  nationalCode: string;
+  passportNo: string;
+  birthDate: string;
+  gender: 'M' | 'F';
+  mobile: string;
+  email: string;
+}
+
 export interface InsuranceDraftInputV1 {
+  passenger?: InsurancePassengerInputV1;
   intakeId: string;
   customerId: string;
   destinationCode: string;
