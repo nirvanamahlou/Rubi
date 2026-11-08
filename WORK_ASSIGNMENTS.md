@@ -491,6 +491,10 @@ SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTU
 
 Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
 
+## AMENDMENT-RESPONSIVE-1108 — PC-A
+
+Owner authorizes responsive redesign of Reservations passenger/room amendment and develop merge. Reserve editor CSS only and own notes. Remove viewport-plus-padding overflow, constrain grid/table/input intrinsic sizing, and improve section/card spacing. Existing commands, fields and permissions preserved; no schema/dependency/deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
@@ -11829,3 +11833,7 @@ REQUEST-FLOW-REDESIGN-1108 hosted full-suite follow-up: existing receipt/account
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-mail-acceptance-1108 from origin/develop@57bbca3b4. Owner authorizes completing IT-independent acceptance, staff/operations instructions, PR, fixing all exact-head CI gates and merge to develop after success. Reserve reservation-mail.service.spec.ts, reservation-mail-workflow.spec.ts, reservation-mail-route.spec.ts and own task/status documentation. Prior PR1498 is integrated; its source locks are released. Verify recipient ambiguity/invalid email/audit failures, branch and permission rejection, disabled dispatch and attachment-only PDF acceptance. Preserve form/CSS/PDF template and existing authorization. No IAM grants, production contact edits, migration/dependency, deployment or real SMTP; sending remains default-off. Recipient completeness on real records and controlled external delivery remain operational acceptance after IT settings.
 
 RESERVATION-MAIL-ACCEPTANCE-1108 — READY_FOR_CI: PR1519 published as41c971453.40 API mail tests,699 Web Reservations tests (5 existing skips),15 focused Web checks, real Chrome single/multipage PDF smoke, scoped lint and formatting pass. Persian staff guide includes recipient/access preparation, notification semantics and safe suspension. Source frozen and bounded locks released; exact final-head hosted gates are required for owner-authorized develop merge. Final check/merge evidence is retained in PR1519. No form/PDF appearance, operational data/settings, migration/dependency or SMTP changes.
+
+## SALES-RETURN-DATE-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-return-date-1108 from develop de4a68e3b. Reserve Sales list travel-summary helper, focused regression and own task/status notes. User authorizes correct return-only contract dates and green develop merge; no deployment. The shared public salesContractFlights reader includes floating snapshots absent from ticketSelections; exact direction, per-service calendar and Tehran date are retained. No schema/dependency/API contract or data mutation. No overlapping active list-summary writer found. Eight targeted regression tests pass; final full gates required.
