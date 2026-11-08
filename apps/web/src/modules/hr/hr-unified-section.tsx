@@ -43,6 +43,7 @@ import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
+import { HrAttendanceEditor } from './hr-attendance-editor';
 import { HrLeaveBalance } from './hr-leave-balance';
 import { parseSavedHrFilter } from './hr-filters';
 
@@ -78,6 +79,9 @@ function AccessibleHrSection({
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
+  const [attendanceEdit, setAttendanceEdit] = useState<HrRecordDto | null>(
+    null,
+  );
   const [missionCosts, setMissionCosts] = useState<{
     mission: HrRecordDto;
     items: HrRecordDto[];
@@ -346,6 +350,24 @@ function AccessibleHrSection({
             >
               گزارش PDF
             </HrButton>
+            {section === 'time' &&
+              source.tab === 'leavePolicies' &&
+              store.data!.capabilities.write && (
+                <HrButton
+                  onClick={() =>
+                    onForm({
+                      source: {
+                        section: 'time',
+                        tab: 'penaltySettings',
+                        label: 'تنظیمات جریمه',
+                        action: 'تنظیمات جریمه',
+                      },
+                    })
+                  }
+                >
+                  تنظیمات جریمه
+                </HrButton>
+              )}
             {writable && !calendar ? (
               <>
                 <HrButton onClick={() => setImporting(true)}>
@@ -601,6 +623,16 @@ function AccessibleHrSection({
           <>
             <HrTable
               data={dataset}
+              {...(attendanceView && store.data!.capabilities.manualAttendance
+                ? {
+                    onEdit: (index: number) =>
+                      setAttendanceEdit(
+                        currentItems.find(
+                          (item) => item.id === dataset.recordIds?.[index],
+                        ) ?? null,
+                      ),
+                  }
+                : {})}
               {...(source.section === 'expenses' && source.tab === 'mission'
                 ? {
                     rowActions: (index: number) => (
@@ -660,6 +692,16 @@ function AccessibleHrSection({
                   }
                 : {})}
             />
+            {attendanceEdit && store.data!.capabilities.manualAttendance && (
+              <HrAttendanceEditor
+                record={attendanceEdit}
+                onClose={() => setAttendanceEdit(null)}
+                onSaved={async () => {
+                  await store.mutated();
+                  setRefreshTick((value) => value + 1);
+                }}
+              />
+            )}
             {missionCosts && (
               <Dialog
                 open
