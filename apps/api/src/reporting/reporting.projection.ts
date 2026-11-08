@@ -7,6 +7,7 @@ import type {
   TravelReportRowV1,
 } from './reporting.contracts';
 import type { ReportingFactRow } from './reporting.repository';
+import { currencyValues } from './reporting-currency-values';
 import {
   createFilterSnapshot,
   MAX_PREVIEW_PAGE_SIZE,
@@ -160,6 +161,8 @@ export function buildTravelReportResult(input: {
     string,
     TravelReportRowV1 & {
       orderIds: Set<string>;
+      countItems: Map<string, { passengers: number; tickets: number }>;
+      money: Map<string, Record<string, string>>;
       pendingReservationOrderIds: Set<string>;
     }
   >();
@@ -170,7 +173,7 @@ export function buildTravelReportResult(input: {
       primaryDimension,
       secondaryDimension,
     ];
-    const key = `${identity[0]}\u001f${identity[1]}\u001f${fact.currencyCode}`;
+    const key = JSON.stringify(identity);
     const current = groups.get(key) ?? {
       grainId: key,
       primaryDimension,
@@ -186,6 +189,8 @@ export function buildTravelReportResult(input: {
       settlementBalance: '0',
       pendingReservationActions: 0,
       orderIds: new Set<string>(),
+      countItems: new Map(),
+      money: new Map(),
       pendingReservationOrderIds: new Set<string>(),
     };
     current.orderIds.add(fact.orderNumber);
@@ -193,27 +198,43 @@ export function buildTravelReportResult(input: {
       current.pendingReservationOrderIds.add(fact.orderNumber);
     current.orderCount = current.orderIds.size;
     current.pendingReservationActions = current.pendingReservationOrderIds.size;
-    current.passengerCount += fact.passengerCount;
-    current.ticketCount += fact.ticketCount;
-    current.salesAmount = amount(current.salesAmount)
-      .plus(fact.salesAmount)
-      .toString();
-    current.purchaseAmount = amount(current.purchaseAmount)
-      .plus(fact.purchaseAmount)
-      .toString();
-    current.grossProfit = amount(current.grossProfit)
-      .plus(fact.salesAmount)
-      .minus(fact.purchaseAmount)
-      .plus(fact.commissionAmount)
-      .toString();
-    current.refundAmount = amount(current.refundAmount)
-      .plus(fact.refundAmount)
-      .toString();
-    current.settlementBalance = amount(current.settlementBalance)
-      .plus(fact.salesAmount)
-      .minus(fact.refundAmount)
-      .minus(fact.settledAmount)
-      .toString();
+    const countId = fact.sourceItemId ?? fact.id;
+    const previousCounts = current.countItems.get(countId);
+    current.countItems.set(countId, {
+      passengers: fact.passengerCount,
+      tickets: fact.ticketCount,
+    });
+    current.passengerCount +=
+      fact.passengerCount - (previousCounts?.passengers ?? 0);
+    current.ticketCount += fact.ticketCount - (previousCounts?.tickets ?? 0);
+    const money = current.money.get(fact.currencyCode) ?? {
+      salesAmount: '0',
+      purchaseAmount: '0',
+      grossProfit: '0',
+      refundAmount: '0',
+      settlementBalance: '0',
+    };
+    const additions = {
+      salesAmount: fact.salesAmount,
+      purchaseAmount: fact.purchaseAmount,
+      grossProfit: fact.salesAmount
+        .minus(fact.purchaseAmount)
+        .plus(fact.commissionAmount),
+      refundAmount: fact.refundAmount,
+      settlementBalance: fact.salesAmount
+        .minus(fact.refundAmount)
+        .minus(fact.settledAmount),
+    };
+    for (const [name, value] of Object.entries(additions))
+      money[name] = amount(money[name]!).plus(value).toString();
+    current.money.set(fact.currencyCode, money);
+    // Scalar compatibility fields retain the first currency, never a mixed sum.
+    const firstCurrency = current.money.get(current.currencyCode)!;
+    current.salesAmount = firstCurrency.salesAmount!;
+    current.purchaseAmount = firstCurrency.purchaseAmount!;
+    current.grossProfit = firstCurrency.grossProfit!;
+    current.refundAmount = firstCurrency.refundAmount!;
+    current.settlementBalance = firstCurrency.settlementBalance!;
     groups.set(key, current);
   }
   const sortable = new Set<keyof TravelReportRowV1>([
@@ -251,7 +272,40 @@ export function buildTravelReportResult(input: {
     refundAmount: group.refundAmount,
     settlementBalance: group.settlementBalance,
     pendingReservationActions: group.pendingReservationActions,
+    amountsByCurrency: [...group.money].map(([currencyCode, money]) => ({
+      currencyCode,
+      amount: money.salesAmount!,
+    })),
+    sourceValues: {
+      primaryDimension: group.primaryDimension,
+      secondaryDimension: group.secondaryDimension,
+      orderCount: group.orderCount,
+      passengerCount: group.passengerCount,
+      ticketCount: group.ticketCount,
+      pendingReservationActions: group.pendingReservationActions,
+      ...Object.fromEntries(
+        [
+          'salesAmount',
+          'purchaseAmount',
+          'grossProfit',
+          'refundAmount',
+          'settlementBalance',
+        ].map((name) => [
+          name,
+          currencyValues(
+            new Map(
+              [...group.money].map(([currency, money]) => [
+                currency,
+                money[name]!,
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    },
   }));
+  const mixedCurrencies =
+    new Set(facts.map((fact) => fact.currencyCode)).size > 1;
   rows.sort((left, right) => {
     const l = left[sort.column as keyof TravelReportRowV1];
     const r = right[sort.column as keyof TravelReportRowV1];
@@ -262,7 +316,9 @@ export function buildTravelReportResult(input: {
       'refundAmount',
       'settlementBalance',
     ].includes(sort.column)
-      ? amount(String(l)).comparedTo(amount(String(r)))
+      ? !mixedCurrencies
+        ? amount(String(l)).comparedTo(amount(String(r)))
+        : left.orderCount - right.orderCount
       : typeof l === 'number' && typeof r === 'number'
         ? l - r
         : String(l).localeCompare(String(r), 'fa');
@@ -317,6 +373,8 @@ export function buildTravelReportResult(input: {
     reportVersion: 1,
     grain: 'ORDER_ITEM_CURRENCY',
     sourceProjection: 'reporting.travel.facts.v1',
+    dataLayout: 'SOURCE_COLUMNS',
+    chartMeasure: 'salesAmount',
     columns: [
       {
         key: 'primaryDimension',
@@ -328,15 +386,14 @@ export function buildTravelReportResult(input: {
         label: DIMENSION_LABELS[dimensions[1]],
         kind: 'TEXT',
       },
-      { key: 'currencyCode', label: 'ارز', kind: 'TEXT' },
       { key: 'orderCount', label: 'تعداد سفارش', kind: 'NUMBER' },
       { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
       { key: 'ticketCount', label: 'تعداد بلیت', kind: 'NUMBER' },
-      { key: 'salesAmount', label: 'فروش', kind: 'MONEY' },
-      { key: 'purchaseAmount', label: 'خرید', kind: 'MONEY' },
-      { key: 'grossProfit', label: 'سود ناخالص', kind: 'MONEY' },
-      { key: 'refundAmount', label: 'استرداد', kind: 'MONEY' },
-      { key: 'settlementBalance', label: 'مانده تسویه', kind: 'MONEY' },
+      { key: 'salesAmount', label: 'فروش', kind: 'TEXT' },
+      { key: 'purchaseAmount', label: 'خرید', kind: 'TEXT' },
+      { key: 'grossProfit', label: 'سود ناخالص', kind: 'TEXT' },
+      { key: 'refundAmount', label: 'استرداد', kind: 'TEXT' },
+      { key: 'settlementBalance', label: 'مانده تسویه', kind: 'TEXT' },
       ...(exposesPendingReservationActions(input.code)
         ? [
             {

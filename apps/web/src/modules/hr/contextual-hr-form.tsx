@@ -126,6 +126,7 @@ const fieldOptions = (
   label: string,
   peopleOptions: readonly string[] = defaultPeopleOptions,
 ): readonly string[] | undefined => {
+  if (label.startsWith('معافیت ')) return ['بله', 'خیر'];
   if (label === 'وضعیت تجهیز')
     return [
       'سالم',
@@ -445,16 +446,19 @@ function buildInitialFormValues(
         ? field.type === 'date'
           ? persianDateToIso(context.initialValues[index] ?? '')
           : (context.initialValues[index] ?? '')
-        : isAutomaticRegistrationDate(field.label)
-          ? todayIso()
-          : context.section === 'lifecycle' &&
-              context.tab === 'settlement' &&
-              field.label === 'وضعیت تأیید مالی'
-            ? 'در انتظار تأیید مالی'
-            : (field.options?.[0] ??
-              (isAutomaticCodeField(field, index)
-                ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
-                : '')),
+        : context.tab === 'penaltySettings' &&
+            field.label.startsWith('مبلغ جریمه')
+          ? '50000'
+          : isAutomaticRegistrationDate(field.label)
+            ? todayIso()
+            : context.section === 'lifecycle' &&
+                context.tab === 'settlement' &&
+                field.label === 'وضعیت تأیید مالی'
+              ? 'در انتظار تأیید مالی'
+              : (field.options?.[0] ??
+                (isAutomaticCodeField(field, index)
+                  ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
+                  : '')),
     ]),
   );
   for (const field of fields) {

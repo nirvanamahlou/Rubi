@@ -1,6 +1,9 @@
 ## HR fast attendance sync � 2026-11-08
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
+## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
+
+Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
 
 ## HR attendance freshness and current employees — 2026-11-07
 
@@ -9264,3 +9267,5 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
   dates now share the row label's 13pt/700 inherited-color typography.
 - Layout tests 9/9 and related consumers 43/43 pass with one existing optional
   skip; scoped lint, Web TypeScript and the 67-route production build pass.
+
+2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.

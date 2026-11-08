@@ -810,6 +810,13 @@ function HrRecordFormFields({
                   ? { 'عنوان شغل': 'text' as const }
                   : {}),
                 'نام سمت': 'text',
+                ...(target.source.tab === 'penaltySettings'
+                  ? {
+                      'مبلغ جریمه هر دقیقه تأخیر (تومان)': 'number' as const,
+                      'مبلغ جریمه هر دقیقه خروج زودهنگام (تومان)':
+                        'number' as const,
+                    }
+                  : {}),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? { مدیر: 'text' as const }

@@ -84,6 +84,18 @@ function fixture() {
   return { client, findMany };
 }
 describe('native Sales report source and shared preview/export path', () => {
+  it.each(['route_passengers', 'sales_contract_pipeline'])(
+    'consolidates %s without counting currency legs as contracts or passengers',
+    async (code) => {
+      const { client } = fixture();
+      const result = await nativeSalesReport(client, code, query, actor, true);
+      expect(result.total).toBe(1);
+      expect(result.rows[0]?.orderCount).toBe(1);
+      expect(result.rows[0]?.passengerCount).toBe(3);
+      expect(result.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
+      expect(result.columns.map((c) => c.key)).not.toContain('currencyCode');
+    },
+  );
   it('groups a package once by its distinct service combination without multiplying sales', async () => {
     const { client } = fixture();
     const result = await nativeSalesReport(
@@ -246,7 +258,7 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(preview.totalsByCurrency).toEqual(exported.totalsByCurrency);
     expect(exported.filterSnapshot.grain).toBe('CONTRACT');
     expect(exported.rows[0]?.orderCount).toBe(1);
-    expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال - 20 $');
+    expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
     expect(exported.columns.map((c) => c.key)).not.toContain('currencyCode');
   });
   it('refuses a complete-looking money report for unpriced contracts', async () => {
@@ -302,7 +314,7 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(r.rows[0]?.orderCount).toBe(2);
     expect(r.rows[0]?.passengerCount).toBe(5);
     expect(r.rows[0]?.sourceValues?.salesAmount).toBe(
-      '900 ریال - 9007199254740993.1234 € - 20 $',
+      '900 ریال + 9007199254740993.1234 € + 20 $',
     );
     const workbook = unzipSync(
       new Uint8Array(
@@ -314,7 +326,7 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     );
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
-    expect(sheet).toContain('900 ریال - 9007199254740993.1234 € - 20 $');
+    expect(sheet).toContain('900 ریال + 9007199254740993.1234 € + 20 $');
     expect(r.columns.map((c) => c.key)).toEqual([
       'primaryDimension',
       'secondaryDimension',
