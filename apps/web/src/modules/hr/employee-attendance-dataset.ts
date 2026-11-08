@@ -30,6 +30,7 @@ export function employeeAttendanceDataset(
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'جریمه روز',
       'وضعیت',
     ],
     rows: attendance.map((record) => {
@@ -72,6 +73,9 @@ export function employeeAttendanceDataset(
         record.data.overtimeMinutes == null
           ? '—'
           : String(record.data.overtimeMinutes),
+        record.data.dailyPenaltyToman == null
+          ? '—'
+          : `${Number(record.data.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`,
         record.status === 'حاضر'
           ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
             ? 'حاضر با تأخیر و خروج زودهنگام'
