@@ -23,6 +23,7 @@ export async function readTicketSlaReporting(
     'branch',
     'status',
   ]);
+  const status = scalar('status');
   const tickets = boundedSource(
     await client.customerAffairsTicket.findMany({
       where: {
@@ -50,7 +51,6 @@ export async function readTicketSlaReporting(
       take: 10001,
     }),
   );
-  const status = scalar('status');
   const now = new Date();
   const groups = new Map<
     string,
