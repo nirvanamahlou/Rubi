@@ -17,11 +17,16 @@ export interface DashboardObservation {
   currencyCode?: string;
   /** Mutually exclusive producer-owned breakdowns; never contain row identities. */
   dimensions?: Readonly<Record<string, string>>;
+  /** Opaque internal grouping keys distinguish identical display labels; never sent over HTTP. */
+  dimensionKeys?: Readonly<Record<string, string>>;
 }
 export interface DashboardSourceMetric {
   kind: 'money' | 'count';
   calculation?: 'sum' | 'mean';
   aggregation: string;
+  unit?: string;
+  /** Current-state measures cannot fabricate historical comparisons or sparklines. */
+  snapshot?: boolean;
   observations: readonly DashboardObservation[];
 }
 export interface DashboardSourceResult {
@@ -29,6 +34,8 @@ export interface DashboardSourceResult {
   state: 'ready' | 'forbidden' | 'unsupported' | 'unavailable';
   reason?: string;
   metrics: Readonly<Record<string, DashboardSourceMetric>>;
+  /** Partial-source failures are explicit; absent permissions never become zero. */
+  unavailableMetrics?: Readonly<Record<string, string>>;
 }
 export function unsupportedDashboardFilters(
   query: DashboardSourceQuery,

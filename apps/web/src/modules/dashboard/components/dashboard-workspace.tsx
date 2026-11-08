@@ -121,6 +121,7 @@ import {
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
+import { dashboardMeasurementRequirements } from '../model/measurement-requirements';
 import { dashboardUnavailableReason } from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
@@ -929,7 +930,6 @@ function Metric({
     'issue-success-rate',
     'sell-through-rate',
     'tour-sell-through-rate',
-    'customer-interest-coverage',
     'lead-growth-rate',
     'lead-conversion-rate',
     'sla-breach-rate',
@@ -1031,10 +1031,7 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : definition?.id === 'gross-profit' ||
-                  definition?.id === 'net-profit'
-                ? 'قابل محاسبه نیست'
-                : '—'}
+              : 'قابل محاسبه نیست'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -1356,11 +1353,19 @@ function KpiCard({
                 <MiniTrend title={definition.title} trend={metric.trend} />
               ) : null}
             </span>
-          ) : unavailableReason ? (
-            <span className="relative mt-3 block text-xs leading-6 text-muted-foreground">
-              {dashboardUnavailableReason(unavailableReason)}
+          ) : (
+            <span
+              data-dashboard-unavailable
+              className="relative mt-3 block text-xs leading-6 text-muted-foreground"
+            >
+              <span className="block">
+                {dashboardUnavailableReason(unavailableReason)}
+              </span>
+              <span className="mt-1 block">
+                دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+              </span>
             </span>
-          ) : null}
+          )}
         </>
       )}
     </button>
@@ -2970,6 +2975,7 @@ function ProjectionSlot({
   trendCalendarSystem,
   wide = false,
   data,
+  unavailableReason,
 }: {
   visualId: string;
   kind: DashboardVisualKind;
@@ -2986,6 +2992,7 @@ function ProjectionSlot({
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?: DashboardVisualSnapshot | undefined;
+  unavailableReason?: string | undefined;
 }) {
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
     string | undefined
@@ -3175,15 +3182,47 @@ function ProjectionSlot({
           ) : (
             <>
               <EmptyVisualCanvas kind={kind} />
-              <p className="mt-2 text-xs text-muted-foreground">
-                دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای
-                این نمودار باید بررسی شوند.
-              </p>
+              {data ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  داده‌ای در بازه و فیلتر انتخابی ثبت نشده است.
+                </p>
+              ) : (
+                <div
+                  data-dashboard-unavailable
+                  className="mt-2 space-y-1 text-xs leading-6 text-muted-foreground"
+                >
+                  <p className="font-bold text-foreground">قابل محاسبه نیست</p>
+                  <p>{dashboardUnavailableReason(unavailableReason)}</p>
+                  <p>
+                    دادهٔ موردنیاز:{' '}
+                    {dashboardMeasurementRequirements({ id: visualId, source })}
+                  </p>
+                </div>
+              )}
             </>
           )}
           {data?.notice ? (
             <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
           ) : null}
+          {Object.entries(data?.missingMetrics ?? {}).map(([id, reason]) => {
+            const definition = dashboardKpis.find((kpi) => kpi.id === id);
+            if (!definition) return null;
+            return (
+              <div
+                key={id}
+                data-dashboard-unavailable
+                className="mt-3 space-y-1 text-xs leading-6 text-muted-foreground"
+              >
+                <p className="font-bold text-foreground">
+                  {definition.title} · قابل محاسبه نیست
+                </p>
+                <p>{dashboardUnavailableReason(reason)}</p>
+                <p>
+                  دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+                </p>
+              </div>
+            );
+          })}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -4083,6 +4122,9 @@ export function DashboardWorkspace() {
                         source={visualization.source}
                         trendCalendarSystem={trendCalendarSystem}
                         data={query.data?.visuals[visualization.id]}
+                        unavailableReason={
+                          query.data?.unavailableVisuals?.[visualization.id]
+                        }
                       />
                     ))}
                   </div>

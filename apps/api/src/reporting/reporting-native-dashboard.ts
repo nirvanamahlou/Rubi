@@ -1,9 +1,15 @@
+import { dashboardMetricSource } from './reporting-dashboard-source-lineage';
 import {
   ForbiddenException,
   Inject,
   Injectable,
   Optional,
 } from '@nestjs/common';
+import { DashboardOperationalSources } from './reporting-dashboard-operational-sources';
+import {
+  dashboardBreakdowns,
+  renderDashboardBreakdown,
+} from './reporting-dashboard-breakdowns';
 import { SalesDashboardPayments } from '../sales/sales-dashboard-payments.public';
 import { SalesDashboardCustomers } from '../sales/sales-dashboard-customers.public';
 import { createHash } from 'node:crypto';
@@ -127,6 +133,9 @@ export class ReportingNativeDashboard {
     @Optional()
     @Inject(SalesDashboardCustomers)
     private readonly customerPurchases?: SalesDashboardCustomers,
+    @Optional()
+    @Inject(DashboardOperationalSources)
+    private readonly operational?: DashboardOperationalSources,
   ) {}
   async load(
     input: Record<string, string | undefined>,
@@ -169,6 +178,17 @@ export class ReportingNativeDashboard {
       this.leads,
       ...(this.payments ? [this.payments] : []),
       ...(this.customerPurchases ? [this.customerPurchases] : []),
+      ...(this.operational?.readers ?? []),
+    ];
+    const readerNames = [
+      'sales.dashboard.contract-currency.v1',
+      'customers.dashboard.registrations.v1',
+      'customer-affairs.dashboard.leads.v1',
+      ...(this.payments ? ['sales.dashboard.confirmed-payments.v1'] : []),
+      ...(this.customerPurchases
+        ? ['sales.dashboard.customer-purchase-cohorts.v1']
+        : []),
+      ...(this.operational?.readers.map((r) => r.source) ?? []),
     ];
     const read = async (request: DashboardSourceQuery) => {
       const results = await Promise.allSettled(
@@ -178,13 +198,7 @@ export class ReportingNativeDashboard {
         result.status === 'fulfilled'
           ? result.value
           : {
-              source: [
-                'sales.dashboard.contract-currency.v1',
-                'customers.dashboard.registrations.v1',
-                'customer-affairs.dashboard.leads.v1',
-                'sales.dashboard.confirmed-payments.v1',
-                'sales.dashboard.customer-purchase-cohorts.v1',
-              ][index]!,
+              source: readerNames[index]!,
               state: 'unavailable',
               reason: 'SOURCE_READ_FAILED',
               metrics: {},
@@ -264,12 +278,26 @@ export class ReportingNativeDashboard {
     for (const id of calculated) {
       const metric = available[id];
       if (!metric) {
+        const source = current.find(
+          (r) => r.source === dashboardMetricSource[id],
+        );
+        const partialReason = current
+          .map((r) => r.unavailableMetrics?.[id])
+          .find(Boolean);
         unavailableMetrics[id] =
-          id === 'gross-profit'
+          partialReason ??
+          (id === 'gross-profit'
             ? 'APPROVED_MATCHED_COST_REQUIRED'
             : postedAccountingMetricIds.has(id)
               ? 'POSTED_ACCOUNTING_SOURCE_REQUIRED'
-              : 'SOURCE_OR_SCOPE_UNAVAILABLE';
+              : source?.state === 'forbidden'
+                ? 'SOURCE_PERMISSION_REQUIRED'
+                : source?.state === 'unsupported' ||
+                    source?.state === 'unavailable'
+                  ? (source.reason ?? 'SOURCE_READ_FAILED')
+                  : id === 'sell-through-rate' && source?.state === 'ready'
+                    ? 'ZERO_DENOMINATOR'
+                    : 'MEASUREMENT_INPUTS_REQUIRED');
         continue;
       }
       const old = prior[id];
@@ -287,7 +315,7 @@ export class ReportingNativeDashboard {
       ].sort();
       const total =
         metric.kind === 'count'
-          ? sum(metric.observations)
+          ? aggregate(metric.observations, mean)
           : new Prisma.Decimal(0);
       const monetary = metric.kind === 'money';
       const safe = (rows: readonly DashboardObservation[]) =>
@@ -343,12 +371,12 @@ export class ReportingNativeDashboard {
                   code,
               )
               .join(' · ') || '۰'
-          : total.toFixed(0).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]!),
-        unit: monetary ? 'ارزهای مستقل' : 'تعداد',
+          : exactText(total.toDecimalPlaces(4)),
+        unit: monetary ? 'ارزهای مستقل' : (metric.unit ?? 'تعداد'),
         detail: metric.aggregation,
         metricId: id,
         aggregation: metric.aggregation,
-        ...(monetary
+        ...(!metric.snapshot && monetary
           ? comparisonSeries.length
             ? {
                 comparisonSeries,
@@ -357,10 +385,20 @@ export class ReportingNativeDashboard {
                   : {}),
               }
             : {}
-          : old && safe(metric.observations) && safe(old.observations)
-            ? { comparison: comparison(total, sum(old.observations)) }
+          : !metric.snapshot &&
+              old &&
+              (!mean || old.observations.length > 0) &&
+              safe(metric.observations) &&
+              safe(old.observations)
+            ? {
+                comparison: comparison(
+                  total,
+                  aggregate(old.observations, mean),
+                ),
+              }
             : {}),
-        ...(!mean &&
+        ...(!metric.snapshot &&
+        !mean &&
         starts.length &&
         (monetary
           ? codes.every((code) =>
@@ -423,6 +461,12 @@ export class ReportingNativeDashboard {
       {};
     const unavailableVisuals: Record<string, string> = {};
     for (const id of visualIds) {
+      if (dashboardBreakdowns[id]) {
+        const result = renderDashboardBreakdown(id, available);
+        if (result.visual) visuals[id] = result.visual;
+        else unavailableVisuals[id] = result.reason;
+        continue;
+      }
       if (breakdownVisualIds.has(id)) {
         const source = available['net-sales'];
         if (!source) {
@@ -553,6 +597,16 @@ export class ReportingNativeDashboard {
         unit: money ? 'مبلغ؛ ارزهای مستقل' : 'تعداد',
         ...(money ? { currencySeries } : { series }),
         ...(notices.length ? { notice: notices.join(' ') } : {}),
+        ...(missing.length
+          ? {
+              missingMetrics: Object.fromEntries(
+                missing.map((metric) => [
+                  metric,
+                  unavailableMetrics[metric] ?? 'MEASUREMENT_INPUTS_REQUIRED',
+                ]),
+              ),
+            }
+          : {}),
       };
     }
     for (const id of Object.keys(metrics)) {
