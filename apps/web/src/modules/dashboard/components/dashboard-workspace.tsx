@@ -122,7 +122,10 @@ import {
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
 import { dashboardMeasurementRequirements } from '../model/measurement-requirements';
-import { dashboardUnavailableReason } from '../model/availability';
+import {
+  dashboardUnavailableReason,
+  dashboardVisualLimitation,
+} from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
@@ -2849,14 +2852,6 @@ function VisualDetailsPanel({
               <p className="mt-2 leading-7 text-muted-foreground">
                 {description}
               </p>
-              {decision ? (
-                <p className="mt-3 leading-7 text-muted-foreground">
-                  این نمودار برای پاسخ به این تصمیم استفاده می‌شود:{' '}
-                  <span className="font-semibold text-foreground">
-                    {decision}
-                  </span>
-                </p>
-              ) : null}
             </section>
 
             <section
@@ -2928,6 +2923,11 @@ function VisualDetailsPanel({
               >
                 محدودیت‌ها و دسترسی
               </h3>
+              {dashboardVisualLimitation(visualId, decision) ? (
+                <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                  {dashboardVisualLimitation(visualId, decision)}
+                </p>
+              ) : null}
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
                 فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
                 مجوز موردنیاز:{' '}
@@ -3027,10 +3027,7 @@ function ProjectionSlot({
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
     : undefined;
-  const canOpenVisualDetails =
-    Boolean(displayData?.values.length) &&
-    resolvedKind !== 'table' &&
-    resolvedKind !== 'queue';
+  const canOpenVisualDetails = source.length > 0;
   return (
     <>
       <Card
@@ -3267,11 +3264,6 @@ function ProjectionSlot({
               <Info aria-hidden="true" className="size-3.5" />
               جزئیات نمودار
             </Button>
-          ) : null}
-          {decision ? (
-            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              {decision}
-            </Badge>
           ) : null}
           <Button
             className="ms-auto"
