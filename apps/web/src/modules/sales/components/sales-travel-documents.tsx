@@ -1,4 +1,5 @@
 'use client';
+import { ReservationInsuranceDocuments } from '@/modules/reservations/components/reservation-insurance-documents';
 import { useState } from 'react';
 import { isFloatingSalesContract } from '@nora/contracts';
 import type {
@@ -115,6 +116,9 @@ export function SalesTravelDocuments({
                 </p>
                 <SalesContractTermsDownload />
               </section>
+              {intake.snapshot.serviceSelections.some(
+                (service) => service.kind === 'INSURANCE',
+              ) && <ReservationInsuranceDocuments id={contractId} sales />}
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

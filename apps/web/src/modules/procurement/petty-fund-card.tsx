@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { uploadPettyRechargeReceipt } from './petty-receipt';
 import type { ProcurementDocumentReferenceV1 } from '@nora/contracts';
 import { useState } from 'react';
@@ -240,7 +241,7 @@ export function PettyFundCard({
                   <Input
                     id="petty-recharge-receipt"
                     type="file"
-                    accept="application/pdf,image/jpeg,image/png"
+                    accept={RECEIPT_FILE_ACCEPT}
                     onChange={(event) => {
                       setReceiptFile(event.target.files?.[0] ?? null);
                       setReceipt(undefined);

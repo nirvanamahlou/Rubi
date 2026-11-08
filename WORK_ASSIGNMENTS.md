@@ -96,6 +96,14 @@ AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to 
 
 COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.
 
+## DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — PC-C — READY_FOR_CI
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-chart-labels-1107` from latest `origin/develop`. Remove only the blue chart-kind badge shared by Dashboard visual cards so every chart is cleaner. Keep chart-kind wording in accessible figure names, captions and explanatory details, and retain amber DEC-OPEN decision badges. Reserve only the shared card presentation and its Dashboard source regression plus bounded task/status notes. No calculation, data, API, permission, dependency, deployment or other badge changes.
+
+اعتبارسنجی DASHBOARD-REMOVE-CHART-KIND-TAGS-1107: آزمون داشبورد ۱۹ پاس و ۱ مورد از قبل skip؛ ESLint محدود، build قراردادها، typecheck وب، build تولیدی وب (۶۷ مسیر) و diff check موفق. نوع نمودار از همه کارت‌ها حذف شد؛ DEC-OPEN حفظ شد. بدون تغییر داده، محاسبات، مجوز، API، وابستگی یا runtime.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
+
 ## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C. Extend own draft PR1436 with owner-requested Persian-only KPI calculation text and short contextual term explanations below KPI/chart rules. Reserve Dashboard registry rule strings, employee rule strings if needed, shared definition renderer, new local calculation glossary and additive English translation keys; preserve prior definitions and all calculations. Latest develop inspected; no competing change to these leaves. No API, schema, dependency or deployment. Same scoped validation as KPI copy.
@@ -11715,3 +11723,9 @@ SELF-ATTENDANCE-PENALTY-1108:23 focused API checks and9 Web/translation checks p
 RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the task branch only. Five shared docs/catalogue conflicts resolved with peer additions preserved; object comparison proves no upstream Web/API key or value removed/changed. No PR-to-develop merge, deployment or SMTP activation.
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
+
+## UPLOAD-FILE-FORMATS-1108 — PC-B — READY_FOR_CI
+
+Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. Reserve additive shared upload format helpers, Documents sniffing/validation/policy and tests, bounded Sales receipt preflight and Web receipt pickers (Sales, Procurement, Finance, HR mission), message composer and own translations/docs. Preserve branch/source authorization, existing storage/download paths, size limits and rejection of executables/macro formats. Existing HR scopes merged/released. No schema, dependency or production data changes. Excel policy family includes legacy XLS alongside XLSX; no database policy rewrite.
+
+UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.

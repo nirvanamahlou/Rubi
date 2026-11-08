@@ -1,3 +1,4 @@
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { FinanceRequestReceipts } from './finance-request-receipts';
 import { PartyReceipts } from './party-receipts';
 import { useAccessPermissions } from '@/modules/iam/access-context';
@@ -1962,7 +1963,7 @@ export function FinanceInboxLiveWorkspace() {
                       </span>
                       <Input
                         type="file"
-                        accept="image/*,application/pdf"
+                        accept={`image/*,${RECEIPT_FILE_ACCEPT}`}
                         onChange={(event) =>
                           setTicketReceiptFile(event.target.files?.[0] ?? null)
                         }
