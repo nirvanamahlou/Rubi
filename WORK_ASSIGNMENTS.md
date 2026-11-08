@@ -11543,6 +11543,9 @@ RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLi
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
 
+REPORT-CURRENCY-ROWS-1108 | PC-C | codex/pc-c-report-currency-rows-1108 | Reporting currency consolidation + owner source grouping metadata (sales/reservations), focused tests | IN_PROGRESS | user explicitly authorizes all report currency rows; no migration/FX/deploy
+REPORT-CURRENCY-ROWS-1108 READY_FOR_CI: optional internal producer identity/count metadata consumed by Reporting; owning readers retain all authorization. Existing public amountsByCurrency/sourceValues contract reused; no external contract migration. Source scope explicitly authorized by user's all-report request.
+
 ## VOUCHER-FLIGHT-DATE-1108 — PC-A — DONE/MERGED
 
 COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `origin/develop`. Owner requests voucher flight dates to match the current contract exactly and authorizes push plus direct `develop` merge. Reserve `voucher-settings.ts`, its focused regression, and bounded task/status notes. Voucher output must use the immutable current contract flight projection even when an older saved form contains a prior-day date; supplier-form drafts retain their explicit saved date behavior. Preserve all other saved voucher fields, ticket times, contract data, permissions and document layout. No schema, migration, dependency, lockfile, operational data or deployment changes.
