@@ -9380,4 +9380,6 @@ Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, Dashbo
 
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
 
+PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing dialog to the viewport. Opt-in compact table reduces field widths/spacing, keeps sticky headings and highlights the focused row. Identity authorization and save paths unchanged; no migration or deployment. Local checks and final hosted CI required before authorized develop merge.
+
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.

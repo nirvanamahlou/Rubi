@@ -637,6 +637,7 @@ export function ReservationSalesAmendment({
         {section === 'CORRECTION' && requestId && (
           <>
             <ReservationPassengers
+              compact
               id={requestId}
               customerIds={draft.passengers.map((p) => p.customerId)}
               pendingRows={pendingPassengers}
