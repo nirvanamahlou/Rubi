@@ -136,3 +136,27 @@ export function recentAttendanceDataset(
     }),
   };
 }
+
+/** Calculation/export consumers use this; history tables intentionally keep all days. */
+export function eligibleAttendanceRecords(records: readonly HrRecordDto[]) {
+  const excluded = new Set(
+    records
+      .filter(
+        (row) =>
+          row.section === 'time' &&
+          row.tab === 'attendance' &&
+          (row.status === 'غیرفعال' || row.data.attendanceActive === false),
+      )
+      .map((row) => `${row.employeeId}:${row.values[1]}`),
+  );
+  return records.filter(
+    (row) =>
+      !(
+        row.section === 'time' &&
+        ['attendance', 'checkins'].includes(row.tab) &&
+        (row.data.attendanceActive === false ||
+          row.status === 'غیرفعال' ||
+          excluded.has(`${row.employeeId}:${row.values[1]}`))
+      ),
+  );
+}
