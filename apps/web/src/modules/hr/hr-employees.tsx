@@ -29,6 +29,7 @@ const HrRecordForm = dynamic(() =>
   import('./hr-record-form').then((module) => module.HrRecordForm),
 );
 import { hrCompanies } from './hr-live-data';
+import { employeeCompanyAssignment } from './hr-company-assignment';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { normalizeHrText } from './hr-data-utils';
 import ui from './hr-unified.module.css';
@@ -138,9 +139,10 @@ export function employeeFormValue(
     identificationCode: employee.identificationCode ?? '',
     employmentType: employee.kind,
     branch:
-      employee.companyName ||
-      store.data!.branches.find((item) => item.id === employee.branchId)
-        ?.name ||
+      (employee.companyScope === 'ALL' ? 'همه شرکت‌ها' : '') ||
+      store.data!.branches.find(
+        (item) => item.id === (employee.companyId ?? employee.branchId),
+      )?.name ||
       '',
     unit: employee.unit,
     position: employee.position,
@@ -158,21 +160,13 @@ export function employeeOrganizationOptions(
   ownerBranchId?: string,
 ) {
   return hrCompanies(data).map((company) => {
-    const local = data.records.find(
-      (r) =>
-        r.section === 'organization' &&
-        r.tab === 'branches' &&
-        r.branchId === ownerBranchId &&
-        !r.deletedAt &&
-        r.status === 'فعال' &&
-        hrBranchKey(r.values[0] ?? '') === hrBranchKey(company.name),
-    );
     const options = hrReferenceOptions(
       data,
       'employee',
       'create',
-      local?.branchId ?? company.branchId,
-      local?.id ?? company.organizationBranchId,
+      company.isHeadquarters
+        ? (ownerBranchId ?? company.branchId)
+        : company.branchId,
     );
     return {
       branch: company.name,
@@ -332,24 +326,7 @@ export function HrEmployeeEditor({
           const chosenCompany = companies.find(
             (item) => hrBranchKey(item.name) === hrBranchKey(value.branch),
           );
-          const localCompany = references.data.records.find(
-            (r) =>
-              r.section === 'organization' &&
-              r.tab === 'branches' &&
-              r.branchId ===
-                (employee?.branchId ?? preferredCompany?.branchId) &&
-              !r.deletedAt &&
-              r.status === 'فعال' &&
-              hrBranchKey(r.values[0] ?? '') === hrBranchKey(value.branch),
-          );
-          const branch =
-            localCompany && chosenCompany
-              ? {
-                  ...chosenCompany,
-                  branchId: localCompany.branchId,
-                  organizationBranchId: localCompany.id,
-                }
-              : chosenCompany;
+          const branch = chosenCompany;
           if (!branch) throw new Error('شرکت یا شعبه مجاز را انتخاب کنید.');
           const managers = store.data!.employees.filter(
             (item) => item.name === value.manager && item.id !== employee?.id,
@@ -398,10 +375,7 @@ export function HrEmployeeEditor({
             ...(photoDocumentId ? { photoDocumentId } : {}),
             groupId: value.groupId || null,
             userId: value.userId || null,
-            branchId: branch.branchId,
-            ...(branch.organizationBranchId
-              ? { organizationBranchId: branch.organizationBranchId }
-              : {}),
+            ...employeeCompanyAssignment(branch, employee),
             firstName: value.firstName,
             lastName: value.lastName,
             name: `${value.firstName} ${value.lastName}`.trim(),
@@ -574,8 +548,9 @@ export function HrEmployees({
             (!groupId || members.includes(item.id)) &&
             (!branch ||
               selectedCompany?.isHeadquarters ||
+              item.companyScope === 'ALL' ||
               selectedCompany?.aliases.includes(
-                item.organizationBranchId || item.branchId,
+                item.companyId ?? item.branchId,
               )) &&
             (!unit || item.unit === unit) &&
             (!status || hrStatusText(item.status) === status) &&
@@ -735,8 +710,9 @@ export function HrEmployees({
                       (item) =>
                         !branch ||
                         selectedCompany?.isHeadquarters ||
+                        item.companyScope === 'ALL' ||
                         selectedCompany?.aliases.includes(
-                          item.organizationBranchId || item.branchId,
+                          item.companyId ?? item.branchId,
                         ),
                     )
                     .map((item) => item.unit),

@@ -894,6 +894,7 @@ export const HR_RESOURCE_COLUMNS = {
     'مسافت',
     'هدف استفاده',
   ],
+  'employee.companyScope': ['دامنه شرکت', 'شرکت'],
   'organization.branches': ['نام شعبه', 'شرکت', 'شهر', 'مدیر', 'تاریخ اثر'],
   'organization.units': [
     'نام واحد',

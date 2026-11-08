@@ -1,3 +1,9 @@
+## HR-COMPANY-SCOPE-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes company/branch separation, shared organization units and employees with editable membership, and preservation of historical links. Radan is read-only: preserve both existing API connections, source mappings, personnel IDs and attendance provenance. Branch codex/pc-a-hr-company-scope-1108. Reserve HR organization catalog, employee company assignment and scoped forms, contracts and regression tests. No external Radan writes. Physical ownership branch IDs must remain stable for financial, document and attendance records. No schema migration reserved until active migration owner is released. Extend scope to IAM-owned company creation through IamService, HR company controller and organization editor; no IAM permission model changes.
+
+Bounded translation lease: fourteen company-scope labels/errors in Web en-overrides and mirrored API catalogue; preserve all peer entries.
+
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.

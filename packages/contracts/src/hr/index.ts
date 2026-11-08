@@ -20,6 +20,8 @@ export const HR_PERMISSION_CODES = [
 ] as const;
 
 export interface HrEmployeeDto {
+  companyScope?: 'ALL' | 'COMPANY';
+  companyId?: string | null;
   identificationCode?: string | null;
   jobTitleId?: string | null;
   extension?: string;
@@ -44,6 +46,7 @@ export interface HrEmployeeDto {
 }
 
 export interface HrRecordDto {
+  sharedSourceId?: string | null;
   jobTitleId?: string | null;
   id: string;
   code: string;
@@ -147,6 +150,8 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  companyScope?: 'ALL' | 'COMPANY';
+  companyId?: string | null;
   jobTitleId?: string;
   /** Internal business phone extension; omit to preserve on edit, blank/null clears. */
   extension?: string | null;
@@ -160,7 +165,7 @@ export interface HrEmployeeCreate {
   branchId?: string;
   userId?: string | null;
   photoDocumentId?: string;
-  organizationBranchId?: string;
+  organizationBranchId?: string | null;
   personnelCode?: string;
   name: string;
   kind: string;
@@ -225,6 +230,7 @@ export interface HrBootstrapDto {
   employees: HrEmployeeDto[];
   records: HrRecordDto[];
   capabilities: {
+    manageCompanies?: boolean;
     manualAttendance?: boolean;
     read: boolean;
     write: boolean;

@@ -5764,5 +5764,19 @@
   "خلاصه مالی قرارداد": "Contract financial summary",
   "گیرنده منابع انسانی در این شعبه تعریف نشده است.": "No HR recipient is configured for this branch.",
   "فیلترهای تماس‌های امروز": "Today's call filters",
-  "تماسی با فیلترهای انتخاب‌شده در دسترسی شما وجود ندارد.": "No accessible calls match the selected filters."
+  "تماسی با فیلترهای انتخاب‌شده در دسترسی شما وجود ندارد.": "No accessible calls match the selected filters.",
+  "انتقال ساختار نیازمند دسترسی به همه شرکت‌ها است.": "Transferring the structure requires access to all companies.",
+  "برای همه شرکت‌ها شرکت مشخص انتخاب نشود.": "Do not select a specific company for the all-companies scope.",
+  "تعریف شرکت": "Add company",
+  "ثبت شرکت": "Save company",
+  "ثبت شرکت انجام نشد.": "Could not save the company.",
+  "حالت اجرای انتقال الزامی است.": "The transfer execution mode is required.",
+  "دامنه شرکت": "Company scope",
+  "دامنه شرکت الزامی است.": "Company scope is required.",
+  "دامنه شرکت معتبر نیست.": "Invalid company scope.",
+  "دسترسی مدیریت شرکت‌ها وجود ندارد.": "You do not have permission to manage companies.",
+  "ساختار واحدها دارای چرخه است.": "The department hierarchy contains a cycle.",
+  "شرکت در محدوده دسترسی نیست.": "The company is outside your access scope.",
+  "شناسه شرکت قبلاً استفاده شده است.": "The company ID is already in use.",
+  "شناسه و نام شرکت معتبر نیست.": "The company ID and name are invalid."
 }
