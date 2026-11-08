@@ -11717,3 +11717,7 @@ SELF-ATTENDANCE-PENALTY-1108:23 focused API checks and9 Web/translation checks p
 RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the task branch only. Five shared docs/catalogue conflicts resolved with peer additions preserved; object comparison proves no upstream Web/API key or value removed/changed. No PR-to-develop merge, deployment or SMTP activation.
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
+
+## AMENDMENT-AIRLINE-1108 — PC-A — ACTIVE
+
+Owner authorizes removing the redundant airline selector from reservation contract flight amendments and develop merge. Reserve reservation-sales-amendment.tsx and focused regression plus own notes. Carrier identity remains supplied by the chosen catalogue ticket or floating flight details; no separate airline field exists in the backend amendment payload. Preserve ticket identity validation, prices, capacity rules, shared contracts and existing floating flight editor. No migration, dependency or deployment.

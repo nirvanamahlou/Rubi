@@ -1,3 +1,7 @@
+## AMENDMENT-AIRLINE-1108 — 2026-11-08
+
+PC-A removes the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests pass; scoped lint, full Web TypeScript and production build are the release checks. No API/schema/migration/dependency changes or server deployment.
+
 ## HR penalty settings persistence — 2026-11-08
 
 ## REPORT-MONEY-FORMAT-1108 — PC-C

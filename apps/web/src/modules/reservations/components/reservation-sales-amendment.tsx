@@ -88,7 +88,6 @@ export function ReservationSalesAmendment({
   const [saved, setSaved] = useState(false);
   const [completionPending, setCompletionPending] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
-  const [airline, setAirline] = useState('');
   const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
   const [pendingPassengers, setPendingPassengers] = useState<PassengerName[]>(
     [],
@@ -407,12 +406,6 @@ export function ReservationSalesAmendment({
                 }}
               />
             }
-            <SearchableReference
-              label="ایرلاین"
-              value={airline}
-              options={refs.airlines ?? []}
-              onChange={setAirline}
-            />
             <TicketOfferPicker
               enabled={!!day}
               emptyMessage={
@@ -420,12 +413,10 @@ export function ReservationSalesAmendment({
                   draft,
                   direction,
                   day,
-                  refs.airlines?.find((r) => r.id === airline)?.name,
                 )
                   ? 'بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.'
                   : undefined
               }
-              carrierName={refs.airlines?.find((r) => r.id === airline)?.name}
               exactDay={day}
               query={{
                 originId:
