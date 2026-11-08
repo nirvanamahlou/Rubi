@@ -5727,5 +5727,7 @@
   "منبع خارجی": "External source",
   "بدون شعبه": "No branch",
   "بدون ارز": "No currency",
-  "حساب بانکی استفاده‌شده قابل تغییر نوع، شعبه یا ارز نیست.": "The type, branch or currency of a bank account already in use cannot be changed."
+  "حساب بانکی استفاده‌شده قابل تغییر نوع، شعبه یا ارز نیست.": "The type, branch or currency of a bank account already in use cannot be changed.",
+  "فیلترهای تماس‌های امروز": "Today's call filters",
+  "تماسی با فیلترهای انتخاب‌شده در دسترسی شما وجود ندارد.": "No accessible calls match the selected filters."
 }

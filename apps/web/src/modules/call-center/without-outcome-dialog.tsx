@@ -1,4 +1,6 @@
 'use client';
+import { TodayCallFilterControls } from './today-call-filters';
+import type { TodayCallFilters } from './read-client';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
@@ -13,6 +15,7 @@ import { useDialogReturnFocus } from './use-dialog-focus';
 import styles from './without-outcome-dialog.module.css';
 
 export function WithoutOutcomeDialog({
+  destinations = [],
   mode = 'without-outcome',
   branch,
   revision,
@@ -22,6 +25,7 @@ export function WithoutOutcomeDialog({
   onComplete,
   onRequest,
 }: {
+  destinations?: readonly string[];
   mode?: KpiCallMode;
   branch: string;
   revision: number;
@@ -42,6 +46,11 @@ export function WithoutOutcomeDialog({
       : 'تماس‌های بدون نتیجه';
   const restoreFocus = useDialogReturnFocus();
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<TodayCallFilters>({
+    direction: '',
+    outcome: '',
+    unit: '',
+  });
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState<Awaited<
     ReturnType<typeof readApi.missedCallbacks>
@@ -51,18 +60,26 @@ export function WithoutOutcomeDialog({
   const snapshot = useRef<string | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
-    (mode === 'today'
-      ? readApi.todayCalls
-      : mode === 'week'
-        ? readApi.weekCalls
-        : callbacks
-          ? readApi.missedCallbacks
-          : readApi.withoutOutcome)(
-      branch,
-      page,
-      page === 1 ? undefined : snapshot.current,
-      controller.signal,
-    )
+    const request =
+      mode === 'today'
+        ? readApi.todayCalls(
+            branch,
+            page,
+            page === 1 ? undefined : snapshot.current,
+            controller.signal,
+            filters,
+          )
+        : (mode === 'week'
+            ? readApi.weekCalls
+            : callbacks
+              ? readApi.missedCallbacks
+              : readApi.withoutOutcome)(
+            branch,
+            page,
+            page === 1 ? undefined : snapshot.current,
+            controller.signal,
+          );
+    request
       .then((value) => {
         if (!controller.signal.aborted) {
           setResult(value);
@@ -83,13 +100,21 @@ export function WithoutOutcomeDialog({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [branch, page, revision, retry, callbacks, mode]);
+  }, [branch, page, revision, retry, callbacks, mode, filters]);
   const refresh = () => {
     setLoading(true);
     setError('');
     snapshot.current = undefined;
     setPage(1);
     setRetry((v) => v + 1);
+  };
+  const changeFilter = (key: keyof TodayCallFilters, value: string) => {
+    snapshot.current = undefined;
+    setPage(1);
+    setLoading(true);
+    setError('');
+    setResult(null);
+    setFilters((current) => ({ ...current, [key]: value }));
   };
   return (
     <Dialog
@@ -109,7 +134,9 @@ export function WithoutOutcomeDialog({
               ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است؛ اطلاعات آخرین تماس بی‌پاسخ او را می‌توانید ویرایش کنید.'
               : 'هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.'}
         </DialogDescription>
-        <div className={styles.toolbar}>
+        <div
+          className={`${styles.toolbar} ${mode === 'today' ? styles.todayToolbar : ''}`}
+        >
           <span aria-live="polite">
             {loading
               ? 'در حال دریافت تماس‌ها…'
@@ -117,9 +144,18 @@ export function WithoutOutcomeDialog({
                 ? `${faNumber(result.meta.total)} ${callbacks ? 'مخاطب' : 'تماس'}`
                 : ''}
           </span>
-          <button type="button" onClick={refresh} disabled={loading}>
-            تازه‌سازی فهرست
-          </button>
+          <div className={styles.toolbarControls}>
+            {mode === 'today' && (
+              <TodayCallFilterControls
+                filters={filters}
+                destinations={destinations}
+                onChange={changeFilter}
+              />
+            )}
+            <button type="button" onClick={refresh} disabled={loading}>
+              تازه‌سازی فهرست
+            </button>
+          </div>
         </div>
         {error && (
           <p role="alert">
@@ -131,11 +167,13 @@ export function WithoutOutcomeDialog({
         )}
         {!loading && result?.data.length === 0 && (
           <p role="status">
-            {period
-              ? 'تماسی در این بازه در دسترسی شما وجود ندارد.'
-              : callbacks
-                ? 'مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.'
-                : 'تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.'}
+            {mode === 'today' && Object.values(filters).some(Boolean)
+              ? 'تماسی با فیلترهای انتخاب‌شده در دسترسی شما وجود ندارد.'
+              : period
+                ? 'تماسی در این بازه در دسترسی شما وجود ندارد.'
+                : callbacks
+                  ? 'مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.'
+                  : 'تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.'}
           </p>
         )}
         <div className={styles.scroll} aria-busy={loading}>

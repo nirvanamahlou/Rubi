@@ -74,3 +74,47 @@
   padding: 4px 8px;
   border-radius: 6px;
 }
+
+.todayToolbar {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.toolbarControls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  max-width: 100%;
+}
+.todayToolbar .toolbarControls {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 100%;
+}
+.filter {
+  display: grid;
+  gap: 5px;
+  width: 165px;
+  min-width: 140px;
+  font-size: 12px;
+}
+.filterControl {
+  width: 100%;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .todayToolbar .toolbarControls {
+    width: 100%;
+  }
+  .filters {
+    flex: 1 1 100%;
+  }
+  .filter {
+    flex: 1 1 140px;
+  }
+}

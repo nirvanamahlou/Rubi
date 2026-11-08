@@ -793,6 +793,7 @@ function Content({
         <WithoutOutcomeDialog
           key={periodOpen + branch + historyRevision}
           mode={periodOpen}
+          destinations={destinations}
           branch={branch}
           revision={historyRevision}
           hidden={!!draft}

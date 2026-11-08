@@ -1,3 +1,7 @@
+## CALL-CENTER-TODAY-FILTERS-1108 — PC-C
+
+Today Calls gains three explicitly requested local filters beside refresh: direction, outcome and connected-to. Filtering occurs before authorized server counts/paging; changing filters resets paging and snapshot. See docs/tasks/CALL-CENTER-TODAY-FILTERS-1108.md for compatibility, verification and Draft PR handoff. No deployment.
+
 
 ## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
