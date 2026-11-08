@@ -37,6 +37,54 @@ it('defaults missing form sex to Male while preserving known and saved Female va
   expect(intake.outputPassengers).toHaveLength(1);
 });
 
+it('prints current contract flight dates on the voucher instead of an older saved day', () => {
+  const intake = {
+    receivedAt: '2026-11-01T00:00:00Z',
+    snapshot: {
+      contractNumber: 'SYNTHETIC-FLIGHT-DATE',
+      passengerIds: [],
+      passengerAssignments: [],
+      serviceSelections: [],
+      ticketSelections: [
+        {
+          direction: 'OUTBOUND',
+          originId: 'origin',
+          destinationId: 'destination',
+          departureAt: '2026-11-08T21:00:00Z',
+          arrivalAt: '2026-11-09T01:00:00Z',
+          carrierNameSnapshot: 'Outbound Air',
+          serviceNumberSnapshot: 'OUT-1',
+          cabinClassCode: 'ECONOMY',
+        },
+        {
+          direction: 'RETURN',
+          originId: 'destination',
+          destinationId: 'origin',
+          departureAt: '2026-11-12T21:00:00Z',
+          arrivalAt: '2026-11-13T01:00:00Z',
+          carrierNameSnapshot: 'Return Air',
+          serviceNumberSnapshot: 'BACK-1',
+          cabinClassCode: 'ECONOMY',
+        },
+      ],
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.arrivalDate = '2026-11-08';
+  settings.text.departureDate = '2026-11-12';
+  intake.workflow.voucherSettings = settings;
+
+  expect(
+    voucherFormData(intake, {}).flights.map((flight) => flight.date),
+  ).toEqual(['09 NOV 2026', '13 NOV 2026']);
+  intake.workflow.supplierFormSettings = settings;
+  expect(
+    supplierFormData(intake, {}).flights.map((flight) => flight.date),
+  ).toEqual(['08 NOV 2026', '12 NOV 2026']);
+  expect(settings.text.arrivalDate).toBe('2026-11-08');
+});
+
 it('uses saved voucher settings, selected passengers and service flags without rewriting the source', () => {
   const intake = {
     receivedAt: '2026-09-10T00:00:00Z',
