@@ -588,6 +588,7 @@ export class CallCenterReadService {
           branchId,
           'reports',
           tx,
+          true,
         );
         const contactScope = await this.identityScope(actor, branchId, tx);
         const now = new Date();
