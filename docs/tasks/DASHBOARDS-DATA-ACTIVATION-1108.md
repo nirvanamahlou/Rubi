@@ -381,3 +381,9 @@ Integrated base: `0c4cedf6b2aff6ec175afa9d00c4a70dfa935744`. Implementation merg
 Accepted attendance missing normalized work/overtime minutes now withholds the affected aggregate explicitly instead of treating unknown minutes as zero; two regressions and a fresh read-only live probe confirm the boundary.
 
 Latest integration: inherited HR reversible day exclusions through its owner helper; an inactive latest day never revives an older accepted duplicate. All eight hosted gates passed the previous integrated head dfc71dae8a151c58c71abeb4ba0992ec17715007; final merged-head evidence remains tracked in PR1488. Own central-document entries are appended to avoid concurrent header-append conflicts.
+
+## PR1488 merge closeout
+
+Owner explicitly authorized PR1488 develop merge after green tests and forbade server publication. All eight final-head CI checks passed on b13dbb0532558a1e9d1bc3c2ef7938cc027d500c: full quality, full tests, full production build and PostgreSQL 18 migration/seed gates in both push/PR runs. PR1488 merged to develop as 52fb4dc6dbc89037dcc062acb091b3cb42b572d6; remote ancestry verified. No test failures required repair in this merge turn. No server connection, deployment, production data mutation or main-branch change. This closeout branch changes only the existing work-item records and handoff note.
+
+PR: https://github.com/nirvanamahlou/Rubi/pull/1488. Server publication remains explicitly prohibited by the owner for this task.
