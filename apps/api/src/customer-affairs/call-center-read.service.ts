@@ -283,6 +283,7 @@ export class CallCenterReadService {
           branchId,
           'contacts',
           tx,
+          true,
         );
         const coverage = await tx.callCenterCall.count({
           where: { contact: { branchId }, searchVersion: 0 },
@@ -296,7 +297,7 @@ export class CallCenterReadService {
           throw new ConflictException(
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
-        const latest = Prisma.sql`SELECT x.id FROM customer_affairs_calls x WHERE x.contact_id=c.id ORDER BY x.occurred_at DESC,x.id ASC LIMIT 1`;
+        const latest = Prisma.sql`SELECT a.id FROM customer_affairs_calls a WHERE a.contact_id=c.id AND (${scope}) ORDER BY a.occurred_at DESC,a.id ASC LIMIT 1`;
         const columnFilters = !!(
           q.direction ||
           q.outcome ||
@@ -327,9 +328,9 @@ export class CallCenterReadService {
           let total = 0;
           for (let offset = 0; ; offset += 200) {
             const rows = await tx.$queryRaw<Row[]>`
-              SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+              SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls a WHERE a.contact_id=c.id AND (${scope})) AS "callCount"
               FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}
-              ORDER BY c.latest_occurred_at DESC,c.id ASC LIMIT 200 OFFSET ${offset}`;
+              ORDER BY (SELECT a.occurred_at FROM customer_affairs_calls a WHERE a.id=(${latest})) DESC,c.id ASC LIMIT 200 OFFSET ${offset}`;
             const calls = await tx.callCenterCall.findMany({
               where: { id: { in: rows.map((row) => row.latestId) } },
             });
@@ -374,9 +375,9 @@ export class CallCenterReadService {
         const rows = await tx.$queryRaw<
           Array<{ id: string; latestId: string; callCount: bigint }>
         >`
-        SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+        SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls a WHERE a.contact_id=c.id AND (${scope})) AS "callCount"
         FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}
-        ORDER BY c.latest_occurred_at DESC,c.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
+        ORDER BY (SELECT a.occurred_at FROM customer_affairs_calls a WHERE a.id=(${latest})) DESC,c.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
         const calls = await tx.callCenterCall.findMany({
           where: { id: { in: rows.map((r) => r.latestId) } },
         });
@@ -424,15 +425,17 @@ export class CallCenterReadService {
     });
     if (!contact) throw new NotFoundException();
     if (kind === 'calls') {
+      const callScope = await this.workflow.access.callWhere(actor, branchId);
       const anchor = q.after
         ? await this.db.client.callCenterCall.findFirst({
-            where: { id: q.after, contactId: id },
+            where: { AND: [callScope, { id: q.after, contactId: id }] },
           })
         : null;
       if (q.after && !anchor)
         throw new BadRequestException('نشانگر تاریخچه معتبر نیست.');
       const rows = await this.db.client.callCenterCall.findMany({
         where: {
+          AND: [callScope],
           contactId: id,
           ...(anchor
             ? {
@@ -487,7 +490,13 @@ export class CallCenterReadService {
   }
   async kpis(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
-    const scope = await this.workflow.access.sql(actor, branchId, 'reports');
+    const scope = await this.workflow.access.sql(
+      actor,
+      branchId,
+      'reports',
+      undefined,
+      true,
+    );
     const contactScope = await this.identityScope(actor, branchId);
     const now = new Date(),
       day = tehranDay(now),
@@ -547,7 +556,13 @@ export class CallCenterReadService {
     tx?: Prisma.TransactionClient,
   ) {
     try {
-      return await this.workflow.access.sql(actor, branchId, 'contacts', tx);
+      return await this.workflow.access.sql(
+        actor,
+        branchId,
+        'contacts',
+        tx,
+        true,
+      );
     } catch (error) {
       if (!(error instanceof ForbiddenException)) throw error;
       return Prisma.sql`FALSE`;
@@ -578,6 +593,7 @@ export class CallCenterReadService {
           branchId,
           'reports',
           tx,
+          true,
         );
         const contactScope = await this.identityScope(actor, branchId, tx);
         const now = new Date();
@@ -631,7 +647,7 @@ export class CallCenterReadService {
         const ids = await tx.$queryRaw<
           Array<{ id: string; callCount: bigint }>
         >`SELECT a.id,
-        (SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+        (SELECT count(*) FROM customer_affairs_calls a WHERE a.contact_id=c.id AND (${reportScope}) AND (${contactScope})) AS "callCount"
         FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}
         ORDER BY a.occurred_at DESC,a.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
         const rows = await tx.callCenterCall.findMany({
@@ -672,6 +688,7 @@ export class CallCenterReadService {
           branchId,
           'reports',
           tx,
+          true,
         );
         const contactScope = await this.identityScope(actor, branchId, tx);
         const pending = await missedCallbackContacts(
@@ -708,6 +725,7 @@ export class CallCenterReadService {
         const counts = await tx.callCenterCall.groupBy({
           by: ['contactId'],
           where: {
+            AND: [await this.workflow.access.callWhere(actor, branchId, tx)],
             contactId: { in: page.map((p) => p.contactId) },
             occurredAt: { lte: now },
             OR: [{ origin: null }, { origin: { not: 'SYNTHETIC' } }],
@@ -771,6 +789,7 @@ export class CallCenterReadService {
           branchId,
           'reports',
           tx,
+          true,
         );
         let contactIdentityScope = Prisma.sql`TRUE`;
         if (this.workflow.access.scoped(actor)) {
@@ -780,6 +799,7 @@ export class CallCenterReadService {
               branchId,
               'contacts',
               tx,
+              true,
             );
           } catch (error) {
             if (!(error instanceof ForbiddenException)) throw error;

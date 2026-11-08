@@ -1,3 +1,4 @@
+import { debitExchange } from '../exchange-offices/exchange-payment';
 import type { CustomerFinancialReleaseFacts } from './financial-release.public';
 import { financialDate } from '../accounting/accounting.financial-events';
 import {
@@ -71,6 +72,7 @@ export class FinanceDeliveryService {
     createdAt: Date;
     financeRevisions: Array<{
       payingSupplierName?: string | null;
+      exchangeOfficeName?: string | null;
       version: number;
       status: 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
       bankId: string | null;
@@ -127,7 +129,10 @@ export class FinanceDeliveryService {
             bankId: finance.account?.bankId ?? finance.bankId,
             accountId: finance.accountId,
             accountTitle:
-              finance.payingSupplierName ?? finance.account?.title ?? null,
+              finance.exchangeOfficeName ??
+              finance.payingSupplierName ??
+              finance.account?.title ??
+              null,
             paymentMethodId: finance.paymentMethodId,
             paymentMethodName: finance.paymentMethod?.name ?? null,
             paidAmount: legacyPaid
@@ -251,7 +256,9 @@ export class FinanceDeliveryService {
       (command.reason?.trim().length ?? 0) > 500 ||
       (!paid && !isOptionalOperationReason(command.reason)) ||
       (paid &&
-        ((!command.accountId && !command.payingSupplierId) ||
+        ((!command.accountId &&
+          !command.payingSupplierId &&
+          !command.exchangeOfficeId) ||
           !command.paymentMethodId ||
           !paidAmount ||
           paidAmount.lte(0) ||
@@ -281,6 +288,8 @@ export class FinanceDeliveryService {
       let paymentMethod: { id: string; name: string } | null = null;
       let payingSupplierId: string | null = null;
       let payingSupplierName: string | null = null;
+      let exchangeOfficeId: string | null = null;
+      let exchangeOfficeName: string | null = null;
       if (paid) {
         const source = await paymentSource(
           tx,
@@ -293,6 +302,8 @@ export class FinanceDeliveryService {
         account = source.account;
         payingSupplierId = source.payingSupplierId;
         payingSupplierName = source.payingSupplierName;
+        exchangeOfficeId = source.exchangeOfficeId;
+        exchangeOfficeName = source.exchangeOfficeName;
         paymentMethod = await tx.masterPaymentMethod.findFirst({
           where: {
             id: command.paymentMethodId!,
@@ -346,6 +357,8 @@ export class FinanceDeliveryService {
           accountId: paid ? (account?.id ?? null) : null,
           payingSupplierId,
           payingSupplierName,
+          exchangeOfficeId,
+          exchangeOfficeName,
           paymentMethodId: paid ? paymentMethod!.id : null,
           paidAmount: paid ? paidAmount : null,
           exchangeRateToIrr: paid ? exchangeRate : null,
@@ -360,6 +373,14 @@ export class FinanceDeliveryService {
           actorUserId,
         },
       });
+      if (paid && paidAmount)
+        await debitExchange(tx, {
+          officeId: exchangeOfficeId,
+          currencyCode: purchase.currencyCode,
+          amount: paidAmount.toString(),
+          actorUserId,
+          supplierPaymentId: row.id,
+        });
       if (
         paid &&
         alreadyPaid.isZero() &&
@@ -403,15 +424,17 @@ export class FinanceDeliveryService {
             row.rialEquivalent?.toString(),
           ),
           settlementAccountId: account?.id ?? null,
-          partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${payingSupplierId ?? ''}`,
+          partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${exchangeOfficeId ?? payingSupplierId ?? ''}`,
           reference: row.paymentReference,
         });
       return {
+        id: row.id,
         version: row.version,
         status: row.status,
         bankId: row.bankId,
         accountId: row.accountId,
-        accountTitle: payingSupplierName ?? account?.title ?? null,
+        accountTitle:
+          exchangeOfficeName ?? payingSupplierName ?? account?.title ?? null,
         paymentMethodId: row.paymentMethodId,
         paymentMethodName: paymentMethod?.name ?? null,
         paidAmount: row.cumulativePaid?.toString() ?? '0',

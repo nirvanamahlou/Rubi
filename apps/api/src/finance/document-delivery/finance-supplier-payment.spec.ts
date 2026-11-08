@@ -8,6 +8,21 @@ import { FinanceDeliveryService } from './finance-delivery.module';
 function fixture(amount = '100', currencyCode = 'IRR') {
   const createdAt = new Date('2026-09-13T12:00:00.000Z');
   const tx = {
+    financeExchangeOffice: {
+      findFirst: vi.fn().mockResolvedValue({
+        id: '50000000-0000-4000-8000-000000000002',
+        title: 'Exchange',
+        balances: [{ id: 'balance' }],
+      }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    financeExchangeBalance: {
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUniqueOrThrow: vi
+        .fn()
+        .mockResolvedValue({ id: 'balance', amount: new Prisma.Decimal('60') }),
+    },
+    financeExchangeMovement: { create: vi.fn().mockResolvedValue({}) },
     financeAccountingEvent: financialEventStore(),
     $queryRaw: vi.fn().mockResolvedValue([]),
     reservationServicePurchase: {
@@ -221,4 +236,44 @@ describe('broker purchase gate', () => {
     expect(gate.missingServiceTitles).toEqual(['هتل', 'ترانسفر']);
     expect(gate.missingServiceTitles).not.toContain('بلیط');
   });
+});
+
+it('links the reservation payment debit to its revision in the same transaction', async () => {
+  const { service, tx } = fixture('100', 'EUR');
+  const result = await service.updateSupplierPayment(
+    'intake-1',
+    'purchase-1',
+    {
+      expectedVersion: 0,
+      status: 'PAID',
+      exchangeOfficeId: '50000000-0000-4000-8000-000000000002',
+      paymentMethodId: 'method-1',
+      paidAmount: '40',
+      exchangeRateToIrr: '800000',
+      transferAt: '2026-09-13T12:00:00.000Z',
+      reason: '',
+    },
+    'finance-user',
+    ['branch-a'],
+  );
+  expect(result).toMatchObject({
+    id: 'revision-1',
+    accountTitle: 'Exchange',
+    remainingAmount: '60',
+  });
+  expect(tx.financeExchangeBalance.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        currencyCode: 'EUR',
+        amount: { gte: new Prisma.Decimal(40) },
+      }),
+    }),
+  );
+  expect(tx.financeExchangeMovement.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      supplierPaymentId: 'revision-1',
+      delta: new Prisma.Decimal(-40),
+    }),
+  });
+  expect(tx.financeSettlementAccount.findFirst).not.toHaveBeenCalled();
 });

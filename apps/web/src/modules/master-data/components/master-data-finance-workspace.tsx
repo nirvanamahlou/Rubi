@@ -1,4 +1,5 @@
 'use client';
+import { ExchangeOfficeWorkspace } from '@/modules/finance/components/exchange-office-workspace';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { useMasterDataColumnFilters } from './master-data-column-filters';
@@ -93,7 +94,8 @@ import { FinanceChart } from './master-data-currency-chart';
 import { CurrencyRateActions } from './master-data-currency-rate-actions';
 export { FinanceChart };
 
-type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
+type FinanceTab =
+  'currencies' | 'approvals' | 'banks' | 'payments' | 'exchanges';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 type RateStatus = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
@@ -126,6 +128,12 @@ const tabs: readonly {
   { key: 'currencies', label: 'ارزها', resource: 'currencies', icon: Coins },
   { key: 'banks', label: 'بانک‌ها', resource: 'banks', icon: Landmark },
   {
+    key: 'exchanges',
+    label: 'صندوق‌های ارزی',
+    resource: 'banks',
+    icon: WalletCards,
+  },
+  {
     key: 'payments',
     label: 'روش پرداخت',
     resource: 'payment-methods',
@@ -148,6 +156,7 @@ const tabCopy: Record<FinanceTab, { title: string; description: string }> = {
     description:
       'بانک‌های مرجع مشترک بین شرکت‌ها؛ حساب، مانده و شبا متعلق به Finance است.',
   },
+  exchanges: { title: 'صندوق‌های ارزی', description: '' },
   payments: {
     title: 'روش‌های پرداخت',
     description:
@@ -284,6 +293,7 @@ export function MasterDataFinanceWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (tab === 'exchanges') return;
     if (!resourceAllowed) {
       setRecords([]);
       setRates([]);
@@ -775,26 +785,61 @@ export function MasterDataFinanceWorkspace() {
     },
   ];
 
+  const pageHeader = (
+    <PageHeader
+      actions={
+        <Link
+          className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
+          href="/master-data"
+        >
+          <ArrowRight aria-hidden="true" className="size-4" />
+          همه بخش‌ها
+        </Link>
+      }
+      title={copy.title}
+    />
+  );
+  const navigation = (
+    <Card className="overflow-x-auto p-2">
+      <nav
+        aria-label="زیرمجموعه‌های ارز و بانک"
+        className="flex min-w-max gap-1 rounded-xl bg-primary/5 p-1"
+      >
+        {visibleTabs.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              aria-current={tab === item.key ? 'page' : undefined}
+              className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-bold text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+              key={item.key}
+              onClick={() => changeTab(item.key)}
+              type="button"
+            >
+              <Icon aria-hidden="true" className="size-4" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+    </Card>
+  );
   if (!resourceAllowed) {
     return (
       <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
     );
   }
 
+  if (tab === 'exchanges')
+    return (
+      <div className="space-y-4" dir="rtl">
+        {pageHeader}
+        {navigation}
+        <ExchangeOfficeWorkspace />
+      </div>
+    );
   return (
     <div className={tab === 'currencies' ? 'space-y-3' : 'space-y-5'} dir="rtl">
-      <PageHeader
-        actions={
-          <Link
-            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
-            href="/master-data"
-          >
-            <ArrowRight aria-hidden="true" className="size-4" />
-            همه بخش‌ها
-          </Link>
-        }
-        title={copy.title}
-      />
+      {pageHeader}
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 
@@ -824,28 +869,7 @@ export function MasterDataFinanceWorkspace() {
         </div>
       </div>
 
-      <Card className="overflow-x-auto p-2">
-        <nav
-          aria-label="زیرمجموعه‌های ارز و بانک"
-          className="flex min-w-max gap-1 rounded-xl bg-primary/5 p-1"
-        >
-          {visibleTabs.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                aria-current={tab === item.key ? 'page' : undefined}
-                className="flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-bold text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                key={item.key}
-                onClick={() => changeTab(item.key)}
-                type="button"
-              >
-                <Icon aria-hidden="true" className="size-4" />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      </Card>
+      {navigation}
 
       {tab !== 'payments' ? (
         <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${copy.title}`} />

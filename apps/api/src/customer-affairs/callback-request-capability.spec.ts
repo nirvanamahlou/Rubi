@@ -53,7 +53,10 @@ function fixture() {
   const sql = vi.fn(async () => Prisma.sql`TRUE`);
   const service = new CallCenterReadService(
     db,
-    { scope, access: { sql } } as unknown as CallCenterWorkflowService,
+    {
+      scope,
+      access: { sql, callWhere: vi.fn(async () => ({})) },
+    } as unknown as CallCenterWorkflowService,
     {} as CallCenterService,
     { fingerprint: () => 'revision' } as unknown as CallCenterCrypto,
     {} as IamWorkbenchRequestDirectory,
@@ -92,6 +95,7 @@ describe('missed callback request capability', () => {
         actor.branchIds[0],
         'contacts',
         expect.anything(),
+        true,
       );
     },
   );

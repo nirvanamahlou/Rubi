@@ -1,8 +1,11 @@
+<<<<<<< HEAD
 ## CALL-CENTER-TODAY-FILTERS-1108 — PC-C
 
 Today Calls gains three explicitly requested local filters beside refresh: direction, outcome and connected-to. Filtering occurs before authorized server counts/paging; changing filters resets paging and snapshot. See docs/tasks/CALL-CENTER-TODAY-FILTERS-1108.md for compatibility, verification and Draft PR handoff. No deployment.
 
 
+=======
+>>>>>>> origin/develop
 ## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
 PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel voucher now has one continuous passenger/service table; Chrome prints continuation pages with column headings only, retaining row order and complete rows. Hotel, flight and tour sections are not restarted for passenger chunks. All room details remain inline; obsolete estimated physical page numbers are hidden. 56 focused output tests and actual Chrome PDF checks for6/40/80 synthetic passengers pass; all rendered pages visually inspected. Scoped lint, full Web TypeScript and67-route production build pass. Integrated to develop under owner authorization; no own migration, dependency, operational data or deployment changes.
@@ -9165,6 +9168,10 @@ Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, 
 
 Production read-only diagnosis found current native HR managers with own-only Call Center permissions excluded from their unit contacts because the read scope still depended on manual team grants/IAM profiles. Strict-policy contacts and reports now use the published HR manager/current-unit/company projection intersected with active internal branch accounts. Ordinary staff remain self-only; demotion/transfer is immediate, executable workflow/recording/global/legacy policies are unchanged.40 focused tests and20 real PostgreSQL answer/ingress/access cases pass, including own-read-only manager inbound/outbound/contact search/report SQL, transfer/demotion and native eligibility. API types/build and scoped lint pass. Read-only candidate acceptance on current production data confirms every one of the affected employee's nine visible contacts is accessible to the unit manager, without expanding that employee's own scope. No schema/dependency/grant or HR/call data change. Full exact-head hosted gates precede merge and bounded release. Details: tasks/RESERVATION-CALL-VISIBILITY-1108.md.
 
+## EXPERT-CALL-ISOLATION-1108 — 2026-11-08
+
+The owner requires experts to see only their own verified calls, and current HR managers their current unit's verified calls. This supersedes the earlier ANSWERED rule allowing an authorized contact's entire history. A shared telephone/contact is identity, not a grant to every call. Latest-call selection, counts, filters, reports, history, direct-call reads and completed-call edits must correlate responsibility to that exact call. Verified shared-extension responsibility and outbound-origin snapshots remain valid; callback visibility is restricted to the missed call or explicitly linked assigned-request calls. Operational offer/claim popup access remains separate. Native HR manager projection, pinned global identities and executive-only recording downloads are unchanged. No operational data rewrite or migration. All201 Call Center/callback tests pass on a freshly migrated isolated PostgreSQL18 database, with full API type/build and scoped lint. PR1512 integrated the concurrent insurance/transfer develop changes; final-head hosted gates remain required.
+
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
 Owner confirmed an exact two-manager/three-extra-recipient Call Center assignment exception. Protected exact-ID policy feeds both selector and save validation; active internal branch checks and all other department/team/self policies remain intact. Own-created target requests remain readable without expanding contact history. No schema/dependency/HR/stored-grant change.52 focused tests pass; full types/build and hosted gates precede approved merge/publication. See tasks/SALES-REQUEST-ASSIGNEES-1107.md.
@@ -9392,6 +9399,12 @@ UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messagin
 PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing dialog to the viewport. Opt-in compact table reduces field widths/spacing, keeps sticky headings and highlights the focused row. Identity authorization and save paths unchanged; no migration or deployment. Local checks and final hosted CI required before authorized develop merge.
 
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.
+
+## EXCHANGE-FUNDS-1108 — 2026-11-08 — PC-B
+
+Added Currency Funds to currency/bank master data: four requested KPIs, search/country/currency/status filters, title-only required exchange-office editor, multiple currency balances, versioned edit and soft delete. Finance inbox replaces the paying-supplier picker with active exchange offices carrying the payment currency. Payments atomically debit that currency; legacy supplier history/API remains compatible. Removed the fixed purchase-rate entry and partial-payment guidance. Optional payment evidence now covers ticket, reservation supplier and procurement invoice payments with independent upload retry.
+
+One additive migration creates office/balance/audit/movement records and nullable real links on the three payment revisions. Disposable PostgreSQL tests verify replay, concurrency, insufficient funds, transaction rollback and immutable audit; targeted payment integration and form tests also pass. No operational database or production runtime was changed. Deployment must apply the migration before serving the new API/Web. Exact-head hosted build and quality gates are required before merge.
 
 ## Insurance correction — 2026-11-08 — PC-A — INTEGRATED / FINAL CI
 

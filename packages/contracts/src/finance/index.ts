@@ -466,6 +466,7 @@ export interface FinanceTicketPaymentCommandV1 {
   costRevisionId: string;
   accountId?: string | null;
   payingSupplierId?: string | null;
+  exchangeOfficeId?: string | null;
   paymentMethodId: string;
   paidAmount: string;
   exchangeRateToIrr: string;
@@ -597,6 +598,7 @@ export interface FinanceProcurementInvoicePaymentCommandV1 {
   expectedSourceVersion?: number;
   accountId?: string | null;
   payingSupplierId?: string | null;
+  exchangeOfficeId?: string | null;
   paymentMethodId: string;
   paidAmount: string;
   exchangeRateToIrr?: string | null;
