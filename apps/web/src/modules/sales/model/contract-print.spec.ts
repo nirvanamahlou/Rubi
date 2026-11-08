@@ -621,7 +621,7 @@ it('uses compact soft Latin names and room types, isolated rial glyphs and left-
   expect(out).toEqual(before);
 });
 
-it('prints actual airport names and codes in the contract route and flight section without changing saved data', () => {
+it('keeps airports in flight rows and shows only destination cities in the parties section', () => {
   const before = structuredClone(printFixture);
   const html = contractPrintHtml(printFixture, {
     ...printReferences,
@@ -644,9 +644,12 @@ it('prints actual airport names and codes in the contract route and flight secti
     html.split('FLIGHT INFORMATION')[1]?.split('HOTEL INFORMATION')[0] || '';
   expect(section).toContain('Gazipasa · Gazipasa Airport (GZP)');
   expect(section).toContain('Tehran · Imam Khomeini (IKA)');
-  expect(html).toContain(
-    'مقصد: <bdi dir="ltr"><bdi>Tehran · Imam Khomeini (IKA)</bdi> → <bdi>Gazipasa · Gazipasa Airport (GZP)</bdi></bdi>',
-  );
+  expect(html).toContain('مقصد: ' + printReferences.names.antalya + '</div>');
+  const parties = html
+    .split('CONTRACT PARTIES')[1]!
+    .split('PASSENGER SERVICES')[0]!;
+  expect(parties).not.toContain('Imam Khomeini');
+  expect(parties).not.toContain('→');
   expect(printFixture).toEqual(before);
   expect(printFixture.contract.destinationId).toBe('antalya');
 });
@@ -938,7 +941,7 @@ it.each([2, 3])(
     refs.names['extra-city-1'] = 'ازمیر';
     const html = contractPrintHtml(output, refs);
     expect(html).toContain(
-      'محل اقامت: ' +
+      'مقصد: ' +
         (count === 2 ? 'آنتالیا / استانبول' : 'آنتالیا / استانبول / ازمیر') +
         '</div>',
     );
@@ -947,6 +950,7 @@ it.each([2, 3])(
 
 it('uses the actual one-way flight route even when the legacy contract destination differs', () => {
   const output = structuredClone(printFixture);
+  delete output.contract.hotelSelection;
   output.contract.ticketSelections = [
     {
       ...output.contract.ticketSelections![0]!,
@@ -959,12 +963,10 @@ it('uses the actual one-way flight route even when the legacy contract destinati
     ...printReferences,
     names: { ...printReferences.names, antalya: 'ANTALYA', tehran: 'TEHRAN' },
   });
-  expect(html).toContain(
-    'مقصد: <bdi dir="ltr"><bdi>ANTALYA</bdi> → <bdi>TEHRAN</bdi></bdi></div>',
-  );
+  expect(html).toContain('مقصد: TEHRAN</div>');
 });
 
-it('prints floating airport snapshots in both the route summary and flight table', async () => {
+it('prints floating airports only in the flight table', async () => {
   const { contractFlightMetadata } = await import('@nora/contracts');
   const output = structuredClone(printFixture);
   output.contract.ticketSelections = [];
@@ -1002,6 +1004,45 @@ it('prints floating airport snapshots in both the route summary and flight table
     },
   ];
   const html = contractPrintHtml(output, printReferences);
-  expect(html.split('Antalya Airport (AYT)').length - 1).toBe(2);
-  expect(html.split('Imam Khomeini (IKA)').length - 1).toBe(2);
+  expect(html.split('Antalya Airport (AYT)').length - 1).toBe(1);
+  expect(html.split('Imam Khomeini (IKA)').length - 1).toBe(1);
+});
+
+it('does not add the return-flight home city to the destination of a round trip', () => {
+  const output = structuredClone(printFixture);
+  delete output.contract.hotelSelection;
+  const html = contractPrintHtml(output, {
+    ...printReferences,
+    names: { ...printReferences.names, antalya: 'ANTALYA', tehran: 'TEHRAN' },
+  });
+  expect(html).toContain('مقصد: ANTALYA</div>');
+});
+it('deduplicates combined hotel cities without adding flight airport routes', () => {
+  const output = structuredClone(printFixture);
+  output.contract.hotelSelection!.cityId = 'antalya';
+  output.contract.hotelSelection!.additionalStays = [
+    {
+      hotelId: 'other',
+      cityId: 'antalya',
+      hotelNameSnapshot: 'Other',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-02',
+    },
+    {
+      hotelId: 'third',
+      cityId: 'istanbul',
+      hotelNameSnapshot: 'Third',
+      checkInDate: '2026-10-02',
+      checkOutDate: '2026-10-03',
+    },
+  ];
+  const html = contractPrintHtml(output, {
+    ...printReferences,
+    names: {
+      ...printReferences.names,
+      antalya: 'ANTALYA',
+      istanbul: 'ISTANBUL',
+    },
+  });
+  expect(html).toContain('مقصد: ANTALYA / ISTANBUL</div>');
 });
