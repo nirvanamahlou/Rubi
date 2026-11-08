@@ -118,9 +118,10 @@ describe('sales dashboard loading', () => {
       expect.objectContaining({ travelFrom: '2026-10-01', pageSize: 10_000 }),
     );
   });
-  it('renders customer phone and destination only with the original contract date rather than its last edit', () => {
+  it('renders only the outbound route for a round trip with the original contract date', () => {
     const createdAt = '2026-09-01T12:00:00.000Z';
     const contract = {
+      tripType: 'ROUND_TRIP',
       customerPhone: '09900000001',
       originName: 'تهران',
       destinationName: 'آنتالیا',
@@ -137,9 +138,8 @@ describe('sales dashboard loading', () => {
       </table>,
     );
     expect(html).toContain('<bdi dir="ltr">09900000001</bdi>');
-    expect(html).not.toContain('تهران');
-    expect(html).not.toContain('→');
-    expect(html).toContain('آنتالیا');
+    expect(html).toContain('<bdi dir="rtl">تهران ← آنتالیا</bdi>');
+    expect(html.match(/آنتالیا/g)).toHaveLength(1);
     expect(html).toContain(
       new Date(createdAt).toLocaleDateString('fa-IR', {
         timeZone: 'Asia/Tehran',
@@ -199,7 +199,7 @@ describe('sales dashboard loading', () => {
     expect(html.match(/—/g)).toHaveLength(2);
     expect(html).not.toContain('ریال');
   });
-  it('falls back to an unknown destination without substituting the origin', () => {
+  it('keeps the origin and marks a missing destination as unknown', () => {
     const contract = {
       originName: 'تهران',
       destinationName: null,
@@ -214,8 +214,7 @@ describe('sales dashboard loading', () => {
         </tbody>
       </table>,
     );
-    expect(html).toContain('<bdi>—</bdi>');
-    expect(html).not.toContain('تهران');
+    expect(html).toContain('<bdi dir="rtl">تهران ← —</bdi>');
   });
   it('places the Excel export beside the contract list with a full-results hint', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
