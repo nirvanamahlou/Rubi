@@ -351,7 +351,10 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
         grain: 'CONTRACT' as const,
         version: entry.code === 'sales_by_organization' ? 4 : 2,
         ...(entry.code === 'agency_performance'
-          ? { title: 'کدام مشتریان سازمانی بیشترین فروش قرارداد را داشته‌اند؟' }
+          ? {
+              title: 'کدام مشتریان سازمانی بیشترین فروش قرارداد را داشته‌اند؟',
+              permission: 'reporting.customers.read',
+            }
           : {}),
         ...(entry.code === 'future_travel_commitments'
           ? {
