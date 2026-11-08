@@ -18,6 +18,10 @@ export interface SearchFilters {
   from: string;
   to: string;
 }
+export type TodayCallFilters = Pick<
+  SearchFilters,
+  'direction' | 'outcome' | 'unit'
+>;
 export const emptySearch: SearchFilters = {
   query: '',
   scope: 'LATEST',
@@ -175,6 +179,7 @@ export const readApi = {
     page: number,
     revision: string | undefined,
     signal: AbortSignal,
+    filters: Partial<TodayCallFilters> = {},
   ) =>
     callCenterRequest<{
       data: { call: ContactSummary['latest']; callCount: number }[];
@@ -190,6 +195,9 @@ export const readApi = {
       body: JSON.stringify({
         page,
         pageSize: 20,
+        ...(filters.direction ? { direction: filters.direction } : {}),
+        ...(filters.outcome ? { outcome: filters.outcome } : {}),
+        ...(filters.unit ? { unit: filters.unit } : {}),
         ...(revision ? { revision } : {}),
       }),
       signal,

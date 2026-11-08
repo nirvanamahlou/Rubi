@@ -5757,5 +5757,7 @@
   "بارگذاری از پرداخت مالی": "Uploaded from a financial payment",
   "فهرست صرافی‌ها در دسترس نیست.": "The exchange office directory is unavailable.",
   "کشور انتخاب‌شده معتبر نیست.": "The selected country is invalid.",
-  "منبع پرداخت معتبر نیست.": "Invalid payment source."
+  "منبع پرداخت معتبر نیست.": "Invalid payment source.",
+  "فیلترهای تماس‌های امروز": "Today's call filters",
+  "تماسی با فیلترهای انتخاب‌شده در دسترسی شما وجود ندارد.": "No accessible calls match the selected filters."
 }
