@@ -135,7 +135,7 @@ it.each([
   async (make) => {
     vi.stubGlobal('fetch', vi.fn(make));
     await expect(new TravisSandboxService().catalog()).rejects.toThrow(
-      'اطلاعات بیمه دریافت نشد.',
+      /اطلاعات بیمه دریافت نشد|دسترسی یا کلید اتصال بیمه تأیید نشد/,
     );
   },
 );
@@ -253,3 +253,48 @@ it('imports supported provider rates without inventing zero prices for unavailab
     );
   }
 });
+
+it('returns bounded actionable provider validation fields without echoing sensitive response values', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(
+      () =>
+        new Response(
+          JSON.stringify({
+            code: 400,
+            message: 'SECRET-PASSPORT-123',
+            errors: {
+              'Person.Mobile': ['09123456789'],
+              'person.email': ['private@example.test'],
+              'SECRET-PASSPORT-123': ['api-key'],
+            },
+          }),
+          { status: 400 },
+        ),
+    ),
+  );
+  await expect(new TravisSandboxService().createPolicy({})).rejects.toThrow(
+    'موبایل، ایمیل',
+  );
+  try {
+    await new TravisSandboxService().createPolicy({});
+  } catch (error) {
+    expect(String(error)).not.toMatch(/SECRET|091234|private@|api-key/);
+    expect(String(error)).toContain('400');
+    expect(String(error)).toContain('ثبت درخواست');
+  }
+});
+it.each([401, 403, 429, 503])(
+  'distinguishes provider HTTP failure %s without disclosing HTML',
+  async (status) => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response('<html>SECRET</html>', { status })),
+    );
+    await expect(new TravisSandboxService().createPolicy({})).rejects.toThrow(
+      String(status),
+    );
+  },
+);
