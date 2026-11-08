@@ -26,22 +26,59 @@ it('allows cash with no accounts even while account lookup loads or fails', () =
 it.each(['BANK_TRANSFER', 'POS', 'ONLINE_GATEWAY', 'CHECK'] as const)(
   'keeps account and currency validation for %s including a switch from cash',
   (method) => {
-    const bankPayment = { ...payment, method };
+    const bankPayment = {
+      ...payment,
+      method,
+      currencyCode: method === 'BANK_TRANSFER' ? 'IRR' : payment.currencyCode,
+    };
+    const selectedAccount = {
+      ...account,
+      currencyCode: bankPayment.currencyCode,
+    };
     expect(paymentDestinationIsValid(bankPayment, [], false, '')).toBe(false);
     const selected = { ...bankPayment, destinationAccountId: 'bank' };
-    expect(paymentDestinationIsValid(selected, [account], false, '')).toBe(
-      true,
-    );
-    expect(paymentDestinationIsValid(selected, [account], true, '')).toBe(
-      false,
-    );
     expect(
-      paymentDestinationIsValid(selected, [account], false, 'Failed'),
+      paymentDestinationIsValid(selected, [selectedAccount], false, ''),
+    ).toBe(true);
+    expect(
+      paymentDestinationIsValid(selected, [selectedAccount], true, ''),
+    ).toBe(false);
+    expect(
+      paymentDestinationIsValid(selected, [selectedAccount], false, 'Failed'),
     ).toBe(false);
     expect(
       paymentDestinationIsValid(
         { ...selected, currencyCode: 'USD' },
-        [account],
+        [selectedAccount],
+        false,
+        '',
+      ),
+    ).toBe(false);
+  },
+);
+
+it.each(['EUR', 'USD', 'AED'])(
+  'allows a %s bank transfer without an account even if account lookup fails',
+  (currencyCode) => {
+    const transfer = {
+      ...payment,
+      method: 'BANK_TRANSFER' as const,
+      currencyCode,
+    };
+    for (const destinationAccountId of [undefined, null, '']) {
+      expect(
+        paymentDestinationIsValid(
+          { ...transfer, destinationAccountId },
+          [],
+          true,
+          'Failed',
+        ),
+      ).toBe(true);
+    }
+    expect(
+      paymentDestinationIsValid(
+        { ...transfer, destinationAccountId: 'unknown' },
+        [],
         false,
         '',
       ),

@@ -11587,3 +11587,9 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+## FX-TRANSFER-DESTINATION-1108 — PC-B — ACTIVE
+
+Owner requests optional destination account for foreign-currency bank-transfer declarations in Sales payments. Reserve payment-destination helper, contract-payments selector/serialization, focused UI/flow and existing server persistence regressions, own notes. Backend already accepts omitted destinations and validates provided references through branch/currency/active account scope. Preserve IRR/other-method requirements, actual Finance receipt approval, idempotency and source ownership. No API/schema/dependency/financial transactions or deployment.
+
+FX-TRANSFER-DESTINATION-1108 validation:26 Web/11 API checks pass; native server omission contract is unchanged. Source frozen on push; preserve all final-head quality/build/test/migration gates before standing authorized develop merge. No deployment or payment registration.
