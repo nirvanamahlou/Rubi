@@ -5588,5 +5588,9 @@
   "پیامی با این عبارت پیدا نشد.": "No messages match this search.",
   "نتایج قدیمی‌تر": "Older results",
   "ترانسفر این هتل": "Hotel transfer",
-  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel"
+  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel",
+  "اطلاعات حساب تفصیلی": "Detail account information",
+  "اطلاعات نوع تفصیلی": "Detail account type information",
+  "برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.": "Create an accounting ledger before saving a detail account type.",
+  "تعریف دفتر کل": "Create accounting ledger"
 }
