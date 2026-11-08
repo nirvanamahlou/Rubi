@@ -869,13 +869,7 @@ export function ReservationSettingsForm({
               intake.workflow.supplierStatus === 'CANCELLED' ||
               (!selected.length && !aggregateForm)
             }
-            onClick={() =>
-              void save(
-                showDocument &&
-                  Boolean(intake.workflow.sentSupplierFormSettings),
-                true,
-              )
-            }
+            onClick={() => void save(false, true)}
           >
             ذخیره
           </Button>

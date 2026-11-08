@@ -245,3 +245,26 @@ it('rejects a missing or unsigned PDF before accessing any recipient', async () 
   ).rejects.toThrow();
   expect(master.detail).not.toHaveBeenCalled();
 });
+it('does not start a dispatcher or claim any queued email while sending is disabled', async () => {
+  vi.stubEnv('RESERVATION_MAIL_ENABLED', 'false');
+  vi.useFakeTimers();
+  const transaction = vi.fn();
+  type D = ConstructorParameters<typeof ReservationMailService>;
+  const service = new ReservationMailService(
+    { client: { $transaction: transaction } } as unknown as D[0],
+    {} as D[1],
+    {} as D[2],
+    {} as D[3],
+  );
+  const sweep = vi.spyOn(service, 'sweep');
+  try {
+    service.onModuleInit();
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(sweep).not.toHaveBeenCalled();
+    await service.sweep();
+    expect(transaction).not.toHaveBeenCalled();
+  } finally {
+    service.onModuleDestroy();
+    vi.useRealTimers();
+  }
+});

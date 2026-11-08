@@ -114,3 +114,21 @@ Build نهایی API و Web موفق شد؛ Web تمام ۶۷ مسیر را سا
 بررسی‌های میزبانی‌شده PR و پذیرش واقعی صندوق ایمیل پس از دریافت تنظیمات IT باقی‌اند.
 Migration/Dependency lock این واحد پس از انتشار آزاد است و سورس منجمد است.
 Container اختصاصی تست پس از اعتبارسنجی متوقف شد. هیچ merge یا deploy انجام نشده است.
+
+## PR1498 CI repair — 2026-11-08
+
+Reviewed exact head c45e0cd3a: hosted quality, production build and PostgreSQL18
+migration/seed checks passed; full suite failed only reservation-price-save.spec.tsx
+(4714 Web tests passed). The test expected the old second workflow request. More
+importantly, the price Save action could call the new SMTP dispatch path for an
+already sent form. Price Save now persists only SUPPLIER_FORM_SETTINGS; explicit
+Send to broker remains the only email command. Immutable sent snapshots are kept.
+Three status regressions assert no fetch/email and unchanged sent prices. A new
+API regression proves disabled mail starts no background dispatcher and claims no
+queue rows. No live configuration, credentials or delivery state was changed.
+
+Validation:11 targeted Web tests,34 mail API tests, scoped lint, Web typecheck and
+production build (67 routes), and actual Chrome A4/multipage PDF smoke all passed.
+GitHub also reports five merge conflicts limited to shared work/status docs and
+translation catalogues, including a generated binary-marked catalogue. No merge
+has been performed; resolving these requires the AGENTS.md merge authorization.

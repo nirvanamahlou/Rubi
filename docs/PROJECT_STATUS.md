@@ -9306,3 +9306,13 @@ See tasks/RESERVATION-BROKER-EMAIL-1108.md for IT intake and private configurati
 RESERVATION-BROKER-EMAIL-1108 final local gates: API production build and Web production build (67 routes) both pass. SMTP remains disabled pending IT; draft branch publication only.
 
 RESERVATION-BROKER-EMAIL-1108 delivery: implementation fc9713987 pushed; draft PR1498 to develop, author Amin-tech11 verified. API/Web production builds pass (67 Web routes). All local gates and IT instructions are in docs/tasks/RESERVATION-BROKER-EMAIL-1108.md. Source frozen; bounded Migration/Dependency reservations released. No merge, deploy, real email or operational data/schema/settings changes. Dedicated test PostgreSQL container stopped after validation. Hosted PR gates and IT-controlled live acceptance remain pending.
+
+## RESERVATION-BROKER-EMAIL-CI-1108 — PC-A — FIX VALIDATED
+
+PR1498 head c45e0cd3a had green quality/build/PostgreSQL gates and one failing Web
+price-save regression. Separate price Save from real PDF email dispatch; only the
+explicit Send to broker action can dispatch. Preserve old sent-form snapshots.
+11 targeted Web and34 mail API tests, lint, Web typecheck/build (67 routes), and
+actual Chrome PDF smoke pass. Added disabled-background-dispatch safety coverage.
+No real email, runtime settings, migration/dependency or UI appearance changes.
+Five shared docs/catalogue merge conflicts remain pending merge authorization.
