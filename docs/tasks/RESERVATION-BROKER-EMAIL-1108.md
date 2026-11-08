@@ -145,3 +145,23 @@ reports no merge conflicts after task-branch synchronization. The integrated
 quality job exposed two missing blank lines at merged ledger section boundaries;
 formatting is corrected without changing peer records or relaxing any CI gate.
 All final-head hosted checks must finish before any future release. Mail stays off.
+
+## IT-independent acceptance — 2026-11-08
+
+PR1498 is already integrated into develop. The owner now explicitly authorizes a
+follow-up PR and merge to develop after all final-head checks pass. Deployment and
+live delivery remain outside this authorization; mail stays disabled by default.
+
+Added acceptance coverage for invalid/multiple recipient addresses, incomplete
+contact pagination, sensitive-contact audit failure, missing SMTP/encryption
+configuration, branch-scoped rejection and Web authentication/disabled-mail error
+propagation. No production contact or IAM changes are performed. Recipient
+completeness and employee access on operational records require their authorized
+owners; tests validate the enforcement using synthetic data, not a production audit.
+
+The [staff and operations guide](RESERVATION-MAIL-STAFF-GUIDE-1108.md) documents
+save/download/send, PDF-only content, final notifications, ambiguous results,
+recipient/access preparation, controlled activation and safe suspension. Local
+validation:40 API mail tests,15 focused Web tests, scoped ESLint and real Chrome
+A4/multipage smoke pass; the rendered single-page NOTICE remains in its existing
+final section. Form source, styles and PDF template are unchanged.
