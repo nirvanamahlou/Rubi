@@ -1,5 +1,9 @@
 ## HR penalty settings persistence — 2026-11-08
 
+## REPORT-MONEY-FORMAT-1108 — PC-C
+
+Report table/chart money and CSV/XLSX compound amounts use ASCII comma thousands separators. Raw decimal API values, sorting and per-currency calculations are unchanged; Excel numeric cells retain numeric values and their existing thousands number format, long decimals remain exact text. 132 API reporting tests and 18 Web model checks pass; scoped lint and clean CI validate the change. No data/schema/migration/dependency or deployment changes.
+
 Reopening penalty settings resolves the saved record for the selected branch/organization or headquarters scope and uses the existing versioned update flow. Branch switching remounts the form; other resource forms remain unchanged. Five focused tests and scoped ESLint pass; production compilation succeeded, full typecheck/build in progress. No schema or API changes.
 
 ## HR fast attendance sync — 2026-11-08

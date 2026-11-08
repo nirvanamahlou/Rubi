@@ -1,4 +1,8 @@
 'use client';
+import {
+  formatReportMoney,
+  isReportMoneyColumn,
+} from '../model/report-money-format';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useReportLiveRefresh } from '../model/use-report-live-refresh';
 import resultTableStyles from './report-result-table.module.css';
@@ -1343,7 +1347,11 @@ export function ReportResultPanel({
                     <tr className="border-t" key={row.grainId}>
                       {result.columns?.map((column) => (
                         <td className="p-3 text-center" key={column.key}>
-                          {row.sourceValues?.[column.key] ?? '—'}
+                          {isReportMoneyColumn(column)
+                            ? formatReportMoney(
+                                row.sourceValues?.[column.key] ?? '—',
+                              )
+                            : (row.sourceValues?.[column.key] ?? '—')}
                         </td>
                       ))}
                     </tr>
@@ -1488,7 +1496,7 @@ export function ReportResultPanel({
                         {row.contractCount.toLocaleString('fa-IR')}
                       </td>
                       <td className="p-3 text-center font-semibold" dir="ltr">
-                        {row.amount}
+                        {formatReportMoney(row.amount)}
                       </td>
                       {detailColumns.passengerCount ? (
                         <td className="p-3 text-center" dir="ltr">
@@ -1502,22 +1510,22 @@ export function ReportResultPanel({
                       ) : null}
                       {detailColumns.purchaseAmount ? (
                         <td className="p-3 text-center font-semibold" dir="ltr">
-                          {row.purchaseAmount ?? '—'}
+                          {formatReportMoney(row.purchaseAmount ?? '—')}
                         </td>
                       ) : null}
                       {detailColumns.grossProfit ? (
                         <td className="p-3 text-center font-semibold" dir="ltr">
-                          {row.grossProfit ?? '—'}
+                          {formatReportMoney(row.grossProfit ?? '—')}
                         </td>
                       ) : null}
                       {detailColumns.refundAmount ? (
                         <td className="p-3 text-center font-semibold" dir="ltr">
-                          {row.refundAmount ?? '—'}
+                          {formatReportMoney(row.refundAmount ?? '—')}
                         </td>
                       ) : null}
                       {detailColumns.settlementBalance ? (
                         <td className="p-3 text-center font-semibold" dir="ltr">
-                          {row.settlementBalance ?? '—'}
+                          {formatReportMoney(row.settlementBalance ?? '—')}
                         </td>
                       ) : null}
                       {detailColumns.pendingReservationActions ? (
@@ -1580,7 +1588,8 @@ export function ReportResultPanel({
                           {row.branchId} · {row.ownerUserId}
                         </span>
                         <span className="shrink-0 font-semibold" dir="ltr">
-                          {row.amount} {currencySymbol(row.currencyCode ?? '')}
+                          {formatReportMoney(row.amount)}{' '}
+                          {currencySymbol(row.currencyCode ?? '')}
                         </span>
                       </div>
                       <div className="h-3 overflow-hidden rounded-full bg-muted">
@@ -1633,7 +1642,8 @@ export function ReportResultPanel({
                           className="block truncate text-[11px] font-semibold"
                           dir="ltr"
                         >
-                          {row.amount} {currencySymbol(row.currencyCode ?? '')}
+                          {formatReportMoney(row.amount)}{' '}
+                          {currencySymbol(row.currencyCode ?? '')}
                         </span>
                         <div className="mt-2 flex h-44 items-end justify-center">
                           <div
