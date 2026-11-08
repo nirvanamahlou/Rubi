@@ -36,6 +36,9 @@ export async function loadContractPrint(id: string) {
     ['cities', c.originId],
     ['cities', c.destinationId],
   ];
+  for (const flight of c.ticketSelections ?? []) {
+    keys.push(['cities', flight.originId], ['cities', flight.destinationId]);
+  }
   if (c.hotelSelection?.roomTypeId)
     keys.push(['room-types', c.hotelSelection.roomTypeId]);
   if (c.hotelSelection?.mealServiceId)
