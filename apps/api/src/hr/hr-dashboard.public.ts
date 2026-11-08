@@ -2,6 +2,7 @@ import { dashboardDimensionKey } from '../common/dashboard-dimensions';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import type {
   DashboardObservation,
+  DashboardSourceMetric,
   DashboardSourceQuery,
   DashboardSourceResult,
 } from '../common/dashboard-source';
@@ -78,15 +79,26 @@ export async function readHrDashboard(
   }
   const days: DashboardObservation[] = [],
     overtime: DashboardObservation[] = [];
+  let missingWork = false,
+    missingOvertime = false;
   for (const r of latest.values()) {
     // A pending review or absence is not confirmed work, even if it carries minute fields.
     if (!['حاضر', 'تأییدشده', 'تاییدشده'].includes(r.status)) continue;
-    if (!r.data || typeof r.data !== 'object' || Array.isArray(r.data))
+    if (!r.data || typeof r.data !== 'object' || Array.isArray(r.data)) {
+      missingWork = true;
+      missingOvertime = true;
       continue;
+    }
     const worked = r.data.workedMinutes,
       extra = r.data.overtimeMinutes;
-    if (typeof worked !== 'number' || !Number.isFinite(worked) || worked <= 0)
+    if (typeof worked !== 'number' || !Number.isFinite(worked) || worked < 0) {
+      missingWork = true;
+      missingOvertime = true;
       continue;
+    }
+    if (worked === 0) continue;
+    if (typeof extra !== 'number' || !Number.isFinite(extra) || extra < 0)
+      missingOvertime = true;
     const at = r.effectiveAt!,
       dimensions = { unit: r.employee?.unit || 'واحد ثبت‌نشده' };
     const dimensionKeys = {
@@ -105,24 +117,27 @@ export async function readHrDashboard(
         dimensionKeys,
       });
   }
-  return {
-    source,
-    state: 'ready',
-    metrics: {
-      'employee-workdays': {
-        kind: 'count',
-        unit: 'روز',
-        aggregation:
-          'آخرین رکورد معتبر هر کارمند/روز با وضعیت حاضر یا تأییدشده و کارکرد مثبت واقعی؛ رکورد نیازمند بررسی، غیبت و روز غیرکاری حذف می‌شود.',
-        observations: days,
-      },
-      'employee-overtime': {
-        kind: 'count',
-        unit: 'ساعت',
-        aggregation:
-          'دقیقه اضافه‌کاری ثبت‌شده در آخرین رکورد حضور معتبر تقسیم بر ۶۰؛ بدون تبدیل روز به ساعت یا محاسبه مبلغ.',
-        observations: overtime,
-      },
+  const unavailableMetrics: Record<string, string> = {};
+  if (missingWork)
+    unavailableMetrics['employee-workdays'] = 'MEASUREMENT_INPUTS_REQUIRED';
+  if (missingOvertime)
+    unavailableMetrics['employee-overtime'] = 'MEASUREMENT_INPUTS_REQUIRED';
+  const metrics: Record<string, DashboardSourceMetric> = {
+    'employee-workdays': {
+      kind: 'count',
+      unit: 'روز',
+      aggregation:
+        'آخرین رکورد معتبر هر کارمند/روز با وضعیت حاضر یا تأییدشده و کارکرد مثبت واقعی؛ رکورد نیازمند بررسی، غیبت و روز غیرکاری حذف می‌شود.',
+      observations: days,
+    },
+    'employee-overtime': {
+      kind: 'count',
+      unit: 'ساعت',
+      aggregation:
+        'دقیقه اضافه‌کاری ثبت‌شده در آخرین رکورد حضور معتبر تقسیم بر ۶۰؛ بدون تبدیل روز به ساعت یا محاسبه مبلغ.',
+      observations: overtime,
     },
   };
+  for (const id of Object.keys(unavailableMetrics)) delete metrics[id];
+  return { source, state: 'ready', metrics, unavailableMetrics };
 }

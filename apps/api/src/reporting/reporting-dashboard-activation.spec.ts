@@ -200,6 +200,47 @@ describe('audited native Dashboard activation', () => {
     );
     expect(result.metrics['employee-overtime']?.unit).toBe('ساعت');
   });
+  it.each(['workedMinutes', 'overtimeMinutes'])(
+    'withholds incomplete accepted attendance instead of inventing zero for missing %s',
+    async (field) => {
+      const data: Record<string, number> = {
+        workedMinutes: 480,
+        overtimeMinutes: 90,
+      };
+      delete data[field];
+      const result = await readHrDashboard(
+        {
+          hrRecord: {
+            findMany: vi
+              .fn()
+              .mockResolvedValue([
+                {
+                  id: 'day',
+                  employeeId: 'employee',
+                  branchId: 'branch',
+                  effectiveAt: at,
+                  updatedAt: at,
+                  status: 'حاضر',
+                  data,
+                  employee: { unit: 'Unit' },
+                },
+              ]),
+          },
+        } as never,
+        query,
+      );
+      expect(result.metrics['employee-overtime']).toBeUndefined();
+      expect(result.unavailableMetrics?.['employee-overtime']).toBe(
+        'MEASUREMENT_INPUTS_REQUIRED',
+      );
+      if (field === 'workedMinutes')
+        expect(result.metrics['employee-workdays']).toBeUndefined();
+      else
+        expect(result.metrics['employee-workdays']?.observations).toHaveLength(
+          1,
+        );
+    },
+  );
   it('excludes internal ticket categories and leaves missing first response unavailable rather than zero minutes', async () => {
     const findMany = vi.fn().mockResolvedValue([
       { createdAt: at, status: 'NEW', firstRespondedAt: null },
