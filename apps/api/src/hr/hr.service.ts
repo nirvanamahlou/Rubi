@@ -505,7 +505,7 @@ export class HrService {
     );
   }
 
-  private async dailyPenalty(row: RecordRow): Promise<string | null> {
+  async dailyPenalty(row: RecordRow): Promise<string | null> {
     if (inactiveAttendance(row)) return null;
     if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
       return null;

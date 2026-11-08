@@ -475,6 +475,7 @@ export function contractPrintHtml(
       return `<tr><td>${i + 1}</td><td class="passenger-name"><bdi>${e(p.displayNameSnapshot)}</bdi></td><td>${passengerAgeHtml(p)}</td><td>${mark(hasLeg('FLIGHT', 'OUTBOUND'))}</td><td>${mark(hasLeg('FLIGHT', 'RETURN'))}</td><td${stayCellClass}>${stay ? '<bdi class="stay-date" dir="ltr">' + e(stayDate(stay.checkInDate)) + '</bdi>' : '—'}</td><td${stayCellClass}>${stay ? '<bdi class="stay-date" dir="ltr">' + e(stayDate(stay.checkOutDate)) + '</bdi>' : '—'}</td><td>${mark(hasLeg('TRANSFER', 'OUTBOUND'))}</td><td>${mark(hasLeg('TRANSFER', 'RETURN'))}</td><td>${e(other.join('، ') || '—')}</td></tr>`;
     })
     .join('');
+  const routeLegs: string[] = [];
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
     .map((t) => {
       const business =
@@ -491,9 +492,12 @@ export function contractPrintHtml(
         id: string,
       ) =>
         airport
-          ? `${airport.cityName || airport.name} (${airport.code})`
+          ? `${[airport.cityName, airport.name].filter((value, index, values) => value && values.indexOf(value) === index).join(' · ')} (${airport.code})`
           : name(id);
-      return `<tr><td class="flight-route"><bdi dir="ltr"><bdi>${e(endpoint(facts?.originAirport, t.originId))}</bdi> → <bdi>${e(endpoint(facts?.destinationAirport, t.destinationId))}</bdi></bdi><small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td><bdi dir="ltr">${e(travelDate(t.departureAt))}</bdi></td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
+      routeLegs.push(
+        `<bdi dir="ltr"><bdi>${e(endpoint(facts?.originAirport ?? t.originAirport, t.originId))}</bdi> → <bdi>${e(endpoint(facts?.destinationAirport ?? t.destinationAirport, t.destinationId))}</bdi></bdi>`,
+      );
+      return `<tr><td class="flight-route"><bdi dir="ltr"><bdi>${e(endpoint(facts?.originAirport ?? t.originAirport, t.originId))}</bdi> → <bdi>${e(endpoint(facts?.destinationAirport ?? t.destinationAirport, t.destinationId))}</bdi></bdi><small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td><bdi dir="ltr">${e(travelDate(t.departureAt))}</bdi></td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
   const issuerName =
@@ -582,7 +586,7 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
-  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(destinationCities)}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
+  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${routeLegs.length ? routeLegs.join(' / ') : e(destinationCities)}</div>${routeLegs.length && hotel ? `<div>محل اقامت: ${e(destinationCities)}</div>` : ''}<div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
 ${
   legacyParties
     ? `<section><table><thead><tr><th>خدمت</th><th>بزرگسال</th><th>کودک</th><th>نوزاد</th></tr></thead><tbody>${c.servicesDetail

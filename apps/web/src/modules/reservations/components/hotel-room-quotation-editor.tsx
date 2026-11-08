@@ -179,25 +179,6 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={busy}
-            checked={draft.hotelTransferSeparate === true}
-            onChange={(event) => {
-              const next = {
-                ...draft,
-                hotelTransferSeparate: event.target.checked,
-              };
-              if (!event.target.checked) {
-                next.hotelTransferSplit = false;
-                delete next.hotelTransferReturn;
-              }
-              update(next);
-            }}
-          />
-          کارگزار ترانسفر جدا از هتل
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            disabled={busy}
             checked={draft.hotelTransferRoundTrip ?? false}
             onChange={(event) => {
               const next = {
@@ -272,7 +253,14 @@ export function HotelRoomQuotationEditor({
             onChange={(value) => {
               const next = {
                 ...draft,
+                hotelTransferSeparate: Boolean(
+                  value && value.id !== (hotelBroker?.id ?? draft.brokerId),
+                ),
               };
+              if (!next.hotelTransferSeparate) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+              }
               if (value) {
                 next.transferBrokerId = value.id;
                 next.transferBrokerName = value.name;

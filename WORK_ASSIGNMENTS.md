@@ -4,6 +4,14 @@ Reserve only the insurance header link placement in foundation/workspace.tsx and
 
 Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped ESLint and all 31 existing workspace tests pass. No merge or deployment yet; source scope freezes on publication.
 
+> > > > > > > origin/develop
+
+## FX-TRANSFER-DESTINATION-1108 — PC-B — ACTIVE
+
+Owner requests optional destination account for foreign-currency bank-transfer declarations in Sales payments. Reserve payment-destination helper, contract-payments selector/serialization, focused UI/flow and existing server persistence regressions, own notes. Backend already accepts omitted destinations and validates provided references through branch/currency/active account scope. Preserve IRR/other-method requirements, actual Finance receipt approval, idempotency and source ownership. No API/schema/dependency/financial transactions or deployment.
+
+FX-TRANSFER-DESTINATION-1108 validation:26 Web/11 API checks pass; native server omission contract is unchanged. Source frozen on push; preserve all final-head quality/build/test/migration gates before standing authorized develop merge. No deployment or payment registration.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
@@ -11536,6 +11544,34 @@ COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `or
 
 CALENDAR-DAY-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve workbench calendar, note editor and request initial date wiring; existing APIs only, no migration/dependency changes.
 
+## TRANSFER-SEPARATE-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-transfer-separate-default-1108` from
+`origin/develop@a4e85b83f`. Owner requests hotel and transfer to share one broker
+and one supplier form by default, removes the explicit «کارگزار ترانسفر جدا از
+هتل» checkbox, and authorizes develop merge. Reserve the bounded Reservations
+hotel quotation editor, focused
+hotel-stay regressions and own status notes. New forms keep one hotel/transfer
+broker until the transfer broker is explicitly changed; saved modes remain readable
+and are not rewritten. Keep editable transfer broker, round-trip pricing and optional
+outbound/return split. No API/schema/migration/dependency/runtime or operational
+data change. Final-head checks gate merge; source freezes on publication and
+releases on verified merge.
+
+Delivered the combined default without the checkbox. The transfer lookup initially
+shows the hotel broker; selecting a genuinely different transfer broker records
+separate output automatically, and selecting the hotel broker retains combined
+output. Existing explicit saved modes remain unchanged. Focused 26 tests and the
+complete Reservations Web suite (664 passed, 4 existing skips), scoped ESLint,
+Web TypeScript and the production Web build (67 static pages/routes generated)
+pass. No data, API, schema, migration, dependency or runtime change.
+
+## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
+
+INTEGRATE-TRANSFER-DEFAULT-1108 bounded correctness extension: reproduced two failures when explicitly selecting the hotel broker or clearing a transfer broker after split mode; API rejects hotelTransferSplit=true with hotelTransferSeparate=false. Reserve minimal handler cleanup and two focused interaction regressions on the integration branch only. Preserve initial saved modes and original peer branch; no API/schema/dependency changes.
+
 ## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
@@ -11587,13 +11623,6 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
-
-## FX-TRANSFER-DESTINATION-1108 — PC-B — ACTIVE
-
-Owner requests optional destination account for foreign-currency bank-transfer declarations in Sales payments. Reserve payment-destination helper, contract-payments selector/serialization, focused UI/flow and existing server persistence regressions, own notes. Backend already accepts omitted destinations and validates provided references through branch/currency/active account scope. Preserve IRR/other-method requirements, actual Finance receipt approval, idempotency and source ownership. No API/schema/dependency/financial transactions or deployment.
-
-FX-TRANSFER-DESTINATION-1108 validation:26 Web/11 API checks pass; native server omission contract is unchanged. Source frozen on push; preserve all final-head quality/build/test/migration gates before standing authorized develop merge. No deployment or payment registration.
-
 ## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
 
 Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
@@ -11601,3 +11630,9 @@ Owner requests reversible employee/date attendance exclusion, bulk range and ind
 ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.
 
 ATTENDANCE-ACTIVATION-1108 consumer review: reserve bounded hr-dashboard.tsx, hr-reports.tsx, radan-reports.ts and contextual attendance options in hr-record-form.tsx. The legacy browser projections also consume eligible attendance; keep history rows visible. No competing active HR writer.
+
+## SELF-ATTENDANCE-PENALTY-1108 — PC-B — READY_FOR_CI
+
+Owner requests the same computed daily penalty in Workbench self attendance history beside deficit minutes. Reserve HR daily-penalty internal method visibility, self-performance projection/tests, additive Workbench contract, performance history column/test and own translations/status notes. Earlier HR scopes merged/released. Reuse the authoritative calculation and existing self/branch scope; exclude inactive days. No schema, dependency, payroll writes or deployment.
+
+SELF-ATTENDANCE-PENALTY-1108:23 focused API checks and9 Web/translation checks pass; scoped lint passes. Reuses the identical HR penalty function for scoped active history, preserving duplicate-day selection and exact Toman string projection. No operational data changes. Final hosted quality, tests, database and build gates required before merge.
