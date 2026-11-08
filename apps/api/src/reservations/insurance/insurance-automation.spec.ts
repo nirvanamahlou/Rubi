@@ -4,7 +4,10 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import type { DatabaseService } from '../../database/database.service';
 import type { CustomerInsuranceIdentity } from '../../customers/customer-insurance-identity';
 import type { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
-import type { TravisSandboxService } from '../../integrations/insurance/travis-sandbox.service';
+import {
+  TravisDiagnosticError,
+  type TravisSandboxService,
+} from '../../integrations/insurance/travis-sandbox.service';
 import type { NotificationsService } from '../../notifications/notifications.service';
 import { InsuranceAutomation } from './insurance-automation';
 import type { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
@@ -397,4 +400,49 @@ it('explains cancelled policies and contracts instead of displaying a misleading
   expect(
     (await f.service.summary('intake', f.actor)).policies[0],
   ).toMatchObject({ ready: false, error: 'قرارداد ابطال شده است.' });
+});
+
+it('retains only locally generated provider diagnostics in the policy error', async () => {
+  const f = fixture();
+  f.provider.createPolicy.mockRejectedValueOnce(
+    new TravisDiagnosticError('ثبت درخواست بیمه: موبایل (کد 400).'),
+  );
+  await f.service.process('policy');
+  expect(f.row).toMatchObject({
+    status: 'PROVIDER_ERROR',
+    lastError: 'ثبت درخواست بیمه: موبایل (کد 400).',
+  });
+  expect(f.provider.confirmPolicy).not.toHaveBeenCalled();
+});
+it('sends only documented PolicyCreateInput field names and integer identifiers', async () => {
+  const f = fixture();
+  await f.service.process('policy');
+  const input = (
+    f.provider.createPolicy.mock.calls[0] as unknown as [
+      Record<string, unknown>,
+    ]
+  )[0];
+  expect(Object.keys(input).sort()).toEqual(
+    [
+      'sourceCountryId',
+      'destinationCountryId',
+      'durationOfStay',
+      'travelKind',
+      'travelTypeId',
+      'planId',
+      'contractNo',
+      'passportNo',
+      'person',
+    ].sort(),
+  );
+  for (const field of [
+    'sourceCountryId',
+    'destinationCountryId',
+    'durationOfStay',
+    'travelKind',
+    'travelTypeId',
+    'planId',
+  ])
+    expect(Number.isInteger(input[field])).toBe(true);
+  expect(typeof input.person).toBe('object');
 });
