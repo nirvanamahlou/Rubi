@@ -21,7 +21,7 @@ export async function salesReceiptAccounts(
   actorUserId: string,
 ) {
   const rows = await db.financeSettlementAccount.findMany({
-    where: { branchId, isActive: true },
+    where: { branchId, currencyCode: { not: null }, isActive: true },
     select: {
       id: true,
       title: true,
@@ -35,26 +35,31 @@ export async function salesReceiptAccounts(
     orderBy: [{ title: 'asc' }, { id: 'asc' }],
   });
   return Promise.all(
-    rows.map(async ({ bankIdentifiers, branchId: accountBranch, ...row }) => {
-      const identifiers = crypto.open(
-        bankIdentifiers,
-        `finance:company-bank:v1:${accountBranch}:${row.bankId}:${row.id}`,
-      );
-      if (bankIdentifiers !== null) {
-        await db.financeBankAccountAudit.create({
-          data: {
-            accountId: row.id,
-            actorUserId,
-            action: 'REVEAL',
-            metadata: {
-              source: 'sales-payment-destination',
-              branchId: accountBranch,
+    rows
+      .filter(
+        (row): row is typeof row & { currencyCode: string; branchId: string } =>
+          row.currencyCode !== null && row.branchId !== null,
+      )
+      .map(async ({ bankIdentifiers, branchId: accountBranch, ...row }) => {
+        const identifiers = crypto.open(
+          bankIdentifiers,
+          `finance:company-bank:v1:${accountBranch}:${row.bankId}:${row.id}`,
+        );
+        if (bankIdentifiers !== null) {
+          await db.financeBankAccountAudit.create({
+            data: {
+              accountId: row.id,
+              actorUserId,
+              action: 'REVEAL',
+              metadata: {
+                source: 'sales-payment-destination',
+                branchId: accountBranch,
+              },
             },
-          },
-        });
-      }
-      return { ...row, ...identifiers };
-    }),
+          });
+        }
+        return { ...row, ...identifiers };
+      }),
   );
 }
 

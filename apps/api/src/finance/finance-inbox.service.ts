@@ -772,22 +772,31 @@ export class FinanceInboxService {
     actor: AuthenticatedActor,
   ): Promise<readonly FinanceSettlementAccountV1[]> {
     const rows = await this.database.client.financeSettlementAccount.findMany({
-      where: { branchId: { in: [...actor.branchIds] }, isActive: true },
+      where: {
+        branchId: { in: [...actor.branchIds] },
+        isActive: true,
+        currencyCode: { not: null },
+      },
       include: { bank: { select: { name: true } } },
       orderBy: [{ title: 'asc' }, { id: 'asc' }],
     });
-    return rows.map((row) => ({
-      version: row.version,
-      id: row.id,
-      branchId: row.branchId,
-      title: row.title,
-      kind: row.kind as FinanceSettlementAccountV1['kind'],
-      currencyCode: row.currencyCode,
-      bankId: row.bankId,
-      bankName: row.bank?.name ?? null,
-      maskedIdentifier: row.maskedIdentifier,
-      isActive: row.isActive,
-    }));
+    return rows
+      .filter(
+        (row): row is typeof row & { branchId: string; currencyCode: string } =>
+          row.branchId !== null && row.currencyCode !== null,
+      )
+      .map((row) => ({
+        version: row.version,
+        id: row.id,
+        branchId: row.branchId,
+        title: row.title,
+        kind: row.kind as FinanceSettlementAccountV1['kind'],
+        currencyCode: row.currencyCode,
+        bankId: row.bankId,
+        bankName: row.bank?.name ?? null,
+        maskedIdentifier: row.maskedIdentifier,
+        isActive: row.isActive,
+      }));
   }
 
   async listPaymentMethods(
@@ -851,10 +860,10 @@ export class FinanceInboxService {
     return {
       version: row.version,
       id: row.id,
-      branchId: row.branchId,
+      branchId: input.branchId,
       title: row.title,
       kind: row.kind as FinanceSettlementAccountV1['kind'],
-      currencyCode: row.currencyCode,
+      currencyCode,
       bankId: row.bankId,
       bankName: row.bank?.name ?? null,
       maskedIdentifier: row.maskedIdentifier,
