@@ -138,3 +138,10 @@ combined without dropping peer records; the authoritative Web overrides retain
 all upstream values plus20 email labels. Regenerated API catalogue retains every
 upstream key/value plus21 additions. No peer domain implementation was edited.
 PR-to-develop merge, deployment and mail activation remain unauthorized.
+
+Integrated follow-up validation:717 Reservations/i18n Web tests passed (4 existing
+skips),34 mail API tests passed, and the real Chrome PDF smoke passed. GitHub
+reports no merge conflicts after task-branch synchronization. The integrated
+quality job exposed two missing blank lines at merged ledger section boundaries;
+formatting is corrected without changing peer records or relaxing any CI gate.
+All final-head hosted checks must finish before any future release. Mail stays off.
