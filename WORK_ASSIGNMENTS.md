@@ -11584,6 +11584,14 @@ VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full W
 
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
 
+## DETAIL-TYPE-LAYOUT-1108 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; branch codex/pc-d-detail-type-layout-1108, created from PC-D-Integration and fast-forwarded to current develop for the already-merged detail editor. Owner explicitly delegated detail accounts/types to PC-D and PC-B in this chat. Reserve accounting-workspace.tsx, accounting-detail-editor.tsx/module.css, bounded nullable unsaved-note context in accounting-setup-notes.tsx and focused route/render regression tests, own task/status notes. Restore the requested type form even when no authorized ledger exists and match the supplied two-column Rahkaran reference. Preserve book-scoped FK/authorization, existing persistence and required title/length (1–20). No automatic ledger creation, schema/migration/dependency changes or operational data writes. Publish task branch under standing commit/push authorization; integration follows explicit destination authorization.
+
+DETAIL-TYPE-LAYOUT-1108 validation: four new normal-entry rendering regressions and nine related tests pass, scoped ESLint/Web TypeScript/formatting and all 67 production Web routes build. Local rendered preview confirms compact field rows and two columns. Source locks freeze/release at task commit; missing ledger explicitly blocks persistence while leaving the requested form visible. No operational data writes or deployment.
+
+DETAIL-TYPE-LAYOUT-1108: owner selected direct develop merge only on 2026-11-08; live deployment remains unapproved. Extend bounded reservation to four new Web-only en-overrides.json labels found by English coverage. API/standalone labels are unchanged.
+
 ## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
 
 Owner authorizes current-contract insurance selection, per-passenger issuance reasons and insurance allocation editing, tests and develop merge. Reserve Reservations insurance automation and documents UI, Customers internal insurance identity projection, passenger-service-editor and focused regressions. Consume existing public Sales current-execution port; preserve provider idempotency, issued identities, branch/source authorization and sandbox restriction. No migration/dependency or live issuance/deployment. Previous insurance scopes are merged/frozen. Additive missing-policy summary rows ship with Web consumer; no shared schema changes.
