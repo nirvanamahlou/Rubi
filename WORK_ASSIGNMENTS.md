@@ -1,3 +1,9 @@
+## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
+
+Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.
+
+Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped ESLint and all 31 existing workspace tests pass. No merge or deployment yet; source scope freezes on publication.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
