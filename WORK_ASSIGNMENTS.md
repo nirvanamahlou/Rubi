@@ -11750,6 +11750,10 @@ Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. 
 
 UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.
 
+## PASSENGER-FULLSCREEN-1108 — PC-A — IN_PROGRESS
+
+User assigns PC-A and authorizes develop merge after tests. Branch codex/pc-a-passenger-fullscreen-1108; isolated checkout from 53cc0a538. Reserve contract-editor passenger-tab presentation, amendment compact passenger opt-in and passenger table styling only. Preserve identity permissions, pending membership and save behavior. No dependency, migration, data or deployment changes.
+
 ## EXTERNAL-BANK-SOURCE-1108 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-external-bank-source-1108 from develop d00a4b2e5. Owner requests external-source checkbox making all account form fields optional and explicitly confirms storing missing branch/currency as NULL, with no implicit defaults. Reserve CompanyBankAccounts UI/client/contracts, Finance bank-account commands/validation/tests and narrowly required nullable-account consumer guards; own translations and docs. Sole schema/migration reservation for additive isExternal flag and nullable FinanceSettlementAccount branch/currency, preserving existing rows/FKs, permission checks and financial use requirements. Prior broker email migration reservation released on frozen candidate. External unscoped accounts are bank-directory records visible under existing bank resource permission; financial commands still require matching explicit branch/currency. Used accounts cannot change scope/type. No dependency, operational data or deployment changes.
