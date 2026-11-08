@@ -3361,7 +3361,11 @@ export class HrService {
         const state = validate.status(
           input.status,
           schema.approval,
-          schema.key === 'time.penaltySettings' ? 'فعال' : 'پیش‌نویس',
+          ['time.penaltySettings', 'time.calculationSettings'].includes(
+            schema.key,
+          )
+            ? 'فعال'
+            : 'پیش‌نویس',
         );
         if (data.approvalRoute?.length && validate.APPROVED.has(state))
           throw new BadRequestException(

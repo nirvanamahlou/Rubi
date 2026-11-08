@@ -509,7 +509,9 @@ export class CustomerAffairsRepository {
         category: { startsWith: 'WORKBENCH_' },
       },
       include: {
-        timeline: { where: { type: 'WORKBENCH_SUBSTITUTE' } },
+        timeline: {
+          where: { type: { in: ['WORKBENCH_SUBSTITUTE', 'WORKBENCH_LEAVE'] } },
+        },
         createdBy: { select: { displayName: true } },
         executionOwner: { select: { displayName: true } },
       },

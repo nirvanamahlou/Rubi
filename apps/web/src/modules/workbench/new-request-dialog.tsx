@@ -237,6 +237,20 @@ function NewRequestForm({
                 type="button"
                 variant="outline"
                 disabled={pending || uploading}
+                onClick={() => {
+                  setLeave(null);
+                  setTitle('درخواست مساعده');
+                  setBody(
+                    'با سلام، درخواست پرداخت مساعده دارم.\nمبلغ درخواستی:\nتاریخ مورد نیاز:\nعلت درخواست:\nنحوه بازپرداخت:',
+                  );
+                }}
+              >
+                مساعده
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending || uploading}
                 className="ms-auto"
                 onClick={() => {
                   setLeave(

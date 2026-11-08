@@ -22,6 +22,7 @@ import type {
   SalesContractProfitV1,
   SalesContractOutputV1,
   SalesContractDetail,
+  SalesBalance,
   SalesContractListQuery,
   SalesContractPage,
   SalesDashboard,
@@ -298,6 +299,10 @@ export const salesApi = {
     ),
   list: (query: SalesContractListQuery) =>
     request<SalesContractPage>(`/contracts?${queryString(query)}`),
+  financeSummary: (id: string) =>
+    request<{ data: { balances: SalesBalance[] } }>(
+      `/contracts/${encodeURIComponent(id)}/finance-summary`,
+    ),
   detail: (id: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}`,

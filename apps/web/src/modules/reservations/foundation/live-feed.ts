@@ -215,11 +215,16 @@ export function accessFromSession(session: LoginResponse): ViewAccess {
 export function decodeIntake(
   input: unknown,
   session: LoginResponse,
+  audience: 'reservations' | 'finance' = 'reservations',
 ): RequestView[] {
   const parsed = envelopeSchema.safeParse(input);
   if (!parsed.success) throw new ReservationFeedError('ERROR');
   const access = accessFromSession(session);
-  if (!access.permissions.includes('reservations.read'))
+  if (
+    !access.permissions.includes(
+      audience === 'finance' ? 'finance.read' : 'reservations.read',
+    )
+  )
     throw new ReservationFeedError('FORBIDDEN');
   const seen = new Set<string>();
   return parsed.data.data

@@ -498,12 +498,31 @@ export function ContractPayments({
           پرداخت‌ها و اقساط قرارداد {contract?.contractNumber}
         </DialogTitle>
         {error ? <Alert tone="error" title={error} /> : null}
-        {contract?.balances.map((balance) => (
-          <p key={balance.currencyCode}>
-            مانده {currencySymbol(balance.currencyCode ?? '')}:{' '}
-            {balance.outstanding} · پرداخت تأییدشده: {balance.confirmedPaid}
-          </p>
-        ))}
+        <section className="space-y-3 rounded-2xl bg-primary/5 p-4">
+          {contract?.balances.map((balance) => (
+            <div
+              key={balance.currencyCode}
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              {[
+                ['مبلغ کل', balance.amount],
+                ['پرداخت تأییدشده', balance.confirmedPaid],
+                ['مانده', balance.outstanding],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="rounded-xl border bg-background p-4"
+                >
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="mt-2 text-xl font-bold">
+                    <bdi>{formatSalesMoney(value!)}</bdi>{' '}
+                    {currencySymbol(balance.currencyCode)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </section>
         <form
           className="flex flex-wrap items-end gap-2"
           onSubmit={(event) => {
@@ -536,19 +555,26 @@ export function ContractPayments({
           <p>هنوز پرداختی برای این قرارداد ثبت نشده است.</p>
         ) : null}
         {contract?.payments.map((item) => (
-          <div key={item.id} className="rounded-xl border p-3">
-            <strong>
-              {item.amount} {currencySymbol(item.currencyCode ?? '')}
-            </strong>{' '}
-            ·{' '}
-            {
-              {
-                FINANCE_CONFIRMED: 'تأییدشده مالی',
-                FINANCE_REJECTED: 'ردشده توسط مالی',
-                SCHEDULED: 'برنامه‌ریزی‌شده',
-                PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
-              }[item.status]
-            }
+          <div
+            key={item.id}
+            className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-4 shadow-sm sm:grid-cols-2"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+              <strong className="text-lg text-primary">
+                {formatSalesMoney(item.amount)}{' '}
+                {currencySymbol(item.currencyCode ?? '')}
+              </strong>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                {
+                  {
+                    FINANCE_CONFIRMED: 'تأییدشده مالی',
+                    FINANCE_REJECTED: 'ردشده توسط مالی',
+                    SCHEDULED: 'برنامه‌ریزی‌شده',
+                    PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
+                  }[item.status]
+                }
+              </span>
+            </div>
             <p>
               شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
             </p>
@@ -591,7 +617,10 @@ export function ContractPayments({
               (entry) => !contract.payments.some((p) => p.id === entry.id),
             )
             .map((entry) => (
-              <div key={entry.id} className="rounded-xl border p-3">
+              <div
+                key={entry.id}
+                className="grid gap-3 rounded-2xl border border-border bg-muted/20 p-4 shadow-sm sm:grid-cols-2"
+              >
                 <p>
                   شماره پیگیری:{' '}
                   <bdi>{entry.paymentReference || 'ثبت نشده'}</bdi>

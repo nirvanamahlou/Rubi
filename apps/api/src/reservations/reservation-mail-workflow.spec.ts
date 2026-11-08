@@ -96,6 +96,21 @@ it('rejects unauthorized users before preparing any email', async () => {
   ).rejects.toThrow();
   expect(f.mail.prepare).not.toHaveBeenCalled();
 });
+it('resolves the request only within actor branches and stops before email preparation when inaccessible', async () => {
+  const f = fixture();
+  const detail = vi.mocked(f.service.detail);
+  detail.mockRejectedValue(new Error('REQUEST_NOT_ACCESSIBLE'));
+  await expect(
+    f.service.update(
+      'intake',
+      { action: 'REQUEST_SUPPLIER', expectedVersion: 0, note: '' },
+      f.actor,
+    ),
+  ).rejects.toThrow('REQUEST_NOT_ACCESSIBLE');
+  expect(detail).toHaveBeenCalledWith('intake', ['branch'], true);
+  expect(f.mail.prepare).not.toHaveBeenCalled();
+  expect(f.transaction).not.toHaveBeenCalled();
+});
 it('does not enqueue stale requests and propagates queue failures to rollback the transaction', async () => {
   const f = fixture();
   await expect(

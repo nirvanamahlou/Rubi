@@ -1,3 +1,4 @@
+import type { SalesBalance } from '@nora/contracts';
 import { isValidElement, type ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -93,9 +94,9 @@ const contract = {
       amount: '100',
       confirmedPaid: '0',
       pendingFinance: '0',
-      remaining: '100',
+      outstanding: '100',
     },
-  ],
+  ] satisfies SalesBalance[],
 };
 const newPayment = {
   id: 'payment',

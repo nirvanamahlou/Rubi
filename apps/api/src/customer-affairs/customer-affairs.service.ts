@@ -1118,13 +1118,6 @@ export class CustomerAffairsService {
               workbenchAssignment.recipientId,
             )
           : null;
-        if (
-          workbenchAssignment?.leave &&
-          !isHrRequestUnit(assignment?.unit.name)
-        )
-          throw new BadRequestException(
-            'درخواست مرخصی باید به واحد منابع انسانی ارسال شود.',
-          );
         if (workbenchAssignment?.leave)
           await this.hr!.validateWorkbenchLeaveSubmission(
             tx,
@@ -2250,7 +2243,7 @@ export class CustomerAffairsService {
         'عنوان و شرح درخواست باید حداقل ۳ نویسه داشته باشند.',
       );
     const leaveSummary = input.leave
-      ? `\n\nمرخصی ${input.leave.mode}\nاز ${input.leave.from} تا ${input.leave.to}\n${input.leave.startTime ?? ''} ${input.leave.endTime ?? ''}\nدلیل: ${input.leave.reason}\nجانشین احتمالی: ${input.leave.substitute || '—'}`
+      ? `\n\nمرخصی ${input.leave.mode}\nاز ${new Date(input.leave.from).toLocaleDateString('fa-IR', { timeZone: 'UTC' })} تا ${new Date(input.leave.to).toLocaleDateString('fa-IR', { timeZone: 'UTC' })}\n${input.leave.startTime ?? ''} ${input.leave.endTime ?? ''}\nدلیل: ${input.leave.reason}\nجانشین احتمالی: ${input.leave.substitute || '—'}`
       : '';
     const description = `${input.description.trim()}${leaveSummary}${input.reference?.trim() ? `\n\nمرجع پرونده: ${input.reference.trim()}` : ''}`;
     if (description.length > 2000)
@@ -2340,9 +2333,18 @@ export class CustomerAffairsService {
             (e) =>
               e.type === 'WORKBENCH_SUBSTITUTE' && e.summary === actor.userId,
           ),
+          recipientReview:
+            row.executionOwnerUserId === actor.userId &&
+            !isHrRequestUnit(row.executionUnit) &&
+            row.timeline?.some((e) => e.type === 'WORKBENCH_LEAVE'),
           trackingNumber: row.trackingNumber,
           subject: row.subject,
           description: row.description,
+          leave: row.timeline?.find((e) => e.type === 'WORKBENCH_LEAVE')
+            ? (JSON.parse(
+                row.timeline.find((e) => e.type === 'WORKBENCH_LEAVE')!.summary,
+              ) as WorkbenchLeaveInputV1)
+            : undefined,
           destinationUnit: row.executionUnit,
           status: workbenchReviewStatus(row),
           priority: row.priority,
@@ -2415,11 +2417,6 @@ export class CustomerAffairsService {
     input: { version: number; status: string },
     actor: AuthenticatedActor,
   ) {
-    if (
-      !actor.permissions.includes('hr.manage') ||
-      !actor.permissions.includes('hr.approve')
-    )
-      throw new ForbiddenException('مجوز رسیدگی منابع انسانی لازم است.');
     const result = await this.repository.transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${id}::uuid FOR UPDATE`;
       const row = await tx.customerAffairsTicket.findFirst({
@@ -2430,8 +2427,112 @@ export class CustomerAffairsService {
         },
         include: { timeline: true },
       });
-      if (!row || !isHrRequestUnit(row.executionUnit))
-        throw new NotFoundException();
+      if (!row) throw new NotFoundException();
+      if (!isHrRequestUnit(row.executionUnit)) {
+        if (
+          row.executionOwnerUserId !== actor.userId ||
+          row.createdByUserId === actor.userId
+        )
+          throw new ForbiddenException();
+        const leaveEvent = row.timeline.find(
+          (e) => e.type === 'WORKBENCH_LEAVE',
+        );
+        if (
+          !leaveEvent ||
+          row.version !== input.version ||
+          !['APPROVED', 'REJECTED', 'NEEDS_REVISION'].includes(input.status) ||
+          ['RESOLVED', 'CANCELLED'].includes(row.status)
+        )
+          throw conflict();
+        const recipients =
+          input.status === 'APPROVED'
+            ? await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+                row.branchId,
+                this.workbenchUnitTerms('منابع انسانی'),
+              )
+            : [];
+        if (input.status === 'APPROVED' && !recipients.length)
+          throw new ConflictException(
+            'گیرنده منابع انسانی در این شعبه تعریف نشده است.',
+          );
+        await tx.customerAffairsTicket.update({
+          where: { id },
+          data: {
+            ...(input.status === 'APPROVED'
+              ? {
+                  executionUnit: 'منابع انسانی',
+                  executionOwnerUserId: recipients[0]!,
+                  status: 'IN_PROGRESS',
+                  resolutionOutcome: null,
+                }
+              : {
+                  status:
+                    input.status === 'REJECTED'
+                      ? 'CANCELLED'
+                      : 'WAITING_CUSTOMER',
+                  resolutionOutcome: `WORKBENCH_HR:${input.status}`,
+                }),
+            version: { increment: 1 },
+            updatedByUserId: actor.userId,
+          },
+        });
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId: row.branchId,
+            actorUserId: actor.userId,
+            entityType: 'TICKET',
+            entityId: id,
+            action: 'RECIPIENT_REVIEW',
+            version: row.version + 1,
+            beforeSnapshot: json({
+              status: row.status,
+              executionUnit: row.executionUnit,
+            }),
+            afterSnapshot: json({
+              decision: input.status,
+              executionUnit:
+                input.status === 'APPROVED'
+                  ? 'منابع انسانی'
+                  : row.executionUnit,
+            }),
+          },
+        });
+        await tx.customerAffairsTimeline.create({
+          data: {
+            ticketId: id,
+            type: 'WORKBENCH_RECIPIENT_REVIEW',
+            outcome: input.status,
+            summary: input.status,
+            actorUserId: actor.userId,
+            documentVersionIds: [],
+          },
+        });
+        await this.notifications.createWithinTransaction(tx, {
+          recipientUserIds:
+            input.status === 'APPROVED' ? recipients : [row.createdByUserId],
+          actorUserId: actor.userId,
+          sourceModule: 'customer-affairs',
+          eventType: 'ticket.updated',
+          title: row.subject,
+          message: row.subject,
+          entityType: 'customer-affairs-ticket',
+          entityId: id,
+          href:
+            input.status === 'APPROVED'
+              ? '/hr?section=requests'
+              : '/workbench?tab=requests',
+        });
+        return {
+          branchId: row.branchId,
+          leave: undefined,
+          senderId: row.createdByUserId,
+        };
+      }
+      if (
+        !actor.permissions.includes('hr.manage') ||
+        !actor.permissions.includes('hr.approve')
+      )
+        throw new ForbiddenException('مجوز رسیدگی منابع انسانی لازم است.');
       if (row.createdByUserId === actor.userId)
         throw new ForbiddenException('رسیدگی به درخواست خود مجاز نیست.');
       const event = row.timeline.find(

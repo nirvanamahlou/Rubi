@@ -217,6 +217,89 @@ it('inserts the prepared row using the caller transaction and the saved revision
   const sql = tx.$executeRaw.mock.calls[0]![0];
   expect(sql.values).toEqual(['mail-id', 'revision', 'contact', 'sealed']);
 });
+it('rejects invalid recipient addresses and incomplete directory pages without selecting another contact', async () => {
+  const { master, service } = fixture();
+  for (const email of [
+    'invalid',
+    'a@example.test,b@example.test',
+    'a@example.test\r\nBcc: b@example.test',
+  ]) {
+    master.unmaskOrganizationContact.mockResolvedValue({ data: { email } });
+    await expect(
+      service.prepare(
+        state,
+        command,
+        actor,
+        'branch',
+        'TEST',
+        'company',
+        signed,
+        'intake',
+      ),
+    ).rejects.toThrow('ایمیل ثبت‌شده کارگزار معتبر نیست.');
+  }
+  master.unmaskOrganizationContact.mockClear();
+  master.list.mockResolvedValue({
+    data: [{ id: 'contact', attributes: { jobTitle: 'PARTNER_EMAIL' } }],
+    meta: { total: 101 },
+  });
+  await expect(
+    service.prepare(
+      state,
+      command,
+      actor,
+      'branch',
+      'TEST',
+      'company',
+      signed,
+      'intake',
+    ),
+  ).rejects.toThrow();
+  expect(master.unmaskOrganizationContact).not.toHaveBeenCalled();
+});
+it('propagates sensitive-contact audit failure rather than using a fallback recipient', async () => {
+  const { master, service } = fixture();
+  master.unmaskOrganizationContact.mockRejectedValue(
+    new Error('AUDIT_UNAVAILABLE'),
+  );
+  await expect(
+    service.prepare(
+      state,
+      command,
+      actor,
+      'branch',
+      'TEST',
+      'company',
+      signed,
+      'intake',
+    ),
+  ).rejects.toThrow('AUDIT_UNAVAILABLE');
+});
+it.each([
+  'RESERVATION_SMTP_PASSWORD',
+  'RESERVATION_MAIL_KEY_BASE64',
+  'RESERVATION_SMTP_HOST',
+])(
+  'rejects missing %s before reading sensitive recipient data',
+  async (name) => {
+    const { master, service } = fixture();
+    vi.stubEnv(name, '');
+    await expect(
+      service.prepare(
+        state,
+        command,
+        actor,
+        'branch',
+        'TEST',
+        'company',
+        signed,
+        'intake',
+      ),
+    ).rejects.toThrow('اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.');
+    expect(master.detail).not.toHaveBeenCalled();
+    expect(master.unmaskOrganizationContact).not.toHaveBeenCalled();
+  },
+);
 it('rejects a missing or unsigned PDF before accessing any recipient', async () => {
   const { master, service } = fixture();
   await expect(

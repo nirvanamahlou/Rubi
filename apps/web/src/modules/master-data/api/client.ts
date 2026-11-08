@@ -80,6 +80,7 @@ export const MASTER_DATA_CHANGED_EVENT = 'nora:master-data-changed';
 export type WorkflowSelectionContext =
   | 'sales'
   | 'reservations'
+  | 'finance'
   | 'customers'
   | 'organizations'
   | 'accounting'

@@ -16,6 +16,15 @@ const id = '11111111-1111-4111-8111-111111111111';
 let app: INestApplication;
 const contract = {
   id,
+  balances: [
+    {
+      amount: '100',
+      currencyCode: 'IRR',
+      confirmedPaid: '40',
+      pendingFinance: '10',
+      outstanding: '60',
+    },
+  ],
   branchId: 'branch',
   servicesDetail: [{ clientKey: 'insurance', kind: 'INSURANCE' }],
   priceComponents: [{ type: 'BASE', amount: '100', currencyCode: 'IRR' }],
@@ -115,4 +124,19 @@ it('allows finance-only staff without granting Sales screen access', async () =>
     .get(`/sales/contracts/${id}/profit`)
     .set('Cookie', 'nora_access=no-sales')
     .expect(200);
+});
+
+it('returns authoritative contract totals to finance and rejects unauthenticated or unauthorized readers', async () => {
+  const path = `/sales/contracts/${id}/finance-summary`;
+  await request(app.getHttpServer()).get(path).expect(401);
+  await request(app.getHttpServer())
+    .get(path)
+    .set('Cookie', 'nora_access=no-finance')
+    .expect(403);
+  const result = await request(app.getHttpServer())
+    .get(path)
+    .set('Cookie', 'nora_access=no-sales')
+    .expect(200);
+  expect(result.body.data.balances).toEqual(contract.balances);
+  expect(result.headers['cache-control']).toBe('private, no-store');
 });

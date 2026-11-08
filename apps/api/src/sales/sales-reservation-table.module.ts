@@ -34,7 +34,10 @@ export class SalesReservationTableService {
     id: string,
     actor: AuthenticatedActor,
   ): Promise<ReservationContractDetailsV1> {
-    if (!actor.permissions.includes('reservations.read'))
+    if (
+      !actor.permissions.includes('reservations.read') &&
+      !actor.permissions.includes('finance.read')
+    )
       throw new ForbiddenException();
     const row = await this.database.client.salesContract.findFirst({
       where: { id, branchId: { in: [...actor.branchIds] } },
@@ -199,7 +202,11 @@ export class SalesReservationTableService {
     ids: readonly string[],
     actor: AuthenticatedActor,
   ): Promise<Map<string, ReservationTableSummaryV1>> {
-    if (!actor.permissions.includes('reservations.read') || !ids.length)
+    if (
+      (!actor.permissions.includes('reservations.read') &&
+        !actor.permissions.includes('finance.read')) ||
+      !ids.length
+    )
       return new Map();
     const rows = await this.database.client.salesContract.findMany({
       where: { id: { in: [...ids] }, branchId: { in: [...actor.branchIds] } },
