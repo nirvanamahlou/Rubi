@@ -1,3 +1,7 @@
+import {
+  inactiveAttendance,
+  attendanceForUse,
+} from './hr-attendance-activation';
 import { canEditAttendance } from './hr-manual-attendance-policy';
 import { ProcurementMissionPort } from '../procurement/procurement-mission.module';
 import type { UploadedDocumentFile } from '../documents/documents.service';
@@ -501,7 +505,8 @@ export class HrService {
     );
   }
 
-  private async dailyPenalty(row: RecordRow): Promise<string | null> {
+  async dailyPenalty(row: RecordRow): Promise<string | null> {
+    if (inactiveAttendance(row)) return null;
     if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
       return null;
     const date = (row.values as string[])[1];
@@ -5411,6 +5416,144 @@ export class HrService {
       selected,
     };
   }
+  async setAttendanceActivation(
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    if (!(await this.canManuallyEditAttendance(actor)))
+      throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
+    const input = validate.object(body, [
+      'employeeIds',
+      'from',
+      'to',
+      'active',
+      'recordId',
+      'version',
+    ]);
+    if (typeof input.active !== 'boolean')
+      throw new BadRequestException('وضعیت معتبر نیست.');
+    const from = validate.isoDate(input.from),
+      to = validate.isoDate(input.to);
+    if (to < from || to.getTime() - from.getTime() > 365 * 86400000)
+      throw new BadRequestException('بازه باید حداکثر یک سال باشد.');
+    if (
+      !Array.isArray(input.employeeIds) ||
+      !input.employeeIds.length ||
+      input.employeeIds.length > 200
+    )
+      throw new BadRequestException('کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.');
+    const ids = [
+      ...new Set(input.employeeIds.map((value) => validate.uuid(value))),
+    ];
+    if (ids.length * (1 + (to.getTime() - from.getTime()) / 86400000) > 2000)
+      throw new BadRequestException(
+        'در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.',
+      );
+    return this.command(
+      actor,
+      key,
+      { operation: 'attendance.activation', input },
+      async (tx) => {
+        if (input.recordId) {
+          const record = await this.record(
+            tx,
+            validate.uuid(input.recordId),
+            actor,
+          );
+          if (record.version !== validate.version(input.version))
+            throw new ConflictException('نسخه کارکرد تغییر کرده است.');
+          if (
+            record.section !== 'time' ||
+            record.tab !== 'attendance' ||
+            ids.length !== 1 ||
+            record.employeeId !== ids[0] ||
+            (record.values as string[])[1] !== input.from ||
+            input.from !== input.to
+          )
+            throw new BadRequestException('رکورد کارکرد معتبر نیست.');
+        }
+        let changed = 0;
+        for (const id of ids) {
+          const employee = await this.employee(tx, id, actor);
+          for (let at = from.getTime(); at <= to.getTime(); at += 86400000) {
+            const date = new Date(at).toISOString().slice(0, 10);
+            await this.assertOpenPeriod(tx, employee.branchId, date);
+            const rows = await tx.hrRecord.findMany({
+              where: {
+                branchId: employee.branchId,
+                employeeId: id,
+                section: 'time',
+                tab: 'attendance',
+                deletedAt: null,
+                values: { path: ['1'], equals: date },
+              },
+            });
+            for (const row of rows) {
+              const data = (row.data ?? {}) as HrWorkflowData;
+              if (inactiveAttendance(row) === !input.active) continue;
+              const status = input.active
+                ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                : 'غیرفعال';
+              const next = {
+                ...data,
+                attendanceActive: input.active,
+                attendancePreviousStatus: input.active ? status : row.status,
+              };
+              await tx.hrRecord.update({
+                where: { id: row.id },
+                data: { status, data: json(next), version: { increment: 1 } },
+              });
+              await this.audit(
+                tx,
+                actor,
+                { branchId: row.branchId, employeeId: id, recordId: row.id },
+                'attendance.activation',
+                { date, active: input.active },
+                row.version + 1,
+                row.status,
+                status,
+              );
+              changed++;
+            }
+            if (!rows.length && !input.active) {
+              const row = await tx.hrRecord.create({
+                data: {
+                  branchId: employee.branchId,
+                  employeeId: id,
+                  section: 'time',
+                  tab: 'attendance',
+                  code: `HR-ATT-${randomUUID()}`,
+                  effectiveAt: validate.isoDate(date),
+                  status: 'غیرفعال',
+                  values: [employee.name, date, '—', '0:00', '—', '—'],
+                  searchText: `${employee.name} ${date}`,
+                  data: {
+                    attendanceActive: false,
+                    attendancePreviousStatus: 'در انتظار تردد',
+                  },
+                },
+              });
+              await this.audit(
+                tx,
+                actor,
+                {
+                  branchId: employee.branchId,
+                  employeeId: id,
+                  recordId: row.id,
+                },
+                'attendance.activation',
+                { date, active: false },
+                1,
+              );
+              changed++;
+            }
+          }
+        }
+        return { changed };
+      },
+    );
+  }
   async editAttendance(
     id: string,
     body: unknown,
@@ -5820,6 +5963,10 @@ export class HrService {
                     ? 'حاضر'
                     : 'غایب';
           const calculatedData = {
+            ...((existing?.data as HrWorkflowData | undefined)
+              ?.attendanceActive === false
+              ? { attendanceActive: false, attendancePreviousStatus: status }
+              : {}),
             ...(settings
               ? {
                   calculationSettingsId: settings.id,
@@ -5859,9 +6006,11 @@ export class HrService {
             overtimeMinutes: overtime,
             exceptionCodes: reviewExceptions,
           };
+          const effectiveStatus =
+            existing && inactiveAttendance(existing) ? 'غیرفعال' : status;
           if (
             existing &&
-            existing.status === status &&
+            existing.status === effectiveStatus &&
             existing.effectiveAt?.getTime() ===
               validate.isoDate(date).getTime() &&
             isDeepStrictEqual(existing.values, values) &&
@@ -5875,7 +6024,7 @@ export class HrService {
                   values,
                   effectiveAt: validate.isoDate(date),
                   searchText: values.join(' '),
-                  status,
+                  status: effectiveStatus,
                   data: calculatedData,
                   version: { increment: 1 },
                 },
@@ -6915,7 +7064,7 @@ export class HrService {
           throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
         return {
           employees: employees.map((employee) => this.employeeDto(employee)),
-          records: await this.recordDtos(operational, actor),
+          records: await this.recordDtos(attendanceForUse(operational), actor),
           references: await this.recordDtos(references, actor),
         };
       },

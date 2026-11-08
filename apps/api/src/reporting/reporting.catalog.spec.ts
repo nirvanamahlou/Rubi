@@ -43,7 +43,7 @@ describe('REPORTING_CATALOG_V1', () => {
     ).toBe(true);
     expect(
       REPORTING_CATALOG_V1.filter((item) => item.producerStatus === 'READY'),
-    ).toHaveLength(16);
+    ).toHaveLength(21);
     expect(
       REPORTING_CATALOG_V1.some(
         (item) =>
@@ -53,6 +53,14 @@ describe('REPORTING_CATALOG_V1', () => {
     ).toBe(false);
   });
 
+  it('explains every blocked report with concrete missing prerequisites', () => {
+    for (const report of REPORTING_CATALOG_V1.filter(
+      (r) => r.producerStatus === 'PENDING_CONNECTION',
+    )) {
+      expect(report.readiness?.reason.length).toBeGreaterThan(15);
+      expect(report.readiness?.requirements.length).toBeGreaterThan(0);
+    }
+  });
   it('keeps money-bearing joins at contract/service/payment/journal grain', () => {
     const financial = REPORTING_CATALOG_V1.filter((item) =>
       [

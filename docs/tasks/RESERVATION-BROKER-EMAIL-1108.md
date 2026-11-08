@@ -132,3 +132,9 @@ production build (67 routes), and actual Chrome A4/multipage PDF smoke all passe
 GitHub also reports five merge conflicts limited to shared work/status docs and
 translation catalogues, including a generated binary-marked catalogue. No merge
 has been performed; resolving these requires the AGENTS.md merge authorization.
+
+Owner explicitly approved develop-to-PR-branch integration only. Shared docs were
+combined without dropping peer records; the authoritative Web overrides retain
+all upstream values plus20 email labels. Regenerated API catalogue retains every
+upstream key/value plus21 additions. No peer domain implementation was edited.
+PR-to-develop merge, deployment and mail activation remain unauthorized.

@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
+import { AttendanceStatusControl } from './hr-attendance-activation-form';
 import type { HrRecordDto } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { TimePicker } from '@/components/ui/time-picker';
@@ -43,6 +44,13 @@ export function HrAttendanceEditor({
         <DialogTitle>
           ویرایش تردد · {hrDisplayDate(record.values[1] ?? '')}
         </DialogTitle>
+        <AttendanceStatusControl
+          record={record}
+          onSaved={async () => {
+            await onSaved();
+            onClose();
+          }}
+        />
         <form
           className="grid gap-4"
           onSubmit={async (e) => {

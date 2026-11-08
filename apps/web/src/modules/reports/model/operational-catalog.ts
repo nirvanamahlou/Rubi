@@ -12,6 +12,52 @@ export const operationalCatalog: Readonly<
     }
   >
 > = {
+  customer_service_sla: {
+    projection: 'customer-affairs.reporting.sla.v1',
+    title: 'مهلت پاسخ و رسیدگی درخواست‌ها در هر واحد چگونه رعایت شده است؟',
+    dimensions: ['واحد رسیدگی', 'وضعیت'],
+    measures: ['درخواست دارای SLA'],
+    filters: ['بازه تاریخ', 'شعبه', 'وضعیت'],
+    description:
+      'مهلت‌های واقعی درخواست‌های پشتیبانی؛ پرونده‌های بدون SLA و توقف رسیدگی از محاسبه عبور زمان جدا می‌شوند.',
+  },
+  workbench_due_actions: {
+    projection: 'workbench.reporting.due-actions.v1',
+    title: 'کدام پیگیری‌های شخصی تقویم من از موعد گذشته‌اند؟',
+    dimensions: ['پیگیری شخصی', 'اولویت'],
+    measures: ['روز تأخیر'],
+    filters: ['بازه تاریخ', 'شعبه'],
+    description:
+      'فقط رویدادهای برنامه‌ریزی‌شده و عقب‌افتاده حساب جاری؛ بازه بر اساس موعد پیگیری است.',
+  },
+  hr_record_expiry: {
+    projection: 'hr.reporting.record-expiry.v1',
+    title: 'کدام سوابق کارکنان تاریخ انقضای گذشته یا نزدیک دارند؟',
+    dimensions: ['کد سابقه', 'نوع سابقه'],
+    measures: ['تعداد سابقه'],
+    filters: ['بازه تاریخ', 'شعبه', 'وضعیت'],
+    description:
+      'فقط تاریخ انقضای صریح سوابق منابع انسانی؛ سوابق بدون تاریخ، انقضای فرضی یا صفر نمی‌گیرند.',
+  },
+  agency_performance: {
+    projection: 'sales.reporting.contract-currency.v1',
+    title: 'کدام مشتریان سازمانی بیشترین فروش قرارداد را داشته‌اند؟',
+    dimensions: ['مشتری سازمانی', 'شعبه'],
+    measures: ['مبلغ قرارداد'],
+    filters: ['بازه تاریخ', 'شعبه', 'کارشناس', 'ارز', 'وضعیت'],
+    description:
+      'فروش قراردادهای تأییدشده مشتریان سازمانی؛ خرید و سود قطعی یا اعتبار آژانس از مبلغ فروش استنتاج نمی‌شود.',
+  },
+  future_travel_commitments: {
+    projection: 'sales.reporting.contract-currency.v1',
+    title: 'قراردادهای سفر آینده چه مبلغ فروشی دارند؟',
+    dimensions: ['شهر مقصد', 'مسیر سفر'],
+    measures: ['مبلغ قرارداد'],
+    filters: ['بازه تاریخ', 'شعبه', 'کارشناس', 'ارز', 'وضعیت'],
+    description:
+      'قراردادهای تأییدشده و باطل‌نشده از امروز تهران به بعد؛ بازه بر اساس تاریخ حرکت است و مبلغ فروش به معنی تعهد پرداخت تأمین‌کننده نیست.',
+  },
+
   cancellations_refunds: {
     projection: 'sales.reporting.cancellations.v1',
     title: 'قراردادهای ایجادشده که اکنون باطل‌اند چه تعداد و چه مبلغی دارند؟',

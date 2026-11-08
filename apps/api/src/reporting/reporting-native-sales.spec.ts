@@ -65,6 +65,13 @@ function fixture() {
   ]);
   const client = {
     salesContract: { findMany },
+    customer: {
+      findMany: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'organization', displayName: 'سازمان نمونه' },
+        ]),
+    },
     reservationIntake: { findMany: vi.fn().mockResolvedValue([]) },
     branch: {
       findMany: vi.fn().mockResolvedValue([{ id: 'branch', name: 'مرکزی' }]),
@@ -84,6 +91,62 @@ function fixture() {
   return { client, findMany };
 }
 describe('native Sales report source and shared preview/export path', () => {
+  it('reports organizational customer sales without inventing agency credit or profit', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      {
+        ...one,
+        customerId: 'organization',
+      },
+    ]);
+    const result = await nativeSalesReport(
+      client,
+      'agency_performance',
+      query,
+      { ...actor, permissions: [...actor.permissions, 'customers.read'] },
+      true,
+    );
+    expect(client.customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          kind: 'ORGANIZATION',
+          ownerBranchId: { in: ['branch'] },
+        }),
+      }),
+    );
+    expect(result.total).toBe(1);
+    expect(result.rows[0]?.orderCount).toBe(1);
+    expect(result.rows[0]?.passengerCount).toBe(3);
+    expect(result.rows[0]?.primaryDimension).toBe('سازمان نمونه');
+    expect(result.columns.map((c) => c.key)).not.toContain('grossProfit');
+  });
+  it('requires customer-source permission before resolving organizational identities', async () => {
+    const { client } = fixture();
+    await expect(
+      nativeSalesReport(client, 'agency_performance', query, actor),
+    ).rejects.toThrow('مجوز مشاهده منبع این گزارش وجود ندارد.');
+    expect(client.customer.findMany).not.toHaveBeenCalled();
+  });
+  it('uses departure date rather than creation date for future travel', async () => {
+    const { client, findMany } = fixture();
+    const result = await nativeSalesReport(
+      client,
+      'future_travel_commitments',
+      query,
+      actor,
+      true,
+    );
+    expect(findMany.mock.calls.at(-1)?.[0].where.AND).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          departureDate: expect.objectContaining({ gte: expect.any(Date) }),
+        }),
+      ]),
+    );
+    expect(result.filterSnapshot.filters.fromUtc).toBeTruthy();
+    expect(result.rows[0]?.orderCount).toBe(1);
+  });
   it.each(['route_passengers', 'sales_contract_pipeline'])(
     'consolidates %s without counting currency legs as contracts or passengers',
     async (code) => {
