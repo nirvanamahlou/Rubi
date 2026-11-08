@@ -152,7 +152,7 @@ describe('attendance connector authorization', () => {
   });
 });
 
-it('catches up at startup and switches from quarter-hour to hourly slots', async () => {
+it('catches up at startup and polls every minute throughout the day', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-11-01T05:29:00Z'));
   vi.stubEnv('HR_RADAN_ENABLED', 'true');
@@ -168,16 +168,16 @@ it('catches up at startup and switches from quarter-hour to hourly slots', async
   await vi.advanceTimersByTimeAsync(60000);
   expect(sync).toHaveBeenCalledTimes(2);
   await vi.advanceTimersByTimeAsync(60 * 60000);
-  expect(sync).toHaveBeenCalledTimes(6);
+  expect(sync).toHaveBeenCalledTimes(62);
   await vi.advanceTimersByTimeAsync(59 * 60000);
-  expect(sync).toHaveBeenCalledTimes(6);
+  expect(sync).toHaveBeenCalledTimes(121);
   await vi.advanceTimersByTimeAsync(60000);
-  expect(sync).toHaveBeenCalledTimes(7);
+  expect(sync).toHaveBeenCalledTimes(122);
   service.onModuleDestroy();
   await vi.advanceTimersByTimeAsync(3600000);
-  expect(sync).toHaveBeenCalledTimes(7);
+  expect(sync).toHaveBeenCalledTimes(122);
 });
-it('reschedules at the next clock slot after failure rather than retrying every two minutes', async () => {
+it('retries at the next minute after failure', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-11-01T13:29:00Z'));
   vi.stubEnv('HR_RADAN_ENABLED', 'true');
@@ -192,12 +192,12 @@ it('reschedules at the next clock slot after failure rather than retrying every 
   await vi.advanceTimersByTimeAsync(60000);
   expect(service.status(actor)).toMatchObject({
     state: 'error',
-    nextSyncAt: '2026-11-01T13:45:00.000Z',
+    nextSyncAt: '2026-11-01T13:31:00.000Z',
   });
   await vi.advanceTimersByTimeAsync(14 * 60000);
-  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(2);
+  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(16);
   await vi.advanceTimersByTimeAsync(60000);
-  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(3);
+  expect(iam.authenticateAttendanceConnectorV1).toHaveBeenCalledTimes(17);
   service.onModuleDestroy();
 });
 
@@ -279,4 +279,50 @@ it('recovers attendance synchronization on a later valid login without restartin
     'configured-actor',
   );
   service.onModuleDestroy();
+});
+
+it('uses a bounded recent window between successful hourly reconciliations', async () => {
+  const { service, hr } = dualSource();
+  await service.sync(actor, true);
+  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
+    ['/V1/Ta/Clockings', 'clockings', undefined],
+  );
+  hr.processAttendance.mockClear();
+  await service.sync(actor, true);
+  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
+    ['/V1/Ta/Clockings', 'clockings', '2026-11-02'],
+  );
+  expect(hr.processAttendance.mock.calls.map(([input]) => input.date)).toEqual([
+    '2026-11-03',
+    '2026-11-04',
+  ]);
+  vi.setSystemTime(new Date('2026-11-04T13:00:00Z'));
+  await service.sync(actor, true);
+  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
+    ['/V1/Ta/Clockings', 'clockings', undefined],
+  );
+});
+it('never overlaps a long-running scheduled pull and stops after destruction', async () => {
+  vi.useFakeTimers();
+  vi.stubEnv('HR_RADAN_ENABLED', 'true');
+  const service = new HrRadanDeviceService(
+    {} as never,
+    {
+      authenticateAttendanceConnectorV1: vi.fn().mockResolvedValue(actor),
+    } as never,
+  );
+  let finish!: (value: Record<string, unknown>) => void;
+  const sync = vi.spyOn(service, 'sync').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  service.onModuleInit();
+  await vi.advanceTimersByTimeAsync(180000);
+  expect(sync).toHaveBeenCalledOnce();
+  service.onModuleDestroy();
+  finish({ state: 'ready' });
+  await vi.advanceTimersByTimeAsync(120000);
+  expect(sync).toHaveBeenCalledOnce();
 });

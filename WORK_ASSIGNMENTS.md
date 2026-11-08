@@ -1,3 +1,7 @@
+## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
+
+Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:22 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
+
 ## HR-ATTENDANCE-CURRENT-1107 — PC-A — ACTIVE
 
 Reserve HR attendance current-employee filtering, Radan Saturday synchronization diagnosis and bounded operational recovery. Preserve historical data, personnel mappings, branch authorization and existing shifts. No schema/dependency changes.

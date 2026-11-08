@@ -1,3 +1,7 @@
+## HR fast attendance sync — 2026-11-08
+
+One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
+
 ## HR attendance freshness and current employees â€” 2026-11-07
 
 Production read-only diagnosis: both workstation tunnels respond; primary Radan has nine raw 2026-11-06 punches mapped once to 2026-11-07, and Nora contains eighteen daily rows for Saturday with last processing at 12:30 UTC. Secondary Radan returns no Saturday punches (latest raw 2026-11-05). Add one startup catch-up before resuming unchanged clock slots, current-employee scope for shared attendance list/count, current-only selector/projection, and visible-page refresh each minute. Preserve explicit personnel-profile historical queries and stored records. Focused connector/query tests:21 pass; projection tests:6 pass; scoped lint passes. No schema or dependency change.
