@@ -4,7 +4,10 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import type { DatabaseService } from '../../database/database.service';
 import type { CustomerInsuranceIdentity } from '../../customers/customer-insurance-identity';
 import type { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
-import type { TravisSandboxService } from '../../integrations/insurance/travis-sandbox.service';
+import {
+  TravisDiagnosticError,
+  type TravisSandboxService,
+} from '../../integrations/insurance/travis-sandbox.service';
 import type { NotificationsService } from '../../notifications/notifications.service';
 import { InsuranceAutomation } from './insurance-automation';
 import type { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
