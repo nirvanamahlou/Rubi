@@ -1500,7 +1500,7 @@ function KpiDefinitionPanel({
 
             <section aria-labelledby="kpi-calculation-features-title">
               <h3
-                className="text-sm font-black text-foreground"
+                className="text-sm font-semibold text-foreground"
                 id="kpi-calculation-features-title"
               >
                 فیچرهای استفاده‌شده در فرمول

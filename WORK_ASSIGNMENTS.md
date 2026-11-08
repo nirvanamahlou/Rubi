@@ -78,6 +78,14 @@ Contract wiring: ReportingNativeDashboard consumes only owner-public readers for
 
 Validation/handoff: Draft PR1488. Local native/source/identity/money regressions67 pass; fresh post-integration Reporting/HR regressions40 pass; Dashboard/i18n103 including rendered availability regression1 pass (one existing skip). API/Web typechecks, API compilation and scoped lint pass. Nine owner-public readers verified in read-only production aggregates. Windows cross-drive Web build is replaced by required hosted Linux production build; hosted quality/build/PostgreSQL gates succeeded on integrated implementation, final-head full checks tracked in PR. No own port3000 listener, schema/dependency/data mutation, merge or deployment. Exhaustive ledger: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md.
 
+## DASHBOARD-KPI-FEATURE-HEADING-1107 — PC-C — READY_FOR_CI
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-feature-heading-1107` from latest `origin/develop`. Owner requests the “فیچرهای استفاده‌شده در فرمول” heading in every KPI definition panel to use the same readable font weight as regular section content. Reserve only that heading in `dashboard-workspace.tsx`, its existing Dashboard source regression in `dashboard.spec.ts`, and bounded task/status notes. Preserve all other headings, feature rows, calculations and behavior. No API, data, permissions, dependencies or deployment changes.
+
+DASHBOARD-KPI-FEATURE-HEADING-1107 validation: focused Dashboard tests 19 passed / 1 existing skipped; scoped ESLint, contracts build, full Web typecheck, Web production build (67 routes), and git diff --check passed. Prettier check reported formatting warnings in the two existing large TS files; no broad rewrite was applied for the one-class change. No API, data, permission, dependency, runtime or deployment changes.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
+
 ## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.

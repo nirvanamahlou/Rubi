@@ -816,6 +816,9 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('[&_*]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('[&_svg]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('فیچرهای استفاده‌شده در فرمول');
+    expect(kpiDefinitionPanelSource).toMatch(
+      /<h3\s+className="text-sm font-semibold text-foreground"\s+id="kpi-calculation-features-title"\s*>/,
+    );
     expect(kpiDefinitionPanelSource).toContain('definition.source.map');
     expect(kpiDefinitionPanelSource).toContain('map(calculationFeatureFor)');
     expect(source).toContain('recognized sale revenue');
