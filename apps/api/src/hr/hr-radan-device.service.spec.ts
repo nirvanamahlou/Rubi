@@ -326,3 +326,35 @@ it('never overlaps a long-running scheduled pull and stops after destruction', a
   await vi.advanceTimersByTimeAsync(120000);
   expect(sync).toHaveBeenCalledOnce();
 });
+
+it('honors the confirmed source date correction only from its configured cutover', async () => {
+  const { service, hr } = dualSource();
+  vi.stubEnv('HR_RADAN_DATE_CORRECTED_FROM', '2026-11-04');
+  vi.mocked(RadanDeviceClient.prototype.list).mockImplementation(
+    async (path) =>
+      (path === '/V1/Users'
+        ? [{ id: 1, profile: { personnel_id: '2001' } }]
+        : [
+            {
+              id: 1,
+              user_id: 1,
+              datetime: '2026-11-03 09:30:00',
+              entry_type: 'in',
+              status: 'accepted',
+            },
+            {
+              id: 2,
+              user_id: 1,
+              datetime: '2026-11-04 09:30:00',
+              entry_type: 'in',
+              status: 'accepted',
+            },
+          ]) as never,
+  );
+  await service.sync(actor);
+  expect(
+    hr.importDevicePunches.mock.calls[0]![0].punches.map(
+      (p: { date: string }) => p.date,
+    ),
+  ).toEqual(['2026-11-04', '2026-11-04']);
+});

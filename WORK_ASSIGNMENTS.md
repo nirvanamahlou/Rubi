@@ -1,6 +1,6 @@
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
-Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:22 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
+Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
 
 ## HR-ATTENDANCE-CURRENT-1107 — PC-A — ACTIVE
 
@@ -11554,3 +11554,5 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `orig
 VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Voucher output takes both flight calendar dates from the current contract projection while supplier-form revisions retain their explicitly saved dates; the stored settings object remains unchanged. No API, schema, dependency, runtime data or deployment changes.
 
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
+
+HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.

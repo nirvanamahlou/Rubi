@@ -34,6 +34,7 @@ type DeviceSource = {
   username: string;
   password: string;
   dateOffsetDays: number;
+  dateCorrectedFrom?: string | undefined;
 };
 
 @Injectable()
@@ -147,6 +148,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         username,
         password,
         dateOffsetDays: 1,
+        dateCorrectedFrom: process.env.HR_RADAN_DATE_CORRECTED_FROM,
       },
     ];
     const secondaryBranch = process.env.HR_RADAN_SECONDARY_BRANCH_ID;
@@ -222,6 +224,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
     scheduled: boolean,
   ) {
     const { base, username, password, branchId, dateOffsetDays } = config;
+    if (config.dateCorrectedFrom) isoDate(config.dateCorrectedFrom);
     const provider = new RadanDeviceClient(base, username, password);
     await provider.login();
     const users = await provider.list<RadanUser>('/V1/Users', 'users');
@@ -282,7 +285,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       let date: string;
       try {
         date = new Date(
-          isoDate(match[1]!).getTime() + dateOffsetDays * 86400000,
+          isoDate(match[1]!).getTime() +
+            (config.dateCorrectedFrom && match[1]! >= config.dateCorrectedFrom
+              ? 0
+              : dateOffsetDays) *
+              86400000,
         )
           .toISOString()
           .slice(0, 10);
