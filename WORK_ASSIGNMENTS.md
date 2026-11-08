@@ -11843,3 +11843,7 @@ RESERVATION-MAIL-ACCEPTANCE-1108 — READY_FOR_CI: PR1519 published as41c971453.
 ## SALES-RETURN-DATE-1108 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-return-date-1108 from develop de4a68e3b. Reserve Sales list travel-summary helper, focused regression and own task/status notes. User authorizes correct return-only contract dates and green develop merge; no deployment. The shared public salesContractFlights reader includes floating snapshots absent from ticketSelections; exact direction, per-service calendar and Tehran date are retained. No schema/dependency/API contract or data mutation. No overlapping active list-summary writer found. Eight targeted regression tests pass; final full gates required.
+
+## INSURANCE-PROVIDER-ERRORS-1108 — PC-A
+
+Owner requests official input/output contract verification and actionable insurance errors, then develop merge. Reserve Travis transport diagnostics, automation safe error propagation and focused tests. Official live Swagger PolicyCreateInput/Person inspected read-only. Never expose upstream free text, identity, credentials or URLs. No provider issuance, schema, dependency or deployment.

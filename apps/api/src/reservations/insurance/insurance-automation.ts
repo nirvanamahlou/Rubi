@@ -1,3 +1,4 @@
+import { TravisDiagnosticError } from '../../integrations/insurance/travis-sandbox.service';
 import {
   Inject,
   forwardRef,
@@ -412,7 +413,8 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           href: '/sales',
         });
       });
-    } catch {
+    } catch (cause) {
+      if (cause instanceof TravisDiagnosticError) error = cause.message;
       await this.db.client.reservationInsurancePolicy.updateMany({
         where: { id, processingUntil: leaseUntil, status: { not: 'ISSUED' } },
         data: {
