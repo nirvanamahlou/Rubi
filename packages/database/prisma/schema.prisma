@@ -4752,6 +4752,7 @@ enum FinanceSupplierPaymentStatus {
 
 model FinanceSettlementAccount {
   accountingCode             String?                                @unique @db.VarChar(7)
+  isExternal                 Boolean                                @default(false)
   deletedAt                  DateTime?                              @db.Timestamptz(3)
   salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
   workflowRefunds            AccountingWorkflow[]
@@ -4766,10 +4767,10 @@ model FinanceSettlementAccount {
   accountingEvents           FinanceAccountingEvent[]
   financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
-  branchId                   String                                 @db.Uuid
+  branchId                   String?                                @db.Uuid
   title                      String                                 @db.VarChar(160)
   kind                       String                                 @db.VarChar(24)
-  currencyCode               String                                 @db.VarChar(3)
+  currencyCode               String?                                @db.VarChar(3)
   bankId                     String?                                @db.Uuid
   maskedIdentifier           String?                                @db.VarChar(80)
   isActive                   Boolean                                @default(true)
@@ -4777,7 +4778,7 @@ model FinanceSettlementAccount {
   createdByUserId            String                                 @db.Uuid
   createdAt                  DateTime                               @default(now()) @db.Timestamptz(3)
   updatedAt                  DateTime                               @updatedAt @db.Timestamptz(3)
-  branch                     Branch                                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch                     Branch?                                @relation(fields: [branchId], references: [id], onDelete: Restrict)
   salesReceiptPayments       SalesContractPaymentEntry[]            @relation("SalesPaymentReceiptAccount")
   bank                       MasterBank?                            @relation(fields: [bankId], references: [id], onDelete: Restrict)
   createdBy                  User                                   @relation("FinanceSettlementAccountCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)

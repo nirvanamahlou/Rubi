@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
+import { salesReceiptAccounts } from '../src/finance/payments/sales-receipt-accounts.public';
 import { BankAccountService } from '../src/finance/bank-accounts/bank-account.service';
 import { BankAccountCrypto } from '../src/finance/bank-accounts/bank-account.crypto';
 import { MasterProcurementDirectory } from '../src/master-data/master-procurement-directory';
@@ -39,13 +40,21 @@ describe.skipIf(!enabled)(
     });
     beforeAll(async () => {
       const url = new URL(process.env.DATABASE_URL!);
-      if (!(
-        process.env.CI === 'true' &&
-        url.hostname === '127.0.0.1' &&
-        url.port === '5432' &&
+      const localDisposable =
+        ['127.0.0.1', 'localhost'].includes(url.hostname) &&
+        url.port === '55593' &&
         url.pathname === '/nora_ci' &&
-        url.username === 'nora_ci'
-      ))
+        url.username === 'test';
+      if (
+        !localDisposable &&
+        !(
+          process.env.CI === 'true' &&
+          url.hostname === '127.0.0.1' &&
+          url.port === '5432' &&
+          url.pathname === '/nora_ci' &&
+          url.username === 'nora_ci'
+        )
+      )
         throw new Error('Dedicated CI disposable database required.');
       db = createDatabaseClient(process.env.DATABASE_URL);
       await db.branch.create({
@@ -179,6 +188,123 @@ describe.skipIf(!enabled)(
         db.financeBankAccountAudit.deleteMany({
           where: { accountId: created.id },
         }),
+      ).rejects.toThrow();
+    });
+    it('persists and reloads an external source with true NULL scope, validates its database constraint and reencrypts conversion', async () => {
+      const request = { requestId: randomUUID(), isExternal: true };
+      const created = await service.save(bankId, null, request, actor);
+      expect(created).toMatchObject({
+        isExternal: true,
+        branchId: null,
+        currencyCode: null,
+        title: '',
+      });
+      expect(await service.save(bankId, null, request, actor)).toEqual(created);
+      expect(
+        await db.financeSettlementAccount.findUniqueOrThrow({
+          where: { id: created.id },
+        }),
+      ).toMatchObject({ branchId: null, currencyCode: null, isExternal: true });
+      expect(
+        (await service.list(bankId, '1', actor)).items.some(
+          (row) => row.id === created.id,
+        ),
+      ).toBe(true);
+      expect(await service.details(bankId, created.id, actor)).toMatchObject({
+        branchId: null,
+        currencyCode: null,
+        accountNumber: null,
+      });
+      await expect(
+        db.financeSettlementAccount.update({
+          where: { id: created.id },
+          data: { isExternal: false },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        service.save(
+          bankId,
+          created.id,
+          { isExternal: false, expectedVersion: 1 },
+          actor,
+        ),
+      ).rejects.toThrow();
+      const updated = await service.save(
+        bankId,
+        created.id,
+        {
+          title: 'Synthetic external',
+          isExternal: true,
+          accountNumber: '123456789123',
+          expectedVersion: 1,
+        },
+        actor,
+      );
+      expect(updated).toMatchObject({
+        branchId: null,
+        currencyCode: null,
+        version: 2,
+      });
+      const incomplete = await service.save(
+        bankId,
+        null,
+        { requestId: randomUUID(), isExternal: true, branchId },
+        actor,
+      );
+      const destinations = await salesReceiptAccounts(
+        db,
+        branchId,
+        new BankAccountCrypto(
+          new ConfigService({
+            MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 19).toString(
+              'base64',
+            ),
+          }),
+        ),
+        userId,
+      );
+      expect(
+        destinations.some(
+          (row) => row.id === incomplete.id || row.id === created.id,
+        ),
+      ).toBe(false);
+      await expect(
+        service.save(
+          bankId,
+          null,
+          {
+            requestId: randomUUID(),
+            isExternal: true,
+            accountNumber: '123456789123',
+          },
+          actor,
+        ),
+      ).rejects.toThrow();
+      const restored = await service.save(
+        bankId,
+        created.id,
+        {
+          title: 'Synthetic completed',
+          branchId,
+          currencyCode: 'IRR',
+          isActive: true,
+          isExternal: false,
+          expectedVersion: 2,
+        },
+        actor,
+      );
+      expect(restored).toMatchObject({
+        isExternal: false,
+        branchId,
+        currencyCode: 'IRR',
+        version: 3,
+      });
+      expect(
+        (await service.details(bankId, created.id, actor)).accountNumber,
+      ).toBe('123456789123');
+      await service.remove(bankId, created.id, { expectedVersion: 3 }, actor);
+      await expect(
+        service.details(bankId, created.id, actor),
       ).rejects.toThrow();
     });
     it('rolls creation/update back if the audit writer fails and reveals nothing on audit failure', async () => {
