@@ -11563,3 +11563,10 @@ VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full W
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+
+## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
+
+Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
+
+ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.

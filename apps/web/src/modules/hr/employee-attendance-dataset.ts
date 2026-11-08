@@ -21,6 +21,12 @@ export function employeeAttendanceDataset(
   const base = recordsDataset('time', 'attendance', attendance);
   return {
     ...base,
+    inactiveRecordIds: attendance
+      .filter(
+        (record) =>
+          record.data.attendanceActive === false || record.status === 'غیرفعال',
+      )
+      .map((record) => record.id),
     columns: [
       'تاریخ',
       'روز هفته',

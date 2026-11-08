@@ -7922,5 +7922,12 @@
   "مهلت ثبت ساعتی (روز قبل)": "Hourly leave notice (days before)",
   "مهلت ثبت مرخصی ساعتی گذشته است.": "The hourly leave submission deadline has passed.",
   "فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.": "Only the fund custodian or purchasing manager may register an expense.",
-  "مهلت ثبت": "Submission deadline"
+  "مهلت ثبت": "Submission deadline",
+  "ثبت وضعیت": "Save status",
+  "غیرفعال‌سازی کارکرد": "Deactivate attendance",
+  "بازه تاریخ و کارکنان را انتخاب کنید.": "Select a date range and employees.",
+  "جست‌وجوی کارکنان": "Search employees",
+  "بازه باید حداکثر یک سال باشد.": "The date range must not exceed one year.",
+  "کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.": "Select up to 200 employees.",
+  "در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.": "Up to 2,000 employee attendance days can be changed at once."
 }

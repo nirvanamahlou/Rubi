@@ -209,3 +209,19 @@ it('shows the authoritative Toman daily penalty in both attendance views', () =>
     employee.rows[0]![employee.columns.indexOf('جریمه روز')],
   );
 });
+
+it('marks excluded days consistently in HR and employee tables without dropping their history', () => {
+  const day = {
+    ...record('attendance', ['Worker', '2026-11-08']),
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  const normal = record('attendance', ['Worker', '2026-11-09']);
+  for (const data of [
+    employeeAttendanceDataset([day, normal]),
+    recentAttendanceDataset([day, normal], []),
+  ]) {
+    expect(data.inactiveRecordIds).toEqual([day.id]);
+    expect(data.rows).toHaveLength(2);
+  }
+});
