@@ -449,7 +449,9 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           where: { employeeId: employee.id, tab: 'mission' },
         }),
       ).toBe(count);
-      const other = { ...manager, userId: admin.userId };
+      const other = (
+        await actor('mission_other_manager', HR_PERMISSION_CODES, [branchId])
+      ).actor;
       await expect(
         service.editAttendance(
           day.id,
@@ -5384,7 +5386,11 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         key(),
         owner,
       );
-      expect(preview.subsidiaries).toBe(1);
+      expect(preview.subsidiaries).toBe(
+        await client.hrRecord.count({
+          where: { section: 'organization', tab: 'branches', deletedAt: null },
+        }),
+      );
       expect(
         (
           await client.hrEmployee.findUniqueOrThrow({
