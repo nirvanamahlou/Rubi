@@ -1,4 +1,8 @@
 {
+  "(کد": "(code",
+  "بیمه:": "insurance:",
+  "فیلدهای نیازمند بررسی:": "Fields to check:",
+  "مهلت پاسخ سرویس بیمه تمام شد؛ وضعیت درخواست پیش از تلاش مجدد بررسی می‌شود.": "The insurer response timed out; request status will be checked before another attempt.",
   "قیمت کارگزار": "Broker price",
   "قیمت رفت یا برگشت جدا": "Separate outbound or return price",
   "دسترسی به این عملیات مجاز نیست.": "Access to this operation is not permitted.",
