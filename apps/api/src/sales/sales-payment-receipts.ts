@@ -1,3 +1,4 @@
+import { receiptFileSupported } from '@nora/contracts';
 import {
   BadRequestException,
   Controller,
@@ -122,12 +123,9 @@ export class SalesPaymentReceiptsService {
     metadata: DocumentRequestMetadata,
   ) {
     const c = await this.context(id, paymentId, actor);
-    if (
-      !file ||
-      !['application/pdf', 'image/jpeg', 'image/png'].includes(file.mimetype)
-    )
+    if (!file || !receiptFileSupported(file.originalname, file.mimetype))
       throw new BadRequestException(
-        'مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.',
+        'مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.',
       );
     const { data: options } = await this.documents.options(c.actor);
     const type = options.documentTypes.find(

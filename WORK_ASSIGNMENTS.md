@@ -1,3 +1,7 @@
+## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
 ## RESERVATION-BROKER-EMAIL-1108 — PC-A — READY_FOR_REVIEW / IT PENDING
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-broker-email-1108 from origin/develop@628d53437; isolated worktree F:/Projects/Rubi-email-1108 preserves concurrent local changes in the original checkout. Owner explicitly released TRANSFER-SEPARATE-DEFAULT-1108 form scope for this work. Reserve Reservations workflow/email orchestration and tests, unchanged-layout Web send feedback, Integrations SMTP leaf/module, API manifest and pnpm lock for nodemailer, additive email-outbox schema/migration and own docs. Sole Dependency/Lockfile and Migration Owner PC-A for this bounded work; no current overlapping new migration/dependency scope found among latest tasks. Do not change hotel quotation editor or peer tests. Existing public MasterData detail/list/unmask ports resolve and audit the recipient; no Master Data internals/table access. Producer Reservations owns immutable PDF send intent; Integrations owns SMTP and credentials. Outbox state is distinct from existing operational sent-form state (legacy/manual semantics preserved); no claim of email delivery without SMTP acceptance. Default off until IT settings and controlled acceptance; no deployment, actual external send, merge or runtime/data mutation authorized. PDF attachment only, no email body. User awaiting IT details.
@@ -147,6 +151,10 @@ Reserve Documents workspace default loading and ten-row pagination. Remove filte
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
 Owner confirms two specific sales managers may assign Call Center requests to three additional named active internal accounts. Coordinated with the HR authority owner after PR1459 merge: reserve optional expected-unit ID projection and focused HR tests (existing callers unchanged). Reserve IAM Call Center request selector/management validation and narrowly scoped creator request visibility, a fail-closed configured exact-account exception helper and focused tests, and own release notes. Preserve branch/active/internal checks, HR memberships, all other managers and existing scopes. No schema/dependency change. Use protected deployment configuration for exact account IDs; no personnel identifiers in Git. Standing green CI/develop merge/publication authorization applies. Closeout: PR1457 merged after all exact-head hosted gates. Protected production policy enabled for exactly two verified current Sales managers and three active recipients; read-only live selector/transactional save/management and negative-account acceptance passed. Fresh encrypted DB/config backup, unchanged Web/environment/mount checks and Worker/AMI/recording/HTTPS passed. Reservation released; no migration.
+
+## RESERVATION-CALL-VISIBILITY-1108 — PC-C — READY_FOR_CI
+
+COMPUTER_ID=PC-C; base develop efed9ccd1; branch codex/pc-c-reservation-call-visibility-1108. Owner requests the Reservations manager can read current Reservations staff calls, with develop PR and green-check merge. Read-only production diagnosis confirms active linked native HR manager/staff in the same unit, but contacts/reports policy still requires a separate manual team grant and returns self-only. Reserve IamCallCenterDirectory minimal public current-manager read-team projection, CallCenterAccessService users scope, focused IAM/access tests and answered-access PostgreSQL fixtures/regressions plus own notes. Reuse the released HR current-manager/unit/company projection from PR1459/1457; no HR writer, grants, schema, dependency or UI change. Keep active/internal/branch/route guards, exact current HR manager grade, own access, shared/outbound answer evidence, global policy and recording restriction. Legacy non-ANSWERED and workflow scopes remain compatible. No HR/IAM/call data mutation. Source PR merge and bounded API correction under standing publication authorization only after all current-head hosted gates; preserve concurrent runtime images/configuration.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -11718,6 +11726,18 @@ RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the 
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
 
-## AMENDMENT-AIRLINE-1108 — PC-A — ACTIVE
+## AMENDMENT-AIRLINE-1108 — PC-A — DONE/MERGED
 
 Owner authorizes removing the redundant airline selector from reservation contract flight amendments and develop merge. Reserve reservation-sales-amendment.tsx and focused regression plus own notes. Carrier identity remains supplied by the chosen catalogue ticket or floating flight details; no separate airline field exists in the backend amendment payload. Preserve ticket identity validation, prices, capacity rules, shared contracts and existing floating flight editor. No migration, dependency or deployment.
+
+Validation:26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build pass. Current develop changes are retained; no independent airline selection is required by the amendment API. Source reservation released with authorized develop integration; no deployment.
+
+## REPORTING-BOOTSTRAP-CYCLE-1108 — PC-C — IN_PROGRESS
+
+Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, DashboardOperationalSources, a full application module-graph regression and bounded status/task notes. Production activation of a43bb8a failed on Reporting -> CustomerAffairs -> Sales -> Reservations -> System -> Reporting; reviewed rollback restored healthy 0c4cedf6b. Preserve all public call-report authorization and newly activated sources. No Sales/Customer Affairs private readers, schema, dependencies or operational data changes.
+
+## UPLOAD-FILE-FORMATS-1108 — PC-B — READY_FOR_CI
+
+Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. Reserve additive shared upload format helpers, Documents sniffing/validation/policy and tests, bounded Sales receipt preflight and Web receipt pickers (Sales, Procurement, Finance, HR mission), message composer and own translations/docs. Preserve branch/source authorization, existing storage/download paths, size limits and rejection of executables/macro formats. Existing HR scopes merged/released. No schema, dependency or production data changes. Excel policy family includes legacy XLS alongside XLSX; no database policy rewrite.
+
+UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.

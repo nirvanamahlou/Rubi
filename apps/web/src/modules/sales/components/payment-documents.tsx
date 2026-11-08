@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { useEffect, useRef, useState } from 'react';
 import type {
   DocumentListItemV1,
@@ -271,14 +272,14 @@ export function PaymentDocuments({
               </Button>
             </div>
           ) : null}
-          <FormField label="مدرک پرداخت (PDF، JPG یا PNG)">
+          <FormField label="مدرک پرداخت (تصویر، PDF یا Excel)">
             <Input
               ref={fileInput}
               className="sr-only"
               aria-label="انتخاب فایل مدرک پرداخت"
               key={inputKey}
               type="file"
-              accept="application/pdf,image/jpeg,image/png"
+              accept={RECEIPT_FILE_ACCEPT}
               disabled={busy || !options || unknown}
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />

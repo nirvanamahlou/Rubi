@@ -1,4 +1,6 @@
 {
+  "قیمت کارگزار": "Broker price",
+  "قیمت رفت یا برگشت جدا": "Separate outbound or return price",
   "کد تفصیلی حسابداری": "Accounting detail code",
   "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",
@@ -8045,5 +8047,9 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "پیوست پیام باید تصویر، PDF یا فایل Excel باشد.": "Message attachments must be images, PDF or Excel files.",
+  "مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.": "Evidence must be an image, PDF or Excel file within the permitted size limit.",
+  "حداکثر ۱۰ فایل تصویر، PDF یا Excel و هر فایل تا ۱۰ مگابایت انتخاب کنید.": "Select up to 10 image, PDF or Excel files, each no larger than 10 MB.",
+  "مدرک پرداخت (تصویر، PDF یا Excel)": "Payment evidence (image, PDF or Excel)"
 }

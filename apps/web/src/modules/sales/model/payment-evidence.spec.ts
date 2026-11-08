@@ -104,3 +104,35 @@ describe('payment evidence public Documents binding', () => {
     ).toThrow();
   });
 });
+
+it.each([
+  ['proof.jfif', 'image/jfif', 'image/jpeg'],
+  [
+    'proof.xlsx',
+    '',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ],
+  ['proof.xls', 'application/octet-stream', 'application/vnd.ms-excel'],
+])(
+  'accepts %s while retaining document type/size restrictions',
+  (name, browserMime, canonicalMime) => {
+    const file = new File(['synthetic'], name!, { type: browserMime! });
+    const permitted = {
+      ...options,
+      documentTypes: options.documentTypes.map((type) => ({
+        ...type,
+        allowedMimeTypes: [canonicalMime!],
+      })),
+      uploadPolicy: {
+        ...options.uploadPolicy,
+        allowedMimeTypes: [canonicalMime!],
+      },
+    };
+    expect(
+      paymentEvidenceForm(contract, 'payment', permitted, file).get('file'),
+    ).toBe(file);
+    expect(() =>
+      paymentEvidenceForm(contract, 'payment', options, file),
+    ).toThrow();
+  },
+);

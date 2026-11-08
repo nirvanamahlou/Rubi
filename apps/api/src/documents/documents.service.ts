@@ -1,3 +1,11 @@
+import {
+  attachmentMimeType,
+  receiptFileSupported,
+  documentMimeTypes,
+  XLS_MIME,
+  RECEIPT_MIME_TYPES,
+} from '@nora/contracts';
+import { spreadsheetFileType } from './spreadsheet-file-type';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
@@ -175,6 +183,8 @@ const validSortFields = new Set<DocumentSortCode>([
 
 function detectMimeType(file: UploadedDocumentFile): string {
   const bytes = file.buffer;
+  const spreadsheet = spreadsheetFileType(bytes);
+  if (spreadsheet) return spreadsheet;
   if (bytes.subarray(0, 4).equals(Buffer.from('%PDF')))
     return 'application/pdf';
   if (
@@ -189,7 +199,7 @@ function detectMimeType(file: UploadedDocumentFile): string {
   if (
     bytes[0] === 0x50 &&
     bytes[1] === 0x4b &&
-    file.mimetype.includes('openxmlformats')
+    file.mimetype.includes('wordprocessingml')
   )
     return file.mimetype;
   if (
@@ -297,7 +307,12 @@ const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
   PDF: ['application/pdf'],
   JPG: ['image/jpeg'],
   PNG: ['image/png'],
-  XLSX: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+  XLSX: [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    XLS_MIME,
+  ],
+  XLS: [XLS_MIME],
+  JFIF: ['image/jpeg'],
 };
 
 function confidentialityFromSetting(
@@ -836,9 +851,9 @@ export class DocumentsService {
     if (!actor.branchIds.includes(input.branchId))
       throw new ForbiddenException('شعبه پیوست خارج از دسترسی شما است.');
     if (!file) throw new BadRequestException('انتخاب فایل پیوست الزامی است.');
-    if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype))
+    if (!receiptFileSupported(file.originalname, file.mimetype))
       throw new UnsupportedMediaTypeException(
-        'پیوست پیام باید PDF، PNG یا JPEG باشد.',
+        'پیوست پیام باید تصویر، PDF یا فایل Excel باشد.',
       );
     if (file.size < 1 || file.size > 10 * 1024 * 1024)
       throw new BadRequestException('حجم هر پیوست حداکثر ۱۰ مگابایت است.');
@@ -1563,7 +1578,7 @@ export class DocumentsService {
       name: type.name,
       domain: type.domain,
       defaultConfidentiality: type.defaultConfidentiality,
-      allowedMimeTypes: type.allowedMimeTypes,
+      allowedMimeTypes: documentMimeTypes(type.allowedMimeTypes),
       maxFileSizeBytes: Number(type.maxFileSizeBytes),
       requiresExpiry: type.requiresExpiry,
     }));
@@ -1588,7 +1603,11 @@ export class DocumentsService {
             ...documentTypes.map((type) => type.maxFileSizeBytes),
           ),
           allowedMimeTypes: [
-            ...new Set(documentTypes.flatMap((type) => type.allowedMimeTypes)),
+            ...new Set(
+              documentTypes.flatMap((type) =>
+                documentMimeTypes(type.allowedMimeTypes),
+              ),
+            ),
           ].filter((mimeType) => uploadPolicy.allowedMimeTypes.has(mimeType)),
           antivirusAvailable: this.scanProcessor.available,
         },
@@ -2122,7 +2141,7 @@ export class DocumentsService {
     const validation = validateUploadFile(
       {
         originalFileName: file.originalname,
-        declaredMimeType: file.mimetype,
+        declaredMimeType: attachmentMimeType(file.originalname, file.mimetype),
         detectedMimeType,
         sizeBytes: file.size,
         sha256,
@@ -2136,7 +2155,9 @@ export class DocumentsService {
     if (
       !validation.valid ||
       !uploadPolicy.allowedMimeTypes.has(detectedMimeType) ||
-      !references.documentType.allowedMimeTypes.includes(detectedMimeType) ||
+      !documentMimeTypes(references.documentType.allowedMimeTypes).includes(
+        detectedMimeType,
+      ) ||
       file.size > Number(references.documentType.maxFileSizeBytes)
     ) {
       throw new BadRequestException({
@@ -2567,9 +2588,7 @@ export class DocumentsService {
       row.sourceEntityType === 'SalesContractPaymentEntry' &&
       row.documentType.domain === 'FINANCE' &&
       row.documentType.code === 'RECEIPT' &&
-      ['application/pdf', 'image/jpeg', 'image/png'].includes(
-        row.currentVersion.detectedMimeType,
-      ) &&
+      RECEIPT_MIME_TYPES.includes(row.currentVersion.detectedMimeType) &&
       ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
         row.currentVersion.scanStatus,
       );
