@@ -1,3 +1,4 @@
+import type { SalesContractDetail } from '@nora/contracts';
 vi.mock('../api/payment-receipts', () => ({
   paymentReceiptsApi: { entries: vi.fn(async () => ({ data: [] })) },
 }));
@@ -113,9 +114,16 @@ beforeEach(() => {
       payments: [
         {
           id: 'payment',
+          amount: '100',
+          currencyCode: 'IRR',
+          method: 'BANK_TRANSFER',
+          dueAt: '2026-10-27T00:00:00.000Z',
+          createdAt: '2026-10-27T00:00:00.000Z',
+          financeConfirmedAt: null,
+          status: 'PENDING_FINANCE_CONFIRMATION',
           destinationAccountId: 'account',
           destinationAccountTitle: 'Company',
-        },
+        } satisfies SalesContractDetail['payments'][number],
       ],
     },
   });

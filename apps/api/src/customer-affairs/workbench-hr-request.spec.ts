@@ -26,6 +26,7 @@ function setup(status = 'NEW') {
     branchId: 'branch',
     createdByUserId: 'sender',
     executionUnit: 'منابع انسانی',
+    executionOwnerUserId: 'reviewer',
     subject: 'مرخصی',
     timeline: [{ type: 'WORKBENCH_LEAVE', summary: JSON.stringify(leave) }],
   };
@@ -44,6 +45,11 @@ function setup(status = 'NEW') {
     reconcileWorkbenchLeave: vi.fn(),
   };
   const notifications = { createWithinTransaction: vi.fn() };
+  const directory = {
+    workbenchFeedbackRecipientUserIds: vi
+      .fn()
+      .mockResolvedValue(['hr-reviewer']),
+  };
   const service = new CustomerAffairsService(
     repository as never,
     {} as never,
@@ -51,12 +57,12 @@ function setup(status = 'NEW') {
     {} as never,
     {} as never,
     notifications as never,
-    {} as never,
+    directory as never,
     undefined,
     undefined,
     hr as never,
   );
-  return { service, tx, row, hr, notifications };
+  return { service, tx, row, hr, notifications, directory };
 }
 describe('HR Workbench review', () => {
   it('does not let HR approve before the selected substitute consents', async () => {
@@ -232,5 +238,56 @@ describe('structured leave validation', () => {
     expect(() => validateWorkbenchLeave({ ...leave, ...patch })).toThrow(
       BadRequestException,
     );
+  });
+});
+
+describe('recipient approval before HR', () => {
+  it('routes an approved leave to HR without consuming leave or attendance', async () => {
+    const f = setup();
+    f.row.executionUnit = 'فروش';
+    await f.service.reviewHrWorkbenchRequest(
+      'request',
+      { version: 1, status: 'APPROVED' },
+      { ...actor, permissions: [] },
+    );
+    expect(f.tx.customerAffairsTicket.update).toHaveBeenCalledWith({
+      where: { id: 'request' },
+      data: expect.objectContaining({
+        executionUnit: 'منابع انسانی',
+        executionOwnerUserId: 'hr-reviewer',
+        version: { increment: 1 },
+      }),
+    });
+    expect(f.hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+    expect(f.hr.reconcileWorkbenchLeave).not.toHaveBeenCalled();
+    expect(f.notifications.createWithinTransaction).toHaveBeenCalledWith(
+      f.tx,
+      expect.objectContaining({ recipientUserIds: ['hr-reviewer'] }),
+    );
+  });
+  it('rejects nonrecipients, stale versions, self approval and missing HR routes before writing', async () => {
+    const f = setup();
+    f.row.executionUnit = 'فروش';
+    for (const [reviewer, version] of [
+      [{ ...actor, userId: 'other' }, 1],
+      [actor, 2],
+      [{ ...actor, userId: 'sender' }, 1],
+    ] as const)
+      await expect(
+        f.service.reviewHrWorkbenchRequest(
+          'request',
+          { version, status: 'APPROVED' },
+          reviewer,
+        ),
+      ).rejects.toThrow();
+    f.directory.workbenchFeedbackRecipientUserIds.mockResolvedValue([]);
+    await expect(
+      f.service.reviewHrWorkbenchRequest(
+        'request',
+        { version: 1, status: 'APPROVED' },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(f.tx.customerAffairsTicket.update).not.toHaveBeenCalled();
   });
 });

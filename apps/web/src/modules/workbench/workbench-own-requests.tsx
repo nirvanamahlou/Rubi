@@ -1,4 +1,5 @@
 'use client';
+import { leaveDescription } from '@/modules/workbench/leave-description';
 import { hrRequest } from '@/modules/hr/hr-api';
 
 import {
@@ -44,6 +45,8 @@ export function WorkbenchOwnRequests() {
   const [error, setError] = useState('');
   const [removing, setRemoving] = useState<string | null>(null);
   const removed = useRef(new Set<string>());
+  const reviewLock = useRef(false);
+  const [reviewing, setReviewing] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [mode, setMode] = useState<'all' | 'incoming' | 'outgoing'>('all');
   const params = useSearchParams();
@@ -303,10 +306,52 @@ export function WorkbenchOwnRequests() {
                     شرح درخواست
                   </dt>
                   <dd className="mt-3 whitespace-pre-wrap break-words leading-7 text-foreground">
-                    {selected.description ||
+                    {leaveDescription(selected.description, selected.leave) ||
                       'شرحی برای این درخواست ثبت نشده است.'}
                   </dd>
                 </div>
+                {selected.recipientReview &&
+                !['APPROVED', 'REJECTED'].includes(selected.status) ? (
+                  <div className="flex gap-2">
+                    {(['APPROVED', 'REJECTED', 'NEEDS_REVISION'] as const).map(
+                      (status) => (
+                        <Button
+                          key={status}
+                          disabled={reviewing}
+                          onClick={async () => {
+                            if (reviewLock.current) return;
+                            reviewLock.current = true;
+                            setReviewing(true);
+                            try {
+                              await customerAffairsApi.reviewHrWorkbenchRequest(
+                                selected.id,
+                                selected.version!,
+                                status,
+                              );
+                              setSelected(null);
+                              setRefresh((v) => v + 1);
+                            } catch (e) {
+                              setError(
+                                e instanceof Error
+                                  ? e.message
+                                  : 'ثبت نتیجه انجام نشد.',
+                              );
+                            } finally {
+                              reviewLock.current = false;
+                              setReviewing(false);
+                            }
+                          }}
+                        >
+                          {status === 'APPROVED'
+                            ? 'تأیید و ارسال به منابع انسانی'
+                            : status === 'REJECTED'
+                              ? 'رد'
+                              : 'نیازمند اصلاح'}
+                        </Button>
+                      ),
+                    )}
+                  </div>
+                ) : null}
                 {selected.substituteStatus ? (
                   <div className="space-y-3 rounded-xl border p-4">
                     <p>

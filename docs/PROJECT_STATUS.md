@@ -457,6 +457,9 @@ One shared-broker editor now contains all hotel quotation panels, dates and room
 ## MANIFEST-DOCUMENT-REFERENCES-1107
 Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with insert-only migration. Preserve configured IDs, policies and deactivation. Isolated PostgreSQL regression exercises missing references and replay preservation under existing receipt-reference CI gate. No operational data changes or deployment.
 
+## AMENDMENT-RESPONSIVE-1108
+Bound passenger amendment dialog to available viewport with border-box sizing and centered maximum width. Intrinsic grid/form/table widths can shrink; responsive tabs and padded sections retain all existing controls. Presentation-only, no API or migration.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9411,5 +9414,12 @@ INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in th
 Owner subsequently authorized coordination and integration preserving both branches. Coordination receipt: PR1507 issuecomment-6720292840. Integrated PR1507 at9ba91b1e4 with latest develop; policy-management inline identity editor and API/retry guards are retained alongside the document-summary correction dialog, exact passenger link, in-form requirements and list focus refresh. Standalone Web production build67 routes, typecheck/lint and56 focused tests passed; integrated verification and final hosted gates precede authorized merge. No deployment.
 
 
-## AMENDMENT-RESPONSIVE-1108
-Bound passenger amendment dialog to available viewport with border-box sizing and centered maximum width. Intrinsic grid/form/table widths can shrink; responsive tabs and padded sections retain all existing controls. Presentation-only, no API or migration.
+
+
+## REQUEST-FLOW-REDESIGN-1108 — PC-B — 2026-11-08
+
+Completed the nine owner browser comments: redesigned HR leave detail and Sales payment/installment summary; Gregorian generated leave descriptions now render Persian dates in Workbench and the duplicate summary is omitted from HR detail. Added an advance request template. Structured leave can be sent to a selected non-HR recipient; recipient-only, versioned approval routes it to HR without creating leave or consuming balance. HR retains final authorization, substitute consent, native leave rules and attendance reconciliation. Replay/branch/self-approval guards and audit/notification records remain.
+
+Calculation settings from the status-less editor now save active, preserving explicitly inactive records. A forward migration repairs validated legacy drafts with existing editor audit and no active branch configuration; it leaves inactive/invalid records unchanged. Finance receipt review shows authoritative contract total/confirmed paid/remaining cards, and profit is always expanded with a title. Reservation rows offer General Details using the same reservation decoder and rendered details through a Finance-authorized, branch-scoped, read-only route; no ticket generation is invoked.
+
+Native PostgreSQL migration and initial-recipient replay tests, HR request unit tests, Finance/Reservation HTTP checks, Persian-date and exact-Decimal presentation tests pass. Final type/lint and exact-head hosted gates required before authorized develop merge. No operational database, production runtime or repository dependency changes.
