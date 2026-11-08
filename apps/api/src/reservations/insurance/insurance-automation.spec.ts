@@ -323,3 +323,22 @@ it('does not submit or overwrite state after another worker acquires the lease',
   expect(f.row.processingUntil).toBe(newerLease);
   expect(f.notifications.createWithinTransaction).not.toHaveBeenCalled();
 });
+
+it('issues with explicitly corrected trip settings instead of overwriting them from the contract', async () => {
+  const f = fixture();
+  Object.assign(f.row, {
+    automation: { phase: 'QUEUED', useDraft: true },
+    destinationCode: '5',
+    planCode: '76',
+    departureDate: new Date('2027-03-10'),
+    durationDays: 12,
+  });
+  await f.service.process('policy');
+  expect(f.provider.createPolicy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      destinationCountryId: 5,
+      planId: 76,
+      durationOfStay: 12,
+    }),
+  );
+});
