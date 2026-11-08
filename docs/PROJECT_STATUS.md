@@ -9420,3 +9420,10 @@ Native PostgreSQL migration and initial-recipient replay tests, HR request unit 
 ## DEVICE-CHECKOUT-FIX-1108 — PC-B
 
 Production primary device date cutover corrected from2026-11-08 to2026-11-07 after source/native comparison and encrypted backup. Native reconciliation repaired the two reported employees' yesterday checkouts and removed fabricated today exits/early-departure/deficit. No raw device punch deletion, direct SQL writes, schema or dependency changes. Existing runtime images retained. Separate connector hardening preserves seconds, neutral/explicit duplicate interpretation and provider reacceptance while respecting manual archives, inactive days and closed periods;55 focused tests and scoped lint pass. See docs/tasks/DEVICE-CHECKOUT-FIX-1108.md for release scope and final checks.
+
+
+## RESERVATION-MAIL-ACCEPTANCE-1108 — PC-A — 2026-11-08
+
+PR1498 is integrated in develop. Owner authorizes IT-independent acceptance and staff handoff, new PR, exact-head CI repair and green develop merge. Follow-up adds recipient-invalid/ambiguous/pagination/audit, missing-configuration, branch/permission and Web disabled-mail error regressions.40 mail API tests and15 focused Web tests pass; real Chrome A4/multipage PDF smoke and single-page visual review pass. Scoped lint passes. Staff/operations guide: docs/tasks/RESERVATION-MAIL-STAFF-GUIDE-1108.md. Local generated Contracts were rebuilt after switching base; no tracked dependency edits. Full typechecks/build/hosted tests remain final gates. Form source/styles/PDF template, real contacts/IAM and runtime settings are unchanged. No migration, deployment or real SMTP. Actual sending remains default-off pending IT and controlled mailbox acceptance.
+
+Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source frozen; final exact-head quality, production build, full tests and PostgreSQL checks gate the explicitly authorized develop merge. PR records final check and merge evidence. No deployment or mail activation is included.
