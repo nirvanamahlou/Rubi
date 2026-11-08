@@ -68,6 +68,14 @@ AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to 
 
 Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).
 
+## 2026-11-07 — DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — READY_FOR_CI
+
+در کارت مشترک نمودارهای داشبورد، برچسب آبی نوع نمودار حذف می‌شود. نام نوع نمودار برای دسترس‌پذیری و توضیحات حفظ می‌شود و نشان‌های زرد `DEC-OPEN` باقی می‌مانند چون به تصمیم‌های باز کسب‌وکار اشاره دارند.
+
+اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint، build قراردادها، typecheck وب و build تولیدی وب با ۶۷ مسیر موفق شدند. تگ نوع نمودار حذف شد و شناسه‌های DEC-OPEN حفظ شدند.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
+
 ## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
 All 84 KPI rules are Persian-only; 41 mixed-language rules translated. Added 32 short contextual calculation explanations below KPI/chart rules and localized the chart projection wording. Existing calculation logic and shared translations preserved. Dashboard/i18n: 54 passed, one existing skip; scoped lint and TypeScript passed. Continues draft PR1436; no production deployment.
@@ -9351,3 +9359,5 @@ RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real
 ## TRANSFER-BROKER-RATIO-1108 — PC-A
 
 The shared supplier-form/purchase room editor now displays a separate transfer broker only after explicit separate-mode selection. Switching combined clears split-only broker/return settings; purchase submission uses the hotel supplier while combined even with a stale hidden broker ID. New room Ratio defaults to2 across initial rows, missing rows and row edits; saved factors remain editable and authoritative.39 focused Web tests pass, including toggle transitions, preserved quotations, exact batch totals and stale-broker inheritance. Scoped lint, full Web types and67-route production build pass. PR1503 requires successful final hosted gates before owner-authorized develop merge. No schema/dependency/API/mail/deployment/data changes.
+
+UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.

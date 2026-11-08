@@ -1,3 +1,4 @@
+import { receiptFileSupported, attachmentMimeType } from '@nora/contracts';
 import type {
   DocumentOptionsResponseV1,
   SalesContractDetail,
@@ -80,14 +81,18 @@ export function validatePaymentEvidenceFile(
       'دسترسی یا اطلاعات پایهٔ بارگذاری رسید مالی در این شعبه موجود نیست.',
     );
   if (
-    !['application/pdf', 'image/jpeg', 'image/png'].includes(file.type) ||
-    !type.allowedMimeTypes.includes(file.type) ||
-    !options.uploadPolicy.allowedMimeTypes.includes(file.type) ||
+    !receiptFileSupported(file.name, file.type) ||
+    !type.allowedMimeTypes.includes(attachmentMimeType(file.name, file.type)) ||
+    !options.uploadPolicy.allowedMimeTypes.includes(
+      attachmentMimeType(file.name, file.type),
+    ) ||
     file.size <= 0 ||
     file.size >
       Math.min(type.maxFileSizeBytes, options.uploadPolicy.maxFileSizeBytes)
   )
-    throw new Error('مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.');
+    throw new Error(
+      'مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.',
+    );
 }
 
 export const paymentDocumentScanLabel = (status: string) =>

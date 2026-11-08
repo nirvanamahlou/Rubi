@@ -1,3 +1,4 @@
+import { attachmentMimeType } from '@nora/contracts';
 import { documentsApi } from '@/modules/documents/api/client';
 
 function mimeType(file: File): string {
@@ -5,7 +6,7 @@ function mimeType(file: File): string {
   if (/\.png$/i.test(file.name)) return 'image/png';
   if (/\.webp$/i.test(file.name)) return 'image/webp';
   if (/\.jpe?g$/i.test(file.name)) return 'image/jpeg';
-  return file.type;
+  return attachmentMimeType(file.name, file.type);
 }
 
 export async function uploadWorkbenchAttachments(input: {

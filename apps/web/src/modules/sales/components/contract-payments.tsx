@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT, receiptFileSupported } from '@nora/contracts';
 import {
   paymentReceiptsApi,
   type PaymentReceiptEntry,
@@ -822,24 +823,20 @@ export function ContractPayments({
                   <FormField label="انتخاب فایل مدرک پرداخت">
                     <Input
                       type="file"
-                      accept="application/pdf,image/jpeg,image/png"
+                      accept={RECEIPT_FILE_ACCEPT}
                       aria-label="انتخاب فایل مدرک پرداخت"
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
                         if (
                           file &&
-                          (![
-                            'application/pdf',
-                            'image/jpeg',
-                            'image/png',
-                          ].includes(file.type) ||
+                          (!receiptFileSupported(file.name, file.type) ||
                             file.size <= 0 ||
                             file.size > 25 * 1024 * 1024)
                         ) {
                           event.target.value = '';
                           setReceiptFile(null);
                           setError(
-                            'مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.',
+                            'مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.',
                           );
                         } else {
                           setReceiptFile(file);
