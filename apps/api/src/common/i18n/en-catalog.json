@@ -1,4 +1,8 @@
 {
+  "تعداد تنظیمات جریمه بیش از حد مجاز است.": "Too many penalty settings.",
+  "مبلغ جریمه باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty must be a nonnegative whole amount in Toman.",
+  "وضعیت خطای دستگاه معتبر نیست.": "Invalid device error status.",
+  "وضعیت معافیت معتبر نیست.": "Invalid exemption status.",
   "کد تفصیلی حسابداری": "Accounting detail code",
   "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",

@@ -113,6 +113,8 @@ export interface HrWorkflowData {
   lastOut?: string | null;
   deficitMinutes?: number | null;
   workedMinutes?: number;
+  attendanceDeviceError?: boolean;
+  dailyPenaltyToman?: string | null;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
   overtimeMinutes?: number | null;
