@@ -19,7 +19,7 @@ import { PassengerCorrectionModule } from './corrections/passenger-correction.mo
 import { SalesProfitService } from './sales-profit.service';
 import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SalesReferencesController } from './sales-references.controller';
 import { MasterDataModule } from '../master-data/master-data.module';
 
@@ -56,7 +56,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     LegalEntitiesModule,
     CustomersModule,
     TicketRuntimeModule,
-    ReservationsRuntimeModule,
+    forwardRef(() => ReservationsRuntimeModule),
   ],
   controllers: [
     SalesInsuranceDocumentsController,

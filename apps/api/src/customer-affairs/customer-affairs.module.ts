@@ -14,7 +14,7 @@ import { TasksModule } from '../tasks/tasks.module';
 import { CallCenterWorkflowService } from './call-center-workflow.service';
 import { CallCenterWorkflowController } from './call-center-workflow.controller';
 import { CallCenterDashboardSource } from './call-center-dashboard.public';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CallCenterController } from './call-center.controller';
 import { CallCenterService } from './call-center.service';
 import { CallCenterCrypto } from './call-center.crypto';
@@ -60,7 +60,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     HrDirectoryModule,
     DocumentsModule,
     SalesModule,
-    ReservationsRuntimeModule,
+    forwardRef(() => ReservationsRuntimeModule),
     NotificationsModule,
     MarketingModule,
     SettingsModule,
