@@ -1,5 +1,7 @@
 import type { ReportingGrain } from './reporting.contracts';
 import { OPERATIONAL_REPORTS } from './reporting-native-operational';
+import { NATIVE_SALES_REPORTS } from './reporting-native-sales';
+import { REPORT_READINESS, type ReportReadiness } from './reporting-readiness';
 
 export interface ReportingCatalogEntryV1 {
   code: string;
@@ -10,6 +12,7 @@ export interface ReportingCatalogEntryV1 {
   approvedView: string;
   outputs: readonly ['XLSX', 'PDF', 'CSV', 'API'];
   version: number;
+  readiness?: ReportReadiness;
 }
 
 function pending(
@@ -26,7 +29,7 @@ function pending(
     permission,
     approvedView,
     outputs: ['XLSX', 'PDF', 'CSV', 'API'],
-    producerStatus: 'PENDING_CONNECTION',
+    producerStatus: 'PENDING_CONNECTION' as const,
     version: 1,
   };
 }
@@ -46,7 +49,7 @@ function readyPublicProjection(
     permission,
     approvedView: publicProjection,
     outputs: ['XLSX', 'PDF', 'CSV', 'API'],
-    producerStatus: 'READY',
+    producerStatus: 'READY' as const,
     version,
   };
 }
@@ -203,6 +206,10 @@ const baseCatalog: readonly ReportingCatalogEntryV1[] = [
 ];
 
 const operationalTitles: Readonly<Record<string, string>> = {
+  customer_service_sla:
+    'مهلت پاسخ و رسیدگی درخواست‌ها در هر واحد چگونه رعایت شده است؟',
+  workbench_due_actions: 'کدام پیگیری‌های شخصی تقویم من از موعد گذشته‌اند؟',
+  hr_record_expiry: 'کدام سوابق کارکنان تاریخ انقضای گذشته یا نزدیک دارند؟',
   cancellations_refunds:
     'قراردادهای ایجادشده که اکنون باطل‌اند چه تعداد و چه مبلغی دارند؟',
   purchase_by_supplier: 'مبلغ خرید ثبت‌شده خدمات نزد هر تأمین‌کننده چقدر است؟',
@@ -334,24 +341,51 @@ const additionalCatalog = [
 export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
   ...baseCatalog,
   ...additionalCatalog,
-].map((entry) => {
-  const source = Object.hasOwn(OPERATIONAL_REPORTS, entry.code)
-    ? OPERATIONAL_REPORTS[entry.code]
-    : undefined;
-  if (source)
-    return {
-      ...entry,
-      title: operationalTitles[entry.code] ?? entry.title,
-      producerStatus: 'READY',
-      approvedView: source.projection,
-      grain: source.grain,
-    };
-  // A demo/staging table is never an operational producer.
-  if (entry.approvedView === 'reporting.travel.facts.v1')
-    return {
-      ...entry,
-      producerStatus: 'PENDING_CONNECTION',
-      approvedView: `reporting_${entry.code}_facts_v1`,
-    };
-  return entry;
-});
+]
+  .map((entry) => {
+    if (NATIVE_SALES_REPORTS.has(entry.code))
+      return {
+        ...entry,
+        producerStatus: 'READY' as const,
+        approvedView: 'sales.reporting.contract-currency.v1',
+        grain: 'CONTRACT' as const,
+        version: entry.code === 'sales_by_organization' ? 4 : 2,
+        ...(entry.code === 'agency_performance'
+          ? {
+              title: 'کدام مشتریان سازمانی بیشترین فروش قرارداد را داشته‌اند؟',
+              permission: 'reporting.customers.read',
+            }
+          : {}),
+        ...(entry.code === 'future_travel_commitments'
+          ? {
+              title: 'قراردادهای سفر آینده چه مبلغ فروشی دارند؟',
+              permission: 'reporting.sales.read',
+            }
+          : {}),
+      };
+    const source = Object.hasOwn(OPERATIONAL_REPORTS, entry.code)
+      ? OPERATIONAL_REPORTS[entry.code]
+      : undefined;
+    if (source)
+      return {
+        ...entry,
+        title: operationalTitles[entry.code] ?? entry.title,
+        producerStatus: 'READY' as const,
+        approvedView: source.projection,
+        grain: source.grain,
+      };
+    // A demo/staging table is never an operational producer.
+    if (entry.approvedView === 'reporting.travel.facts.v1')
+      return {
+        ...entry,
+        producerStatus: 'PENDING_CONNECTION' as const,
+        approvedView: `reporting_${entry.code}_facts_v1`,
+      };
+    return entry;
+  })
+  .map((entry) =>
+    entry.producerStatus === 'PENDING_CONNECTION' &&
+    REPORT_READINESS[entry.code]
+      ? { ...entry, readiness: REPORT_READINESS[entry.code]! }
+      : entry,
+  );

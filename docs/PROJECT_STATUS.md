@@ -4,6 +4,13 @@ Reopening penalty settings resolves the saved record for the selected branch/org
 
 ## HR fast attendance sync — 2026-11-08
 
+## REPORT-READINESS-1108 — PC-C — integration follow-up
+
+2026-11-08 PC-C REPORT-READINESS-1108: read-only production inventory completed; activate organizational Sales, future departures, real ticket SLA and own overdue calendar. HR expiry API uses explicit dates with an empty-data warning; existing HR-only catalog exclusion retained. All 16 blocked sources expose business reasons and required inputs before Run in the result panel. Readiness endpoint does not grant business-data execution. Details: docs/tasks/REPORT-SOURCE-READINESS-1108.md. No DB/schema/migration/seed/FX/deploy.
+
+REPORT-READINESS-1108: 124 targeted API and 24 Web tests pass; read-only live-source/XLSX validation passes for organization sales, future travel and SLA. Local full typecheck is blocked by stale shared generated contracts/Prisma artifacts; clean CI is required. Production unchanged.
+
+
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
 
@@ -9266,6 +9273,7 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
   skip; scoped lint, Web TypeScript and the 67-route production build pass.
 
 2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.
+
 
 ATTENDANCE-ACTIVATION-1108 PC-B IN_PROGRESS: reversible attendance exclusion; preserves device punches.
 ## 2026-11-08 — PC-D — Detail type form visibility and reference layout

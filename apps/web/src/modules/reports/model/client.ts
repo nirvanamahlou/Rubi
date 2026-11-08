@@ -228,6 +228,13 @@ export function reportSortApiColumn(column = 'amount') {
 }
 
 export const reportingApi = {
+  readiness(code: string) {
+    return request<{
+      readiness?: { reason: string; requirements: readonly string[] };
+    }>(`/${encodeURIComponent(code)}/readiness`, { method: 'GET' }).then(
+      (result) => result.readiness ?? null,
+    );
+  },
   salesByOrganization(input: SalesByOrganizationPreviewInput = {}) {
     const filters = {
       ...reportDateRangeUtc(input.fromDate, input.toDate),
