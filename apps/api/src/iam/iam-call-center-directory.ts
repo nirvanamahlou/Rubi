@@ -25,6 +25,41 @@ import {
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
 export class IamCallCenterDirectory {
+  /** Current native HR managers may read their own unit's calls, not other units. */
+  async managedReadUsers(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<string[]> {
+    if (
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes('customer_affairs.call_center.read') ||
+      !canViewRoute(actor.permissions, '/customer-affairs/call-center')
+    )
+      return [];
+    const client = tx ?? this.database.client;
+    const team = await this.personnel.callCenterRequestTeam(
+      branchId,
+      actor.userId,
+      tx,
+    );
+    if (!team?.length) return [];
+    const users = await client.user.findMany({
+      where: {
+        id: { in: team },
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    });
+    // The manager must survive the same active/internal/branch intersection.
+    // This also avoids a redundant account query for every ordinary employee read.
+    return users.some((user) => user.id === actor.userId)
+      ? users.map((user) => user.id)
+      : [];
+  }
   private async eligibleExtraAssignees(
     actor: AuthenticatedActor,
     branchId: string,
