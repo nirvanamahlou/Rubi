@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { DashboardSourceQuery } from '../common/dashboard-source';
 import { readTicketDashboard } from '../ticket-catalog/ticket-dashboard.public';
@@ -222,6 +223,7 @@ describe('audited native Dashboard activation', () => {
         expertActivity: {
           rows: [
             {
+              id: 'expert',
               name: 'Expert',
               total: 3,
               inboundAnswered: 1,
@@ -252,6 +254,11 @@ describe('audited native Dashboard activation', () => {
     expect(await source.read(query)).toMatchObject({
       state: 'unsupported',
       reason: 'MANUAL_CALL_ATTRIBUTION_REQUIRED',
+      metrics: {},
+    });
+    report.mockRejectedValue(new ForbiddenException('scope denied'));
+    expect(await source.read(query)).toMatchObject({
+      state: 'forbidden',
       metrics: {},
     });
     report.mockRejectedValue(new Error('scope denied'));
