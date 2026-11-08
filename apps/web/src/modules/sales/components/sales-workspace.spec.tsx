@@ -118,10 +118,9 @@ describe('sales dashboard loading', () => {
       expect.objectContaining({ travelFrom: '2026-10-01', pageSize: 10_000 }),
     );
   });
-  it('renders only the outbound route for a round trip with the original contract date', () => {
+  it('renders the canonical outbound route once with the original contract date', () => {
     const createdAt = '2026-09-01T12:00:00.000Z';
     const contract = {
-      tripType: 'ROUND_TRIP',
       customerPhone: '09900000001',
       originName: 'تهران',
       destinationName: 'آنتالیا',
