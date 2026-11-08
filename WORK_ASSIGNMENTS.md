@@ -1,8 +1,24 @@
 ## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
 
+## REPORT-READINESS-1108 — PC-C — integration follow-up
+
+REPORT-READINESS-1108 | PC-C | codex/pc-c-report-readiness-1108 | read-only production schema/data inventory, owning reporting projections, readiness API/UI and tests | IN_PROGRESS | user authorizes existing report activation and blocked-reason panel; no data mutation/migration/deploy
+
+REPORT-READINESS-1108 scope: optional readiness metadata and authenticated no-store endpoint; owning Sales/CustomerAffairs/Workbench/HR readers only. Source-scoped native permissions retained; no migration/dependency lock. I18n catalogues regenerated with existing script; HR-only general-catalog exclusion preserved.
+
+REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization identity lookup by Sales customerId; no cross-module table access in Reporting.
+
+REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.
+
+REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
+
+REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
+
 Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.
 
 Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped ESLint and all 31 existing workspace tests pass. No merge or deployment yet; source scope freezes on publication.
+
+> > > > > > > origin/develop
 
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
@@ -11536,6 +11552,34 @@ COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-range-hover-1107` from latest `or
 
 CALENDAR-DAY-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve workbench calendar, note editor and request initial date wiring; existing APIs only, no migration/dependency changes.
 
+## TRANSFER-SEPARATE-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-transfer-separate-default-1108` from
+`origin/develop@a4e85b83f`. Owner requests hotel and transfer to share one broker
+and one supplier form by default, removes the explicit «کارگزار ترانسفر جدا از
+هتل» checkbox, and authorizes develop merge. Reserve the bounded Reservations
+hotel quotation editor, focused
+hotel-stay regressions and own status notes. New forms keep one hotel/transfer
+broker until the transfer broker is explicitly changed; saved modes remain readable
+and are not rewritten. Keep editable transfer broker, round-trip pricing and optional
+outbound/return split. No API/schema/migration/dependency/runtime or operational
+data change. Final-head checks gate merge; source freezes on publication and
+releases on verified merge.
+
+Delivered the combined default without the checkbox. The transfer lookup initially
+shows the hotel broker; selecting a genuinely different transfer broker records
+separate output automatically, and selecting the hotel broker retains combined
+output. Existing explicit saved modes remain unchanged. Focused 26 tests and the
+complete Reservations Web suite (664 passed, 4 existing skips), scoped ESLint,
+Web TypeScript and the production Web build (67 static pages/routes generated)
+pass. No data, API, schema, migration, dependency or runtime change.
+
+## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
+
+INTEGRATE-TRANSFER-DEFAULT-1108 bounded correctness extension: reproduced two failures when explicitly selecting the hotel broker or clearing a transfer broker after split mode; API rejects hotelTransferSplit=true with hotelTransferSeparate=false. Reserve minimal handler cleanup and two focused interaction regressions on the integration branch only. Preserve initial saved modes and original peer branch; no API/schema/dependency changes.
+
 ## RESERVATION-CONTRACT-VALUES-1107 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-contract-values-1107 from origin/develop cbc8d334b. Owner authorizes reservation form date/transfer/quotation/total repair and develop merge. Reserve reservation form and voucher defaults/projection, supplier price model/renderers and focused regressions, own notes. Prior same-owner reservation scopes frozen/merged. Preserve contract sales prices, explicit saved overrides, sent revisions, branch authorization and exact currency arithmetic. No schema/migration/dependency/deployment changes. Hosted final-head checks required before merge.
@@ -11568,15 +11612,6 @@ VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full W
 
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
 
-REPORT-READINESS-1108 | PC-C | codex/pc-c-report-readiness-1108 | read-only production schema/data inventory, owning reporting projections, readiness API/UI and tests | IN_PROGRESS | user authorizes existing report activation and blocked-reason panel; no data mutation/migration/deploy
-REPORT-READINESS-1108 scope: optional readiness metadata and authenticated no-store endpoint; owning Sales/CustomerAffairs/Workbench/HR readers only. Source-scoped native permissions retained; no migration/dependency lock. I18n catalogues regenerated with existing script; HR-only general-catalog exclusion preserved.
-
-REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization identity lookup by Sales customerId; no cross-module table access in Reporting.
-
-REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.
-
-REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
-
 ## DETAIL-TYPE-LAYOUT-1108 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D; branch codex/pc-d-detail-type-layout-1108, created from PC-D-Integration and fast-forwarded to current develop for the already-merged detail editor. Owner explicitly delegated detail accounts/types to PC-D and PC-B in this chat. Reserve accounting-workspace.tsx, accounting-detail-editor.tsx/module.css, bounded nullable unsaved-note context in accounting-setup-notes.tsx and focused route/render regression tests, own task/status notes. Restore the requested type form even when no authorized ledger exists and match the supplied two-column Rahkaran reference. Preserve book-scoped FK/authorization, existing persistence and required title/length (1–20). No automatic ledger creation, schema/migration/dependency changes or operational data writes. Publish task branch under standing commit/push authorization; integration follows explicit destination authorization.
@@ -11596,8 +11631,6 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
-
-REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
 
 ## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
 
