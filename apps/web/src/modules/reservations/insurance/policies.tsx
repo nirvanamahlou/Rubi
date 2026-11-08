@@ -54,6 +54,11 @@ export function InsurancePolicies({
   const [query, setQuery] = useState(emptyFilter);
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setRevision((value) => value + 1);
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, []);
   const [result, setResult] = useState<InsuranceListResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);

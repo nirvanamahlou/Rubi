@@ -1,8 +1,10 @@
-## INSURANCE-CORRECTION-1108 — PC-A — AWAITING OWNER COORDINATION
+## INSURANCE-CORRECTION-1108 — PC-A — INTEGRATED / FINAL CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correction-1108 from origin/develop53cc0a538. Reserve insurance policies/documents correction entry points, shared correction dialog and requirements guidance, focused tests, bounded English keys and own task/status notes. Automatic identity corrections use existing authorized Customers public UI; manual draft correction retains current API. Preserve provider fingerprint/idempotency, issued-policy guards and sandbox restriction. Prior insurance selection source merged in PR1500. No schema/dependency or provider/runtime writes. User explicitly authorizes develop merge after final-head checks.
 
 Final fetch discovered concurrent PR1507 (codex/insurance-amend-1108), which changes the same policies editor plus identity/issuance API. Per repository overlap rule, stop source integration until its owner releases/coordinates scope. Local candidate preserved; 56 focused Web/customer regressions passed. No PR/develop merge or deployment performed by this task.
+
+Owner explicitly authorized coordination, preservation of both branches and green final-head develop merge. Coordination posted on PR1507. Integrated origin/develop and PR1507 at9ba91b1e4 preserving its direct passenger fields, versioned API correction and retry logic; document-summary correction dialog/requirements and exact-customer link remain. Policy list focus refresh retained. Original standalone Web lint/typecheck and full67-route production build passed; integrated tests/build and full hosted gates required before merge. No provider/runtime calls or deployment.
 
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 

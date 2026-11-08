@@ -1,5 +1,7 @@
 # Insurance correction — 2026-11-08
 
+Integration update: user explicitly authorized coordinating with PR1507 and preserving both implementations. PR1507 source9ba91b1e4 is merged into this candidate. Its direct passenger editor and API/version/retry/fingerprint protections replace the policy-management deep-link approach; the document summary retains the shared correction dialog, detailed requirements and exact-customer record link. Policy list refresh on focus is preserved. Standalone Web typecheck/lint and full67-route production build passed. Integrated tests/build and final hosted gates precede develop merge; no deployment.
+
 PC-A; codex/pc-a-insurance-correction-1108; base develop53cc0a538.
 
 The Reservations insurance document summary and policy management table now offer correction for DRAFT, INPUT_ERROR and PROVIDER_ERROR requests. The existing policy-management permission guard is retained. Automatic policies open a shared correction dialog with required-data guidance and the existing Customers deep link for precisely that customerId, in a separate tab. Customers retains its own read/edit authorization and audited persistence. Manual policies retain the existing versioned draft editor and now include the same guide. Issued/cancelled policies are never locally amended.
