@@ -115,12 +115,14 @@ it('charges a combined round-trip fare once per passenger and rejects unequal le
 });
 
 it('bounds each transfer leg by booked paying guests, excluding infants and the 2–6 band', () => {
-  const source = structuredClone(
-    snapshot,
-  ) as unknown as SalesReservationRequestV1;
+  const source = {
+    ...snapshot,
+    hotelSelection: { ...snapshot.hotelSelection },
+  } as unknown as SalesReservationRequestV1;
   source.hotelSelection!.rooms = [
     {
       ordinal: 1,
+      roomTypeId: 'family-room',
       roomTypeNameSnapshot: 'Family',
       adults: 2,
       childAges: [1, 2, 5, 6, 11],

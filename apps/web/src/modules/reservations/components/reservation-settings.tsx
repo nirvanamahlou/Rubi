@@ -365,10 +365,11 @@ export function ReservationSettingsForm({
   async function save(sendToBroker = showDocument, pricesOnly = false) {
     if (busy || intake.workflow.supplierStatus === 'CANCELLED') return;
     try {
-      assertReservationTransferCounts(
-        draft.hotelTransferCounts,
-        reservationTransferPassengerLimit(intake.snapshot),
-      );
+      if (draft.hotelTransferCounts)
+        assertReservationTransferCounts(
+          draft.hotelTransferCounts,
+          reservationTransferPassengerLimit(intake.snapshot),
+        );
     } catch (error) {
       setError(error instanceof Error ? error.message : 'عملیات نامعتبر');
       return;
