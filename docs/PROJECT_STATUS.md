@@ -9357,3 +9357,5 @@ RESERVATION-BROKER-EMAIL-CI-1108: owner approved task-branch-only synchronizatio
 RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real PDF smoke pass. Task branch synchronized with develop; no PR merge conflicts. Two ledger formatting separators corrected after hosted quality feedback. Final-head hosted checks pending. Real email remains disabled; no deployment or merge to develop.
 
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
+
+PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing dialog to the viewport. Opt-in compact table reduces field widths/spacing, keeps sticky headings and highlights the focused row. Identity authorization and save paths unchanged; no migration or deployment. Local checks and final hosted CI required before authorized develop merge.
