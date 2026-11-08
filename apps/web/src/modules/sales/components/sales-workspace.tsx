@@ -75,7 +75,9 @@ export function ContractListContactRouteDate({
         <bdi dir="ltr">{contract.customerPhone || '—'}</bdi>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        <bdi>{contract.destinationName || '—'}</bdi>
+        <bdi dir="rtl">
+          {contract.originName || '—'} ← {contract.destinationName || '—'}
+        </bdi>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         {new Date(contract.createdAt).toLocaleDateString('fa-IR', {
@@ -509,7 +511,7 @@ export function SalesWorkspace() {
                     'مشتری',
                     'فروشنده',
                     'شماره تلفن مشتری',
-                    'مقصد',
+                    'مسیر',
                     'تاریخ بستن قرارداد',
                     'تاریخ رفت',
                     'تاریخ برگشت',
