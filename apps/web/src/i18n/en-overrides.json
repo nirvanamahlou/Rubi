@@ -5574,5 +5574,15 @@
   "پیامی با این عبارت پیدا نشد.": "No messages match this search.",
   "نتایج قدیمی‌تر": "Older results",
   "ترانسفر این هتل": "Hotel transfer",
-  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel"
+  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel",
+  "این نمودار فقط دریافت‌های تأییدشده مالی و استردادهای اجراشده را نشان می‌دهد؛ سایر پرداخت‌ها، انتقالات داخلی و مانده حساب در آن محاسبه نمی‌شوند.": "This chart shows confirmed receipts and executed refunds only; other payments, internal transfers, and account balances are excluded.",
+  "ارزیابی کمپین به هزینهٔ واقعی ثبت‌شده و روش مصوب نسبت‌دادن فروش به کمپین نیاز دارد.": "Campaign evaluation requires recorded actual costs and an approved sales attribution method.",
+  "دریافت‌های تأییدشده و استردادهای اجراشده به تفکیک ارز و زمان؛ سایر پرداخت‌ها و مانده حساب در این نمودار نیستند.": "Confirmed receipts and executed refunds by currency and time; other payments and account balances are outside this chart.",
+  "سود تنها با هزینهٔ تأییدشده و مرتبط با همان فروش قابل محاسبه است؛ نبود هزینه به معنی صفر بودن آن نیست.": "Profit requires approved costs matched to the same sale; missing cost does not mean zero cost.",
+  "گردش نمایش‌داده‌شده فقط شامل دریافت تأییدشده و استرداد اجراشده است؛ برای مانده و گردش کامل، اسناد قطعی حسابداری و سایر پرداخت‌ها لازم‌اند.": "Displayed flows include confirmed receipts and executed refunds only. Complete flows and balances require posted accounting entries and other payments.",
+  "محاسبهٔ ریسک اعتباری به سقف اعتبار مصوب، بدهی‌های مشمول و قاعدهٔ توقف یا هشدار فروش نیاز دارد.": "Credit risk requires an approved credit limit, included liabilities, and a sales blocking or warning policy.",
+  "محاسبهٔ زمان مجاز رسیدگی به ساعات کاری، تعطیلات، مهلت پاسخ و قاعدهٔ ارجاع درخواست عقب‌افتاده نیاز دارد.": "Service deadlines require working hours, holidays, response targets, and an overdue escalation policy.",
+  "مهلت ثبت ساعتی (روز قبل)": "Hourly leave notice (days before)",
+  "فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.": "Only the fund custodian or purchasing manager may register an expense.",
+  "مهلت ثبت": "Submission deadline"
 }

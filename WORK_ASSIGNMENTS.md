@@ -11539,3 +11539,11 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from la
 RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
+
+## DASHBOARD-DECISION-AUDIT-1108 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-decision-audit-1108 from origin/develop. Owner authorizes read-only server/source reconciliation of Dashboard charts, obsolete decision-tag removal and supported source completion. Reserve Dashboard visual card/details, availability/lineage/registry, native Reporting Dashboard trend mapping/tests and bounded task/status notes. Prior complete-sources committed branch is an ancestor of develop; its uncommitted reporting.contracts.ts is excluded. No schema/dependency/operational data or permission changes. Server inspection is counts/metadata only.
+
+DASHBOARD-DECISION-AUDIT-1108 bounded translation reservation: seven new Dashboard strings in en-overrides.json and their offline generated API/standalone English catalogue entries only; preserve all peer entries. No runtime policy changes.
+
+DASHBOARD-DECISION-AUDIT-1108: 93 registry chart slots audited against native dispatcher; Treasury receipt/refund source added and reconciled in a production READ ONLY transaction. Accepted 001/004 chart metadata removed; raw decision badges replaced by Persian details, available even without chart data. Credit/SLA/marketing policies remain business decisions. No production writes or rollout. Translation scope includes three preserved legacy catalogue entries to avoid regeneration loss.

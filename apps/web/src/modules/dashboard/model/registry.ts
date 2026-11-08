@@ -2008,12 +2008,11 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
       visual(
         'treasury-flow',
         'گردش خزانه',
-        'نمایش currency و as-of برای هر series.',
+        'دریافت‌های تأییدشده و استردادهای اجراشده به تفکیک ارز و زمان؛ سایر پرداخت‌ها و مانده حساب در این نمودار نیستند.',
         'line',
-        [payment, journalBalance],
+        ['sales.dashboard.confirmed-payments.v1'],
         'reports.dashboard.finance.read',
         '/reports',
-        'DEC-OPEN-001 / DEC-OPEN-004',
       ),
       visual(
         'due-checks-queue',
@@ -2041,7 +2040,6 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
         [serviceItem, journalBalance],
         'reports.dashboard.finance.read',
         '/reports?report=account_balances',
-        'DEC-OPEN-004',
       ),
       visual(
         'gross-profit-by-service',
@@ -2051,7 +2049,6 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
         [travelFacts],
         'reports.dashboard.profit.read',
         '/reports?report=contract_service_profit',
-        'DEC-OPEN-004',
       ),
       visual(
         'expense-structure',

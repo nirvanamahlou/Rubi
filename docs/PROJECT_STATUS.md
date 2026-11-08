@@ -9251,3 +9251,9 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
   dates now share the row label's 13pt/700 inherited-color typography.
 - Layout tests 9/9 and related consumers 43/43 pass with one existing optional
   skip; scoped lint, Web TypeScript and the 67-route production build pass.
+
+## DASHBOARD-DECISION-AUDIT-1108 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-decision-audit-1108 from origin/develop. Owner authorizes read-only server/source reconciliation of Dashboard charts, obsolete decision-tag removal and supported source completion. Reserve Dashboard visual card/details, availability/lineage/registry, native Reporting Dashboard trend mapping/tests and bounded task/status notes. Prior complete-sources committed branch is an ancestor of develop; its uncommitted reporting.contracts.ts is excluded. No schema/dependency/operational data or permission changes. Server inspection is counts/metadata only.
+
+DASHBOARD-DECISION-AUDIT-1108: 93 registry chart slots audited against native dispatcher; Treasury receipt/refund source added and reconciled in a production READ ONLY transaction. Accepted 001/004 chart metadata removed; raw decision badges replaced by Persian details, available even without chart data. Credit/SLA/marketing policies remain business decisions. No production writes or rollout. Translation scope includes three preserved legacy catalogue entries to avoid regeneration loss.

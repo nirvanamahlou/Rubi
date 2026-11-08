@@ -898,3 +898,48 @@ describe('additional native dashboard trends', () => {
     );
   });
 });
+
+describe('treasury receipt and refund coverage', () => {
+  it('keeps confirmed receipts and executed refunds separate and discloses incomplete treasury coverage', async () => {
+    const source: DashboardSourceResult = {
+      source: 'fixture',
+      state: 'ready',
+      metrics: {
+        collected: {
+          kind: 'money',
+          aggregation: 'confirmed',
+          observations: [
+            { at: new Date('2026-10-15'), value: '40', currencyCode: 'USD' },
+          ],
+        },
+        refunded: {
+          kind: 'money',
+          aggregation: 'executed',
+          observations: [
+            { at: new Date('2026-10-16'), value: '5', currencyCode: 'USD' },
+          ],
+        },
+      },
+    };
+    const result = await setup(source).native.load(
+      { visualIds: 'treasury-flow' },
+      actor,
+      filters,
+      new Date('2026-10-31'),
+    );
+    const chart = result.visuals['treasury-flow']!;
+    expect(
+      chart.currencySeries?.[0]?.series?.map((s) =>
+        s.values.reduce((a, b) => a + b, 0),
+      ),
+    ).toEqual([40, 5]);
+    expect(chart.notice).toContain('سایر پرداخت‌ها');
+    const denied = await setup(absent(), absent(), absent()).native.load(
+      { visualIds: 'treasury-flow' },
+      actor,
+      filters,
+      new Date('2026-10-31'),
+    );
+    expect(denied.visuals['treasury-flow']).toBeUndefined();
+  });
+});

@@ -1,4 +1,21 @@
 /** Business explanations for missing measurements. Never substitutes a zero. */
+export function dashboardVisualLimitation(
+  id: string,
+  decision?: string,
+): string | null {
+  if (id === 'treasury-flow')
+    return 'گردش نمایش‌داده‌شده فقط شامل دریافت تأییدشده و استرداد اجراشده است؛ برای مانده و گردش کامل، اسناد قطعی حسابداری و سایر پرداخت‌ها لازم‌اند.';
+  if (id === 'finance-profit-trend' || id === 'gross-profit-by-service')
+    return 'سود تنها با هزینهٔ تأییدشده و مرتبط با همان فروش قابل محاسبه است؛ نبود هزینه به معنی صفر بودن آن نیست.';
+  if (decision?.includes('DEC-OPEN-008'))
+    return 'محاسبهٔ ریسک اعتباری به سقف اعتبار مصوب، بدهی‌های مشمول و قاعدهٔ توقف یا هشدار فروش نیاز دارد.';
+  if (decision?.includes('DEC-OPEN-009'))
+    return 'محاسبهٔ زمان مجاز رسیدگی به ساعات کاری، تعطیلات، مهلت پاسخ و قاعدهٔ ارجاع درخواست عقب‌افتاده نیاز دارد.';
+  if (decision?.includes('DEC-OPEN-012'))
+    return 'ارزیابی کمپین به هزینهٔ واقعی ثبت‌شده و روش مصوب نسبت‌دادن فروش به کمپین نیاز دارد.';
+  return null;
+}
+
 export function dashboardUnavailableReason(reason?: string): string {
   switch (reason) {
     case 'APPROVED_MATCHED_COST_REQUIRED':

@@ -39,6 +39,7 @@ const sum = (rows: readonly DashboardObservation[]) =>
   rows.reduce((value, row) => value.plus(row.value), new Prisma.Decimal(0));
 // Metric series inside a currency must never be confused with currency series.
 const trendVisuals: Readonly<Record<string, readonly string[]>> = {
+  'treasury-flow': ['collected', 'refunded'],
   'revenue-collections': ['net-sales'], // legacy client identifier
   'executive-trend': ['net-sales', 'collected', 'gross-profit'],
   'sales-collection-trend': ['net-sales', 'collected', 'refunded'],
@@ -536,6 +537,11 @@ export class ReportingNativeDashboard {
       });
       const series = seriesFor();
       const notices = [
+        ...(id === 'treasury-flow'
+          ? [
+              'این نمودار فقط دریافت‌های تأییدشده مالی و استردادهای اجراشده را نشان می‌دهد؛ سایر پرداخت‌ها، انتقالات داخلی و مانده حساب در آن محاسبه نمی‌شوند.',
+            ]
+          : []),
         ...(missing.length
           ? [
               `سری‌های فاقد منبع معتبر یا دسترسی: ${missing.map((metric) => metricLabels[metric] ?? metric).join('، ')}؛ این سری‌ها صفر فرض نشده‌اند.`,

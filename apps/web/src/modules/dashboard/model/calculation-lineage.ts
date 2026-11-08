@@ -53,6 +53,7 @@ const metrics: Readonly<Record<string, readonly Feature[]>> = {
   'lead-growth-rate': ['leads', 'buyers', 'receipts'],
 };
 const visualMetrics: Readonly<Record<string, readonly string[]>> = {
+  'treasury-flow': ['collected', 'refunded'],
   'revenue-collections': ['net-sales'],
   'executive-trend': ['net-sales', 'collected'],
   'sales-collection-trend': ['net-sales', 'collected', 'refunded'],
