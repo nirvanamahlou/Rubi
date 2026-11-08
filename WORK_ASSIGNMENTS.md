@@ -90,6 +90,14 @@ AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to 
 
 COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.
 
+## DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — PC-C — READY_FOR_CI
+
+COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-chart-labels-1107` from latest `origin/develop`. Remove only the blue chart-kind badge shared by Dashboard visual cards so every chart is cleaner. Keep chart-kind wording in accessible figure names, captions and explanatory details, and retain amber DEC-OPEN decision badges. Reserve only the shared card presentation and its Dashboard source regression plus bounded task/status notes. No calculation, data, API, permission, dependency, deployment or other badge changes.
+
+اعتبارسنجی DASHBOARD-REMOVE-CHART-KIND-TAGS-1107: آزمون داشبورد ۱۹ پاس و ۱ مورد از قبل skip؛ ESLint محدود، build قراردادها، typecheck وب، build تولیدی وب (۶۷ مسیر) و diff check موفق. نوع نمودار از همه کارت‌ها حذف شد؛ DEC-OPEN حفظ شد. بدون تغییر داده، محاسبات، مجوز، API، وابستگی یا runtime.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
+
 ## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C. Extend own draft PR1436 with owner-requested Persian-only KPI calculation text and short contextual term explanations below KPI/chart rules. Reserve Dashboard registry rule strings, employee rule strings if needed, shared definition renderer, new local calculation glossary and additive English translation keys; preserve prior definitions and all calculations. Latest develop inspected; no competing change to these leaves. No API, schema, dependency or deployment. Same scoped validation as KPI copy.
