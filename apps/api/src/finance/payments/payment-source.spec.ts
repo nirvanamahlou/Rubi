@@ -158,6 +158,8 @@ describe('Finance payment source', () => {
         account: null,
         payingSupplierId: 'supplier',
         payingSupplierName: 'Supplier',
+        exchangeOfficeId: null,
+        exchangeOfficeName: null,
       });
       expect(findFirst).not.toHaveBeenCalled();
       expect(supplier).toHaveBeenCalledWith(supplierId, tx);
@@ -263,4 +265,34 @@ describe('actual purchase-payment cash currency', () => {
       ),
     ).toThrow();
   });
+});
+
+it('limits exchange offices to purchase payments and rejects mixed payment sources', async () => {
+  const { tx, directory } = setup();
+  const exchangeOfficeId = '50000000-0000-4000-8000-000000000002';
+  for (const policy of ['ACCOUNT_ONLY', 'SUPPLIER_FOR_FOREIGN'] as const)
+    await expect(
+      paymentSource(
+        tx,
+        directory,
+        { exchangeOfficeId },
+        'USD',
+        'branch',
+        policy,
+      ),
+    ).rejects.toThrow();
+  for (const other of [
+    { accountId: 'account' },
+    { payingSupplierId: supplierId },
+  ])
+    await expect(
+      paymentSource(
+        tx,
+        directory,
+        { exchangeOfficeId, ...other },
+        'USD',
+        'branch',
+        'ACCOUNT_OR_SUPPLIER',
+      ),
+    ).rejects.toThrow();
 });

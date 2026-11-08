@@ -65,6 +65,22 @@ export class MasterProcurementDirectory {
       take: 100,
     });
   }
+  exchangeCountries() {
+    return this.database.client.masterCountry.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+    });
+  }
+  async assertExchangeCountry(id: string, tx: Prisma.TransactionClient) {
+    if (
+      !(await tx.masterCountry.findFirst({
+        where: { id, isActive: true },
+        select: { id: true },
+      }))
+    )
+      throw new BadRequestException('کشور انتخاب‌شده معتبر نیست.');
+  }
   currencies() {
     return this.database.client.masterCurrency.findMany({
       where: { isActive: true },

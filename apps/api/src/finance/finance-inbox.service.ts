@@ -1,3 +1,4 @@
+import { debitExchange } from './exchange-offices/exchange-payment';
 import { financialDate } from './accounting/accounting.financial-events';
 import {
   recordFinancialEvent,
@@ -1248,7 +1249,9 @@ export class FinanceInboxService {
       input?.version !== 1 ||
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 1 ||
-      (!input.accountId && !input.payingSupplierId) ||
+      (!input.accountId &&
+        !input.payingSupplierId &&
+        !input.exchangeOfficeId) ||
       !input.paymentMethodId ||
       paidAmount.compare(DecimalValue.zero()) <= 0 ||
       exchangeRate.compare(DecimalValue.zero()) <= 0 ||
@@ -1290,15 +1293,20 @@ export class FinanceInboxService {
           current.sourceVersion !== source.sourceVersion
         )
           throw new ConflictException('وضعیت پرداخت هم‌زمان تغییر کرده است.');
-        const { account, payingSupplierId, payingSupplierName } =
-          await paymentSource(
-            tx,
-            this.supplierDirectory,
-            input,
-            source.currencyCode,
-            source.branchId,
-            'ACCOUNT_OR_SUPPLIER',
-          );
+        const {
+          account,
+          payingSupplierId,
+          payingSupplierName,
+          exchangeOfficeId,
+          exchangeOfficeName,
+        } = await paymentSource(
+          tx,
+          this.supplierDirectory,
+          input,
+          source.currencyCode,
+          source.branchId,
+          'ACCOUNT_OR_SUPPLIER',
+        );
         const method = await tx.masterPaymentMethod.findFirst({
           where: {
             id: input.paymentMethodId,
@@ -1330,6 +1338,8 @@ export class FinanceInboxService {
             accountId: account?.id ?? null,
             payingSupplierId,
             payingSupplierName,
+            exchangeOfficeId,
+            exchangeOfficeName,
             paymentCurrencyCode: source.currencyCode,
             paymentMethodId: method.id,
             paidAmount: paidAmount.toString(),
@@ -1342,6 +1352,13 @@ export class FinanceInboxService {
             reason,
             actorUserId: actor.userId,
           },
+        });
+        await debitExchange(tx, {
+          officeId: exchangeOfficeId,
+          currencyCode: source.currencyCode,
+          amount: paidAmount.toString(),
+          actorUserId: actor.userId,
+          invoicePaymentId: row.id,
         });
         await recordFinancialEvent(tx, {
           source: 'INVOICE',
@@ -1359,7 +1376,7 @@ export class FinanceInboxService {
             row.rialEquivalent?.toString(),
           ),
           settlementAccountId: account?.id ?? null,
-          partyId: `${source.supplier.id}:${payingSupplierId ?? ''}`,
+          partyId: `${source.supplier.id}:${exchangeOfficeId ?? payingSupplierId ?? ''}`,
           reference: row.paymentReference,
         });
         const applied = await this.procurement.applyFinanceResult(
@@ -1380,6 +1397,7 @@ export class FinanceInboxService {
         if (applied !== 'applied')
           throw new ConflictException('وضعیت منبع خرید قابل تغییر نیست.');
         return {
+          id: row.id,
           status,
           version: row.version,
           paidAmount: cumulativePaid.toString(),

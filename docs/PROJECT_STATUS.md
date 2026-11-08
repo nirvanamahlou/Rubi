@@ -9377,3 +9377,9 @@ Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, Dashbo
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
 
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.
+
+## EXCHANGE-FUNDS-1108 — 2026-11-08 — PC-B
+
+Added Currency Funds to currency/bank master data: four requested KPIs, search/country/currency/status filters, title-only required exchange-office editor, multiple currency balances, versioned edit and soft delete. Finance inbox replaces the paying-supplier picker with active exchange offices carrying the payment currency. Payments atomically debit that currency; legacy supplier history/API remains compatible. Removed the fixed purchase-rate entry and partial-payment guidance. Optional payment evidence now covers ticket, reservation supplier and procurement invoice payments with independent upload retry.
+
+One additive migration creates office/balance/audit/movement records and nullable real links on the three payment revisions. Disposable PostgreSQL tests verify replay, concurrency, insufficient funds, transaction rollback and immutable audit; targeted payment integration and form tests also pass. No operational database or production runtime was changed. Deployment must apply the migration before serving the new API/Web. Exact-head hosted build and quality gates are required before merge.
