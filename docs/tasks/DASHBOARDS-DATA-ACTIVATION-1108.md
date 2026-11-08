@@ -379,3 +379,5 @@ Validation details: local focused API67, fresh post-integration Reporting/HR40, 
 Integrated base: `0c4cedf6b2aff6ec175afa9d00c4a70dfa935744`. Implementation merge HEAD: `0de7dbbd7e61782ac6a87837f9beba2b503fce2c`; final test/handoff commit is the PR HEAD. Working tree is kept clean after scoped commits; the shared F:/Projects/Rubi workspace is untouched.
 
 Accepted attendance missing normalized work/overtime minutes now withholds the affected aggregate explicitly instead of treating unknown minutes as zero; two regressions and a fresh read-only live probe confirm the boundary.
+
+Latest integration: inherited HR reversible day exclusions through its owner helper; an inactive latest day never revives an older accepted duplicate. All eight hosted gates passed the previous integrated head dfc71dae8a151c58c71abeb4ba0992ec17715007; final merged-head evidence remains tracked in PR1488. Own central-document entries are appended to avoid concurrent header-append conflicts.

@@ -239,6 +239,36 @@ describe('audited native Dashboard activation', () => {
         );
     },
   );
+  it('inherits reversible HR day exclusions without reviving older accepted duplicates', async () => {
+    const day = {
+      id: 'old',
+      branchId: 'branch',
+      employeeId: 'employee',
+      effectiveAt: at,
+      updatedAt: at,
+      status: 'حاضر',
+      data: { workedMinutes: 480, overtimeMinutes: 90 },
+      employee: { unit: 'Unit' },
+    };
+    const result = await readHrDashboard(
+      {
+        hrRecord: {
+          findMany: vi.fn().mockResolvedValue([
+            day,
+            {
+              ...day,
+              id: 'new',
+              updatedAt: new Date(at.getTime() + 1),
+              data: { ...day.data, attendanceActive: false },
+            },
+          ]),
+        },
+      } as never,
+      query,
+    );
+    expect(result.metrics['employee-workdays']?.observations).toEqual([]);
+    expect(result.metrics['employee-overtime']?.observations).toEqual([]);
+  });
   it('excludes internal ticket categories and leaves missing first response unavailable rather than zero minutes', async () => {
     const findMany = vi.fn().mockResolvedValue([
       { createdAt: at, status: 'NEW', firstRespondedAt: null },

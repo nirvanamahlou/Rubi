@@ -1,3 +1,4 @@
+import { inactiveAttendance } from './hr-attendance-activation';
 import { dashboardDimensionKey } from '../common/dashboard-dimensions';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import type {
@@ -83,7 +84,11 @@ export async function readHrDashboard(
     missingOvertime = false;
   for (const r of latest.values()) {
     // A pending review or absence is not confirmed work, even if it carries minute fields.
-    if (!['حاضر', 'تأییدشده', 'تاییدشده'].includes(r.status)) continue;
+    if (
+      inactiveAttendance(r) ||
+      !['حاضر', 'تأییدشده', 'تاییدشده'].includes(r.status)
+    )
+      continue;
     if (!r.data || typeof r.data !== 'object' || Array.isArray(r.data)) {
       missingWork = true;
       missingOvertime = true;

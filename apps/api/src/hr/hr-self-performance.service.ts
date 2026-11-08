@@ -1,3 +1,4 @@
+import { inactiveAttendance } from './hr-attendance-activation';
 import { attendanceFrom } from './hr-attendance-range';
 import { resolveDeviceDirections } from './hr-device-attendance.domain';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
@@ -127,7 +128,7 @@ export class HrSelfPerformanceService {
             .toISOString()
             .slice(0, 10);
     const fromDate = attendanceFrom(requestedFromDate);
-    const monthlyRows = await this.database.client.hrRecord.findMany({
+    const allMonthlyRows = await this.database.client.hrRecord.findMany({
       where: {
         ...scope,
         section: 'time',
@@ -140,7 +141,13 @@ export class HrSelfPerformanceService {
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       take: 1001,
     });
-    if (monthlyRows.length > 1000)
+    const monthlyRows = allMonthlyRows.filter(
+      (row) => !inactiveAttendance(row),
+    );
+    const todayInactive = allMonthlyRows.some(
+      (row) => (row.values as string[])[1] === today && inactiveAttendance(row),
+    );
+    if (allMonthlyRows.length > 1000)
       throw new Error('Monthly attendance limit exceeded');
     // One latest reviewed calculation per day; do not double-count superseded rows.
     const days = new Map<string, Record<string, unknown>>();
@@ -261,9 +268,11 @@ export class HrSelfPerformanceService {
       throw new Error('Daily attendance limit exceeded');
     // An approved correction replaces the day's original punches, as in HR attendance.
     const correction = punches.find((row) => row.parentId != null);
-    const selected = correction
-      ? punches.filter((row) => row.parentId === correction.parentId)
-      : punches;
+    const selected = todayInactive
+      ? []
+      : correction
+        ? punches.filter((row) => row.parentId === correction.parentId)
+        : punches;
     const resolved = resolveDeviceDirections(
       selected.flatMap((row) => {
         const v = row.values as string[];
