@@ -170,7 +170,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           branchId,
           section: 'organization',
           tab: 'units',
-          values: ['فروش'],
+          values: [id === unitId ? 'فروش' : 'مالی'],
           status: 'فعال',
         })),
       });
@@ -321,9 +321,10 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
             personnelCode: randomUUID(),
             name: 'Synthetic employee',
             kind: 'staff',
-            unit: 'فروش',
+            unit:
+              id === other ? 'مالی' : id === noUnit ? 'Unconfigured' : 'فروش',
             position: 'کارشناس',
-            grade: 'test',
+            grade: id === manager ? 'مدیر' : 'کارشناس',
             startedAt: past,
             createdAt: past,
             updatedAt: past,
@@ -694,7 +695,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         }),
       ).toBe(0);
     });
-    it('uses current unit IDs rather than matching titles, does not infer managers and rejects foreign branches', async () => {
+    it('uses live HR unit/grade despite stale IAM profiles and rejects foreign branches', async () => {
       const own = await emit(makeEvent('404')),
         foreign = await emit(makeEvent('301'));
       expect(await visible(manager, own.contactId)).toBe(true);
@@ -710,7 +711,17 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         data: { organizationUnitId: null },
       });
       expect(await visible(manager, managerOwn.contactId)).toBe(true);
+      expect(await visible(manager, own.contactId)).toBe(true);
+      await db.hrEmployee.update({
+        where: { userId: manager },
+        data: { grade: 'کارشناس' },
+      });
       expect(await visible(manager, own.contactId)).toBe(false);
+      expect(await visible(manager, managerOwn.contactId)).toBe(true);
+      await db.hrEmployee.update({
+        where: { userId: manager },
+        data: { grade: 'مدیر', updatedAt: past },
+      });
       await db.iamUserProfile.update({
         where: { userId: manager },
         data: { organizationUnitId: unitId },
@@ -718,16 +729,58 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await expect(
         access.where(actor(expert), foreignBranch),
       ).rejects.toThrow();
-      await db.iamUserProfile.update({
+      await db.hrEmployee.update({
         where: { userId: expert },
-        data: { organizationUnitId: otherUnit },
+        data: { unit: 'مالی' },
       });
       expect(await visible(manager, own.contactId)).toBe(false);
       expect(await visible(expert, own.contactId)).toBe(true);
-      await db.iamUserProfile.update({
+      await db.hrEmployee.update({
         where: { userId: expert },
-        data: { organizationUnitId: unitId },
+        data: { unit: 'فروش', updatedAt: past },
       });
+    });
+    it('shows employee inbound/outbound contacts to an HR manager with own-only read permissions', async () => {
+      const original = actor(manager);
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, extension: '501', userId: peer },
+      });
+      actors.set(manager, {
+        ...original,
+        permissions: original.permissions.filter(
+          (code) => !code.endsWith('.team'),
+        ),
+      });
+      try {
+        const inbound = await emit(makeEvent('404'));
+        const outboundEvent = {
+          ...makeEvent('501', 'RINGING'),
+          direction: 'OUT' as const,
+          caller: { kind: 'UNKNOWN' as const, value: null },
+          destination: { kind: 'KNOWN' as const, value: '+12025559998' },
+        };
+        const outbound = await emit(outboundEvent);
+        expect(await visible(manager, inbound.contactId)).toBe(true);
+        expect(await visible(manager, outbound.contactId)).toBe(true);
+        expect(await visible(expert, outbound.contactId)).toBe(false);
+        const rows = await db.$queryRaw<Array<{ id: string }>>(
+          Prisma.sql`SELECT c.id FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND (${await access.sql(actor(manager), branchId, 'reports')})`,
+        );
+        expect(rows.map((row) => row.id)).toEqual(
+          expect.arrayContaining([inbound.contactId, outbound.contactId]),
+        );
+        const result = await read.search(actor(manager), branchId, {
+          query: '+12025559998',
+          page: 1,
+          pageSize: 10,
+        } as never);
+        expect(result.meta.total).toBe(1);
+      } finally {
+        actors.set(manager, original);
+        await db.integrationTelephonyMapping.deleteMany({
+          where: { connectionId, extension: '501', userId: peer },
+        });
+      }
     });
     it('uses receipt-time identity even if an extension changes before Worker processing', async () => {
       const event = makeEvent('404'),
@@ -1463,6 +1516,8 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         (await pending()).some((c) => c.contactId === single.contactId),
       ).toBe(false);
       vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', '');
-    });
+      // This end-to-end case persists many independent PBX paths and requests;
+      // retain all authorization assertions with a PostgreSQL integration budget.
+    }, 20000);
   },
 );

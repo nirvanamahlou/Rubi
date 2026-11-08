@@ -5,6 +5,7 @@ import {
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
+import { useRef } from 'react';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { MoneyInput } from '@/components/ui/money-input';
 import { Input } from '@/components/ui/form-controls';
@@ -30,6 +31,14 @@ export function HotelRoomQuotationEditor({
   nights: number;
   hotelBroker?: { id: string; name: string } | null;
 }) {
+  const transferCurrencyOverridden = useRef(
+    Boolean(
+      draft.supplierFormPrices?.transferPp?.currencyCode &&
+      draft.supplierFormPrices.transferPp.currencyCode !==
+        draft.hotelRoomPrices?.currencyCode,
+    ),
+  );
+  const roundTrip = draft.hotelTransferRoundTrip ?? true;
   const rooms = draft.rooms ?? [];
   const prices =
     draft.hotelRoomPrices?.rooms ??
@@ -66,7 +75,7 @@ export function HotelRoomQuotationEditor({
     if (transfer.amount && transfer.currencyCode) {
       const count = draft.hotelTransferSplit
         ? counts.outbound
-        : hotelTransferChargeableCount(counts, draft.hotelTransferRoundTrip);
+        : hotelTransferChargeableCount(counts, roundTrip);
       transferTotal =
         count === 0
           ? '0'
@@ -99,7 +108,18 @@ export function HotelRoomQuotationEditor({
         currencies={currencies}
         disabled={busy}
         onChange={(currencyCode) =>
-          update({ ...draft, hotelRoomPrices: { currencyCode, rooms: prices } })
+          update({
+            ...draft,
+            hotelRoomPrices: { currencyCode, rooms: prices },
+            ...(!transferCurrencyOverridden.current
+              ? {
+                  supplierFormPrices: {
+                    ...draft.supplierFormPrices,
+                    transferPp: { ...transfer, currencyCode },
+                  },
+                }
+              : {}),
+          })
         }
       />
       <div className="overflow-x-auto">
@@ -179,13 +199,13 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={busy}
-            checked={draft.hotelTransferRoundTrip ?? false}
+            checked={!roundTrip}
             onChange={(event) => {
               const next = {
                 ...draft,
-                hotelTransferRoundTrip: event.target.checked,
+                hotelTransferRoundTrip: !event.target.checked,
               };
-              if (event.target.checked) {
+              if (!event.target.checked) {
                 next.hotelTransferSplit = false;
                 delete next.hotelTransferReturn;
                 next.hotelTransferCounts = {
@@ -196,7 +216,7 @@ export function HotelRoomQuotationEditor({
               update(next);
             }}
           />
-          قیمت رفت‌وبرگشت برای هر نفر
+          قیمت رفت یا برگشت جدا
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -205,7 +225,7 @@ export function HotelRoomQuotationEditor({
               busy ||
               !draft.hotelTransferSeparate ||
               !canSplitTransfers ||
-              draft.hotelTransferRoundTrip
+              roundTrip
             }
             checked={draft.hotelTransferSplit ?? false}
             onChange={(event) => {
@@ -274,11 +294,7 @@ export function HotelRoomQuotationEditor({
         }
 
         <MoneyInput
-          aria-label={
-            draft.hotelTransferRoundTrip
-              ? 'Transfer P.P رفت‌وبرگشت'
-              : 'Transfer P.P'
-          }
+          aria-label={roundTrip ? 'Transfer P.P رفت‌وبرگشت' : 'Transfer P.P'}
           value={transfer.amount}
           disabled={busy}
           onValueChange={(amount) =>
@@ -296,22 +312,23 @@ export function HotelRoomQuotationEditor({
           value={transfer.currencyCode}
           currencies={currencies}
           disabled={busy}
-          onChange={(currencyCode) =>
+          onChange={(currencyCode) => {
+            transferCurrencyOverridden.current = true;
             update({
               ...draft,
               supplierFormPrices: {
                 ...draft.supplierFormPrices,
                 transferPp: { ...transfer, currencyCode },
               },
-            })
-          }
+            });
+          }}
         />
-        {(draft.hotelTransferRoundTrip
+        {(roundTrip
           ? (['outbound'] as const)
           : (['outbound', 'returning'] as const)
         ).map((key) => (
           <label key={key}>
-            {draft.hotelTransferRoundTrip
+            {roundTrip
               ? 'تعداد نفرات ترانسفر رفت‌وبرگشت'
               : key === 'outbound'
                 ? 'تعداد ترانسفر رفت'
@@ -329,7 +346,7 @@ export function HotelRoomQuotationEditor({
                   hotelTransferCounts: {
                     ...counts,
                     [key]: Number(event.target.value),
-                    ...(draft.hotelTransferRoundTrip
+                    ...(roundTrip
                       ? { returning: Number(event.target.value) }
                       : {}),
                   },
