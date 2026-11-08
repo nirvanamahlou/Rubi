@@ -1,3 +1,7 @@
+## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
 ## RESERVATION-BROKER-EMAIL-1108 — PC-A — READY_FOR_REVIEW / IT PENDING
 
 ## TRANSFER-BROKER-RATIO-1108 — PC-A — READY_FOR_CI
@@ -11733,3 +11737,5 @@ Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, Dashbo
 Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. Reserve additive shared upload format helpers, Documents sniffing/validation/policy and tests, bounded Sales receipt preflight and Web receipt pickers (Sales, Procurement, Finance, HR mission), message composer and own translations/docs. Preserve branch/source authorization, existing storage/download paths, size limits and rejection of executables/macro formats. Existing HR scopes merged/released. No schema, dependency or production data changes. Excel policy family includes legacy XLS alongside XLSX; no database policy rewrite.
 
 UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.
+
+TRANSFER-BROKER-RATIO-1108 integration: preserve merged peer PR1505 transfer currency and per-direction price controls; separate-broker checkbox is independent of the price-mode checkbox. Combined source passes40 focused tests. Final hosted gates required on the integrated head.
