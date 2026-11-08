@@ -1,3 +1,4 @@
+import { createHrCompany, hrCompanyInput } from './hr-company';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { hrCallPermissions } from './hr-call-routing';
 import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
@@ -784,6 +785,12 @@ export class IamService implements IamStepUpPort {
     };
   }
 
+  createHrCompany(body: unknown, actor: AuthenticatedActor) {
+    const input = hrCompanyInput(body, actor);
+    return this.database.client.$transaction((tx) =>
+      createHrCompany(tx, input, actor),
+    );
+  }
   listRolesAndBranches() {
     return Promise.all([
       this.database.client.role.findMany({

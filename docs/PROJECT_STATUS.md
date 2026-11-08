@@ -9415,6 +9415,15 @@ Owner subsequently authorized coordination and integration preserving both branc
 
 
 
+## HR-COMPANY-SCOPE-1108 — implementation in progress
+
+IAM companies now supply HR company selectors independently of subsidiary records. Employee organizational membership is stored separately from physical attendance/finance ownership; selecting ALL or another company preserves the existing physical owner. Company creation is implemented through an IAM-owned transaction with HR and IAM administration permission checks, creator membership, audit and retry identity checks. Organization screen includes the company form. Focused tests: 21 frontend, 11 backend passed; scoped ESLint passed. Full migration of existing employee/unit memberships, subsidiary retirement with historical references preserved, full build, runtime validation and publication remain pending. No Radan writes, no production migration, no deployment.
+
+
+HR-COMPANY-SCOPE-1108: company roots and shared-unit canonical chart projection, employee membership-aware forms and record filtering are implemented. One-time authorized serializable transfer archives subsidiary records, preserves physical employee/attendance owners and IDs, snapshots old links, and does not repeat over later membership edits. Validation: 23 focused frontend and 15 backend unit tests passed; isolated PostgreSQL transfer/filter/preservation test passed (direct connection to dedicated test database because Docker CLI timed out); Web typecheck passed. Local API typecheck environment alignment, final integrated checks, push/merge and operational transfer remain pending. No production mutations or Radan writes.
+
+
+
 
 ## REQUEST-FLOW-REDESIGN-1108 — PC-B — 2026-11-08
 
@@ -9438,6 +9447,10 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
 
+
 ## COMPACT-MESSAGE-BUBBLES-1108 - PC-B
 
 Chat bubbles use content-sized responsive widths,14px body text,24px line spacing,8px vertical padding and32px forward/reaction controls. Reply/forward spacing is tighter. Six existing chat checks and scoped lint pass; light/dark synthetic class preview shows168px to144px sample height without horizontal overflow. Styling only; no API, dependency, schema or production deployment. Final hosted gates precede owner-authorized develop merge.
+
+HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and PostgreSQL migration/seed gates passed. Full test inventory exposed fourteen missing English labels, now translated in Web and API catalogs; three inventory tests pass. Full isolated HR PostgreSQL run passed the company transfer and 48 other cases; an existing authorization fixture incorrectly used the explicitly permitted demo identity and was corrected to a separate unauthorized synthetic manager. Final full rerun and hosted gates pending. PR1522. No Radan or operational data changes.
+
