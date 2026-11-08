@@ -92,6 +92,9 @@ async function responseError(response: Response, fallback: string) {
 
 export function ManifestExport() {
   const today = todayInTehran();
+  const [flightSupplyType, setFlightSupplyType] = useState<
+    'CHARTER' | 'FLOATING'
+  >('CHARTER');
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [includePreviouslyExported, setIncludePreviouslyExported] =
@@ -201,7 +204,7 @@ export function ManifestExport() {
     setError('');
     setResult('');
     try {
-      const query = new URLSearchParams({ fromDate, toDate });
+      const query = new URLSearchParams({ fromDate, toDate, flightSupplyType });
       const response = await authenticatedFetch(
         base,
         '/reservations/manifests/tickets?' + query.toString(),
@@ -309,6 +312,27 @@ export function ManifestExport() {
     <div className="grid gap-4 rounded-xl border border-border p-4">
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
+      </div>
+      <div role="group" aria-label="نوع بلیط منیفست" className="flex gap-2">
+        {(['CHARTER', 'FLOATING'] as const).map((type) => (
+          <Button
+            key={type}
+            type="button"
+            aria-pressed={flightSupplyType === type}
+            variant={flightSupplyType === type ? 'primary' : 'outline'}
+            disabled={Boolean(busy)}
+            onClick={() => {
+              setFlightSupplyType(type);
+              setDownloadLink(null);
+              setTickets([]);
+              setLoaded(false);
+              setError('');
+              setResult('');
+            }}
+          >
+            {type === 'CHARTER' ? 'چارتر' : 'شناور'}
+          </Button>
+        ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">

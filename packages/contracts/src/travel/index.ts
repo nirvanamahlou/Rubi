@@ -271,6 +271,7 @@ export interface ReservationManifestTicketTemplateV1 {
 }
 
 export interface ReservationManifestTicketCardV1 {
+  flightSupplyType?: 'CHARTER' | 'FLOATING';
   /** Ticket Catalog inventory; absent for legacy/ground tickets. */
   totalCapacity?: number;
   allocatedCapacity?: number;

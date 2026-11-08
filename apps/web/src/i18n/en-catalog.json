@@ -17811,5 +17811,9 @@
   "پس از ذخیره اطلاعات مسافر، درخواست خودکار در نوبت بعد دوباره بررسی می‌شود. اگر اطلاعات قبلاً به بیمه‌گر ارسال شده باشد، تغییر آن ممکن است نیازمند بررسی بیمه‌گر باشد.": "After passenger details are saved, the automatic request is checked again on the next attempt. Changes to information already submitted may require insurer review.",
   "اتصال فعلی آزمایشی تراویس است؛ خروجی آن پوشش واقعی سفر نیست. اصلاح پرونده مسافر، بیمه‌نامه صادرشده را تغییر نمی‌دهد.": "The current Travis connection is a sandbox and does not provide real travel coverage. Editing a passenger record does not amend an issued policy.",
   "باز کردن پرونده مسافر برای اصلاح": "Open passenger record for correction",
-  "پرونده در صفحه جدید باز می‌شود؛ اطلاعات هویتی، گذرنامه و تماس را اصلاح و ذخیره کنید، سپس برای مشاهده وضعیت بیمه به این صفحه برگردید.": "The passenger record opens in a new tab. Correct and save identity, passport and contact details, then return here to view the insurance status."
+  "پرونده در صفحه جدید باز می‌شود؛ اطلاعات هویتی، گذرنامه و تماس را اصلاح و ذخیره کنید، سپس برای مشاهده وضعیت بیمه به این صفحه برگردید.": "The passenger record opens in a new tab. Correct and save identity, passport and contact details, then return here to view the insurance status.",
+  "نوع بلیط منیفست": "Manifest ticket type",
+  "نوع بلیط منیفست معتبر نیست.": "The manifest ticket type is invalid.",
+  "چارتر": "Charter",
+  "شناور": "Floating"
 }

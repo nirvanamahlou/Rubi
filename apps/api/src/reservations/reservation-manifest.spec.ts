@@ -1,3 +1,5 @@
+import { contractFlightMetadata } from '@nora/contracts';
+import { manifestJourneys } from './manifest-journeys';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { strFromU8, unzipSync } from 'fflate';
@@ -412,4 +414,205 @@ it('keeps missing airline fields blank and appends a linked warning sheet withou
   expect(strFromU8(files['[Content_Types].xml']!)).toContain(
     '/xl/worksheets/nora-empty-cells.xml',
   );
+});
+
+describe('floating flight manifest', () => {
+  const originId = '10000000-0000-4000-8000-000000000001',
+    destinationId = '10000000-0000-4000-8000-000000000002';
+  function setup() {
+    const snapshot = {
+      contractId: 'contract',
+      contractNumber: 'SYNTHETIC',
+      passengerIds: ['p1', 'p2'],
+      ticketSelections: [
+        {
+          offerId: 'catalog',
+          serviceClientKey: 'catalog-key',
+          direction: 'OUTBOUND',
+          originId,
+          destinationId,
+          departureAt: '2026-11-08T08:00:00Z',
+          arrivalAt: '2026-11-08T10:00:00Z',
+          carrierNameSnapshot: 'TEST AIR',
+          serviceNumberSnapshot: '123',
+          cabinClassCode: 'ECONOMY',
+        },
+      ],
+      serviceSelections: [
+        {
+          kind: 'FLIGHT',
+          clientKey: 'floating',
+          titleSnapshot: 'Floating',
+          status: 'NEEDS_RESERVATION_CONFIRMATION',
+          metadata: contractFlightMetadata({
+            version: 1,
+            direction: 'OUTBOUND',
+            originId,
+            destinationId,
+            departureAt: '2026-11-08T08:00:00.000Z',
+            arrivalAt: '2026-11-08T10:00:00.000Z',
+            carrierNameSnapshot: 'TEST AIR',
+            serviceNumberSnapshot: '456',
+            cabinClassCode: 'ECONOMY',
+          }),
+        },
+      ],
+      passengerAssignments: [
+        {
+          customerId: 'p1',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['floating'],
+        },
+        {
+          customerId: 'p2',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['catalog-key'],
+        },
+      ],
+    };
+    const row = {
+      id: 'intake',
+      contractId: 'contract',
+      contractVersion: 1,
+      status: 'QUEUED',
+      snapshot,
+    };
+    const workflow = {
+      detail: vi.fn(async () => ({
+        ...row,
+        workflow: { roomOrder: [], ageOverrides: {} },
+      })),
+    };
+    const customers = {
+      detail: vi.fn(async () => ({
+        data: {
+          firstName: 'Sample',
+          lastName: 'Traveler',
+          passportFirstName: 'SAMPLE',
+          passportLastName: 'TRAVELER',
+          birthDate: '1990-01-01',
+          gender: 'M',
+          passportNumber: 'A1234567',
+          passportExpiryDate: '2030-01-01',
+          nationalityCode: 'IRN',
+        },
+      })),
+    };
+    const directory = {
+      cityReference: vi.fn(async (id: string) => ({
+        name: id,
+        englishName: id === originId ? 'TEHRAN' : 'ANTALYA',
+        countryId: id === originId ? 'IR' : 'TR',
+      })),
+    };
+    const client = {
+      reservationIntake: { findMany: vi.fn(async () => [row]) },
+      reservationManifestExport: {
+        findUnique: vi.fn(async () => null),
+        create: vi.fn(),
+      },
+    };
+    const tickets = {
+      manifestSelection: vi.fn(async () => null),
+      manifestInventory: vi.fn(async () => []),
+    };
+    const service = new ReservationManifestService(
+      workflow as never,
+      customers as never,
+      directory as never,
+      {} as never,
+      { client } as never,
+      undefined,
+      tickets as never,
+    );
+    const actor = {
+      userId: 'user',
+      branchIds: ['branch'],
+      permissions: [
+        'reservations.read',
+        'reservations.documents.manage',
+        'customers.read',
+        'customers.sensitive.read',
+      ],
+    };
+    return { service, snapshot, row, client, tickets, actor, customers };
+  }
+  const range = { fromDate: '2026-11-08', toDate: '2026-11-08' };
+  it('defaults to charter and lists only floating flights when selected, without catalog/template lookups for floating identities', async () => {
+    const f = setup();
+    expect(
+      (await f.service.listTickets(range, f.actor as never)).map(
+        (c) => c.offerId,
+      ),
+    ).toEqual(['catalog']);
+    f.tickets.manifestSelection.mockClear();
+    f.tickets.manifestInventory.mockClear();
+    const cards = await f.service.listTickets(
+      { ...range, flightSupplyType: 'FLOATING' },
+      f.actor as never,
+    );
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({
+      flightSupplyType: 'FLOATING',
+      passengerCount: 1,
+      template: { id: 'default' },
+    });
+    expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
+    expect(f.tickets.manifestInventory).toHaveBeenCalledWith([], ['branch']);
+    await expect(
+      f.service.listTickets(
+        { ...range, flightSupplyType: 'BAD' },
+        f.actor as never,
+      ),
+    ).rejects.toThrow();
+  });
+  it('exports assigned floating passengers in the same default workbook as charter', async () => {
+    const f = setup();
+    const id = manifestJourneys(f.snapshot as never).find(
+      (t) => t.flightSupplyType === 'FLOATING',
+    )!.offerId;
+    const result = await f.service.exportTicket(
+      id,
+      { ...range, includePreviouslyExported: true },
+      'synthetic-key',
+      f.actor as never,
+    );
+    expect(result.passengerCount).toBe(1);
+    expect(result.contractCount).toBe(1);
+    const files = unzipSync(result.bytes);
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('SAMPLE');
+    expect(sheet).toContain('456');
+    expect(f.customers.detail).toHaveBeenCalledWith(
+      'p1',
+      f.actor,
+      undefined,
+      'customer-verification',
+    );
+    expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
+    expect(f.client.reservationManifestExport.create).toHaveBeenCalled();
+  });
+  it('shares a stable identity across contracts but separates different routes or departure times', () => {
+    const f = setup();
+    const first = manifestJourneys(f.snapshot as never).find(
+      (t) => t.flightSupplyType === 'FLOATING',
+    )!;
+    const second = structuredClone(f.snapshot);
+    second.contractId = 'another';
+    second.serviceSelections[0]!.clientKey = 'other-key';
+    expect(
+      manifestJourneys(second as never).find(
+        (t) => t.flightSupplyType === 'FLOATING',
+      )!.offerId,
+    ).toBe(first.offerId);
+    second.serviceSelections[0]!.metadata = {
+      ...second.serviceSelections[0]!.metadata,
+      flightDepartureAt: '2026-11-08T09:00:00.000Z',
+    };
+    expect(
+      manifestJourneys(second as never).find(
+        (t) => t.flightSupplyType === 'FLOATING',
+      )!.offerId,
+    ).not.toBe(first.offerId);
+  });
 });
