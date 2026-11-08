@@ -23,7 +23,6 @@ describe('audited dashboard calculation lineage', () => {
       'account-balance',
       'gross-profit',
       'net-profit',
-      'employee-sales-amount',
       'expense-trend',
     ])
       expect(nativeCalculationFeatures(id)).toBeNull();
@@ -38,4 +37,17 @@ describe('audited dashboard calculation lineage', () => {
       ),
     ).toContain('درخواست‌های اولیه و ارجاع به فروش');
   });
+});
+
+it('traces activated domain measures without declaring accounting profit connected', () => {
+  for (const id of [
+    'employee-sales-amount',
+    'employee-call-count',
+    'remaining-capacity',
+    'hotel-reservations',
+    'employee-workdays',
+    'document-quality-overview',
+  ])
+    expect(nativeCalculationFeatures(id)?.length, id).toBeGreaterThan(0);
+  expect(nativeCalculationFeatures('net-profit')).toBeNull();
 });

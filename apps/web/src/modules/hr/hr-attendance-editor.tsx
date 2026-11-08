@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
+import { AttendanceStatusControl } from './hr-attendance-activation-form';
 import type { HrRecordDto } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { TimePicker } from '@/components/ui/time-picker';
@@ -30,6 +31,7 @@ export function HrAttendanceEditor({
     [reason, setReason] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [deviceError, setDeviceError] = useState(false);
   const retry = useRef({ body: '', key: crypto.randomUUID() });
   return (
     <Dialog
@@ -42,6 +44,13 @@ export function HrAttendanceEditor({
         <DialogTitle>
           ویرایش تردد · {hrDisplayDate(record.values[1] ?? '')}
         </DialogTitle>
+        <AttendanceStatusControl
+          record={record}
+          onSaved={async () => {
+            await onSaved();
+            onClose();
+          }}
+        />
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
@@ -55,6 +64,7 @@ export function HrAttendanceEditor({
                 arrival,
                 departure,
                 reason,
+                deviceError,
               });
               if (retry.current.body !== body)
                 retry.current = { body, key: crypto.randomUUID() };
@@ -98,6 +108,16 @@ export function HrAttendanceEditor({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
+          </label>
+          <label className={ui.field}>
+            <span>
+              <input
+                type="checkbox"
+                checked={deviceError}
+                onChange={(event) => setDeviceError(event.target.checked)}
+              />{' '}
+              تأیید خطای دستگاه
+            </span>
           </label>
           {error ? <p role="alert">{error}</p> : null}
           <HrButton type="submit" primary disabled={busy}>

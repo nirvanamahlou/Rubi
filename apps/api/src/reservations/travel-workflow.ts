@@ -56,6 +56,9 @@ export function transitionTravelWorkflow(
       'NOTE',
       'VOUCHER_SETTINGS',
       'SUPPLIER_FORM_SETTINGS',
+      ...(current.sentSupplierFormSettings
+        ? (['REQUEST_SUPPLIER'] as const)
+        : []),
       'TABLE_STATUS',
       'TICKET_FLIGHT_NUMBERS',
     ].includes(command.action)
@@ -312,9 +315,16 @@ export function transitionTravelWorkflow(
         throw new Error(
           'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
         );
-      if (!['NEW', 'REQUESTED'].includes(current.supplierStatus))
+      if (
+        !['NEW', 'REQUESTED'].includes(current.supplierStatus) &&
+        !(
+          current.supplierStatus === 'CONFIRMED' &&
+          current.sentSupplierFormSettings
+        )
+      )
         throw new Error('ثبت ارسال در این وضعیت ممکن نیست.');
-      next.supplierStatus = 'REQUESTED';
+      next.supplierStatus =
+        current.supplierStatus === 'CONFIRMED' ? 'CONFIRMED' : 'REQUESTED';
       if (current.supplierFormSettings)
         next.sentSupplierFormSettings = structuredClone(
           current.supplierFormSettings,

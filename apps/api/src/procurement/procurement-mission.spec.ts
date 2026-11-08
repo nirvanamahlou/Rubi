@@ -34,6 +34,32 @@ function setup(reversed = false) {
   return { entry, tx, port };
 }
 describe('mission petty-cash reversal', () => {
+  it('provides a narrow HR fund preview without requiring purchase-read permissions', async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      balance: new Prisma.Decimal(500),
+      currencyCode: 'IRR',
+      custodianId: 'owner',
+    });
+    const port = new ProcurementMissionPort(
+      {
+        client: { procurementPettyFund: { findUnique } },
+      } as unknown as DatabaseService,
+      {} as DocumentsService,
+    );
+    expect(await port.summary('branch', actor)).toEqual({
+      balance: '500',
+      currencyCode: 'IRR',
+      canRegister: true,
+    });
+    expect(await port.summary('branch', { ...actor, userId: 'other' })).toEqual(
+      { balance: '500', currencyCode: 'IRR', canRegister: false },
+    );
+    await expect(port.summary('outside', actor)).rejects.toThrow();
+    await expect(
+      port.summary('branch', { ...actor, permissions: ['hr.read'] }),
+    ).rejects.toThrow();
+    expect(findUnique).toHaveBeenCalledTimes(2);
+  });
   it('keeps the original debit and restores the exact amount through a linked credit', async () => {
     const { entry, tx, port } = setup();
     await port.reverse(

@@ -4,6 +4,7 @@ import {
   normalizeSupplierFormPrices,
   normalizeSupplierDraftPrices,
   supplierPriceTableData,
+  supplierPriceDraft,
   supplierTransferCounts,
 } from './supplier-form-prices';
 import type { ReservationFormIntake } from './reservation-form';
@@ -182,4 +183,29 @@ it('prints a combined transfer quote once per person and restores its saved basi
       {},
     ).hotelTransferRoundTrip,
   ).toBe(true);
+});
+
+it('saves the price-table amounts without overwriting saved hotel, passenger or supplier fields', () => {
+  const intake = fixture();
+  const saved = defaultVoucherSettings(intake, {});
+  saved.text.hotel = 'SAVED HOTEL';
+  saved.text.broker = 'SAVED BROKER';
+  const draft = structuredClone(saved);
+  draft.text.hotel = 'UNSAVED EDIT';
+  draft.passengers = [];
+  draft.supplierFormPrices = {
+    pp: { amount: '123.50', currencyCode: 'EUR' },
+    ratio: { amount: '2' },
+    transferPp: { amount: '10', currencyCode: 'EUR' },
+  };
+  const result = supplierPriceDraft(saved, draft);
+  expect(result.text).toEqual(saved.text);
+  expect(result.passengers).toEqual(saved.passengers);
+  expect(result.supplierFormPrices).toEqual(draft.supplierFormPrices);
+  expect(normalizeSupplierDraftPrices(result, [{ code: 'EUR' }])).toEqual(
+    draft.supplierFormPrices,
+  );
+  intake.workflow.supplierFormSettings = result;
+  expect(supplierPriceTableData(intake).values).toContain('123.50 EUR');
+  expect(saved.supplierFormPrices).not.toEqual(draft.supplierFormPrices);
 });

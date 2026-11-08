@@ -1,4 +1,7 @@
 import { reservationHasTransfer } from '@nora/contracts';
+import { ReservationMailService } from './reservation-mail.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadedFile } from '@nestjs/common';
 import {
   reservationPurchaseRegistered,
   reservationPurchasesComplete,
@@ -513,6 +516,44 @@ export class ReservationRequestsController {
       throw new ForbiddenException();
     return { data: await this.workflow.history(id, req.actor.branchIds) };
   }
+  @Post(':id/supplier-email')
+  @Header('Cache-Control', 'private, no-store')
+  @UseInterceptors(
+    FileInterceptor('pdf', {
+      limits: { fileSize: 10_000_000, files: 1, fields: 2, fieldSize: 1024 },
+    }),
+  )
+  async sendSupplierPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { expectedVersion?: string; hotelStayKey?: string },
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+    @Headers('x-reservation-pdf-signature') signature: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const expectedVersion = Number(body.expectedVersion);
+    if (
+      !file ||
+      !signature ||
+      !/^\d+$/.test(body.expectedVersion ?? '') ||
+      !Number.isSafeInteger(expectedVersion)
+    )
+      throw new BadRequestException(
+        'PDF معتبر فرم رزرواسیون برای ارسال دریافت نشد.',
+      );
+    return {
+      data: await this.workflow.update(
+        id,
+        {
+          action: 'REQUEST_SUPPLIER',
+          expectedVersion,
+          ...(body.hotelStayKey ? { hotelStayKey: body.hotelStayKey } : {}),
+          note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
+        },
+        req.actor,
+        { bytes: file.buffer, signature },
+      ),
+    };
+  }
   @Patch(':id/workflow')
   @Header('Cache-Control', 'private, no-store')
   async workflowUpdate(
@@ -936,6 +977,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    ReservationMailService,
     TravisSandboxService,
     InsuranceSettingsService,
     ReservationInsuranceService,

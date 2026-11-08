@@ -1,7 +1,8 @@
 import { MasterDataModule } from '../master-data/master-data.module';
 import { CustomerInsuranceIdentity } from './customer-insurance-identity';
+import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
 import { SalesPeopleController } from './sales-people.controller';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -14,7 +15,11 @@ import { CustomersController } from './customers.controller';
 import { CustomerSelectionController } from './customer-selection.controller';
 
 @Module({
-  imports: [IamModule, MasterDataModule],
+  imports: [
+    IamModule,
+    MasterDataModule,
+    forwardRef(() => SalesOperationalAmendmentModule),
+  ],
   controllers: [
     SalesPeopleController,
     CustomerSelectionController,

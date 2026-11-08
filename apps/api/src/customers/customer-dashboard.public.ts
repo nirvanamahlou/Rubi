@@ -1,3 +1,4 @@
+import { dashboardDimensionKey } from '../common/dashboard-dimensions';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import type {
   DashboardSourceQuery,
@@ -34,7 +35,11 @@ export class CustomerDashboardSource {
         mergedIntoId: null,
         createdAt: { gte: query.from, lt: query.to },
       },
-      select: { createdAt: true },
+      select: {
+        createdAt: true,
+        isActive: true,
+        acquaintanceMethod: { select: { id: true, name: true } },
+      },
       take: 10001,
     });
     if (rows.length > 10000)
@@ -48,6 +53,24 @@ export class CustomerDashboardSource {
       source,
       state: 'ready',
       metrics: {
+        'customers-by-acquisition-channel': {
+          kind: 'count',
+          aggregation:
+            'مشتریان فعال و ادغام‌نشده ایجادشده در بازه با روش آشنایی مرجع و ثبت‌شده؛ نامشخص به کانالی نسبت داده نمی‌شود.',
+          observations: rows
+            .filter((r) => r.isActive && r.acquaintanceMethod)
+            .map((r) => ({
+              at: r.createdAt,
+              value: '1',
+              dimensions: { channel: r.acquaintanceMethod!.name },
+              dimensionKeys: {
+                channel: dashboardDimensionKey(
+                  'acquisition',
+                  r.acquaintanceMethod!.id,
+                ),
+              },
+            })),
+        },
         'registered-customers': {
           kind: 'count',
           aggregation:

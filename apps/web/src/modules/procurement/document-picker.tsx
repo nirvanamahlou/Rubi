@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { FileUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -187,9 +188,10 @@ export function ProcurementDocumentPicker({
                 </div>
                 <input
                   ref={fileInput}
-                  accept={invoiceOptions?.uploadPolicy.allowedMimeTypes.join(
-                    ',',
-                  )}
+                  accept={[
+                    RECEIPT_FILE_ACCEPT,
+                    ...(invoiceOptions?.uploadPolicy.allowedMimeTypes ?? []),
+                  ].join(',')}
                   aria-label={`انتخاب فایل ${uploadLabel}`}
                   className="sr-only"
                   disabled={busy || !invoiceOptions}

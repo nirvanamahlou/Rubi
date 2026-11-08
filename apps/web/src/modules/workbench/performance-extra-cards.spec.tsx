@@ -54,6 +54,7 @@ it('renders a read-only daily attendance table with source and unknown values', 
       rows={[
         {
           date: '2026-10-29',
+          dailyPenaltyToman: '800000',
           firstIn: '09:15',
           lastOut: '14:00',
           registrationType: 'device',
@@ -63,6 +64,7 @@ it('renders a read-only daily attendance table with source and unknown values', 
         },
         {
           date: '2026-10-28',
+          dailyPenaltyToman: '0',
           firstIn: '09:20',
           lastOut: null,
           registrationType: 'manual',
@@ -78,5 +80,8 @@ it('renders a read-only daily attendance table with source and unknown values', 
   expect(html).toContain('دستی');
   expect(html).toContain('14:00');
   expect(html).toContain('کسری کار');
+  expect(html).toContain('جریمه روز (تومان)');
+  expect(html).toContain('۸۰۰٬۰۰۰ تومان');
+  expect(html).toContain('۰ تومان');
   expect(html).not.toMatch(/<input|<button|contenteditable/i);
 });

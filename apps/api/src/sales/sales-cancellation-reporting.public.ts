@@ -47,6 +47,7 @@ export async function readSalesCancellationReporting(
       currency: string;
       amount: Prisma.Decimal;
       count: number;
+      contracts: Set<string>;
       at: Date;
       updatedAt: Date;
     }
@@ -59,11 +60,13 @@ export async function readSalesCancellationReporting(
       currency: r.currencyCode,
       amount: new Prisma.Decimal(0),
       count: 0,
+      contracts: new Set<string>(),
       at: r.occurredAt,
       updatedAt: r.dataAsOf,
     };
     g.amount = g.amount.add(r.salesAmount);
     g.count++;
+    g.contracts.add(r.id);
     if (r.dataAsOf > g.updatedAt) g.updatedAt = r.dataAsOf;
     groups.set(id, g);
   }
@@ -79,6 +82,8 @@ export async function readSalesCancellationReporting(
     ],
     rows: [...groups].map(([id, g]) => ({
       id,
+      currencyGroupId: JSON.stringify([g.branch, g.owner]),
+      distinctCounts: { recordCount: [...g.contracts] },
       at: g.at,
       updatedAt: g.updatedAt,
       values: {

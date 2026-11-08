@@ -1,5 +1,6 @@
 import {
   Inject,
+  forwardRef,
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -18,6 +19,7 @@ import { DatabaseService } from '../database/database.service';
 import { CustomerNationalIdProtector } from './customer-national-id';
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import { CustomerRepository } from './customer.repository';
+import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 
 /** Internal provider-only projection; never exposed through an HTTP customer endpoint. */
 @Injectable()
@@ -29,6 +31,8 @@ export class CustomerInsuranceIdentity {
     @Inject(CustomerContactCrypto)
     private readonly contacts: CustomerContactCrypto,
     @Inject(CustomerRepository) private readonly repository: CustomerRepository,
+    @Inject(forwardRef(() => SalesOperationalAmendmentService))
+    private readonly sales: SalesOperationalAmendmentService,
   ) {}
   private async context(intakeId: string, customerId: string) {
     const source = await this.db.client.reservationIntake.findUnique({
@@ -50,7 +54,11 @@ export class CustomerInsuranceIdentity {
       intake.contract.status === 'CANCELLED'
     )
       throw new NotFoundException();
-    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const snapshot = await this.sales.currentExecution(
+      this.db.client,
+      intake.snapshot as unknown as SalesReservationRequestV1,
+      [intake.branchId],
+    );
     if (!insurancePassengerIds(snapshot).includes(customerId))
       throw new NotFoundException();
     const latest = await this.db.client.reservationIntake.findFirst({

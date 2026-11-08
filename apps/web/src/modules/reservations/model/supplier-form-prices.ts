@@ -276,3 +276,27 @@ export function normalizeSupplierDraftPrices(
     currencies,
   );
 }
+
+/** Price-table save preserves saved identity, passenger and document fields. */
+export function supplierPriceDraft(
+  saved: VoucherSettingsV1,
+  draft: VoucherSettingsV1,
+): VoucherSettingsV1 {
+  const result = { ...saved };
+  for (const key of [
+    'hotelRoomPrices',
+    'hotelPurchasePrices',
+    'supplierFormPrices',
+    'hotelTransferSeparate',
+    'hotelTransferSplit',
+    'hotelTransferRoundTrip',
+    'hotelTransferReturn',
+    'hotelTransferCounts',
+    'transferBrokerId',
+    'transferBrokerName',
+  ] as const) {
+    if (draft[key] === undefined) delete result[key];
+    else Object.assign(result, { [key]: structuredClone(draft[key]) });
+  }
+  return result;
+}

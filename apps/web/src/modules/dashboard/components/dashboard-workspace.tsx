@@ -121,7 +121,11 @@ import {
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
-import { dashboardUnavailableReason } from '../model/availability';
+import { dashboardMeasurementRequirements } from '../model/measurement-requirements';
+import {
+  dashboardUnavailableReason,
+  dashboardVisualLimitation,
+} from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
@@ -929,7 +933,6 @@ function Metric({
     'issue-success-rate',
     'sell-through-rate',
     'tour-sell-through-rate',
-    'customer-interest-coverage',
     'lead-growth-rate',
     'lead-conversion-rate',
     'sla-breach-rate',
@@ -1031,10 +1034,7 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : definition?.id === 'gross-profit' ||
-                  definition?.id === 'net-profit'
-                ? 'قابل محاسبه نیست'
-                : '—'}
+              : 'قابل محاسبه نیست'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -1356,11 +1356,19 @@ function KpiCard({
                 <MiniTrend title={definition.title} trend={metric.trend} />
               ) : null}
             </span>
-          ) : unavailableReason ? (
-            <span className="relative mt-3 block text-xs leading-6 text-muted-foreground">
-              {dashboardUnavailableReason(unavailableReason)}
+          ) : (
+            <span
+              data-dashboard-unavailable
+              className="relative mt-3 block text-xs leading-6 text-muted-foreground"
+            >
+              <span className="block">
+                {dashboardUnavailableReason(unavailableReason)}
+              </span>
+              <span className="mt-1 block">
+                دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+              </span>
             </span>
-          ) : null}
+          )}
         </>
       )}
     </button>
@@ -1492,7 +1500,7 @@ function KpiDefinitionPanel({
 
             <section aria-labelledby="kpi-calculation-features-title">
               <h3
-                className="text-sm font-black text-foreground"
+                className="text-sm font-semibold text-foreground"
                 id="kpi-calculation-features-title"
               >
                 فیچرهای استفاده‌شده در فرمول
@@ -2844,14 +2852,6 @@ function VisualDetailsPanel({
               <p className="mt-2 leading-7 text-muted-foreground">
                 {description}
               </p>
-              {decision ? (
-                <p className="mt-3 leading-7 text-muted-foreground">
-                  این نمودار برای پاسخ به این تصمیم استفاده می‌شود:{' '}
-                  <span className="font-semibold text-foreground">
-                    {decision}
-                  </span>
-                </p>
-              ) : null}
             </section>
 
             <section
@@ -2923,6 +2923,11 @@ function VisualDetailsPanel({
               >
                 محدودیت‌ها و دسترسی
               </h3>
+              {dashboardVisualLimitation(visualId, decision) ? (
+                <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                  {dashboardVisualLimitation(visualId, decision)}
+                </p>
+              ) : null}
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
                 فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
                 مجوز موردنیاز:{' '}
@@ -2970,6 +2975,7 @@ function ProjectionSlot({
   trendCalendarSystem,
   wide = false,
   data,
+  unavailableReason,
 }: {
   visualId: string;
   kind: DashboardVisualKind;
@@ -2986,6 +2992,7 @@ function ProjectionSlot({
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?: DashboardVisualSnapshot | undefined;
+  unavailableReason?: string | undefined;
 }) {
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
     string | undefined
@@ -3013,17 +3020,11 @@ function ProjectionSlot({
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
 
-  const visualLabel = isEmployeeComparison
-    ? 'مقایسه عملکرد تیم'
-    : visualLabels[resolvedKind];
   const reportCode = dashboardReportCodeFromDrilldown(drilldown);
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
     : undefined;
-  const canOpenVisualDetails =
-    Boolean(displayData?.values.length) &&
-    resolvedKind !== 'table' &&
-    resolvedKind !== 'queue';
+  const canOpenVisualDetails = source.length > 0;
   return (
     <>
       <Card
@@ -3047,9 +3048,6 @@ function ProjectionSlot({
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-              {visualLabel}
-            </Badge>
             <div
               className={cn(
                 'flex items-center gap-1.5',
@@ -3175,15 +3173,47 @@ function ProjectionSlot({
           ) : (
             <>
               <EmptyVisualCanvas kind={kind} />
-              <p className="mt-2 text-xs text-muted-foreground">
-                دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای
-                این نمودار باید بررسی شوند.
-              </p>
+              {data ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  داده‌ای در بازه و فیلتر انتخابی ثبت نشده است.
+                </p>
+              ) : (
+                <div
+                  data-dashboard-unavailable
+                  className="mt-2 space-y-1 text-xs leading-6 text-muted-foreground"
+                >
+                  <p className="font-bold text-foreground">قابل محاسبه نیست</p>
+                  <p>{dashboardUnavailableReason(unavailableReason)}</p>
+                  <p>
+                    دادهٔ موردنیاز:{' '}
+                    {dashboardMeasurementRequirements({ id: visualId, source })}
+                  </p>
+                </div>
+              )}
             </>
           )}
           {data?.notice ? (
             <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
           ) : null}
+          {Object.entries(data?.missingMetrics ?? {}).map(([id, reason]) => {
+            const definition = dashboardKpis.find((kpi) => kpi.id === id);
+            if (!definition) return null;
+            return (
+              <div
+                key={id}
+                data-dashboard-unavailable
+                className="mt-3 space-y-1 text-xs leading-6 text-muted-foreground"
+              >
+                <p className="font-bold text-foreground">
+                  {definition.title} · قابل محاسبه نیست
+                </p>
+                <p>{dashboardUnavailableReason(reason)}</p>
+                <p>
+                  دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+                </p>
+              </div>
+            );
+          })}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -3228,11 +3258,6 @@ function ProjectionSlot({
               <Info aria-hidden="true" className="size-3.5" />
               جزئیات نمودار
             </Button>
-          ) : null}
-          {decision ? (
-            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              {decision}
-            </Badge>
           ) : null}
           <Button
             className="ms-auto"
@@ -4083,6 +4108,9 @@ export function DashboardWorkspace() {
                         source={visualization.source}
                         trendCalendarSystem={trendCalendarSystem}
                         data={query.data?.visuals[visualization.id]}
+                        unavailableReason={
+                          query.data?.unavailableVisuals?.[visualization.id]
+                        }
                       />
                     ))}
                   </div>

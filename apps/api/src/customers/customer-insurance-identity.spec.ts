@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { CustomerInsuranceIdentity } from './customer-insurance-identity';
+import type { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import type { DatabaseService } from '../database/database.service';
 import type { CustomerNationalIdProtector } from './customer-national-id';
 import type { CustomerContactCrypto } from './customer-contact.crypto';
@@ -60,13 +61,15 @@ function fixture() {
     ),
   };
   const repository = { auditSensitiveRead: vi.fn() };
+  const sales = { currentExecution: vi.fn(async () => intake.snapshot) };
   const service = new CustomerInsuranceIdentity(
     db as unknown as DatabaseService,
     ids as unknown as CustomerNationalIdProtector,
     contacts as unknown as CustomerContactCrypto,
     repository as unknown as CustomerRepository,
+    sales as unknown as SalesOperationalAmendmentService,
   );
-  return { intake, person, db, ids, contacts, repository, service };
+  return { intake, person, db, ids, contacts, repository, service, sales };
 }
 it('provides only selected insured identities to the internal provider and records the sensitive read', async () => {
   const f = fixture();
@@ -84,6 +87,19 @@ it('provides only selected insured identities to the internal provider and recor
     undefined,
     expect.arrayContaining(['nationalId', 'passportNumber']),
   );
+});
+it('validates current contract insurance membership instead of an obsolete intake allocation', async () => {
+  const f = fixture();
+  const current = structuredClone(f.intake.snapshot);
+  f.intake.snapshot.passengerAssignments = [];
+  f.sales.currentExecution.mockResolvedValue(current);
+  expect((await f.service.read('intake', 'person')).passportNo).toBe(
+    'SYNTHETIC-PASSPORT',
+  );
+  current.passengerAssignments[0]!.serviceClientKeys = [];
+  f.ids.decryptPassportNumber.mockClear();
+  await expect(f.service.read('intake', 'person')).rejects.toThrow();
+  expect(f.ids.decryptPassportNumber).not.toHaveBeenCalled();
 });
 it('does not decrypt unrelated people, cancelled contracts or superseded intake snapshots', async () => {
   const f = fixture();

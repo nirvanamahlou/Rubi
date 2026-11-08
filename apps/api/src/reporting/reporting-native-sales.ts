@@ -1,3 +1,4 @@
+import { readOrganizationReportCustomers } from '../customers/customer-reporting.public';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import { BadRequestException } from '@nestjs/common';
 import {
@@ -19,6 +20,8 @@ export const NATIVE_SALES_REPORTS = new Set([
   'route_passengers',
   'sales_contract_pipeline',
   'sales_by_service_route',
+  'agency_performance',
+  'future_travel_commitments',
 ]);
 
 const serviceLabels: Readonly<Record<string, string>> = {
@@ -55,12 +58,44 @@ export async function nativeSalesReport(
     throw new BadRequestException(
       'مرتب‌سازی انتخاب‌شده در این گزارش پشتیبانی نمی‌شود.',
     );
-  const source = await readSalesReportingProjection(
+  const today =
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date()) + 'T00:00:00.000Z';
+  const effectiveQuery =
+    code === 'future_travel_commitments'
+      ? {
+          ...query,
+          filters: {
+            ...query.filters,
+            fromUtc:
+              typeof query.filters.fromUtc === 'string' &&
+              query.filters.fromUtc > today
+                ? query.filters.fromUtc
+                : today,
+          },
+        }
+      : query;
+  let source = await readSalesReportingProjection(
     client,
     actor,
-    query,
+    effectiveQuery,
     code === 'sales_contract_pipeline',
+    code === 'future_travel_commitments' ? 'departure' : 'created',
   );
+  const organizations =
+    code === 'agency_performance'
+      ? await readOrganizationReportCustomers(
+          client,
+          actor,
+          source.map((row) => row.customerId),
+        )
+      : new Map<string, string>();
+  if (code === 'agency_performance')
+    source = source.filter((row) => organizations.has(row.customerId));
   const [directory, cities] = await Promise.all([
     reportingIdentityLabels(
       client,
@@ -74,6 +109,7 @@ export async function nativeSalesReport(
   ]);
   const facts: ReportingFactRow[] = source.map((row) => ({
     id: `${row.id}:${row.currencyCode}`,
+    sourceItemId: row.id,
     orderNumber: row.id,
     occurredAt: row.occurredAt,
     legalEntityCode: '',
@@ -88,7 +124,7 @@ export async function nativeSalesReport(
       'خدمت ثبت نشده',
     customerType: 'ثبت نشده',
     customerName: '',
-    agencyName: null,
+    agencyName: organizations.get(row.customerId) ?? null,
     leadSource: null,
     providerName: null,
     airlineName: null,
@@ -117,7 +153,7 @@ export async function nativeSalesReport(
   const result = buildTravelReportResult({
     code,
     query: {
-      ...query,
+      ...effectiveQuery,
       branchIds: actor.permissions.includes('sales.contracts.read.all')
         ? []
         : actor.branchIds,
@@ -127,10 +163,13 @@ export async function nativeSalesReport(
     includeAllRows,
     ...(code === 'sales_by_organization'
       ? { dimensionOverride: ['branchName', 'ownerName'] as const }
-      : {}),
+      : code === 'future_travel_commitments'
+        ? { dimensionOverride: ['destinationCity', 'routeLabel'] as const }
+        : {}),
     ...(code === 'sales_by_organization' ||
     code === 'route_passengers' ||
-    code === 'sales_by_service_route'
+    code === 'sales_by_service_route' ||
+    code === 'future_travel_commitments'
       ? {
           dimensionIdentity: (
             fact: ReportingFactRow,
@@ -193,13 +232,56 @@ export async function nativeSalesReport(
       'مبالغ فروش از قیمت مصوب قرارداد خوانده می‌شوند؛ خرید، سود، وصول و صدور در این گزارش محاسبه نمی‌شوند.',
     ],
   };
-  return code === 'sales_by_organization'
+  return NATIVE_SALES_REPORTS.has(code)
     ? organizationMultiCurrencyResult(
         response,
         source,
         query,
         includeAllRows,
         directory,
+        code === 'agency_performance'
+          ? {
+              labels: ['مشتری سازمانی', 'شعبه'],
+              dimensions: (row) => [
+                row.customerId,
+                row.branchId,
+                organizations.get(row.customerId)!,
+                directory.branches.get(row.branchId) ?? row.branchId,
+              ],
+            }
+          : code === 'route_passengers' || code === 'future_travel_commitments'
+            ? {
+                labels: ['شهر مقصد', 'مسیر سفر'],
+                dimensions: (row) => [
+                  row.destinationId,
+                  JSON.stringify([row.originId, row.destinationId]),
+                  cities.get(row.destinationId) ?? row.destinationId,
+                  `${cities.get(row.originId) ?? row.originId} ← ${cities.get(row.destinationId) ?? row.destinationId}`,
+                ],
+              }
+            : code === 'sales_contract_pipeline'
+              ? {
+                  labels: ['وضعیت قرارداد', 'وضعیت رزرو'],
+                  dimensions: (row) => [
+                    row.status,
+                    row.reservationStatus,
+                    row.status,
+                    row.reservationStatus,
+                  ],
+                }
+              : code === 'sales_by_service_route'
+                ? {
+                    labels: ['ترکیب خدمات قرارداد', 'مسیر سفر'],
+                    dimensions: (row) => [
+                      JSON.stringify(row.serviceKinds),
+                      JSON.stringify([row.originId, row.destinationId]),
+                      row.serviceKinds
+                        .map((kind) => serviceLabels[kind] ?? kind)
+                        .join(' + ') || 'خدمت ثبت نشده',
+                      `${cities.get(row.originId) ?? row.originId} ← ${cities.get(row.destinationId) ?? row.destinationId}`,
+                    ],
+                  }
+                : undefined,
       )
     : response;
 }

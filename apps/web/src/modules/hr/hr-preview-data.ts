@@ -14,6 +14,7 @@ export interface HrPreviewDataset {
   rows: readonly (readonly HrPreviewCell[])[];
   totalLabel: string;
   recordIds?: readonly string[];
+  inactiveRecordIds?: readonly string[];
   versions?: readonly number[];
   employeeIds?: readonly (string | null)[];
   parentIds?: readonly (string | null)[];
@@ -798,7 +799,7 @@ const datasets: Readonly<
         'سهمیه روزانه در ماه',
         'سهمیه ساعتی در ماه',
         'مهلت ثبت روزانه (روز قبل)',
-        'مهلت ثبت ساعتی (ساعت روز مرخصی)',
+        'مهلت ثبت ساعتی (روز قبل)',
         'قابل انتقال',
         'حداکثر انتقال',
       ],

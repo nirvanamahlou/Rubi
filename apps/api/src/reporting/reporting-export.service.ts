@@ -1,3 +1,7 @@
+import {
+  formatReportMoney,
+  isReportMoneyColumn,
+} from './reporting-money-format';
 import { createHash, randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { strToU8, zipSync } from 'fflate';
@@ -47,7 +51,12 @@ function csv(result: TravelReportResultV1, reportName: string) {
   for (const row of result.rows)
     lines.push(
       result.columns
-        .map((column) => csvCell(reportCellValue(row, column.key)))
+        .map((column) => {
+          const value = reportCellValue(row, column.key) ?? '';
+          return csvCell(
+            isReportMoneyColumn(column) ? formatReportMoney(value) : value,
+          );
+        })
         .join(','),
     );
   return Buffer.from(`\uFEFF${lines.join('\r\n')}`, 'utf8');
@@ -160,8 +169,13 @@ function datasetCell(
 ): ExcelCell {
   const text = String(value ?? '');
   if (column.kind === 'TEXT' || /(?:id|code)$/i.test(column.key))
-    return { value: text };
-  if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)) return { value: text };
+    return {
+      value: isReportMoneyColumn(column) ? formatReportMoney(text) : text,
+    };
+  if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text))
+    return {
+      value: isReportMoneyColumn(column) ? formatReportMoney(text) : text,
+    };
   const significantDigits = text
     .replace(/[^\d]/g, '')
     .replace(/^0+/, '').length;

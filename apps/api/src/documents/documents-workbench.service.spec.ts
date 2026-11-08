@@ -334,7 +334,16 @@ describe('DocumentsService Workbench contracts', () => {
     expect(actor.permissions).not.toContain('documents.upload');
   });
 
-  it('uploads a message attachment with a server-owned message reference', async () => {
+  it.each([
+    ['receipt.png', 'image/png'],
+    ['receipt.jfif', 'image/jfif'],
+    ['receipt.pdf', 'application/pdf'],
+    [
+      'receipt.xlsx',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+    ['receipt.xls', 'application/vnd.ms-excel'],
+  ])('uploads %s with a server-owned message reference', async (name, mime) => {
     const branchId = actor.branchIds[0]!;
     const clientRequestId = 'message:request-0001';
     const options = vi.fn().mockResolvedValue({
@@ -362,8 +371,8 @@ describe('DocumentsService Workbench contracts', () => {
     } as never);
     const file = {
       buffer: Buffer.from([137, 80, 78, 71]),
-      mimetype: 'image/png',
-      originalname: 'receipt.png',
+      mimetype: mime,
+      originalname: name,
       size: 4,
     };
 

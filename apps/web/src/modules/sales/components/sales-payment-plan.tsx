@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useId, useState } from 'react';
@@ -262,7 +263,7 @@ export function SalesPaymentPlan({
                     <input
                       key={`${index}-${receiptFiles?.[index]?.name ?? ''}-${receiptFiles?.[index]?.lastModified ?? ''}`}
                       type="file"
-                      accept="application/pdf,image/jpeg,image/png"
+                      accept={RECEIPT_FILE_ACCEPT}
                       disabled={disabled}
                       onChange={(event) =>
                         onReceiptChange(index, event.target.files?.[0] ?? null)

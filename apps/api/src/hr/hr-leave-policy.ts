@@ -23,16 +23,10 @@ export function recordLeave(
 export function leavePolicyValues(values: readonly string[]): string[] {
   // Old annual policies remain legacy until explicitly saved in the new form.
   return values.length === 6
-    ? [
-        values[1] ?? '',
-        '',
-        '',
-        '1',
-        '14:00',
-        values[3] ?? 'خیر',
-        values[4] ?? '0',
-      ]
-    : [...values];
+    ? [values[1] ?? '', '', '', '1', '0', values[3] ?? 'خیر', values[4] ?? '0']
+    : values.map((v, i) =>
+        i === 4 && /^([01]\d|2[0-3]):[0-5]\d$/.test(digits(v)) ? '0' : v,
+      );
 }
 export function parseMonthlyLeavePolicy(values: readonly string[]) {
   if (values.length !== 7) return null;
@@ -45,7 +39,10 @@ export function parseMonthlyLeavePolicy(values: readonly string[]) {
     Number(v[2]) > 744 ||
     !/^\d{1,3}$/.test(v[3]!) ||
     Number(v[3]) > 365 ||
-    !/^([01]\d|2[0-3]):[0-5]\d$/.test(v[4]!)
+    !(
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(v[4]!) ||
+      (/^\d{1,3}$/.test(v[4]!) && Number(v[4]) <= 365)
+    )
   )
     throw new BadRequestException(
       'نوع مرخصی، سهمیه ماهانه و مهلت ثبت را کامل و معتبر وارد کنید.',
@@ -55,7 +52,8 @@ export function parseMonthlyLeavePolicy(values: readonly string[]) {
     daily: Number(v[1]),
     hourly: Number(v[2]),
     noticeDays: Number(v[3]),
-    cutoff: v[4]!,
+    hourlyNoticeDays: v[4]!.includes(':') ? 0 : Number(v[4]),
+    cutoff: v[4]!.includes(':') ? v[4]! : '14:00',
   };
 }
 export function assertLeaveDeadline(
@@ -70,6 +68,11 @@ export function assertLeaveDeadline(
       throw new BadRequestException(
         `درخواست مرخصی روزانه باید حداقل ${policy.noticeDays} روز قبل ثبت شود.`,
       );
+  } else if (
+    (Date.parse(leave.from) - Date.parse(local.date)) / 86400000 <
+    policy.hourlyNoticeDays
+  ) {
+    throw new BadRequestException('مهلت ثبت مرخصی ساعتی گذشته است.');
   } else if (
     leave.from < local.date ||
     (leave.from === local.date &&

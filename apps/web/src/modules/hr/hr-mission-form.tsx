@@ -1,8 +1,9 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHrReferenceData } from './hr-reference-data';
-import { procurementRequest } from '@/modules/procurement/api';
+import { hrRequest } from './hr-api';
 import type {
   HrRecordDto,
   HrWorkflowData,
@@ -75,10 +76,14 @@ export function HrMissionForm({
     uploadId = useRef(crypto.randomUUID());
   const locked = false;
   const fund = useQuery({
-    queryKey: ['procurement', 'petty-fund', employee?.branchId],
+    queryKey: ['hr', 'mission-petty-fund', employee?.branchId],
     queryFn: () =>
-      procurementRequest<{ balance: string; currencyCode: string } | null>(
-        `/petty-fund?branchId=${encodeURIComponent(employee!.branchId)}`,
+      hrRequest<{
+        balance: string;
+        currencyCode: string;
+        canRegister: boolean;
+      } | null>(
+        `/missions/petty-fund?branchId=${encodeURIComponent(employee!.branchId)}`,
       ),
     enabled: refer && Boolean(employee),
   });
@@ -181,6 +186,9 @@ export function HrMissionForm({
                     data,
                   })
                 : await store.create(input, attempt.current.key);
+              void queryClient.invalidateQueries({
+                queryKey: ['hr', 'mission-petty-fund'],
+              });
               onSaved(saved);
               onClose();
               void queryClient.invalidateQueries({
@@ -373,7 +381,7 @@ export function HrMissionForm({
               مدرک
               <input
                 type="file"
-                accept="application/pdf,image/png,image/jpeg"
+                accept={RECEIPT_FILE_ACCEPT}
                 onChange={(e) => {
                   setFile(e.target.files?.[0] ?? null);
                   setReceipt(undefined);
@@ -381,6 +389,14 @@ export function HrMissionForm({
               />
             </label>
           </fieldset>
+          {refer && fund.data && !fund.data.canRegister ? (
+            <p role="alert">
+              فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.
+            </p>
+          ) : null}
+          {refer && fund.data === null ? (
+            <p role="alert">ابتدا حساب تنخواه این شعبه را تنظیم کنید.</p>
+          ) : null}
           {refer && fund.error ? (
             <p role="alert">{fund.error.message}</p>
           ) : null}
@@ -399,7 +415,7 @@ export function HrMissionForm({
                 !employee ||
                 !from ||
                 (!claim && (!to || !start || !end)) ||
-                (refer && !fund.data)
+                (refer && (!fund.data || !fund.data.canRegister))
               }
             >
               {claim ? 'ثبت هزینه مستقل' : 'ثبت مأموریت'}

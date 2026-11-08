@@ -65,6 +65,13 @@ function fixture() {
   ]);
   const client = {
     salesContract: { findMany },
+    customer: {
+      findMany: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'organization', displayName: 'سازمان نمونه' },
+        ]),
+    },
     reservationIntake: { findMany: vi.fn().mockResolvedValue([]) },
     branch: {
       findMany: vi.fn().mockResolvedValue([{ id: 'branch', name: 'مرکزی' }]),
@@ -84,6 +91,74 @@ function fixture() {
   return { client, findMany };
 }
 describe('native Sales report source and shared preview/export path', () => {
+  it('reports organizational customer sales without inventing agency credit or profit', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      {
+        ...one,
+        customerId: 'organization',
+      },
+    ]);
+    const result = await nativeSalesReport(
+      client,
+      'agency_performance',
+      query,
+      { ...actor, permissions: [...actor.permissions, 'customers.read'] },
+      true,
+    );
+    expect(client.customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          kind: 'ORGANIZATION',
+          ownerBranchId: { in: ['branch'] },
+        }),
+      }),
+    );
+    expect(result.total).toBe(1);
+    expect(result.rows[0]?.orderCount).toBe(1);
+    expect(result.rows[0]?.passengerCount).toBe(3);
+    expect(result.rows[0]?.primaryDimension).toBe('سازمان نمونه');
+    expect(result.columns.map((c) => c.key)).not.toContain('grossProfit');
+  });
+  it('requires customer-source permission before resolving organizational identities', async () => {
+    const { client } = fixture();
+    await expect(
+      nativeSalesReport(client, 'agency_performance', query, actor),
+    ).rejects.toThrow('مجوز مشاهده منبع این گزارش وجود ندارد.');
+    expect(client.customer.findMany).not.toHaveBeenCalled();
+  });
+  it('uses departure date rather than creation date for future travel', async () => {
+    const { client, findMany } = fixture();
+    const result = await nativeSalesReport(
+      client,
+      'future_travel_commitments',
+      query,
+      actor,
+      true,
+    );
+    expect(findMany.mock.calls.at(-1)?.[0].where.AND).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          departureDate: expect.objectContaining({ gte: expect.any(Date) }),
+        }),
+      ]),
+    );
+    expect(result.filterSnapshot.filters.fromUtc).toBeTruthy();
+    expect(result.rows[0]?.orderCount).toBe(1);
+  });
+  it.each(['route_passengers', 'sales_contract_pipeline'])(
+    'consolidates %s without counting currency legs as contracts or passengers',
+    async (code) => {
+      const { client } = fixture();
+      const result = await nativeSalesReport(client, code, query, actor, true);
+      expect(result.total).toBe(1);
+      expect(result.rows[0]?.orderCount).toBe(1);
+      expect(result.rows[0]?.passengerCount).toBe(3);
+      expect(result.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
+      expect(result.columns.map((c) => c.key)).not.toContain('currencyCode');
+    },
+  );
   it('groups a package once by its distinct service combination without multiplying sales', async () => {
     const { client } = fixture();
     const result = await nativeSalesReport(
@@ -93,10 +168,35 @@ describe('native Sales report source and shared preview/export path', () => {
       actor,
       true,
     );
-    expect(result.rows).toHaveLength(2);
+    expect(result.rows).toHaveLength(1);
     expect(result.rows[0]?.primaryDimension).toBe('پرواز + هتل');
     expect(result.rows[0]?.salesAmount).toBe('900');
     expect(result.columns[0]?.label).toBe('ترکیب خدمات قرارداد');
+    expect(result.rows[0]?.orderCount).toBe(1);
+    expect(result.rows[0]?.passengerCount).toBe(3);
+    expect(result.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
+    expect(result.rows[0]?.amountsByCurrency).toEqual([
+      { currencyCode: 'IRR', amount: '900' },
+      { currencyCode: 'USD', amount: '20' },
+    ]);
+    expect(result.columns.map((c) => c.key)).not.toContain('currencyCode');
+    const preview = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+    );
+    expect(preview.rows).toEqual(result.rows);
+    expect(preview.totalsByCurrency).toEqual(result.totalsByCurrency);
+    const file = new ReportingExportService({} as LocalDocumentStorage).build(
+      'XLSX',
+      result,
+      'خدمات و مسیر',
+    );
+    const sheet = strFromU8(
+      unzipSync(new Uint8Array(file.buffer))['xl/worksheets/sheet1.xml']!,
+    );
+    expect(sheet).toContain('900 ریال + 20 $');
   });
   it('rejects sorting by an unavailable financial metric before reading the source', async () => {
     const { client, findMany } = fixture();
@@ -109,6 +209,41 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     ).rejects.toThrow();
     expect(findMany).not.toHaveBeenCalled();
+  });
+  it('deduplicates contracts across currencies before pagination and keeps different route IDs separate', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      { ...one, id: 'two', _count: { passengers: 2 } },
+      { ...one, id: 'three', destinationId: 'other-destination' },
+    ]);
+    const all = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+      true,
+    );
+    expect(all.total).toBe(2);
+    expect(all.rows[0]?.orderCount).toBe(2);
+    expect(all.rows[0]?.passengerCount).toBe(5);
+    expect(all.rows[0]?.sourceValues?.salesAmount).toBe('1800 ریال + 40 $');
+    const page = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      query,
+      actor,
+    );
+    expect(page.total).toBe(2);
+    expect(page.rows).toEqual(all.rows.slice(0, 1));
+    const second = await nativeSalesReport(
+      client,
+      'sales_by_service_route',
+      { ...query, page: 2 },
+      actor,
+    );
+    expect(second.rows).toEqual(all.rows.slice(1));
   });
   it('requires native authorization even when the actor has generic reporting read', async () => {
     const { client, findMany } = fixture();
@@ -186,7 +321,7 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(preview.totalsByCurrency).toEqual(exported.totalsByCurrency);
     expect(exported.filterSnapshot.grain).toBe('CONTRACT');
     expect(exported.rows[0]?.orderCount).toBe(1);
-    expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال - 20 $');
+    expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
     expect(exported.columns.map((c) => c.key)).not.toContain('currencyCode');
   });
   it('refuses a complete-looking money report for unpriced contracts', async () => {
@@ -242,7 +377,7 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(r.rows[0]?.orderCount).toBe(2);
     expect(r.rows[0]?.passengerCount).toBe(5);
     expect(r.rows[0]?.sourceValues?.salesAmount).toBe(
-      '900 ریال - 9007199254740993.1234 € - 20 $',
+      '900 ریال + 9007199254740993.1234 € + 20 $',
     );
     const workbook = unzipSync(
       new Uint8Array(
@@ -254,7 +389,7 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     );
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
-    expect(sheet).toContain('900 ریال - 9007199254740993.1234 € - 20 $');
+    expect(sheet).toContain('900 ریال + 9,007,199,254,740,993.1234 € + 20 $');
     expect(r.columns.map((c) => c.key)).toEqual([
       'primaryDimension',
       'secondaryDimension',

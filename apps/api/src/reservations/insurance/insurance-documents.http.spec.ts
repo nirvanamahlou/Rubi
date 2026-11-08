@@ -1,3 +1,4 @@
+import { FinanceDeliveryService } from '../../finance/document-delivery/finance-delivery.module';
 import { expect, it, vi } from 'vitest';
 import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -11,7 +12,7 @@ import { TravelWorkflowService } from '../travel-workflow.service';
 const intakeId = '10000000-0000-4000-8000-000000000001';
 const contractId = '10000000-0000-4000-8000-000000000002';
 const policyId = '10000000-0000-4000-8000-000000000003';
-it('serves an individual original PDF in Sales and Reservations without any Finance dependency and refuses an unreadable Sales contract', async () => {
+it('serves an individual original PDF in Sales and Reservations after Finance releases Sales documents and refuses an unreadable Sales contract', async () => {
   const actor = {
     userId: 'owner',
     branchIds: ['branch'],
@@ -22,12 +23,16 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
     ],
   };
   const insurance = {
+    prepare: vi.fn(async () => ({ total: 1, policies: [] })),
     summary: vi.fn(async () => ({ ready: true, policies: [{ id: policyId }] })),
     download: vi.fn(async () => ({
       bytes: Buffer.from('%PDF-synthetic'),
       type: 'application/pdf',
       filename: 'sandbox-insurance.pdf',
     })),
+  };
+  const delivery = {
+    readCustomerContract: vi.fn().mockResolvedValue({ approved: true }),
   };
   const sales = { detail: vi.fn(async () => ({ data: {} })) };
   const travel = { forContract: vi.fn(async () => ({ id: intakeId })) };
@@ -37,6 +42,7 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
       SalesInsuranceDocumentsController,
     ],
     providers: [
+      { provide: FinanceDeliveryService, useValue: delivery },
       { provide: InsuranceAutomation, useValue: insurance },
       { provide: SalesService, useValue: sales },
       { provide: TravelWorkflowService, useValue: travel },
@@ -59,6 +65,9 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
     ]) {
       const summary = await request(app.getHttpServer()).get(path).expect(200);
       expect(summary.body.ready).toBe(true);
+      await request(app.getHttpServer())
+        .post(path + '/prepare')
+        .expect(201);
       const pdf = await request(app.getHttpServer())
         .get(path + '/pdf/' + policyId)
         .expect(200);
@@ -75,6 +84,15 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
       contractId,
     );
     insurance.download.mockClear();
+    delivery.readCustomerContract.mockResolvedValue({ approved: false });
+    await request(app.getHttpServer())
+      .get(`/sales/contracts/${contractId}/insurance/pdf/${policyId}`)
+      .expect(403);
+    await request(app.getHttpServer())
+      .get(`/sales/contracts/${contractId}/insurance`)
+      .expect(403);
+    expect(insurance.download).not.toHaveBeenCalled();
+    delivery.readCustomerContract.mockResolvedValue({ approved: true });
     sales.detail.mockRejectedValueOnce(new ForbiddenException());
     await request(app.getHttpServer())
       .get(`/sales/contracts/${contractId}/insurance/pdf/${policyId}`)

@@ -31,6 +31,9 @@ describe('dashboard registry', () => {
     expect(source).toContain('series={displayData.series}');
     expect(source).not.toContain('series={data?.series}');
     expect(source).toContain('description={query.data.message}');
+    expect(source).not.toContain('const visualLabel =');
+    expect(source).not.toContain('{visualLabel}');
+    expect(source).toContain('{decision}');
   });
   it('defines all 84 decision-oriented KPIs with auditable metadata', () => {
     expect(dashboardKpis).toHaveLength(84);
@@ -816,6 +819,9 @@ describe('dashboard permission and data states', () => {
     expect(kpiDefinitionPanelSource).toContain('[&_*]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('[&_svg]:!text-white');
     expect(kpiDefinitionPanelSource).toContain('فیچرهای استفاده‌شده در فرمول');
+    expect(kpiDefinitionPanelSource).toMatch(
+      /<h3\s+className="text-sm font-semibold text-foreground"\s+id="kpi-calculation-features-title"\s*>/,
+    );
     expect(kpiDefinitionPanelSource).toContain('definition.source.map');
     expect(kpiDefinitionPanelSource).toContain('map(calculationFeatureFor)');
     expect(source).toContain('recognized sale revenue');

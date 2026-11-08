@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT, receiptFileSupported } from '@nora/contracts';
 import {
   paymentReceiptsApi,
   type PaymentReceiptEntry,
@@ -40,7 +41,10 @@ import {
   validateSalesCurrencySelection,
 } from './sales-currency-select';
 import { calculateContractPaymentShare } from '../model/contract-payment-share';
-import { paymentDestinationIsValid } from '../model/payment-destination';
+import {
+  paymentDestinationIsRequired,
+  paymentDestinationIsValid,
+} from '../model/payment-destination';
 
 const empty: SalesPaymentInput = {
   amount: '',
@@ -62,6 +66,7 @@ export function ContractPaymentAccountSelect({
   onChange: (value: string) => void;
 }) {
   if (method === 'CASH') return null;
+  const required = paymentDestinationIsRequired({ method, currencyCode });
   const eligible = accounts.filter(
     (account) => account.currencyCode === currencyCode,
   );
@@ -96,11 +101,11 @@ export function ContractPaymentAccountSelect({
     </span>
   );
   return (
-    <FormField label="حساب مقصد پرداخت" required>
+    <FormField label="حساب مقصد پرداخت" required={required}>
       <SearchCombobox
         label="حساب مقصد پرداخت"
         placeholder="انتخاب حساب مقصد"
-        required
+        required={required}
         value={value}
         disabled={!eligible.length}
         onValueChange={onChange}
@@ -403,7 +408,7 @@ export function ContractPayments({
         destinationAccountId:
           payment.method === 'CASH'
             ? null
-            : (payment.destinationAccountId ?? null),
+            : payment.destinationAccountId || null,
         dueAt: new Date(payment.dueAt).toISOString(),
         version: contract.version,
       };
@@ -717,7 +722,7 @@ export function ContractPayments({
                         destinationAccountId:
                           method === 'CASH'
                             ? null
-                            : (payment.destinationAccountId ?? null),
+                            : payment.destinationAccountId || null,
                         method: method as SalesPaymentMethod,
                       })
                     }
@@ -818,24 +823,20 @@ export function ContractPayments({
                   <FormField label="انتخاب فایل مدرک پرداخت">
                     <Input
                       type="file"
-                      accept="application/pdf,image/jpeg,image/png"
+                      accept={RECEIPT_FILE_ACCEPT}
                       aria-label="انتخاب فایل مدرک پرداخت"
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
                         if (
                           file &&
-                          (![
-                            'application/pdf',
-                            'image/jpeg',
-                            'image/png',
-                          ].includes(file.type) ||
+                          (!receiptFileSupported(file.name, file.type) ||
                             file.size <= 0 ||
                             file.size > 25 * 1024 * 1024)
                         ) {
                           event.target.value = '';
                           setReceiptFile(null);
                           setError(
-                            'مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.',
+                            'مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.',
                           );
                         } else {
                           setReceiptFile(file);

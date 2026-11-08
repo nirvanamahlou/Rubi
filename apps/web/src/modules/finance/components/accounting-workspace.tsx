@@ -404,6 +404,16 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <p role="alert">دریافت اطلاعات حسابداری ناموفق بود. صفحه را تازه کنید.</p>
     );
+  else if (!books.length && section === 'general-ledger/accounts/detail-types')
+    content = (
+      <AccountingDetailEditor
+        key="no-book-detail-type"
+        book={null}
+        kind="detail-types"
+        run={run}
+        busy={busy}
+      />
+    );
   else if (!books.length && section === 'general-ledger/accounts/chart')
     content = (
       <AccountingChartEditor key="no-book" book={null} run={run} busy={busy} />

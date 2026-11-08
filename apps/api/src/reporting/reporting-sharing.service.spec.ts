@@ -74,7 +74,7 @@ describe('reporting direct sharing', () => {
     expect(repo.deleteSavedWithHistory).toHaveBeenCalledWith(
       '22222222-2222-4222-8222-222222222222',
       actor.userId,
-      expect.objectContaining({ viewVersion: 1 }),
+      expect.objectContaining({ viewVersion: 2 }),
     );
   });
 

@@ -65,38 +65,67 @@ describe('reservation supplier directory', () => {
 });
 
 import { sendSavedReservationForm } from './reservation-settings';
-it('sends a brokerless saved form when the contract has no transfer', async () => {
-  request.mockClear();
-  request.mockResolvedValueOnce({
-    data: { version: 6, supplierStatus: 'REQUESTED' },
-  });
-  await sendSavedReservationForm(
-    'r',
-    { version: 5, supplierFormSettings: {} } as never,
-    undefined,
-    false,
-  );
-  expect(request).toHaveBeenCalledWith(
-    'reservations/requests/r/workflow',
-    expect.objectContaining({ action: 'REQUEST_SUPPLIER', expectedVersion: 5 }),
-  );
+it('requires a broker even without transfer and does not request a PDF for an incomplete form', async () => {
+  const send = vi.fn();
+  vi.stubGlobal('fetch', send);
+  try {
+    await expect(
+      sendSavedReservationForm(
+        'r',
+        { version: 5, supplierFormSettings: {} } as never,
+        undefined,
+        false,
+      ),
+    ).rejects.toThrow();
+    expect(send).not.toHaveBeenCalled();
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
-it('requires a saved broker before sending and uses the newly saved version', async () => {
-  request.mockClear();
-  await expect(
-    sendSavedReservationForm('r', { version: 4 } as never),
-  ).rejects.toThrow();
-  expect(request).not.toHaveBeenCalled();
-  request.mockResolvedValueOnce({
-    data: { version: 6, supplierStatus: 'REQUESTED' },
-  });
-  const result = await sendSavedReservationForm('r', {
-    version: 5,
-    supplierFormSettings: { brokerId: 'b' },
-  } as never);
-  expect(request).toHaveBeenCalledWith(
-    'reservations/requests/r/workflow',
-    expect.objectContaining({ action: 'REQUEST_SUPPLIER', expectedVersion: 5 }),
+it('asks the server to render and mail the saved PDF using its exact version and hotel scope', async () => {
+  const send = vi
+    .fn()
+    .mockResolvedValue(Response.json({ data: { version: 6 } }));
+  vi.stubGlobal('fetch', send);
+  try {
+    const result = await sendSavedReservationForm(
+      'r',
+      {
+        version: 5,
+        hotelSupplierForms: { hotel: { settings: { brokerId: 'b' } } },
+      } as never,
+      'hotel',
+    );
+    expect(send).toHaveBeenCalledWith(
+      '/reservations/requests/r/pdf',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'same-origin',
+        body: JSON.stringify({ expectedVersion: 5, hotelStayKey: 'hotel' }),
+      }),
+    );
+    expect(result.data.version).toBe(6);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+it('shows a server rendering/send failure without claiming that an email was sent', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ message: 'PDF_NOT_READY' }, { status: 503 }),
+      ),
   );
-  expect(result.data.version).toBe(6);
+  try {
+    await expect(
+      sendSavedReservationForm('r', {
+        version: 5,
+        supplierFormSettings: { brokerId: 'b' },
+      } as never),
+    ).rejects.toThrow('PDF_NOT_READY');
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

@@ -338,3 +338,41 @@ describe('HR postal code and shared job title shape', () => {
     expect(() => recordValues(['', '', '', '', '', ''], schema)).toThrow();
   });
 });
+
+it('excludes former employees from the current attendance list and count while retaining scoped profile history', async () => {
+  const findMany = vi.fn().mockResolvedValue([]);
+  const count = vi.fn().mockResolvedValue(0);
+  const scope = { branchId: { in: ['allowed'] }, deletedAt: null };
+  const target = {
+    database: { client: { hrRecord: { findMany, count } } },
+    recordScope: () => scope,
+    recordDtos: async () => [],
+    auditRead: vi.fn(),
+  };
+  await HrService.prototype.listRecords.call(
+    target as never,
+    { section: 'time', tab: 'attendance' },
+    {} as never,
+  );
+  expect(findMany.mock.calls[0]![0].where.AND).toEqual([
+    scope,
+    {
+      section: 'time',
+      tab: 'attendance',
+      employee: { status: 'فعال', deletedAt: null },
+    },
+  ]);
+  expect(count.mock.calls[0]![0].where).toEqual(
+    findMany.mock.calls[0]![0].where,
+  );
+  await HrService.prototype.listRecords.call(
+    target as never,
+    {
+      section: 'time',
+      tab: 'attendance',
+      employeeId: '11111111-1111-4111-8111-111111111111',
+    },
+    {} as never,
+  );
+  expect(findMany.mock.calls[1]![0].where.AND[1].employee).toBeUndefined();
+});
