@@ -4667,15 +4667,16 @@ export class HrService {
         throw new ForbiddenException(
           'ویرایش دستی تردد برای این حساب مجاز نیست.',
         );
-      if (!employee || !data.startsAt || !data.endsAt)
+      if (!employee || (!data.startsAt && !data.endsAt))
         throw new BadRequestException(
-          'اصلاح حضور نیازمند زمان شروع و پایان UTC معتبر است.',
+          'اصلاح حضور نیازمند حداقل یک زمان ورود یا خروج معتبر است.',
         );
       await this.assertOpenPeriod(tx, row.branchId, values[1]!);
       for (const [at, kind] of [
         [data.startsAt, 'ورود'],
         [data.endsAt, 'خروج'],
       ] as const) {
+        if (!at) continue;
         const moment = new Date(at);
         const { date, time } = validate.localClockParts(moment);
         await this.assertOpenPeriod(tx, row.branchId, date);
@@ -5575,7 +5576,7 @@ export class HrService {
     )
       throw new BadRequestException('وضعیت خطای دستگاه معتبر نیست.');
     const version = validate.version(input.version),
-      reason = validate.text(input.reason, 'دلیل', 500);
+      reason = validate.text(input.reason, 'دلیل', 500, true);
     const result = await this.command(
       actor,
       key,
@@ -5590,15 +5591,13 @@ export class HrService {
           throw new BadRequestException('رکورد کارکرد معتبر نیست.');
         const date = (attendance.values as string[])[1]!;
         await this.assertOpenPeriod(tx, attendance.branchId, date);
-        const start = validate.localClockToUtc(
-          date,
-          validate.text(input.arrival, 'ورود', 5),
-        );
-        const end = validate.localClockToUtc(
-          date,
-          validate.text(input.departure, 'خروج', 5),
-        );
-        if (end <= start)
+        const arrival = validate.text(input.arrival, 'ورود', 5, true);
+        const departure = validate.text(input.departure, 'خروج', 5, true);
+        const start = arrival ? validate.localClockToUtc(date, arrival) : null;
+        const end = departure
+          ? validate.localClockToUtc(date, departure)
+          : null;
+        if (start && end && end <= start)
           throw new BadRequestException('خروج باید پس از ورود باشد.');
         const changed = await tx.hrRecord.updateMany({
           where: { id: attendance.id, version, deletedAt: null },
@@ -5606,6 +5605,7 @@ export class HrService {
         });
         if (changed.count !== 1)
           throw new ConflictException('نسخه کارکرد تغییر کرده است.');
+        if (!start && !end) return { branchId: attendance.branchId, date };
         const employee = await this.employee(tx, attendance.employeeId, actor);
         const correction = await tx.hrRecord.create({
           data: {
@@ -5620,13 +5620,13 @@ export class HrService {
               employee.name,
               date,
               '',
-              `${input.arrival} تا ${input.departure}`,
+              `${arrival} تا ${departure}`,
               reason,
               actor.userId,
             ],
             data: {
-              startsAt: start.toISOString(),
-              endsAt: end.toISOString(),
+              ...(start ? { startsAt: start.toISOString() } : {}),
+              ...(end ? { endsAt: end.toISOString() } : {}),
               reason,
               attendanceDeviceError: input.deviceError === true,
             },

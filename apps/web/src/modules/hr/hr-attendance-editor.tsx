@@ -88,7 +88,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             ورود
             <TimePicker
-              required
               value={arrival}
               onChange={(e) => setArrival(e.target.value)}
             />
@@ -96,7 +95,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             خروج
             <TimePicker
-              required
               value={departure}
               onChange={(e) => setDeparture(e.target.value)}
             />
@@ -104,7 +102,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             دلیل اصلاح
             <textarea
-              required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
