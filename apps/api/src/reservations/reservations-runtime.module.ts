@@ -371,6 +371,7 @@ export class ReservationRequestsController {
     if (!req.actor.permissions.includes('finance.financial_release.read'))
       throw new ForbiddenException();
     const rows = await this.service.list(req.actor.branchIds, {
+      actor: req.actor,
       contractNumber,
     });
     return {
@@ -857,6 +858,7 @@ export class ReservationRequestsController {
     )
       throw new ForbiddenException('مجوز مشاهده رزرواسیون وجود ندارد.');
     const rows = await this.service.list(req.actor.branchIds, {
+      actor: req.actor,
       page,
       contractNumber,
     });

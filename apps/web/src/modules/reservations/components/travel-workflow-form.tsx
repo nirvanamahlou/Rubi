@@ -262,7 +262,7 @@ export function TravelWorkflowForm({
               checked={brandKind === 'OWN'}
               onChange={() => setBrandKind('OWN')}
             />{' '}
-            بله، شرکت فعال
+            بله، شرکت قرارداد
           </label>
           <label>
             <input

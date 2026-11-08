@@ -5,11 +5,13 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
+import { ContractCompanyScope } from '../../sales/contract-company-scope.public';
 import * as v from '../accounting/accounting.validation';
 import {
   unallocatedReceiptAmount,
@@ -33,7 +35,12 @@ import {
 
 @Injectable()
 export class FinanceReceiptAllocationService {
-  constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly db: DatabaseService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
+  ) {}
   private authorize(actor: AuthenticatedActor, write = false) {
     const needed = [
       'finance.read',
@@ -59,6 +66,7 @@ export class FinanceReceiptAllocationService {
     });
     if (!event)
       throw new NotFoundException('رویداد دریافت در شعبه مجاز یافت نشد.');
+    await this.companyScope?.assertVisible(event.requestId, actor);
     return event;
   }
   async context(eventId: string, actor: AuthenticatedActor, before?: string) {

@@ -3223,6 +3223,7 @@ enum LegalEntityDocumentIssueStatus {
 }
 
 model LegalEntity {
+  salesContracts                            SalesContract[]
   procurementInvoiceIssuerlegalentityidRows ProcurementInvoice[]         @relation("ProcurementInvoiceIssuerlegalentityid")
   id                                        String                       @id @default(uuid()) @db.Uuid
   code                                      String                       @unique @db.VarChar(40)
@@ -4012,6 +4013,9 @@ model SalesContractNumberCounter {
 }
 
 model SalesContract {
+  legalEntityId             String?                        @map("legal_entity_id") @db.Uuid
+  legalEntity               LegalEntity?                   @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
+  hiddenAt                  DateTime?                      @map("hidden_at") @db.Timestamptz(3)
   insurancePolicies         ReservationInsurancePolicy[]
   financialWorkflows        AccountingWorkflow[]
   receiptAllocations        SalesReceiptAllocation[]
@@ -4064,6 +4068,7 @@ model SalesContract {
   @@index([status, settlementStatus, reservationStatus])
   @@index([customerId, updatedAt])
   @@index([departureDate, originId, destinationId])
+  @@index([legalEntityId, hiddenAt, departureDate])
   @@map("sales_contracts")
 }
 

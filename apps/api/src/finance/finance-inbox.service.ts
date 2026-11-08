@@ -51,6 +51,7 @@ import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.serv
 import { readFinanceHistory } from './finance-history';
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
   SUBMITTED: 'NEW',
@@ -83,6 +84,9 @@ export class FinanceInboxService {
     @Optional()
     @Inject(PurchaseFxService)
     private readonly purchaseFx?: PurchaseFxService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
 
   history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
@@ -92,6 +96,7 @@ export class FinanceInboxService {
       this.reservations,
       query,
       actor,
+      this.companyScope,
     );
   }
 
@@ -149,9 +154,9 @@ export class FinanceInboxService {
 
   private async completeReservationInbox(actor: AuthenticatedActor) {
     if (typeof this.reservations.listForFinance === 'function')
-      return this.reservations.listForFinance(actor.branchIds);
+      return this.reservations.listForFinance(actor.branchIds, actor);
     // Compatibility with older public adapters; never silently keep page one.
-    const first = await this.reservations.list(actor.branchIds);
+    const first = await this.reservations.list(actor.branchIds, { actor });
     const items = [...first],
       seen = new Set(items.map((item) => item.id));
     let batch = first;
@@ -161,6 +166,7 @@ export class FinanceInboxService {
           'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
         );
       batch = await this.reservations.list(actor.branchIds, {
+        actor,
         page: String(page),
       });
       if (
@@ -276,7 +282,10 @@ export class FinanceInboxService {
     );
     const payrollRows =
       await this.database.client.financeOperationalRequest.findMany({
-        where: { branchId: { in: actor.branchIds } },
+        where: {
+          branchId: { in: actor.branchIds },
+          AND: [(await this.companyScope?.operationalWhere(actor)) ?? {}],
+        },
         include: {
           revisions: { orderBy: { version: 'desc' }, take: 1 },
         },

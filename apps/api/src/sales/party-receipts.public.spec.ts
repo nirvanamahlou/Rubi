@@ -127,6 +127,7 @@ describe('Sales party public boundary', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
+          AND: [{}],
           branchId: 'branch',
           payerCustomerId: 'payer',
           status: { notIn: ['CANCELLED', 'DRAFT', 'PENDING_CONFIRMATION'] },

@@ -33,8 +33,7 @@ describe('Sales payment tracking references', () => {
       expect(list).toHaveBeenCalledWith(
         { search: 'TRACK-001' },
         {
-          branchId: { in: ['branch'] },
-          ownerUserId: 'actor',
+          AND: [{ branchId: { in: ['branch'] }, ownerUserId: 'actor' }, {}],
         },
         allowed,
       );

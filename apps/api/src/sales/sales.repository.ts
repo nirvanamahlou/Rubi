@@ -67,6 +67,7 @@ export type SalesContractRow = Prisma.SalesContractGetPayload<{
 }>;
 
 export interface SalesActorContext {
+  legalEntityId?: string;
   userId: string;
   branchId: string;
   traceId?: string;
@@ -161,12 +162,13 @@ export class SalesRepository {
     after: object,
     take: number,
     requestId?: string,
+    scope: Prisma.SalesContractWhereInput = {},
   ) {
     return this.database.client.salesContractPaymentEntry.findMany({
       where: {
         status: 'FINANCE_CONFIRMED',
         financeConfirmedAt: { not: null },
-        contract: { branchId: { in: [...branchIds] } },
+        contract: { AND: [{ branchId: { in: [...branchIds] } }, scope] },
         ...(requestId ? { id: requestId } : {}),
         ...after,
       },
@@ -207,6 +209,7 @@ export class SalesRepository {
   pendingFinancePayments(
     branchIds: readonly string[],
     includeConfirmed = false,
+    scope: Prisma.SalesContractWhereInput = {},
   ) {
     if (!branchIds.length) return Promise.resolve([]);
     return this.database.client.salesContractPaymentEntry.findMany({
@@ -218,7 +221,7 @@ export class SalesRepository {
           { status: 'PENDING_FINANCE_CONFIRMATION' },
           { status: 'SCHEDULED', dueAt: { lte: new Date() } },
         ],
-        contract: { branchId: { in: [...branchIds] } },
+        contract: { AND: [{ branchId: { in: [...branchIds] } }, scope] },
       },
       include: {
         contract: {
@@ -240,11 +243,13 @@ export class SalesRepository {
   customerDocumentDeliveryCandidates(
     branchIds: readonly string[],
     contractNumber?: string,
+    scope: Prisma.SalesContractWhereInput = {},
   ) {
     if (!branchIds.length) return Promise.resolve([]);
     const query = contractNumber?.trim();
     return this.database.client.salesContract.findMany({
       where: {
+        AND: [scope],
         branchId: { in: [...branchIds] },
         ...(query
           ? {
@@ -533,6 +538,9 @@ export class SalesRepository {
           const contract = await tx.salesContract.create({
             data: {
               contractNumber,
+              ...(actor.legalEntityId
+                ? { legalEntityId: actor.legalEntityId }
+                : {}),
               branchId: actor.branchId,
               ownerUserId: actor.userId,
               assignedUserId: input.assignedUserId ?? null,

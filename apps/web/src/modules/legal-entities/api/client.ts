@@ -78,7 +78,29 @@ export interface LegalEntityAuditItem {
   occurredAt: string;
 }
 
+export interface ArchivedContracts {
+  data: {
+    id: string;
+    contractNumber: string;
+    customerNameSnapshot: string;
+    departureDate: string;
+    hiddenAt: string;
+    legalEntity: { persianName: string } | null;
+  }[];
+  total: number;
+  page: number;
+}
+
 export const legalEntitiesApi = {
+  archivedContracts: (search: string, page: number) =>
+    request<ArchivedContracts>(
+      `/contract-archive?${new URLSearchParams({ search, page: String(page) })}`,
+    ),
+  restoreContracts: (ids: string[]) =>
+    request<{ restored: number }>('/contract-archive/restore', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    }),
   selectable: () =>
     request<{ data: LegalEntitySummary[]; meta: { canAggregate: boolean } }>(
       '/selectable',

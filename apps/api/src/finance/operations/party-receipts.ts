@@ -1,3 +1,5 @@
+import { ContractCompanyScope } from '../../sales/contract-company-scope.public';
+import { Optional } from '@nestjs/common';
 import {
   BadRequestException,
   ConflictException,
@@ -60,7 +62,12 @@ function receiptWriteConflict(error: unknown) {
 
 @Injectable()
 export class FinancePartyReceipts {
-  constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly db: DatabaseService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
+  ) {}
   private authorize(
     actor: AuthenticatedActor,
     branchId?: string,
@@ -79,16 +86,18 @@ export class FinancePartyReceipts {
     this.authorize(actor);
     const term = v.text(search, 80, true);
     if (term.length < 2) return [];
+    const scope = (await this.companyScope?.where(actor)) ?? {};
     return this.db.client.$transaction((tx) =>
-      contractParties(tx, actor.branchIds, term),
+      contractParties(tx, actor.branchIds, term, scope),
     );
   }
   async balance(branch: unknown, payer: unknown, actor: AuthenticatedActor) {
     const branchId = v.uuid(branch)!,
       payerId = v.uuid(payer)!;
     this.authorize(actor, branchId);
+    const scope = (await this.companyScope?.where(actor)) ?? {};
     return this.db.client.$transaction(
-      (tx) => partyContractBalance(tx, branchId, payerId),
+      (tx) => partyContractBalance(tx, branchId, payerId, scope),
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
   }
@@ -125,8 +134,16 @@ export class FinancePartyReceipts {
     )
       throw new BadRequestException('مبلغ مثبت، ارز و نسخه معتبر لازم است.');
     input.amount = new Prisma.Decimal(input.amount).toString();
+    const legalEntityId = await this.companyScope?.selected(actor, true);
+    const scope = legalEntityId ? { legalEntityId, hiddenAt: null } : {};
     const fingerprint = createHash('sha256')
-      .update(JSON.stringify({ ...input, actorId: actor.userId }))
+      .update(
+        JSON.stringify({
+          ...input,
+          actorId: actor.userId,
+          companyScope: scope,
+        }),
+      )
       .digest('hex');
     try {
       return await this.db.client.$transaction(
@@ -140,6 +157,7 @@ export class FinancePartyReceipts {
             tx,
             input.branchId,
             input.payerId,
+            scope,
           );
           if (context.revision !== input.revision)
             throw new ConflictException(

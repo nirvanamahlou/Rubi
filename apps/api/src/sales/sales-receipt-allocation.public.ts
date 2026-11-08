@@ -32,6 +32,8 @@ const receiptSelect = {
       id: true,
       branchId: true,
       customerId: true,
+      legalEntityId: true,
+      hiddenAt: true,
       version: true,
       status: true,
       contractNumber: true,
@@ -43,6 +45,8 @@ const targetSelect = {
   id: true,
   branchId: true,
   customerId: true,
+  legalEntityId: true,
+  hiddenAt: true,
   version: true,
   status: true,
   contractNumber: true,
@@ -98,6 +102,8 @@ export async function receiptAllocationTargets(
       id: { not: source.contractId },
       branchId: source.contract.branchId,
       customerId: source.contract.customerId,
+      legalEntityId: source.contract.legalEntityId,
+      hiddenAt: null,
       status: { not: 'CANCELLED' },
       ...(search
         ? { contractNumber: { contains: search, mode: 'insensitive' as const } }
@@ -221,11 +227,14 @@ export async function prepareReceiptAllocation(
   if (
     !original &&
     (target.status === 'CANCELLED' ||
+      target.hiddenAt != null ||
+      source.contract.hiddenAt != null ||
+      source.contract.legalEntityId !== target.legalEntityId ||
       source.contract.customerId !== target.customerId ||
       source.contract.customerId !== basisPartyId)
   )
     throw new ConflictException(
-      'تخصیص فقط بین قراردادهای همان مشتری و شعبه ممکن است.',
+      'تخصیص فقط بین قراردادهای فعال همان مشتری، شرکت و شعبه ممکن است.',
     );
   const amount = original?.amount ?? new Prisma.Decimal(input.amount!);
   if (!amount.isFinite() || !amount.isPositive() || amount.decimalPlaces() > 4)

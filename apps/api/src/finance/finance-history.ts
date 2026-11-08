@@ -9,6 +9,7 @@ import type {
 import type { DatabaseService } from '../database/database.service';
 import type { SalesService } from '../sales/sales.service';
 import type { ReservationsPublicService } from '../reservations/reservations-public.service';
+import type { ContractCompanyScope } from '../sales/contract-company-scope.public';
 
 const sources: FinanceHistorySourceV1[] = [
   'SALES',
@@ -130,6 +131,7 @@ export async function readFinanceHistory(
   reservations: ReservationsPublicService,
   query: FinanceHistoryQueryV1,
   actor: AuthenticatedActor,
+  companyScope?: ContractCompanyScope,
 ): Promise<FinanceHistoryV1> {
   if (!actor.permissions.includes('finance.read'))
     throw new ForbiddenException('مجوز مشاهده تاریخچه مالی وجود ندارد.');
@@ -188,7 +190,11 @@ export async function readFinanceHistory(
           })
         : [],
       enabled('RESERVATIONS')
-        ? reservations.financeHistoryPurchases(actor.branchIds, query.requestId)
+        ? reservations.financeHistoryPurchases(
+            actor.branchIds,
+            query.requestId,
+            actor,
+          )
         : [],
       enabled('OPERATIONAL')
         ? db.financeOperationalRevision.findMany({
@@ -197,6 +203,7 @@ export async function readFinanceHistory(
               paidAmount: { gt: 0 },
               transferAt: { not: null },
               request: {
+                AND: [(await companyScope?.operationalWhere(actor)) ?? {}],
                 branchId: { in: actor.branchIds },
                 ...(query.direction === 'RECEIPT'
                   ? { kind: 'PETTY_CASH_RETURN' }

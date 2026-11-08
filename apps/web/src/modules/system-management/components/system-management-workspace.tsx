@@ -1,4 +1,5 @@
 'use client';
+import { ContractArchive } from '@/modules/legal-entities/components/contract-archive';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   Dialog,
@@ -886,6 +887,9 @@ export function SystemManagementWorkspace() {
             {copy.history}
           </button>
         </div>
+        {selectedModule.id === 'sales' && moduleTab === 'settings' ? (
+          <ContractArchive />
+        ) : null}
         {selectedModule.id === 'marketing' && moduleTab === 'settings' ? (
           <section className="mt-5 grid gap-4" aria-label="تنظیمات مارکتینگ">
             <Tabs

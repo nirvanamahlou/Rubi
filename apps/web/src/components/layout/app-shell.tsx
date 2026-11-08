@@ -92,6 +92,25 @@ import {
   TooltipTrigger,
 } from '../ui/overlays';
 
+function CompanyScopedContent({ children }: { children: ReactNode }) {
+  const { context, loading, switching } = useLegalEntityContext();
+  const pathname = usePathname();
+  // Reset list selections and stale in-flight requests on company changes. Keep
+  // the new-contract draft mounted so choosing its company never discards inputs.
+  const scoped =
+    pathname === '/sales' ||
+    pathname === '/reservations' ||
+    pathname.startsWith('/finance/') ||
+    pathname === '/system';
+  if (scoped && (loading || switching))
+    return (
+      <div role="status" className="p-6">
+        در حال دریافت اطلاعات شرکت…
+      </div>
+    );
+  return <div key={scoped ? context?.selection : 'draft'}>{children}</div>;
+}
+
 function Brand({ compact = false }: { compact?: boolean }) {
   const { language } = useSystemPreferences();
   const { context } = useLegalEntityContext();
@@ -730,7 +749,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
           <Suspense fallback={<p role="status">در حال بررسی دسترسی…</p>}>
             <RouteAccessGuard>
               <HrConnectionsVisibilityProvider>
-                {children}
+                <CompanyScopedContent>{children}</CompanyScopedContent>
               </HrConnectionsVisibilityProvider>
             </RouteAccessGuard>
           </Suspense>

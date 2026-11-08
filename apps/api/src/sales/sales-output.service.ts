@@ -1,3 +1,5 @@
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import { Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
@@ -20,6 +22,9 @@ export class SalesOutputService {
     private readonly legalEntities: LegalEntitiesService,
     @Inject(IamFinanceDirectory)
     private readonly identities: IamFinanceDirectory,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
   async prepare(
     id: string,
@@ -32,7 +37,14 @@ export class SalesOutputService {
       throw new ConflictException(
         'قرارداد را پیش از تهیه خروجی نهایی تأیید کنید.',
       );
-    const { data: context } = await this.legalEntities.current(actor);
+    const { data: context } = this.companyScope
+      ? {
+          data: {
+            isAggregate: false,
+            legalEntity: await this.companyScope.owner(id),
+          },
+        }
+      : await this.legalEntities.current(actor);
     if (context.isAggregate || !context.legalEntity)
       throw new ConflictException(
         'برای خروجی، یک شرکت مشخص را از بالای صفحه انتخاب کنید.',
