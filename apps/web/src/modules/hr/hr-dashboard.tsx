@@ -1,4 +1,5 @@
 'use client';
+import { eligibleAttendanceRecords } from './employee-attendance-dataset';
 import { HrDashboardCharts } from './hr-dashboard-charts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -102,7 +103,7 @@ export function HrDashboard({
       /انتظار|بررسی/.test(item.status),
   );
   const daily = new Map<string, HrRecordDto>();
-  for (const item of scoped
+  for (const item of eligibleAttendanceRecords(scoped)
     .filter((item) => item.section === 'time' && item.tab === 'attendance')
     .sort(
       (a, b) =>

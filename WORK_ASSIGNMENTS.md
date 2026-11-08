@@ -11593,3 +11593,11 @@ HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date 
 Owner requests optional destination account for foreign-currency bank-transfer declarations in Sales payments. Reserve payment-destination helper, contract-payments selector/serialization, focused UI/flow and existing server persistence regressions, own notes. Backend already accepts omitted destinations and validates provided references through branch/currency/active account scope. Preserve IRR/other-method requirements, actual Finance receipt approval, idempotency and source ownership. No API/schema/dependency/financial transactions or deployment.
 
 FX-TRANSFER-DESTINATION-1108 validation:26 Web/11 API checks pass; native server omission contract is unchanged. Source frozen on push; preserve all final-head quality/build/test/migration gates before standing authorized develop merge. No deployment or payment registration.
+
+## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
+
+Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
+
+ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.
+
+ATTENDANCE-ACTIVATION-1108 consumer review: reserve bounded hr-dashboard.tsx, hr-reports.tsx, radan-reports.ts and contextual attendance options in hr-record-form.tsx. The legacy browser projections also consume eligible attendance; keep history rows visible. No competing active HR writer.

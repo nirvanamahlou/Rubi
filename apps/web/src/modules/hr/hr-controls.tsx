@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from '@/components/ui/overlays';
 import type { HrPreviewDataset } from './hr-preview-data';
-import { cellText, recordKey } from './hr-data-utils';
+import { cellText, recordKey, subsetDataset } from './hr-data-utils';
 import { reportCellText } from './hr-report-text';
 import { hrStatusText, hrStatusTone } from './hr-presentation';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
@@ -256,7 +256,13 @@ export function HrTable({
             {data.rows.slice(start, start + 20).map((row, offset) => {
               const index = start + offset;
               return (
-                <tr key={recordKey(data, index) || index}>
+                <tr
+                  key={recordKey(data, index) || index}
+                  data-attendance-inactive={
+                    data.inactiveRecordIds?.includes(recordKey(data, index)) ||
+                    undefined
+                  }
+                >
                   {showSelection ? (
                     <td className={ui.selectionCell}>
                       <input
@@ -447,12 +453,21 @@ export function HrConfirmDelete({
   );
 }
 export function HrExportButton({
-  data,
+  data: inputData,
   name,
 }: {
   data: HrPreviewDataset;
   name: string;
 }) {
+  const data = subsetDataset(
+    inputData,
+    inputData.rows
+      .map((_, index) => index)
+      .filter(
+        (index) =>
+          !inputData.inactiveRecordIds?.includes(recordKey(inputData, index)),
+      ),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return (
@@ -483,7 +498,7 @@ export function HrExportButton({
 }
 
 export function HrPdfButton({
-  data,
+  data: inputData,
   title,
   disabled = false,
 }: {
@@ -491,6 +506,15 @@ export function HrPdfButton({
   title: string;
   disabled?: boolean;
 }) {
+  const data = subsetDataset(
+    inputData,
+    inputData.rows
+      .map((_, index) => index)
+      .filter(
+        (index) =>
+          !inputData.inactiveRecordIds?.includes(recordKey(inputData, index)),
+      ),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return (

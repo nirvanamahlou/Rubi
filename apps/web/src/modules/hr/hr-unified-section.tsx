@@ -1,4 +1,5 @@
 'use client';
+import { HrAttendanceActivationForm } from './hr-attendance-activation-form';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -79,6 +80,7 @@ function AccessibleHrSection({
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
+  const [activationOpen, setActivationOpen] = useState(false);
   const [attendanceEdit, setAttendanceEdit] = useState<HrRecordDto | null>(
     null,
   );
@@ -413,9 +415,25 @@ function AccessibleHrSection({
               }}
               label="نمای شیفت"
             />
+          ) : source.section === 'time' &&
+            source.tab === 'attendance' &&
+            store.data!.capabilities.manualAttendance ? (
+            <HrButton onClick={() => setActivationOpen(true)}>
+              غیرفعال‌سازی
+            </HrButton>
           ) : undefined
         }
       >
+        {activationOpen && (
+          <HrAttendanceActivationForm
+            employees={store.data!.employees}
+            onClose={() => setActivationOpen(false)}
+            onSaved={async () => {
+              await store.mutated();
+              setRefreshTick((value) => value + 1);
+            }}
+          />
+        )}
         <div className={ui.filters}>
           {!embedded && group.sources.length > 1 ? (
             <label>
@@ -526,6 +544,7 @@ function AccessibleHrSection({
                   'ردشده',
                   'لغوشده',
                   'فعال',
+                  'غیرفعال',
                   ...items.map((item) => item.status),
                 ]),
               ).map((item) => (

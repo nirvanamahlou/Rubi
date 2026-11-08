@@ -44,6 +44,14 @@ export class HrController {
   ) {
     return this.service.missionPettyFund(branchId, req.actor);
   }
+  @Post('attendance/activation')
+  setAttendanceActivation(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.setAttendanceActivation(body, key, req.actor);
+  }
   @Post('attendance/:id/manual')
   editAttendance(
     @Param('id') id: string,

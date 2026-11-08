@@ -871,7 +871,10 @@ function HrRecordFormFields({
               attendance: data.records
                 .filter(
                   (item) =>
-                    item.section === 'time' && item.tab === 'attendance',
+                    item.section === 'time' &&
+                    item.tab === 'attendance' &&
+                    item.status !== 'غیرفعال' &&
+                    item.data.attendanceActive !== false,
                 )
                 .map((item) => ({
                   employee: valueOf(item, 'کارمند'),
