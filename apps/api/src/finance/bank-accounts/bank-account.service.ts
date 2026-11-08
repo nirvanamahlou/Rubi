@@ -55,7 +55,7 @@ export class BankAccountService {
   }
   private context(row: {
     id: string;
-    branchId: string;
+    branchId: string | null;
     bankId: string | null;
   }) {
     return `finance:company-bank:v1:${row.branchId}:${row.bankId}:${row.id}`;
@@ -70,6 +70,7 @@ export class BankAccountService {
       currencyCode: row.currencyCode,
       version: row.version,
       isActive: row.isActive,
+      isExternal: row.isExternal ?? false,
       accountNumber: row.maskedAccountNumber,
       cardNumber: row.maskedCardNumber,
       iban: row.maskedIban,
@@ -106,7 +107,10 @@ export class BankAccountService {
         bankId,
         kind: 'BANK',
         deletedAt: null,
-        branchId: { in: [...actor.branchIds] },
+        OR: [
+          { branchId: { in: [...actor.branchIds] } },
+          { branchId: null, isExternal: true },
+        ],
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 26,
@@ -130,7 +134,10 @@ export class BankAccountService {
         bankId,
         kind: 'BANK',
         deletedAt: null,
-        branchId: { in: [...actor.branchIds] },
+        OR: [
+          { branchId: { in: [...actor.branchIds] } },
+          { branchId: null, isExternal: true },
+        ],
       },
     });
     if (!row) throw new NotFoundException('حساب بانکی پیدا نشد.');
@@ -234,12 +241,13 @@ export class BankAccountService {
   private identifiers(
     input: Record<string, unknown>,
     previous: BankIdentifiers,
+    isExternal = false,
   ): BankIdentifiers {
     const values = { ...previous };
     for (const field of fields)
       if (Object.hasOwn(input, field))
         values[field] = normalizeBankIdentifier(field, input[field]);
-    if (fields.every((field) => !values[field]))
+    if (!isExternal && fields.every((field) => !values[field]))
       throw new BadRequestException(
         'حداقل یکی از شماره حساب، کارت یا شبا را وارد کنید.',
       );
@@ -275,43 +283,100 @@ export class BankAccountService {
       'title',
       'currencyCode',
       'isActive',
+      'isExternal',
+      'branchId',
       ...fields,
-      ...(id ? ['expectedVersion'] : ['branchId', 'requestId']),
+      ...(id ? ['expectedVersion'] : ['requestId']),
     ]);
-    if (
-      typeof input.title !== 'string' ||
-      !input.title.trim() ||
-      input.title.trim().length > 160 ||
-      typeof input.currencyCode !== 'string' ||
-      !/^[A-Z]{3}$/.test(input.currencyCode) ||
-      typeof input.isActive !== 'boolean'
-    )
+    if (input.isExternal !== undefined && typeof input.isExternal !== 'boolean')
       throw new BadRequestException('اطلاعات حساب بانکی معتبر نیست.');
-    const title = input.title.trim(),
-      currencyCode = input.currencyCode,
-      isActive = input.isActive;
     const expectedVersion = id ? bankVersion(input.expectedVersion) : null;
-    const branchId = id ? null : bankUuid(input.branchId),
-      requestId = id ?? bankUuid(input.requestId);
-    if (branchId) this.scope(actor, branchId);
+    const requestId = id ?? bankUuid(input.requestId);
     try {
       return await this.db.client.$transaction(
         async (tx) => {
           await this.directory.assertBank(bankId, tx);
-          await this.directory.assertCurrency(currencyCode, tx);
-          if (id) {
-            const current = await this.find(tx, bankId, id, actor);
+          const current = id ? await this.find(tx, bankId, id, actor) : null;
+          const isExternal = (input.isExternal ??
+            current?.isExternal ??
+            false) as boolean;
+          if (
+            (input.title !== undefined && typeof input.title !== 'string') ||
+            (typeof input.title === 'string' &&
+              input.title.trim().length > 160) ||
+            (!isExternal &&
+              (typeof input.title !== 'string' || !input.title.trim())) ||
+            (input.currencyCode != null &&
+              input.currencyCode !== '' &&
+              (typeof input.currencyCode !== 'string' ||
+                !/^[A-Z]{3}$/.test(input.currencyCode))) ||
+            (!isExternal && !input.currencyCode) ||
+            (input.isActive !== undefined &&
+              typeof input.isActive !== 'boolean') ||
+            (!isExternal && typeof input.isActive !== 'boolean')
+          )
+            throw new BadRequestException('اطلاعات حساب بانکی معتبر نیست.');
+          const title =
+            typeof input.title === 'string' ? input.title.trim() : '';
+          const currencyCode = (input.currencyCode || null) as string | null;
+          const isActive = (input.isActive ??
+            current?.isActive ??
+            true) as boolean;
+          const branchValue = Object.hasOwn(input, 'branchId')
+            ? input.branchId
+            : current?.branchId;
+          const branchId =
+            branchValue == null || branchValue === ''
+              ? null
+              : bankUuid(branchValue);
+          if (!isExternal && !branchId)
+            throw new BadRequestException('شعبه خارج از دسترسی است.');
+          if (branchId) {
+            this.scope(actor, branchId);
+            const branches = await this.directory.branches([branchId], tx);
+            if (!branches.some((branch) => branch.id === branchId))
+              throw new BadRequestException('شعبه خارج از دسترسی است.');
+          }
+          if (currencyCode)
+            await this.directory.assertCurrency(currencyCode, tx);
+          if (current && id) {
             if (current.version !== expectedVersion)
               throw new ConflictException(
                 'حساب هم‌زمان تغییر کرده است؛ دوباره آن را باز کنید.',
               );
-            if (current.currencyCode !== currencyCode)
+            if (
+              !isExternal &&
+              !current.isExternal &&
+              (current.currencyCode !== currencyCode ||
+                current.branchId !== branchId)
+            )
               throw new BadRequestException(
                 'ارز حساب ثبت‌شده قابل تغییر نیست.',
               );
+            if (
+              current.branchId !== branchId ||
+              current.currencyCode !== currencyCode ||
+              (current.isExternal ?? false) !== isExternal
+            ) {
+              const usage = await tx.financeSettlementAccount.findUniqueOrThrow(
+                {
+                  where: { id },
+                  include: { _count: true },
+                },
+              );
+              if (
+                Object.entries(usage._count).some(
+                  ([key, count]) => key !== 'bankAccountAudits' && count > 0,
+                )
+              )
+                throw new ConflictException(
+                  'حساب بانکی استفاده‌شده قابل تغییر نوع، شعبه یا ارز نیست.',
+                );
+            }
             const identifiers = this.identifiers(
               input,
               this.crypto.open(current.bankIdentifiers, this.context(current)),
+              isExternal,
             );
             const result = await tx.financeSettlementAccount.updateMany({
               where: {
@@ -323,7 +388,13 @@ export class BankAccountService {
               data: {
                 title,
                 isActive,
-                ...this.protectedData(identifiers, this.context(current)),
+                isExternal,
+                branchId,
+                currencyCode,
+                ...this.protectedData(
+                  identifiers,
+                  this.context({ ...current, branchId }),
+                ),
                 version: { increment: 1 },
               },
             });
@@ -341,21 +412,22 @@ export class BankAccountService {
             );
             return this.projection(row);
           }
-          const branches = await this.directory.branches([branchId!], tx);
-          if (!branches.some((branch) => branch.id === branchId))
-            throw new BadRequestException('شعبه خارج از دسترسی است.');
-          const identifiers = this.identifiers(input, {
-            accountNumber: null,
-            cardNumber: null,
-            iban: null,
-          });
+          const identifiers = this.identifiers(
+            input,
+            {
+              accountNumber: null,
+              cardNumber: null,
+              iban: null,
+            },
+            isExternal,
+          );
           await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`company-bank:${requestId}`}, 0))::text`;
           const previous = await tx.financeSettlementAccount.findUnique({
             where: { id: requestId },
           });
           const protectedData = this.protectedData(
             identifiers,
-            this.context({ id: requestId, bankId, branchId: branchId! }),
+            this.context({ id: requestId, bankId, branchId }),
           );
           if (previous) {
             if (
@@ -365,6 +437,7 @@ export class BankAccountService {
               previous.title !== title ||
               previous.currencyCode !== currencyCode ||
               previous.isActive !== isActive ||
+              (previous.isExternal ?? false) !== isExternal ||
               previous.accountFingerprint !==
                 protectedData.accountFingerprint ||
               previous.cardFingerprint !== protectedData.cardFingerprint ||
@@ -378,12 +451,13 @@ export class BankAccountService {
           const row = await tx.financeSettlementAccount.create({
             data: {
               id: requestId,
-              branchId: branchId!,
+              branchId,
               bankId,
               kind: 'BANK',
               title,
               currencyCode,
               isActive,
+              isExternal,
               createdByUserId: actor.userId,
               ...protectedData,
             },
@@ -391,9 +465,22 @@ export class BankAccountService {
           await this.audit(tx, row, actor, 'CREATE');
           return this.projection(row);
         },
-        { maxWait: 15000, timeout: 15000 },
+        {
+          maxWait: 15000,
+          timeout: 15000,
+          isolationLevel: id ? 'Serializable' : 'ReadCommitted',
+        },
       );
     } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2034'
+      )
+        throw new ConflictException(
+          'حساب هم‌زمان تغییر کرده است؛ دوباره آن را باز کنید.',
+        );
       if (
         error &&
         typeof error === 'object' &&

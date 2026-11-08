@@ -125,12 +125,13 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
       setEditor({
         mode,
         requestId: '',
-        branchId: full.branchId,
+        branchId: full.branchId ?? '',
         record: full,
         values: {
           title: full.title,
           currencyCode: full.currencyCode,
           isActive: full.isActive,
+          isExternal: full.isExternal ?? false,
           accountNumber: full.accountNumber,
           cardNumber: full.cardNumber,
           iban: full.iban,
@@ -151,6 +152,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
   async function save() {
     if (!editor || busy.current || editor.mode === 'view') return;
     if (
+      !editor.values.isExternal &&
       ![
         editor.values.accountNumber,
         editor.values.cardNumber,
@@ -168,12 +170,13 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
       if (captured.mode === 'create')
         await bankAccountsApi.create(bankId, {
           ...captured.values,
-          branchId: captured.branchId,
+          branchId: captured.branchId || null,
           requestId: captured.requestId,
         });
       else
         await bankAccountsApi.update(bankId, captured.record!.id, {
           ...captured.values,
+          branchId: captured.branchId || null,
           expectedVersion: captured.record!.version,
         });
       setEditor(null);
@@ -212,6 +215,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                     options.currencies[0]?.code ??
                     '',
                   isActive: true,
+                  isExternal: false,
                   accountNumber: '',
                   cardNumber: '',
                   iban: '',
@@ -272,7 +276,9 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-border">
-                  <td className="p-3 text-center">{row.title}</td>
+                  <td className="p-3 text-center">
+                    {row.title || (row.isExternal ? 'منبع خارجی' : '—')}
+                  </td>
                   <td className="p-3 text-center font-mono" dir="ltr">
                     {row.accountingCode ?? '—'}
                   </td>
@@ -281,7 +287,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                       ?.name ?? '—'}
                   </td>
                   <td className="p-3 text-center" dir="ltr">
-                    {row.currencyCode}
+                    {row.currencyCode ?? '—'}
                   </td>
                   {(['accountNumber', 'cardNumber', 'iban'] as const).map(
                     (field) => (
@@ -419,6 +425,35 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                 void save();
               }}
             >
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-3 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={editor.values.isExternal ?? false}
+                  disabled={pending || readonly}
+                  onChange={(event) => {
+                    setFormError('');
+                    const restoreScope =
+                      !event.target.checked &&
+                      editor.record &&
+                      !editor.record.isExternal;
+                    setEditor({
+                      ...editor,
+                      branchId: restoreScope
+                        ? (editor.record!.branchId ?? '')
+                        : editor.branchId,
+                      values: {
+                        ...editor.values,
+                        isExternal: event.target.checked,
+                        currencyCode: restoreScope
+                          ? editor.record!.currencyCode
+                          : editor.values.currencyCode,
+                      },
+                    });
+                  }}
+                  className="size-4 accent-primary"
+                />
+                منبع خارجی
+              </label>
               {editor.record ? (
                 <FormField
                   id="company-bank-accounting-code"
@@ -432,10 +467,14 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                   />
                 </FormField>
               ) : null}
-              <FormField id="company-bank-title" label="عنوان حساب" required>
+              <FormField
+                id="company-bank-title"
+                label="عنوان حساب"
+                required={!editor.values.isExternal}
+              >
                 <Input
                   id="company-bank-title"
-                  required
+                  required={!editor.values.isExternal}
                   maxLength={160}
                   value={editor.values.title}
                   disabled={pending || readonly}
@@ -447,18 +486,40 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                   }
                 />
               </FormField>
-              <FormField id="company-bank-branch" label="شعبه شرکت" required>
+              <FormField
+                id="company-bank-branch"
+                label="شعبه شرکت"
+                required={!editor.values.isExternal}
+              >
                 <Select
-                  value={editor.branchId}
-                  disabled={pending || readonly || editor.mode !== 'create'}
+                  value={
+                    editor.branchId ||
+                    (editor.values.isExternal ? '__none' : '')
+                  }
+                  disabled={
+                    pending ||
+                    readonly ||
+                    (editor.mode !== 'create' &&
+                      !editor.values.isExternal &&
+                      !editor.record?.isExternal)
+                  }
                   onValueChange={(value) =>
-                    setEditor({ ...editor, branchId: value })
+                    setEditor({
+                      ...editor,
+                      branchId: value === '__none' ? '' : value,
+                    })
                   }
                 >
-                  <SelectTrigger id="company-bank-branch" aria-required="true">
+                  <SelectTrigger
+                    id="company-bank-branch"
+                    aria-required={!editor.values.isExternal}
+                  >
                     <SelectValue placeholder="انتخاب شعبه" />
                   </SelectTrigger>
                   <SelectContent>
+                    {editor.values.isExternal ? (
+                      <SelectItem value="__none">بدون شعبه</SelectItem>
+                    ) : null}
                     {options?.branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
@@ -467,24 +528,43 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField id="company-bank-currency" label="ارز" required>
+              <FormField
+                id="company-bank-currency"
+                label="ارز"
+                required={!editor.values.isExternal}
+              >
                 <Select
-                  value={editor.values.currencyCode}
-                  disabled={pending || readonly || editor.mode !== 'create'}
+                  value={
+                    editor.values.currencyCode ||
+                    (editor.values.isExternal ? '__none' : '')
+                  }
+                  disabled={
+                    pending ||
+                    readonly ||
+                    (editor.mode !== 'create' &&
+                      !editor.values.isExternal &&
+                      !editor.record?.isExternal)
+                  }
                   onValueChange={(value) =>
                     setEditor({
                       ...editor,
-                      values: { ...editor.values, currencyCode: value },
+                      values: {
+                        ...editor.values,
+                        currencyCode: value === '__none' ? null : value,
+                      },
                     })
                   }
                 >
                   <SelectTrigger
                     id="company-bank-currency"
-                    aria-required="true"
+                    aria-required={!editor.values.isExternal}
                   >
                     <SelectValue placeholder="انتخاب ارز" />
                   </SelectTrigger>
                   <SelectContent>
+                    {editor.values.isExternal ? (
+                      <SelectItem value="__none">بدون ارز</SelectItem>
+                    ) : null}
                     {options?.currencies.map((currency) => (
                       <SelectItem key={currency.code} value={currency.code}>
                         {currency.code} · {currency.name}
@@ -565,7 +645,9 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                     type="submit"
                     loading={pending}
                     disabled={
-                      pending || !editor.branchId || !editor.values.currencyCode
+                      pending ||
+                      (!editor.values.isExternal &&
+                        (!editor.branchId || !editor.values.currencyCode))
                     }
                   >
                     ذخیره حساب

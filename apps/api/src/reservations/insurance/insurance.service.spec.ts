@@ -6,6 +6,7 @@ import type {
   SalesReservationRequestV1,
 } from '@nora/contracts';
 import type { DatabaseService } from '../../database/database.service';
+import type { CustomerInsuranceIdentity } from '../../customers/customer-insurance-identity';
 import type { CustomerService } from '../../customers/customer.service';
 import type { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
 import type { TravelWorkflowService } from '../travel-workflow.service';
@@ -113,11 +114,13 @@ function fixture() {
       },
     }),
   };
+  const identities = { correction: vi.fn(), saveCorrection: vi.fn() };
   const service = new ReservationInsuranceService(
     db as unknown as DatabaseService,
     workflow as unknown as TravelWorkflowService,
     customers as unknown as CustomerService,
     settings as unknown as InsuranceSettingsService,
+    identities as unknown as CustomerInsuranceIdentity,
   );
   return {
     input,
@@ -130,6 +133,7 @@ function fixture() {
     customers,
     workflow,
     settings,
+    identities,
     branchId,
   };
 }
@@ -286,4 +290,102 @@ describe('passenger insurance ownership and lifecycle', () => {
     await expect(f.service.saveDraft(f.input, actor)).rejects.toThrow();
     expect(f.policies.create).not.toHaveBeenCalled();
   });
+});
+
+const passenger = {
+  version: 1,
+  firstName: 'Test',
+  lastName: 'Passenger',
+  firstNameLatin: 'TEST',
+  lastNameLatin: 'PASSENGER',
+  nationalityCode: 'IRN',
+  nationalCode: '0013547890',
+  passportNo: 'A12345678',
+  birthDate: '1990-01-01',
+  gender: 'M' as const,
+  mobile: '09123456789',
+  email: 'test@example.invalid',
+};
+it('opens correction for an authorized scoped policy and denies unauthorized or issued records', async () => {
+  const f = fixture();
+  f.identities.correction.mockResolvedValue(passenger);
+  await expect(f.service.correction(f.row.id, f.actor)).resolves.toEqual({
+    data: passenger,
+  });
+  expect(f.policies.findFirst).toHaveBeenCalledWith({
+    where: { id: f.row.id, intake: { branchId: { in: [f.branchId] } } },
+  });
+  await expect(
+    f.service.correction(f.row.id, { ...f.actor, permissions: [] }),
+  ).rejects.toThrow();
+  f.policies.findFirst.mockResolvedValue({ ...f.row, status: 'ISSUED' });
+  await expect(f.service.correction(f.row.id, f.actor)).rejects.toThrow();
+});
+it('corrects incomplete automatic requests transactionally and queues the saved trip for retry', async () => {
+  const f = fixture();
+  f.policies.findUnique.mockResolvedValue({
+    ...f.row,
+    automatic: true,
+    status: 'INPUT_ERROR',
+    automation: { phase: 'QUEUED' },
+  } as never);
+  const result = await f.service.saveDraft(
+    { ...f.input, expectedVersion: 1, passenger },
+    f.actor,
+  );
+  expect(f.identities.saveCorrection).toHaveBeenCalledWith(
+    f.tx,
+    f.input.customerId,
+    passenger,
+    f.actor,
+    f.branchId,
+  );
+  expect(result.data.status).toBe('DRAFT');
+  expect(f.policies.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        automation: { phase: 'QUEUED', useDraft: true },
+        lastError: null,
+        version: 2,
+      }),
+    }),
+  );
+});
+it.each([
+  { phase: 'CREATING' },
+  { phase: 'CREATED' },
+  { phase: 'QUEUED', fingerprint: 'sent' },
+])(
+  'does not reset an already submitted provider attempt: %j',
+  async (automation) => {
+    const f = fixture();
+    f.policies.findUnique.mockResolvedValue({
+      ...f.row,
+      automatic: true,
+      automation,
+    } as never);
+    await expect(
+      f.service.saveDraft(
+        { ...f.input, expectedVersion: 1, passenger },
+        f.actor,
+      ),
+    ).rejects.toThrow();
+    expect(f.identities.saveCorrection).not.toHaveBeenCalled();
+  },
+);
+it.each([
+  { mobile: '123' },
+  { email: 'bad' },
+  { birthDate: '2026-02-30' },
+  { nationalCode: '123' },
+  { gender: 'X' },
+  { firstNameLatin: 'علی' },
+  { passportNo: 'bad space' },
+])('validates insurance correction formats: %j', (patch) => {
+  expect(() =>
+    parseInsuranceDraft({
+      ...fixture().input,
+      passenger: { ...passenger, ...patch },
+    }),
+  ).toThrow();
 });
