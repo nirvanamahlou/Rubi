@@ -11595,3 +11595,9 @@ Owner requests reversible employee/date attendance exclusion, bulk range and ind
 ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.
 
 ATTENDANCE-ACTIVATION-1108 consumer review: reserve bounded hr-dashboard.tsx, hr-reports.tsx, radan-reports.ts and contextual attendance options in hr-record-form.tsx. The legacy browser projections also consume eligible attendance; keep history rows visible. No competing active HR writer.
+
+## SELF-ATTENDANCE-PENALTY-1108 — PC-B — READY_FOR_CI
+
+Owner requests the same computed daily penalty in Workbench self attendance history beside deficit minutes. Reserve HR daily-penalty internal method visibility, self-performance projection/tests, additive Workbench contract, performance history column/test and own translations/status notes. Earlier HR scopes merged/released. Reuse the authoritative calculation and existing self/branch scope; exclude inactive days. No schema, dependency, payroll writes or deployment.
+
+SELF-ATTENDANCE-PENALTY-1108:23 focused API checks and9 Web/translation checks pass; scoped lint passes. Reuses the identical HR penalty function for scoped active history, preserving duplicate-day selection and exact Toman string projection. No operational data changes. Final hosted quality, tests, database and build gates required before merge.
