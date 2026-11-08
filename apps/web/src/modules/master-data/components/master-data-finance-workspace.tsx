@@ -785,6 +785,20 @@ export function MasterDataFinanceWorkspace() {
     },
   ];
 
+  const pageHeader = (
+    <PageHeader
+      actions={
+        <Link
+          className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
+          href="/master-data"
+        >
+          <ArrowRight aria-hidden="true" className="size-4" />
+          همه بخش‌ها
+        </Link>
+      }
+      title={copy.title}
+    />
+  );
   const navigation = (
     <Card className="overflow-x-auto p-2">
       <nav
@@ -818,25 +832,14 @@ export function MasterDataFinanceWorkspace() {
   if (tab === 'exchanges')
     return (
       <div className="space-y-4" dir="rtl">
-        <PageHeader title="صندوق‌های ارزی" />
+        {pageHeader}
         {navigation}
         <ExchangeOfficeWorkspace />
       </div>
     );
   return (
     <div className={tab === 'currencies' ? 'space-y-3' : 'space-y-5'} dir="rtl">
-      <PageHeader
-        actions={
-          <Link
-            className={`${buttonVariants({ variant: 'outline' })} ms-auto`}
-            href="/master-data"
-          >
-            <ArrowRight aria-hidden="true" className="size-4" />
-            همه بخش‌ها
-          </Link>
-        }
-        title={copy.title}
-      />
+      {pageHeader}
 
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
 

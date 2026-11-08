@@ -5755,5 +5755,7 @@
   "ویرایش صرافی": "Edit exchange office",
   "جست‌وجوی صرافی": "Search exchange offices",
   "بارگذاری از پرداخت مالی": "Uploaded from a financial payment",
-  "فهرست صرافی‌ها در دسترس نیست.": "The exchange office directory is unavailable."
+  "فهرست صرافی‌ها در دسترس نیست.": "The exchange office directory is unavailable.",
+  "کشور انتخاب‌شده معتبر نیست.": "The selected country is invalid.",
+  "منبع پرداخت معتبر نیست.": "Invalid payment source."
 }
