@@ -389,7 +389,7 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     );
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
-    expect(sheet).toContain('900 ریال + 9007199254740993.1234 € + 20 $');
+    expect(sheet).toContain('900 ریال + 9,007,199,254,740,993.1234 € + 20 $');
     expect(r.columns.map((c) => c.key)).toEqual([
       'primaryDimension',
       'secondaryDimension',

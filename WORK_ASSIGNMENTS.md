@@ -1,5 +1,9 @@
 ## HR-PENALTY-PERSIST-1108 — PC-A — ACTIVE
 
+## REPORT-MONEY-FORMAT-1108 — PC-C — IN_PROGRESS
+
+Base d140c45ac; branch codex/pc-c-report-money-format-1108. Reserve report result presentation, export renderer and focused precision/formatting tests. Comma thousands separators for all monetary displays including multi-currency cells; preserve raw API decimals, sorting, counts, currency isolation and Excel numeric fidelity. No source data, schema, dependency, merge or deployment changes.
+
 Reserve penalty settings form reopening and branch-scoped existing-record resolution, focused Web tests. Prior PC-B penalty implementation is merged; preserve its calculations and contracts. No schema or dependency changes.
 
 ## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
