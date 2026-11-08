@@ -42,6 +42,7 @@ export class CallCenterAccessService {
     actor: AuthenticatedActor,
     branchId: string,
     tx?: Prisma.TransactionClient,
+    callsOnly = false,
   ) {
     if (!this.callbackCrypto || !callbackManagers().length)
       return [] as string[];
@@ -74,7 +75,8 @@ export class CallCenterAccessService {
         );
         if (!missedInbound(t)) continue;
         const user = await this.singleRingingUser(branchId, t, db);
-        if (user ? user === actor.userId : manager) ids.add(row.call.contactId);
+        if (user ? user === actor.userId : manager)
+          ids.add(callsOnly ? row.callId : row.call.contactId);
       }
       if (rows.length < 200) break;
       after = rows.at(-1)!.id;
@@ -86,9 +88,15 @@ export class CallCenterAccessService {
         executionOwnerUserId: actor.userId,
         callCenterContactId: { not: null },
       },
-      select: { callCenterContactId: true },
+      select: {
+        callCenterContactId: true,
+        callCenterCalls: { select: { id: true } },
+      },
     });
-    for (const row of assigned) ids.add(row.callCenterContactId!);
+    for (const row of assigned) {
+      if (callsOnly) for (const call of row.callCenterCalls) ids.add(call.id);
+      else ids.add(row.callCenterContactId!);
+    }
     return [...ids];
   }
   async singleRingingUser(
@@ -221,6 +229,35 @@ export class CallCenterAccessService {
       ? { branchId, OR: [where, { id: { in: callbacks } }] }
       : where;
   }
+  /** A shared contact identity never authorizes another employee's calls. */
+  async callWhere(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Prisma.CallCenterCallWhereInput> {
+    const users = await this.users(actor, branchId, 'contacts', tx);
+    if (!answeredCallAccess() || users === null)
+      return { contact: await this.where(actor, branchId, 'contacts', tx) };
+    return {
+      contact: { branchId },
+      OR: [
+        { answerResponsibilities: { some: { userId: { in: users } } } },
+        {
+          origin: 'TELEPHONY',
+          direction: 'OUTBOUND',
+          telephonySession: {
+            synthetic: false,
+            offers: {
+              some: { userId: { in: users }, mappingVersion: { gt: 0 } },
+            },
+          },
+        },
+        {
+          id: { in: await this.callbackContactIds(actor, branchId, tx, true) },
+        },
+      ],
+    };
+  }
   async contact(
     actor: AuthenticatedActor,
     branchId: string,
@@ -243,10 +280,11 @@ export class CallCenterAccessService {
     branchId: string,
     purpose: Purpose,
     tx?: Prisma.TransactionClient,
+    individualCall = false,
   ) {
     const users = await this.users(actor, branchId, purpose, tx);
     const callbacks = users
-      ? await this.callbackContactIds(actor, branchId, tx)
+      ? await this.callbackContactIds(actor, branchId, tx, individualCall)
       : [];
     if (answeredCallAccess()) {
       const evidence =
@@ -255,16 +293,16 @@ export class CallCenterAccessService {
           : users.length
             ? Prisma.sql`(EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
           JOIN customer_affairs_calls answered ON answered.id=ar."callId"
-          WHERE answered.contact_id=c.id AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))
+          WHERE ${individualCall ? Prisma.sql`answered.id=a.id` : Prisma.sql`answered.contact_id=c.id`} AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))
           OR EXISTS(SELECT 1 FROM customer_affairs_calls outbound
           JOIN call_center_telephony_sessions s ON s."callId"=outbound.id
           JOIN call_center_telephony_offers o ON o."sessionId"=s.id
-          WHERE outbound.contact_id=c.id AND outbound.origin='TELEPHONY'
+          WHERE ${individualCall ? Prisma.sql`outbound.id=a.id` : Prisma.sql`outbound.contact_id=c.id`} AND outbound.origin='TELEPHONY'
           AND outbound.direction='OUTBOUND' AND s.synthetic=false AND o."mappingVersion">0
           AND o."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
             : Prisma.sql`FALSE`;
       return callbacks.length
-        ? Prisma.sql`(${evidence} OR c.id IN (${Prisma.join(callbacks.map((id) => Prisma.sql`${id}::uuid`))}))`
+        ? Prisma.sql`(${evidence} OR ${individualCall ? Prisma.sql`a.id` : Prisma.sql`c.id`} IN (${Prisma.join(callbacks.map((id) => Prisma.sql`${id}::uuid`))}))`
         : evidence;
     }
     if (purpose === 'reports' && users !== null)

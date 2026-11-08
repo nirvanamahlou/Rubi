@@ -311,6 +311,7 @@ export class CallCenterService {
     const page = query.page ?? 1,
       pageSize = query.pageSize ?? 50;
     const where = await this.access.where(actor, branchId);
+    const callScope = await this.access.callWhere(actor, branchId);
     const [total, contacts] = await this.database.client.$transaction(
       [
         this.database.client.callCenterContact.count({ where }),
@@ -321,10 +322,11 @@ export class CallCenterService {
           take: pageSize,
           include: {
             calls: {
+              where: callScope,
               orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
               take: 1,
             },
-            _count: { select: { calls: true, notes: true } },
+            _count: { select: { calls: { where: callScope }, notes: true } },
           },
         }),
       ],
@@ -348,7 +350,7 @@ export class CallCenterService {
       'customer_affairs.call_center.read',
     );
     const row = await this.database.client.callCenterCall.findFirst({
-      where: { id, contact: await this.access.where(actor, branchId) },
+      where: { AND: [{ id }, await this.access.callWhere(actor, branchId)] },
     });
     if (!row) throw new NotFoundException();
     return {
@@ -414,6 +416,18 @@ export class CallCenterService {
           include: { telephonySession: true },
         });
         if (!existing) throw new NotFoundException();
+        if (
+          !(await tx.callCenterCall.findFirst({
+            where: {
+              AND: [
+                { id: existing.id },
+                await this.access.callWhere(actor, branchId, tx),
+              ],
+            },
+            select: { id: true },
+          }))
+        )
+          throw new NotFoundException();
         if (this.access.scoped(actor))
           await this.access.contact(
             actor,

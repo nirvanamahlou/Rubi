@@ -582,7 +582,15 @@ export class CallCenterTelephonyService {
   async history(actor: AuthenticatedActor, id: string) {
     const row = await this.db.client.callCenterTelephonySession.findFirst({
       where: { id, ...this.scope(actor) },
-      select: { call: { select: { contactId: true, id: true } } },
+      select: {
+        call: {
+          select: {
+            contactId: true,
+            id: true,
+            contact: { select: { branchId: true } },
+          },
+        },
+      },
     });
     if (!row) throw new NotFoundException();
     // A trusted offer authorizes this call, not the customer's historical dossier.
@@ -597,7 +605,13 @@ export class CallCenterTelephonyService {
         row.call.contactId,
       );
     const calls = await this.db.client.callCenterCall.findMany({
-      where: { contactId: row.call.contactId, id: { not: row.call.id } },
+      where: {
+        AND: [
+          await this.calls.access.callWhere(actor, row.call.contact.branchId),
+        ],
+        contactId: row.call.contactId,
+        id: { not: row.call.id },
+      },
       orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
       take: 3,
     });

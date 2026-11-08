@@ -1,3 +1,7 @@
+## EXPERT-CALL-ISOLATION-1108 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-expert-call-isolation-1108 from develop80cbd9f58. Owner explicitly requires experts see only their own calls and native HR managers see their current team, with develop PR, complete CI and merge. Reserve CustomerAffairs call access/read/service and focused regression tests plus own documentation. Supersede old whole-contact-history policy for strict answered reads: shared telephone identity does not grant access to another employee's calls. Preserve shared-extension verified responsibility, trusted outbound origin, callback assignments, live popup operational claims, HR manager projection, global identities and recording restriction. No UI/schema/dependency/runtime changes in this source unit. Bounded Telephony history reader included; operational offer/claim paths unchanged. Read-only production audit confirms6 and3 cross-expert latest rows for two self-only sales experts. 84 focused tests including real PostgreSQL, full API TypeScript/build and scoped ESLint passed; expanded suite and hosted CI pending.
+
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.

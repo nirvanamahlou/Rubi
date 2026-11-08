@@ -861,6 +861,73 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ).status,
       ).toBe(403);
     });
+    it('isolates calls sharing a phone while managers retain current-team visibility', async () => {
+      const first = makeEvent('404');
+      const own = await emit(first);
+      const second = makeEvent('105');
+      second.caller = first.caller;
+      second.occurredAt = new Date(Date.now() - 50).toISOString();
+      const shared = await emit(second);
+      expect(shared.contactId).toBe(own.contactId);
+      // 105 is shared with the peer, so use a different-unit employee instead.
+      const third = makeEvent('301');
+      third.caller = first.caller;
+      third.occurredAt = new Date().toISOString();
+      const foreign = await emit(third);
+      const result = await read.search(actor(expert), branchId, {
+        page: 1,
+        pageSize: 50,
+        scope: 'LATEST',
+      } as never);
+      const row = result.data.find((r) => r.id === own.contactId)!;
+      expect(row.latest.id).toBe(shared.callId);
+      expect(row.callCount).toBe(2);
+      const history = await read.history(
+        actor(expert),
+        branchId,
+        own.contactId,
+        'calls',
+        { pageSize: 50 } as never,
+      );
+      expect(history.data.map((r) => r.id)).toEqual([
+        shared.callId,
+        own.callId,
+      ]);
+      await expect(
+        calls.getCall(foreign.callId, actor(expert), branchId),
+      ).rejects.toThrow();
+      expect(
+        (await calls.getCall(foreign.callId, actor(other), branchId)).data.id,
+      ).toBe(foreign.callId);
+      const managerHistory = await read.history(
+        actor(manager),
+        branchId,
+        own.contactId,
+        'calls',
+        { pageSize: 50 } as never,
+      );
+      expect(managerHistory.data.map((r) => r.id)).toEqual([
+        shared.callId,
+        own.callId,
+      ]);
+      const globalHistory = await db.callCenterCall.findMany({
+        where: {
+          contactId: own.contactId,
+          AND: [
+            await access.callWhere(
+              await directory.callCenterActor(actor(demo)),
+              branchId,
+            ),
+          ],
+        },
+        orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+      });
+      expect(globalHistory.map((r) => r.id)).toEqual([
+        foreign.callId,
+        shared.callId,
+        own.callId,
+      ]);
+    });
     it('applies contact policy to search, KPIs, dossier, history, direct call and recording reads', async () => {
       const a = makeEvent('404'),
         own = await emit(a),
@@ -1048,13 +1115,13 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
     });
     it('keeps SQL KPIs and all KPI modal rows within the same answered-contact scope', async () => {
       const allowed = await db.callCenterCall.count({
-        where: { contact: await access.where(actor(expert), branchId) },
+        where: await access.callWhere(actor(expert), branchId),
       });
       const kpis = await read.kpis(actor(expert), branchId);
       expect(kpis.data.today).toBe(allowed);
       const incomplete = await db.callCenterCall.count({
         where: {
-          contact: await access.where(actor(expert), branchId),
+          AND: [await access.callWhere(actor(expert), branchId)],
           outcome: null,
         },
       });
