@@ -1,3 +1,7 @@
+## HR penalty settings persistence — 2026-11-08
+
+Reopening penalty settings resolves the saved record for the selected branch/organization or headquarters scope and uses the existing versioned update flow. Branch switching remounts the form; other resource forms remain unchanged. Five focused tests and scoped ESLint pass; production compilation succeeded, full typecheck/build in progress. No schema or API changes.
+
 ## HR fast attendance sync — 2026-11-08
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
