@@ -1,4 +1,8 @@
 {
+  "اطلاعات حساب تفصیلی": "Detail account information",
+  "اطلاعات نوع تفصیلی": "Detail account type information",
+  "برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.": "Create an accounting ledger before saving a detail account type.",
+  "تعریف دفتر کل": "Create accounting ledger",
   "تاریخ شروع اعتبار": "Effective start date",
   "تأیید خطای دستگاه": "Confirm device error",
   "تعداد تنظیمات جریمه بیش از حد مجاز است.": "Too many penalty settings.",
@@ -5595,9 +5599,5 @@
   "اتصال بیمه‌گر روی سرور تنظیم نشده است.": "The insurance provider connection is not configured on the server.",
   "درخواست صدور برای این مسافر هنوز ثبت نشده است.": "An issuance request has not yet been registered for this passenger.",
   "در انتظار پردازش درخواست بیمه‌گر.": "Waiting for the insurer to process the request.",
-  "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer.",
-  "اطلاعات حساب تفصیلی": "Detail account information",
-  "اطلاعات نوع تفصیلی": "Detail account type information",
-  "برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.": "Create an accounting ledger before saving a detail account type.",
-  "تعریف دفتر کل": "Create accounting ledger"
+  "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer."
 }
