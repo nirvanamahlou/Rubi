@@ -1,3 +1,6 @@
+## HR fast attendance sync — 2026-11-08
+
+One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
 
 Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
@@ -2133,6 +2136,14 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## 2026-11-08 — انتخاب و وضعیت بیمه هر مسافر
+
+وضعیت: تکمیل و ادغام در develop؛ برای اعمال روی سرور، API و Web این نسخه باید با هم مستقر شوند. اگر بیمه در قرارداد ثبت شده ولی به هیچ مسافری تخصیص ندارد، پیام مشخص و راهنمای ویرایش اسامی نمایش داده می‌شود.
+
+`INSURANCE-SELECTION-1108` توسط PC-A: بیمه‌نامه و صف صدور، تخصیص فعلی بیمه در قرارداد را از سرویس عمومی فروش می‌خوانند. مسافر بدون رکورد صدور نیز همراه علت آماده‌نبودن نمایش داده می‌شود؛ بیمه‌نامه موجود با تغییر نسخه intake ناپدید نمی‌شود. آماده‌سازی درخواست‌های ثبت‌نشده با مجوز مدیریت اسناد و حفظ یکتایی درخواست ممکن است. در ویرایش قرارداد، خدمات بیمه هر مسافر قابل افزودن و برداشتن است.
+
+۴۲ تست API، ۱۴ تست Web و ۳ بررسی ترجمه، lint محدود، TypeScript کامل و buildهای API/Web پاس شدند. Schema، Migration و Dependency تغییر نکرده‌اند. اتصال موجود تراویس آزمایشی است؛ صدور واقعی و استقرار سرور در این واحد انجام نشده است.
 
 ## 2026-11-08 — تطبیق تاریخ پرواز واچر با قرارداد
 

@@ -1,3 +1,7 @@
+## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
+
+Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
+
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
 
 Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
@@ -11564,3 +11568,15 @@ REPORT-READINESS-1108 scope: optional readiness metadata and authenticated no-st
 REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization identity lookup by Sales customerId; no cross-module table access in Reporting.
 
 REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.
+
+## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
+
+Owner authorizes current-contract insurance selection, per-passenger issuance reasons and insurance allocation editing, tests and develop merge. Reserve Reservations insurance automation and documents UI, Customers internal insurance identity projection, passenger-service-editor and focused regressions. Consume existing public Sales current-execution port; preserve provider idempotency, issued identities, branch/source authorization and sandbox restriction. No migration/dependency or live issuance/deployment. Previous insurance scopes are merged/frozen. Additive missing-policy summary rows ship with Web consumer; no shared schema changes.
+
+Bounded extension: reserve Customers module import for the existing Sales public projection, both insurance-document controllers for a permission-checked POST prepare command, and five new English override labels. Missing policy rows use nullable id with customerId as UI identity. Reads remain non-mutating; prepare requires documents.manage plus the existing branch/contract read scope. Existing confirmed policies remain contract/customer bound across intake revisions.
+
+Validation: 42 API regressions across insurance, identity and contract amendment; 14 focused Web checks; 3 English-catalogue checks; scoped API/Web lint, full API/Web TypeScript and API plus 67-route Web builds pass. API checks use a 6GB Node heap after the default 2GB process exhausted its heap. Prisma generation used a dummy unreachable URL and did not connect to a database. No runtime policy/provider calls, migrations or deployment. The existing Travis adapter remains sandbox-only; actual production insurer issuance is outside this repair. Prepare preserves unique contract/customer/provider idempotency and does not resubmit existing policies.
+
+Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
+
+HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
