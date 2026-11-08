@@ -1,12 +1,14 @@
+## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
 ## TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-transfer-count-guard-1108 from develop381f86e20. Owner requests removal of quotation helper text, transfer count bounds and exclusion of age 2–6 children, then develop merge. Reserve bounded reservation transfer count helpers/defaults, quotation editor, server supplier-settings/purchase validation and focused tests plus own task/status notes and additive error translations. Prior quotation/email scopes are merged; preserve their changes. No schema, dependency, operational data or deployment changes.
 
 Additive pure contracts helper is shared by Reservations Web/API; no API/Event payload change. Canonical booked rooms (or registered age bands when rooms are absent) bound each direction. Age 2–6 uses the existing under-six contract band; infants remain excluded. Preserve unknown historical child ages without inventing identities. Focused contracts, Web and API regressions pass; final-head hosted quality/build/full tests/PostgreSQL gates precede merge. Source scope freezes on publication and releases on verified merge.
 
-## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
-
-Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+Bounded CI repair: reserve formatting only in the merged reservation-sales-amendment.tsx; upstream develop765072f5c introduced a Prettier failure. No semantic change to the peer airline-selector repair.
 
 ## RESERVATION-BROKER-EMAIL-1108 — PC-A — READY_FOR_REVIEW / IT PENDING
 
