@@ -14,8 +14,8 @@ were limited to additive status/decision notes and derived English catalogues;
 all peer notes are retained and catalogues regenerated from the canonical source.
 No new consumer capability, dependency, schema, IAM grant or secret change.
 259 related API tests and73 Web tests pass, with existing opt-in integration tests
-remaining skipped. Scoped lint, API/Web types and formatting pass. Production
-builds and hosted final-head gates precede release approval. Production connection
+remaining skipped. Scoped lint, API/Web types, formatting and both production
+builds pass (67 Web routes). Hosted final-head gates precede release approval. Production connection
 remains unverified until secure producer setup and consumer deployment are done.
 
 ## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW

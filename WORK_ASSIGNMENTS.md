@@ -1,4 +1,4 @@
-## JAHAN-NORA-LIVE-1108 — PC-D — RELEASE_PREPARATION
+## JAHAN-NORA-LIVE-1108 — PC-D — SOURCE_VALIDATED
 
 COMPUTER_ID=PC-D; codex/pc-d-jahan-nora-live-1108. The owner requests actual
 Jahan Bastan/Nora connection. Reserve synchronization of existing own PR1466 with

@@ -113,7 +113,7 @@ current develop before publishing that consumer. All five merge conflicts are
 shared additive notes or derived English catalogues; the canonical generator
 preserves current source translations. Original connector application behavior
 and the disabled commercial/SSO boundaries are unchanged. Related local API/Web
-tests, typechecks, scoped lint and formatting pass. Builds and final-head CI remain
-release gates. No production bundle, credential, grant or business write is made
+tests, typechecks, scoped lint, formatting and both production builds pass (67 Web
+routes). Final-head CI remains a release gate. No production bundle, credential, grant or business write is made
 by this release-preparation step. A successful real connection test is still
 required after both deployment prerequisites are resolved.
