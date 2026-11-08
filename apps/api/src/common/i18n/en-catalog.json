@@ -7862,6 +7862,7 @@
   "نوع اقامت ذخیره‌شده مسافر را مشخص کنید؛ حذف ضمنی آن مجاز نیست.": "Specify the traveler's saved accommodation type; Implicit deletion is not allowed.",
   "نوع بدنه": "body type",
   "نوع بدنه هواپیما معتبر نیست.": "The airframe type is not valid.",
+  "نوع بلیط منیفست معتبر نیست.": "The manifest ticket type is invalid.",
   "نوع تردد باید ورود یا خروج باشد.": "The type of traffic must be inbound or outbound.",
   "نوع ترمینال": "Terminal type",
   "نوع ترمینال خروجی معتبر نیست.": "The output terminal type is not valid.",

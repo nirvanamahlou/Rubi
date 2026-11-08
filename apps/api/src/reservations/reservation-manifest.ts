@@ -214,8 +214,10 @@ export class ReservationManifestService {
     snapshot: ReservationIntakeV1['snapshot'],
     offerId: string,
   ) {
-    const flight = manifestJourneys(snapshot).find(
-      (ticket) => ticket.offerId === offerId,
+    const flightKeys = new Set(
+      manifestJourneys(snapshot)
+        .filter((ticket) => ticket.offerId === offerId)
+        .map((ticket) => ticket.serviceClientKey),
     );
     const assignments = snapshot.passengerAssignments ?? [];
     if (!assignments.length) return [...snapshot.passengerIds];
@@ -223,7 +225,7 @@ export class ReservationManifestService {
       assignments.some(
         (a) =>
           a.customerId === id &&
-          a.serviceClientKeys.includes(flight?.serviceClientKey ?? ''),
+          a.serviceClientKeys.some((key) => flightKeys.has(key)),
       ),
     );
   }
@@ -265,7 +267,8 @@ export class ReservationManifestService {
         const day = tehranDay(ticket.departureAt);
         if (day < input.fromDate || day > input.toDate) continue;
         const group = groups.get(ticket.offerId) ?? { ticket, rows: [] };
-        group.rows.push(row);
+        if (!group.rows.some((item) => item.id === row.id))
+          group.rows.push(row);
         groups.set(ticket.offerId, group);
       }
     }
@@ -315,18 +318,33 @@ export class ReservationManifestService {
   }
 
   async listTickets(
-    input: { fromDate: string; toDate: string },
+    input: {
+      fromDate: string;
+      toDate: string;
+      flightSupplyType?: string | undefined;
+    },
     actor: AuthenticatedActor,
   ): Promise<ReservationManifestTicketCardV1[]> {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده بلیط‌های MANIFEST وجود ندارد.');
+    const supply = input.flightSupplyType ?? 'CHARTER';
+    if (!['CHARTER', 'FLOATING'].includes(supply))
+      throw new BadRequestException('نوع بلیط منیفست معتبر نیست.');
     const cards: ReservationManifestTicketCardV1[] = [];
     const geography = this.geographyResolver();
-    const groups = await this.ticketGroups(input, actor);
+    const groups = (await this.ticketGroups(input, actor)).filter((group) =>
+      group.ticket.transportType === 'FLIGHT'
+        ? (group.ticket.flightSupplyType ?? 'CHARTER') === supply
+        : supply === 'CHARTER',
+    );
     const inventory = this.tickets
       ? await this.tickets.manifestInventory(
           groups
-            .filter((group) => group.ticket.transportType === 'FLIGHT')
+            .filter(
+              (group) =>
+                group.ticket.transportType === 'FLIGHT' &&
+                group.ticket.flightSupplyType !== 'FLOATING',
+            )
             .map((group) => group.ticket.offerId),
           actor.branchIds,
         )
@@ -337,7 +355,8 @@ export class ReservationManifestService {
       const [origin, destination, selection] = await Promise.all([
         geography(ticket.originId, ticket.originName),
         geography(ticket.destinationId, ticket.destinationName),
-        (ticket.transportType === 'FLIGHT'
+        (ticket.transportType === 'FLIGHT' &&
+        ticket.flightSupplyType !== 'FLOATING'
           ? this.selectedTemplate(
               ticket.offerId,
               actor,
@@ -360,6 +379,9 @@ export class ReservationManifestService {
         ...loads.get(ticket.offerId),
         offerId: ticket.offerId,
         transportType: ticket.transportType,
+        ...(ticket.transportType === 'FLIGHT'
+          ? { flightSupplyType: ticket.flightSupplyType ?? 'CHARTER' }
+          : {}),
         departureTimeKnown: ticket.departureTimeKnown ?? true,
         direction: ticket.direction,
         originId: ticket.originId,
@@ -643,7 +665,8 @@ export class ReservationManifestService {
       throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
     const ticket = group.ticket;
     const template =
-      ticket.transportType === 'FLIGHT'
+      ticket.transportType === 'FLIGHT' &&
+      ticket.flightSupplyType !== 'FLOATING'
         ? await this.selectedTemplate(
             offerId,
             actor,
@@ -1169,10 +1192,14 @@ export class ReservationManifestBatchController {
   async tickets(
     @Query('fromDate') fromDate: string,
     @Query('toDate') toDate: string,
+    @Query('flightSupplyType') flightSupplyType: string | undefined,
     @Req() req: AuthenticatedRequest,
   ) {
     return {
-      data: await this.service.listTickets({ fromDate, toDate }, req.actor),
+      data: await this.service.listTickets(
+        { fromDate, toDate, flightSupplyType },
+        req.actor,
+      ),
     };
   }
 
