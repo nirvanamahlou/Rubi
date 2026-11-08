@@ -338,13 +338,11 @@ export function HotelStayPurchase({
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
         );
-      const separate = Boolean(
-        draft.hotelTransferSplit ||
-        (draft.transferBrokerId && draft.transferBrokerId !== broker.id),
-      );
-      const groups = draft.hotelTransferSplit
-        ? [[outboundKey], [returnKey!]]
-        : [transferKeys];
+      const separate = draft.hotelTransferSeparate === true;
+      const groups =
+        separate && draft.hotelTransferSplit
+          ? [[outboundKey], [returnKey!]]
+          : [transferKeys];
       const transferRows = groups
         .filter((keys) => keys.length)
         .map((keys, index) => {
