@@ -9437,3 +9437,7 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 ## SALES-RETURN-DATE-1108 — PC-A — 2026-11-08
 
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
+
+## COMPACT-MESSAGE-BUBBLES-1108 - PC-B
+
+Chat bubbles use content-sized responsive widths,14px body text,24px line spacing,8px vertical padding and32px forward/reaction controls. Reply/forward spacing is tighter. Six existing chat checks and scoped lint pass; light/dark synthetic class preview shows168px to144px sample height without horizontal overflow. Styling only; no API, dependency, schema or production deployment. Final hosted gates precede owner-authorized develop merge.
