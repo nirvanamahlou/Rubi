@@ -4,6 +4,14 @@ Owner requests an exhaustive read-only audit of populated production tables agai
 
 Contract wiring: ReportingNativeDashboard consumes only owner-public readers for ticket inventory, Sales events/stays and customer signals, Customer identity/deduplication, HR attendance, Support, native Call Center reports, Documents compliance and Reservation issuance. Internal DashboardSourceMetric gains optional unit/snapshot (no historical state fabricated); DashboardSourceResult may declare per-metric partial failures. Reporting HTTP visual V1 gains optional missingMetrics, consumed by the existing Dashboard projection client; old consumers ignore it and old servers remain supported. Reserve matching Reporting contracts/client changes and additive Web English overrides with offline API/standalone catalogue synchronization. Native Call Center report/actor checks and UI remain unchanged.
 
+## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
+
+Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
+
+## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
+
+Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
+
 ## HR-ATTENDANCE-CURRENT-1107 — PC-A — ACTIVE
 
 Reserve HR attendance current-employee filtering, Radan Saturday synchronization diagnosis and bounded operational recovery. Preserve historical data, personnel mappings, branch authorization and existing shifts. No schema/dependency changes.
@@ -11548,3 +11556,26 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from la
 RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
+
+REPORT-CURRENCY-ROWS-1108 | PC-C | codex/pc-c-report-currency-rows-1108 | Reporting currency consolidation + owner source grouping metadata (sales/reservations), focused tests | IN_PROGRESS | user explicitly authorizes all report currency rows; no migration/FX/deploy
+REPORT-CURRENCY-ROWS-1108 READY_FOR_CI: optional internal producer identity/count metadata consumed by Reporting; owning readers retain all authorization. Existing public amountsByCurrency/sourceValues contract reused; no external contract migration. Source scope explicitly authorized by user's all-report request.
+
+## VOUCHER-FLIGHT-DATE-1108 — PC-A — DONE/MERGED
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `origin/develop`. Owner requests voucher flight dates to match the current contract exactly and authorizes push plus direct `develop` merge. Reserve `voucher-settings.ts`, its focused regression, and bounded task/status notes. Voucher output must use the immutable current contract flight projection even when an older saved form contains a prior-day date; supplier-form drafts retain their explicit saved date behavior. Preserve all other saved voucher fields, ticket times, contract data, permissions and document layout. No schema, migration, dependency, lockfile, operational data or deployment changes.
+
+VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Voucher output takes both flight calendar dates from the current contract projection while supplier-form revisions retain their explicitly saved dates; the stored settings object remains unchanged. No API, schema, dependency, runtime data or deployment changes.
+
+VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
+
+## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
+
+Owner authorizes current-contract insurance selection, per-passenger issuance reasons and insurance allocation editing, tests and develop merge. Reserve Reservations insurance automation and documents UI, Customers internal insurance identity projection, passenger-service-editor and focused regressions. Consume existing public Sales current-execution port; preserve provider idempotency, issued identities, branch/source authorization and sandbox restriction. No migration/dependency or live issuance/deployment. Previous insurance scopes are merged/frozen. Additive missing-policy summary rows ship with Web consumer; no shared schema changes.
+
+Bounded extension: reserve Customers module import for the existing Sales public projection, both insurance-document controllers for a permission-checked POST prepare command, and five new English override labels. Missing policy rows use nullable id with customerId as UI identity. Reads remain non-mutating; prepare requires documents.manage plus the existing branch/contract read scope. Existing confirmed policies remain contract/customer bound across intake revisions.
+
+Validation: 42 API regressions across insurance, identity and contract amendment; 14 focused Web checks; 3 English-catalogue checks; scoped API/Web lint, full API/Web TypeScript and API plus 67-route Web builds pass. API checks use a 6GB Node heap after the default 2GB process exhausted its heap. Prisma generation used a dummy unreachable URL and did not connect to a database. No runtime policy/provider calls, migrations or deployment. The existing Travis adapter remains sandbox-only; actual production insurer issuance is outside this repair. Prepare preserves unique contract/customer/provider idempotency and does not resubmit existing policies.
+
+Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
+
+HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.

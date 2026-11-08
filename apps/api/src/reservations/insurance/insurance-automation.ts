@@ -1,5 +1,6 @@
 import {
   Inject,
+  forwardRef,
   Injectable,
   Logger,
   ForbiddenException,
@@ -22,6 +23,7 @@ import { CustomerInsuranceIdentity } from '../../customers/customer-insurance-id
 import { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
 import { TravisSandboxService } from '../../integrations/insurance/travis-sandbox.service';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
 
 type State = {
   phase?: 'QUEUED' | 'CREATING' | 'CREATED' | 'CONFIRMING' | 'ISSUED';
@@ -48,6 +50,8 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     private readonly provider: TravisSandboxService,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(forwardRef(() => SalesOperationalAmendmentService))
+    private readonly sales: SalesOperationalAmendmentService,
   ) {}
   onModuleInit() {
     this.timer = setInterval(() => void this.dispatch(), 15000);
@@ -78,7 +82,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       intake.contract.status === 'CANCELLED'
     )
       return;
-    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const snapshot = await this.sales.currentExecution(
+      this.db.client,
+      intake.snapshot as unknown as SalesReservationRequestV1,
+      [intake.branchId],
+    );
     for (const customerId of insurancePassengerIds(snapshot)) {
       await this.db.client.reservationInsurancePolicy.upsert({
         where: {
@@ -421,17 +429,23 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       )
     )
       throw new ForbiddenException();
-    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const snapshot =
+      intake.contract.status === 'CANCELLED'
+        ? (intake.snapshot as unknown as SalesReservationRequestV1)
+        : await this.sales.currentExecution(
+            this.db.client,
+            intake.snapshot as unknown as SalesReservationRequestV1,
+            actor.branchIds,
+          );
     const ids = insurancePassengerIds(snapshot);
     const rows = await this.db.client.reservationInsurancePolicy.findMany({
       where: {
         contractId: intake.contractId,
-        intakeId: intake.id,
         customerId: { in: ids },
       },
       orderBy: { customerId: 'asc' },
     });
-    return { intake, ids, rows };
+    return { intake: { ...intake, snapshot }, ids, rows };
   }
   async summary(
     intakeId: string,
@@ -446,24 +460,46 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
     return {
       sandbox: true,
+      selected: snapshot.serviceSelections.some(
+        (service) => service.kind === 'INSURANCE',
+      ),
+      canPrepare: actor.permissions.includes('reservations.documents.manage'),
       total: ids.length,
-      policies: rows.map((p) => ({
-        id: p.id,
-        customerId: p.customerId,
-        passengerName:
-          snapshot.passengerAssignments?.find(
-            (a) => a.customerId === p.customerId,
-          )?.displayNameSnapshot ?? '',
-        policyNumber: p.status === 'ISSUED' ? p.policyNumber : null,
-        status: p.status,
-        error: p.lastError,
-        sandbox: p.sandbox,
-        ready:
-          p.status === 'ISSUED' &&
-          Boolean(p.pdfUrl) &&
-          intake.status !== 'CANCELLED' &&
-          intake.contract.status !== 'CANCELLED',
-      })),
+      policies: ids.map((customerId) => {
+        const p = rows.find((row) => row.customerId === customerId);
+        return {
+          id: p?.id ?? null,
+          customerId,
+          passengerName:
+            snapshot.passengerAssignments?.find(
+              (a) => a.customerId === customerId,
+            )?.displayNameSnapshot ?? '',
+          policyNumber: p?.status === 'ISSUED' ? p.policyNumber : null,
+          status: p?.status ?? 'PENDING',
+          error:
+            intake.status === 'CANCELLED' ||
+            intake.contract.status === 'CANCELLED'
+              ? 'قرارداد ابطال شده است.'
+              : p?.status === 'CANCELLED'
+                ? 'بیمه‌نامه لغو شده است.'
+                : p?.lastError ||
+                  (!this.provider.configured()
+                    ? 'اتصال بیمه‌گر روی سرور تنظیم نشده است.'
+                    : !p
+                      ? 'درخواست صدور برای این مسافر هنوز ثبت نشده است.'
+                      : p.status !== 'ISSUED'
+                        ? 'در انتظار پردازش درخواست بیمه‌گر.'
+                        : !p.pdfUrl
+                          ? 'فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.'
+                          : null),
+          sandbox: p?.sandbox ?? true,
+          ready:
+            p?.status === 'ISSUED' &&
+            Boolean(p.pdfUrl) &&
+            intake.status !== 'CANCELLED' &&
+            intake.contract.status !== 'CANCELLED',
+        };
+      }),
       ready:
         ids.length > 0 &&
         rows.length === ids.length &&
@@ -496,5 +532,19 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       type: 'application/pdf',
       filename: `sandbox-insurance-${row.id}.pdf`,
     };
+  }
+
+  async prepare(
+    intakeId: string,
+    actor: AuthenticatedActor,
+    salesContractId?: string,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException();
+    const { intake } = await this.scoped(intakeId, actor, salesContractId);
+    if (intake.status === 'CANCELLED' || intake.contract.status === 'CANCELLED')
+      throw new ForbiddenException();
+    await this.enqueue(intakeId);
+    return this.summary(intakeId, actor, salesContractId);
   }
 }

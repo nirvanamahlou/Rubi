@@ -52,6 +52,7 @@ describe('employee attendance table', () => {
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'جریمه روز',
       'وضعیت',
     ]);
     expect(data.rows[0]?.slice(2)).toEqual([
@@ -59,6 +60,7 @@ describe('employee attendance table', () => {
       '16:50',
       '5',
       '10',
+      '—',
       '—',
       '—',
       'حاضر با تأخیر و خروج زودهنگام',
@@ -97,6 +99,7 @@ it('uses calculated server times for device punches and includes attendance stat
     'خروج زودهنگام',
     'کسری کار',
     'اضافه‌کاری',
+    'جریمه روز',
     'وضعیت',
   ]);
   expect(data.rows[0]!.slice(4)).toEqual([
@@ -106,6 +109,7 @@ it('uses calculated server times for device punches and includes attendance stat
     '0',
     '—',
     '30',
+    '—',
     'حاضر با تأخیر',
   ]);
 });
@@ -161,7 +165,7 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ],
   );
   expect(data.recordIds).toEqual([first.id, second.id]);
-  expect(data.rows.map((row) => [row[0], row[1], row.at(-2)])).toEqual([
+  expect(data.rows.map((row) => [row[0], row[1], row.at(-3)])).toEqual([
     ['001', 'first', '12'],
     ['002', 'second', '34'],
   ]);
@@ -188,4 +192,20 @@ it('hides former employees from the current list without removing profile histor
   expect(data.recordIds).toEqual([active.id]);
   expect(data.rows).toHaveLength(1);
   expect(employeeAttendanceDataset([former]).recordIds).toEqual([former.id]);
+});
+
+it('shows the authoritative Toman daily penalty in both attendance views', () => {
+  const day = record('attendance', ['worker', '2026-11-08', '', '', '10', '5']);
+  day.data.dailyPenaltyToman = '750000';
+  const employee = employeeAttendanceDataset([day]);
+  const recent = recentAttendanceDataset(
+    [day],
+    [{ id: 'employee-1', name: 'worker', personnelCode: '001' }],
+  );
+  expect(employee.rows[0]![employee.columns.indexOf('جریمه روز')]).toContain(
+    '۷۵۰٬۰۰۰',
+  );
+  expect(recent.rows[0]![recent.columns.indexOf('جریمه روز')]).toBe(
+    employee.rows[0]![employee.columns.indexOf('جریمه روز')],
+  );
 });

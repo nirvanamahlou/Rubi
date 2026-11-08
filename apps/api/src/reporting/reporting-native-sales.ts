@@ -74,6 +74,7 @@ export async function nativeSalesReport(
   ]);
   const facts: ReportingFactRow[] = source.map((row) => ({
     id: `${row.id}:${row.currencyCode}`,
+    sourceItemId: row.id,
     orderNumber: row.id,
     occurredAt: row.occurredAt,
     legalEntityCode: '',
@@ -193,26 +194,46 @@ export async function nativeSalesReport(
       'مبالغ فروش از قیمت مصوب قرارداد خوانده می‌شوند؛ خرید، سود، وصول و صدور در این گزارش محاسبه نمی‌شوند.',
     ],
   };
-  return code === 'sales_by_organization' || code === 'sales_by_service_route'
+  return NATIVE_SALES_REPORTS.has(code)
     ? organizationMultiCurrencyResult(
         response,
         source,
         query,
         includeAllRows,
         directory,
-        code === 'sales_by_service_route'
+        code === 'route_passengers'
           ? {
-              labels: ['ترکیب خدمات قرارداد', 'مسیر سفر'],
+              labels: ['شهر مقصد', 'مسیر سفر'],
               dimensions: (row) => [
-                JSON.stringify(row.serviceKinds),
+                row.destinationId,
                 JSON.stringify([row.originId, row.destinationId]),
-                row.serviceKinds
-                  .map((kind) => serviceLabels[kind] ?? kind)
-                  .join(' + ') || 'خدمت ثبت نشده',
+                cities.get(row.destinationId) ?? row.destinationId,
                 `${cities.get(row.originId) ?? row.originId} ← ${cities.get(row.destinationId) ?? row.destinationId}`,
               ],
             }
-          : undefined,
+          : code === 'sales_contract_pipeline'
+            ? {
+                labels: ['وضعیت قرارداد', 'وضعیت رزرو'],
+                dimensions: (row) => [
+                  row.status,
+                  row.reservationStatus,
+                  row.status,
+                  row.reservationStatus,
+                ],
+              }
+            : code === 'sales_by_service_route'
+              ? {
+                  labels: ['ترکیب خدمات قرارداد', 'مسیر سفر'],
+                  dimensions: (row) => [
+                    JSON.stringify(row.serviceKinds),
+                    JSON.stringify([row.originId, row.destinationId]),
+                    row.serviceKinds
+                      .map((kind) => serviceLabels[kind] ?? kind)
+                      .join(' + ') || 'خدمت ثبت نشده',
+                    `${cities.get(row.originId) ?? row.originId} ← ${cities.get(row.destinationId) ?? row.destinationId}`,
+                  ],
+                }
+              : undefined,
       )
     : response;
 }

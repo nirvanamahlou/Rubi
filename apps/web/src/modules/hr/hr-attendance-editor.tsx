@@ -30,6 +30,7 @@ export function HrAttendanceEditor({
     [reason, setReason] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [deviceError, setDeviceError] = useState(false);
   const retry = useRef({ body: '', key: crypto.randomUUID() });
   return (
     <Dialog
@@ -55,6 +56,7 @@ export function HrAttendanceEditor({
                 arrival,
                 departure,
                 reason,
+                deviceError,
               });
               if (retry.current.body !== body)
                 retry.current = { body, key: crypto.randomUUID() };
@@ -98,6 +100,16 @@ export function HrAttendanceEditor({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
+          </label>
+          <label className={ui.field}>
+            <span>
+              <input
+                type="checkbox"
+                checked={deviceError}
+                onChange={(event) => setDeviceError(event.target.checked)}
+              />{' '}
+              تأیید خطای دستگاه
+            </span>
           </label>
           {error ? <p role="alert">{error}</p> : null}
           <HrButton type="submit" primary disabled={busy}>

@@ -2,6 +2,13 @@
 
 Read-only production catalogue audit covers 319 tables (155 populated), 4,030 columns and 721 FKs. Every 84 KPI/91 chart definition now has explicit business input requirements; 33 KPI definitions and 34 charts have native source wiring, conditional on scope/filters/completeness. Added owner-public capacity, Sales events/stays/staff, issuance, protected Call Center, Support, HR attendance, Documents and canonical customer behavior readers. Missing approved costs/posted journals/thresholds/attribution are explicitly unavailable; no fabricated money, averages or history. Focused API56 and Web/translation102 tests pass (one existing skip); API typecheck passes. Full API tests/build, lint and final hosted checks pending. Local Web typecheck passes; Windows cross-drive dependency junction prevents local Webpack build, so hosted Linux build remains required. No migration/dependency/data mutation/deployment. Full widget ledger and populated-table audit: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md. Draft develop handoff.
 
+## HR fast attendance sync — 2026-11-08
+
+One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
+## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
+
+Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
+
 ## HR attendance freshness and current employees — 2026-11-07
 
 Production read-only diagnosis: both workstation tunnels respond; primary Radan has nine raw 2026-11-06 punches mapped once to 2026-11-07, and Nora contains eighteen daily rows for Saturday with last processing at 12:30 UTC. Secondary Radan returns no Saturday punches (latest raw 2026-11-05). Add one startup catch-up before resuming unchanged clock slots, current-employee scope for shared attendance list/count, current-only selector/projection, and visible-page refresh each minute. Preserve explicit personnel-profile historical queries and stored records. Focused connector/query tests:21 pass; projection tests:6 pass; scoped lint passes. No schema or dependency change.
@@ -2133,6 +2140,20 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## 2026-11-08 — انتخاب و وضعیت بیمه هر مسافر
+
+وضعیت: تکمیل و ادغام در develop؛ برای اعمال روی سرور، API و Web این نسخه باید با هم مستقر شوند. اگر بیمه در قرارداد ثبت شده ولی به هیچ مسافری تخصیص ندارد، پیام مشخص و راهنمای ویرایش اسامی نمایش داده می‌شود.
+
+`INSURANCE-SELECTION-1108` توسط PC-A: بیمه‌نامه و صف صدور، تخصیص فعلی بیمه در قرارداد را از سرویس عمومی فروش می‌خوانند. مسافر بدون رکورد صدور نیز همراه علت آماده‌نبودن نمایش داده می‌شود؛ بیمه‌نامه موجود با تغییر نسخه intake ناپدید نمی‌شود. آماده‌سازی درخواست‌های ثبت‌نشده با مجوز مدیریت اسناد و حفظ یکتایی درخواست ممکن است. در ویرایش قرارداد، خدمات بیمه هر مسافر قابل افزودن و برداشتن است.
+
+۴۲ تست API، ۱۴ تست Web و ۳ بررسی ترجمه، lint محدود، TypeScript کامل و buildهای API/Web پاس شدند. Schema، Migration و Dependency تغییر نکرده‌اند. اتصال موجود تراویس آزمایشی است؛ صدور واقعی و استقرار سرور در این واحد انجام نشده است.
+
+## 2026-11-08 — تطبیق تاریخ پرواز واچر با قرارداد
+
+- `VOUCHER-FLIGHT-DATE-1108` روی `PC-A` با Commit `5c6956a77` در `develop` ادغام شد: تاریخ پرواز رفت و برگشت در واچر همیشه از projection فعلی قرارداد خوانده می‌شود و تاریخ ذخیره‌شده قدیمی نمی‌تواند واچر را یک روز عقب بیندازد.
+- فرم کارگزار همچنان تاریخ صریح نسخه ذخیره‌شده خودش را حفظ می‌کند و سایر فیلدهای ذخیره‌شده واچر تغییر نمی‌کنند.
+- ۲۴ تست هدفمند Web، ESLint محدود، TypeScript کامل Web و build تولیدی ۶۷ مسیر پاس شدند؛ Schema، Migration، Dependency، داده عملیاتی و استقرار تغییر نکرده‌اند.
 
 ## 2026-11-07 — فرم ترکیبی هتل و ترانسفر
 
@@ -9258,3 +9279,5 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
   dates now share the row label's 13pt/700 inherited-color typography.
 - Layout tests 9/9 and related consumers 43/43 pass with one existing optional
   skip; scoped lint, Web TypeScript and the 67-route production build pass.
+
+2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.
