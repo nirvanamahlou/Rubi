@@ -11585,3 +11585,7 @@ VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full W
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — IN_PROGRESS
+
+Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
