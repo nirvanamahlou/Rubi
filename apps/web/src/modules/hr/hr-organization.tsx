@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
+import { HrCompanyCreate } from './hr-company-create';
 import type { HrRecordDto } from '@nora/contracts';
 import { OrganizationChart, type OrganizationNode } from './organization-chart';
 import { HrButton, HrConfirmDelete, HrPanel, HrTabs } from './hr-controls';
@@ -24,14 +25,37 @@ export function buildLiveOrganizationNodes(
     branchId: string;
     position: string;
     organizationBranchId?: string | null;
+    companyScope?: 'ALL' | 'COMPANY';
+    companyId?: string | null;
     personnelCode?: string;
   }[],
 ): OrganizationNode[] {
-  const units = records.filter(
+  const allUnits = records.filter(
     (item) =>
       item.section === 'organization' &&
       item.tab === 'units' &&
       !item.deletedAt,
+  );
+  const sharedRoot = 'hr-headquarters';
+  const hasSharedScope =
+    allUnits.some((r) => r.data.allBranches) ||
+    employees.some((e) => e.companyScope === 'ALL');
+  const canonicalUnits = new Map<string, HrRecordDto>();
+  for (const unit of allUnits) {
+    const key = unit.data.allBranches
+      ? (unit.sharedSourceId ?? unit.id)
+      : unit.id;
+    if (!canonicalUnits.has(key) || unit.id === key)
+      canonicalUnits.set(key, unit);
+  }
+  const units = [...canonicalUnits.values()];
+  const unitIds = new Map(
+    allUnits.map((unit) => [
+      unit.id,
+      canonicalUnits.get(
+        unit.data.allBranches ? (unit.sharedSourceId ?? unit.id) : unit.id,
+      )!.id,
+    ]),
   );
   const companies = records.filter(
     (item) =>
@@ -40,24 +64,34 @@ export function buildLiveOrganizationNodes(
       !item.deletedAt,
   );
   const roots = [
+    ...(hasSharedScope
+      ? [
+          {
+            id: sharedRoot,
+            name: 'همه شرکت‌ها',
+            scope: sharedRoot,
+            parentId: null as string | null,
+          },
+        ]
+      : []),
+    ...branches.map((item) => ({
+      ...item,
+      scope: item.id,
+      parentId: hasSharedScope ? sharedRoot : (null as string | null),
+    })),
     ...companies.map((item) => ({
       id: item.id,
       name: item.values[0] ?? item.code,
       scope: item.branchId,
+      parentId: item.branchId,
     })),
-    ...branches
-      .filter(
-        (branch) =>
-          !companies.some((company) => company.branchId === branch.id),
-      )
-      .map((item) => ({ ...item, scope: item.id })),
   ];
   const nodes: OrganizationNode[] = roots.map((branch) => ({
     id: branch.id,
     name: branch.name,
     kind: 'MANAGEMENT',
     branch: branch.name,
-    parentId: null,
+    parentId: branch.parentId,
     manager: '',
     positionCapacity: employees.filter(
       (item) => (item.organizationBranchId || item.branchId) === branch.id,
@@ -76,6 +110,9 @@ export function buildLiveOrganizationNodes(
     const read = (label: string) =>
       record.values[record.columns.indexOf(label)] ?? '';
     const root =
+      (record.data.allBranches
+        ? roots.find((item) => item.id === sharedRoot)
+        : undefined) ??
       roots.find((item) => item.id === record.data.organizationBranchId) ??
       roots.find(
         (item) => item.scope === record.branchId && item.name === read('شعبه'),
@@ -86,11 +123,14 @@ export function buildLiveOrganizationNodes(
       name: read('نام واحد'),
       kind: 'UNIT',
       branch: root?.name ?? '',
-      parentId: record.parentId ?? root?.id ?? null,
+      parentId:
+        (record.parentId ? unitIds.get(record.parentId) : undefined) ??
+        root?.id ??
+        null,
       manager: read('مدیر'),
       positionCapacity: employees.filter(
         (employee) =>
-          employee.branchId === record.branchId &&
+          (record.data.allBranches || employee.branchId === record.branchId) &&
           (!employee.organizationBranchId ||
             employee.organizationBranchId === root?.id) &&
           employee.unit === read('نام واحد'),
@@ -118,17 +158,24 @@ export function buildLiveOrganizationNodes(
     )
       continue;
     const root =
+      (employee.companyScope === 'ALL'
+        ? roots.find((r) => r.id === sharedRoot)
+        : roots.find((r) => r.id === employee.companyId)) ??
       roots.find(
         (r) =>
           r.id === record.data.organizationBranchId ||
           r.id === employee.organizationBranchId,
-      ) ?? roots.find((r) => r.scope === employee.branchId);
+      ) ??
+      roots.find((r) => r.scope === employee.branchId);
     nodes.push({
       id: record.id,
       name: record.values[1] || employee.name,
       kind: 'EMPLOYEE',
       branch: root?.name ?? '',
-      parentId: record.parentId ?? root?.id ?? null,
+      parentId:
+        (record.parentId ? unitIds.get(record.parentId) : undefined) ??
+        root?.id ??
+        null,
       manager: [employee.position, employee.personnelCode]
         .filter(Boolean)
         .join(' · '),
@@ -222,6 +269,7 @@ export function HrOrganization({
           <p>ساختار شرکت‌ها، ارتباط واحدها و جایگاه‌های شغلی</p>
         </div>
       </header>
+      <HrCompanyCreate store={store} />
       <HrTabs
         label="گروه‌های ساختار سازمانی"
         items={[

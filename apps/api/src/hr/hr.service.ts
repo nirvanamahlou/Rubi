@@ -1,3 +1,8 @@
+import { migrateHrCompanyStructure } from './hr-company-migration';
+import {
+  recordCompanyWhere,
+  saveEmployeeCompanyScope,
+} from './hr-company-scope';
 import {
   inactiveAttendance,
   attendanceForUse,
@@ -93,11 +98,16 @@ type AssignmentLabels = {
   managers: Map<string, string>;
 };
 const employeeExtensionProjection = {
-  where: { section: 'employee', tab: 'internalContact', deletedAt: null },
-  select: { values: true },
-  take: 1,
-} as const;
+  where: {
+    section: 'employee',
+    tab: { in: ['internalContact', 'companyScope'] },
+    deletedAt: null,
+  },
+  select: { values: true, tab: true },
+} satisfies Prisma.HrEmployee$recordsArgs;
 const employeeKeys = [
+  'companyScope',
+  'companyId',
   'jobTitleId',
   'extension',
   'extensions',
@@ -162,6 +172,39 @@ export class HrService {
     @Inject(ProcurementMissionPort)
     private readonly missionPetty?: ProcurementMissionPort,
   ) {}
+
+  async migrateCompanyStructure(
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'hr.manage');
+    this.require(actor, 'hr.sensitive');
+    this.require(actor, 'iam.roles.manage');
+    const input = validate.object(body, ['dryRun']);
+    if (typeof input.dryRun !== 'boolean')
+      throw new BadRequestException('حالت اجرای انتقال الزامی است.');
+    const { branches } = await this.iam.listRolesAndBranches();
+    if (
+      !branches.length ||
+      branches.some((branch) => !actor.branchIds.includes(branch.id))
+    )
+      throw new ForbiddenException(
+        'انتقال ساختار نیازمند دسترسی به همه شرکت‌ها است.',
+      );
+    const work = (tx: Tx) =>
+      migrateHrCompanyStructure(tx, actor, input.dryRun as boolean, (row) =>
+        this.syncSharedReference(tx, row, actor),
+      );
+    return input.dryRun
+      ? this.transaction(work)
+      : this.command(
+          actor,
+          key,
+          { operation: 'organization.companyScope.migrate' },
+          work,
+        );
+  }
 
   private expenseMission(
     parent: RecordRow | null,
@@ -414,17 +457,34 @@ export class HrService {
     row: Employee & {
       manager?: { name: string } | null;
       organizationBranch?: RecordRow | null;
-      records?: { values: Prisma.JsonValue }[];
+      records?: { values: Prisma.JsonValue; tab?: string }[];
     },
   ): HrEmployeeDto {
     return {
       id: row.id,
+      companyScope:
+        (
+          row.records?.find((r) => r.tab === 'companyScope')?.values as
+            string[] | undefined
+        )?.[0] === 'ALL'
+          ? 'ALL'
+          : 'COMPANY',
+      companyId:
+        (
+          row.records?.find((r) => r.tab === 'companyScope')?.values as
+            string[] | undefined
+        )?.[1] || row.branchId,
       personnelCode: row.personnelCode,
       identificationCode: row.identificationCode ?? null,
       jobTitleId: row.jobTitleId,
-      extensions: (row.records?.[0]?.values as string[] | undefined) ?? [],
+      extensions:
+        (row.records?.find((r) => !r.tab || r.tab === 'internalContact')
+          ?.values as string[] | undefined) ?? [],
       extension: String(
-        (row.records?.[0]?.values as string[] | undefined)?.[0] ?? '',
+        (
+          row.records?.find((r) => !r.tab || r.tab === 'internalContact')
+            ?.values as string[] | undefined
+        )?.[0] ?? '',
       ),
       branchId: row.branchId,
       userId: row.userId,
@@ -693,11 +753,12 @@ export class HrService {
     }
     if ((row.data as HrWorkflowData).allBranches)
       schema.columns.forEach((label, index) => {
-        if (['شعبه', 'شرکت'].includes(label)) values[index] = 'دفتر مرکزی';
+        if (['شعبه', 'شرکت'].includes(label)) values[index] = 'همه شرکت‌ها';
       });
     return {
       id: row.id,
       code: row.code,
+      sharedSourceId: row.sharedSourceId,
       branchId: row.branchId,
       section: row.section,
       tab: row.tab,
@@ -912,6 +973,8 @@ export class HrService {
         .filter((b) => actor.branchIds.includes(b.id))
         .map(({ id, name, code }) => ({ id, name, code })),
       capabilities: {
+        manageCompanies:
+          this.has(actor, 'hr.manage') && this.has(actor, 'iam.roles.manage'),
         read: true,
         manualAttendance: await this.canManuallyEditAttendance(actor),
         write: this.has(actor, 'hr.manage'),
@@ -944,6 +1007,7 @@ export class HrService {
       'page',
       'pageSize',
       'branchId',
+      'companyId',
       'organizationBranchId',
       'from',
       'to',
@@ -993,6 +1057,17 @@ export class HrService {
             },
           ],
         },
+      ];
+    }
+    if (input.companyId) {
+      const companyId = this.branch(actor, input.companyId);
+      filters.AND = [
+        ...(Array.isArray(filters.AND)
+          ? filters.AND
+          : filters.AND
+            ? [filters.AND]
+            : []),
+        recordCompanyWhere(companyId),
       ];
     }
     if (input.section)
@@ -1907,6 +1982,13 @@ export class HrService {
       },
       async (tx) => {
         const employee = await this.insertEmployee(tx, input, actor, photo);
+        await saveEmployeeCompanyScope(
+          tx,
+          employee,
+          input.companyScope,
+          input.companyId,
+          actor.branchIds,
+        );
         if (privateProfile)
           await this.insertPersonnelProfile(tx, employee, input, actor);
         return { id: employee.id };
@@ -2143,6 +2225,13 @@ export class HrService {
           expected + 1,
         );
       }
+      await saveEmployeeCompanyScope(
+        tx,
+        current,
+        input.companyScope,
+        input.companyId,
+        actor.branchIds,
+      );
       await this.setEmployeeExtension(
         tx,
         existing,
@@ -3272,7 +3361,11 @@ export class HrService {
         const state = validate.status(
           input.status,
           schema.approval,
-          schema.key === 'time.penaltySettings' ? 'فعال' : 'پیش‌نویس',
+          ['time.penaltySettings', 'time.calculationSettings'].includes(
+            schema.key,
+          )
+            ? 'فعال'
+            : 'پیش‌نویس',
         );
         if (data.approvalRoute?.length && validate.APPROVED.has(state))
           throw new BadRequestException(
@@ -6070,6 +6163,7 @@ export class HrService {
         time: string;
         kind: string;
         accepted: boolean;
+        occurredAt?: string;
       }[];
     },
     key: string,
@@ -6125,7 +6219,12 @@ export class HrService {
           }
           const id = deviceRecordId(input.source, punch.id);
           const existing = await tx.hrRecord.findUnique({ where: { id } });
-          if (existing?.deletedAt) {
+          const priorData =
+            (existing?.data as Record<string, unknown> | undefined) ?? {};
+          if (
+            existing?.deletedAt &&
+            priorData.attendanceProviderRejected !== true
+          ) {
             unchanged++;
             continue;
           }
@@ -6152,19 +6251,33 @@ export class HrService {
             reconcile.push({ date: oldDate, employeeId: employee.id });
           }
           if (!punch.accepted) {
-            if (existing) {
+            if (existing && !existing.deletedAt) {
               await tx.hrRecord.update({
                 where: { id },
-                data: { deletedAt: new Date(), version: { increment: 1 } },
+                data: {
+                  deletedAt: new Date(),
+                  data: json({
+                    ...priorData,
+                    attendanceProviderRejected: true,
+                  }),
+                  version: { increment: 1 },
+                },
               });
               dates.add(punch.date);
               imported++;
             }
             continue;
           }
-          const at = validate
-            .localClockToUtc(punch.date, punch.time)
-            .toISOString();
+          const timestamp =
+            punch.occurredAt === undefined
+              ? validate.localClockToUtc(punch.date, punch.time)
+              : new Date(punch.occurredAt);
+          if (!Number.isFinite(timestamp.getTime()))
+            throw new BadRequestException('ساعت معتبر نیست.');
+          const clock = validate.localClockParts(timestamp);
+          if (clock.date !== punch.date || clock.time !== punch.time)
+            throw new BadRequestException('ساعت معتبر نیست.');
+          const at = timestamp.toISOString();
           const values = [
             employee.name,
             punch.date,
@@ -6206,6 +6319,8 @@ export class HrService {
             reconcile.push({ date: previous, employeeId: employee.id });
           }
           const data = {
+            ...priorData,
+            attendanceProviderRejected: false,
             ...(previousDates.size
               ? { attendancePreviousDates: [...previousDates].sort() }
               : {}),
@@ -6216,15 +6331,19 @@ export class HrService {
           };
           if (
             existing &&
-            JSON.stringify(existing.values) === JSON.stringify(values)
+            !existing.deletedAt &&
+            JSON.stringify(existing.values) === JSON.stringify(values) &&
+            priorData.startsAt === at &&
+            priorData.sourceEntryType === punch.kind
           ) {
             unchanged++;
             dates.add(punch.date);
             continue;
           }
           const write = {
+            deletedAt: null,
             values,
-            data,
+            data: json(data),
             status: 'ثبت شده',
             effectiveAt: validate.isoDate(punch.date),
             searchText: values.join(' '),

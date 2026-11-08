@@ -271,9 +271,10 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         skipped++;
         return [];
       }
-      const match = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?$/.exec(
-        p.datetime ?? '',
-      );
+      const match =
+        /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::([0-5]\d))?$/.exec(
+          p.datetime ?? '',
+        );
       if (
         !personnelCode ||
         !match ||
@@ -298,8 +299,13 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         return [];
       }
       if (date < from || date > today) return [];
+      let occurredAt: string;
       try {
-        const stamp = localClockToUtc(date, match[2]!);
+        const stamp = new Date(
+          localClockToUtc(date, match[2]!).getTime() +
+            Number(match[3] ?? 0) * 1000,
+        );
+        occurredAt = stamp.toISOString();
         if (stamp.getTime() > Date.now()) {
           invalid++;
           return [];
@@ -321,6 +327,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           personnelCode: digits(personnelCode),
           date,
           time: match[2]!,
+          occurredAt,
           kind,
           accepted:
             p.status === 'accepted' &&

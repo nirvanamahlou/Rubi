@@ -153,3 +153,32 @@ it('rejects stale data and renderer failure without requesting an email', async 
     false,
   );
 });
+it.each([401, 403, 404])(
+  'does not render or submit a PDF when the authenticated API returns %s',
+  async (status) => {
+    mock.fetch.mockResolvedValue(
+      Response.json({ message: 'Unavailable' }, { status }),
+    );
+    const response = await POST(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(status);
+    expect(mock.render).not.toHaveBeenCalled();
+    expect(
+      mock.fetch.mock.calls.some((call) => call[1]?.method === 'POST'),
+    ).toBe(false);
+  },
+);
+it('returns disabled-mail rejection without reporting a queued email', async () => {
+  mock.fetch.mockImplementation(async (_url: string, options?: RequestInit) =>
+    options?.method === 'POST'
+      ? Response.json(
+          { message: 'اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.' },
+          { status: 503 },
+        )
+      : Response.json({ data: structuredClone(intake) }),
+  );
+  const response = await POST(request(), { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(503);
+  expect(await response.text()).toContain(
+    'اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.',
+  );
+});

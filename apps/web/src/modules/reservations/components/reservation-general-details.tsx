@@ -464,11 +464,13 @@ export function reservationGeneralDetailGroups(
 function LoadedDetails({
   intake,
   request,
+  finance = false,
 }: {
   intake: ReservationFormIntake;
   request: RequestView;
+  finance?: boolean;
 }) {
-  const refs = useReservationFormReferences(intake, true);
+  const refs = useReservationFormReferences(intake, true, undefined, finance);
   const [customer, setCustomer] = useState<CustomerDetail>();
   const [sensitiveContact, setSensitiveContact] = useState(false);
   const [country, setCountry] = useState('');
@@ -509,7 +511,7 @@ function LoadedDetails({
     if (typeof countryId !== 'string') return;
     let active = true;
     void masterDataApi
-      .detail('countries', countryId, 'reservations')
+      .detail('countries', countryId, finance ? 'finance' : 'reservations')
       .then(({ data }) => {
         if (active) setCountry(text(data.attributes.englishName || data.name));
       })
@@ -517,7 +519,7 @@ function LoadedDetails({
     return () => {
       active = false;
     };
-  }, [countryId]);
+  }, [countryId, finance]);
   const groups = reservationGeneralDetailGroups(
     intake,
     request,
@@ -547,13 +549,32 @@ function LoadedDetails({
 
 export function ReservationGeneralDetails({
   request,
+  finance = false,
 }: {
   request: RequestView;
+  finance?: boolean;
 }) {
   const [intake, setIntake] = useState<ReservationFormIntake>();
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
+    if (finance) {
+      void travelRequest<{ data: ReservationFormIntake }>(
+        `reservations/requests/${request.id}/finance-general-details`,
+      )
+        .then((r) => {
+          if (active) setIntake(r.data);
+        })
+        .catch((e) => {
+          if (active)
+            setError(
+              e instanceof Error ? e.message : 'دریافت مشخصات ناموفق بود.',
+            );
+        });
+      return () => {
+        active = false;
+      };
+    }
     void Promise.all([
       travelRequest<{ data: ReservationFormIntake }>(
         `reservations/requests/${request.id}/workflow`,
@@ -577,8 +598,8 @@ export function ReservationGeneralDetails({
     return () => {
       active = false;
     };
-  }, [request.id]);
+  }, [request.id, finance]);
   if (error) return <p role="alert">{error}</p>;
   if (!intake) return <p role="status">در حال دریافت مشخصات کامل قرارداد…</p>;
-  return <LoadedDetails intake={intake} request={request} />;
+  return <LoadedDetails intake={intake} request={request} finance={finance} />;
 }

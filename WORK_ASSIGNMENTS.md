@@ -2,6 +2,12 @@
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
 
+## HR-COMPANY-SCOPE-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes company/branch separation, shared organization units and employees with editable membership, and preservation of historical links. Radan is read-only: preserve both existing API connections, source mappings, personnel IDs and attendance provenance. Branch codex/pc-a-hr-company-scope-1108. Reserve HR organization catalog, employee company assignment and scoped forms, contracts and regression tests. No external Radan writes. Physical ownership branch IDs must remain stable for financial, document and attendance records. No schema migration reserved until active migration owner is released. Extend scope to IAM-owned company creation through IamService, HR company controller and organization editor; no IAM permission model changes.
+
+Bounded translation lease: fourteen company-scope labels/errors in Web en-overrides and mirrored API catalogue; preserve all peer entries.
+
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
@@ -488,6 +494,10 @@ SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTU
 ## MANIFEST-DOCUMENT-REFERENCES-1107 — PC-A
 
 Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
+
+## AMENDMENT-RESPONSIVE-1108 — PC-A
+
+Owner authorizes responsive redesign of Reservations passenger/room amendment and develop merge. Reserve editor CSS only and own notes. Remove viewport-plus-padding overflow, constrain grid/table/input intrinsic sizing, and improve section/card spacing. Existing commands, fields and permissions preserved; no schema/dependency/deployment.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -11805,3 +11815,39 @@ Final fetch discovered concurrent PR1507 (codex/insurance-amend-1108), which cha
 Owner explicitly authorized coordination, preservation of both branches and green final-head develop merge. Coordination posted on PR1507. Integrated origin/develop and PR1507 at9ba91b1e4 preserving its direct passenger fields, versioned API correction and retry logic; document-summary correction dialog/requirements and exact-customer link remain. Policy list focus refresh retained. Original standalone Web lint/typecheck and full67-route production build passed; integrated tests/build and full hosted gates required before merge. No provider/runtime calls or deployment.
 
 EXCHANGE-FUNDS-1108 hosted follow-up: sync the bounded new visible API errors into the offline English catalogue and share one PageHeader across Finance master-data tabs, preserving navigation and the existing breadcrumb regression. No test relaxation or unrelated translations.
+
+## REQUEST-FLOW-REDESIGN-1108 — PC-B — READY_FOR_CI
+
+Owner assigns nine browser comments: HR leave approval settings error and redesigned detail, Persian leave dates without duplicate Gregorian summary, leave recipient approval before HR review, advance template, Finance contract total/paid/remaining cards and always-open profit, redesigned Sales installments and reservation-identical general details from Finance cards. Reserve bounded HR/workbench/customer-affairs request workflow/contracts/tests, Finance inbox presentation, Sales contract-payments and public Reservation details consumer; preserve module ownership, branch authorization and real financial sources. No dependency or production changes. Determine whether additive migration is required before taking schema lock. Prior exchange task merged PR1513 and released its locks.
+
+REQUEST-FLOW-REDESIGN-1108 reserves sole forward data-migration lock for repairing valid legacy calculationSettings drafts produced by the status-less form, with immutable audit attribution to their latest editor. Explicit inactive records remain inactive. Also reserve bounded public read routes in Sales/Reservations, existing general-detail decoder and read projection, and offline i18n errors. No dependency changes.
+
+REQUEST-FLOW-REDESIGN-1108 reserves an additive CI PostgreSQL step for the existing transactional leave suite, including initial recipient replay and legacy settings repair tests. No CI policy or dependency changes.
+
+REQUEST-FLOW-REDESIGN-1108: bound IAM reservationResponsibilityNames read port also accepts finance.read under the same branch filter so the reused reservation projection renders its recorded responsibility names; no mutation or role/screen grants.
+
+REQUEST-FLOW-REDESIGN-1108 validation: real PostgreSQL tests pass for initial recipient concurrency, final HR quota/attendance rollback/replay and audited legacy settings repair; unit/HTTP and UI/date/translation/exact-decimal checks pass. Read-only Finance projection reuses Reservations presentation and default decoder remains reservations-only. Frozen publication releases bounded source and migration locks; full final-head hosted gates precede authorized merge. No production rollout.
+
+REQUEST-FLOW-REDESIGN-1108 extends bounded read-only selection context to finance.read + Finance requests screen for the same travel reference labels. Reused general-details hook selects this context without granting Master Data mutation, Reservations write or customer-sensitive access. Reserve common/workflow-selection.policy, MasterSelectionDirectory and consumer context union/tests.
+
+REQUEST-FLOW-REDESIGN-1108 hosted full-suite follow-up: existing receipt/account-flow fixtures omitted required payment amount and used remaining instead of the SalesBalance.outstanding contract. Complete those fixtures and type-check their fields with satisfies; preserve every receipt retry/account-save behavior assertion. Production financial data and formatter remain unchanged.
+
+## DEVICE-CHECKOUT-FIX-1108 — PC-B — VALIDATED
+
+Owner reports missing and incorrect device API checkouts. Reserve bounded HR Radan client/normalization/import/direction and attendance interpretation, regression tests and own docs. Investigate source event direction, pagination, timestamp precision and replay/correction before changing interpretation. Preserve raw punches, explicit device directions, manual corrections, activation exclusions, employee/branch mapping and closed periods. No dependency or operational data changes without verified repair scope.
+
+Live root cause verified: primary raw-date cutover was one day late. Encrypted backup precedes the bounded2026-11-07 configuration correction; existing authenticated native reconciliation repaired both reported employees' yesterday/today rows without deleting source punches. Same production images retained. Connector hardening has55 focused passing tests and scoped lint; production TypeScript build and hosted final-head gates precede owner-authorized merge. No migration/dependency change. Source locks released on publication; see docs/tasks/DEVICE-CHECKOUT-FIX-1108.md.
+
+## RESERVATION-MAIL-ACCEPTANCE-1108 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-mail-acceptance-1108 from origin/develop@57bbca3b4. Owner authorizes completing IT-independent acceptance, staff/operations instructions, PR, fixing all exact-head CI gates and merge to develop after success. Reserve reservation-mail.service.spec.ts, reservation-mail-workflow.spec.ts, reservation-mail-route.spec.ts and own task/status documentation. Prior PR1498 is integrated; its source locks are released. Verify recipient ambiguity/invalid email/audit failures, branch and permission rejection, disabled dispatch and attachment-only PDF acceptance. Preserve form/CSS/PDF template and existing authorization. No IAM grants, production contact edits, migration/dependency, deployment or real SMTP; sending remains default-off. Recipient completeness on real records and controlled external delivery remain operational acceptance after IT settings.
+
+RESERVATION-MAIL-ACCEPTANCE-1108 — READY_FOR_CI: PR1519 published as41c971453.40 API mail tests,699 Web Reservations tests (5 existing skips),15 focused Web checks, real Chrome single/multipage PDF smoke, scoped lint and formatting pass. Persian staff guide includes recipient/access preparation, notification semantics and safe suspension. Source frozen and bounded locks released; exact final-head hosted gates are required for owner-authorized develop merge. Final check/merge evidence is retained in PR1519. No form/PDF appearance, operational data/settings, migration/dependency or SMTP changes.
+
+## SALES-RETURN-DATE-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-return-date-1108 from develop de4a68e3b. Reserve Sales list travel-summary helper, focused regression and own task/status notes. User authorizes correct return-only contract dates and green develop merge; no deployment. The shared public salesContractFlights reader includes floating snapshots absent from ticketSelections; exact direction, per-service calendar and Tehran date are retained. No schema/dependency/API contract or data mutation. No overlapping active list-summary writer found. Eight targeted regression tests pass; final full gates required.
+
+## COMPACT-MESSAGE-BUBBLES-1108 - PC-B - VALIDATED
+
+Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx responsive bubble spacing, typography and action sizing. Scoped ESLint and six existing chat/reaction checks pass. A synthetic source-class light/dark preview reduced sample height168px to144px without horizontal overflow; this is not live production UI acceptance. Final hosted gates precede owner-authorized merge. Bounded source lock released on publication. No API, dependency, schema or deployment change.

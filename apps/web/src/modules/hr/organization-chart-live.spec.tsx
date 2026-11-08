@@ -171,7 +171,7 @@ describe('live organization chart nodes', () => {
     const nodes = buildLiveOrganizationNodes([company], branches, []);
     expect(
       nodes.filter((n) => n.kind === 'MANAGEMENT').map((n) => n.id),
-    ).toEqual(['company-a', 'legacy']);
+    ).toEqual(['b', 'legacy', 'company-a']);
     const options = hrCompanies({
       records: [company],
       branches,
@@ -179,7 +179,7 @@ describe('live organization chart nodes', () => {
     expect(
       options.map((o) => [o.id, o.branchId, o.organizationBranchId]),
     ).toEqual([
-      ['company-a', 'b', 'company-a'],
+      ['b', 'b', ''],
       ['legacy', 'legacy', ''],
       ['hr-headquarters', 'b', ''],
     ]);
@@ -218,5 +218,58 @@ describe('live organization chart nodes', () => {
     });
     expect(sourceForRecord(member).label).toBe('کارکن چارت');
     expect(parentFieldLabel('organization', 'chartEmployees')).toBe('گره والد');
+  });
+});
+
+it('keeps a real company root when its subsidiary has another name', () => {
+  const subsidiary = record('subsidiary', 'branches', {
+    values: ['شعبه تهران', '', ''],
+  });
+  const nodes = build([subsidiary]);
+  expect(nodes.find((node) => node.id === 'b')).toMatchObject({
+    name: 'شرکت',
+    parentId: null,
+  });
+  expect(nodes.find((node) => node.id === 'subsidiary')).toMatchObject({
+    name: 'شعبه تهران',
+    parentId: 'b',
+  });
+});
+
+describe('shared company organization', () => {
+  it('shows shared units once and keeps employee links to their canonical unit', () => {
+    const shared = { ...unit, data: { allBranches: true } };
+    const copy = {
+      ...shared,
+      id: 'copy',
+      branchId: 'other',
+      sharedSourceId: unit.id,
+    };
+    const nodes = buildLiveOrganizationNodes(
+      [shared, copy, { ...member, parentId: 'copy' }],
+      [
+        { id: 'b', name: 'شرکت' },
+        { id: 'other', name: 'شرکت دوم' },
+      ],
+      [{ ...employee, companyScope: 'ALL' }],
+    );
+    expect(nodes.filter((n) => n.kind === 'UNIT')).toHaveLength(1);
+    expect(nodes.find((n) => n.id === unit.id)?.parentId).toBe(
+      'hr-headquarters',
+    );
+    expect(nodes.find((n) => n.id === member.id)?.parentId).toBe(unit.id);
+    expect(nodes.find((n) => n.id === 'hr-headquarters')?.mutable).toBe(false);
+  });
+  it('uses organizational membership rather than physical data ownership for employee roots', () => {
+    const nodes = buildLiveOrganizationNodes(
+      [{ ...member, parentId: null }],
+      [
+        { id: 'b', name: 'مالک' },
+        { id: 'other', name: 'شرکت منتخب' },
+      ],
+      [{ ...employee, companyScope: 'COMPANY', companyId: 'other' }],
+    );
+    expect(nodes.find((n) => n.id === member.id)?.parentId).toBe('other');
+    expect(employee.branchId).toBe('b');
   });
 });

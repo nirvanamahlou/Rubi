@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SalesContractDetail } from '@nora/contracts';
 import { salesListTravelSummary } from './sales-list-summary';
+import { contractFlightMetadata } from '@nora/contracts';
 
 const base = {
   departureDate: '2026-10-25',
@@ -10,6 +11,48 @@ const base = {
   passengersDetail: [],
 } as unknown as SalesContractDetail;
 describe('Sales list travel and passenger projection', () => {
+  it.each(['OUTBOUND', 'RETURN'] as const)(
+    'places a contract-only %s flight in its own column without a fabricated opposite date',
+    (direction) => {
+      const flight = {
+        clientKey: 'floating-flight',
+        kind: 'FLIGHT',
+        status: 'NEEDS_RESERVATION_CONFIRMATION',
+        metadata: {
+          ...contractFlightMetadata({
+            version: 1,
+            direction,
+            originId: '10000000-0000-4000-8000-000000000001',
+            destinationId: '10000000-0000-4000-8000-000000000002',
+            departureAt: '2026-11-01T22:00:00Z',
+            arrivalAt: '2026-11-02T02:00:00Z',
+            carrierNameSnapshot: 'SYNTHETIC',
+            serviceNumberSnapshot: 'TEST1',
+            cabinClassCode: 'ECONOMY',
+          }),
+          dateCalendarSystem: 'gregorian',
+        },
+      };
+      const result = salesListTravelSummary({
+        ...base,
+        servicesDetail: [flight] as never,
+        hotelSelection: {
+          checkInDate: '2026-10-20',
+          checkOutDate: '2026-11-05',
+        } as never,
+      }).travelDates;
+      expect(result).toEqual({
+        outbound:
+          direction === 'OUTBOUND'
+            ? { date: '2026-11-02', calendar: 'gregorian' }
+            : null,
+        returning:
+          direction === 'RETURN'
+            ? { date: '2026-11-02', calendar: 'gregorian' }
+            : null,
+      });
+    },
+  );
   it('retains a booked child without assigning a fabricated age band when birth is unknown', () => {
     expect(
       salesListTravelSummary({
