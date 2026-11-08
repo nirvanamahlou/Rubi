@@ -102,7 +102,7 @@ export function organizationMultiCurrencyResult(
         passengerCount,
         salesAmount: amountsByCurrency
           .map((m) => `${m.amount} ${symbol(m.currencyCode)}`)
-          .join(grouping ? ' + ' : ' - '),
+          .join(' + '),
       },
     };
   });

@@ -15,6 +15,7 @@ import {
 } from './reporting-native-operational';
 
 export interface ReportingFactRow {
+  sourceItemId?: string;
   id: string;
   orderNumber: string;
   occurredAt: Date;

@@ -11542,3 +11542,6 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from la
 RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
+
+REPORT-CURRENCY-ROWS-1108 | PC-C | codex/pc-c-report-currency-rows-1108 | Reporting currency consolidation + owner source grouping metadata (sales/reservations), focused tests | IN_PROGRESS | user explicitly authorizes all report currency rows; no migration/FX/deploy
+REPORT-CURRENCY-ROWS-1108 READY_FOR_CI: optional internal producer identity/count metadata consumed by Reporting; owning readers retain all authorization. Existing public amountsByCurrency/sourceValues contract reused; no external contract migration. Source scope explicitly authorized by user's all-report request.

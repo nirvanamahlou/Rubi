@@ -20,6 +20,10 @@ export interface ReportSourceColumn {
   kind: 'TEXT' | 'NUMBER' | 'MONEY';
 }
 export interface ReportSourceRow {
+  /** Owning producer declares identity without currency; never inferred from labels. */
+  currencyGroupId?: string;
+  distinctCounts?: Readonly<Record<string, readonly string[]>>;
+  chartAmounts?: readonly { currencyCode: string; amount: string }[];
   id: string;
   at: Date;
   updatedAt: Date;
