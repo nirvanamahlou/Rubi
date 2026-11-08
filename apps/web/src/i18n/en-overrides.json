@@ -5608,5 +5608,6 @@
   "بازه باید حداکثر یک سال باشد.": "The date range must not exceed one year.",
   "کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.": "Select up to 200 employees.",
   "در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.": "Up to 2,000 employee attendance days can be changed at once.",
-  "نام یا کد پرسنلی": "Name or personnel code"
+  "نام یا کد پرسنلی": "Name or personnel code",
+  "جریمه روز (تومان)": "Daily penalty (Toman)"
 }

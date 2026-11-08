@@ -26,6 +26,7 @@ function fixture() {
     hrAuditEvent: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const hr = {
+    dailyPenalty: vi.fn().mockResolvedValue(null),
     leaveBalances: vi.fn().mockResolvedValue({
       year: 2026,
       items: [{ type: 'annual', granted: '26', used: '2', balance: '24' }],
@@ -385,6 +386,7 @@ it('returns newest-first own history with stored metrics and registration proven
   expect(result.attendanceHistory).toEqual([
     {
       date: '2026-11-03',
+      dailyPenaltyToman: null,
       firstIn: '09:15',
       lastOut: null,
       lateMinutes: 0,
@@ -394,6 +396,7 @@ it('returns newest-first own history with stored metrics and registration proven
     },
     {
       date: '2026-11-02',
+      dailyPenaltyToman: null,
       firstIn: '09:16',
       lastOut: '17:00',
       lateMinutes: 1,
@@ -444,4 +447,31 @@ it('excludes inactive days from history, totals and today punches', async () => 
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('uses authoritative HR penalties only for scoped active attendance days', async () => {
+  const f = fixture();
+  const active = {
+    id: 'day',
+    employeeId: 'employee',
+    branchId: 'allowed',
+    values: ['User', '2026-11-08'],
+    status: 'حاضر',
+    data: { lateMinutes: 10, dailyPenaltyToman: 'wrong-stale-value' },
+  };
+  const inactive = {
+    ...active,
+    id: 'disabled',
+    values: ['User', '2026-11-07'],
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  f.client.hrRecord.findMany.mockImplementation(async (q) =>
+    q.where.tab === 'attendance' ? [active, inactive] : [],
+  );
+  f.hr.dailyPenalty.mockResolvedValue('800000');
+  const result = await f.service.get(actor, 30);
+  expect(result.attendanceHistory).toHaveLength(1);
+  expect(result.attendanceHistory?.[0]?.dailyPenaltyToman).toBe('800000');
+  expect(f.hr.dailyPenalty).toHaveBeenCalledExactlyOnceWith(active);
 });
