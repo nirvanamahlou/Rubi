@@ -193,13 +193,26 @@ export async function nativeSalesReport(
       'مبالغ فروش از قیمت مصوب قرارداد خوانده می‌شوند؛ خرید، سود، وصول و صدور در این گزارش محاسبه نمی‌شوند.',
     ],
   };
-  return code === 'sales_by_organization'
+  return code === 'sales_by_organization' || code === 'sales_by_service_route'
     ? organizationMultiCurrencyResult(
         response,
         source,
         query,
         includeAllRows,
         directory,
+        code === 'sales_by_service_route'
+          ? {
+              labels: ['ترکیب خدمات قرارداد', 'مسیر سفر'],
+              dimensions: (row) => [
+                JSON.stringify(row.serviceKinds),
+                JSON.stringify([row.originId, row.destinationId]),
+                row.serviceKinds
+                  .map((kind) => serviceLabels[kind] ?? kind)
+                  .join(' + ') || 'خدمت ثبت نشده',
+                `${cities.get(row.originId) ?? row.originId} ← ${cities.get(row.destinationId) ?? row.destinationId}`,
+              ],
+            }
+          : undefined,
       )
     : response;
 }

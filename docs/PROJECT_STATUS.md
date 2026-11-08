@@ -9241,6 +9241,9 @@ RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pas
 RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
 
 RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.
+
+2026-11-07 PC-C SERVICE-ROUTE-CURRENCIES-1107: service/route rows consolidate exact per-currency amounts using +; contract/passenger counts deduplicate by contract ID before pagination. Native source and export/chart money arrays shared. 13 focused tests passed (includes XLSX content), formatting passed; full local typecheck blocked by stale shared contracts/Prisma artifacts; hosted checks required. No FX conversion, migration or deployment.
+
 ## 2026-11-07 — Ticket multi-airline marks and leg-date typography
 
 - PC-A reserved the shared presentation-only flight-ticket layout and focused

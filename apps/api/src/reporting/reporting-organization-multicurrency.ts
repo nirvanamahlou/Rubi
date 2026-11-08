@@ -29,6 +29,10 @@ export function organizationMultiCurrencyResult(
     branches: ReadonlyMap<string, string>;
     users: ReadonlyMap<string, string>;
   },
+  grouping?: {
+    dimensions: (row: SourceRow) => readonly [string, string, string, string];
+    labels: readonly [string, string];
+  },
 ): TravelReportResultV1 {
   const groups = new Map<
     string,
@@ -40,10 +44,18 @@ export function organizationMultiCurrencyResult(
     }
   >();
   for (const row of source) {
-    const key = JSON.stringify([row.branchId, row.ownerUserId]);
+    const [primaryId, secondaryId, primaryLabel, secondaryLabel] = grouping
+      ? grouping.dimensions(row)
+      : [
+          row.branchId,
+          row.ownerUserId,
+          labels.branches.get(row.branchId) ?? row.branchId,
+          labels.users.get(row.ownerUserId) ?? row.ownerUserId,
+        ];
+    const key = JSON.stringify([primaryId, secondaryId]);
     const g = groups.get(key) ?? {
-      branchId: row.branchId,
-      ownerId: row.ownerUserId,
+      branchId: primaryLabel,
+      ownerId: secondaryLabel,
       contracts: new Map<string, number>(),
       money: new Map<string, Prisma.Decimal>(),
     };
@@ -66,8 +78,8 @@ export function organizationMultiCurrencyResult(
     );
     const orderCount = g.contracts.size,
       passengerCount = [...g.contracts.values()].reduce((a, b) => a + b, 0);
-    const primaryDimension = labels.branches.get(g.branchId) ?? g.branchId,
-      secondaryDimension = labels.users.get(g.ownerId) ?? g.ownerId;
+    const primaryDimension = g.branchId,
+      secondaryDimension = g.ownerId;
     return {
       grainId: key,
       primaryDimension,
@@ -90,11 +102,17 @@ export function organizationMultiCurrencyResult(
         passengerCount,
         salesAmount: amountsByCurrency
           .map((m) => `${m.amount} ${symbol(m.currencyCode)}`)
-          .join(' - '),
+          .join(grouping ? ' + ' : ' - '),
       },
     };
   });
-  const column = query.sort?.column ?? 'salesAmount';
+  // Mixed currencies cannot be ranked by amount without an approved FX policy.
+  const requestedColumn =
+    query.sort?.column ?? (grouping ? 'orderCount' : 'salesAmount');
+  const column =
+    grouping && ['salesAmount', 'currencyCode'].includes(requestedColumn)
+      ? 'orderCount'
+      : requestedColumn;
   rows.sort((a, b) => {
     let comparison = 0;
     if (column === 'salesAmount' || column === 'currencyCode') {
@@ -130,13 +148,21 @@ export function organizationMultiCurrencyResult(
   });
   return {
     ...result,
-    reportVersion: 4,
+    reportVersion: grouping ? 2 : 4,
     grain: 'CONTRACT',
     dataLayout: 'SOURCE_COLUMNS',
     chartMeasure: 'salesAmount',
     columns: [
-      { key: 'primaryDimension', label: 'شعبه', kind: 'TEXT' },
-      { key: 'secondaryDimension', label: 'کارشناس', kind: 'TEXT' },
+      {
+        key: 'primaryDimension',
+        label: grouping?.labels[0] ?? 'شعبه',
+        kind: 'TEXT',
+      },
+      {
+        key: 'secondaryDimension',
+        label: grouping?.labels[1] ?? 'کارشناس',
+        kind: 'TEXT',
+      },
       { key: 'orderCount', label: 'تعداد قرارداد', kind: 'NUMBER' },
       { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
       { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
@@ -148,9 +174,17 @@ export function organizationMultiCurrencyResult(
           query.page * query.pageSize,
         ),
     total: rows.length,
+    ...(grouping
+      ? {
+          warnings: [
+            ...result.warnings,
+            'مرتب‌سازی مبلغ چندارزی تا تعیین مبنای نرخ تبدیل انجام نمی‌شود؛ ترتیب مبلغ بر اساس تعداد قرارداد است.',
+          ],
+        }
+      : {}),
     filterSnapshot: {
       ...result.filterSnapshot,
-      reportVersion: 4,
+      reportVersion: grouping ? 2 : 4,
       grain: 'CONTRACT',
     },
   };
