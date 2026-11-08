@@ -11587,3 +11587,9 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+## RESERVATION-DATE-GUARD-1108 — PC-A — RESERVED
+
+Owner requests prevention verification for new supplier forms/vouchers after authorized production date repair. Branch codex/pc-a-reservation-date-guard-1108 from282304171. Reserve focused new-form timezone regression and own status/task notes. Existing Tehran calendar conversion is already deployed in0c4cedf6b. Verify new defaults, save/reopen and supplier/voucher preview/PDF across host timezones; change production code only if a reproducible failure is found. No migration/dependency or unrelated source changes; previous voucher-date source lock released.
+
+RESERVATION-DATE-GUARD-1108 — VERIFIED: actual deployed image passes28 focused tests including four new cross-timezone roundtrips and both PDF outputs. Scoped lint passes; full Web typecheck passed. Production implementation already contains the fix, so this unit adds regression coverage only; no rebuild/deploy or operational write required. Source lock releases on publication.
