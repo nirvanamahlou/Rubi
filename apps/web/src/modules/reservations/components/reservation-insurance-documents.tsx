@@ -152,7 +152,7 @@ export function ReservationInsuranceDocuments({
         </p>
       ) : (
         <>
-          {data.canPrepare && data.policies.some((p) => !p.id) && (
+          {!sales && data.canPrepare && data.policies.some((p) => !p.id) && (
             <Button disabled={busy} onClick={() => void prepare()}>
               آماده‌سازی بیمه‌نامه‌های انتخاب‌شده
             </Button>

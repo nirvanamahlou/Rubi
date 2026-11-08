@@ -279,3 +279,25 @@ it('allows Finance to read payment evidence only in its branch without granting 
     ),
   ).rejects.toThrow();
 });
+
+it.each([
+  ['proof.jfif', 'image/jfif'],
+  [
+    'proof.xlsx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ],
+  ['proof.xls', 'application/vnd.ms-excel'],
+])(
+  'routes %s through the authorized receipt archive',
+  async (originalname, mimetype) => {
+    const s = setup();
+    const attachment = { ...file, originalname, mimetype };
+    await s.service.upload('contract', 'payment', attachment, actor, {});
+    expect(s.documents.upload).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceEntityId: 'payment' }),
+      attachment,
+      expect.anything(),
+      {},
+    );
+  },
+);

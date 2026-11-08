@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Header,
@@ -11,6 +12,7 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import type { Response } from 'express';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -27,6 +29,8 @@ export class SalesInsuranceDocumentsController {
     private readonly travel: TravelWorkflowService,
     @Inject(InsuranceAutomation)
     private readonly insurance: InsuranceAutomation,
+    @Inject(FinanceDeliveryService)
+    private readonly delivery: FinanceDeliveryService,
   ) {}
   @Get()
   @Header('Cache-Control', 'private, no-store')
@@ -36,6 +40,7 @@ export class SalesInsuranceDocumentsController {
   ) {
     await this.sales.detail(id, req.actor);
     const intake = await this.travel.forContract(id, req.actor.branchIds);
+    await this.assertReleased(id);
     return this.insurance.summary(intake.id, req.actor, id);
   }
   @Get('pdf/:policyId')
@@ -48,6 +53,7 @@ export class SalesInsuranceDocumentsController {
   ) {
     await this.sales.detail(id, req.actor);
     const intake = await this.travel.forContract(id, req.actor.branchIds);
+    await this.assertReleased(id);
     const result = await this.insurance.download(
       intake.id,
       req.actor,
@@ -60,6 +66,13 @@ export class SalesInsuranceDocumentsController {
     );
     response.setHeader('X-Content-Type-Options', 'nosniff');
     return new StreamableFile(result.bytes, { type: result.type });
+  }
+  private async assertReleased(id: string) {
+    const authorization = await this.delivery.readCustomerContract(id);
+    if (!authorization.approved)
+      throw new ForbiddenException(
+        'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
+      );
   }
   @Post('prepare')
   async prepare(

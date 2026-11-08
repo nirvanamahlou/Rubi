@@ -114,6 +114,8 @@ describe('saved contract payment currency control', () => {
     );
     expect(html).toContain('type="file"');
     expect(html).toContain('انتخاب فایل مدرک پرداخت');
+    expect(html).toContain('.jfif');
+    expect(html).toContain('.xls,.xlsx');
     expect(html).toContain('application/pdf,image/jpeg,image/png');
     expect(html).toContain('تأیید');
   });
