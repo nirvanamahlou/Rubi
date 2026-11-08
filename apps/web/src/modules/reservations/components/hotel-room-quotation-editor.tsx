@@ -36,7 +36,7 @@ export function HotelRoomQuotationEditor({
     rooms.map((room) => ({
       roomOrdinal: room.ordinal,
       baseAmount: '',
-      factor: '1',
+      factor: '2',
     }));
   const currencyCode = draft.hotelRoomPrices?.currencyCode ?? '';
   const transfer = draft.supplierFormPrices?.transferPp ?? {
@@ -118,7 +118,7 @@ export function HotelRoomQuotationEditor({
             {rooms.map((room) => {
               const price = prices.find(
                 (price) => price.roomOrdinal === room.ordinal,
-              ) ?? { roomOrdinal: room.ordinal, baseAmount: '', factor: '1' };
+              ) ?? { roomOrdinal: room.ordinal, baseAmount: '', factor: '2' };
               const change = (patch: Partial<typeof price>) =>
                 update({
                   ...draft,
@@ -132,7 +132,7 @@ export function HotelRoomQuotationEditor({
                           ) ?? {
                             roomOrdinal: row.ordinal,
                             baseAmount: '',
-                            factor: '1',
+                            factor: '2',
                           }),
                     ),
                   },
@@ -175,6 +175,27 @@ export function HotelRoomQuotationEditor({
       </p>
       <fieldset className="grid gap-2 rounded-xl border border-border p-3">
         <legend>ترانسفر این هتل</legend>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
+            checked={draft.hotelTransferSeparate === true}
+            onChange={(event) => {
+              const next = {
+                ...draft,
+                hotelTransferSeparate: event.target.checked,
+              };
+              if (!event.target.checked) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+                delete next.transferBrokerId;
+                delete next.transferBrokerName;
+              }
+              update(next);
+            }}
+          />
+          کارگزار ترانسفر جدا از هتل
+        </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -226,7 +247,7 @@ export function HotelRoomQuotationEditor({
           />
           {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
-        {
+        {draft.hotelTransferSeparate === true && (
           <ReservationPurchaseBrokerLookup
             purchaseRoot={purchaseRoot}
             requestId={requestId}
@@ -271,7 +292,7 @@ export function HotelRoomQuotationEditor({
               update(next);
             }}
           />
-        }
+        )}
 
         <MoneyInput
           aria-label={

@@ -11709,3 +11709,7 @@ SELF-ATTENDANCE-PENALTY-1108:23 focused API checks and9 Web/translation checks p
 RESERVATION-BROKER-EMAIL-CI-1108 integration: owner authorizes develop into the task branch only. Five shared docs/catalogue conflicts resolved with peer additions preserved; object comparison proves no upstream Web/API key or value removed/changed. No PR-to-develop merge, deployment or SMTP activation.
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated validation:717 Web/34 API tests pass, actual PDF smoke passes; merge conflicts cleared. Fix only two ledger section-separator blank lines flagged by hosted formatting. All peer domain code and translation values retained. Final-head CI pending; no deploy, actual email or PR-to-develop merge. Freeze own repair source on publication.
+
+## TRANSFER-BROKER-RATIO-1108 — PC-A — RESERVED
+
+Owner requests transfer broker lookup only for explicitly separate hotel/transfer mode and editable Ratio default2 in supplier form and purchase; push/develop merge authorized. Branch codex/pc-a-transfer-broker-ratio-1108 from381f86e20. Reserve shared hotel-room-quotation-editor.tsx, hotel-stay-purchase.tsx mode handling, their focused regression and own notes. Existing supplier email writer is frozen and its settings/save code is outside this unit. Checkbox controls mode; combined purchase inherits hotel supplier and ignores stale transfer-specific IDs. Saved explicit factors/prices remain authoritative. No API/schema/migration/dependency/mail/runtime changes.
