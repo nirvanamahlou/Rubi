@@ -63,7 +63,7 @@ export function PassengerServiceEditor({
   return (
     <div className="grid min-w-64 gap-2">
       {draft.services
-        .filter((s) => s.kind === 'FLIGHT' || s.kind === 'TRANSFER')
+        .filter((s) => ['FLIGHT', 'TRANSFER', 'INSURANCE'].includes(s.kind))
         .map((service) => {
           const direction =
             service.metadata?.direction ??
@@ -71,7 +71,11 @@ export function PassengerServiceEditor({
               (selection) => selection.serviceClientKey === service.clientKey,
             )?.direction;
           const label =
-            (service.kind === 'FLIGHT' ? 'بلیط' : 'ترانسفر') +
+            (service.kind === 'INSURANCE'
+              ? 'بیمه'
+              : service.kind === 'FLIGHT'
+                ? 'بلیط'
+                : 'ترانسفر') +
             ' ' +
             (direction === 'RETURN'
               ? 'برگشت'

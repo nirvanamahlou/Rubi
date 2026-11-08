@@ -200,7 +200,11 @@ export function buildDashboardCharts(
     if (!employee) continue;
     const v = Array.isArray(row.values) ? (row.values as string[]) : [];
     const key = department(employee);
-    if (row.section === 'time' && row.tab === 'attendance') {
+    if (
+      row.section === 'time' &&
+      row.tab === 'attendance' &&
+      row.status !== 'غیرفعال'
+    ) {
       const day = v[1] ?? '';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
       const unique = `${employee.id}:${day}`;

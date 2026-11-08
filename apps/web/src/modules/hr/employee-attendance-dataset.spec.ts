@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { HrRecordDto } from '@nora/contracts';
 import {
   employeeAttendanceDataset,
+  eligibleAttendanceRecords,
   recentAttendanceDataset,
 } from './employee-attendance-dataset';
 const record = (
@@ -52,6 +53,7 @@ describe('employee attendance table', () => {
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'جریمه روز',
       'وضعیت',
     ]);
     expect(data.rows[0]?.slice(2)).toEqual([
@@ -59,6 +61,7 @@ describe('employee attendance table', () => {
       '16:50',
       '5',
       '10',
+      '—',
       '—',
       '—',
       'حاضر با تأخیر و خروج زودهنگام',
@@ -97,6 +100,7 @@ it('uses calculated server times for device punches and includes attendance stat
     'خروج زودهنگام',
     'کسری کار',
     'اضافه‌کاری',
+    'جریمه روز',
     'وضعیت',
   ]);
   expect(data.rows[0]!.slice(4)).toEqual([
@@ -106,6 +110,7 @@ it('uses calculated server times for device punches and includes attendance stat
     '0',
     '—',
     '30',
+    '—',
     'حاضر با تأخیر',
   ]);
 });
@@ -161,7 +166,7 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ],
   );
   expect(data.recordIds).toEqual([first.id, second.id]);
-  expect(data.rows.map((row) => [row[0], row[1], row.at(-2)])).toEqual([
+  expect(data.rows.map((row) => [row[0], row[1], row.at(-3)])).toEqual([
     ['001', 'first', '12'],
     ['002', 'second', '34'],
   ]);
@@ -188,4 +193,47 @@ it('hides former employees from the current list without removing profile histor
   expect(data.recordIds).toEqual([active.id]);
   expect(data.rows).toHaveLength(1);
   expect(employeeAttendanceDataset([former]).recordIds).toEqual([former.id]);
+});
+
+it('shows the authoritative Toman daily penalty in both attendance views', () => {
+  const day = record('attendance', ['worker', '2026-11-08', '', '', '10', '5']);
+  day.data.dailyPenaltyToman = '750000';
+  const employee = employeeAttendanceDataset([day]);
+  const recent = recentAttendanceDataset(
+    [day],
+    [{ id: 'employee-1', name: 'worker', personnelCode: '001' }],
+  );
+  expect(employee.rows[0]![employee.columns.indexOf('جریمه روز')]).toContain(
+    '۷۵۰٬۰۰۰',
+  );
+  expect(recent.rows[0]![recent.columns.indexOf('جریمه روز')]).toBe(
+    employee.rows[0]![employee.columns.indexOf('جریمه روز')],
+  );
+});
+
+it('marks excluded days consistently in HR and employee tables without dropping their history', () => {
+  const day = {
+    ...record('attendance', ['Worker', '2026-11-08']),
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  const normal = record('attendance', ['Worker', '2026-11-09']);
+  for (const data of [
+    employeeAttendanceDataset([day, normal]),
+    recentAttendanceDataset([day, normal], []),
+  ]) {
+    expect(data.inactiveRecordIds).toEqual([day.id]);
+    expect(data.rows).toHaveLength(2);
+  }
+});
+
+it('excludes disabled days and their punches from cached dashboard and report inputs', () => {
+  const day = {
+    ...record('attendance', ['Worker', '2026-11-08']),
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  const punch = record('checkins', ['Worker', '2026-11-08', '09:00', 'ورود']);
+  const other = record('attendance', ['Worker', '2026-11-09']);
+  expect(eligibleAttendanceRecords([day, punch, other])).toEqual([other]);
 });

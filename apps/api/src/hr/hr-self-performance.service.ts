@@ -1,3 +1,4 @@
+import { inactiveAttendance } from './hr-attendance-activation';
 import { attendanceFrom } from './hr-attendance-range';
 import { resolveDeviceDirections } from './hr-device-attendance.domain';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
@@ -127,7 +128,7 @@ export class HrSelfPerformanceService {
             .toISOString()
             .slice(0, 10);
     const fromDate = attendanceFrom(requestedFromDate);
-    const monthlyRows = await this.database.client.hrRecord.findMany({
+    const allMonthlyRows = await this.database.client.hrRecord.findMany({
       where: {
         ...scope,
         section: 'time',
@@ -140,7 +141,13 @@ export class HrSelfPerformanceService {
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       take: 1001,
     });
-    if (monthlyRows.length > 1000)
+    const monthlyRows = allMonthlyRows.filter(
+      (row) => !inactiveAttendance(row),
+    );
+    const todayInactive = allMonthlyRows.some(
+      (row) => (row.values as string[])[1] === today && inactiveAttendance(row),
+    );
+    if (allMonthlyRows.length > 1000)
       throw new Error('Monthly attendance limit exceeded');
     // One latest reviewed calculation per day; do not double-count superseded rows.
     const days = new Map<string, Record<string, unknown>>();
@@ -261,9 +268,11 @@ export class HrSelfPerformanceService {
       throw new Error('Daily attendance limit exceeded');
     // An approved correction replaces the day's original punches, as in HR attendance.
     const correction = punches.find((row) => row.parentId != null);
-    const selected = correction
-      ? punches.filter((row) => row.parentId === correction.parentId)
-      : punches;
+    const selected = todayInactive
+      ? []
+      : correction
+        ? punches.filter((row) => row.parentId === correction.parentId)
+        : punches;
     const resolved = resolveDeviceDirections(
       selected.flatMap((row) => {
         const v = row.values as string[];
@@ -276,6 +285,17 @@ export class HrSelfPerformanceService {
         .filter((e) => e.kind === kind)
         .map((e) => localClockParts(e.at).time)
         .sort();
+    const history = [
+      ...new Map(
+        monthlyRows
+          .slice()
+          .reverse()
+          .map((row) => [(row.values as string[])[1]!, row]),
+      ).entries(),
+    ].sort(([a], [b]) => b.localeCompare(a));
+    const penalties = new Map<string, string | null>();
+    for (const [date, row] of history)
+      penalties.set(date, await this.hr.dailyPenalty(row));
     return {
       monthlyAttendance: {
         period:
@@ -291,42 +311,34 @@ export class HrSelfPerformanceService {
         deficitMinutes: total('deficitMinutes'),
       },
       approvedLeaveCount,
-      attendanceHistory: [
-        ...new Map(
-          monthlyRows
-            .slice()
-            .reverse()
-            .map((row) => [(row.values as string[])[1]!, row]),
-        ).entries(),
-      ]
-        .sort(([a], [b]) => b.localeCompare(a))
-        .map(([date, row]) => {
-          const data = (row.data ?? {}) as Record<string, unknown>;
-          const minutes = (key: string) =>
-            typeof data[key] === 'number' &&
-            Number.isSafeInteger(data[key]) &&
-            data[key] >= 0
-              ? (data[key] as number)
-              : null;
-          const clock = (key: string) =>
-            typeof data[key] === 'string' &&
-            Number.isFinite(Date.parse(data[key]))
-              ? localClockParts(new Date(data[key])).time
-              : null;
-          return {
-            date,
-            firstIn: clock('firstIn'),
-            lastOut: clock('lastOut'),
-            registrationType:
-              data.registrationType === 'manual' ||
-              data.registrationType === 'device'
-                ? data.registrationType
-                : null,
-            lateMinutes: minutes('lateMinutes'),
-            overtimeMinutes: minutes('overtimeMinutes'),
-            deficitMinutes: minutes('deficitMinutes'),
-          };
-        }),
+      attendanceHistory: history.map(([date, row]) => {
+        const data = (row.data ?? {}) as Record<string, unknown>;
+        const minutes = (key: string) =>
+          typeof data[key] === 'number' &&
+          Number.isSafeInteger(data[key]) &&
+          data[key] >= 0
+            ? (data[key] as number)
+            : null;
+        const clock = (key: string) =>
+          typeof data[key] === 'string' &&
+          Number.isFinite(Date.parse(data[key]))
+            ? localClockParts(new Date(data[key])).time
+            : null;
+        return {
+          date,
+          firstIn: clock('firstIn'),
+          lastOut: clock('lastOut'),
+          registrationType:
+            data.registrationType === 'manual' ||
+            data.registrationType === 'device'
+              ? data.registrationType
+              : null,
+          lateMinutes: minutes('lateMinutes'),
+          overtimeMinutes: minutes('overtimeMinutes'),
+          deficitMinutes: minutes('deficitMinutes'),
+          dailyPenaltyToman: penalties.get(date) ?? null,
+        };
+      }),
       todayAttendance: {
         date: today,
         firstIn: times('ورود')[0] ?? null,

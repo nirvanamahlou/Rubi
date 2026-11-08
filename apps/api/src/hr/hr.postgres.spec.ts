@@ -266,8 +266,15 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       },
       process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 180000 : 60000,
     );
-    beforeEach(() => {
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', admin.userId);
+    beforeEach(async () => {
+      await client.user.updateMany({
+        where: { username: 'nima' },
+        data: { username: `previous-nima-${randomUUID()}` },
+      });
+      await client.user.update({
+        where: { id: admin.userId },
+        data: { username: 'demo' },
+      });
     });
     afterAll(async () => {
       vi.unstubAllEnvs();
@@ -284,7 +291,10 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const manager = (
         await actor('mission_manager', HR_PERMISSION_CODES, [branchId])
       ).actor;
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
+      await client.user.update({
+        where: { id: manager.userId },
+        data: { username: 'nima' },
+      });
       const employee = await service.createEmployee(
         employeeInput('Synthetic mission employee', { branchId }),
         key(),
@@ -565,7 +575,10 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const manager = (
         await actor('leave_manager', HR_PERMISSION_CODES, [branchId])
       ).actor;
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
+      await client.user.update({
+        where: { id: manager.userId },
+        data: { username: 'nima' },
+      });
       const owner = (await actor('leave_owner', ['hr.self'], [branchId])).actor;
       const substitute = (
         await actor('leave_substitute', ['hr.self'], [branchId])

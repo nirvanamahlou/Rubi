@@ -2010,7 +2010,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
         'گردش خزانه',
         'دریافت‌های تأییدشده و استردادهای اجراشده به تفکیک ارز و زمان؛ سایر پرداخت‌ها و مانده حساب در این نمودار نیستند.',
         'line',
-        ['sales.dashboard.confirmed-payments.v1'],
+        [payment],
         'reports.dashboard.finance.read',
         '/reports',
       ),

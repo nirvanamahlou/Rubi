@@ -1,5 +1,7 @@
 # Dashboard chart coverage audit — 2026-11-08
 
+Historical snapshot before PR1488. The later DASHBOARDS-DATA-ACTIVATION-1108 audit supersedes the unconnected-source counts below. PR1484 integration preserves all newly merged domain-public producers, chart requirements and source lineage; Treasury receipts/refunds remain additive. The table below is retained as dated evidence, not current coverage.
+
 Read-only production inspection: six deployed native calculation/reader files match repository HEAD after newline normalization. Accounting journals/lines, approved supplier/ticket payment revisions, B2B credit policies, marketing campaigns/spend and leads contain no records. Payment entries: 3 FINANCE_CONFIRMED, 7 pending, 1 rejected; refunds: 0. No business rows, identities or amounts exported.
 
 Coverage is based on the actual native dispatcher, not the existence of planned tables. An authorized empty event source is zero; missing sources or denied scope are unavailable. Sources outside the dispatcher require owner-public producers before activation. Treasury receipt/refund coverage is added in this candidate and is not yet deployed.

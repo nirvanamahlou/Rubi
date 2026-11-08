@@ -2,6 +2,7 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useReportLiveRefresh } from '../model/use-report-live-refresh';
 import resultTableStyles from './report-result-table.module.css';
+import { ReportPrerequisites } from './report-prerequisites';
 
 import {
   AlertTriangle,
@@ -969,6 +970,42 @@ export function ReportResultPanel({
   started: boolean;
 }) {
   const hasRows = Boolean(result?.rows.length);
+  const [readinessAttempt, setReadinessAttempt] = useState(0);
+  const readinessKey = report.code + ':' + readinessAttempt;
+  const [readinessResponse, setReadinessResponse] = useState<{
+    key: string;
+    value: { reason: string; requirements: readonly string[] } | null;
+    error: boolean;
+  } | null>(null);
+  const readiness =
+    readinessResponse?.key === readinessKey ? readinessResponse.value : null;
+  const readinessError =
+    readinessResponse?.key === readinessKey && readinessResponse.error;
+  useEffect(() => {
+    let current = true;
+    if (!connected)
+      void reportingApi
+        .readiness(report.code)
+        .then((value) => {
+          if (current)
+            setReadinessResponse({
+              key: readinessKey,
+              value: value ?? { reason: report.description, requirements: [] },
+              error: false,
+            });
+        })
+        .catch(() => {
+          if (current)
+            setReadinessResponse({
+              key: readinessKey,
+              value: null,
+              error: true,
+            });
+        });
+    return () => {
+      current = false;
+    };
+  }, [report.code, report.description, connected, readinessKey]);
   const incomplete = Boolean(
     result &&
     (!result.sourceDataAsOfUtc ||
@@ -1111,7 +1148,13 @@ export function ReportResultPanel({
         </div>
       </div>
 
-      {running ? (
+      {!connected ? (
+        <ReportPrerequisites
+          readiness={readiness}
+          error={readinessError}
+          onRetry={() => setReadinessAttempt((value) => value + 1)}
+        />
+      ) : running ? (
         <div className="mt-5 space-y-4" role="status">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Clock3 className="size-4 animate-pulse text-primary" />
@@ -1149,14 +1192,6 @@ export function ReportResultPanel({
             title="گزارش هنوز اجرا نشده است"
           />
         </div>
-      ) : !connected ? (
-        <div className="mt-5">
-          <EmptyState
-            description="برای این گزارش هنوز Public Projection تأییدشده منتشر نشده است؛ تا آن زمان داده نمونه نمایش داده نمی‌شود."
-            icon={AlertTriangle}
-            title="داده گزارش هنوز قابل دریافت نیست"
-          />
-        </div>
       ) : result && !hasRows ? (
         <div className="mt-5">
           <EmptyState
@@ -1165,7 +1200,10 @@ export function ReportResultPanel({
                 اجرای دوباره
               </Button>
             }
-            description="در محدوده دسترسی و فیلترهای انتخاب‌شده رکوردی وجود ندارد."
+            description={[
+              'در محدوده دسترسی و فیلترهای انتخاب‌شده رکوردی وجود ندارد.',
+              ...result.warnings,
+            ].join(' ')}
             title="نتیجه‌ای پیدا نشد"
           />
         </div>
@@ -1964,7 +2002,13 @@ export function ReportingWorkspace({
     if (filter === 'وضعیت') {
       const allowed = new Set(producerFilterOptions?.statuses ?? []);
       return producerFilterOptions
-        ? salesStatusOptions.filter((option) => allowed.has(option.value))
+        ? [...allowed].map(
+            (value) =>
+              salesStatusOptions.find((option) => option.value === value) ?? {
+                value,
+                label: value,
+              },
+          )
         : salesStatusOptions;
     }
     return [];
@@ -2626,6 +2670,7 @@ export function ReportingWorkspace({
                   className="w-full"
                   disabled={
                     running ||
+                    !connectedReportSelected ||
                     Boolean(dateRangeError) ||
                     (connectedReportSelected && unsupportedConnectedFilters)
                   }

@@ -66,6 +66,7 @@ export interface DashboardVisualSeriesSnapshot {
 
 export interface DashboardVisualSnapshot {
   notice?: string;
+  missingMetrics?: Readonly<Record<string, string>>;
   labels: readonly string[];
   values: readonly number[];
   unit?: string;

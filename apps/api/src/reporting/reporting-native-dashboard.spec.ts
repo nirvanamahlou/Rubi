@@ -305,7 +305,12 @@ describe('native dashboard independent source composition', () => {
               at,
               value: '100',
               currencyCode: 'USD',
-              dimensions: { service: 'خدمات ترکیبی' },
+              dimensions: {
+                service: 'خدمات ترکیبی',
+                agent: 'کارشناس ثبت‌نشده',
+                destination: 'مقصد ثبت‌نشده',
+                country: 'کشور ثبت‌نشده',
+              },
             },
             {
               at,
@@ -625,7 +630,12 @@ describe('producer-owned native dashboard readers', () => {
         at,
         value: '100',
         currencyCode: 'USD',
-        dimensions: { service: 'خدمات ترکیبی' },
+        dimensions: {
+          service: 'خدمات ترکیبی',
+          agent: 'کارشناس ثبت‌نشده',
+          destination: 'مقصد ثبت‌نشده',
+          country: 'کشور ثبت‌نشده',
+        },
       },
     ]);
   });
@@ -786,7 +796,11 @@ describe('producer-owned native dashboard readers', () => {
       mergedIntoId: null,
       createdAt: { gte: query.from, lt: query.to },
     });
-    expect(findMany.mock.calls[0]?.[0].select).toEqual({ createdAt: true });
+    expect(findMany.mock.calls[0]?.[0].select).toEqual({
+      createdAt: true,
+      isActive: true,
+      acquaintanceMethod: { select: { id: true, name: true } },
+    });
   });
   it('treats real empty lead source as zero without inventing leads from contracts', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
@@ -896,6 +910,93 @@ describe('additional native dashboard trends', () => {
     expect(result.unavailableMetrics?.['net-profit']).toBe(
       'POSTED_ACCOUNTING_SOURCE_REQUIRED',
     );
+  });
+});
+
+describe('new native measurement availability contracts', () => {
+  it('keeps decimal means and units, and never fabricates history for current-state metrics', async () => {
+    const result: DashboardSourceResult = {
+      source: 'hr.dashboard.accepted-attendance.v1',
+      state: 'ready',
+      metrics: {
+        'employee-overtime': {
+          kind: 'count',
+          unit: 'ساعت',
+          aggregation: 'actual hours',
+          snapshot: true,
+          observations: [{ at: new Date('2026-10-15'), value: '1.5' }],
+        },
+        'first-response-time': {
+          kind: 'count',
+          unit: 'دقیقه',
+          calculation: 'mean',
+          aggregation: 'actual responses',
+          observations: [
+            { at: new Date('2026-10-15'), value: '30' },
+            { at: new Date('2026-10-16'), value: '60' },
+          ],
+        },
+      },
+    };
+    const native = new ReportingNativeDashboard(
+      { read: async () => absent() } as never,
+      { read: async () => absent() } as never,
+      { read: async () => absent() } as never,
+      { branches: async () => [{ id: 'branch-a', name: 'Branch' }] } as never,
+      undefined,
+      undefined,
+      {
+        readers: [{ source: result.source, read: async () => result }],
+      } as never,
+    );
+    const response = await native.load(
+      { kpiIds: 'employee-overtime,first-response-time' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(response.metrics['employee-overtime']).toMatchObject({
+      value: '۱٫۵',
+      unit: 'ساعت',
+    });
+    expect(response.metrics['employee-overtime']?.trend).toBeUndefined();
+    expect(response.metrics['employee-overtime']?.comparison).toBeUndefined();
+    expect(response.metrics['first-response-time']).toMatchObject({
+      value: '۴۵',
+      unit: 'دقیقه',
+    });
+  });
+  it('publishes the exact missing profit reasons on a partially available financial chart', async () => {
+    const sales: DashboardSourceResult = {
+      source: 'sales.dashboard.contract-currency.v1',
+      state: 'ready',
+      metrics: {
+        'net-sales': {
+          kind: 'money',
+          aggregation: 'canonical',
+          observations: [
+            { at: new Date('2026-10-15'), value: '100', currencyCode: 'USD' },
+          ],
+        },
+      },
+    };
+    const response = await setup(sales).native.load(
+      { kpiIds: 'net-sales', visualIds: 'finance-profit-trend' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(
+      response.visuals['finance-profit-trend']?.missingMetrics,
+    ).toMatchObject({
+      'gross-profit': 'APPROVED_MATCHED_COST_REQUIRED',
+      'net-profit': 'POSTED_ACCOUNTING_SOURCE_REQUIRED',
+    });
+    expect(
+      response.visuals[
+        'finance-profit-trend'
+      ]?.currencySeries?.[0]?.series?.map((s) => s.label),
+    ).toEqual(['فروش خالص']);
   });
 });
 

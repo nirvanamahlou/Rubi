@@ -14,7 +14,7 @@ describe('reporting catalog', () => {
       reportCatalog
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
-    ).toHaveLength(15);
+    ).toHaveLength(19);
     expect(
       reportCatalog.find((report) => report.code === 'due_checks')
         ?.availability,
@@ -124,8 +124,6 @@ describe('reporting catalog', () => {
       'lead_pipeline',
       'customer_satisfaction',
       'customer_consent_coverage',
-      'workbench_due_actions',
-      'future_travel_commitments',
       'customer_payment_aging',
       'manifest_finance_exclusions',
     ];

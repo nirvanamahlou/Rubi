@@ -87,3 +87,24 @@ export async function readCustomerReporting(
     ],
   };
 }
+
+/** Scoped organizational identities for authorized reporting consumers. */
+export async function readOrganizationReportCustomers(
+  client: DatabaseClient,
+  actor: ReportSourceActor,
+  customerIds: readonly string[],
+) {
+  requireSourcePermission(actor, ['customers.read']);
+  const rows = boundedSource(
+    await client.customer.findMany({
+      where: {
+        id: { in: [...new Set(customerIds)] },
+        ownerBranchId: { in: sourceBranches(actor) },
+        kind: 'ORGANIZATION',
+      },
+      select: { id: true, displayName: true },
+      take: 10001,
+    }),
+  );
+  return new Map(rows.map((row) => [row.id, row.displayName]));
+}
