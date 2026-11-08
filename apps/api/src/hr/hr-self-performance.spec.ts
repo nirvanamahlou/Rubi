@@ -439,8 +439,8 @@ it('excludes inactive days from history, totals and today punches', async () => 
     );
     const result = await f.service.get(actor);
     expect(result.attendanceHistory).toEqual([]);
-    expect(result.monthlyAttendance.lateMinutes).toBeNull();
-    expect(result.todayAttendance.firstIn).toBeNull();
+    expect(result.monthlyAttendance?.lateMinutes).toBeNull();
+    expect(result.todayAttendance?.firstIn).toBeNull();
   } finally {
     vi.useRealTimers();
   }
