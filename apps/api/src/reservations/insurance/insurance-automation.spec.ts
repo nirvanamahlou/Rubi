@@ -7,6 +7,42 @@ import type { InsuranceSettingsService } from '../../integrations/insurance/insu
 import type { TravisSandboxService } from '../../integrations/insurance/travis-sandbox.service';
 import type { NotificationsService } from '../../notifications/notifications.service';
 import { InsuranceAutomation } from './insurance-automation';
+import type { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
+
+it('uses current insurance allocations and shows a reason for every missing policy without issuing on a read', async () => {
+  const f = fixture();
+  const current = structuredClone(f.intake.snapshot);
+  f.intake.snapshot.serviceSelections = [];
+  f.sales.currentExecution.mockResolvedValue(current);
+  f.policies.findMany.mockResolvedValue([]);
+  const result = await f.service.summary('intake', f.actor);
+  expect(result.total).toBe(1);
+  expect(result.policies).toEqual([
+    expect.objectContaining({
+      customerId: 'passenger',
+      id: null,
+      ready: false,
+      status: 'PENDING',
+      error: expect.any(String),
+    }),
+  ]);
+  expect(f.policies.upsert).not.toHaveBeenCalled();
+  expect(f.provider.createPolicy).not.toHaveBeenCalled();
+  await expect(f.service.prepare('intake', f.actor)).rejects.toBeInstanceOf(
+    ForbiddenException,
+  );
+  await f.service.prepare('intake', {
+    ...f.actor,
+    permissions: [...f.actor.permissions, 'reservations.documents.manage'],
+  });
+  expect(f.policies.upsert).toHaveBeenCalledTimes(1);
+  expect(f.provider.createPolicy).not.toHaveBeenCalled();
+  current.passengerAssignments[0]!.serviceClientKeys = [];
+  expect(await f.service.summary('intake', f.actor)).toMatchObject({
+    total: 0,
+    selected: true,
+  });
+});
 
 function fixture() {
   const contract = {
@@ -173,12 +209,14 @@ function fixture() {
     policyPdf: vi.fn(async () => Buffer.from('%PDF-synthetic')),
   };
   const notifications = { createWithinTransaction: vi.fn() };
+  const sales = { currentExecution: vi.fn(async () => intake.snapshot) };
   const service = new InsuranceAutomation(
     db as unknown as DatabaseService,
     identities as unknown as CustomerInsuranceIdentity,
     settings as unknown as InsuranceSettingsService,
     provider as unknown as TravisSandboxService,
     notifications as unknown as NotificationsService,
+    sales as unknown as SalesOperationalAmendmentService,
   );
   const actor = {
     userId: 'owner',
@@ -187,6 +225,7 @@ function fixture() {
   } as unknown as AuthenticatedActor;
   return {
     service,
+    sales,
     db,
     row,
     policies,
@@ -283,6 +322,11 @@ it('downloads each original PDF independently without a financial gate, enforcin
     f.service.download('intake', { ...f.actor, permissions: [] }, 'policy'),
   ).rejects.toBeInstanceOf(ForbiddenException);
   const one = await f.service.download('intake', f.actor, 'policy');
+  expect(f.policies.findMany).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      where: { contractId: 'contract', customerId: { in: ['passenger'] } },
+    }),
+  );
   expect(one.type).toBe('application/pdf');
   expect(one.bytes.toString()).toBe('%PDF-synthetic');
   await expect(
@@ -322,4 +366,16 @@ it('does not submit or overwrite state after another worker acquires the lease',
   expect(f.row.status).toBe('DRAFT');
   expect(f.row.processingUntil).toBe(newerLease);
   expect(f.notifications.createWithinTransaction).not.toHaveBeenCalled();
+});
+
+it('explains cancelled policies and contracts instead of displaying a misleading pending status', async () => {
+  const f = fixture();
+  f.row.status = 'CANCELLED';
+  expect(
+    (await f.service.summary('intake', f.actor)).policies[0],
+  ).toMatchObject({ ready: false, error: 'بیمه‌نامه لغو شده است.' });
+  f.intake.contract.status = 'CANCELLED';
+  expect(
+    (await f.service.summary('intake', f.actor)).policies[0],
+  ).toMatchObject({ ready: false, error: 'قرارداد ابطال شده است.' });
 });

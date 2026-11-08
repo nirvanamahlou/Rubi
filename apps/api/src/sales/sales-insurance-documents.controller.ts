@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Header,
   Inject,
   Param,
@@ -59,5 +60,14 @@ export class SalesInsuranceDocumentsController {
     );
     response.setHeader('X-Content-Type-Options', 'nosniff');
     return new StreamableFile(result.bytes, { type: result.type });
+  }
+  @Post('prepare')
+  async prepare(
+    @Param('contractId', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.sales.detail(id, req.actor);
+    const intake = await this.travel.forContract(id, req.actor.branchIds);
+    return this.insurance.prepare(intake.id, req.actor, id);
   }
 }
