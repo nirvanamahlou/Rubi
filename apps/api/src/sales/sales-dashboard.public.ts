@@ -1,3 +1,4 @@
+import { dashboardDimensionKey } from '../common/dashboard-dimensions';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { Prisma, type SalesContractStatus } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
@@ -7,6 +8,11 @@ import type {
   DashboardObservation,
 } from '../common/dashboard-source';
 import { unsupportedDashboardFilters } from '../common/dashboard-source';
+import { reportingIdentityLabels } from '../iam/reporting-directory.public';
+import {
+  reportingCityLabels,
+  reportingCityCountries,
+} from '../master-data/reporting-cities.public';
 import { calculateSalesBalances } from './sales.domain';
 
 /** Sales-owned contract/currency projection. No passenger/service joins multiply money. */
@@ -81,6 +87,8 @@ export class SalesDashboardSource {
         ],
       },
       select: {
+        ownerUserId: true,
+        destinationId: true,
         services: { select: { kind: true } },
         createdAt: true,
         confirmedAt: true,
@@ -143,6 +151,21 @@ export class SalesDashboardSource {
       net: DashboardObservation[] = [],
       discounts: DashboardObservation[] = [],
       finalized: DashboardObservation[] = [];
+    const ownerIds = rows.flatMap((r) =>
+      r.ownerUserId ? [r.ownerUserId] : [],
+    );
+    const cityIds = rows.flatMap((r) =>
+      r.destinationId ? [r.destinationId] : [],
+    );
+    const owners = ownerIds.length
+      ? (await reportingIdentityLabels(this.db.client, [], ownerIds)).users
+      : new Map<string, string>();
+    const cities = cityIds.length
+      ? await reportingCityLabels(this.db.client, cityIds)
+      : new Map<string, string>();
+    const countries = cityIds.length
+      ? await reportingCityCountries(this.db.client, cityIds)
+      : new Map<string, { id: string; name: string }>();
     for (const row of rows) {
       const kinds = [
         ...new Set((row.services ?? []).map((service) => service.kind)),
@@ -160,6 +183,9 @@ export class SalesDashboardSource {
         OTHER: 'سایر خدمات',
       };
       const dimensions = {
+        agent: owners.get(row.ownerUserId) ?? 'کارشناس ثبت‌نشده',
+        destination: cities.get(row.destinationId) ?? 'مقصد ثبت‌نشده',
+        country: countries.get(row.destinationId)?.name ?? 'کشور ثبت‌نشده',
         service:
           kinds.length > 1
             ? 'خدمات ترکیبی'
@@ -167,6 +193,30 @@ export class SalesDashboardSource {
               ? (serviceLabels[kinds[0]!] ?? kinds[0]!)
               : 'خدمت ثبت نشده',
       };
+      const keys = {
+        ...(row.ownerUserId
+          ? { agent: dashboardDimensionKey('agent', row.ownerUserId) }
+          : {}),
+        ...(row.destinationId
+          ? {
+              destination: dashboardDimensionKey(
+                'destination',
+                row.destinationId,
+              ),
+            }
+          : {}),
+        ...(countries.get(row.destinationId)
+          ? {
+              country: dashboardDimensionKey(
+                'country',
+                countries.get(row.destinationId)!.id,
+              ),
+            }
+          : {}),
+      };
+      const dimensionKeys = Object.keys(keys).length
+        ? { dimensionKeys: keys }
+        : {};
       const at =
         query.dateBasis === 'created' ? row.createdAt : row.confirmedAt!;
       const balances = calculateSalesBalances(
@@ -182,7 +232,7 @@ export class SalesDashboardSource {
           (balance) => balance.currencyCode === query.filters.currencyCode,
         )
       )
-        finalized.push({ at, value: '1' });
+        finalized.push({ at, value: '1', dimensions, ...dimensionKeys });
       for (const balance of balances) {
         if (
           query.filters.currencyCode &&
@@ -210,6 +260,8 @@ export class SalesDashboardSource {
           at,
           currencyCode: balance.currencyCode,
           value: discount.toString(),
+          dimensions,
+          ...dimensionKeys,
         });
         gross.push({
           at,
@@ -221,6 +273,7 @@ export class SalesDashboardSource {
           currencyCode: balance.currencyCode,
           value: new Prisma.Decimal(balance.amount).minus(refunded).toString(),
           dimensions,
+          ...dimensionKeys,
         });
       }
     }
@@ -228,6 +281,31 @@ export class SalesDashboardSource {
       source,
       state: 'ready',
       metrics: {
+        'employee-finalized-sales-count': {
+          kind: 'count',
+          aggregation:
+            'تعداد فروش نهایی به نام مالک قرارداد؛ هر قرارداد یک‌بار مستقل از ارز.',
+          observations: finalized,
+        },
+        'employee-sales-amount': {
+          kind: 'money',
+          aggregation:
+            'فروش خالص قراردادهای نهایی‌شده به نام مالک، به تفکیک ارز.',
+          observations: net,
+        },
+        'employee-average-sale': {
+          kind: 'money',
+          calculation: 'mean',
+          aggregation:
+            'میانگین فروش خالص هر قرارداد قیمت‌دار، به تفکیک کارشناس و ارز.',
+          observations: net,
+        },
+        'customer-destination-demand': {
+          kind: 'count',
+          aggregation:
+            'قرارداد نهایی‌شده دارای مقصد؛ یک‌بار مستقل از تعداد مسافر.',
+          observations: finalized,
+        },
         'new-orders': {
           kind: 'count',
           aggregation:

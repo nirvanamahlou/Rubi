@@ -251,6 +251,8 @@ export interface DashboardProjectionV1 {
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
         notice?: string;
+        /** A partially available chart must explain each missing measurement separately. */
+        missingMetrics?: Readonly<Record<string, string>>;
         series?: readonly DashboardVisualSeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
