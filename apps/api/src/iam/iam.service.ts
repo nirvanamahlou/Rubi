@@ -2825,7 +2825,8 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
   ) {
     if (
-      !actor.permissions.includes('reservations.read') ||
+      (!actor.permissions.includes('reservations.read') &&
+        !actor.permissions.includes('finance.read')) ||
       !actor.branchIds.includes(branchId)
     )
       throw new ForbiddenException();

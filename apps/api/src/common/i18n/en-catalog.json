@@ -8075,6 +8075,7 @@
   "موجودی صرافی معتبر نیست.": "Invalid exchange office balance.",
   "کشور انتخاب‌شده معتبر نیست.": "The selected country is invalid.",
   "منبع پرداخت معتبر نیست.": "Invalid payment source.",
+  "گیرنده منابع انسانی در این شعبه تعریف نشده است.": "No HR recipient is configured for this branch.",
   "تعداد صرافی‌ها": "Exchange offices",
   "تعریف صرافی": "Add exchange office",
   "حذف صرافی": "Delete exchange office",

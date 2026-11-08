@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -14,6 +16,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
   const branch = randomUUID(),
     sender = randomUUID(),
     reviewer = randomUUID(),
+    initialReviewer = randomUUID(),
     employee = randomUUID();
   const actor = {
     userId: reviewer,
@@ -37,7 +40,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
     await db.branch.create({
       data: { id: branch, code: branch, name: 'Synthetic HR branch' },
     });
-    for (const id of [sender, reviewer])
+    for (const id of [sender, reviewer, initialReviewer])
       await db.user.create({
         data: {
           id,
@@ -108,7 +111,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
       {} as never,
       {} as never,
       new NotificationsService(new NotificationsRepository(database as never)),
-      {} as never,
+      { workbenchFeedbackRecipientUserIds: async () => [reviewer] } as never,
       undefined,
       undefined,
       hr,
@@ -156,6 +159,118 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
     });
     return id;
   }
+  it('routes once after recipient consent without consuming leave before HR review', async () => {
+    const id = await request();
+    await db.customerAffairsTicket.update({
+      where: { id },
+      data: { executionUnit: 'فروش', executionOwnerUserId: initialReviewer },
+    });
+    const initialActor = {
+      ...actor,
+      userId: initialReviewer,
+      permissions: [],
+    } as AuthenticatedActor;
+    const results = await Promise.allSettled([
+      service.reviewHrWorkbenchRequest(
+        id,
+        { version: 1, status: 'APPROVED' },
+        initialActor,
+      ),
+      service.reviewHrWorkbenchRequest(
+        id,
+        { version: 1, status: 'APPROVED' },
+        initialActor,
+      ),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      await db.customerAffairsTicket.findUniqueOrThrow({ where: { id } }),
+    ).toMatchObject({
+      executionUnit: 'منابع انسانی',
+      executionOwnerUserId: reviewer,
+      version: 2,
+    });
+    expect(
+      await db.customerAffairsTimeline.count({
+        where: { ticketId: id, type: 'WORKBENCH_RECIPIENT_REVIEW' },
+      }),
+    ).toBe(1);
+    expect(await db.hrRecord.count({ where: { code: `WB-${id}` } })).toBe(0);
+  });
+  it('repairs valid legacy settings drafts with an audit while preserving inactive and invalid records', async () => {
+    const branchId = randomUUID();
+    await db.branch.create({
+      data: { id: branchId, code: branchId, name: 'Synthetic settings repair' },
+    });
+    const values = [
+      'Calculation',
+      '[]',
+      'خیر',
+      '480',
+      'خیر',
+      'خیر',
+      'بله',
+      'خیر',
+      'خیر',
+      'تردد',
+    ];
+    const rows = [];
+    for (const [status, minutes] of [
+      ['پیش‌نویس', '480'],
+      ['غیرفعال', '480'],
+      ['پیش‌نویس', 'bad'],
+    ]) {
+      const row = await db.hrRecord.create({
+        data: {
+          branchId,
+          section: 'time',
+          tab: 'calculationSettings',
+          status: status!,
+          code: randomUUID(),
+          values: values.map((v, i) => (i === 3 ? minutes! : v)),
+        },
+      });
+      rows.push(row);
+      await db.hrAuditEvent.create({
+        data: {
+          branchId,
+          actorId: reviewer,
+          recordId: row.id,
+          action: 'CREATE',
+          version: 1,
+          changes: {},
+        },
+      });
+    }
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        '../../packages/database/prisma/migrations/20261108190000_activate_saved_calculation_settings/migration.sql',
+      ),
+      'utf8',
+    )
+      .replace(/^BEGIN;/, '')
+      .replace(/COMMIT;\s*$/, '');
+    await db.$executeRawUnsafe(sql);
+    await db.$executeRawUnsafe(sql);
+    const repaired = await db.hrRecord.findUniqueOrThrow({
+      where: { id: rows[0]!.id },
+    });
+    expect(repaired).toMatchObject({ status: 'فعال', version: 2 });
+    expect(
+      (await db.hrRecord.findUniqueOrThrow({ where: { id: rows[1]!.id } }))
+        .status,
+    ).toBe('غیرفعال');
+    expect(
+      (await db.hrRecord.findUniqueOrThrow({ where: { id: rows[2]!.id } }))
+        .status,
+    ).toBe('پیش‌نویس');
+    expect(
+      await db.hrAuditEvent.count({
+        where: { recordId: repaired.id, action: 'CALCULATION_SETTINGS_REPAIR' },
+      }),
+    ).toBe(1);
+  });
   it('rolls back approval and native leave on insufficient balance; approved replay consumes once and replaces absence', async () => {
     const id = await request();
     await expect(

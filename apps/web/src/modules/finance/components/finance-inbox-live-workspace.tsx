@@ -1,3 +1,4 @@
+import { FinanceReservationDetails } from './finance-reservation-details';
 import {
   RECEIPT_FILE_ACCEPT,
   attachmentMimeType,
@@ -15,6 +16,7 @@ import {
   PurchaseFxPaymentPreview,
 } from '../purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
+import { ContractFinancialSummary } from './contract-financial-summary';
 import { ContractProfit } from './contract-profit';
 import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
 import styles from './finance-inbox.module.css';
@@ -181,6 +183,9 @@ export function FinanceInboxLiveWorkspace() {
   );
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [pagination, setPagination] = useState({ key: '', page: 1 });
+  const [generalItem, setGeneralItem] = useState<FinanceInboxItemV1 | null>(
+    null,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -792,6 +797,26 @@ export function FinanceInboxLiveWorkspace() {
       className={`${styles.workspace} space-y-4`}
       aria-label="کارتابل یکپارچه مالی"
     >
+      <Dialog
+        open={Boolean(generalItem)}
+        onOpenChange={(open) => {
+          if (!open) setGeneralItem(null);
+        }}
+      >
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90dvh] max-w-5xl overflow-y-auto"
+        >
+          <DialogTitle>مشخصات کلی</DialogTitle>
+          {generalItem && (
+            <FinanceReservationDetails
+              key={generalItem.id}
+              id={generalItem.sourceContextReference}
+              contractNumber={generalItem.contractReference!}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       {receiptRetries.map((retry) => (
         <Card key={retry.id} className="space-y-3 p-4">
           <p>
@@ -1278,78 +1303,93 @@ export function FinanceInboxLiveWorkspace() {
               data.generatedAt > item.dueAt,
             );
             return (
-              <button
-                aria-pressed={active}
-                aria-controls="finance-request-details"
-                className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
-                key={item.id}
-                onClick={() => {
-                  setSelectedId(item.id);
-                }}
-                type="button"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={sourceTone(item.source)}>
-                        {item.source === 'PURCHASES'
-                          ? item.ticketPurchase
-                            ? 'خرید و تأمین'
-                            : 'تنخواه'
-                          : sourceLabels[item.source]}
-                      </Badge>
-                      <Badge>{statusLabels[item.status] ?? item.status}</Badge>
-                      {overdue ? (
-                        <Badge className="bg-rose-100 text-rose-700">
-                          سررسید گذشته
+              <div key={item.id} className="space-y-2">
+                <button
+                  aria-pressed={active}
+                  aria-controls="finance-request-details"
+                  className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                  }}
+                  type="button"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className={sourceTone(item.source)}>
+                          {item.source === 'PURCHASES'
+                            ? item.ticketPurchase
+                              ? 'خرید و تأمین'
+                              : 'تنخواه'
+                            : sourceLabels[item.source]}
                         </Badge>
-                      ) : null}
+                        <Badge>
+                          {statusLabels[item.status] ?? item.status}
+                        </Badge>
+                        {overdue ? (
+                          <Badge className="bg-rose-100 text-rose-700">
+                            سررسید گذشته
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                        {item.title}
+                      </h3>
                     </div>
-                    <h3 className="mt-2 break-words text-sm font-bold leading-6">
-                      {item.title}
-                    </h3>
+                    <p className={styles.requestAmount} dir="ltr">
+                      {money(item)}
+                    </p>
                   </div>
-                  <p className={styles.requestAmount} dir="ltr">
-                    {money(item)}
-                  </p>
-                </div>
-                {item.purchaseFx?.length ? (
-                  <div className={styles.rowFx}>
-                    <PurchaseFxSummary entries={item.purchaseFx} />
-                  </div>
-                ) : null}
-                {item.ticketPurchase ? (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    تعداد صندلی:{' '}
-                    {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
-                      '—'}{' '}
-                    · قیمت تکی:{' '}
-                    {item.ticketPurchase.unitCost
-                      ? item.ticketPurchase.unitCost +
-                        ' ' +
-                        (item.amount?.currencyCode ?? '')
-                      : 'ثبت نشده'}
-                  </p>
-                ) : null}
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                  <bdi className="break-all">
-                    {item.contractReference
-                      ? `قرارداد ${item.contractReference}`
-                      : ''}
-                  </bdi>
-                  <span>
-                    {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
-                  </span>
-                  {item.requesterDisplaySnapshot ? (
-                    <span>درخواست‌کننده: {item.requesterDisplaySnapshot}</span>
+                  {item.purchaseFx?.length ? (
+                    <div className={styles.rowFx}>
+                      <PurchaseFxSummary entries={item.purchaseFx} />
+                    </div>
                   ) : null}
-                  <span>سررسید: {faDate(item.dueAt)}</span>
-                  <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
-                    {active ? 'در حال مشاهده' : 'بررسی درخواست'}
-                    <ChevronLeft aria-hidden="true" className="size-4" />
-                  </span>
-                </div>
-              </button>
+                  {item.ticketPurchase ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      تعداد صندلی:{' '}
+                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                        '—'}{' '}
+                      · قیمت تکی:{' '}
+                      {item.ticketPurchase.unitCost
+                        ? item.ticketPurchase.unitCost +
+                          ' ' +
+                          (item.amount?.currencyCode ?? '')
+                        : 'ثبت نشده'}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <bdi className="break-all">
+                      {item.contractReference
+                        ? `قرارداد ${item.contractReference}`
+                        : ''}
+                    </bdi>
+                    <span>
+                      {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
+                    </span>
+                    {item.requesterDisplaySnapshot ? (
+                      <span>
+                        درخواست‌کننده: {item.requesterDisplaySnapshot}
+                      </span>
+                    ) : null}
+                    <span>سررسید: {faDate(item.dueAt)}</span>
+                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
+                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                      <ChevronLeft aria-hidden="true" className="size-4" />
+                    </span>
+                  </div>
+                </button>
+                {item.source === 'RESERVATIONS' && item.contractReference && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setGeneralItem(item)}
+                  >
+                    مشخصات کلی
+                  </Button>
+                )}
+              </div>
             );
           })}
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-4 py-4">
@@ -1490,6 +1530,12 @@ export function FinanceInboxLiveWorkspace() {
                       ))}
                     </div>
                   ) : null}
+                  {selected.source === 'SALES' && (
+                    <ContractFinancialSummary
+                      key={selected.sourceContextReference}
+                      id={selected.sourceContextReference}
+                    />
+                  )}
                   <dl className={styles.detailFacts}>
                     {[
                       ['قرارداد', selected.contractReference ?? '—'],

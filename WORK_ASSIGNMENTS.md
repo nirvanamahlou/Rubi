@@ -11801,3 +11801,19 @@ Final fetch discovered concurrent PR1507 (codex/insurance-amend-1108), which cha
 Owner explicitly authorized coordination, preservation of both branches and green final-head develop merge. Coordination posted on PR1507. Integrated origin/develop and PR1507 at9ba91b1e4 preserving its direct passenger fields, versioned API correction and retry logic; document-summary correction dialog/requirements and exact-customer link remain. Policy list focus refresh retained. Original standalone Web lint/typecheck and full67-route production build passed; integrated tests/build and full hosted gates required before merge. No provider/runtime calls or deployment.
 
 EXCHANGE-FUNDS-1108 hosted follow-up: sync the bounded new visible API errors into the offline English catalogue and share one PageHeader across Finance master-data tabs, preserving navigation and the existing breadcrumb regression. No test relaxation or unrelated translations.
+
+## REQUEST-FLOW-REDESIGN-1108 — PC-B — READY_FOR_CI
+
+Owner assigns nine browser comments: HR leave approval settings error and redesigned detail, Persian leave dates without duplicate Gregorian summary, leave recipient approval before HR review, advance template, Finance contract total/paid/remaining cards and always-open profit, redesigned Sales installments and reservation-identical general details from Finance cards. Reserve bounded HR/workbench/customer-affairs request workflow/contracts/tests, Finance inbox presentation, Sales contract-payments and public Reservation details consumer; preserve module ownership, branch authorization and real financial sources. No dependency or production changes. Determine whether additive migration is required before taking schema lock. Prior exchange task merged PR1513 and released its locks.
+
+REQUEST-FLOW-REDESIGN-1108 reserves sole forward data-migration lock for repairing valid legacy calculationSettings drafts produced by the status-less form, with immutable audit attribution to their latest editor. Explicit inactive records remain inactive. Also reserve bounded public read routes in Sales/Reservations, existing general-detail decoder and read projection, and offline i18n errors. No dependency changes.
+
+REQUEST-FLOW-REDESIGN-1108 reserves an additive CI PostgreSQL step for the existing transactional leave suite, including initial recipient replay and legacy settings repair tests. No CI policy or dependency changes.
+
+REQUEST-FLOW-REDESIGN-1108: bound IAM reservationResponsibilityNames read port also accepts finance.read under the same branch filter so the reused reservation projection renders its recorded responsibility names; no mutation or role/screen grants.
+
+REQUEST-FLOW-REDESIGN-1108 validation: real PostgreSQL tests pass for initial recipient concurrency, final HR quota/attendance rollback/replay and audited legacy settings repair; unit/HTTP and UI/date/translation/exact-decimal checks pass. Read-only Finance projection reuses Reservations presentation and default decoder remains reservations-only. Frozen publication releases bounded source and migration locks; full final-head hosted gates precede authorized merge. No production rollout.
+
+REQUEST-FLOW-REDESIGN-1108 extends bounded read-only selection context to finance.read + Finance requests screen for the same travel reference labels. Reused general-details hook selects this context without granting Master Data mutation, Reservations write or customer-sensitive access. Reserve common/workflow-selection.policy, MasterSelectionDirectory and consumer context union/tests.
+
+REQUEST-FLOW-REDESIGN-1108 hosted full-suite follow-up: existing receipt/account-flow fixtures omitted required payment amount and used remaining instead of the SalesBalance.outstanding contract. Complete those fixtures and type-check their fields with satisfies; preserve every receipt retry/account-save behavior assertion. Production financial data and formatter remain unchanged.
