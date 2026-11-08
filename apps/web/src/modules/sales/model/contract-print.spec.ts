@@ -642,8 +642,9 @@ it('keeps airports in flight rows and shows only destination cities in the parti
   });
   const section =
     html.split('FLIGHT INFORMATION')[1]?.split('HOTEL INFORMATION')[0] || '';
-  expect(section).toContain('Gazipasa · Gazipasa Airport (GZP)');
-  expect(section).toContain('Tehran · Imam Khomeini (IKA)');
+  expect(section).toContain('<bdi>IKA</bdi> → <bdi>GZP</bdi>');
+  expect(section).not.toContain('Gazipasa Airport');
+  expect(section).not.toContain('Imam Khomeini');
   expect(html).toContain('مقصد: ' + printReferences.names.antalya + '</div>');
   const parties = html
     .split('CONTRACT PARTIES')[1]!
@@ -1004,8 +1005,9 @@ it('prints floating airports only in the flight table', async () => {
     },
   ];
   const html = contractPrintHtml(output, printReferences);
-  expect(html.split('Antalya Airport (AYT)').length - 1).toBe(1);
-  expect(html.split('Imam Khomeini (IKA)').length - 1).toBe(1);
+  expect(html).toContain('<bdi>AYT</bdi> → <bdi>IKA</bdi>');
+  expect(html).not.toContain('Antalya Airport');
+  expect(html).not.toContain('Imam Khomeini');
 });
 
 it('does not add the return-flight home city to the destination of a round trip', () => {

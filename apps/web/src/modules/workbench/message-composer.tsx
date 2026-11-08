@@ -1094,10 +1094,10 @@ export function MessageComposer({
                       onPointerUp={clearTouchTimer}
                       onPointerCancel={clearTouchTimer}
                       onPointerMove={clearTouchTimer}
-                      className={`relative box-border w-full min-w-0 shrink-0 overflow-hidden rounded-2xl p-3 shadow-sm sm:w-auto sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      className={`relative box-border w-fit min-w-0 max-w-[85%] shrink-0 overflow-hidden rounded-xl px-3 py-2 text-sm shadow-sm sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
                       {message.replyTo && (
-                        <blockquote className="mb-2 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
+                        <blockquote className="mb-1.5 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-2 py-1.5 text-xs dark:bg-white/5">
                           <strong className="block truncate">
                             {message.replyTo.sender.displayName}
                           </strong>
@@ -1106,7 +1106,7 @@ export function MessageComposer({
                           </p>
                         </blockquote>
                       )}
-                      <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
+                      <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] opacity-80">
                         <strong className="truncate">
                           {message.sender.displayName}
                         </strong>
@@ -1115,11 +1115,11 @@ export function MessageComposer({
                         </time>
                       </div>
                       {message.forwardedFrom && (
-                        <p className="mt-2 border-s-2 border-current/30 ps-2 text-xs opacity-80">
+                        <p className="mt-1 border-s-2 border-current/30 ps-2 text-xs opacity-80">
                           فوروارد از {message.forwardedFrom.senderDisplayName}
                         </p>
                       )}
-                      <p className="mt-2 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-7">
+                      <p className="mt-1 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-6">
                         {message.body}
                       </p>
                       {message.attachments.length ? (
@@ -1149,11 +1149,11 @@ export function MessageComposer({
                           ))}
                         </ul>
                       ) : null}
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="size-9 min-h-9 text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/15"
+                          className="size-8 min-h-8 text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/15"
                           aria-label="فوروارد پیام"
                           title="فوروارد پیام"
                           onClick={() => setForwarding(message)}
@@ -1169,7 +1169,7 @@ export function MessageComposer({
                             aria-pressed={reaction.userIds.includes(
                               currentUserId,
                             )}
-                            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-current/20 bg-black/5 px-3 text-sm aria-pressed:ring-2 aria-pressed:ring-current disabled:opacity-50 dark:bg-white/10"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-full border border-current/20 bg-black/5 px-2 text-xs aria-pressed:ring-2 aria-pressed:ring-current disabled:opacity-50 dark:bg-white/10"
                             onClick={() =>
                               void reactTo(
                                 message,

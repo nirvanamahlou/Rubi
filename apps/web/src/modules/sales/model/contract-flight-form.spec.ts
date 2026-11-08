@@ -182,11 +182,11 @@ describe('Contract-only flight form and consumers', () => {
       },
     ];
     expect(contractPrintHtml(output, printReferences)).toContain(
-      'Imam Khomeini Airport (IKA)',
+      '<bdi>IKA</bdi>',
     );
     expect(contractPrintHtml(output, printReferences)).toContain('FLOAT123');
     expect(contractPrintHtml(output, printReferences)).toContain(
-      'Antalya Airport (AYT)',
+      '<bdi>AYT</bdi>',
     );
     const saved = { ...output.contract, originId, destinationId };
     const manual = manualAmendmentFlights(saved);

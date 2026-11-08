@@ -460,6 +460,9 @@ Add missing MANIFEST XLSX document type and TRAVEL_RESERVATIONS category with in
 ## AMENDMENT-RESPONSIVE-1108
 Bound passenger amendment dialog to available viewport with border-box sizing and centered maximum width. Intrinsic grid/form/table widths can shrink; responsive tabs and padded sections retain all existing controls. Presentation-only, no API or migration.
 
+## INSURANCE-PROVIDER-ERRORS-1108
+Read-only official Travis Swagger PolicyCreateInput/Person review confirms current automation payload field names and required numeric/string/date-time types; no fabricated extra fields. Transport now emits only locally generated stage/status and allowlisted validation field labels. Upstream messages, values, headers, keys and URLs remain undisclosed. Automation preserves these safe diagnostics in policy lastError; ambiguous Create/Confirm reconciliation and no-blind-replay remain unchanged. No live issuance or deployment. Focused regressions and final-head hosted gates precede authorized develop merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9447,8 +9450,12 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
 
+
+## COMPACT-MESSAGE-BUBBLES-1108 - PC-B
+
+Chat bubbles use content-sized responsive widths,14px body text,24px line spacing,8px vertical padding and32px forward/reaction controls. Reply/forward spacing is tighter. Six existing chat checks and scoped lint pass; light/dark synthetic class preview shows168px to144px sample height without horizontal overflow. Styling only; no API, dependency, schema or production deployment. Final hosted gates precede owner-authorized develop merge.
+
 HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and PostgreSQL migration/seed gates passed. Full test inventory exposed fourteen missing English labels, now translated in Web and API catalogs; three inventory tests pass. Full isolated HR PostgreSQL run passed the company transfer and 48 other cases; an existing authorization fixture incorrectly used the explicitly permitted demo identity and was corrected to a separate unauthorized synthetic manager. Final full rerun and hosted gates pending. PR1522. No Radan or operational data changes.
 
 
-## INSURANCE-PROVIDER-ERRORS-1108
-Read-only official Travis Swagger PolicyCreateInput/Person review confirms current automation payload field names and required numeric/string/date-time types; no fabricated extra fields. Transport now emits only locally generated stage/status and allowlisted validation field labels. Upstream messages, values, headers, keys and URLs remain undisclosed. Automation preserves these safe diagnostics in policy lastError; ambiguous Create/Confirm reconciliation and no-blind-replay remain unchanged. No live issuance or deployment. Focused regressions and final-head hosted gates precede authorized develop merge.
+

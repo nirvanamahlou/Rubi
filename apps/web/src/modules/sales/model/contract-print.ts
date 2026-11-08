@@ -499,10 +499,7 @@ export function contractPrintHtml(
       const endpoint = (
         airport: TicketDocumentFacts['originAirport'],
         id: string,
-      ) =>
-        airport
-          ? `${[airport.cityName, airport.name].filter((value, index, values) => value && values.indexOf(value) === index).join(' · ')} (${airport.code})`
-          : name(id);
+      ) => (airport ? airport.code : name(id));
       return `<tr><td class="flight-route"><bdi dir="ltr"><bdi>${e(endpoint(facts?.originAirport ?? t.originAirport, t.originId))}</bdi> → <bdi>${e(endpoint(facts?.destinationAirport ?? t.destinationAirport, t.destinationId))}</bdi></bdi><small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td><bdi dir="ltr">${e(travelDate(t.departureAt))}</bdi></td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
