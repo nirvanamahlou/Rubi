@@ -950,7 +950,7 @@ it.each([2, 3])(
 
 it('uses the actual one-way flight route even when the legacy contract destination differs', () => {
   const output = structuredClone(printFixture);
-  delete output.contract.hotelSelection;
+  output.contract.hotelSelection = null;
   output.contract.ticketSelections = [
     {
       ...output.contract.ticketSelections![0]!,
@@ -1010,7 +1010,7 @@ it('prints floating airports only in the flight table', async () => {
 
 it('does not add the return-flight home city to the destination of a round trip', () => {
   const output = structuredClone(printFixture);
-  delete output.contract.hotelSelection;
+  output.contract.hotelSelection = null;
   const html = contractPrintHtml(output, {
     ...printReferences,
     names: { ...printReferences.names, antalya: 'ANTALYA', tehran: 'TEHRAN' },
