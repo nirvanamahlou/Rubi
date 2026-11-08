@@ -875,6 +875,57 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
         ).rejects.toMatchObject({ status: 403 });
         expect(decrypt).toHaveBeenCalled();
+        const todayFiltered = (filters: Partial<CallCenterSearchDto>) =>
+          read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), filters),
+            'today',
+          );
+        expect(
+          (await todayFiltered({ direction: 'OUTBOUND' })).meta.total,
+        ).toBe(0);
+        const unanswered = await todayFiltered({
+          direction: 'INBOUND',
+          outcome: 'NO_ANSWER',
+        });
+        expect(unanswered.meta.total).toBe(1);
+        expect(unanswered.data[0]!.call.outcome).toBe('NO_ANSWER');
+        expect((await todayFiltered({ outcome: 'UNKNOWN' })).meta.total).toBe(
+          1,
+        );
+        const displayedUnit =
+          unanswered.data[0]!.call.answerRecipient?.label ||
+          unanswered.data[0]!.call.operator ||
+          'نامشخص';
+        expect(
+          (await todayFiltered({ unit: displayedUnit, outcome: 'NO_ANSWER' }))
+            .meta.total,
+        ).toBe(1);
+        expect(
+          (await todayFiltered({ unit: 'no matching destination' })).meta.total,
+        ).toBe(0);
+        await expect(
+          todayFiltered({
+            page: 2,
+            revision: unanswered.meta.revision,
+            outcome: 'UNKNOWN',
+          }),
+        ).rejects.toMatchObject({ status: 409 });
+        expect(
+          (
+            await read.withoutOutcome(
+              scopedActor,
+              kpiBranch,
+              Object.assign(new CallCenterSearchDto(), {
+                direction: 'OUTBOUND',
+                unit: 'ignored',
+                outcome: 'BUSY',
+              }),
+              'week',
+            )
+          ).meta.total,
+        ).toBe(4);
         for (const period of ['today', 'week'] as const) {
           const first = await read.withoutOutcome(
             scopedActor,
