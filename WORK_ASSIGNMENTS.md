@@ -11570,4 +11570,14 @@ DETAIL-TYPE-LAYOUT-1108 validation: four new normal-entry rendering regressions 
 
 DETAIL-TYPE-LAYOUT-1108: owner selected direct develop merge only on 2026-11-08; live deployment remains unapproved. Extend bounded reservation to four new Web-only en-overrides.json labels found by English coverage. API/standalone labels are unchanged.
 
+## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
+
+Owner authorizes current-contract insurance selection, per-passenger issuance reasons and insurance allocation editing, tests and develop merge. Reserve Reservations insurance automation and documents UI, Customers internal insurance identity projection, passenger-service-editor and focused regressions. Consume existing public Sales current-execution port; preserve provider idempotency, issued identities, branch/source authorization and sandbox restriction. No migration/dependency or live issuance/deployment. Previous insurance scopes are merged/frozen. Additive missing-policy summary rows ship with Web consumer; no shared schema changes.
+
+Bounded extension: reserve Customers module import for the existing Sales public projection, both insurance-document controllers for a permission-checked POST prepare command, and five new English override labels. Missing policy rows use nullable id with customerId as UI identity. Reads remain non-mutating; prepare requires documents.manage plus the existing branch/contract read scope. Existing confirmed policies remain contract/customer bound across intake revisions.
+
+Validation: 42 API regressions across insurance, identity and contract amendment; 14 focused Web checks; 3 English-catalogue checks; scoped API/Web lint, full API/Web TypeScript and API plus 67-route Web builds pass. API checks use a 6GB Node heap after the default 2GB process exhausted its heap. Prisma generation used a dummy unreachable URL and did not connect to a database. No runtime policy/provider calls, migrations or deployment. The existing Travis adapter remains sandbox-only; actual production insurer issuance is outside this repair. Prepare preserves unique contract/customer/provider idempotency and does not resubmit existing policies.
+
+Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
+
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
