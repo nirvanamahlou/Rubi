@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Header,
   Inject,
   Param,
@@ -45,5 +46,12 @@ export class InsuranceDocumentsController {
     );
     response.setHeader('X-Content-Type-Options', 'nosniff');
     return new StreamableFile(result.bytes, { type: result.type });
+  }
+  @Post('prepare')
+  prepare(
+    @Param('intakeId', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.insurance.prepare(id, req.actor);
   }
 }

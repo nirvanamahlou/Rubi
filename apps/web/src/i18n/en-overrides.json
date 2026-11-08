@@ -5588,5 +5588,12 @@
   "پیامی با این عبارت پیدا نشد.": "No messages match this search.",
   "نتایج قدیمی‌تر": "Older results",
   "ترانسفر این هتل": "Hotel transfer",
-  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel"
+  "کارگزار ترانسفر جدا از هتل": "Separate transfer supplier from hotel",
+  "آماده‌سازی بیمه‌نامه‌های انتخاب‌شده": "Prepare selected insurance policies",
+  "بیمه در قرارداد ثبت شده است؛ در ویرایش اسامی مسافران، بیمه را به مسافر تخصیص دهید.": "Insurance is included in the contract; assign it to a passenger when editing passenger services.",
+  "بیمه‌نامه لغو شده است.": "The insurance policy has been cancelled.",
+  "اتصال بیمه‌گر روی سرور تنظیم نشده است.": "The insurance provider connection is not configured on the server.",
+  "درخواست صدور برای این مسافر هنوز ثبت نشده است.": "An issuance request has not yet been registered for this passenger.",
+  "در انتظار پردازش درخواست بیمه‌گر.": "Waiting for the insurer to process the request.",
+  "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer."
 }

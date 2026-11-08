@@ -9,7 +9,7 @@ Focused 26 tests and the full Reservations Web suite (664 passed, 4 existing
 skips), scoped lint, Web TypeScript and the production Web build passed. No API,
 schema, migration, dependency, runtime or operational-data change.
 
-## HR fast attendance sync � 2026-11-08
+## HR fast attendance sync — 2026-11-08
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
@@ -2147,6 +2147,14 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## 2026-11-08 — انتخاب و وضعیت بیمه هر مسافر
+
+وضعیت: تکمیل و ادغام در develop؛ برای اعمال روی سرور، API و Web این نسخه باید با هم مستقر شوند. اگر بیمه در قرارداد ثبت شده ولی به هیچ مسافری تخصیص ندارد، پیام مشخص و راهنمای ویرایش اسامی نمایش داده می‌شود.
+
+`INSURANCE-SELECTION-1108` توسط PC-A: بیمه‌نامه و صف صدور، تخصیص فعلی بیمه در قرارداد را از سرویس عمومی فروش می‌خوانند. مسافر بدون رکورد صدور نیز همراه علت آماده‌نبودن نمایش داده می‌شود؛ بیمه‌نامه موجود با تغییر نسخه intake ناپدید نمی‌شود. آماده‌سازی درخواست‌های ثبت‌نشده با مجوز مدیریت اسناد و حفظ یکتایی درخواست ممکن است. در ویرایش قرارداد، خدمات بیمه هر مسافر قابل افزودن و برداشتن است.
+
+۴۲ تست API، ۱۴ تست Web و ۳ بررسی ترجمه، lint محدود، TypeScript کامل و buildهای API/Web پاس شدند. Schema، Migration و Dependency تغییر نکرده‌اند. اتصال موجود تراویس آزمایشی است؛ صدور واقعی و استقرار سرور در این واحد انجام نشده است.
 
 ## 2026-11-08 — تطبیق تاریخ پرواز واچر با قرارداد
 
@@ -9280,3 +9288,5 @@ RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and on
   skip; scoped lint, Web TypeScript and the 67-route production build pass.
 
 2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.
+
+INTEGRATE-TRANSFER-DEFAULT-1108: owner-requested source2e6219682 integrated with current develop on a separate branch; only a status-header conflict required resolution, retaining the combined-broker note and current HR heading. Published peer branch remains unchanged. Four source CI gates are green; final integration PR gates remain required. No migration or deployment.

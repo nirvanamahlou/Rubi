@@ -22,6 +22,7 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
     ],
   };
   const insurance = {
+    prepare: vi.fn(async () => ({ total: 1, policies: [] })),
     summary: vi.fn(async () => ({ ready: true, policies: [{ id: policyId }] })),
     download: vi.fn(async () => ({
       bytes: Buffer.from('%PDF-synthetic'),
@@ -59,6 +60,9 @@ it('serves an individual original PDF in Sales and Reservations without any Fina
     ]) {
       const summary = await request(app.getHttpServer()).get(path).expect(200);
       expect(summary.body.ready).toBe(true);
+      await request(app.getHttpServer())
+        .post(path + '/prepare')
+        .expect(201);
       const pdf = await request(app.getHttpServer())
         .get(path + '/pdf/' + policyId)
         .expect(200);
