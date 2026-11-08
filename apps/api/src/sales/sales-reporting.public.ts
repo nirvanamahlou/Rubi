@@ -27,6 +27,7 @@ export async function readSalesReportingProjection(
   actor: SalesReportingActor,
   query: SalesReportingQuery,
   pipeline = false,
+  dateBasis: 'created' | 'departure' = 'created',
 ) {
   const all = actor.permissions.includes('sales.contracts.read.all');
   const branch = actor.permissions.includes('sales.contracts.read.branch');
@@ -116,7 +117,7 @@ export async function readSalesReportingProjection(
           ? [{ status: status as SalesContractStatus }]
           : []),
         {
-          createdAt: {
+          [dateBasis === 'departure' ? 'departureDate' : 'createdAt']: {
             ...(scalar('fromUtc') ? { gte: new Date(scalar('fromUtc')!) } : {}),
             ...(scalar('toUtc') ? { lt: new Date(scalar('toUtc')!) } : {}),
           },
@@ -128,6 +129,7 @@ export async function readSalesReportingProjection(
       contractNumber: true,
       branchId: true,
       ownerUserId: true,
+      customerId: true,
       originId: true,
       destinationId: true,
       status: true,
@@ -192,6 +194,7 @@ export async function readSalesReportingProjection(
         contractNumber: row.contractNumber,
         branchId: row.branchId,
         ownerUserId: row.ownerUserId,
+        customerId: row.customerId,
         originId: row.originId,
         destinationId: row.destinationId,
         status: effectiveStatus,

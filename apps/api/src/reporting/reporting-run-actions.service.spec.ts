@@ -91,7 +91,7 @@ describe('Reporting form action history', () => {
 
     await service.saveReport({ ...saved, recordAction: true }, actor);
     expect(repo.createSaved.mock.calls[1]?.[1]).toMatchObject({
-      runMetadata: { viewVersion: 1 },
+      runMetadata: { viewVersion: 2 },
       filterState: saved.filterState,
     });
   });

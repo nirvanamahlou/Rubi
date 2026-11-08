@@ -11557,3 +11557,10 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `orig
 VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Voucher output takes both flight calendar dates from the current contract projection while supplier-form revisions retain their explicitly saved dates; the stored settings object remains unchanged. No API, schema, dependency, runtime data or deployment changes.
 
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
+
+REPORT-READINESS-1108 | PC-C | codex/pc-c-report-readiness-1108 | read-only production schema/data inventory, owning reporting projections, readiness API/UI and tests | IN_PROGRESS | user authorizes existing report activation and blocked-reason panel; no data mutation/migration/deploy
+REPORT-READINESS-1108 scope: optional readiness metadata and authenticated no-store endpoint; owning Sales/CustomerAffairs/Workbench/HR readers only. Source-scoped native permissions retained; no migration/dependency lock. I18n catalogues regenerated with existing script; HR-only general-catalog exclusion preserved.
+
+REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization identity lookup by Sales customerId; no cross-module table access in Reporting.
+
+REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.

@@ -17,6 +17,9 @@ import type {
 } from './reporting.contracts';
 import { createFilterSnapshot } from './reporting.policy';
 import { consolidateSourceCurrencies } from './reporting-source-currencies';
+import { readTicketSlaReporting } from '../customer-affairs/ticket-reporting.public';
+import { readDueWorkbenchReporting } from '../workbench/workbench-reporting.public';
+import { readHrExpiryReporting } from '../hr/hr-expiry-reporting.public';
 
 export const OPERATIONAL_REPORTS: Readonly<
   Record<
@@ -24,6 +27,18 @@ export const OPERATIONAL_REPORTS: Readonly<
     { projection: ReportSource['projection']; grain: ReportingGrain }
   >
 > = {
+  customer_service_sla: {
+    projection: 'customer-affairs.reporting.sla.v1',
+    grain: 'TICKET_SUPPORT',
+  },
+  workbench_due_actions: {
+    projection: 'workbench.reporting.due-actions.v1',
+    grain: 'TICKET_SUPPORT',
+  },
+  hr_record_expiry: {
+    projection: 'hr.reporting.record-expiry.v1',
+    grain: 'EMPLOYEE',
+  },
   cancellations_refunds: {
     projection: 'sales.reporting.cancellations.v1',
     grain: 'CONTRACT_CURRENCY',
@@ -228,6 +243,15 @@ export async function nativeOperationalReport(
 ) {
   let source: ReportSource;
   switch (code) {
+    case 'customer_service_sla':
+      source = await readTicketSlaReporting(client, actor, query);
+      break;
+    case 'workbench_due_actions':
+      source = await readDueWorkbenchReporting(client, actor, query);
+      break;
+    case 'hr_record_expiry':
+      source = await readHrExpiryReporting(client, actor, query);
+      break;
     case 'cancellations_refunds':
       source = await readSalesCancellationReporting(client, actor, query);
       break;
