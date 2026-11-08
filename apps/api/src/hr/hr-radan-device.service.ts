@@ -51,7 +51,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     if (process.env.HR_RADAN_ENABLED !== 'true') return;
     this.stopped = false;
-    this.schedule();
+    void this.tick().finally(() => this.schedule());
   }
   onModuleDestroy() {
     this.stopped = true;

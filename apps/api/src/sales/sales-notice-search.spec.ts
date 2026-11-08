@@ -22,7 +22,7 @@ it.each([true, false])(
       scope,
       allowed,
     );
-    const args = findMany.mock.calls[0]![0];
+    const args = findMany.mock.calls.find(([args]) => args.include)![0];
     expect(args.where.AND[0]).toEqual(scope);
     expect(args.where.AND).toContainEqual({ status: 'SENT_TO_RESERVATIONS' });
     expect(args.where.AND).toContainEqual({ destinationId: 'destination' });
@@ -62,7 +62,7 @@ it('keeps an unfiltered list unchanged and uses the same Notice filter for bound
   await repo.list({}, scope);
   expect(findMany.mock.calls[0]![0].where.AND[1]).toEqual({});
   await repo.list({ search: 'AbC-120123' }, scope, false, 100);
-  const args = findMany.mock.calls[1]![0];
+  const args = findMany.mock.calls.find(([args]) => args.take === 101)![0];
   expect(args.where.AND[0]).toEqual(scope);
   expect(args.where.AND[1].OR).toContainEqual({
     services: {

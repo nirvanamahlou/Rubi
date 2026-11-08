@@ -267,9 +267,15 @@ export class MessagingRepository {
     conversationId: string,
     cursor: string | undefined,
     take: number,
+    search = '',
   ) {
     return this.database.client.messagingMessage.findMany({
-      where: { conversationId },
+      where: {
+        conversationId,
+        ...(search
+          ? { body: { contains: search, mode: 'insensitive' as const } }
+          : {}),
+      },
       select: messageSelection,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

@@ -824,6 +824,12 @@ export class HrService {
       filters.section = validate.text(input.section, 'بخش', 40);
     if (input.tab) filters.tab = validate.text(input.tab, 'نوع', 40);
     if (input.employeeId) filters.employeeId = validate.uuid(input.employeeId);
+    if (
+      input.section === 'time' &&
+      input.tab === 'attendance' &&
+      !input.employeeId
+    )
+      filters.employee = { status: 'فعال', deletedAt: null };
     if (input.parentId) filters.parentId = validate.uuid(input.parentId);
     if (input.status) filters.status = validate.text(input.status, 'وضعیت', 80);
     if (input.from || input.to) {
@@ -2607,6 +2613,30 @@ export class HrService {
     );
     return row ? parseMonthlyLeavePolicy(row.values as string[]) : null;
   }
+  async missionPettyFund(branchId: string, actor: AuthenticatedActor) {
+    this.require(actor, 'hr.manage');
+    this.branch(actor, validate.uuid(branchId));
+    if (!this.missionPetty)
+      throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+    return this.missionPetty.summary(branchId, actor);
+  }
+  private async workbenchLeaveEmployee(
+    tx: Tx,
+    branchId: string,
+    senderId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.branch(actor, branchId);
+    const employee = await tx.hrEmployee.findFirst({
+      where: { userId: senderId, deletedAt: null, status: 'فعال' },
+    });
+    if (!employee)
+      throw new BadRequestException(
+        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
+      );
+    this.branch(actor, employee.branchId);
+    return employee;
+  }
   async validateWorkbenchLeaveSubmission(
     tx: Tx,
     branchId: string,
@@ -2614,13 +2644,12 @@ export class HrService {
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
   ) {
-    const employee = await tx.hrEmployee.findFirst({
-      where: { branchId, userId: senderId, deletedAt: null, status: 'فعال' },
-    });
-    if (!employee)
-      throw new BadRequestException(
-        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
-      );
+    const employee = await this.workbenchLeaveEmployee(
+      tx,
+      branchId,
+      senderId,
+      actor,
+    );
     await this.validateLeaveSubmission(tx, employee, leave, actor);
   }
   private async validateLeaveSubmission(
@@ -2788,18 +2817,13 @@ export class HrService {
   ) {
     this.require(actor, 'hr.manage');
     this.branch(actor, branchId);
-    const employee = await tx.hrEmployee.findFirst({
-      where: {
-        userId: senderId,
-        branchId,
-        deletedAt: null,
-        status: 'فعال',
-      },
-    });
-    if (!employee)
-      throw new BadRequestException(
-        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
-      );
+    const employee = await this.workbenchLeaveEmployee(
+      tx,
+      branchId,
+      senderId,
+      actor,
+    );
+    branchId = employee.branchId;
     await tx.$queryRaw`SELECT id FROM hr_employees WHERE id=${employee.id}::uuid FOR UPDATE`;
     const schema = getHrResource('requests', 'radanLeave')!;
     await this.approve(tx, schema, actor, employee);
@@ -2866,7 +2890,17 @@ export class HrService {
     branchId: string,
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
+    senderId?: string,
   ) {
+    if (senderId)
+      branchId = (
+        await this.workbenchLeaveEmployee(
+          this.database.client,
+          branchId,
+          senderId,
+          actor,
+        )
+      ).branchId;
     const today = validate.localClockParts(new Date()).date;
     for (
       let at = Date.parse(leave.from);

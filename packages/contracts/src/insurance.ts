@@ -1,3 +1,24 @@
+import type { SalesReservationRequestV1 } from './sales';
+
+export function insurancePassengerIds(snapshot: SalesReservationRequestV1) {
+  const keys = new Set(
+    snapshot.serviceSelections
+      .filter((s) => s.kind === 'INSURANCE')
+      .map((s) => s.clientKey),
+  );
+  return [
+    ...new Set(
+      (snapshot.passengerAssignments ?? [])
+        .filter(
+          (p) =>
+            snapshot.passengerIds.includes(p.customerId) &&
+            p.serviceClientKeys.some((key) => keys.has(key)),
+        )
+        .map((p) => p.customerId),
+    ),
+  ];
+}
+
 /** Insurance preparation is separate from confirmed provider issuance. */
 export type InsurancePolicyStatusV1 =
   'DRAFT' | 'INPUT_ERROR' | 'PROVIDER_ERROR' | 'ISSUED' | 'CANCELLED';
@@ -42,6 +63,9 @@ export interface InsuranceDraftInputV1 {
 }
 
 export interface InsurancePolicyRowV1 {
+  automatic?: boolean;
+  sandbox?: boolean;
+  lastError?: string | null;
   id: string;
   intakeId: string;
   branchId: string;

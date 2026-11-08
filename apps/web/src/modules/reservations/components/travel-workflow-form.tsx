@@ -1,4 +1,5 @@
 'use client';
+import { ReservationInsuranceDocuments } from './reservation-insurance-documents';
 import { reservationHasTransfer } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -106,6 +107,7 @@ export function TravelWorkflowForm({
   }, [settingsDirty]);
   useEffect(() => {
     let active = true;
+    if (action === 'بیمه‌نامه') return;
     void travelRequest<{
       data: WorkflowIntake;
       delivery: TravelDeliveryAuthorizationV1;
@@ -184,6 +186,7 @@ export function TravelWorkflowForm({
       setBusy(false);
     }
   }
+  if (action === 'بیمه‌نامه') return <ReservationInsuranceDocuments id={id} />;
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
   const requiresParty = reservationHasTransfer(intake.snapshot);

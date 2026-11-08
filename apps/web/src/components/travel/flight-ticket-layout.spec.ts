@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   ticketPageHtml,
   ticketDocumentHtml,
+  ticketLayoutStyles,
   ticketAlignmentStyles,
   type TicketLayoutData,
 } from './flight-ticket-layout';
@@ -189,4 +190,43 @@ it('allows explicitly logo-free ticket documents, keeps airline marks, and retai
   expect(
     ticketPageHtml(data, cities, { ...brand, withoutLogo: true }),
   ).not.toContain('class="agency-logo"');
+});
+
+it('renders one mark for every distinct carrier on the ticket without duplicating repeated carriers', () => {
+  const iranAirtourLogo = 'data:image/png;base64,aXJhbmFpcnRvdXI=';
+  const mahanLogo = 'data:image/png;base64,bWFoYW4=';
+  const html = ticketPageHtml(
+    {
+      ...data,
+      offers: [data.offers[0]!, { ...data.offers[1]!, carrierName: 'ماهان' }],
+    },
+    cities,
+    brand,
+    {
+      'ایران ایرتور': {
+        name: 'Iran Airtour',
+        logoDataUrl: iranAirtourLogo,
+      },
+      ماهان: { name: 'Mahan Air', logoDataUrl: mahanLogo },
+    },
+  );
+  expect(html).toContain('class="logos multiple-airlines"');
+  expect(html.match(/class="airline-logo"/g)).toHaveLength(2);
+  expect(html).toContain(`src="${iranAirtourLogo}" alt="Iran Airtour"`);
+  expect(html).toContain(`src="${mahanLogo}" alt="Mahan Air"`);
+
+  const repeated = ticketPageHtml(data, cities, brand, {
+    'ایران ایرتور': {
+      name: 'Iran Airtour',
+      logoDataUrl: iranAirtourLogo,
+    },
+  });
+  expect(repeated.match(/class="airline-logo"/g)).toHaveLength(1);
+  expect(repeated).not.toContain('multiple-airlines');
+});
+
+it('gives the ARRIVAL and DEPARTURE dates the same typography and color as their labels', () => {
+  expect(ticketLayoutStyles).toContain(
+    '.flight-ticket .leg-head strong,.flight-ticket .leg-head>span{font-size:13pt;font-weight:700;letter-spacing:.2mm;color:inherit}',
+  );
 });

@@ -42,6 +42,22 @@ function record(
   };
 }
 
+describe('leave policy day deadlines', () => {
+  it('renders both notice periods as numbers rather than calendar dates', () => {
+    const fields = buildContextualHrFields([
+      'شناسه',
+      'مهلت ثبت روزانه (روز قبل)',
+      'مهلت ثبت ساعتی (روز قبل)',
+    ]);
+    expect(fields.slice(1).map((f) => f.type)).toEqual(['number', 'number']);
+    expect(
+      getHrResource('time', 'leavePolicies')!
+        .fields.slice(3, 5)
+        .map((f) => f.type),
+    ).toEqual(['decimal', 'decimal']);
+  });
+});
+
 describe('connected HR forms and selection exports', () => {
   it('fills recruitment requisition fields from the selected company resources', () => {
     const data = {

@@ -410,3 +410,42 @@ it('requires the sent hotel supplier but allows voucher issuance without an opti
     ),
   ).toThrow('کارگزار فرم');
 });
+
+it('publishes corrected supplier prices after confirmation without reopening confirmation or changing an issued voucher', () => {
+  const oldSettings = {
+    brokerId: 'broker',
+    supplierFormPrices: { pp: { amount: '0', currencyCode: 'EUR' } },
+  } as never;
+  const newSettings = {
+    brokerId: 'broker',
+    supplierFormPrices: {
+      pp: { amount: '123.50', currencyCode: 'EUR' },
+      ratio: { amount: '2' },
+    },
+  } as never;
+  const current: TravelWorkflowStateV1 = {
+    ...initialTravelWorkflow(),
+    version: 6,
+    supplierStatus: 'CONFIRMED',
+    voucherIssued: true,
+    voucherSettings: oldSettings,
+    supplierFormSettings: newSettings,
+    sentSupplierFormSettings: oldSettings,
+    sentSupplierFormVersion: 5,
+  };
+  const before = structuredClone(current);
+  const result = transition(current, command(current, 'REQUEST_SUPPLIER'), []);
+  expect(result.supplierStatus).toBe('CONFIRMED');
+  expect(result.voucherIssued).toBe(true);
+  expect(result.voucherSettings).toEqual(oldSettings);
+  expect(result.sentSupplierFormSettings).toEqual(newSettings);
+  expect(result.sentSupplierFormVersion).toBe(7);
+  expect(current).toEqual(before);
+  expect(() =>
+    transition(
+      { ...current, supplierStatus: 'CANCELLED' },
+      command(current, 'REQUEST_SUPPLIER'),
+      [],
+    ),
+  ).toThrow();
+});

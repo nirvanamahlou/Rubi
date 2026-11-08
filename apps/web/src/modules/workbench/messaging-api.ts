@@ -138,9 +138,15 @@ export const messagingApi = {
       json(input),
     );
   },
-  messages(conversationId: string) {
+  messages(
+    conversationId: string,
+    options: { search?: string; cursor?: string } = {},
+  ) {
+    const query = new URLSearchParams({ limit: '50' });
+    if (options.search) query.set('search', options.search);
+    if (options.cursor) query.set('cursor', options.cursor);
     return request<MessagingMessagesResponseV1>(
-      `/conversations/${encodeURIComponent(conversationId)}/messages?limit=50`,
+      `/conversations/${encodeURIComponent(conversationId)}/messages?${query.toString()}`,
     );
   },
   send(conversationId: string, input: SendMessagingMessageInputV1) {
