@@ -9351,4 +9351,3 @@ RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real
 ## TRANSFER-BROKER-RATIO-1108 — PC-A
 
 The shared supplier-form/purchase room editor now displays a separate transfer broker only after explicit separate-mode selection. Switching combined clears split-only broker/return settings; purchase submission uses the hotel supplier while combined even with a stale hidden broker ID. New room Ratio defaults to2 across initial rows, missing rows and row edits; saved factors remain editable and authoritative.39 focused Web tests pass, including toggle transitions, preserved quotations, exact batch totals and stale-broker inheritance. Scoped lint/types/build in progress. No schema/dependency/API/mail/deployment/data changes. Owner authorizes develop merge after final checks.
-
