@@ -87,10 +87,11 @@ export class RadanDeviceClient {
       throw new Error('Attendance token missing');
     this.token = result.access_token;
   }
-  async list<T>(path: string, key: string): Promise<T[]> {
+  async list<T>(path: string, key: string, recentFrom?: string): Promise<T[]> {
     const rows: T[] = [];
     const seen = new Set<string>();
     let expected: number | undefined;
+    let previousDate = '9999-12-31 23:59:59';
     for (let page = 0; page < 100; page++) {
       const response = await this.request(`${path}?page=${page}&limit=500`);
       const data = response.data as Record<string, unknown> | undefined;
@@ -114,6 +115,22 @@ export class RadanDeviceClient {
         seen.add(String(item.id));
       }
       rows.push(...(batch as T[]));
+      if (recentFrom && batch.length) {
+        // Radan returns newest-first clockings. Validate ordering before trusting
+        // the boundary; fall back to the complete reader on incompatible output.
+        for (const item of batch as { datetime?: unknown }[]) {
+          const date = item.datetime;
+          if (
+            typeof date !== 'string' ||
+            !/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(date) ||
+            date.replace('T', ' ') > previousDate
+          ) {
+            return this.list<T>(path, key);
+          }
+          previousDate = date.replace('T', ' ');
+        }
+        if (previousDate.slice(0, 10) < recentFrom) return rows;
+      }
       if (expected !== undefined && rows.length === expected) return rows;
       if (expected !== undefined && (rows.length > expected || !batch.length))
         throw new Error('Incomplete attendance pagination');
