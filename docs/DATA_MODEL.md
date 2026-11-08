@@ -1074,3 +1074,7 @@ or historical record is reclassified as SMTP delivery. ACCEPTED is server SMTP
 acceptance only; it is independent of broker confirmation, voucher and Finance.
 The additive migration creates no legacy queue entries. Key backup and controlled
 retention/key rotation must preserve decryptability of retained envelopes.
+
+## External bank sources — 2026-11-08
+
+FinanceSettlementAccount.isExternal distinguishes optional external-source entries in the bank profile. The owner explicitly requires omitted branchId/currencyCode to remain NULL, without assigning an unrelated branch or default currency. Existing accounts remain isExternal=false; database CHECK requires branch/currency for ordinary accounts and a bank reference for external entries. Branchless external records follow the existing bank-directory resource permission, while entries with a branch retain branch scope. Lists/download of identifiers retain existing masked/reveal permissions and audit. Financial account selectors and payment validation exclude incomplete accounts. Scope/type changes are versioned, audited and rejected once the account has business references; identifiers are reencrypted against the new scope. Migration must precede API/Web rollout. No historical records are rewritten.

@@ -127,7 +127,8 @@ describe('company bank account owner commands', () => {
         return row &&
           !row.deletedAt &&
           row.bankId === where.bankId &&
-          where.branchId.in.includes(row.branchId)
+          (where.OR[0].branchId.in.includes(row.branchId) ||
+            (row.branchId === null && row.isExternal === true))
           ? row
           : null;
       }),
@@ -172,6 +173,140 @@ describe('company bank account owner commands', () => {
       } as never,
       bankTestCrypto(),
     );
+  });
+  it('persists an external source without title, branch, currency or identifiers and replays it', async () => {
+    const request = { requestId: randomUUID(), isExternal: true };
+    const row = await service.save(bankId, null, request, actor);
+    expect(row).toMatchObject({
+      isExternal: true,
+      branchId: null,
+      currencyCode: null,
+      title: '',
+      accountNumber: null,
+    });
+    expect(await service.save(bankId, null, request, actor)).toEqual(row);
+    expect(await service.details(bankId, row.id, actor)).toMatchObject({
+      isExternal: true,
+      branchId: null,
+      currencyCode: null,
+    });
+    const updated = await service.save(
+      bankId,
+      row.id,
+      { isExternal: true, title: 'External', expectedVersion: 1 },
+      actor,
+    );
+    expect(updated).toMatchObject({
+      title: 'External',
+      version: 2,
+      branchId: null,
+      currencyCode: null,
+    });
+    await expect(
+      service.save(
+        bankId,
+        row.id,
+        {
+          isExternal: false,
+          title: 'Normal',
+          isActive: true,
+          expectedVersion: 2,
+        },
+        actor,
+      ),
+    ).rejects.toThrow();
+    await service.remove(bankId, row.id, { expectedVersion: 2 }, actor);
+    await expect(service.details(bankId, row.id, actor)).rejects.toThrow();
+  });
+  it('retains validation and permissions for optional external values', async () => {
+    for (const extra of [
+      { branchId: randomUUID() },
+      { currencyCode: 'invalid' },
+      { cardNumber: '123' },
+      { isExternal: 'true' },
+    ]) {
+      await expect(
+        service.save(
+          bankId,
+          null,
+          { requestId: randomUUID(), isExternal: true, ...extra },
+          actor,
+        ),
+      ).rejects.toThrow();
+    }
+    await expect(
+      service.save(
+        bankId,
+        null,
+        { requestId: randomUUID(), isExternal: true },
+        { ...actor, permissions: [] },
+      ),
+    ).rejects.toThrow();
+  });
+  it('reencrypts identifiers when an unused normal account becomes an unscoped external source and back', async () => {
+    const initial = input();
+    const row = await service.save(bankId, null, initial, actor);
+    const changed = await service.save(
+      bankId,
+      row.id,
+      {
+        title: '',
+        isExternal: true,
+        branchId: null,
+        currencyCode: null,
+        expectedVersion: 1,
+      },
+      actor,
+    );
+    expect(changed).toMatchObject({
+      isExternal: true,
+      branchId: null,
+      currencyCode: null,
+    });
+    expect((await service.details(bankId, row.id, actor)).accountNumber).toBe(
+      initial.accountNumber,
+    );
+    const restored = await service.save(
+      bankId,
+      row.id,
+      {
+        title: initial.title,
+        branchId,
+        currencyCode: 'IRR',
+        isActive: true,
+        isExternal: false,
+        expectedVersion: 2,
+      },
+      actor,
+    );
+    expect(restored).toMatchObject({
+      isExternal: false,
+      branchId,
+      currencyCode: 'IRR',
+    });
+    expect((await service.details(bankId, row.id, actor)).cardNumber).toBe(
+      initial.cardNumber,
+    );
+  });
+  it('prevents changing the scope/type of used accounts and cannot reveal another branch via the checkbox', async () => {
+    const row = await service.save(bankId, null, input(), actor);
+    rows.set(row.id, {
+      ...rows.get(row.id),
+      _count: { bankAccountAudits: 1, salesDestinationPayments: 1 },
+    });
+    const change = {
+      isExternal: true,
+      branchId: null,
+      currencyCode: null,
+      expectedVersion: 1,
+    };
+    await expect(service.save(bankId, row.id, change, actor)).rejects.toThrow(
+      'استفاده',
+    );
+    await expect(
+      service.save(bankId, row.id, change, { ...actor, branchIds: [] }),
+    ).rejects.toThrow();
+    expect(rows.get(row.id)?.branchId).toBe(branchId);
   });
   it('creates multiple accounts with masked ordinary output and secret-free audit, and replays once', async () => {
     const first = input();
