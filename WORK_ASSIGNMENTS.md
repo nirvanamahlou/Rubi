@@ -11542,3 +11542,9 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-transfer-combined-1107` from la
 RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Contract allocations, legacy service parties and declared contract counts initialize the editable quantity while an existing saved purchase remains authoritative. The combined hotel/transfer form splits only after the existing separate-broker checkbox is selected. No API, schema, dependency, runtime data or deployment changes.
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
+
+## VOUCHER-FLIGHT-DATE-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `origin/develop`. Owner requests voucher flight dates to match the current contract exactly and authorizes push plus direct `develop` merge. Reserve `voucher-settings.ts`, its focused regression, and bounded task/status notes. Voucher output must use the immutable current contract flight projection even when an older saved form contains a prior-day date; supplier-form drafts retain their explicit saved date behavior. Preserve all other saved voucher fields, ticket times, contract data, permissions and document layout. No schema, migration, dependency, lockfile, operational data or deployment changes.
+
+VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Voucher output takes both flight calendar dates from the current contract projection while supplier-form revisions retain their explicitly saved dates; the stored settings object remains unchanged. No API, schema, dependency, runtime data or deployment changes.
