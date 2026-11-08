@@ -4,11 +4,12 @@
 }
 
 :global([role='dialog']):has(.passengerWorkspace) {
-  width: 100vw;
-  max-width: 100vw;
-  height: 100dvh;
-  max-height: 100dvh;
-  border-radius: 0;
+  box-sizing: border-box;
+  width: min(1440px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  height: calc(100dvh - 24px);
+  max-height: calc(100dvh - 24px);
+  border-radius: 18px;
   padding: 20px;
   overflow-y: auto;
 }
@@ -266,5 +267,64 @@
 
   .content {
     padding: 10px;
+  }
+}
+
+/* Intrinsic widths must never push the amendment beyond its dialog. */
+.passengerWorkspace,
+.passengerWorkspace * {
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+.passengerWorkspace {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  gap: 18px;
+}
+.passengerWorkspace .content {
+  padding: clamp(12px, 2vw, 24px);
+  border-radius: 16px;
+}
+.passengerWorkspace .content > div,
+.passengerWorkspace fieldset {
+  max-inline-size: 100%;
+}
+.passengerWorkspace fieldset {
+  margin: 0;
+}
+.passengerWorkspace input:not([type='checkbox']):not([type='radio']),
+.passengerWorkspace select,
+.passengerWorkspace textarea,
+.passengerWorkspace button[role='combobox'] {
+  max-inline-size: 100%;
+  inline-size: 100%;
+}
+.passengerWorkspace table {
+  table-layout: fixed;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+.passengerWorkspace th,
+.passengerWorkspace td {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.passengerWorkspace .tabs {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+.passengerWorkspace .tab {
+  padding: 10px;
+}
+@media (max-width: 640px) {
+  :global([role='dialog']):has(.passengerWorkspace) {
+    padding: 10px;
+    width: calc(100vw - 12px);
+    max-width: calc(100vw - 12px);
+  }
+  .passengerWorkspace :global(.sm\:grid-cols-2),
+  .passengerWorkspace :global(.md\:grid-cols-3) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

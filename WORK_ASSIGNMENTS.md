@@ -485,6 +485,10 @@ SHARED-BROKER-FORM-1105 validation and follow-up: owner requests ARRIVAL/DEPARTU
 
 Owner authorizes manifest template registration repair and develop merge. Reserve insert-only Documents reference migration and matching PostgreSQL replay regression, bounded CI invocation and own notes. Published receipt migration scope is frozen/released; no schema/dependency changes or production rollout. Preserve existing disabled records, IDs and policies.
 
+## AMENDMENT-RESPONSIVE-1108 — PC-A
+
+Owner authorizes responsive redesign of Reservations passenger/room amendment and develop merge. Reserve editor CSS only and own notes. Remove viewport-plus-padding overflow, constrain grid/table/input intrinsic sizing, and improve section/card spacing. Existing commands, fields and permissions preserved; no schema/dependency/deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
