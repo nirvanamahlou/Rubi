@@ -91,6 +91,7 @@ export async function readReservationReporting(
       string,
       {
         supplier: string;
+        groupId: string;
         kind: string;
         currency: string;
         amount: Prisma.Decimal;
@@ -130,6 +131,10 @@ export async function readReservationReporting(
         ]);
         const g = groups.get(id) ?? {
           supplier: p.supplierNameSnapshot,
+          groupId: JSON.stringify([
+            p.supplierBrokerId ?? p.supplierOrganizationId ?? p.id,
+            p.serviceKind,
+          ]),
           kind: p.serviceKind,
           currency: p.currencyCode,
           amount: new Prisma.Decimal(0),
@@ -155,6 +160,7 @@ export async function readReservationReporting(
       ],
       rows: [...groups].map(([id, g]) => ({
         id,
+        currencyGroupId: g.groupId,
         at: g.at,
         updatedAt: g.at,
         values: {

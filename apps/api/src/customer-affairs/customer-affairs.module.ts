@@ -13,6 +13,7 @@ import { CallCenterReadService } from './call-center-read.service';
 import { TasksModule } from '../tasks/tasks.module';
 import { CallCenterWorkflowService } from './call-center-workflow.service';
 import { CallCenterWorkflowController } from './call-center-workflow.controller';
+import { CallCenterDashboardSource } from './call-center-dashboard.public';
 import { Module } from '@nestjs/common';
 import { CallCenterController } from './call-center.controller';
 import { CallCenterService } from './call-center.service';
@@ -87,6 +88,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CallCenterTelephonyService,
     CallCenterCustomerService,
     CallCenterReadService,
+    CallCenterDashboardSource,
     CallCenterWorkflowService,
     CallCenterService,
     CallCenterCrypto,
@@ -103,6 +105,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeService,
   ],
   exports: [
+    CallCenterDashboardSource,
     CallCenterActorGuard,
     CallCenterAccessService,
     IamWorkbenchRequestDirectory,

@@ -273,6 +273,7 @@ export const voucherFlagLabels: Record<
 export function voucherFormData(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
+  contractFlightDates = true,
 ) {
   const d = reservationFormData(intake, refs),
     v = intake.workflow.voucherSettings;
@@ -391,13 +392,20 @@ export function voucherFormData(
     infants: isAggregateReservationForm(intake)
       ? d.infants
       : passengers.filter((p) => p.age === 'INF').length,
-    flights: (['arrival', 'departure'] as const).map((prefix) => ({
-      leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
-      airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),
-      number: v.text[`${prefix}Flight`] || '-',
-      date: voucherDate(v.text[`${prefix}Date`]),
-      time: v.text[`${prefix}Time`] || '-',
-    })),
+    flights: (['arrival', 'departure'] as const).map((prefix) => {
+      const leg = prefix === 'arrival' ? 'OUTBOUND' : 'RETURN';
+      const contractFlight = d.flights.find((flight) => flight.leg === leg);
+      return {
+        leg,
+        airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),
+        number: v.text[`${prefix}Flight`] || '-',
+        date:
+          contractFlightDates && contractFlight
+            ? contractFlight.date
+            : voucherDate(v.text[`${prefix}Date`]),
+        time: v.text[`${prefix}Time`] || '-',
+      };
+    }),
   };
 }
 
@@ -413,6 +421,7 @@ export function supplierFormData(
           workflow: { ...intake.workflow, voucherSettings: settings },
         },
         refs,
+        false,
       )
     : reservationFormData(intake, refs);
   return settings

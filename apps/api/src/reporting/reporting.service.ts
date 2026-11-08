@@ -113,8 +113,20 @@ export class ReportingService {
   }
 
   private canReadReport(actor: ReportingActor, permission: string): boolean {
+    const native: Readonly<Record<string, readonly string[]>> = {
+      'reporting.hr.read': ['hr.read', 'hr.manage'],
+      'reporting.customers.read': ['customers.read'],
+      'reporting.customer_affairs.read': [
+        'customer_affairs.ticket.read',
+        'customer_affairs.lead.read',
+      ],
+    };
     return (
       actor.permissions.includes(permission) ||
+      (actor.permissions.includes('reporting.read') &&
+        (native[permission] ?? []).some((code) =>
+          actor.permissions.includes(code),
+        )) ||
       (permission === 'reporting.sales.read' && this.hasSalesRead(actor))
     );
   }
@@ -141,6 +153,17 @@ export class ReportingService {
     return REPORTING_CATALOG_V1.filter((report) =>
       this.canReadReport(actor, report.permission),
     );
+  }
+
+  readiness(code: string, actor: ReportingActor) {
+    this.require(actor, 'reporting.read');
+    const report = REPORTING_CATALOG_V1.find((item) => item.code === code);
+    if (!report) throw new NotFoundException('گزارش پیدا نشد.');
+    // Prerequisites contain no business data and do not grant source access.
+    return {
+      producerStatus: report.producerStatus,
+      readiness: report.readiness ?? null,
+    };
   }
 
   metadata(code: string, actor: ReportingActor) {

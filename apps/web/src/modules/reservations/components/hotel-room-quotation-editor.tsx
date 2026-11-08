@@ -174,7 +174,7 @@ export function HotelRoomQuotationEditor({
         </bdi>
       </p>
       <fieldset className="grid gap-2 rounded-xl border border-border p-3">
-        <legend>ترانسفر مستقل این هتل</legend>
+        <legend>ترانسفر این هتل</legend>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -202,25 +202,27 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={
-              busy || !canSplitTransfers || draft.hotelTransferRoundTrip
+              busy ||
+              !draft.hotelTransferSeparate ||
+              !canSplitTransfers ||
+              draft.hotelTransferRoundTrip
             }
             checked={draft.hotelTransferSplit ?? false}
-            onChange={(event) =>
-              update({
+            onChange={(event) => {
+              const next = {
                 ...draft,
                 hotelTransferSplit: event.target.checked,
-                ...(event.target.checked
-                  ? {
-                      hotelTransferSeparate: true,
-                      hotelTransferRoundTrip: false,
-                      hotelTransferReturn: draft.hotelTransferReturn ?? {
-                        amount: transfer.amount,
-                        currencyCode: transfer.currencyCode,
-                      },
-                    }
-                  : {}),
-              })
-            }
+              };
+              if (event.target.checked) {
+                next.hotelTransferSeparate = true;
+                next.hotelTransferRoundTrip = false;
+                next.hotelTransferReturn = draft.hotelTransferReturn ?? {
+                  amount: transfer.amount,
+                  currencyCode: transfer.currencyCode,
+                };
+              } else delete next.hotelTransferReturn;
+              update(next);
+            }}
           />
           {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
@@ -255,6 +257,10 @@ export function HotelRoomQuotationEditor({
                   value && value.id !== (hotelBroker?.id ?? draft.brokerId),
                 ),
               };
+              if (!next.hotelTransferSeparate) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+              }
               if (value) {
                 next.transferBrokerId = value.id;
                 next.transferBrokerName = value.name;

@@ -118,6 +118,7 @@ describe('HR Workbench review', () => {
       'branch',
       leave,
       actor,
+      'sender',
     );
     expect(notifications.createWithinTransaction).toHaveBeenCalledWith(
       tx,

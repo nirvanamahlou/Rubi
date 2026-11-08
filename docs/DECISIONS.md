@@ -788,3 +788,21 @@ Owner clarification retains first paid confirmed contract and selects the Financ
 ## CALL-HR-MANAGER-AUTHORITY-1107 — 2026-11-07
 
 Owner explicitly supersedes manually granted Call Center team-assignment authority with the active native HR employee grade «مدیر» and current HR organizational assignment. Recompute at directory reads and transactional saves; never cache the managerial decision in sessions or persist automatic role changes. Legacy manual team permission must not preserve authority after demotion or unit transfer. Retain existing base route/read/workflow and account/branch gates and pinned executive scope. HR exposes only active same-branch/company/unit linked account IDs; no names, job titles or fuzzy identity matching grants authority. Native HR currently stores a validated unit label and organizationBranchId rather than a unit FK; HR projection must resolve an unambiguous active native unit in that company/branch and fail closed on missing or ambiguous mapping. IAM profile unit is no longer the source for this request authority. HR-owned row locks at save revalidate manager grade/current unit and candidate membership; unlinked personnel do not gain privileges. No schema or automatic HR-account linking is implied.
+
+## RESERVATION-BROKER-EMAIL-1108 — operational form versus email acceptance
+
+2026-11-08 / PC-A. User authorizes implementation of real reservation PDF email while
+preserving the approved form appearance, and explicitly releases the prior
+TRANSFER-SEPARATE-DEFAULT-1108 form scope. IT connection details are pending.
+Keep the existing operational REQUEST_SUPPLIER/sent-form and purchasing contract
+compatible; do not reinterpret historical manual form registration as email
+acceptance. The new PDF-only email has its own durable encrypted intent and
+ACCEPTED/FAILED/UNKNOWN states. Queue acceptance is never presented as inbox
+receipt or broker confirmation. The default-off SMTP adapter requires a verified
+TLS connection and a company-matched explicit sender. Missing setup rejects the
+send command before a new sent revision; the independently saved draft remains.
+No email body or automatic reply processing, credentials in UI, live send or deployment.
+An API-hosted background dispatcher is used for this bounded slice with database
+claims across replicas; it owns no cross-module table and does not require a new
+Worker/Redis contract. A future separate Worker must consume the same public
+outbox contract rather than reading domain tables directly.

@@ -143,6 +143,17 @@ export class InsuranceSettingsService {
         : ('NOT_CONFIGURED' as const),
     };
   }
+  /** Internal worker port: branch identity comes from the persisted intake. */
+  async automationConfig(branchId: string) {
+    const row = await this.settings.resolveSetting({
+      namespace: 'operations',
+      key: 'insurance-issuance',
+      branchId,
+    });
+    return row?.scope === 'BRANCH' && row.scopeId === branchId
+      ? insuranceConfiguration(row.value)
+      : { schemaVersion: 1 as const, countries: [] };
+  }
   async save(branchId: string, raw: unknown, actor: AuthenticatedActor) {
     this.authorize(actor, branchId, true);
     const result = Joi.object({

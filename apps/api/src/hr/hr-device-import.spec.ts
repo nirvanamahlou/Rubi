@@ -325,3 +325,30 @@ it('persists a sortable work date and repairs missing legacy dates even when met
   await run('repeat-date-key');
   expect(f.tx.hrRecord.update).toHaveBeenCalledTimes(1);
 });
+
+it('retains day exclusion across device recalculation', async () => {
+  const f = fixture();
+  f.records.set('daily', {
+    id: 'daily',
+    employeeId: 'employee',
+    values: ['Synthetic', '2026-11-01'],
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+    version: 1,
+  });
+  f.tx.hrRecord.findMany.mockImplementation(async (...args: unknown[]) => {
+    const q = args[0] as { where: { tab?: string } };
+    return q.where.tab === 'attendance'
+      ? ([f.records.get('daily')] as never)
+      : [];
+  });
+  await f.hr.processAttendance(
+    { branchId: branch, date: '2026-11-01' },
+    'inactive-sync-key',
+    actor,
+  );
+  expect(f.records.get('daily')?.status).toBe('غیرفعال');
+  expect(f.records.get('daily')?.data).toMatchObject({
+    attendanceActive: false,
+  });
+});

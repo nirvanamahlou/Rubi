@@ -1797,6 +1797,7 @@ model MasterBrokerService {
 }
 
 model MasterOrganizationContact {
+  reservationNoteMails           ReservationNoteMail[]
   id                             String                           @id @default(uuid()) @db.Uuid
   organizationId                 String                           @db.Uuid
   code                           String                           @unique @db.VarChar(32)
@@ -5379,14 +5380,15 @@ model PackagePricingAuditEvent {
 }
 
 model ReservationWorkflowRevision {
-  id          String            @id @default(uuid()) @db.Uuid
-  intakeId    String            @db.Uuid
-  intake      ReservationIntake @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  noteMail    ReservationNoteMail?
+  id          String               @id @default(uuid()) @db.Uuid
+  intakeId    String               @db.Uuid
+  intake      ReservationIntake    @relation(fields: [intakeId], references: [id], onDelete: Restrict)
   version     Int
   state       Json
-  actorUserId String            @db.Uuid
-  actor       User              @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  actorUserId String               @db.Uuid
+  actor       User                 @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
 
   @@unique([intakeId, version])
 }
@@ -8278,6 +8280,13 @@ model ReservationInsurancePolicy {
   version         Int                            @default(1)
   issuedAt        DateTime?                      @db.Timestamptz(3)
   cancelledAt     DateTime?                      @db.Timestamptz(3)
+  automatic       Boolean                        @default(false)
+  sandbox         Boolean                        @default(false)
+  automation      Json?
+  lastError       String?                        @db.VarChar(500)
+  pdfUrl          String?                        @db.VarChar(2000)
+  processingUntil DateTime?                      @db.Timestamptz(3)
+  nextAttemptAt   DateTime?                      @db.Timestamptz(3)
   createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
   contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
@@ -8289,6 +8298,7 @@ model ReservationInsurancePolicy {
   @@unique([provider, providerId])
   @@unique([provider, policyNumber])
   @@index([intakeId, status, createdAt])
+  @@index([automatic, status, nextAttemptAt], map: "reservation_insurance_auto_due_idx")
   @@map("reservation_insurance_policies")
 }
 
@@ -8365,4 +8375,21 @@ model ProcurementPettyEntry {
 
   @@index([fundId, createdAt])
   @@map("procurement_petty_entries")
+}
+
+model ReservationNoteMail {
+  id            String                      @id @db.Uuid
+  revisionId    String                      @unique @db.Uuid
+  contactId     String                      @db.Uuid
+  envelope      String                      @db.Text
+  status        String                      @default("QUEUED") @db.VarChar(16)
+  attempts      Int                         @default(0)
+  nextAttemptAt DateTime                    @default(now()) @db.Timestamptz(3)
+  createdAt     DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                    @default(now()) @db.Timestamptz(3)
+  revision      ReservationWorkflowRevision @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  contact       MasterOrganizationContact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  @@index([status, nextAttemptAt])
+  @@map("reservation_note_mail")
 }

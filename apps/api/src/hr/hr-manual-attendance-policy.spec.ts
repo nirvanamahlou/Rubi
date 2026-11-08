@@ -9,20 +9,26 @@ const actor: AuthenticatedActor = {
   permissions: ['hr.manage', 'hr.approve'],
 };
 afterEach(() => vi.unstubAllEnvs());
-it('fails closed unless the exact configured HR account is authenticated', () => {
+it('allows only demo and nima with HR management permission', () => {
   expect(canEditAttendance(actor, '')).toBe(false);
   expect(canEditAttendance(actor, 'another-user')).toBe(false);
   expect(canEditAttendance({ ...actor, permissions: [] }, actor.userId)).toBe(
     false,
   );
-  expect(canEditAttendance(actor, actor.userId)).toBe(true);
+  expect(canEditAttendance(actor, 'demo')).toBe(true);
+  expect(canEditAttendance(actor, 'nima')).toBe(true);
+  expect(canEditAttendance(actor, 'original')).toBe(false);
 });
 it('rejects an unauthorized manual correction before reading or writing records', async () => {
   vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', 'another-user');
   const database = { client: { hrRecord: { findUnique: vi.fn() } } };
   const service = new HrService(
     database as never,
-    {} as never,
+    {
+      describeMessagingParticipants: vi
+        .fn()
+        .mockResolvedValue([{ id: actor.userId, username: 'other' }]),
+    } as never,
     {} as never,
     {} as never,
   );

@@ -29,6 +29,44 @@ const draft = {
     checkOutDate: '2026-11-08',
   },
 } as unknown as SalesContractAmendmentV1;
+it('adds and removes insurance for one passenger while preserving other allocations', () => {
+  const source = {
+    ...draft,
+    services: [
+      ...draft.services,
+      {
+        clientKey: 'insurance',
+        kind: 'INSURANCE' as const,
+        titleSnapshot: 'Insurance',
+      },
+    ],
+  };
+  for (const checked of [true, false]) {
+    const onChange = vi.fn();
+    const tree = nodes(
+      canonicalTestTree(
+        PassengerServiceEditor({
+          draft: source,
+          customerId: 'p',
+          disabled: false,
+          onChange,
+        }),
+      ),
+    );
+    const label = tree.find(
+      (n) =>
+        n.type === 'label' && JSON.stringify(n.props.children).includes('بیمه'),
+    )!;
+    const input = nodes(label).find((n) => n.type === 'input')!;
+    (input.props.onChange as (e: unknown) => void)({ target: { checked } });
+    const next = onChange.mock.calls[0]![0] as SalesContractAmendmentV1;
+    expect(next.passengers[0]!.serviceClientKeys.includes('insurance')).toBe(
+      checked,
+    );
+    expect(next.passengers[1]).toEqual(source.passengers[1]);
+    source.passengers = next.passengers;
+  }
+});
 it('edits flight and transfer memberships per person and updates transfer quantity', () => {
   for (const index of [0, 1]) {
     const onChange = vi.fn();
