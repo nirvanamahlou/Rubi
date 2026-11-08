@@ -144,6 +144,27 @@ it('records one atomic hotel purchase from all room formulas and a separate zero
     expect.objectContaining({ data: { purchaseVersion: { increment: 2 } } }),
   );
 });
+it('rejects transfer quantities that include free 2–6 children before any purchase write', async () => {
+  const { service, create, database } = setup();
+  const source = structuredClone(snapshot);
+  source.hotelSelection.additionalStays[0]!.rooms[0]!.childAges = [
+    2, 5,
+  ] as never;
+  database.client.reservationIntake.findUnique.mockResolvedValueOnce({
+    snapshot: source,
+    branchId: 'branch',
+  });
+  await expect(
+    service.recordBatch(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...input, hotelTransferCounts: { outbound: 4, returning: 0 } },
+      actor,
+      'young-children',
+    ),
+  ).rejects.toThrow('قیمت یا تعداد نفرات ترانسفر یا فرمول هتل معتبر نیست.');
+  expect(create).not.toHaveBeenCalled();
+});
+
 it('rejects forged stay, room totals, duplicate room entries, cross-branch and over-capacity transfers before writing', async () => {
   for (const body of [
     { ...input, hotelStayKey: 'foreign' },

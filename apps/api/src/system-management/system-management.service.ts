@@ -191,7 +191,15 @@ export class SystemManagementService {
     metadata: AuditMetadata,
   ): Promise<SystemSettingV1> {
     const value = validateSetting(input);
+    const scopedInsuranceManager =
+      actor.permissions.includes('reservations.insurance.manage') &&
+      value.namespace === 'operations' &&
+      value.key === 'insurance-issuance' &&
+      value.scope === 'BRANCH' &&
+      !!value.scopeId &&
+      actor.branchIds.includes(value.scopeId);
     if (
+      !scopedInsuranceManager &&
       !hasAccessControl(actor.permissions, `system.module.${value.namespace}`)
     )
       throw new ForbiddenException(

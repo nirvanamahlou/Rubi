@@ -1059,3 +1059,22 @@ Customers owns the branch-unique, manually entered ledgerPersonCode (1–20 digi
 Organizations used as ledger owners keep their required Customer.organizationId FK to MasterOrganization. Legal name, national ID, economic code and registration number use the organization record. The branch-local accounting company code is a digit string, unique per owning branch and separate from both generated CRM codes and account detail codes. Optional accounting fields, address snapshots, tax rows, workflow metadata and notes use authenticated encryption bound to the company customer UUID. Documents owns the attachment files. Company types follow the ten observed legal forms; purchase and sale each accept only the registered-taxpayer classification.
 
 The Customers command checks branch and version, and delegates identity creation or changes to Master Data in the same transaction. Creating a new organization or changing shared registration fields requires the corresponding Master Data permission and field controls. An existing active legal entity matched by national ID is reused only when supplied identity fields agree; conflicting information must be reconciled. A failure creating/updating the customer rolls back the organization write.
+
+## RESERVATION-BROKER-EMAIL-1108 — note email outbox
+
+ReservationNoteMail is Reservations-owned and references the exact
+ReservationWorkflowRevision and the designated MasterOrganizationContact through
+restrictive foreign keys. One email intent per command revision; the prior
+revision's intake and actor retain contract/branch/actor lineage. AES-256-GCM
+protects the immutable recipient, sender identity, subject and immutable PDF bytes containing the NOTICE;
+row UUID is authenticated associated data. SMTP credentials are never persisted.
+The separate bounded status/attempt/timestamp fields support PostgreSQL claims,
+retry scheduling and uncertain-delivery recovery. No existing sent-form snapshot
+or historical record is reclassified as SMTP delivery. ACCEPTED is server SMTP
+acceptance only; it is independent of broker confirmation, voucher and Finance.
+The additive migration creates no legacy queue entries. Key backup and controlled
+retention/key rotation must preserve decryptability of retained envelopes.
+
+## External bank sources — 2026-11-08
+
+FinanceSettlementAccount.isExternal distinguishes optional external-source entries in the bank profile. The owner explicitly requires omitted branchId/currencyCode to remain NULL, without assigning an unrelated branch or default currency. Existing accounts remain isExternal=false; database CHECK requires branch/currency for ordinary accounts and a bank reference for external entries. Branchless external records follow the existing bank-directory resource permission, while entries with a branch retain branch scope. Lists/download of identifiers retain existing masked/reveal permissions and audit. Financial account selectors and payment validation exclude incomplete accounts. Scope/type changes are versioned, audited and rejected once the account has business references; identifiers are reencrypted against the new scope. Migration must precede API/Web rollout. No historical records are rewritten.

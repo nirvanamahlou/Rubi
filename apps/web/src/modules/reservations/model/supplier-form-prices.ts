@@ -1,8 +1,10 @@
+import { reservationTransferCounts } from './reservation-transfer-counts';
 import {
-  readLegacyServiceParties,
   hotelNights,
   hotelTransferChargeableCount,
   reservationServicePurchaseTotal,
+  moneyUnits,
+  moneyDecimal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
 import type { ReservationFormIntake } from './reservation-form';
@@ -17,55 +19,7 @@ export const supplierPriceColumns = [
 export function supplierTransferCounts(intake: ReservationFormIntake) {
   if (intake.workflow.supplierFormSettings?.flags.transfer === false)
     return { outbound: 0, returning: 0 };
-  const passengers = supplierFormData(intake).passengers;
-  const services = intake.snapshot.serviceSelections;
-  const parties = readLegacyServiceParties(services);
-  const count = (direction: 'OUTBOUND' | 'RETURN') => {
-    const transfers = services.filter(
-      (service) =>
-        service.kind === 'TRANSFER' &&
-        (service.metadata?.direction === direction ||
-          service.clientKey ===
-            (direction === 'OUTBOUND'
-              ? 'transfer-outbound'
-              : 'transfer-return')),
-    );
-    if (passengers.length) {
-      const selected = passengers.filter(
-        (person) =>
-          person.age !== 'INF' &&
-          (direction === 'OUTBOUND'
-            ? person.outboundTransfer
-            : person.returnTransfer),
-      ).length;
-      const declared = transfers
-        .map((service) => service.metadata?.passengerCount)
-        .filter(
-          (value): value is number =>
-            typeof value === 'number' &&
-            Number.isSafeInteger(value) &&
-            value >= 0,
-        );
-      return declared.length
-        ? Math.min(selected, Math.max(...declared))
-        : selected;
-    }
-    if (!transfers.length) return 0;
-    const counts = transfers.map((service) => {
-      const party = parties?.[service.clientKey];
-      if (party) return party.adults + party.children;
-      const value = service.metadata?.passengerCount;
-      return typeof value === 'number' &&
-        Number.isSafeInteger(value) &&
-        value >= 0
-        ? value
-        : null;
-    });
-    return counts.some((value) => value === null)
-      ? null
-      : Math.max(...(counts as number[]));
-  };
-  return { outbound: count('OUTBOUND'), returning: count('RETURN') };
+  return reservationTransferCounts(intake, supplierFormData(intake).passengers);
 }
 export function supplierPriceTableData(intake: ReservationFormIntake) {
   if (intake.supplierDocumentKind && intake.supplierDocumentKind !== 'HOTEL') {
@@ -109,6 +63,17 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
   const counts = supplierTransferCounts(intake);
   const settings = intake.workflow.supplierFormSettings;
   const prices = settings?.supplierFormPrices;
+  const totals = new Map<string, bigint | null>();
+  const addTotal = (amount: string, currency: string) => {
+    if (totals.get(currency) !== null)
+      totals.set(currency, (totals.get(currency) ?? 0n) + moneyUnits(amount));
+  };
+  const totalRows = (columns: number) =>
+    [...totals].map(([currency, amount]) => [
+      'TOTAL',
+      ...Array<string>(columns - 2).fill(''),
+      (amount === null ? '-' : moneyDecimal(amount)) + ' ' + currency,
+    ]);
   if (settings?.hotelRoomPrices) {
     const quotation = settings.hotelRoomPrices;
     let nights = 0;
@@ -132,7 +97,9 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
           price.factor,
           nights,
         );
+        addTotal(amount, quotation.currencyCode);
       } catch {
+        totals.set(quotation.currencyCode, null);
         /* Unavailable quote. */
       }
       return [
@@ -156,12 +123,17 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
     );
     let total = '-';
     try {
-      if (trf)
+      if (trf) {
         total =
           count === 0
             ? '0'
             : reservationServicePurchaseTotal(trf.amount, String(count), 1);
+        if (intake.supplierDocumentKind !== 'HOTEL')
+          addTotal(total, trf.currencyCode);
+      }
     } catch {
+      if (trf && intake.supplierDocumentKind !== 'HOTEL')
+        totals.set(trf.currencyCode, null);
       /* Unavailable quote. */
     }
     if (intake.supplierDocumentKind !== 'HOTEL')
@@ -188,7 +160,7 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
         'PROPOSED PURCHASE',
       ],
       values: rows[0] ?? [],
-      rows,
+      rows: [...rows, ...totalRows(6)],
     };
   }
   const legacy = {
@@ -208,7 +180,63 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
         : '-',
     ),
   };
-  return { ...legacy, rows: [legacy.values] };
+  const rows = [legacy.values];
+  let nights = 0;
+  try {
+    nights = hotelNights(
+      settings?.text.checkIn ||
+        intake.snapshot.hotelSelection?.checkInDate ||
+        '',
+      settings?.text.checkOut ||
+        intake.snapshot.hotelSelection?.checkOutDate ||
+        '',
+    );
+    if (prices?.pp && prices.ratio) {
+      const amount = reservationServicePurchaseTotal(
+        prices.pp.amount,
+        prices.ratio.amount,
+        nights,
+      );
+      addTotal(amount, prices.pp.currencyCode);
+      rows.push([
+        'HOTEL TOTAL',
+        String(nights) + ' NIGHTS',
+        amount + ' ' + prices.pp.currencyCode,
+      ]);
+    }
+  } catch {
+    if (prices?.pp) totals.set(prices.pp.currencyCode, null);
+    /* Incomplete quotation must not produce a guessed total. */
+  }
+  if (prices?.pp && !prices.ratio) totals.set(prices.pp.currencyCode, null);
+  const count = hotelTransferChargeableCount(
+    settings?.hotelTransferCounts ?? {
+      outbound: counts.outbound ?? 0,
+      returning: counts.returning ?? 0,
+    },
+    settings?.hotelTransferRoundTrip,
+  );
+  try {
+    if (prices?.transferPp) {
+      const amount = count
+        ? reservationServicePurchaseTotal(
+            prices.transferPp.amount,
+            String(count),
+            1,
+          )
+        : '0';
+      addTotal(amount, prices.transferPp.currencyCode);
+      rows.push([
+        'TRANSFER TOTAL',
+        String(count) + ' PAX',
+        amount + ' ' + prices.transferPp.currencyCode,
+      ]);
+    }
+  } catch {
+    if (prices?.transferPp) totals.set(prices.transferPp.currencyCode, null);
+    /* Incomplete transfer quotation. */
+  }
+  return { ...legacy, rows: [...rows, ...totalRows(3)] };
 }
 /** Blank columns are omitted; partially entered money/currency is never silently lost. */
 export function normalizeSupplierFormPrices(
@@ -247,4 +275,28 @@ export function normalizeSupplierDraftPrices(
       : draft.supplierFormPrices,
     currencies,
   );
+}
+
+/** Price-table save preserves saved identity, passenger and document fields. */
+export function supplierPriceDraft(
+  saved: VoucherSettingsV1,
+  draft: VoucherSettingsV1,
+): VoucherSettingsV1 {
+  const result = { ...saved };
+  for (const key of [
+    'hotelRoomPrices',
+    'hotelPurchasePrices',
+    'supplierFormPrices',
+    'hotelTransferSeparate',
+    'hotelTransferSplit',
+    'hotelTransferRoundTrip',
+    'hotelTransferReturn',
+    'hotelTransferCounts',
+    'transferBrokerId',
+    'transferBrokerName',
+  ] as const) {
+    if (draft[key] === undefined) delete result[key];
+    else Object.assign(result, { [key]: structuredClone(draft[key]) });
+  }
+  return result;
 }

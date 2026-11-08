@@ -1,4 +1,3 @@
-import type { VoucherSettingsV1 } from '@nora/contracts';
 import { readPassengerHotelStays, salesContractFlights } from '@nora/contracts';
 import {
   reservationFormDate,
@@ -8,7 +7,7 @@ import type { voucherFormData } from './voucher-settings';
 
 export const voucherServiceColumns = [
   ['#', 4],
-  ['SURNAME / NAME', 21],
+  ['SURNAME / NAME', 32],
   ['SEX', 5],
   ['AGE RATE', 9],
   ['FLIGHT OUT', 6],
@@ -17,7 +16,6 @@ export const voucherServiceColumns = [
   ['HOTEL CHECK-OUT', 12],
   ['TRANSFER OUT', 7],
   ['TRANSFER RETURN', 7],
-  ['OTHER SERVICES', 11],
 ] as const;
 
 /** Read-only projection of selected voucher passengers and canonical Sales allocations. */
@@ -114,26 +112,5 @@ export function voucherPassengerCells(
     service.checkOut,
     service.transferOut,
     service.transferReturn,
-    service.other,
   ];
-}
-
-/** Wider service rows need a smaller per-sheet budget than the legacy name list. */
-export function voucherPassengerPageUnits(
-  settings?: VoucherSettingsV1,
-  notes = '',
-) {
-  const textLength = settings
-    ? Object.values(settings.text).join('').length
-    : 0;
-  const roomPenalty = Math.min(
-    2,
-    Math.max(0, (settings?.rooms?.length ?? 0) - 2),
-  );
-  return Math.max(
-    2,
-    6 -
-      roomPenalty -
-      Math.ceil(Math.max(0, Math.max(textLength, notes.length) - 350) / 350),
-  );
 }

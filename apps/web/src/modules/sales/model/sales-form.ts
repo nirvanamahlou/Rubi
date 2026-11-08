@@ -1242,6 +1242,9 @@ export function withSalesHotelDates(
   next: SalesFormState,
 ): SalesFormState {
   const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') => {
+    // An automatic primary checkout ends at the next stay, not the trip return.
+    if (field === 'checkOut' && state.hotel.additionalStays?.[0]?.checkInDate)
+      return state.hotel.additionalStays[0].checkInDate;
     // Hotel check-in follows outbound arrival, including overnight flights.
     // Explicit manual dates remain authoritative below.
     const flightCheckIn = salesOutboundHotelCheckIn(state);
@@ -1304,11 +1307,14 @@ export function salesHotelRoomTypes(
   return roomTypes.filter((roomType) => availableIds.has(roomType.id));
 }
 
-export function salesHotelValid(state: SalesFormState): boolean {
+export function salesHotelValidationError(
+  state: SalesFormState,
+): string | null {
   state = withCompositeGuests(state);
-  if (salesHotelJourneyError(state)) return false;
+  const journeyError = salesHotelJourneyError(state);
+  if (journeyError) return journeyError;
   if (state.hotel.multiHotel && !state.hotel.additionalStays?.length)
-    return false;
+    return 'اطلاعات هتل بعدی را تکمیل کنید.';
   let previousOut = state.hotel.checkOut;
   const stayIds = new Set([state.hotel.hotelId]);
   for (const stay of state.hotel.additionalStays ?? []) {
@@ -1318,10 +1324,11 @@ export function salesHotelValid(state: SalesFormState): boolean {
       stayIds.has(stay.hotelId) ||
       !stay.checkInDate ||
       !stay.checkOutDate ||
-      stay.checkOutDate <= stay.checkInDate ||
-      stay.checkInDate < previousOut
+      stay.checkOutDate <= stay.checkInDate
     )
-      return false;
+      return 'اطلاعات هتل بعدی و تاریخ اقامت آن را تکمیل کنید.';
+    if (stay.checkInDate < previousOut)
+      return 'تاریخ ورود هتل بعدی نباید قبل از خروج هتل قبلی باشد؛ تاریخ خروج هتل قبلی را اصلاح کنید.';
     if (
       stay.rooms !== undefined &&
       (!stay.rooms.length ||
@@ -1345,13 +1352,13 @@ export function salesHotelValid(state: SalesFormState): boolean {
           0,
         ) > state.hotel.occupancy)
     )
-      return false;
+      return 'نوع اتاق و ترکیب مهمانان هتل بعدی را تکمیل کنید.';
     previousOut = stay.checkOutDate;
     stayIds.add(stay.hotelId);
   }
-  if ((state.hotel.additionalStays?.length ?? 0) > 49) return false;
-  return Boolean(
-    state.hotel.hotelId &&
+  if ((state.hotel.additionalStays?.length ?? 0) > 49)
+    return 'حداکثر ۵۰ هتل قابل انتخاب است.';
+  return state.hotel.hotelId &&
     state.hotel.checkIn &&
     state.hotel.checkOut &&
     state.hotel.checkOut > state.hotel.checkIn &&
@@ -1367,8 +1374,13 @@ export function salesHotelValid(state: SalesFormState): boolean {
     Number.isInteger(state.hotel.extraBedCount) &&
     state.hotel.extraBedCount >= 0 &&
     Number.isInteger(state.hotel.occupancy) &&
-    state.hotel.occupancy > 0,
-  );
+    state.hotel.occupancy > 0
+    ? null
+    : 'اطلاعات هتل اول، تاریخ اقامت و اتاق‌ها را تکمیل کنید.';
+}
+
+export function salesHotelValid(state: SalesFormState): boolean {
+  return salesHotelValidationError(state) === null;
 }
 
 export function toggleSalesDirectionalService(

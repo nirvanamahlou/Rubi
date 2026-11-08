@@ -21,6 +21,12 @@ export function employeeAttendanceDataset(
   const base = recordsDataset('time', 'attendance', attendance);
   return {
     ...base,
+    inactiveRecordIds: attendance
+      .filter(
+        (record) =>
+          record.data.attendanceActive === false || record.status === 'غیرفعال',
+      )
+      .map((record) => record.id),
     columns: [
       'تاریخ',
       'روز هفته',
@@ -30,6 +36,7 @@ export function employeeAttendanceDataset(
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'جریمه روز',
       'وضعیت',
     ],
     rows: attendance.map((record) => {
@@ -72,6 +79,9 @@ export function employeeAttendanceDataset(
         record.data.overtimeMinutes == null
           ? '—'
           : String(record.data.overtimeMinutes),
+        record.data.dailyPenaltyToman == null
+          ? '—'
+          : `${Number(record.data.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`,
         record.status === 'حاضر'
           ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
             ? 'حاضر با تأخیر و خروج زودهنگام'
@@ -97,8 +107,17 @@ function attendanceClock(value: string | null) {
 }
 export function recentAttendanceDataset(
   records: readonly HrRecordDto[],
-  employees: readonly { id: string; personnelCode: string; name: string }[],
+  employees: readonly {
+    id: string;
+    personnelCode: string;
+    name: string;
+    status?: string;
+  }[],
 ) {
+  const inactive = new Set(
+    employees.filter((e) => e.status && e.status !== 'فعال').map((e) => e.id),
+  );
+  records = records.filter((r) => !r.employeeId || !inactive.has(r.employeeId));
   const data = employeeAttendanceDataset(records, true);
   const rows = records.filter(
     (r) => r.section === 'time' && r.tab === 'attendance' && !r.deletedAt,
@@ -116,4 +135,28 @@ export function recentAttendanceDataset(
       ];
     }),
   };
+}
+
+/** Calculation/export consumers use this; history tables intentionally keep all days. */
+export function eligibleAttendanceRecords(records: readonly HrRecordDto[]) {
+  const excluded = new Set(
+    records
+      .filter(
+        (row) =>
+          row.section === 'time' &&
+          row.tab === 'attendance' &&
+          (row.status === 'غیرفعال' || row.data.attendanceActive === false),
+      )
+      .map((row) => `${row.employeeId}:${row.values[1]}`),
+  );
+  return records.filter(
+    (row) =>
+      !(
+        row.section === 'time' &&
+        ['attendance', 'checkins'].includes(row.tab) &&
+        (row.data.attendanceActive === false ||
+          row.status === 'غیرفعال' ||
+          excluded.has(`${row.employeeId}:${row.values[1]}`))
+      ),
+  );
 }

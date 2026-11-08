@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -207,7 +208,7 @@ export function PettyRegistrationForm({
                 <Input
                   id="petty-registration-receipt"
                   type="file"
-                  accept="application/pdf,image/jpeg,image/png"
+                  accept={RECEIPT_FILE_ACCEPT}
                   onChange={(event) => {
                     setFile(event.target.files?.[0] ?? null);
                     setReceipt(undefined);

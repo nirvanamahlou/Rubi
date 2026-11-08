@@ -621,7 +621,7 @@ it('uses compact soft Latin names and room types, isolated rial glyphs and left-
   expect(out).toEqual(before);
 });
 
-it('prints actual airport endpoints only in the flight section and preserves the contract destination', () => {
+it('prints actual airport names and codes in the contract route and flight section without changing saved data', () => {
   const before = structuredClone(printFixture);
   const html = contractPrintHtml(printFixture, {
     ...printReferences,
@@ -642,9 +642,11 @@ it('prints actual airport endpoints only in the flight section and preserves the
   });
   const section =
     html.split('FLIGHT INFORMATION')[1]?.split('HOTEL INFORMATION')[0] || '';
-  expect(section).toContain('Gazipasa (GZP)');
-  expect(section).toContain('Tehran (IKA)');
-  expect(html).toContain('مقصد:');
+  expect(section).toContain('Gazipasa · Gazipasa Airport (GZP)');
+  expect(section).toContain('Tehran · Imam Khomeini (IKA)');
+  expect(html).toContain(
+    'مقصد: <bdi dir="ltr"><bdi>Tehran · Imam Khomeini (IKA)</bdi> → <bdi>Gazipasa · Gazipasa Airport (GZP)</bdi></bdi>',
+  );
   expect(printFixture).toEqual(before);
   expect(printFixture.contract.destinationId).toBe('antalya');
 });
@@ -936,9 +938,70 @@ it.each([2, 3])(
     refs.names['extra-city-1'] = 'ازمیر';
     const html = contractPrintHtml(output, refs);
     expect(html).toContain(
-      'مقصد: ' +
+      'محل اقامت: ' +
         (count === 2 ? 'آنتالیا / استانبول' : 'آنتالیا / استانبول / ازمیر') +
         '</div>',
     );
   },
 );
+
+it('uses the actual one-way flight route even when the legacy contract destination differs', () => {
+  const output = structuredClone(printFixture);
+  output.contract.ticketSelections = [
+    {
+      ...output.contract.ticketSelections![0]!,
+      originId: 'antalya',
+      destinationId: 'tehran',
+      direction: 'OUTBOUND',
+    },
+  ];
+  const html = contractPrintHtml(output, {
+    ...printReferences,
+    names: { ...printReferences.names, antalya: 'ANTALYA', tehran: 'TEHRAN' },
+  });
+  expect(html).toContain(
+    'مقصد: <bdi dir="ltr"><bdi>ANTALYA</bdi> → <bdi>TEHRAN</bdi></bdi></div>',
+  );
+});
+
+it('prints floating airport snapshots in both the route summary and flight table', async () => {
+  const { contractFlightMetadata } = await import('@nora/contracts');
+  const output = structuredClone(printFixture);
+  output.contract.ticketSelections = [];
+  output.contract.servicesDetail = [
+    {
+      clientKey: 'floating',
+      status: 'NEEDS_RESERVATION_CONFIRMATION',
+      kind: 'FLIGHT',
+      titleSnapshot: 'Flight',
+      metadata: contractFlightMetadata({
+        version: 1,
+        direction: 'OUTBOUND',
+        originId: '11111111-1111-4111-8111-111111111111',
+        destinationId: '22222222-2222-4222-8222-222222222222',
+        departureAt: '2026-11-09T10:00:00Z',
+        arrivalAt: '2026-11-09T13:00:00Z',
+        carrierNameSnapshot: 'Test',
+        serviceNumberSnapshot: '123',
+        cabinClassCode: 'ECONOMY',
+        originAirport: {
+          id: '33333333-3333-4333-8333-333333333333',
+          cityId: '11111111-1111-4111-8111-111111111111',
+          countryId: '55555555-5555-4555-8555-555555555555',
+          code: 'AYT',
+          name: 'Antalya Airport',
+        },
+        destinationAirport: {
+          id: '44444444-4444-4444-8444-444444444444',
+          cityId: '22222222-2222-4222-8222-222222222222',
+          countryId: '66666666-6666-4666-8666-666666666666',
+          code: 'IKA',
+          name: 'Imam Khomeini',
+        },
+      }),
+    },
+  ];
+  const html = contractPrintHtml(output, printReferences);
+  expect(html.split('Antalya Airport (AYT)').length - 1).toBe(2);
+  expect(html.split('Imam Khomeini (IKA)').length - 1).toBe(2);
+});

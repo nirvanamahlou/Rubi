@@ -93,3 +93,27 @@ records remain external site-scoped data; they never create Nora business record
 Before publication, unpublished task commits were rebased onto producer origin/main `e3efa9bb` and consumer origin/develop `5c72bc48b`. Concurrent peer changes are preserved; each PR diff contains only this task. Producer develop is created at the same `e3efa9bb` main snapshot when absent.
 
 Each remote credential is durably bound to one Nora branch/site coordinator. Reusing the same rotating credential in two scopes is rejected atomically, including concurrent imports, to prevent independent rotations from invalidating another branch. Generate one initial bundle per branch/site connection; user access still follows existing Nora IAM. No branch/user allowlist is introduced.
+
+## Production-panel follow-up — 2026-11-08
+
+The user requests actual configuration through the two panels. Jahan's updated
+public native API now returns401 JSON without a slash redirect. After the owner
+logged back into its admin panel, readiness explicitly reported an invalid/missing
+public HTTPS origin, a non-deployed environment and an unavailable persistent
+connector key. Its Generate bundle control is disabled. These variables require
+the existing deployment environment; the site's ordinary Nora-origin field only
+selects the consumer origin and cannot configure the producer server. Do not
+substitute request Host, enable a public test exception, bypass readiness or turn
+off the existing production security validators to make the button work.
+
+The live Nora UI still displays the old ERP v1 fields. Read-only server inspection
+confirmed no compiled dedicated Jahan consumer in the current API image; the
+existing encrypted persistent connector storage is present. Refresh PR1466 against
+current develop before publishing that consumer. All five merge conflicts are
+shared additive notes or derived English catalogues; the canonical generator
+preserves current source translations. Original connector application behavior
+and the disabled commercial/SSO boundaries are unchanged. Related local API/Web
+tests, typechecks, scoped lint and formatting pass. Builds and final-head CI remain
+release gates. No production bundle, credential, grant or business write is made
+by this release-preparation step. A successful real connection test is still
+required after both deployment prerequisites are resolved.

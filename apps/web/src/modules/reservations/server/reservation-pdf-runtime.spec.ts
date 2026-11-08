@@ -5,7 +5,10 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { defaultVoucherSettings } from '../model/voucher-settings';
 import type { ReservationFormIntake } from '../model/reservation-form';
-import { renderReservationPdf } from './reservation-pdf';
+import {
+  prepareReservationHtml,
+  renderReservationPdf,
+} from './reservation-pdf';
 
 it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
   'renders six synthetic passengers on one actual A4 page without a configured font path',
@@ -43,6 +46,8 @@ it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
     } as unknown as ReservationFormIntake;
     intake.workflow.supplierFormSettings = defaultVoucherSettings(intake, {});
     intake.workflow.supplierFormSettings.text.broker = 'Synthetic Supplier';
+    intake.workflow.supplierFormSettings.text.remarks =
+      'SYNTHETIC NOTICE PDF ONLY';
     const [logo, css] = await Promise.all([
       readFile(join(process.cwd(), 'public/brand/niyayesh.png')),
       readFile(
@@ -69,6 +74,13 @@ it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
         pdf,
       );
       expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+      const html = await prepareReservationHtml(
+        intake,
+        {},
+        `data:image/png;base64,${logo.toString('base64')}`,
+        css,
+      );
+      expect(html).toContain('SYNTHETIC NOTICE PDF ONLY');
       const info = spawnSync('pdfinfo', ['-'], {
         input: pdf,
         encoding: 'utf8',

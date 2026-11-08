@@ -11,6 +11,10 @@ import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
+import {
+  extraRequestAssignees,
+  extraRequestPolicy,
+} from './call-request-extra-assignees';
 import { hrCallRoutes, hrCallRoutingEnabled } from './hr-call-routing';
 import {
   answeredCallAccess,
@@ -21,6 +25,57 @@ import {
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
 export class IamCallCenterDirectory {
+  /** Current native HR managers may read their own unit's calls, not other units. */
+  async managedReadUsers(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<string[]> {
+    if (
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes('customer_affairs.call_center.read') ||
+      !canViewRoute(actor.permissions, '/customer-affairs/call-center')
+    )
+      return [];
+    const client = tx ?? this.database.client;
+    const team = await this.personnel.callCenterRequestTeam(
+      branchId,
+      actor.userId,
+      tx,
+    );
+    if (!team?.length) return [];
+    const users = await client.user.findMany({
+      where: {
+        id: { in: team },
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    });
+    // The manager must survive the same active/internal/branch intersection.
+    // This also avoids a redundant account query for every ordinary employee read.
+    return users.some((user) => user.id === actor.userId)
+      ? users.map((user) => user.id)
+      : [];
+  }
+  private async eligibleExtraAssignees(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const policy = extraRequestPolicy(actor.userId);
+    if (!policy) return [];
+    return (await this.personnel.callCenterRequestTeam(
+      branchId,
+      actor.userId,
+      tx,
+      policy.unitId,
+    ))
+      ? policy.userIds
+      : [];
+  }
   async employeeCallRoutes(branchId: string, tx?: Prisma.TransactionClient) {
     return hrCallRoutes(this.database, branchId, tx);
   }
@@ -170,6 +225,24 @@ export class IamCallCenterDirectory {
     });
     if (!account) return false;
     if (
+      responsibleUserId &&
+      actor.permissions.includes('customer_affairs.call_center.read') &&
+      canViewRoute(actor.permissions, '/customer-affairs/call-center') &&
+      (await this.eligibleExtraAssignees(actor, branchId, tx)).includes(
+        responsibleUserId,
+      ) &&
+      (await client.user.findFirst({
+        where: {
+          id: responsibleUserId,
+          status: 'ACTIVE',
+          b2bOrganizationUser: null,
+          branches: { some: { branchId, branch: { isActive: true } } },
+        },
+        select: { id: true },
+      }))
+    )
+      return true;
+    if (
       !answeredCallAccess() &&
       (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
         .split(',')
@@ -247,6 +320,9 @@ export class IamCallCenterDirectory {
     const team = global
       ? null
       : await this.personnel.callCenterRequestTeam(branchId, actor.userId, tx);
+    const extra = team
+      ? await this.eligibleExtraAssignees(actor, branchId, tx)
+      : [];
     const users = await client.user.findMany({
       where: {
         status: 'ACTIVE',
@@ -254,8 +330,10 @@ export class IamCallCenterDirectory {
         branches: { some: { branchId, branch: { isActive: true } } },
         ...(!global
           ? team
-            ? { id: { in: team } }
-            : { id: actor.userId }
+            ? { id: { in: [...new Set([...team, ...extra])] } }
+            : extra.length
+              ? { id: { in: [actor.userId, ...extra] } }
+              : { id: actor.userId }
           : {}),
       },
       select: { id: true, displayName: true },
@@ -274,6 +352,18 @@ export class IamCallCenterDirectory {
         ? { position: names.get(user.id)?.position || null, showPosition: true }
         : {}),
     }));
+  }
+
+  async additionalRequestAssigneeIds(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const extra = extraRequestAssignees(actor.userId);
+    if (!extra.length) return [];
+    return (await this.requestAssignees(actor, branchId, tx))
+      .filter((user) => extra.includes(user.id))
+      .map((user) => user.id);
   }
 
   async resolveRequestAssignee(

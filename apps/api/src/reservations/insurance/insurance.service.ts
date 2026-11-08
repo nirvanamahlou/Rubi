@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import Joi from 'joi';
+import { insurancePassengerIds } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import type {
   AuthenticatedActor,
@@ -15,6 +16,7 @@ import type {
   SalesReservationRequestV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../../database/database.service';
+import { CustomerInsuranceIdentity } from '../../customers/customer-insurance-identity';
 import { CustomerService } from '../../customers/customer.service';
 import { TravelWorkflowService } from '../travel-workflow.service';
 import { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
@@ -36,27 +38,48 @@ const draftSchema = Joi.object({
   durationDays: Joi.number().integer().min(1).max(365).required(),
   notes: Joi.string().max(2000).allow('').required(),
   expectedVersion: Joi.number().integer().min(0).required(),
+  passenger: Joi.object({
+    version: Joi.number().integer().min(1).required(),
+    firstName: Joi.string().trim().max(120).required(),
+    lastName: Joi.string().trim().max(120).required(),
+    firstNameLatin: Joi.string()
+      .trim()
+      .pattern(/^[A-Za-z][A-Za-z .'-]*$/)
+      .max(120)
+      .required(),
+    lastNameLatin: Joi.string()
+      .trim()
+      .pattern(/^[A-Za-z][A-Za-z .'-]*$/)
+      .max(120)
+      .required(),
+    nationalityCode: Joi.string()
+      .pattern(/^[A-Z]{3}$/)
+      .required(),
+    nationalCode: Joi.when('nationalityCode', {
+      is: 'IRN',
+      then: Joi.string()
+        .pattern(/^\d{10}$/)
+        .required(),
+      otherwise: Joi.string().allow('').max(30).required(),
+    }),
+    passportNo: Joi.string()
+      .pattern(/^[A-Z0-9-]{4,24}$/)
+      .required(),
+    birthDate: Joi.string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .required(),
+    gender: Joi.string().valid('M', 'F').required(),
+    mobile: Joi.string()
+      .pattern(/^\+?[0-9]{10,15}$/)
+      .required(),
+    email: Joi.string()
+      .email({ tlds: { allow: false } })
+      .max(160)
+      .required(),
+  }).optional(),
 });
 
-export function insurancePassengerIds(snapshot: SalesReservationRequestV1) {
-  const keys = new Set(
-    snapshot.serviceSelections
-      .filter((s) => s.kind === 'INSURANCE')
-      .map((s) => s.clientKey),
-  );
-  if (!keys.size) return [];
-  return [
-    ...new Set(
-      (snapshot.passengerAssignments ?? [])
-        .filter(
-          (p) =>
-            p.serviceClientKeys.some((k) => keys.has(k)) &&
-            snapshot.passengerIds.includes(p.customerId),
-        )
-        .map((p) => p.customerId),
-    ),
-  ];
-}
+export { insurancePassengerIds } from '@nora/contracts';
 
 export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
   const result = draftSchema.validate(raw, { convert: false });
@@ -69,6 +92,15 @@ export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
     date.toISOString().slice(0, 10) !== draft.departureDate
   )
     throw new BadRequestException('تاریخ سفر معتبر نیست.');
+  if (draft.passenger) {
+    const birth = new Date(draft.passenger.birthDate + 'T00:00:00Z');
+    if (
+      !Number.isFinite(birth.getTime()) ||
+      birth.toISOString().slice(0, 10) !== draft.passenger.birthDate ||
+      birth > new Date()
+    )
+      throw new BadRequestException('تاریخ تولد معتبر نیست.');
+  }
   return draft;
 }
 
@@ -81,6 +113,8 @@ export class ReservationInsuranceService {
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(InsuranceSettingsService)
     private readonly settings: InsuranceSettingsService,
+    @Inject(CustomerInsuranceIdentity)
+    private readonly identities: CustomerInsuranceIdentity,
   ) {}
 
   private authorize(actor: AuthenticatedActor, write = false) {
@@ -314,6 +348,29 @@ export class ReservationInsuranceService {
       createdAt: row.createdAt.toISOString(),
       notes: row.notes,
       version: row.version,
+      automatic: row.automatic,
+      sandbox: row.sandbox,
+      lastError: row.lastError,
+    };
+  }
+
+  async correction(id: string, actor: AuthenticatedActor) {
+    this.authorize(actor, true);
+    const row = await this.db.client.reservationInsurancePolicy.findFirst({
+      where: { id, intake: { branchId: { in: [...actor.branchIds] } } },
+    });
+    if (!row) throw new NotFoundException();
+    await this.workflow.detail(row.intakeId, actor.branchIds, true);
+    if (!['DRAFT', 'INPUT_ERROR', 'PROVIDER_ERROR'].includes(row.status))
+      throw new ConflictException(
+        'اصلاح بیمه‌نامه صادرشده به تأیید بیمه‌گر نیاز دارد.',
+      );
+    return {
+      data: await this.identities.correction(
+        row.intakeId,
+        row.customerId,
+        actor,
+      ),
     };
   }
 
@@ -342,6 +399,9 @@ export class ReservationInsuranceService {
       await tx.$queryRaw(
         Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + intake.contractId + ':' + input.customerId}, 0))`,
       );
+      await tx.$queryRaw(
+        Prisma.sql`SELECT id FROM reservation_insurance_policies WHERE "contractId" = ${intake.contractId}::uuid AND "customerId" = ${input.customerId}::uuid FOR UPDATE`,
+      );
       const current = await tx.reservationInsurancePolicy.findUnique({
         where: {
           contractId_customerId_provider: {
@@ -351,6 +411,23 @@ export class ReservationInsuranceService {
           },
         },
       });
+      if (current?.automatic) {
+        const state = current.automation as {
+          phase?: string;
+          fingerprint?: string;
+        } | null;
+        if (
+          current.providerId ||
+          state?.fingerprint ||
+          (state?.phase && state.phase !== 'QUEUED') ||
+          (current.processingUntil && current.processingUntil > new Date())
+        )
+          throw new ConflictException(
+            'درخواست نزد بیمه‌گر در حال بررسی است؛ پیش از اصلاح، نتیجه ارسال قبلی باید مشخص شود.',
+          );
+        if (!input.passenger)
+          throw new BadRequestException('اطلاعات بیمه‌شده را تکمیل کنید.');
+      }
       if ((current?.version ?? 0) !== input.expectedVersion)
         throw new ConflictException(
           'اطلاعات بیمه تغییر کرده است؛ دوباره دریافت کنید.',
@@ -362,12 +439,28 @@ export class ReservationInsuranceService {
         throw new ConflictException(
           'اصلاح بیمه‌نامه صادرشده به تأیید بیمه‌گر نیاز دارد.',
         );
+      if (input.passenger) {
+        await this.identities.saveCorrection(
+          tx,
+          input.customerId,
+          input.passenger,
+          actor,
+          intake.branchId,
+        );
+      }
       const values = {
         destinationCode: input.destinationCode,
         planCode: input.planCode,
         departureDate: new Date(input.departureDate + 'T00:00:00Z'),
         durationDays: input.durationDays,
         notes: input.notes,
+        ...(current?.automatic
+          ? {
+              automation: { phase: 'QUEUED', useDraft: true },
+              nextAttemptAt: new Date(),
+              lastError: null,
+            }
+          : {}),
         status: 'DRAFT',
         version: (current?.version ?? 0) + 1,
       };

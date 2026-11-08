@@ -4,6 +4,8 @@ import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-loc
 import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 import { currencyMetricParts } from '../model/currency-metric';
+import { calculationTermsFor } from '../model/calculation-terms';
+import { nativeCalculationFeatures } from '../model/calculation-lineage';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -119,7 +121,11 @@ import {
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
 import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
-import { dashboardUnavailableReason } from '../model/availability';
+import { dashboardMeasurementRequirements } from '../model/measurement-requirements';
+import {
+  dashboardUnavailableReason,
+  dashboardVisualLimitation,
+} from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
@@ -927,7 +933,6 @@ function Metric({
     'issue-success-rate',
     'sell-through-rate',
     'tour-sell-through-rate',
-    'customer-interest-coverage',
     'lead-growth-rate',
     'lead-conversion-rate',
     'sla-breach-rate',
@@ -1029,10 +1034,7 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : definition?.id === 'gross-profit' ||
-                  definition?.id === 'net-profit'
-                ? 'قابل محاسبه نیست'
-                : '—'}
+              : 'قابل محاسبه نیست'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -1354,14 +1356,37 @@ function KpiCard({
                 <MiniTrend title={definition.title} trend={metric.trend} />
               ) : null}
             </span>
-          ) : unavailableReason ? (
-            <span className="relative mt-3 block text-xs leading-6 text-muted-foreground">
-              {dashboardUnavailableReason(unavailableReason)}
+          ) : (
+            <span
+              data-dashboard-unavailable
+              className="relative mt-3 block text-xs leading-6 text-muted-foreground"
+            >
+              <span className="block">
+                {dashboardUnavailableReason(unavailableReason)}
+              </span>
+              <span className="mt-1 block">
+                دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+              </span>
             </span>
-          ) : null}
+          )}
         </>
       )}
     </button>
+  );
+}
+
+function CalculationHelp({ rule }: { rule: string }) {
+  const terms = calculationTermsFor(rule);
+  if (!terms.length) return null;
+  return (
+    <dl className="mt-3 space-y-2 border-t border-border pt-3 text-xs leading-6 text-muted-foreground">
+      {terms.map(([term, explanation]) => (
+        <div key={term}>
+          <dt className="inline font-semibold text-foreground">{term}: </dt>
+          <dd className="inline">{explanation}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -1427,9 +1452,7 @@ function KpiDefinitionPanel({
                 تعریف و هدف کسب‌وکار
               </h3>
               <p className="mt-2 leading-7 text-muted-foreground">
-                این شاخص نشان می‌دهد «{definition.title}» در بازه و فیلترهای
-                انتخاب‌شده چه وضعیتی دارد. از آن برای بررسی سریع عملکرد و تشخیص
-                موارد نیازمند پیگیری استفاده می‌شود.
+                {definition.businessDefinition}
               </p>
               <p className="mt-3 leading-7 text-muted-foreground">
                 این شاخص برای پاسخ به این تصمیم استفاده می‌شود:{' '}
@@ -1472,20 +1495,28 @@ function KpiDefinitionPanel({
                 فرمول و قاعده محاسبه
               </h3>
               <p className="mt-2 leading-7">{definition.rule}</p>
+              <CalculationHelp rule={definition.rule} />
             </section>
 
             <section aria-labelledby="kpi-calculation-features-title">
               <h3
-                className="text-sm font-black text-foreground"
+                className="text-sm font-semibold text-foreground"
                 id="kpi-calculation-features-title"
               >
                 فیچرهای استفاده‌شده در فرمول
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(definition.id)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمایش عدد به دسترسی و داده معتبر وابسته است.'
+                  : 'منابع موردنیاز این شاخص؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {definition.source.map((source) => {
-                  const feature = calculationFeatureFor(source);
+                {(
+                  nativeCalculationFeatures(definition.id) ??
+                  definition.source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={source}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -1493,7 +1524,7 @@ function KpiDefinitionPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
@@ -2752,6 +2783,21 @@ function VisualDetailsPanel({
   trendCalendarSystem: TrendCalendarSystem;
   visualId: string;
 }) {
+  const permissionLabel =
+    (
+      {
+        'reports.dashboard.sales.read': 'مشاهده گزارش‌های فروش',
+        'reports.dashboard.finance.read': 'مشاهده گزارش‌های مالی',
+        'reports.dashboard.profit.read': 'مشاهده گزارش‌های سودآوری',
+        'reports.dashboard.balance.read': 'مشاهده گزارش‌های مانده حساب',
+        'reports.dashboard.operations.read': 'مشاهده گزارش‌های عملیات سفر',
+        'reports.dashboard.crm.read': 'مشاهده گزارش‌های امور مشتریان',
+        'reports.dashboard.hr.read': 'مشاهده گزارش‌های منابع انسانی',
+        'reports.dashboard.marketing.read': 'مشاهده گزارش‌های بازاریابی',
+        'reports.dashboard.procurement.read': 'مشاهده گزارش‌های خرید و تأمین',
+        'reports.dashboard.b2b.read': 'مشاهده گزارش‌های همکاری با آژانس‌ها',
+      } as Record<string, string>
+    )[permission] ?? 'مشاهده گزارش‌های این بخش';
   const temporalGrain =
     kind === 'line' && data
       ? trendTemporalGrain(range, data.labels)
@@ -2806,14 +2852,6 @@ function VisualDetailsPanel({
               <p className="mt-2 leading-7 text-muted-foreground">
                 {description}
               </p>
-              {decision ? (
-                <p className="mt-3 leading-7 text-muted-foreground">
-                  این نمودار برای پاسخ به این تصمیم استفاده می‌شود:{' '}
-                  <span className="font-semibold text-foreground">
-                    {decision}
-                  </span>
-                </p>
-              ) : null}
             </section>
 
             <section
@@ -2827,12 +2865,13 @@ function VisualDetailsPanel({
                 قاعدهٔ نمایش
               </h3>
               <p className="mt-2 leading-7">
-                خروجی از Projection تأییدشده و با فیلترهای فعال نمایش داده
+                خروجی از داده آماده‌شده گزارش و با فیلترهای فعال نمایش داده
                 می‌شود. نوع نمایش: {visualLabels[kind]}.
                 {temporalGrain
                   ? ` تفکیک زمانی: ${trendTemporalLabels[temporalGrain]} (${trendCalendarSystem === 'persian' ? 'تقویم شمسی' : 'تقویم میلادی'}).`
                   : ''}
               </p>
+              <CalculationHelp rule="داده آماده‌شده گزارش" />
             </section>
 
             <section aria-labelledby={`visual-sources-${visualId}`}>
@@ -2842,11 +2881,18 @@ function VisualDetailsPanel({
               >
                 فیچرهای استفاده‌شده در نمودار
               </h3>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {nativeCalculationFeatures(visualId)
+                  ? 'منابع مسیر محاسبه فعلی؛ نمودار ممکن است فقط سری‌های دارای داده معتبر را نمایش دهد.'
+                  : 'منابع موردنیاز این نمودار؛ اتصال فعال آن‌ها به محاسبه فعلی داشبورد تأیید نشده است.'}
+              </p>
               <ul className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
-                {source.map((sourceId) => {
-                  const feature = calculationFeatureFor(sourceId);
+                {(
+                  nativeCalculationFeatures(visualId) ??
+                  source.map(calculationFeatureFor)
+                ).map((feature) => {
                   return (
-                    <li className="flex gap-2" key={sourceId}>
+                    <li className="flex gap-2" key={feature.label}>
                       <span
                         aria-hidden="true"
                         className="mt-3 size-1.5 shrink-0 rounded-full bg-primary"
@@ -2854,7 +2900,7 @@ function VisualDetailsPanel({
                       <span>
                         <bdi
                           className="font-mono text-xs font-bold text-foreground"
-                          dir="ltr"
+                          dir="auto"
                         >
                           {feature.label}
                         </bdi>
@@ -2877,13 +2923,15 @@ function VisualDetailsPanel({
               >
                 محدودیت‌ها و دسترسی
               </h3>
+              {dashboardVisualLimitation(visualId, decision) ? (
+                <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
+                  {dashboardVisualLimitation(visualId, decision)}
+                </p>
+              ) : null}
               <p className="mt-2 leading-7 text-amber-900/80 dark:text-amber-100/80">
-                فقط دادهٔ مجازِ Projection در محدودهٔ انتخاب‌شده نمایش داده
-                می‌شود. مجوز موردنیاز:{' '}
-                <bdi className="font-mono text-xs font-bold" dir="ltr">
-                  {permission}
-                </bdi>
-                .
+                فقط دادهٔ مجاز گزارش در محدودهٔ انتخاب‌شده نمایش داده می‌شود.
+                مجوز موردنیاز:{' '}
+                <span className="font-bold">{permissionLabel}</span>.
               </p>
             </section>
           </div>
@@ -2927,6 +2975,7 @@ function ProjectionSlot({
   trendCalendarSystem,
   wide = false,
   data,
+  unavailableReason,
 }: {
   visualId: string;
   kind: DashboardVisualKind;
@@ -2943,6 +2992,7 @@ function ProjectionSlot({
   trendCalendarSystem: TrendCalendarSystem;
   wide?: boolean;
   data?: DashboardVisualSnapshot | undefined;
+  unavailableReason?: string | undefined;
 }) {
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<
     string | undefined
@@ -2970,17 +3020,11 @@ function ProjectionSlot({
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
 
-  const visualLabel = isEmployeeComparison
-    ? 'مقایسه عملکرد تیم'
-    : visualLabels[resolvedKind];
   const reportCode = dashboardReportCodeFromDrilldown(drilldown);
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
     : undefined;
-  const canOpenVisualDetails =
-    Boolean(displayData?.values.length) &&
-    resolvedKind !== 'table' &&
-    resolvedKind !== 'queue';
+  const canOpenVisualDetails = source.length > 0;
   return (
     <>
       <Card
@@ -3004,9 +3048,6 @@ function ProjectionSlot({
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-              {visualLabel}
-            </Badge>
             <div
               className={cn(
                 'flex items-center gap-1.5',
@@ -3132,15 +3173,47 @@ function ProjectionSlot({
           ) : (
             <>
               <EmptyVisualCanvas kind={kind} />
-              <p className="mt-2 text-xs text-muted-foreground">
-                دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای
-                این نمودار باید بررسی شوند.
-              </p>
+              {data ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  داده‌ای در بازه و فیلتر انتخابی ثبت نشده است.
+                </p>
+              ) : (
+                <div
+                  data-dashboard-unavailable
+                  className="mt-2 space-y-1 text-xs leading-6 text-muted-foreground"
+                >
+                  <p className="font-bold text-foreground">قابل محاسبه نیست</p>
+                  <p>{dashboardUnavailableReason(unavailableReason)}</p>
+                  <p>
+                    دادهٔ موردنیاز:{' '}
+                    {dashboardMeasurementRequirements({ id: visualId, source })}
+                  </p>
+                </div>
+              )}
             </>
           )}
           {data?.notice ? (
             <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
           ) : null}
+          {Object.entries(data?.missingMetrics ?? {}).map(([id, reason]) => {
+            const definition = dashboardKpis.find((kpi) => kpi.id === id);
+            if (!definition) return null;
+            return (
+              <div
+                key={id}
+                data-dashboard-unavailable
+                className="mt-3 space-y-1 text-xs leading-6 text-muted-foreground"
+              >
+                <p className="font-bold text-foreground">
+                  {definition.title} · قابل محاسبه نیست
+                </p>
+                <p>{dashboardUnavailableReason(reason)}</p>
+                <p>
+                  دادهٔ موردنیاز: {dashboardMeasurementRequirements(definition)}
+                </p>
+              </div>
+            );
+          })}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -3185,11 +3258,6 @@ function ProjectionSlot({
               <Info aria-hidden="true" className="size-3.5" />
               جزئیات نمودار
             </Button>
-          ) : null}
-          {decision ? (
-            <Badge className="bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              {decision}
-            </Badge>
           ) : null}
           <Button
             className="ms-auto"
@@ -3594,7 +3662,7 @@ function DashboardSidebar({
                     <SelectContent align="end" dir="rtl">
                       {rangeOptions.map(([value, label]) => (
                         <SelectItem
-                          className="w-full justify-end text-right [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground"
+                          className="w-full justify-end text-right [&>span:first-child]:block [&>span:first-child]:w-full [&>span:first-child]:text-right data-[highlighted]:bg-primary data-[highlighted]:!text-white [&[data-highlighted]>span]:!text-white"
                           key={value}
                           value={value}
                         >
@@ -4040,6 +4108,9 @@ export function DashboardWorkspace() {
                         source={visualization.source}
                         trendCalendarSystem={trendCalendarSystem}
                         data={query.data?.visuals[visualization.id]}
+                        unavailableReason={
+                          query.data?.unavailableVisuals?.[visualization.id]
+                        }
                       />
                     ))}
                   </div>

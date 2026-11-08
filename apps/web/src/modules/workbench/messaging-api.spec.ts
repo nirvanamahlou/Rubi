@@ -36,6 +36,23 @@ describe('Workbench messaging API client', () => {
     );
   });
 
+  it('encodes message search and history cursor without changing the normal feed', async () => {
+    await messagingApi.messages('chat/id', {
+      search: 'قرارداد & ویزا',
+      cursor: 'cursor-id',
+    });
+    const [url] = vi.mocked(fetch).mock.calls[0]!;
+    const parsed = new URL(String(url));
+    expect(parsed.pathname).toContain('/conversations/chat%2Fid/messages');
+    expect(parsed.searchParams.get('search')).toBe('قرارداد & ویزا');
+    expect(parsed.searchParams.get('cursor')).toBe('cursor-id');
+    await messagingApi.messages('chat');
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/messages?limit=50'),
+      expect.anything(),
+    );
+  });
+
   it('loads branch-scoped contacts with authenticated cookies', async () => {
     await messagingApi.contacts('رضا');
 

@@ -1,11 +1,14 @@
 'use client';
 import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
+import {
+  voucherHotelJourneyRows,
+  voucherJourneyColumns,
+} from '../model/voucher-hotel-journeys';
 import { SupplierPriceTable } from './supplier-price-table';
 import {
   voucherPassengerServices,
   voucherPassengerCells,
   voucherServiceColumns,
-  voucherPassengerPageUnits,
 } from '../model/voucher-passenger-services';
 
 import { loadOutputReferences } from '../model/output-references';
@@ -19,7 +22,6 @@ import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
-  reservationPassengerPages,
   reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -188,6 +190,7 @@ function VoucherHotelSheet({
   const data = voucher
     ? voucherFormData(intake, references)
     : supplierFormData(intake, references);
+  const journeys = voucher ? voucherHotelJourneyRows(intake, references) : [];
   const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
     ? voucherPassengerServices(intake, data)
     : {};
@@ -199,14 +202,9 @@ function VoucherHotelSheet({
     browserOrigin,
     serverOrigin,
   );
-  const pages = voucher
-    ? reservationPassengerPages(
-        data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
-      )
-    : [data.passengers];
+  const pages = [data.passengers];
   const roomAppendices =
-    !settings || settings.flags.hotel
+    !voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = totalPages ?? pages.length + roomAppendices.length;
@@ -238,30 +236,32 @@ function VoucherHotelSheet({
               <div
                 className={`${styles.brand} ${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? styles.jahanBrand : ''}`}
               >
-                {logo && settings?.flags.withLetterhead !== false && (
-                  <Image
-                    className={
-                      intake.workflow.branding?.kind === 'OWN'
-                        ? intake.workflow.branding.companyCode ===
-                          'JAHAN_BASTAN'
-                          ? styles.jahanLogo
-                          : intake.workflow.branding.companyCode ===
-                              'GHESATI_RO'
-                            ? styles.ghesatiLogo
-                            : styles.logo
-                        : styles.agencyLogo
-                    }
-                    src={
-                      logo === '/brand/niyayesh-seir-full.png'
-                        ? '/brand/niyayesh.png'
-                        : logo
-                    }
-                    alt={data.brand}
-                    width={196}
-                    height={64}
-                    unoptimized
-                  />
-                )}
+                {!intake.unbranded &&
+                  logo &&
+                  settings?.flags.withLetterhead !== false && (
+                    <Image
+                      className={
+                        intake.workflow.branding?.kind === 'OWN'
+                          ? intake.workflow.branding.companyCode ===
+                            'JAHAN_BASTAN'
+                            ? styles.jahanLogo
+                            : intake.workflow.branding.companyCode ===
+                                'GHESATI_RO'
+                              ? styles.ghesatiLogo
+                              : styles.logo
+                          : styles.agencyLogo
+                      }
+                      src={
+                        logo === '/brand/niyayesh-seir-full.png'
+                          ? '/brand/niyayesh.png'
+                          : logo
+                      }
+                      alt={data.brand}
+                      width={196}
+                      height={64}
+                      unoptimized
+                    />
+                  )}
               </div>
             </header>
             <div className={styles.meta}>
@@ -418,19 +418,60 @@ function VoucherHotelSheet({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.roomBreakdown.slice(0, 4).map((r) => (
-                        <tr key={r.ordinal}>
-                          <td>{r.ordinal}</td>
-                          <td dir="auto">{r.roomType}</td>
-                          <td>{r.adults}</td>
-                          <td>{r.childAges.join(', ') || '-'}</td>
-                          <td>{r.adults + r.childAges.length}</td>
-                        </tr>
-                      ))}
+                      {data.roomBreakdown
+                        .slice(0, voucher ? undefined : 4)
+                        .map((r) => (
+                          <tr key={r.ordinal}>
+                            <td>{r.ordinal}</td>
+                            <td dir="auto">{r.roomType}</td>
+                            <td>{r.adults}</td>
+                            <td>{r.childAges.join(', ') || '-'}</td>
+                            <td>{r.adults + r.childAges.length}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 ) : null}
               </>
+            )}
+            {page === 0 && journeys.length > 0 && (
+              <section style={{ breakInside: 'avoid' }} data-hotel-journeys>
+                <Heading
+                  number="03"
+                  title="HOTEL TRANSPORT"
+                  note="Tehran time"
+                />
+                <table
+                  className={styles.table}
+                  style={{ tableLayout: 'fixed', width: '100%' }}
+                >
+                  <thead>
+                    <tr>
+                      {voucherJourneyColumns.map((label) => (
+                        <th key={label}>{label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {journeys.map((row, index) => (
+                      <tr key={index}>
+                        {row.map((cell, column) => (
+                          <td
+                            key={column}
+                            dir="ltr"
+                            style={{
+                              overflowWrap: 'anywhere',
+                              whiteSpace: 'pre-line',
+                            }}
+                          >
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
             )}
             <Heading number="04" title="TOUR SERVICES" note="Leader & board" />
             <table className={styles.table}>
@@ -580,29 +621,31 @@ function VoucherHotelSheet({
                 </div>
               )}
             </div>
-            <footer className={styles.footer}>
-              {
-                <div
-                  data-reservation-footer
-                  dangerouslySetInnerHTML={{
-                    __html: reservationFormFooterHtml(
-                      intake.id,
-                      origin,
-                      intake.workflow.branding?.companyCode,
-                      data.brand,
-                      publicDocumentUrl,
-                      voucher,
-                    ),
-                  }}
-                />
-              }
-              <div>
-                <span>{''}</span>
-              </div>
-              <b>
-                {pageOffset + page + 1} / {pageCount}
-              </b>
-            </footer>
+            {!intake.unbranded && (
+              <footer className={styles.footer}>
+                {
+                  <div
+                    data-reservation-footer
+                    dangerouslySetInnerHTML={{
+                      __html: reservationFormFooterHtml(
+                        intake.id,
+                        origin,
+                        intake.workflow.branding?.companyCode,
+                        data.brand,
+                        publicDocumentUrl,
+                        voucher,
+                      ),
+                    }}
+                  />
+                }
+                <div>
+                  <span>{''}</span>
+                </div>
+                <b>
+                  {pageOffset + page + 1} / {pageCount}
+                </b>
+              </footer>
+            )}
           </article>
         );
       })}
@@ -641,11 +684,13 @@ function VoucherHotelSheet({
               ))}
             </tbody>
           </table>
-          <footer className={styles.footer}>
-            <b>
-              {pageOffset + pages.length + index + 1} / {pageCount}
-            </b>
-          </footer>
+          {!intake.unbranded && (
+            <footer className={styles.footer}>
+              <b>
+                {pageOffset + pages.length + index + 1} / {pageCount}
+              </b>
+            </footer>
+          )}
         </article>
       ))}
     </div>

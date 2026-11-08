@@ -1,3 +1,6 @@
+## EXPERT-CALL-ISOLATION-1108 — 2026-11-08
+
+The owner requires experts to see only their own verified calls, and current HR managers their current unit's verified calls. This supersedes the earlier ANSWERED rule allowing an authorized contact's entire history. A shared telephone/contact is identity, not a grant to every call. Latest-call selection, counts, filters, reports, history, direct-call reads and completed-call edits must correlate responsibility to that exact call. Verified shared-extension responsibility and outbound-origin snapshots remain valid; callback visibility is restricted to the missed call or explicitly linked assigned-request calls. Operational offer/claim popup access remains separate. Native HR manager projection, pinned global identities and executive-only recording downloads are unchanged. No operational data rewrite or migration.
 ## PRICING-TEMPLATE-FIELDS-1103 — 2026-11-03
 
 Owner explicitly separates composition-table hotel sale prices from footer-only flight tariffs, business uplift, commission and custom labels. This supersedes the row presentation portion of PACKAGE-PRICING-RULES-1031; generic legacy package arithmetic and existing immutable publications remain unchanged. New composition row currencyAmounts carry optional priceBasis=HOTEL_ONLY in their existing JSON snapshot. Pricing Web and publication producer use the same hotel-only calculator; missing-flight costs are not fabricated as hotel costs. The Sales public catalogue adds the immutable publication airfare (including applicable business uplift and age tiers) once per selected room when this marker is present. Unmarked old combined publications are never surcharged again. Commission/custom footer fields do not increase contract sale. Quote and server validation consume the same public totals. No schema/migration/data rewrite; release the compatible API and Web together.
@@ -792,3 +795,21 @@ Owner explicitly supersedes manually granted Call Center team-assignment authori
 ## JAHAN-BASTAN-NORA-1107
 
 The explicit 2026-11-07 task selects develop as Nora base and both PR destinations for this task. Push/CI/PR are authorized; merge/deployment are excluded. Existing worktrees/remotes are preserved.
+
+## RESERVATION-BROKER-EMAIL-1108 — operational form versus email acceptance
+
+2026-11-08 / PC-A. User authorizes implementation of real reservation PDF email while
+preserving the approved form appearance, and explicitly releases the prior
+TRANSFER-SEPARATE-DEFAULT-1108 form scope. IT connection details are pending.
+Keep the existing operational REQUEST_SUPPLIER/sent-form and purchasing contract
+compatible; do not reinterpret historical manual form registration as email
+acceptance. The new PDF-only email has its own durable encrypted intent and
+ACCEPTED/FAILED/UNKNOWN states. Queue acceptance is never presented as inbox
+receipt or broker confirmation. The default-off SMTP adapter requires a verified
+TLS connection and a company-matched explicit sender. Missing setup rejects the
+send command before a new sent revision; the independently saved draft remains.
+No email body or automatic reply processing, credentials in UI, live send or deployment.
+An API-hosted background dispatcher is used for this bounded slice with database
+claims across replicas; it owns no cross-module table and does not require a new
+Worker/Redis contract. A future separate Worker must consume the same public
+outbox contract rather than reading domain tables directly.

@@ -78,6 +78,35 @@ it('exposes add/remove alongside the contract room category in the correction ta
   expect(html).toContain('Saved Deluxe');
   expect(html).toContain('Double');
 });
+
+it('uses the chosen ticket carrier without rendering a second required airline selector', () => {
+  const source = {
+    ...contract,
+    ticketSelections: [
+      {
+        serviceClientKey: 'flight',
+        direction: 'OUTBOUND',
+        offerId: 'offer',
+        originId: 'origin',
+        destinationId: 'destination',
+        departureAt: '2027-01-01T08:00:00Z',
+        arrivalAt: '2027-01-01T10:00:00Z',
+        carrierNameSnapshot: 'Selected Air',
+        serviceNumberSnapshot: '123',
+        cabinClassCode: 'ECONOMY',
+      },
+    ],
+  } as SalesContractDetail;
+  const html = renderToStaticMarkup(
+    <ReservationSalesAmendment
+      contract={source}
+      section="FLIGHT"
+      onSaved={() => undefined}
+    />,
+  );
+  expect(html).toContain('Selected Air');
+  expect(html).not.toContain('aria-label="ایرلاین"');
+});
 it('makes aggregate passenger completion reachable from the empty correction tab', () => {
   const anonymous = {
     ...contract,

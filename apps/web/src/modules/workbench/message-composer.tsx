@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT, receiptFileSupported } from '@nora/contracts';
 
 import type {
   MessagingContactV1,
@@ -94,6 +95,14 @@ export function MessageComposer({
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = conversations.find((item) => item.id === activeId) ?? null;
   const [messages, setMessages] = useState<MessagingMessageV1[]>([]);
+  const [messageSearch, setMessageSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<MessagingMessageV1[]>([]);
+  const [searchCursor, setSearchCursor] = useState<string | undefined>();
+  const [nextSearchCursor, setNextSearchCursor] = useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const searching = Boolean(messageSearch.trim());
+  const visibleMessages = searching ? searchResults : messages;
   const [conversationSearch, setConversationSearch] = useState('');
   const [chatHeight, setChatHeight] = useState(352);
   const messageViewport = useRef<HTMLElement>(null);
@@ -248,6 +257,11 @@ export function MessageComposer({
           item.id === response.data.id ? response.data : item,
         ),
       );
+      setSearchResults((current) =>
+        current.map((item) =>
+          item.id === response.data.id ? response.data : item,
+        ),
+      );
     } catch (reason) {
       if (previousConversationId.current === conversationId)
         setError(
@@ -267,6 +281,10 @@ export function MessageComposer({
     previousConversationId.current = activeId;
     followLatest.current = true;
     setText('');
+    setMessageSearch('');
+    setSearchResults([]);
+    setSearchCursor(undefined);
+    setNextSearchCursor(null);
     setAttachments([]);
     setMessages([]);
     setPicker(false);
@@ -283,7 +301,51 @@ export function MessageComposer({
     const viewport = messageViewport.current;
     if (viewport && followLatest.current)
       viewport.scrollTop = viewport.scrollHeight;
-  }, [messages, chatHeight]);
+  }, [messages, searchResults, chatHeight, searching]);
+
+  useEffect(() => {
+    if (!activeId || !messageSearch.trim()) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setSearchLoading(true);
+      setSearchError('');
+      void messagingApi
+        .messages(activeId, {
+          search: messageSearch.trim(),
+          ...(searchCursor ? { cursor: searchCursor } : {}),
+        })
+        .then((response) => {
+          if (cancelled) return;
+          setSearchResults((current) =>
+            searchCursor
+              ? [
+                  ...response.data,
+                  ...current.filter(
+                    (item) =>
+                      !response.data.some((result) => result.id === item.id),
+                  ),
+                ]
+              : response.data,
+          );
+          setNextSearchCursor(response.meta.nextCursor);
+        })
+        .catch((reason: unknown) => {
+          if (!cancelled)
+            setSearchError(
+              reason instanceof Error
+                ? reason.message
+                : 'دریافت پیام‌ها انجام نشد.',
+            );
+        })
+        .finally(() => {
+          if (!cancelled) setSearchLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeId, messageSearch, searchCursor]);
 
   const reloadConversations = useCallback(
     async (selected?: string) => {
@@ -380,7 +442,7 @@ export function MessageComposer({
         const conversationResponse = await messagingApi.conversations();
         if (epoch !== conversationEpoch.current) return;
         if (!cancelled) setConversations(conversationResponse.data);
-        if (activeId) {
+        if (activeId && !searching) {
           const messageResponse = await messagingApi.messages(activeId);
           if (!cancelled) setMessages(messageResponse.data);
         }
@@ -392,7 +454,7 @@ export function MessageComposer({
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [activeId]);
+  }, [activeId, searching]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -895,9 +957,39 @@ export function MessageComposer({
                 )}
               </header>
               <div
-                className="flex items-center justify-end gap-2"
+                className="flex flex-wrap items-center justify-end gap-2"
                 aria-label="اندازه پنجره گفتگو"
               >
+                <Input
+                  className="min-w-40 flex-1"
+                  aria-label="جست‌وجو در پیام‌های گفتگو"
+                  placeholder="جست‌وجو در پیام‌های گفتگو…"
+                  value={messageSearch}
+                  maxLength={100}
+                  onChange={(event) => {
+                    setMessageSearch(event.target.value);
+                    setSearchLoading(Boolean(event.target.value.trim()));
+                    setSearchError('');
+                    setSearchResults([]);
+                    setSearchCursor(undefined);
+                    setNextSearchCursor(null);
+                    followLatest.current = true;
+                  }}
+                />
+                {searching && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="پاک‌کردن جست‌وجوی پیام"
+                    onClick={() => {
+                      setMessageSearch('');
+                      setSearchCursor(undefined);
+                      followLatest.current = true;
+                    }}
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -933,7 +1025,31 @@ export function MessageComposer({
                 className="relative isolate flex min-h-[240px] max-h-[800px] resize-y min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border border-sky-200/70 bg-surface/80 p-4 dark:border-sky-800/60"
                 aria-label="پیام‌های گفت‌وگو"
               >
-                {messages.map((message) => {
+                {searching && (
+                  <div className="shrink-0 space-y-2" role="status">
+                    {searchLoading ? (
+                      <p>در حال جست‌وجوی پیام‌ها…</p>
+                    ) : searchError ? (
+                      <Alert tone="error" title={searchError} />
+                    ) : !searchResults.length ? (
+                      <p>پیامی با این عبارت پیدا نشد.</p>
+                    ) : null}
+                    {nextSearchCursor && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={searchLoading}
+                        onClick={() => {
+                          followLatest.current = false;
+                          setSearchCursor(nextSearchCursor);
+                        }}
+                      >
+                        نتایج قدیمی‌تر
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {visibleMessages.map((message) => {
                   const mine = message.sender.id === currentUserId;
                   return (
                     <article
@@ -1073,7 +1189,7 @@ export function MessageComposer({
                     </article>
                   );
                 })}
-                {!messages.length && (
+                {!searching && !messages.length && (
                   <p className="grid min-h-40 place-items-center text-sm text-muted-foreground">
                     اولین پیام این گفت‌وگو را بنویسید.
                   </p>
@@ -1195,7 +1311,7 @@ export function MessageComposer({
                   id="workbench-message-files"
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept={RECEIPT_FILE_ACCEPT}
                   onChange={(event) => {
                     const picked = Array.from(event.target.files ?? []);
                     event.target.value = '';
@@ -1204,11 +1320,11 @@ export function MessageComposer({
                       picked.some(
                         (file) =>
                           file.size > 10 * 1024 * 1024 ||
-                          !/\.(pdf|jpe?g|png)$/i.test(file.name),
+                          !receiptFileSupported(file.name, file.type),
                       )
                     )
                       return setError(
-                        'حداکثر ۱۰ فایل PDF یا تصویر و هر فایل تا ۱۰ مگابایت انتخاب کنید.',
+                        'حداکثر ۱۰ فایل تصویر، PDF یا Excel و هر فایل تا ۱۰ مگابایت انتخاب کنید.',
                       );
                     setAttachments((current) => [...current, ...picked]);
                   }}
@@ -1570,8 +1686,9 @@ export function MessageComposer({
       {messageMenu && (
         <MessageReactionMenu
           message={
-            messages.find((item) => item.id === messageMenu.message.id) ??
-            messageMenu.message
+            visibleMessages.find(
+              (item) => item.id === messageMenu.message.id,
+            ) ?? messageMenu.message
           }
           people={[...(active?.participants ?? []), ...contacts]}
           position={messageMenu.position}

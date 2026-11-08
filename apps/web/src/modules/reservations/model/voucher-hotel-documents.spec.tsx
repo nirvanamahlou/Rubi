@@ -105,14 +105,14 @@ describe('composite hotel vouchers', () => {
     expect(services.flight).toMatchObject({ checkIn: '—', checkOut: '—' });
     expect(intake).toEqual(before);
   });
-  it('prints the same hotels, rooms and services in preview and PDF with continuous appendix numbering', () => {
+  it('prints all rooms inline within each continuous hotel voucher in preview and PDF', () => {
     const { intake, refs } = fixture(6);
     const pdf = reservationPdfHtml(intake, refs, '', '', true);
     const preview = renderToStaticMarkup(
       <VoucherFormSheet intake={intake} references={refs} logo="" voucher />,
     );
     for (const html of [preview, pdf]) {
-      expect(html.match(/<article\b/g)).toHaveLength(3);
+      expect(html.match(/<article\b/g)).toHaveLength(2);
       for (const value of [
         'SAMPLE HOTEL',
         'SECOND HOTEL',
@@ -123,13 +123,12 @@ describe('composite hotel vouchers', () => {
         'PASSENGER SERVICES',
         '04 NOV 2026',
         '09 NOV 2026',
-        '1 / 3',
-        '2 / 3',
-        '3 / 3',
+        '1 / 2',
+        '2 / 2',
       ])
         expect(html).toContain(value);
       expect(html).not.toContain('HIDDEN PASSENGER');
-      expect(html.match(/ROOM DETAILS/g)).toHaveLength(1);
+      expect(html).not.toContain('ROOM DETAILS');
     }
     expect(pdf.match(/<!doctype html>/gi)).toHaveLength(1);
     expect(pdf.match(/<body>/g)).toHaveLength(1);

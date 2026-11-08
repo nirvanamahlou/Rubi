@@ -1,17 +1,19 @@
 import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
+import {
+  voucherHotelJourneyRows,
+  voucherJourneyColumns,
+} from '../model/voucher-hotel-journeys';
 import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { localizeDocumentHtml } from '@/i18n/document';
 import {
   voucherPassengerServices,
   voucherPassengerCells,
   voucherServiceColumns,
-  voucherPassengerPageUnits,
 } from '../model/voucher-passenger-services';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
 import {
-  reservationPassengerPages,
   reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -83,6 +85,7 @@ function voucherHotelPdfHtml(
     : intake.workflow.supplierFormSettings;
   const withLetterhead = settings?.flags.withLetterhead !== false;
   const withLogo =
+    !intake.unbranded &&
     withLetterhead &&
     !(voucher && intake.workflow.branding?.voucherWithoutLogo === true);
   if (
@@ -93,15 +96,11 @@ function voucherHotelPdfHtml(
   const data = voucher
     ? voucherFormData(intake, refs)
     : supplierFormData(intake, refs);
+  const journeys = voucher ? voucherHotelJourneyRows(intake, refs) : [];
   const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
     ? voucherPassengerServices(intake, data)
     : {};
-  const pages = voucher
-    ? reservationPassengerPages(
-        data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
-      )
-    : [data.passengers];
+  const pages = [data.passengers];
   const heading = (n: string, title: string, note: string) =>
     `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;
   const fields = (items: unknown[][], cls: string) =>
@@ -114,7 +113,7 @@ function voucherHotelPdfHtml(
   ) =>
     `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, row) => `<tr>${r.map((v, column) => `<td${different[row] && [6, 7].includes(column) ? ' class="differentStay"' : ''} dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const roomAppendices =
-    !settings || settings.flags.hotel
+    !voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const hotelHtml =
@@ -146,7 +145,7 @@ function voucherHotelPdfHtml(
         ? table(
             ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
             data.roomBreakdown
-              .slice(0, 4)
+              .slice(0, voucher ? undefined : 4)
               .map((r) => [
                 r.ordinal,
                 r.roomType,
@@ -216,6 +215,7 @@ function voucherHotelPdfHtml(
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
     ${hotelHtml}
+    ${index === 0 && journeys.length ? `<section data-hotel-journeys style="break-inside:avoid">${heading('03', 'HOTEL TRANSPORT', 'Tehran time')}${table(voucherJourneyColumns, journeys).replace('<table ', '<table style="table-layout:fixed;width:100%;overflow-wrap:anywhere;white-space:pre-line" ')}</section>` : ''}
     ${heading('04', 'TOUR SERVICES', 'Leader & board')}${table(['TRANSFER', 'TOUR LEADER', 'BOARD'], [[data.transfer, data.leader, settings?.text.transferBoard?.trim() || '-']])}
     ${heading('05', voucher ? 'PASSENGER SERVICES' : 'PASSENGERS', 'Passenger manifest')}${
       voucher
@@ -247,7 +247,7 @@ function voucherHotelPdfHtml(
           )
     }
     ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, supplierPriceTableData(intake).rows) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
-    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl, voucher)}</div><div><span></span></div><b>${pageOffset + index + 1} / ${pageCount}</b></footer></article>`;
+    ${intake.unbranded ? '' : `<footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl, voucher)}</div><div><span></span></div><b>${pageOffset + index + 1} / ${pageCount}</b></footer>`}</article>`;
     })
     .join('');
   const appendices = roomAppendices
@@ -262,7 +262,7 @@ function voucherHotelPdfHtml(
             r.childAges.join(', ') || '-',
             r.adults + r.childAges.length,
           ]),
-        )}<footer class="footer"><b>${pageOffset + pages.length + index + 1} / ${pageCount}</b></footer></article>`,
+        )}${intake.unbranded ? '' : `<footer class="footer"><b>${pageOffset + pages.length + index + 1} / ${pageCount}</b></footer>`}</article>`,
     )
     .join('');
   const html = `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:56%}</style></head><body>${sheets}${appendices}</body></html>`;

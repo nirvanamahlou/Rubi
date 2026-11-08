@@ -1,10 +1,12 @@
 'use client';
+import { HrAttendanceActivationForm } from './hr-attendance-activation-form';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import dynamic from 'next/dynamic';
-import { Plus, RefreshCw } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import type { HrSectionId } from './hr.model';
 import { screenMeta, sectionTabs } from './hr.model';
@@ -42,6 +44,7 @@ import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
+import { HrAttendanceEditor } from './hr-attendance-editor';
 import { HrLeaveBalance } from './hr-leave-balance';
 import { parseSavedHrFilter } from './hr-filters';
 
@@ -77,6 +80,14 @@ function AccessibleHrSection({
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
+  const [activationOpen, setActivationOpen] = useState(false);
+  const [attendanceEdit, setAttendanceEdit] = useState<HrRecordDto | null>(
+    null,
+  );
+  const [missionCosts, setMissionCosts] = useState<{
+    mission: HrRecordDto;
+    items: HrRecordDto[];
+  } | null>(null);
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [status, setStatus] = useState('');
@@ -85,6 +96,15 @@ function AccessibleHrSection({
   const [range, setRange] = useState({ from: '', to: '' });
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<HrRecordDto[]>([]);
+  const [refreshTick, setRefreshTick] = useState(0);
+  useEffect(() => {
+    if (source.section !== 'time' || source.tab !== 'attendance') return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible')
+        setRefreshTick((tick) => tick + 1);
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, [source.section, source.tab]);
   const [loadedSource, setLoadedSource] = useState('');
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -167,6 +187,7 @@ function AccessibleHrSection({
   }, [
     queryKey,
     page,
+    refreshTick,
     store.revision,
     remember,
     sourceSection,
@@ -331,6 +352,24 @@ function AccessibleHrSection({
             >
               گزارش PDF
             </HrButton>
+            {section === 'time' &&
+              source.tab === 'leavePolicies' &&
+              store.data!.capabilities.write && (
+                <HrButton
+                  onClick={() =>
+                    onForm({
+                      source: {
+                        section: 'time',
+                        tab: 'penaltySettings',
+                        label: 'تنظیمات جریمه',
+                        action: 'تنظیمات جریمه',
+                      },
+                    })
+                  }
+                >
+                  تنظیمات جریمه
+                </HrButton>
+              )}
             {writable && !calendar ? (
               <>
                 <HrButton onClick={() => setImporting(true)}>
@@ -376,9 +415,25 @@ function AccessibleHrSection({
               }}
               label="نمای شیفت"
             />
+          ) : source.section === 'time' &&
+            source.tab === 'attendance' &&
+            store.data!.capabilities.manualAttendance ? (
+            <HrButton onClick={() => setActivationOpen(true)}>
+              غیرفعال‌سازی
+            </HrButton>
           ) : undefined
         }
       >
+        {activationOpen && (
+          <HrAttendanceActivationForm
+            employees={store.data!.employees}
+            onClose={() => setActivationOpen(false)}
+            onSaved={async () => {
+              await store.mutated();
+              setRefreshTick((value) => value + 1);
+            }}
+          />
+        )}
         <div className={ui.filters}>
           {!embedded && group.sources.length > 1 ? (
             <label>
@@ -442,8 +497,10 @@ function AccessibleHrSection({
                 {store
                   .data!.employees.filter(
                     (item) =>
-                      !branchId ||
-                      (item.organizationBranchId || item.branchId) === branchId,
+                      (!attendanceView || item.status === 'فعال') &&
+                      (!branchId ||
+                        (item.organizationBranchId || item.branchId) ===
+                          branchId),
                   )
                   .map((item) => (
                     <option value={item.id} key={item.id}>
@@ -487,6 +544,7 @@ function AccessibleHrSection({
                   'ردشده',
                   'لغوشده',
                   'فعال',
+                  'غیرفعال',
                   ...items.map((item) => item.status),
                 ]),
               ).map((item) => (
@@ -584,6 +642,37 @@ function AccessibleHrSection({
           <>
             <HrTable
               data={dataset}
+              {...(attendanceView && store.data!.capabilities.manualAttendance
+                ? {
+                    onEdit: (index: number) =>
+                      setAttendanceEdit(
+                        currentItems.find(
+                          (item) => item.id === dataset.recordIds?.[index],
+                        ) ?? null,
+                      ),
+                  }
+                : {})}
+              {...(source.section === 'expenses' && source.tab === 'mission'
+                ? {
+                    rowActions: (index: number) => (
+                      <HrButton
+                        aria-label="ریزهزینه‌های مأموریت"
+                        onClick={() => {
+                          const mission = currentItems[index]!;
+                          void allHrRecords({
+                            section: 'expenses',
+                            tab: 'claims',
+                            parentId: mission.id,
+                          })
+                            .then((r) => setMissionCosts({ mission, items: r }))
+                            .catch((e) => setError(e.message));
+                        }}
+                      >
+                        <ChevronDown size={16} aria-hidden="true" />
+                      </HrButton>
+                    ),
+                  }
+                : {})}
               {...(source.section === 'recruitment' &&
               source.tab === 'applicants' &&
               writable
@@ -622,6 +711,60 @@ function AccessibleHrSection({
                   }
                 : {})}
             />
+            {attendanceEdit && store.data!.capabilities.manualAttendance && (
+              <HrAttendanceEditor
+                record={attendanceEdit}
+                onClose={() => setAttendanceEdit(null)}
+                onSaved={async () => {
+                  await store.mutated();
+                  setRefreshTick((value) => value + 1);
+                }}
+              />
+            )}
+            {missionCosts && (
+              <Dialog
+                open
+                onOpenChange={(v) => {
+                  if (!v) setMissionCosts(null);
+                }}
+              >
+                <DialogContent
+                  dir="rtl"
+                  className="max-h-[85dvh] max-w-4xl overflow-auto"
+                >
+                  <DialogTitle>
+                    ریزهزینه‌های مأموریت {missionCosts.mission.code}
+                  </DialogTitle>
+                  <HrTable
+                    data={recordsDataset(
+                      'expenses',
+                      'claims',
+                      missionCosts.items,
+                    )}
+                    {...(writable
+                      ? {
+                          onEdit: (i: number) => {
+                            onForm({
+                              source: {
+                                section: 'expenses',
+                                tab: 'claims',
+                                label: 'هزینه مستقل',
+                                action: 'ویرایش',
+                              },
+                              record: missionCosts.items[i]!,
+                            });
+                            setMissionCosts(null);
+                          },
+                          onDelete: (i: number) => {
+                            setRemoving(missionCosts.items[i]!);
+                            setMissionCosts(null);
+                          },
+                        }
+                      : {})}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
             <div className={ui.pagination}>
               <span>{total.toLocaleString('fa-IR')} نتیجه</span>
               <HrButton disabled={page === 1} onClick={() => setPage(page - 1)}>

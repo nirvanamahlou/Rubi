@@ -5,6 +5,8 @@ import {
   moneyUnits,
   moneyDecimal,
   hotelNights,
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
   hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
@@ -168,16 +170,16 @@ export function HotelStayPurchase({
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
           transferBrokerName: transfer.supplierName,
-          hotelTransferSeparate:
-            Boolean(returnPurchase) ||
-            quote.hotelTransferSeparate === true ||
-            transfer.supplierOrganizationId !==
-              purchase?.supplierOrganizationId,
-          hotelTransferSplit: Boolean(returnPurchase),
+          hotelTransferSeparate: quote.hotelTransferSeparate === true,
+          hotelTransferSplit:
+            quote.hotelTransferSeparate === true &&
+            quote.hotelTransferSplit === true,
           hotelTransferRoundTrip: transfer.hotelTransferRoundTrip ?? false,
         }
       : {}),
-    ...(returnPurchase?.pricingCalculation
+    ...(returnPurchase?.pricingCalculation &&
+    quote.hotelTransferSeparate === true &&
+    quote.hotelTransferSplit === true
       ? {
           hotelTransferSplit: true,
           hotelTransferSeparate: true,
@@ -304,6 +306,10 @@ export function HotelStayPurchase({
         )
       )
         throw Error('کارگزار، ارز و قیمت همه اتاق‌ها را تکمیل کنید.');
+      assertReservationTransferCounts(
+        draft.hotelTransferCounts,
+        reservationTransferPassengerLimit(request.snapshot, stayKey),
+      );
       const count = hotelTransferChargeableCount(
         draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
         draft.hotelTransferRoundTrip,
@@ -332,13 +338,11 @@ export function HotelStayPurchase({
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
         );
-      const separate = Boolean(
-        draft.hotelTransferSplit ||
-        (draft.transferBrokerId && draft.transferBrokerId !== broker.id),
-      );
-      const groups = draft.hotelTransferSplit
-        ? [[outboundKey], [returnKey!]]
-        : [transferKeys];
+      const separate = draft.hotelTransferSeparate === true;
+      const groups =
+        separate && draft.hotelTransferSplit
+          ? [[outboundKey], [returnKey!]]
+          : [transferKeys];
       const transferRows = groups
         .filter((keys) => keys.length)
         .map((keys, index) => {
@@ -499,6 +503,10 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        transferLimit={reservationTransferPassengerLimit(
+          request.snapshot,
+          stayKey,
+        )}
         hotelBroker={broker}
         purchaseRoot={purchaseRoot}
         requestId={request.id}

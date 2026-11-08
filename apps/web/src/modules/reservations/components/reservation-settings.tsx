@@ -6,6 +6,10 @@ import {
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { hotelFormScope } from '../model/hotel-form-scope';
 import { reservationHasTransfer, reservationHotelStays } from '@nora/contracts';
+import {
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
+} from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
@@ -36,6 +40,7 @@ import {
 } from '../model/reservation-form';
 import {
   defaultVoucherSettings,
+  defaultSupplierFormSettings,
   voucherTextLabels,
   voucherFlagLabels,
   type VoucherTextFieldKey,
@@ -58,6 +63,7 @@ import styles from './reservation-settings.module.css';
 import {
   supplierPriceColumns,
   normalizeSupplierDraftPrices,
+  supplierPriceDraft,
 } from '../model/supplier-form-prices';
 
 export type ReservationSettingsSection =
@@ -356,24 +362,36 @@ export function ReservationSettingsForm({
       live = false;
     };
   }, [intake.id, intake.workflow.version]);
-  async function save(sendToBroker = showDocument) {
+  async function save(sendToBroker = showDocument, pricesOnly = false) {
     if (busy || intake.workflow.supplierStatus === 'CANCELLED') return;
-    if (activeDirectory.loading || activeDirectory.error) {
+    try {
+      if (draft.hotelTransferCounts)
+        assertReservationTransferCounts(
+          draft.hotelTransferCounts,
+          reservationTransferPassengerLimit(intake.snapshot),
+        );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'عملیات نامعتبر');
+      return;
+    }
+    if (!pricesOnly && (activeDirectory.loading || activeDirectory.error)) {
       setError(
         activeDirectory.error ||
           'تا دریافت کامل فهرست‌های اطلاعات پایه صبر کنید.',
       );
       return;
     }
-    const invalidReferenceKey = referenceKeys.find((key) => {
-      const value = draft.text[key]?.trim();
-      if (!value) return false;
-      const resource = reservationEditReferenceResource[key];
-      return !findReservationEditReference(
-        value,
-        activeDirectory.options[resource] ?? [],
-      );
-    });
+    const invalidReferenceKey = pricesOnly
+      ? undefined
+      : referenceKeys.find((key) => {
+          const value = draft.text[key]?.trim();
+          if (!value) return false;
+          const resource = reservationEditReferenceResource[key];
+          return !findReservationEditReference(
+            value,
+            activeDirectory.options[resource] ?? [],
+          );
+        });
     if (invalidReferenceKey) {
       setError(
         `${voucherTextLabels[invalidReferenceKey]} را از فهرست اطلاعات پایه انتخاب کنید.`,
@@ -386,7 +404,7 @@ export function ReservationSettingsForm({
         passenger.age === 'CHD' &&
         !passenger.hotelChildAgeBand,
     );
-    if (childWithoutHotelBand) {
+    if (!pricesOnly && childWithoutHotelBand) {
       setError(
         'برای همهٔ مسافران کودک، ردهٔ هتل ۲ تا ۶ یا ۶ تا ۱۲ سال را انتخاب کنید.',
       );
@@ -395,6 +413,7 @@ export function ReservationSettingsForm({
     if (
       sendToBroker &&
       reservationHasTransfer(intake.snapshot) &&
+      !pricesOnly &&
       !draft.brokerId
     ) {
       setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
@@ -411,7 +430,12 @@ export function ReservationSettingsForm({
       const quotations = quotationDrafts.map(({ intake: scope, settings }) => ({
         scope,
         settings: {
-          ...settings,
+          ...(pricesOnly
+            ? supplierPriceDraft(
+                defaultSupplierFormSettings(scope, refs),
+                settings,
+              )
+            : settings),
           supplierFormPrices: normalizeSupplierDraftPrices(
             settings,
             currencyDirectory.currencies,
@@ -459,14 +483,14 @@ export function ReservationSettingsForm({
                   ...quotation.settings.text,
                   arrivalAirline:
                     findReservationEditReference(
-                      draft.text.arrivalAirline ?? '',
+                      quotation.settings.text.arrivalAirline ?? '',
                       activeDirectory.options.airlines ?? [],
-                    )?.label ?? draft.text.arrivalAirline,
+                    )?.label ?? quotation.settings.text.arrivalAirline,
                   departureAirline:
                     findReservationEditReference(
-                      draft.text.departureAirline ?? '',
+                      quotation.settings.text.departureAirline ?? '',
                       activeDirectory.options.airlines ?? [],
-                    )?.label ?? draft.text.departureAirline,
+                    )?.label ?? quotation.settings.text.departureAirline,
                   broker:
                     findReservationEditReference(
                       quotation.settings.text.broker ?? '',
@@ -493,7 +517,11 @@ export function ReservationSettingsForm({
         : r;
       onSaved(result.data);
       setPreviewDirty(false);
-      setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
+      setMessage(
+        sendToBroker
+          ? 'درخواست ارسال ایمیل فایل PDF ثبت شد؛ نتیجه در اعلان‌ها نمایش داده می‌شود.'
+          : 'نسخهٔ جدید با موفقیت ثبت شد.',
+      );
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
       if (savedWorkflow) onSaved(savedWorkflow);
@@ -753,6 +781,9 @@ export function ReservationSettingsForm({
                 )}
                 {!!quotation.settings.rooms?.length && !legacyQuotation && (
                   <HotelRoomQuotationEditor
+                    transferLimit={reservationTransferPassengerLimit(
+                      quotation.intake.snapshot,
+                    )}
                     requestId={quotation.intake.id}
                     canSplitTransfers={
                       (quotation.intake.hotelStayOrdinal ?? 1) > 1 ||
@@ -853,10 +884,9 @@ export function ReservationSettingsForm({
               busy ||
               currencyDirectory.loading ||
               intake.workflow.supplierStatus === 'CANCELLED' ||
-              activeDirectory.loading ||
               (!selected.length && !aggregateForm)
             }
-            onClick={() => void save(false)}
+            onClick={() => void save(false, true)}
           >
             ذخیره
           </Button>
@@ -1615,8 +1645,8 @@ export async function sendSavedReservationForm(
   hotelStayKey?: string,
   requiresBroker = true,
 ) {
+  void requiresBroker; // Email always requires an explicit recipient, including hotel-only forms.
   if (
-    requiresBroker &&
     !(
       hotelStayKey
         ? state.hotelSupplierForms?.[hotelStayKey]?.settings
@@ -1626,13 +1656,25 @@ export async function sendSavedReservationForm(
     throw new Error(
       'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
     );
-  return travelRequest<{ data: TravelWorkflowStateV1 }>(
-    `reservations/requests/${id}/workflow`,
+  const response = await fetch(
+    `/reservations/requests/${encodeURIComponent(id)}/pdf`,
     {
-      action: 'REQUEST_SUPPLIER',
-      ...(hotelStayKey ? { hotelStayKey } : {}),
-      expectedVersion: state.version,
-      note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expectedVersion: state.version,
+        ...(hotelStayKey ? { hotelStayKey } : {}),
+      }),
     },
   );
+  const result = await response.json().catch(() => null);
+  if (!response.ok)
+    throw new Error(
+      result?.error?.message ??
+        result?.message ??
+        'عملیات انجام نشد؛ مجوز و اتصال را بررسی کنید.',
+    );
+  return result as { data: TravelWorkflowStateV1 };
 }

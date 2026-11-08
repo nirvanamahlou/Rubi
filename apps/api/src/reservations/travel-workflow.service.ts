@@ -4,6 +4,8 @@ import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
   reservationHotelStays,
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
   salesContractFlights,
   readLegacyServiceParties,
   reservationFlightOutputKey,
@@ -29,6 +31,8 @@ import type {
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
+import { ReservationMailService } from './reservation-mail.service';
+import type { SignedReservationPdf } from './reservation-mail-pdf';
 import {
   initialTravelWorkflow,
   transitionTravelWorkflow,
@@ -49,6 +53,9 @@ export class TravelWorkflowService {
     @Optional()
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(ReservationMailService)
+    private readonly mail?: ReservationMailService,
   ) {}
   /** Read-only document defaults; never manufacture a supplier confirmation. */
   async floatingDocumentOutput<
@@ -206,6 +213,7 @@ export class TravelWorkflowService {
     id: string,
     command: TravelWorkflowCommandV1,
     actor: AuthenticatedActor,
+    pdf?: SignedReservationPdf,
   ) {
     if (!actor.permissions.includes('reservations.documents.manage'))
       throw new ForbiddenException('مجوز عملیات مدارک وجود ندارد.');
@@ -218,6 +226,26 @@ export class TravelWorkflowService {
       'TICKET_FLIGHT_NUMBERS',
     ].includes(command?.action);
     const intake = await this.detail(id, actor.branchIds, currentOutput);
+    const email =
+      command?.action === 'REQUEST_SUPPLIER'
+        ? await (async () => {
+            if (!this.mail)
+              throw new BadRequestException(
+                'اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.',
+              );
+            const { data } = await this.entities.current(actor);
+            return this.mail.prepare(
+              intake.workflow,
+              command,
+              actor,
+              intake.branchId,
+              intake.snapshot.contractNumber,
+              data.legalEntity?.id,
+              pdf,
+              id,
+            );
+          })()
+        : undefined;
     let branding: TravelWorkflowStateV1['branding'] = null;
     if (command?.action === 'BRANDING') {
       const ticketWithoutLogo = command.branding?.ticketWithoutLogo;
@@ -282,6 +310,14 @@ export class TravelWorkflowService {
           );
         let next: TravelWorkflowStateV1;
         try {
+          if (command.action === 'SUPPLIER_FORM_SETTINGS')
+            assertReservationTransferCounts(
+              command.voucherSettings?.hotelTransferCounts,
+              reservationTransferPassengerLimit(
+                intake.snapshot,
+                command.hotelStayKey,
+              ),
+            );
           next = transitionTravelWorkflow(
             currentOutput ? intake.workflow : state,
             command,
@@ -376,7 +412,7 @@ export class TravelWorkflowService {
           next.tableFlags[command.tableFlag]!.updatedAt = next.updatedAt;
           next.tableFlags[command.tableFlag]!.updatedByUserId = actor.userId;
         }
-        await tx.reservationWorkflowRevision.create({
+        const savedRevision = await tx.reservationWorkflowRevision.create({
           data: {
             intakeId: id,
             version: next.version,
@@ -384,6 +420,7 @@ export class TravelWorkflowService {
             actorUserId: actor.userId,
           },
         });
+        if (email) await this.mail!.enqueue(tx, email, savedRevision.id);
         if (
           intake.salesOwnerUserId &&
           ((next.voucherIssued && !state.voucherIssued) ||

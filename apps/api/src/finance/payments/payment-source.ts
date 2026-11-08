@@ -47,9 +47,17 @@ export async function paymentSource(
       isActive: true,
     },
   });
-  if (!account)
+  if (!account || account.currencyCode === null || account.branchId === null)
     throw new BadRequestException('حساب فعال هم‌ارز برای پرداخت معتبر نیست.');
-  return { account, payingSupplierId: null, payingSupplierName: null };
+  return {
+    account: {
+      ...account,
+      currencyCode: account.currencyCode,
+      branchId: account.branchId,
+    },
+    payingSupplierId: null,
+    payingSupplierName: null,
+  };
 }
 
 /** The original foreign payment settles the supplier debt. The cash event must

@@ -5,7 +5,6 @@ import {
   voucherPassengerServices,
   voucherPassengerCells,
   voucherServiceColumns,
-  voucherPassengerPageUnits,
 } from './voucher-passenger-services';
 import { reservationPdfHtml } from '../server/reservation-pdf-html';
 it('uses each selected passenger allocation and independent voucher dates, preserving custom stays and passport names', () => {
@@ -85,18 +84,16 @@ it('prints the English service table and issuer without exposing prices, hidden 
   );
 });
 
-it('reserves space for detailed room tables and long notes without changing the selected passengers', () => {
+it('retains detailed room tables and long notes without estimating passenger page chunks', () => {
   const { intake, refs } = voucherServiceFixture();
   const settings = intake.workflow.voucherSettings!;
-  expect(voucherPassengerPageUnits(settings)).toBe(6);
   settings.rooms = Array.from({ length: 4 }, (_, i) => ({
     ordinal: i + 1,
     roomTypeNameSnapshot: 'ROOM',
     adults: 1,
     childAges: [],
   }));
-  expect(voucherPassengerPageUnits(settings)).toBe(4);
-  expect(voucherPassengerPageUnits(settings, 'Long note '.repeat(100))).toBe(2);
+  settings.text.remarks = 'Long note '.repeat(100);
   const html = reservationPdfHtml(
     intake,
     refs,

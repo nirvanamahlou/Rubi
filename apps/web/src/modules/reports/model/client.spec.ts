@@ -378,7 +378,7 @@ it('keeps exact currency components for charts while the table uses one combined
           { currencyCode: 'IRR', amount: '900' },
           { currencyCode: 'EUR', amount: '20.1234' },
         ],
-        sourceValues: { salesAmount: '900 ریال - 20.1234 €' },
+        sourceValues: { salesAmount: '900 ریال + 20.1234 €' },
       },
     ],
     total: 1,
@@ -402,6 +402,6 @@ it('keeps exact currency components for charts while the table uses one combined
     payload.rows[0]!.amountsByCurrency,
   );
   expect(result.rows[0]?.sourceValues?.salesAmount).toBe(
-    '900 ریال - 20.1234 €',
+    '900 ریال + 20.1234 €',
   );
 });

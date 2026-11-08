@@ -16,6 +16,10 @@ import type {
   TravelReportResultV1,
 } from './reporting.contracts';
 import { createFilterSnapshot } from './reporting.policy';
+import { consolidateSourceCurrencies } from './reporting-source-currencies';
+import { readTicketSlaReporting } from '../customer-affairs/ticket-reporting.public';
+import { readDueWorkbenchReporting } from '../workbench/workbench-reporting.public';
+import { readHrExpiryReporting } from '../hr/hr-expiry-reporting.public';
 
 export const OPERATIONAL_REPORTS: Readonly<
   Record<
@@ -23,6 +27,18 @@ export const OPERATIONAL_REPORTS: Readonly<
     { projection: ReportSource['projection']; grain: ReportingGrain }
   >
 > = {
+  customer_service_sla: {
+    projection: 'customer-affairs.reporting.sla.v1',
+    grain: 'TICKET_SUPPORT',
+  },
+  workbench_due_actions: {
+    projection: 'workbench.reporting.due-actions.v1',
+    grain: 'TICKET_SUPPORT',
+  },
+  hr_record_expiry: {
+    projection: 'hr.reporting.record-expiry.v1',
+    grain: 'EMPLOYEE',
+  },
   cancellations_refunds: {
     projection: 'sales.reporting.cancellations.v1',
     grain: 'CONTRACT_CURRENCY',
@@ -77,22 +93,49 @@ export function assembleOperationalResult(
   source: ReportSource,
   includeAllRows = false,
 ): TravelReportResultV1 {
+  const rawSource = source;
+  source = consolidateSourceCurrencies(source);
   const definition = OPERATIONAL_REPORTS[code];
   if (!definition || definition.projection !== source.projection)
     throw new Error('Report source mismatch');
   const column =
-    query.sort?.column === 'salesAmount' &&
-    !source.columns.some((c) => c.key === 'salesAmount')
-      ? source.chartMeasure
-      : (query.sort?.column ?? source.chartMeasure);
+    query.sort?.column === 'currencyCode' &&
+    !source.columns.some((c) => c.key === 'currencyCode')
+      ? (source.columns.find((c) => c.key === 'primaryDimension')?.key ??
+        source.chartMeasure)
+      : query.sort?.column === 'salesAmount' &&
+          !source.columns.some((c) => c.key === 'salesAmount')
+        ? source.chartMeasure
+        : (query.sort?.column ?? source.chartMeasure);
   if (!source.columns.some((c) => c.key === column))
     throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
   const kind = source.columns.find((c) => c.key === column)!.kind;
+  const currencyCount = new Set(
+    rawSource.rows.map((r) => r.values.currencyCode).filter(Boolean),
+  ).size;
   const sorted = [...source.rows].sort((a, b) => {
     const left = a.values[column] ?? '',
       right = b.values[column] ?? '';
     let diff = 0;
-    if (kind === 'TEXT') diff = String(left).localeCompare(String(right), 'fa');
+    if (
+      rawSource.columns.some((c) => c.key === column && c.kind === 'MONEY') &&
+      (a.chartAmounts || b.chartAmounts)
+    ) {
+      // No cross-currency ranking until an FX policy is explicitly approved.
+      diff =
+        currencyCount === 1 &&
+        column === source.chartMeasure &&
+        a.chartAmounts?.[0] &&
+        b.chartAmounts?.[0]
+          ? new Prisma.Decimal(a.chartAmounts[0].amount).comparedTo(
+              b.chartAmounts[0].amount,
+            )
+          : String(a.values.primaryDimension ?? a.id).localeCompare(
+              String(b.values.primaryDimension ?? b.id),
+              'fa',
+            );
+    } else if (kind === 'TEXT')
+      diff = String(left).localeCompare(String(right), 'fa');
     else {
       const numeric = (v: string | number) =>
         /^-?\d+(?:\.\d+)?$/.test(String(v));
@@ -125,6 +168,7 @@ export function assembleOperationalResult(
     settlementBalance: '0',
     pendingReservationActions: 0,
     sourceValues: r.values,
+    ...(r.chartAmounts ? { amountsByCurrency: r.chartAmounts } : {}),
   }));
   // A count, capacity, rate or registered purchase is not approved sales/profit.
   return {
@@ -174,7 +218,7 @@ export function assembleOperationalResult(
       ],
       currency: [
         ...new Set(
-          source.rows.flatMap((r) =>
+          rawSource.rows.flatMap((r) =>
             typeof r.values.currencyCode === 'string' && r.values.currencyCode
               ? [r.values.currencyCode]
               : [],
@@ -199,6 +243,15 @@ export async function nativeOperationalReport(
 ) {
   let source: ReportSource;
   switch (code) {
+    case 'customer_service_sla':
+      source = await readTicketSlaReporting(client, actor, query);
+      break;
+    case 'workbench_due_actions':
+      source = await readDueWorkbenchReporting(client, actor, query);
+      break;
+    case 'hr_record_expiry':
+      source = await readHrExpiryReporting(client, actor, query);
+      break;
     case 'cancellations_refunds':
       source = await readSalesCancellationReporting(client, actor, query);
       break;

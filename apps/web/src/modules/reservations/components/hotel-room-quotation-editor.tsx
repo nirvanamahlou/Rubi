@@ -5,6 +5,7 @@ import {
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
+import { useRef } from 'react';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { MoneyInput } from '@/components/ui/money-input';
 import { Input } from '@/components/ui/form-controls';
@@ -19,6 +20,7 @@ export function HotelRoomQuotationEditor({
   canSplitTransfers = true,
   nights,
   hotelBroker,
+  transferLimit = 500,
 }: {
   draft: VoucherSettingsV1;
   requestId: string;
@@ -29,14 +31,23 @@ export function HotelRoomQuotationEditor({
   canSplitTransfers?: boolean;
   nights: number;
   hotelBroker?: { id: string; name: string } | null;
+  transferLimit?: number;
 }) {
+  const transferCurrencyOverridden = useRef(
+    Boolean(
+      draft.supplierFormPrices?.transferPp?.currencyCode &&
+      draft.supplierFormPrices.transferPp.currencyCode !==
+        draft.hotelRoomPrices?.currencyCode,
+    ),
+  );
+  const roundTrip = draft.hotelTransferRoundTrip ?? true;
   const rooms = draft.rooms ?? [];
   const prices =
     draft.hotelRoomPrices?.rooms ??
     rooms.map((room) => ({
       roomOrdinal: room.ordinal,
       baseAmount: '',
-      factor: '1',
+      factor: '2',
     }));
   const currencyCode = draft.hotelRoomPrices?.currencyCode ?? '';
   const transfer = draft.supplierFormPrices?.transferPp ?? {
@@ -66,7 +77,7 @@ export function HotelRoomQuotationEditor({
     if (transfer.amount && transfer.currencyCode) {
       const count = draft.hotelTransferSplit
         ? counts.outbound
-        : hotelTransferChargeableCount(counts, draft.hotelTransferRoundTrip);
+        : hotelTransferChargeableCount(counts, roundTrip);
       transferTotal =
         count === 0
           ? '0'
@@ -99,7 +110,18 @@ export function HotelRoomQuotationEditor({
         currencies={currencies}
         disabled={busy}
         onChange={(currencyCode) =>
-          update({ ...draft, hotelRoomPrices: { currencyCode, rooms: prices } })
+          update({
+            ...draft,
+            hotelRoomPrices: { currencyCode, rooms: prices },
+            ...(!transferCurrencyOverridden.current
+              ? {
+                  supplierFormPrices: {
+                    ...draft.supplierFormPrices,
+                    transferPp: { ...transfer, currencyCode },
+                  },
+                }
+              : {}),
+          })
         }
       />
       <div className="overflow-x-auto">
@@ -118,7 +140,7 @@ export function HotelRoomQuotationEditor({
             {rooms.map((room) => {
               const price = prices.find(
                 (price) => price.roomOrdinal === room.ordinal,
-              ) ?? { roomOrdinal: room.ordinal, baseAmount: '', factor: '1' };
+              ) ?? { roomOrdinal: room.ordinal, baseAmount: '', factor: '2' };
               const change = (patch: Partial<typeof price>) =>
                 update({
                   ...draft,
@@ -132,7 +154,7 @@ export function HotelRoomQuotationEditor({
                           ) ?? {
                             roomOrdinal: row.ordinal,
                             baseAmount: '',
-                            factor: '1',
+                            factor: '2',
                           }),
                     ),
                   },
@@ -174,18 +196,39 @@ export function HotelRoomQuotationEditor({
         </bdi>
       </p>
       <fieldset className="grid gap-2 rounded-xl border border-border p-3">
-        <legend>ترانسفر مستقل این هتل</legend>
+        <legend>ترانسفر این هتل</legend>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             disabled={busy}
-            checked={draft.hotelTransferRoundTrip ?? false}
+            checked={draft.hotelTransferSeparate === true}
             onChange={(event) => {
               const next = {
                 ...draft,
-                hotelTransferRoundTrip: event.target.checked,
+                hotelTransferSeparate: event.target.checked,
               };
-              if (event.target.checked) {
+              if (!event.target.checked) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+                delete next.transferBrokerId;
+                delete next.transferBrokerName;
+              }
+              update(next);
+            }}
+          />
+          کارگزار ترانسفر جدا از هتل
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
+            checked={!roundTrip}
+            onChange={(event) => {
+              const next = {
+                ...draft,
+                hotelTransferRoundTrip: !event.target.checked,
+              };
+              if (!event.target.checked) {
                 next.hotelTransferSplit = false;
                 delete next.hotelTransferReturn;
                 next.hotelTransferCounts = {
@@ -196,35 +239,37 @@ export function HotelRoomQuotationEditor({
               update(next);
             }}
           />
-          قیمت رفت‌وبرگشت برای هر نفر
+          قیمت رفت یا برگشت جدا
         </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             disabled={
-              busy || !canSplitTransfers || draft.hotelTransferRoundTrip
+              busy ||
+              !draft.hotelTransferSeparate ||
+              !canSplitTransfers ||
+              roundTrip
             }
             checked={draft.hotelTransferSplit ?? false}
-            onChange={(event) =>
-              update({
+            onChange={(event) => {
+              const next = {
                 ...draft,
                 hotelTransferSplit: event.target.checked,
-                ...(event.target.checked
-                  ? {
-                      hotelTransferSeparate: true,
-                      hotelTransferRoundTrip: false,
-                      hotelTransferReturn: draft.hotelTransferReturn ?? {
-                        amount: transfer.amount,
-                        currencyCode: transfer.currencyCode,
-                      },
-                    }
-                  : {}),
-              })
-            }
+              };
+              if (event.target.checked) {
+                next.hotelTransferSeparate = true;
+                next.hotelTransferRoundTrip = false;
+                next.hotelTransferReturn = draft.hotelTransferReturn ?? {
+                  amount: transfer.amount,
+                  currencyCode: transfer.currencyCode,
+                };
+              } else delete next.hotelTransferReturn;
+              update(next);
+            }}
           />
           {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
-        {
+        {draft.hotelTransferSeparate === true && (
           <ReservationPurchaseBrokerLookup
             purchaseRoot={purchaseRoot}
             requestId={requestId}
@@ -255,6 +300,10 @@ export function HotelRoomQuotationEditor({
                   value && value.id !== (hotelBroker?.id ?? draft.brokerId),
                 ),
               };
+              if (!next.hotelTransferSeparate) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+              }
               if (value) {
                 next.transferBrokerId = value.id;
                 next.transferBrokerName = value.name;
@@ -265,14 +314,10 @@ export function HotelRoomQuotationEditor({
               update(next);
             }}
           />
-        }
+        )}
 
         <MoneyInput
-          aria-label={
-            draft.hotelTransferRoundTrip
-              ? 'Transfer P.P رفت‌وبرگشت'
-              : 'Transfer P.P'
-          }
+          aria-label={roundTrip ? 'Transfer P.P رفت‌وبرگشت' : 'Transfer P.P'}
           value={transfer.amount}
           disabled={busy}
           onValueChange={(amount) =>
@@ -290,22 +335,23 @@ export function HotelRoomQuotationEditor({
           value={transfer.currencyCode}
           currencies={currencies}
           disabled={busy}
-          onChange={(currencyCode) =>
+          onChange={(currencyCode) => {
+            transferCurrencyOverridden.current = true;
             update({
               ...draft,
               supplierFormPrices: {
                 ...draft.supplierFormPrices,
                 transferPp: { ...transfer, currencyCode },
               },
-            })
-          }
+            });
+          }}
         />
-        {(draft.hotelTransferRoundTrip
+        {(roundTrip
           ? (['outbound'] as const)
           : (['outbound', 'returning'] as const)
         ).map((key) => (
           <label key={key}>
-            {draft.hotelTransferRoundTrip
+            {roundTrip
               ? 'تعداد نفرات ترانسفر رفت‌وبرگشت'
               : key === 'outbound'
                 ? 'تعداد ترانسفر رفت'
@@ -313,7 +359,8 @@ export function HotelRoomQuotationEditor({
             <Input
               type="number"
               min="0"
-              max="500"
+              max={transferLimit}
+              aria-invalid={counts[key] > transferLimit}
               step="1"
               disabled={busy}
               value={counts[key]}
@@ -323,7 +370,7 @@ export function HotelRoomQuotationEditor({
                   hotelTransferCounts: {
                     ...counts,
                     [key]: Number(event.target.value),
-                    ...(draft.hotelTransferRoundTrip
+                    ...(roundTrip
                       ? { returning: Number(event.target.value) }
                       : {}),
                   },
@@ -412,7 +459,11 @@ export function HotelRoomQuotationEditor({
           </bdi>
         </p>
         <p>
-          مبلغ و تعداد صفر مجاز است؛ ترانسفر در تعداد اتاق و شب ضرب نمی‌شود.
+          {Math.max(counts.outbound, counts.returning) > transferLimit && (
+            <span role="alert">
+              تعداد نفرات ترانسفر از تعداد مسافران مشمول قرارداد بیشتر است.
+            </span>
+          )}
         </p>
       </fieldset>
     </div>

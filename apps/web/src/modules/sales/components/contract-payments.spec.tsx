@@ -114,6 +114,8 @@ describe('saved contract payment currency control', () => {
     );
     expect(html).toContain('type="file"');
     expect(html).toContain('انتخاب فایل مدرک پرداخت');
+    expect(html).toContain('.jfif');
+    expect(html).toContain('.xls,.xlsx');
     expect(html).toContain('application/pdf,image/jpeg,image/png');
     expect(html).toContain('تأیید');
   });
@@ -237,4 +239,18 @@ it('keeps older masked account responses usable and hides stale selections after
   expect(render('IRR')).toContain('••001');
   expect(render('USD')).not.toContain('Legacy account');
   expect(render('USD')).toContain('disabled');
+});
+
+it('renders the FX bank-transfer destination without required marker or required combobox', () => {
+  const html = renderToStaticMarkup(
+    <ContractPaymentAccountSelect
+      method="BANK_TRANSFER"
+      accounts={[]}
+      currencyCode="EUR"
+      value=""
+      onChange={() => undefined}
+    />,
+  );
+  expect(html).toContain('حساب مقصد پرداخت');
+  expect(html).not.toMatch(/required|aria-required="true"/);
 });

@@ -113,8 +113,10 @@ export class InsuranceSettingsService {
   }
   canManage(actor: AuthenticatedActor) {
     return (
-      actor.permissions.includes('system.settings.manage') &&
-      hasAccessControl(actor.permissions, 'system.module.operations') &&
+      (actor.permissions.includes('system.settings.manage') ||
+        actor.permissions.includes('reservations.insurance.manage')) &&
+      (actor.permissions.includes('reservations.insurance.manage') ||
+        hasAccessControl(actor.permissions, 'system.module.operations')) &&
       hasAccessControl(
         actor.permissions,
         systemSettingControlId('operations', 'insurance-issuance'),
@@ -140,6 +142,17 @@ export class InsuranceSettingsService {
         ? ('SANDBOX_CONFIGURED' as const)
         : ('NOT_CONFIGURED' as const),
     };
+  }
+  /** Internal worker port: branch identity comes from the persisted intake. */
+  async automationConfig(branchId: string) {
+    const row = await this.settings.resolveSetting({
+      namespace: 'operations',
+      key: 'insurance-issuance',
+      branchId,
+    });
+    return row?.scope === 'BRANCH' && row.scopeId === branchId
+      ? insuranceConfiguration(row.value)
+      : { schemaVersion: 1 as const, countries: [] };
   }
   async save(branchId: string, raw: unknown, actor: AuthenticatedActor) {
     this.authorize(actor, branchId, true);
@@ -185,7 +198,9 @@ export class InsuranceSettingsService {
         valueType: 'JSON',
         status: 'ACTIVE',
         value: config,
-        expectedVersion: input.expectedVersion,
+        ...(input.expectedVersion > 0
+          ? { expectedVersion: input.expectedVersion }
+          : {}),
         reason: 'Insurance issuance settings',
       },
       actor,

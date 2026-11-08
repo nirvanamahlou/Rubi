@@ -40,6 +40,7 @@ export async function GET(
   const { id } = await context.params;
   if (!uuid.test(id)) return fail('شناسه درخواست معتبر نیست.', 400);
   const parameters = new URL(request.url).searchParams;
+  const unbranded = parameters.get('unbranded') === 'true';
   const passengerId = parameters.get('passengerId');
   const salesContractId = parameters.get('salesContractId');
   if (passengerId && !uuid.test(passengerId))
@@ -266,7 +267,7 @@ export async function GET(
     );
 
     let logoDataUrl: string;
-    if (branding.ticketWithoutLogo === true) {
+    if (unbranded || branding.ticketWithoutLogo === true) {
       logoDataUrl = '';
     } else if (
       branding.logoFileId &&
@@ -307,7 +308,7 @@ export async function GET(
     const published: Array<{ passengerId: string; url: string; html: string }> =
       [];
     for (const ticket of tickets) {
-      if (!ticket.issued || !ticket.eTicketNumber) continue;
+      if (unbranded || !ticket.issued || !ticket.eTicketNumber) continue;
       const share = createPublicDocument();
       if (!share) continue;
       sharingEnabled = true;
@@ -317,6 +318,7 @@ export async function GET(
           [ticket],
           cityNames,
           {
+            unbranded,
             name: branding.name,
             logoDataUrl,
             withoutLogo: branding.ticketWithoutLogo === true,
@@ -345,6 +347,7 @@ export async function GET(
       tickets,
       cityNames,
       {
+        unbranded,
         name: branding.name,
         logoDataUrl,
         withoutLogo: branding.ticketWithoutLogo === true,

@@ -1,3 +1,5 @@
+import { zipSync, strToU8 } from 'fflate';
+import { XLS_MIME, XLSX_MIME } from '@nora/contracts';
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -24,6 +26,24 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationsRepository } from '../notifications/notifications.repository';
 import { AuthGuard } from '../iam/auth.guard';
 
+function legacyXls(name = 'Workbook') {
+  const bytes = Buffer.alloc(1536);
+  Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(bytes);
+  bytes.writeUInt16LE(0xfffe, 28);
+  bytes.writeUInt16LE(9, 30);
+  bytes.writeUInt32LE(1, 44);
+  bytes.writeUInt32LE(1, 48);
+  bytes.writeUInt32LE(0xfffffffe, 68);
+  for (let i = 76; i < 512; i += 4) bytes.writeUInt32LE(0xffffffff, i);
+  bytes.writeUInt32LE(0, 76);
+  bytes.fill(0xff, 512, 1024);
+  bytes.writeUInt32LE(0xfffffffd, 512);
+  bytes.writeUInt32LE(0xfffffffe, 516);
+  Buffer.from(name + '\0', 'utf16le').copy(bytes, 1024);
+  bytes.writeUInt16LE((name.length + 1) * 2, 1088);
+  bytes[1090] = 2;
+  return bytes;
+}
 const enabled = process.env.NORA_RUN_MESSAGING_FILE_POSTGRES_TESTS === '1';
 describe.skipIf(!enabled)(
   'real PostgreSQL and multipart chat attachment delivery',
@@ -79,7 +99,12 @@ describe.skipIf(!enabled)(
           name: 'Synthetic attachment',
           domain: 'GENERAL',
           defaultConfidentiality: 'INTERNAL',
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'application/pdf'],
+          allowedMimeTypes: [
+            'image/png',
+            'image/jpeg',
+            'application/pdf',
+            XLSX_MIME,
+          ],
           maxFileSizeBytes: BigInt(10 * 1024 * 1024),
           requiresExpiry: false,
         },
@@ -177,9 +202,42 @@ describe.skipIf(!enabled)(
       await client?.$disconnect();
       if (root) await rm(root, { recursive: true, force: true });
     });
-    it.each(['direct', 'group'])(
-      'uploads, sends and delivers the same file in a %s chat',
-      async (kind) => {
+    it.each(
+      ['direct', 'group'].flatMap(
+        (kind) =>
+          [
+            [kind, 'test.png', 'image/png', bytes],
+            [kind, 'test.xls', XLS_MIME, legacyXls()],
+            [
+              kind,
+              'test.jfif',
+              'image/jfif',
+              Buffer.from([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0]),
+            ],
+            [
+              kind,
+              'test.pdf',
+              'application/pdf',
+              Buffer.from('%PDF-1.7 synthetic'),
+            ],
+            [
+              kind,
+              'test.xlsx',
+              'application/octet-stream',
+              Buffer.from(
+                zipSync({
+                  '[Content_Types].xml': strToU8(
+                    '<Types><Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" /></Types>',
+                  ),
+                  'xl/workbook.xml': strToU8('<workbook/>'),
+                }),
+              ),
+            ],
+          ] as const,
+      ),
+    )(
+      'uploads, sends and delivers %s / %s unchanged',
+      async (kind, filename, contentType, payload) => {
         const chatId = kind === 'direct' ? conversationId : groupId;
         const http = app.getHttpServer();
         const clientRequestId = `message:${randomUUID()}`;
@@ -187,10 +245,7 @@ describe.skipIf(!enabled)(
           .post(`/messaging/conversations/${chatId}/attachments`)
           .set('x-test-actor', senderId)
           .field('clientRequestId', clientRequestId)
-          .attach('file', bytes, {
-            filename: 'test.png',
-            contentType: 'image/png',
-          })
+          .attach('file', payload, { filename, contentType })
           .expect(201);
         const id = uploaded.body.data.id;
         expect(uploaded.body.data.scanStatus).toBe(
@@ -224,12 +279,28 @@ describe.skipIf(!enabled)(
           .get(`/messaging/conversations/${chatId}/messages`)
           .set('x-test-actor', recipientId)
           .expect(200);
-        expect(inbox.body.data[0].attachments[0].documentId).toBe(id);
+        expect(inbox.body.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: sent.body.data.id,
+              attachments: expect.arrayContaining([
+                expect.objectContaining({ documentId: id }),
+              ]),
+            }),
+          ]),
+        );
         const download = await request(http)
           .get(`/messaging/conversations/${chatId}/attachments/${id}`)
           .set('x-test-actor', recipientId)
+          .buffer(true)
+          .parse((res, callback) => {
+            const chunks: Buffer[] = [];
+            res.on('data', (chunk: Buffer) => chunks.push(chunk));
+            res.on('end', () => callback(null, Buffer.concat(chunks)));
+            res.on('error', callback);
+          })
           .expect(200);
-        expect(download.body).toEqual(bytes);
+        expect(download.body).toEqual(payload);
         await request(http)
           .get(`/messaging/conversations/${chatId}/attachments/${id}`)
           .set('x-test-actor', outsiderId)
@@ -361,6 +432,97 @@ describe.skipIf(!enabled)(
       },
       30000,
     );
+    it('searches older history with isolated cursor pages and does not mark search as read', async () => {
+      const group = await client.messagingConversation.create({
+        data: {
+          type: 'GROUP',
+          branchId,
+          creatorUserId: senderId,
+          title: 'Search test',
+          createRequestId: `group:${randomUUID()}`,
+          members: {
+            create: [
+              { userId: senderId, role: 'OWNER' },
+              { userId: recipientId, role: 'MEMBER' },
+            ],
+          },
+        },
+      });
+      await client.messagingMessage.createMany({
+        data: Array.from({ length: 65 }, (_, index) => ({
+          conversationId: group.id,
+          senderUserId: senderId,
+          clientRequestId: `message:${randomUUID()}`,
+          body: index < 3 ? 'ArchiveNeedle قرارداد' : 'Recent text',
+          createdAt: new Date(Date.UTC(2026, 0, 1, 0, index)),
+        })),
+      });
+      const http = app.getHttpServer();
+      const path = `/messaging/conversations/${group.id}/messages`;
+      const first = await request(http)
+        .get(path)
+        .query({ search: 'archiveneedle', limit: 2 })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(first.body.data).toHaveLength(2);
+      expect(
+        first.body.data.every((message: { body: string }) =>
+          message.body.includes('ArchiveNeedle'),
+        ),
+      ).toBe(true);
+      expect(first.body.meta.nextCursor).toBeTruthy();
+      const second = await request(http)
+        .get(path)
+        .query({
+          search: 'archiveneedle',
+          limit: 2,
+          cursor: first.body.meta.nextCursor,
+        })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(second.body.data).toHaveLength(1);
+      expect(second.body.meta.nextCursor).toBeNull();
+      expect(
+        new Set(
+          [...first.body.data, ...second.body.data].map(
+            (message: { id: string }) => message.id,
+          ),
+        ).size,
+      ).toBe(3);
+      expect(
+        (
+          await client.messagingMember.findUniqueOrThrow({
+            where: {
+              conversationId_userId: {
+                conversationId: group.id,
+                userId: recipientId,
+              },
+            },
+          })
+        ).lastReadAt,
+      ).toBeNull();
+      await request(http)
+        .get(path)
+        .query({ search: 'ArchiveNeedle' })
+        .set('x-test-actor', outsiderId)
+        .expect(403);
+      const empty = await request(http)
+        .get(`/messaging/conversations/${conversationId}/messages`)
+        .query({ search: 'ArchiveNeedle' })
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(empty.body.data).toHaveLength(0);
+      const normal = await request(http)
+        .get(path)
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(
+        normal.body.data.every(
+          (message: { body: string }) => message.body === 'Recent text',
+        ),
+      ).toBe(true);
+    });
+
     it('allows only current group managers to remove or promote members and retains message history', async () => {
       const http = app.getHttpServer();
       const group = await client.messagingConversation.create({

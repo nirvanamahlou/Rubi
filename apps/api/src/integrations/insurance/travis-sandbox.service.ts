@@ -30,6 +30,7 @@ export class TravisSandboxService {
       | '/api/General/Duration-Of-Stays'
       | '/api/Plans/Search'
       | '/api/Policies/Create'
+      | '/api/Policies/Search'
       | '/api/Policies/Confirm',
     body?: object,
     method: 'POST' | 'PUT' = 'POST',
@@ -77,7 +78,8 @@ export class TravisSandboxService {
     path:
       | '/api/General/Countries'
       | '/api/General/Duration-Of-Stays'
-      | '/api/Plans/Search',
+      | '/api/Plans/Search'
+      | '/api/Policies/Search',
     body?: object,
   ): Promise<Record<string, unknown>[]> {
     const data = await this.request(path, body);
@@ -88,6 +90,152 @@ export class TravisSandboxService {
     )
       throw invalid();
     return data as Record<string, unknown>[];
+  }
+
+  async createPolicy(input: object): Promise<number> {
+    const result = (await this.request('/api/Policies/Create', input)) as {
+      policyId?: number;
+    };
+    if (
+      !Number.isSafeInteger(result?.policyId) ||
+      !result.policyId ||
+      result.policyId < 1
+    )
+      throw invalid();
+    return result.policyId;
+  }
+  async confirmPolicy(policyId: number) {
+    const result = (await this.request(
+      '/api/Policies/Confirm',
+      { policyId },
+      'PUT',
+    )) as { policyId?: number };
+    if (result?.policyId !== policyId) throw invalid();
+  }
+  async policy(
+    policyId: number,
+    expected?: {
+      contractNo: string;
+      planId: number;
+      passportNo: string;
+      nationalCode: string;
+    },
+  ) {
+    const rows = await this.read('/api/Policies/Search', {
+      policyId,
+      pageNumber: 1,
+      pageSize: 10,
+    });
+    const row = rows.find((r) => r.policyId === policyId);
+    if (
+      row &&
+      expected &&
+      (row.contractNo !== expected.contractNo ||
+        row.planId !== expected.planId ||
+        row.passportNo !== expected.passportNo ||
+        (row.person as { nationalCode?: unknown } | undefined)?.nationalCode !==
+          expected.nationalCode)
+    )
+      throw invalid();
+    return row ? this.projectPolicy(row) : null;
+  }
+  async findCorrelatedPolicy(
+    nationalCode: string,
+    planId: number,
+    contractNo: string,
+  ) {
+    for (let pageNumber = 1; pageNumber <= 10; pageNumber++) {
+      const rows = await this.read('/api/Policies/Search', {
+        nationalCode,
+        planId,
+        pageNumber,
+        pageSize: 100,
+      });
+      const matches = rows.filter(
+        (r) => r.contractNo === contractNo && r.planId === planId,
+      );
+      if (matches.length > 1) throw invalid();
+      if (matches[0]) return this.projectPolicy(matches[0]);
+      if (rows.length < 100) return null;
+    }
+    throw invalid();
+  }
+  private projectPolicy(row: Record<string, unknown>) {
+    if (!Number.isSafeInteger(row.policyId) || Number(row.policyId) < 1)
+      throw invalid();
+    const active = row.lastStatus === 'Active';
+    const plan = row.plan as { premiumCurrencyCode?: string } | undefined;
+    if (
+      active &&
+      (typeof row.policyNo !== 'string' ||
+        !row.policyNo.trim() ||
+        row.policyNo.length > 100 ||
+        !/^\d{1,15}(?:\.\d{1,4})?$/.test(String(row.payablePremium)) ||
+        !/^[A-Z]{3}$/.test(plan?.premiumCurrencyCode ?? ''))
+    )
+      throw invalid();
+    return {
+      providerId: String(row.policyId),
+      active,
+      policyNumber: active ? String(row.policyNo) : null,
+      amount: active ? String(row.payablePremium) : null,
+      currencyCode: active ? plan!.premiumCurrencyCode! : null,
+      pdfUrl:
+        active && typeof row.pdfUrl === 'string'
+          ? this.policyPdfUrl(row.pdfUrl)
+          : null,
+    };
+  }
+  policyPdfUrl(value: string) {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      throw invalid();
+    }
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.hostname !== 'sandbox.travis.ir' ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      !/^\/Print\/PolicyPdf\/[0-9a-f-]{36}\/true$/i.test(url.pathname)
+    )
+      throw invalid();
+    url.protocol = 'https:';
+    return url.toString();
+  }
+  async policyPdf(value: string) {
+    if (!this.configured()) throw unavailable();
+    try {
+      const response = await fetch(this.policyPdfUrl(value), {
+        redirect: 'error',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok || !response.body) throw invalid();
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for (;;) {
+          const item = await reader.read();
+          if (item.done) break;
+          size += item.value.byteLength;
+          if (size > 10_000_000) throw invalid();
+          chunks.push(item.value);
+        }
+      } finally {
+        await reader.cancel().catch(() => undefined);
+      }
+      const bytes = Buffer.concat(chunks);
+      if (bytes.subarray(0, 5).toString() !== '%PDF-') throw invalid();
+      return bytes;
+    } catch {
+      throw invalid();
+    }
   }
 
   /** Explicit synthetic sandbox smoke test. Never reads or writes a customer's policy. */

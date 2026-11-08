@@ -1,4 +1,5 @@
 import { reservationHasTransfer } from '@nora/contracts';
+import { createHash, createHmac } from 'node:crypto';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
@@ -33,6 +34,13 @@ const fail = (message: string, status: number) =>
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> },
+) {
+  return buildPdf(request, context);
+}
+async function buildPdf(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+  mailVersion?: number,
 ) {
   const { id } = await context.params;
   const parameters = new URL(request.url).searchParams;
@@ -93,12 +101,17 @@ export async function GET(
     const { data: rawIntake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    if (mailVersion !== undefined && rawIntake.workflow.version !== mailVersion)
+      return fail('اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.', 409);
     if (
       salesContractId &&
       (rawIntake.id !== id || rawIntake.snapshot.contractId !== salesContractId)
     )
       return fail('قرارداد فروش با درخواست رزرواسیون مطابقت ندارد.', 403);
-    let intake = rawIntake;
+    let intake: ReservationFormIntake =
+      voucher && parameters.get('unbranded') === 'true'
+        ? { ...rawIntake, unbranded: true }
+        : rawIntake;
     if (hotelStayKey) {
       try {
         intake = hotelFormScope(rawIntake, hotelStayKey);
@@ -106,7 +119,11 @@ export async function GET(
         return fail('اقامت هتل معتبر نیست.', 400);
       }
     }
-    if (!voucher && intake.workflow.sentSupplierFormSettings) {
+    if (
+      !voucher &&
+      mailVersion === undefined &&
+      intake.workflow.sentSupplierFormSettings
+    ) {
       intake.workflow.supplierFormSettings =
         intake.workflow.sentSupplierFormSettings;
     }
@@ -147,7 +164,8 @@ export async function GET(
     let logo: string;
     if (
       voucher &&
-      (branding.voucherWithoutLogo === true ||
+      (intake.unbranded ||
+        branding.voucherWithoutLogo === true ||
         intake.workflow.voucherSettings?.flags.withLetterhead === false)
     ) {
       logo = '';
@@ -256,7 +274,7 @@ export async function GET(
       ),
       'utf8',
     );
-    const share = createPublicDocument();
+    const share = intake.unbranded ? undefined : createPublicDocument();
     const language = languageFromCookies(request.headers.get('cookie'));
     if (share) {
       const html = await prepareReservationHtml(
@@ -306,5 +324,109 @@ export async function GET(
         : 'PDF آماده نشد؛ اتصال، مسیر Chrome و فونت خروجی را بررسی کنید.',
       busy ? 429 : 503,
     );
+  }
+}
+
+/** Only a saved authorized form is rendered here. Browser-supplied PDF/HTML is never accepted. */
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const origin = new URL(request.url).origin;
+  if (request.headers.get('origin') !== origin)
+    return fail('دسترسی به این عملیات مجاز نیست.', 403);
+  const secret = process.env.RESERVATION_PDF_MAIL_SECRET;
+  if (!secret || secret.length < 32)
+    return fail('اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.', 503);
+  const { id } = await context.params;
+  let body: { expectedVersion?: unknown; hotelStayKey?: unknown };
+  try {
+    const reader = request.body?.getReader();
+    if (!reader) return fail('درخواست معتبر نیست.', 400);
+    const chunks: Uint8Array[] = [];
+    let length = 0;
+    for (;;) {
+      const part = await reader.read();
+      if (part.done) break;
+      length += part.value.length;
+      if (length > 2048) {
+        await reader.cancel();
+        return fail('درخواست معتبر نیست.', 400);
+      }
+      chunks.push(part.value);
+    }
+    const raw = Buffer.concat(chunks).toString('utf8');
+    body = JSON.parse(raw);
+    if (
+      !body ||
+      !Number.isSafeInteger(body.expectedVersion) ||
+      Number(body.expectedVersion) < 0 ||
+      (body.hotelStayKey !== undefined &&
+        (typeof body.hotelStayKey !== 'string' ||
+          body.hotelStayKey.length > 200))
+    )
+      return fail('درخواست معتبر نیست.', 400);
+  } catch {
+    return fail('درخواست معتبر نیست.', 400);
+  }
+  const version = body.expectedVersion as number;
+  const scope = typeof body.hotelStayKey === 'string' ? body.hotelStayKey : '';
+  const url = new URL(
+    `/reservations/requests/${encodeURIComponent(id)}/pdf`,
+    origin,
+  );
+  if (scope) url.searchParams.set('hotelStayKey', scope);
+  const rendered = await buildPdf(
+    new Request(url, {
+      headers: { cookie: request.headers.get('cookie') ?? '' },
+    }),
+    context,
+    version,
+  );
+  if (!rendered.ok) return rendered;
+  const bytes = Buffer.from(await rendered.arrayBuffer());
+  if (bytes.length > 10_000_000 || bytes.subarray(0, 5).toString() !== '%PDF-')
+    return fail('PDF معتبر فرم رزرواسیون برای ارسال دریافت نشد.', 503);
+  const signature = createHmac('sha256', secret)
+    .update(
+      JSON.stringify([
+        'reservation-pdf-v1',
+        id,
+        version,
+        scope,
+        createHash('sha256').update(bytes).digest('hex'),
+      ]),
+    )
+    .digest('hex');
+  const form = new FormData();
+  form.set('expectedVersion', String(version));
+  if (scope) form.set('hotelStayKey', scope);
+  form.set(
+    'pdf',
+    new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
+    'reservation-form.pdf',
+  );
+  const base = getPublicApiBaseUrl();
+  try {
+    const sent = await fetch(
+      `${base}/reservations/requests/${encodeURIComponent(id)}/supplier-email`,
+      {
+        method: 'POST',
+        headers: {
+          cookie: request.headers.get('cookie') ?? '',
+          'x-reservation-pdf-signature': signature,
+        },
+        body: form,
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(30000),
+      },
+    );
+    return new Response(await sent.text(), {
+      status: sent.status,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  } catch {
+    return fail('عملیات انجام نشد؛ مجوز و اتصال را بررسی کنید.', 503);
   }
 }
