@@ -1,3 +1,7 @@
+## VOUCHER-CONTINUITY-1108 — 2026-11-08
+
+PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel voucher now has one continuous passenger/service table; Chrome prints continuation pages with column headings only, retaining row order and complete rows. Hotel, flight and tour sections are not restarted for passenger chunks. All room details remain inline; obsolete estimated physical page numbers are hidden. 56 focused output tests and actual Chrome PDF checks for6/40/80 synthetic passengers pass; all rendered pages visually inspected. Scoped lint passes; full Web TypeScript/build are release gates. No migration, dependency, operational data or deployment changes.
+
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.

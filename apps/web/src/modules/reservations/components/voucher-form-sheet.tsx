@@ -9,7 +9,6 @@ import {
   voucherPassengerServices,
   voucherPassengerCells,
   voucherServiceColumns,
-  voucherPassengerPageUnits,
 } from '../model/voucher-passenger-services';
 
 import { loadOutputReferences } from '../model/output-references';
@@ -23,7 +22,6 @@ import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
-  reservationPassengerPages,
   reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -204,14 +202,9 @@ function VoucherHotelSheet({
     browserOrigin,
     serverOrigin,
   );
-  const pages = voucher
-    ? reservationPassengerPages(
-        data.passengers,
-        voucherPassengerPageUnits(settings, data.notes, journeys.length > 0),
-      )
-    : [data.passengers];
+  const pages = [data.passengers];
   const roomAppendices =
-    !settings || settings.flags.hotel
+    !voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = totalPages ?? pages.length + roomAppendices.length;
@@ -425,15 +418,17 @@ function VoucherHotelSheet({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.roomBreakdown.slice(0, 4).map((r) => (
-                        <tr key={r.ordinal}>
-                          <td>{r.ordinal}</td>
-                          <td dir="auto">{r.roomType}</td>
-                          <td>{r.adults}</td>
-                          <td>{r.childAges.join(', ') || '-'}</td>
-                          <td>{r.adults + r.childAges.length}</td>
-                        </tr>
-                      ))}
+                      {data.roomBreakdown
+                        .slice(0, voucher ? undefined : 4)
+                        .map((r) => (
+                          <tr key={r.ordinal}>
+                            <td>{r.ordinal}</td>
+                            <td dir="auto">{r.roomType}</td>
+                            <td>{r.adults}</td>
+                            <td>{r.childAges.join(', ') || '-'}</td>
+                            <td>{r.adults + r.childAges.length}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 ) : null}
