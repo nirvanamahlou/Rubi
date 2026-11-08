@@ -131,10 +131,8 @@ function AccessibleHrSection({
     ...(query ? { search: query } : {}),
     ...(status ? { status } : {}),
     ...(employeeId ? { employeeId } : {}),
-    ...(branchId
-      ? company?.organizationBranchId
-        ? { organizationBranchId: branchId }
-        : { branchId }
+    ...(company && !company.isHeadquarters
+      ? { companyId: company.branchId }
       : {}),
     ...(range.from ? { from: range.from } : {}),
     ...(range.to ? { to: range.to } : {}),
@@ -499,8 +497,10 @@ function AccessibleHrSection({
                     (item) =>
                       (!attendanceView || item.status === 'فعال') &&
                       (!branchId ||
-                        (item.organizationBranchId || item.branchId) ===
-                          branchId),
+                        company?.isHeadquarters ||
+                        item.companyScope === 'ALL' ||
+                        (item.companyId || item.branchId) ===
+                          company?.branchId),
                   )
                   .map((item) => (
                     <option value={item.id} key={item.id}>

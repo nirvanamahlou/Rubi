@@ -177,26 +177,26 @@ function HrRecordFormFields({
     requestedTarget.source.section,
     requestedTarget.source.tab,
   );
+  const linkedEmployee = data.employees.find(
+    (item) =>
+      item.id ===
+      (requestedTarget.employeeId ??
+        requestedTarget.record?.employeeId ??
+        requestedTarget.parent?.employeeId),
+  );
   const [companyId, setCompanyId] = useState(
     () =>
       (requestedTarget.record?.data.allBranches ||
-      requestedTarget.parent?.data.allBranches
+      requestedTarget.parent?.data.allBranches ||
+      linkedEmployee?.companyScope === 'ALL'
         ? companies.find((c) => c.isHeadquarters)?.id
         : undefined) ??
-      (missionExpense
-        ? (requestedTarget.record?.data.organizationBranchId ??
-          requestedTarget.parent?.data.organizationBranchId)
+      (linkedEmployee
+        ? (linkedEmployee.companyId ?? linkedEmployee.branchId)
         : undefined) ??
-      data.employees.find(
-        (item) =>
-          item.id ===
-          (requestedTarget.employeeId ??
-            requestedTarget.record?.employeeId ??
-            requestedTarget.parent?.employeeId),
-      )?.organizationBranchId ??
-      requestedTarget.record?.data.organizationBranchId ??
-      requestedTarget.parent?.data.organizationBranchId ??
       requestedTarget.preferredCompanyId ??
+      requestedTarget.record?.branchId ??
+      requestedTarget.parent?.branchId ??
       companies.find(
         (item) => item.name === valueOf(requestedTarget.record, 'شرکت'),
       )?.id ??
@@ -299,8 +299,9 @@ function HrRecordFormFields({
   const employees = data.employees.filter(
     (item) =>
       (company?.isHeadquarters ||
-        company?.branchIds.includes(item.branchId) ||
-        item.branchId === branchId) &&
+        item.companyScope === 'ALL' ||
+        company?.branchIds.includes(item.companyId ?? item.branchId) ||
+        (!company && item.branchId === branchId)) &&
       (!company?.organizationBranchId ||
         item.organizationBranchId === company.organizationBranchId ||
         company.aliases.includes(item.organizationBranchId ?? '') ||
@@ -607,9 +608,11 @@ function HrRecordFormFields({
                   );
                   if (chosen) {
                     setBranchId(chosen.branchId);
-                    if (!company?.isHeadquarters)
+                    if (!company)
                       setCompanyId(
-                        chosen.organizationBranchId || chosen.branchId,
+                        chosen.companyScope === 'ALL'
+                          ? 'hr-headquarters'
+                          : (chosen.companyId ?? chosen.branchId),
                       );
                   }
                   if (missionExpense) setParentId('');

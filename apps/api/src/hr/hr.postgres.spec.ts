@@ -5325,5 +5325,136 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
       }
     });
+
+    it('transfers company memberships without moving attendance and keeps company filters editable', async () => {
+      const owner = {
+        ...admin,
+        branchIds: (await client.branch.findMany({ select: { id: true } })).map(
+          (b) => b.id,
+        ),
+        permissions: [...admin.permissions, 'iam.roles.manage' as const],
+      };
+      const target = await service.createEmployee(
+        employeeInput('Synthetic shared employee', { branchId: branchA }),
+        key(),
+        owner,
+      );
+      const subsidiary = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'branches',
+          code: key(),
+          values: ['Synthetic subsidiary'],
+          status: 'فعال',
+        },
+      });
+      await client.hrEmployee.update({
+        where: { id: target.id },
+        data: { organizationBranchId: subsidiary.id },
+      });
+      const unit = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'units',
+          code: key(),
+          values: ['Synthetic shared unit'],
+          status: 'فعال',
+          data: { organizationBranchId: subsidiary.id },
+        },
+      });
+      const attendance = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          employeeId: target.id,
+          section: 'time',
+          tab: 'attendance',
+          code: key(),
+          values: ['Synthetic'],
+          effectiveAt: new Date('2026-11-08T00:00:00Z'),
+          status: 'حاضر',
+        },
+      });
+      await expect(
+        service.migrateCompanyStructure({ dryRun: false }, key(), admin),
+      ).rejects.toThrow();
+      const preview = await service.migrateCompanyStructure(
+        { dryRun: true },
+        key(),
+        owner,
+      );
+      expect(preview.subsidiaries).toBe(1);
+      expect(
+        (
+          await client.hrEmployee.findUniqueOrThrow({
+            where: { id: target.id },
+          })
+        ).organizationBranchId,
+      ).toBe(subsidiary.id);
+      await service.migrateCompanyStructure({ dryRun: false }, key(), owner);
+      const migrated = await client.hrEmployee.findUniqueOrThrow({
+        where: { id: target.id },
+      });
+      expect(migrated.branchId).toBe(branchA);
+      expect(migrated.personnelCode).toBe(target.personnelCode);
+      expect(migrated.organizationBranchId).toBeNull();
+      expect(
+        await client.hrRecord.findUnique({ where: { id: attendance.id } }),
+      ).toEqual(attendance);
+      expect(
+        (
+          await client.hrRecord.findUniqueOrThrow({
+            where: { id: subsidiary.id },
+          })
+        ).deletedAt,
+      ).not.toBeNull();
+      expect(
+        await client.hrRecord.count({
+          where: { OR: [{ id: unit.id }, { sharedSourceId: unit.id }] },
+        }),
+      ).toBe(owner.branchIds.length);
+      const shared = await service.listRecords(
+        { section: 'time', tab: 'attendance', companyId: branchB },
+        owner,
+      );
+      expect(shared.items.some((r) => r.id === attendance.id)).toBe(true);
+      await service.updateEmployee(
+        target.id,
+        {
+          version: migrated.version,
+          companyScope: 'COMPANY',
+          companyId: branchB,
+        },
+        owner,
+      );
+      const previous = await service.listRecords(
+        { section: 'time', tab: 'attendance', companyId: branchA },
+        owner,
+      );
+      expect(previous.items.some((r) => r.id === attendance.id)).toBe(false);
+      const selected = await service.listRecords(
+        { section: 'time', tab: 'attendance', companyId: branchB },
+        owner,
+      );
+      expect(selected.items.some((r) => r.id === attendance.id)).toBe(true);
+      expect(
+        (await service.migrateCompanyStructure({ dryRun: false }, key(), owner))
+          .alreadyApplied,
+      ).toBe(true);
+      expect(
+        (
+          await client.hrEmployee.findUniqueOrThrow({
+            where: { id: target.id },
+          })
+        ).branchId,
+      ).toBe(branchA);
+      await expect(
+        service.listRecords(
+          { section: 'time', tab: 'attendance', companyId: branchA },
+          outsider,
+        ),
+      ).rejects.toThrow();
+    }, 60000);
   },
 );

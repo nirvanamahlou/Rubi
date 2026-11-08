@@ -77,9 +77,9 @@ describe('cross-module form reference values', () => {
     const companies = hrCompanies(data);
     expect(companies.filter((c) => c.name === 'جهان آکادمی')).toHaveLength(1);
     expect(companies.filter((c) => c.isHeadquarters)).toHaveLength(1);
-    expect(companies.find((c) => c.name === 'جهان آکادمی')!.aliases).toContain(
-      'academy2',
-    );
+    expect(companies.find((c) => c.name === 'جهان آکادمی')!.aliases).toEqual([
+      'academy-scope',
+    ]);
   });
   it('keeps virtual Headquarters distinct from the native branch already in the selector', () => {
     const companies = hrCompanies({
@@ -109,12 +109,12 @@ describe('cross-module form reference values', () => {
         id,
         section: 'organization',
         tab,
-        branchId: 'scope',
+        branchId: companyId ?? 'scope',
         status: 'فعال',
         deletedAt: null,
         columns: [...getHrResource('organization', tab)!.columns],
         values: [name],
-        data: companyId ? { organizationBranchId: companyId } : {},
+        data: {},
       }) as unknown as HrRecordDto;
     const data = {
       records: [
@@ -126,7 +126,10 @@ describe('cross-module form reference values', () => {
         catalog('position-b', 'positions', 'سمت ب', 'company-b'),
       ],
       employees: [],
-      branches: [{ id: 'scope', name: 'شعبه اصلی' }],
+      branches: [
+        { id: 'company-a', name: 'شرکت الف' },
+        { id: 'company-b', name: 'شرکت ب' },
+      ],
     } as unknown as HrBootstrapDto;
     const options = employeeOrganizationOptions(data);
     expect(options.find((item) => item.branch === 'شرکت الف')).toMatchObject({
