@@ -1,3 +1,7 @@
+## HR-PENALTY-PERSIST-1108 — PC-A — ACTIVE
+
+Reserve penalty settings form reopening and branch-scoped existing-record resolution, focused Web tests. Prior PC-B penalty implementation is merged; preserve its calculations and contracts. No schema or dependency changes.
+
 ## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
 
 Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.

@@ -23,3 +23,24 @@ it('defaults both per-minute rates to 50000 Toman with explicit date and exempti
   expect(definition.fields.every((field) => field.required)).toBe(true);
   expect(definition.fields.some((field) => field.type === 'money')).toBe(false);
 });
+it('shows saved rates and exemptions in edit mode instead of create defaults', () => {
+  const definition = getHrResource('time', 'penaltySettings')!;
+  const html = renderToStaticMarkup(
+    <ContextualHrForm
+      context={{
+        section: 'time',
+        tab: 'penaltySettings',
+        title: 'تنظیمات جریمه',
+        description: '',
+        columns: definition.columns,
+        mode: 'edit',
+        initialValues: ['1234', '5678', '2026-11-08', 'بله', 'خیر', 'بله'],
+      }}
+      onCancel={() => {}}
+      onSubmit={() => {}}
+    />,
+  );
+  expect(html).toContain('value="1234"');
+  expect(html).toContain('value="5678"');
+  expect(html).not.toContain('value="50000"');
+});
