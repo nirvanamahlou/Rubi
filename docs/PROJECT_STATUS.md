@@ -1,4 +1,15 @@
-## HR fast attendance sync � 2026-11-08
+## Combined hotel and transfer supplier form — 2026-11-08
+
+Reservations now keeps the hotel broker as the transfer broker and produces one
+combined hotel/transfer supplier form by default without showing the redundant
+«کارگزار ترانسفر جدا از هتل» checkbox. An explicit transfer-broker change still
+records separate output automatically; returning to the hotel broker keeps the
+combined mode. Existing saved modes and historical forms are not rewritten.
+Focused 26 tests and the full Reservations Web suite (664 passed, 4 existing
+skips), scoped lint, Web TypeScript and the production Web build passed. No API,
+schema, migration, dependency, runtime or operational-data change.
+
+## HR fast attendance sync � 2026-11-08
 
 One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
 ## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI

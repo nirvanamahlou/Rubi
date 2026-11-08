@@ -1,3 +1,25 @@
+## TRANSFER-SEPARATE-DEFAULT-1108 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-transfer-separate-default-1108` from
+`origin/develop@a4e85b83f`. Owner requests hotel and transfer to share one broker
+and one supplier form by default, removes the explicit «کارگزار ترانسفر جدا از
+هتل» checkbox, and authorizes develop merge. Reserve the bounded Reservations
+hotel quotation editor, focused
+hotel-stay regressions and own status notes. New forms keep one hotel/transfer
+broker until the transfer broker is explicitly changed; saved modes remain readable
+and are not rewritten. Keep editable transfer broker, round-trip pricing and optional
+outbound/return split. No API/schema/migration/dependency/runtime or operational
+data change. Final-head checks gate merge; source freezes on publication and
+releases on verified merge.
+
+Delivered the combined default without the checkbox. The transfer lookup initially
+shows the hotel broker; selecting a genuinely different transfer broker records
+separate output automatically, and selecting the hotel broker retains combined
+output. Existing explicit saved modes remain unchanged. Focused 26 tests and the
+complete Reservations Web suite (664 passed, 4 existing skips), scoped ESLint,
+Web TypeScript and the production Web build (67 static pages/routes generated)
+pass. No data, API, schema, migration, dependency or runtime change.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.

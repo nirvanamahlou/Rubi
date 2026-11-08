@@ -500,7 +500,7 @@ it('round-trip checkbox uses one population input and disables split pricing', (
     );
   const checkbox = renderEditor().filter(
     (n) => n.type === 'input' && n.props.type === 'checkbox',
-  )[1]!;
+  )[0]!;
   (checkbox.props.onChange as (event: unknown) => void)({
     target: { checked: true },
   });
@@ -602,7 +602,7 @@ it('stages the exact calculated hotel batch without posting a purchase before co
 });
 
 it.each([undefined, 'sales/contracts/contract/purchases'])(
-  'offers an editable hotel broker default without a separate-agency checkbox: %s',
+  'defaults transfer to the hotel broker without a separate-broker checkbox: %s',
   (purchaseRoot) => {
     const draft = defaultVoucherSettings(request, {});
     const update = vi.fn();
@@ -618,9 +618,9 @@ it.each([undefined, 'sales/contracts/contract/purchases'])(
         nights: 6,
       }),
     );
-    expect(JSON.stringify(tree.map((n) => n.props.children))).not.toContain(
-      'ترانسفر از آژانس دیگر',
-    );
+    const copy = JSON.stringify(tree.map((n) => n.props.children));
+    expect(copy).not.toContain('کارگزار ترانسفر جدا از هتل');
+    expect(draft.hotelTransferSeparate).not.toBe(true);
     const lookup = tree.find(
       (n) => n.type === ReservationPurchaseBrokerLookup,
     )!;
@@ -632,47 +632,11 @@ it.each([undefined, 'sales/contracts/contract/purchases'])(
     expect(update).toHaveBeenLastCalledWith(
       expect.objectContaining({
         transferBrokerId: 'other',
+        hotelTransferSeparate: true,
       }),
     );
   },
 );
-
-it('combines output when the explicit separate checkbox is cleared and retains the quoted prices', () => {
-  const draft = defaultVoucherSettings(request, {});
-  Object.assign(draft, {
-    brokerId: 'shared',
-    transferBrokerId: 'other',
-    hotelTransferSeparate: true,
-    hotelTransferSplit: true,
-    hotelTransferReturn: {
-      amount: '20',
-      currencyCode: 'IRR',
-      brokerId: 'other',
-    },
-  });
-  const update = vi.fn();
-  const controls = nodes(
-    HotelRoomQuotationEditor({
-      draft,
-      requestId: request.id,
-      update,
-      currencies: [],
-      busy: false,
-      nights: 6,
-      hotelBroker: { id: 'shared', name: 'SHARED' },
-    }),
-  ).filter((node) => node.props.type === 'checkbox');
-  (controls[0]!.props.onChange as (event: unknown) => void)({
-    target: { checked: false },
-  });
-  expect(update).toHaveBeenCalledWith(
-    expect.objectContaining({
-      hotelTransferSeparate: false,
-      hotelTransferSplit: false,
-    }),
-  );
-  expect(update.mock.calls[0]![0].hotelTransferReturn).toBeUndefined();
-});
 
 it('does not infer separate supplier forms from existing transfer purchases with different suppliers', () => {
   const input = structuredClone(request);
@@ -711,5 +675,17 @@ it('does not infer separate supplier forms from existing transfer purchases with
   expect(
     (editor.props.draft as ReturnType<typeof defaultVoucherSettings>)
       .hotelTransferSplit,
+  ).toBe(false);
+});
+
+it('preserves an explicit combined mode saved by a legacy supplier form', () => {
+  const input = structuredClone(request);
+  input.workflow.supplierFormSettings!.hotelTransferSeparate = false;
+  const editor = render(input).find(
+    (node) => node.type === HotelRoomQuotationEditor,
+  )!;
+  expect(
+    (editor.props.draft as ReturnType<typeof defaultVoucherSettings>)
+      .hotelTransferSeparate,
   ).toBe(false);
 });
