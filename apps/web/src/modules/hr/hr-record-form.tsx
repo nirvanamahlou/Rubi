@@ -41,6 +41,7 @@ import {
   missionOptionLabel,
 } from './hr-mission-reference';
 
+import { savedPenaltySettings } from './hr-penalty-settings';
 import ui from './hr-unified.module.css';
 
 export interface HrFormTarget {
@@ -78,7 +79,7 @@ interface HrRecordFormProps {
 export function HrRecordForm(props: HrRecordFormProps) {
   if (
     props.target.source.section === 'expenses' &&
-    props.target.source.tab === 'mission'
+    ['mission', 'claims'].includes(props.target.source.tab)
   )
     return <HrMissionForm {...props} />;
   if (
@@ -156,55 +157,68 @@ function HrNodePicker(props: HrRecordFormProps) {
 }
 
 function HrRecordFormFields({
-  target,
+  target: requestedTarget,
   store,
   onClose,
   onSaved,
   nodePicker,
   allowInlineCreate = true,
 }: HrRecordFormProps & { nodePicker?: ReactNode }) {
-  const definition = getHrResource(target.source.section, target.source.tab)!;
+  const definition = getHrResource(
+    requestedTarget.source.section,
+    requestedTarget.source.tab,
+  )!;
   const isChartEmployee = definition.key === 'organization.chartEmployees';
   const external = useHrFormReferences();
   const references = useHrReferenceData(store);
   const data = references.data;
   const companies = hrCompanies(data);
   const missionExpense = isMissionExpense(
-    target.source.section,
-    target.source.tab,
+    requestedTarget.source.section,
+    requestedTarget.source.tab,
   );
   const [companyId, setCompanyId] = useState(
     () =>
-      (target.record?.data.allBranches || target.parent?.data.allBranches
+      (requestedTarget.record?.data.allBranches ||
+      requestedTarget.parent?.data.allBranches
         ? companies.find((c) => c.isHeadquarters)?.id
         : undefined) ??
       (missionExpense
-        ? (target.record?.data.organizationBranchId ??
-          target.parent?.data.organizationBranchId)
+        ? (requestedTarget.record?.data.organizationBranchId ??
+          requestedTarget.parent?.data.organizationBranchId)
         : undefined) ??
       data.employees.find(
         (item) =>
           item.id ===
-          (target.employeeId ??
-            target.record?.employeeId ??
-            target.parent?.employeeId),
+          (requestedTarget.employeeId ??
+            requestedTarget.record?.employeeId ??
+            requestedTarget.parent?.employeeId),
       )?.organizationBranchId ??
-      target.record?.data.organizationBranchId ??
-      target.parent?.data.organizationBranchId ??
-      target.preferredCompanyId ??
-      companies.find((item) => item.name === valueOf(target.record, 'شرکت'))
-        ?.id ??
+      requestedTarget.record?.data.organizationBranchId ??
+      requestedTarget.parent?.data.organizationBranchId ??
+      requestedTarget.preferredCompanyId ??
+      companies.find(
+        (item) => item.name === valueOf(requestedTarget.record, 'شرکت'),
+      )?.id ??
       companies[0]?.id ??
       '',
   );
   const company = companies.find((item) => item.aliases.includes(companyId));
   const [branchId, setBranchId] = useState(
-    target.record?.branchId ??
-      target.parent?.branchId ??
+    requestedTarget.record?.branchId ??
+      requestedTarget.parent?.branchId ??
       companies.find((item) => item.id === companyId)?.branchId ??
       data.branches[0]?.id ??
       '',
   );
+  const penaltySettings = definition.key === 'time.penaltySettings';
+  const savedSettings =
+    penaltySettings && !requestedTarget.record
+      ? savedPenaltySettings(data.records, branchId, company)
+      : undefined;
+  const target = savedSettings
+    ? { ...requestedTarget, record: savedSettings }
+    : requestedTarget;
   const isNewRequisition =
     target.source.section === 'recruitment' &&
     target.source.tab === 'requisitions' &&
@@ -553,7 +567,9 @@ function HrRecordFormFields({
                 disabled={Boolean(
                   target.employeeId ||
                   target.parent ||
-                  (target.record && !isUnit),
+                  (target.record &&
+                    !isUnit &&
+                    (!penaltySettings || Boolean(requestedTarget.record))),
                 )}
                 value={company?.id || branchId}
                 onChange={(event) => {
@@ -660,13 +676,6 @@ function HrRecordFormFields({
                   </option>
                 ))}
               </NativeSearchSelect>
-              {missionExpense && !references.loading && !parents.length ? (
-                <span className={ui.muted}>
-                  برای شرکت و کارمند انتخاب‌شده مأموریتی ثبت نشده است. شرکت یا
-                  کارمند را بررسی کنید یا از بخش مأموریت‌ها درخواست مأموریت ثبت
-                  کنید.
-                </span>
-              ) : null}
             </label>
           ) : null}
         </div>
@@ -711,7 +720,7 @@ function HrRecordFormFields({
           <p role="status">در حال دریافت گزینه‌ها…</p>
         ) : (
           <ContextualHrForm
-            key={`${companyId}:${branchId}:${employeeId}:${parentId}`}
+            key={`${companyId}:${branchId}:${employeeId}:${parentId}:${penaltySettings ? (target.record?.id ?? 'new') : ''}`}
             context={{
               branchId,
               section: target.source.section,
@@ -817,6 +826,13 @@ function HrRecordFormFields({
                   ? { 'عنوان شغل': 'text' as const }
                   : {}),
                 'نام سمت': 'text',
+                ...(target.source.tab === 'penaltySettings'
+                  ? {
+                      'مبلغ جریمه هر دقیقه تأخیر (تومان)': 'number' as const,
+                      'مبلغ جریمه هر دقیقه خروج زودهنگام (تومان)':
+                        'number' as const,
+                    }
+                  : {}),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? { مدیر: 'text' as const }
@@ -871,7 +887,10 @@ function HrRecordFormFields({
               attendance: data.records
                 .filter(
                   (item) =>
-                    item.section === 'time' && item.tab === 'attendance',
+                    item.section === 'time' &&
+                    item.tab === 'attendance' &&
+                    item.status !== 'غیرفعال' &&
+                    item.data.attendanceActive !== false,
                 )
                 .map((item) => ({
                   employee: valueOf(item, 'کارمند'),
@@ -910,9 +929,9 @@ function HrRecordFormFields({
               if (
                 target.source.section === 'time' &&
                 target.source.tab === 'leavePolicies' &&
-                values[3] === 'خیر'
+                values[5] === 'خیر'
               )
-                values[4] = '';
+                values[6] = '0';
               const field = (...labels: string[]) => {
                 for (const label of labels) {
                   const i = definition.columns.indexOf(label);

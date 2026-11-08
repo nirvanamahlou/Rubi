@@ -57,6 +57,22 @@ supplier.text.broker = 'BROKER';
 intake.workflow.supplierFormSettings = supplier;
 
 describe('travel output branding and readiness', () => {
+  it('previews an unbranded voucher even when barcode sharing and the agency logo are unavailable', () => {
+    qrState.current = { status: 'failed', url: '', html: '' };
+    const issued = {
+      ...intake,
+      workflow: { ...intake.workflow, voucherIssued: true },
+    };
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={issued} voucher unbranded />,
+    );
+    expect(html).toContain('HOTEL VOUCHER');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<footer');
+    expect(html).not.toContain('data-reservation-footer');
+    expect(html).not.toContain('Synthetic Company');
+    expect(html).not.toContain('disabled=""');
+  });
   it('preserves supplier price columns while hiding legacy totals and keeping customer vouchers price-free', () => {
     const settings = {
       ...supplier,

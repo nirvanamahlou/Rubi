@@ -266,8 +266,15 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       },
       process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 180000 : 60000,
     );
-    beforeEach(() => {
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', admin.userId);
+    beforeEach(async () => {
+      await client.user.updateMany({
+        where: { username: 'nima' },
+        data: { username: `previous-nima-${randomUUID()}` },
+      });
+      await client.user.update({
+        where: { id: admin.userId },
+        data: { username: 'demo' },
+      });
     });
     afterAll(async () => {
       vi.unstubAllEnvs();
@@ -284,7 +291,10 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const manager = (
         await actor('mission_manager', HR_PERMISSION_CODES, [branchId])
       ).actor;
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
+      await client.user.update({
+        where: { id: manager.userId },
+        data: { username: 'nima' },
+      });
       const employee = await service.createEmployee(
         employeeInput('Synthetic mission employee', { branchId }),
         key(),
@@ -297,6 +307,11 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           currencyCode: 'IRR',
           balance: '1000',
         },
+      });
+      expect(await service.missionPettyFund(branchId, manager)).toEqual({
+        balance: '1000',
+        currencyCode: 'IRR',
+        canRegister: true,
       });
       const date = '2026-11-03';
       await service.createRecord(
@@ -377,13 +392,42 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         lateMinutes: 0,
         earlyMinutes: 0,
       });
+      const edited = await service.updateRecord(
+        record.id,
+        {
+          version: record.version,
+          values: input.values,
+          data: {
+            ...input.data,
+            missionExpense: { ...input.data.missionExpense, amount: '300' },
+          },
+        },
+        manager,
+      );
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
       await expect(
         service.updateRecord(
           record.id,
           { version: record.version, values: input.values },
           manager,
         ),
-      ).rejects.toThrow('تنخواه');
+      ).rejects.toThrow();
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
+      expect(edited.data.pettyRegistrationId).not.toBe(
+        record.data.pettyRegistrationId,
+      );
       const count = await client.hrRecord.count({
         where: { employeeId: employee.id, tab: 'mission' },
       });
@@ -452,6 +496,72 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           manager,
         ),
       ).rejects.toThrow('نسخه');
+      const claim = await service.createRecord(
+        {
+          section: 'expenses',
+          tab: 'claims',
+          branchId,
+          employeeId: employee.id,
+          parentId: record.id,
+          values: [
+            employee.name,
+            'عادی',
+            date,
+            'IRR',
+            '50',
+            'Synthetic proof',
+            'ثبت اولیه',
+          ],
+          status: 'تأییدشده',
+          data: {
+            currency: 'IRR',
+            startsAt: `${date}T08:30:00.000Z`,
+            missionExpense: {
+              amount: '50',
+              title: 'Synthetic claim',
+              costCenter: 'Synthetic',
+              fee: '0',
+              description: 'Synthetic',
+              referToPetty: true,
+            },
+          },
+        },
+        key(),
+        manager,
+      );
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('650');
+      await expect(
+        service.deleteRecord(record.id, edited.version, manager),
+      ).rejects.toThrow();
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('650');
+      await service.deleteRecord(claim.id, claim.version, manager);
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('700');
+      await service.deleteRecord(record.id, edited.version, manager);
+      expect(
+        (
+          await client.procurementPettyFund.findUniqueOrThrow({
+            where: { branchId },
+          })
+        ).balance.toString(),
+      ).toBe('1000');
     });
     it('enforces monthly leave deadlines, substitute consent and hourly attendance in one persisted workflow', async () => {
       const branchId = randomUUID();
@@ -465,7 +575,10 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const manager = (
         await actor('leave_manager', HR_PERMISSION_CODES, [branchId])
       ).actor;
-      vi.stubEnv('HR_MANUAL_ATTENDANCE_USER_ID', manager.userId);
+      await client.user.update({
+        where: { id: manager.userId },
+        data: { username: 'nima' },
+      });
       const owner = (await actor('leave_owner', ['hr.self'], [branchId])).actor;
       const substitute = (
         await actor('leave_substitute', ['hr.self'], [branchId])
@@ -494,7 +607,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         '2.5',
         '3',
         '1',
-        '14:00',
+        '0',
       ]);
       await service.createRecord(
         {
@@ -518,9 +631,69 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         key(),
         manager,
       );
-      const date = new Date(Date.now() + 5 * 86400000)
-        .toISOString()
-        .slice(0, 10);
+      const leaveDate = new Date(Date.now() + 5 * 86400000);
+      while ([4, 5].includes(leaveDate.getUTCDay()))
+        leaveDate.setUTCDate(leaveDate.getUTCDate() + 1);
+      const date = leaveDate.toISOString().slice(0, 10);
+      const destinationBranch = randomUUID();
+      await client.branch.create({
+        data: {
+          id: destinationBranch,
+          code: destinationBranch,
+          name: 'Synthetic request destination',
+        },
+      });
+      await client.userBranch.createMany({
+        data: [owner.userId, manager.userId].map((userId) => ({
+          userId,
+          branchId: destinationBranch,
+        })),
+      });
+      const scopedOwner = await iam.authenticateSessionReferenceV1(
+        owner.userId,
+        owner.sessionId,
+        true,
+      );
+      const scopedManager = await iam.authenticateSessionReferenceV1(
+        manager.userId,
+        manager.sessionId,
+        true,
+      );
+      const crossBranchLeave = {
+        from: date,
+        to: date,
+        mode: 'ساعتی' as const,
+        startTime: '14:00',
+        endTime: '15:00',
+        reason: 'Synthetic canonical identity',
+        leaveType: 'استحقاقی' as const,
+        substituteUserId: substitute.userId,
+      };
+      await service.validateWorkbenchLeaveSubmission(
+        client,
+        destinationBranch,
+        owner.userId,
+        crossBranchLeave,
+        scopedOwner,
+      );
+      await expect(
+        client.$transaction(async (tx) => {
+          const id = await service.approveWorkbenchLeave(
+            tx,
+            randomUUID(),
+            destinationBranch,
+            owner.userId,
+            crossBranchLeave,
+            scopedManager,
+          );
+          const recorded = await tx.hrRecord.findUniqueOrThrow({
+            where: { id },
+          });
+          expect(recorded.branchId).toBe(branchId);
+          expect(recorded.employeeId).toBe(person.id);
+          throw new Error('Synthetic canonical rollback');
+        }),
+      ).rejects.toThrow('Synthetic canonical rollback');
       await service.createRecord(
         {
           branchId,

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   ticketPageHtml,
   ticketDocumentHtml,
+  ticketLayoutStyles,
   ticketAlignmentStyles,
   type TicketLayoutData,
 } from './flight-ticket-layout';
@@ -37,6 +38,37 @@ const brand = { name: 'Synthetic Agency', logoDataUrl: '/brand/niyayesh.png' };
 const cities = { teh: 'TEHRAN', ayt: 'ANTALYA' };
 const airlines = { 'ایران ایرتور': { name: 'Iran Airtour', code: 'B9' } };
 describe('flight ticket placement and English carrier', () => {
+  it('removes agency identity and footer QR while preserving flight and passenger facts', () => {
+    const ticket = {
+      ...data,
+      contractNumber: 'QA-123',
+      publicDocumentUrl: 'https://example.test/d/' + 'a'.repeat(32),
+    };
+    const html = ticketPageHtml(
+      ticket,
+      cities,
+      { ...brand, unbranded: true },
+      airlines,
+    );
+    expect(html).not.toContain('Synthetic Agency');
+    expect(html).not.toContain('agency-logo"');
+    expect(html).not.toContain('<footer>');
+    expect(html).not.toContain('ticket-qr"');
+    expect(html).not.toContain('BRIGHTER');
+    expect(html).toContain('Synthetic Passenger');
+    expect(html).toContain('4512');
+    expect(html).toContain('QA-123');
+    expect(ticketPageHtml(ticket, cities, brand, airlines)).toContain(
+      'ticket-qr"',
+    );
+    expect(() =>
+      ticketDocumentHtml([ticket], cities, {
+        ...brand,
+        logoDataUrl: '',
+        unbranded: true,
+      }),
+    ).not.toThrow();
+  });
   it('uses English names consistently and actual airport codes on each leg', () => {
     const html = ticketPageHtml(data, cities, brand, airlines);
     expect(html).toContain('B9 — Iran Airtour');
@@ -158,4 +190,43 @@ it('allows explicitly logo-free ticket documents, keeps airline marks, and retai
   expect(
     ticketPageHtml(data, cities, { ...brand, withoutLogo: true }),
   ).not.toContain('class="agency-logo"');
+});
+
+it('renders one mark for every distinct carrier on the ticket without duplicating repeated carriers', () => {
+  const iranAirtourLogo = 'data:image/png;base64,aXJhbmFpcnRvdXI=';
+  const mahanLogo = 'data:image/png;base64,bWFoYW4=';
+  const html = ticketPageHtml(
+    {
+      ...data,
+      offers: [data.offers[0]!, { ...data.offers[1]!, carrierName: 'ماهان' }],
+    },
+    cities,
+    brand,
+    {
+      'ایران ایرتور': {
+        name: 'Iran Airtour',
+        logoDataUrl: iranAirtourLogo,
+      },
+      ماهان: { name: 'Mahan Air', logoDataUrl: mahanLogo },
+    },
+  );
+  expect(html).toContain('class="logos multiple-airlines"');
+  expect(html.match(/class="airline-logo"/g)).toHaveLength(2);
+  expect(html).toContain(`src="${iranAirtourLogo}" alt="Iran Airtour"`);
+  expect(html).toContain(`src="${mahanLogo}" alt="Mahan Air"`);
+
+  const repeated = ticketPageHtml(data, cities, brand, {
+    'ایران ایرتور': {
+      name: 'Iran Airtour',
+      logoDataUrl: iranAirtourLogo,
+    },
+  });
+  expect(repeated.match(/class="airline-logo"/g)).toHaveLength(1);
+  expect(repeated).not.toContain('multiple-airlines');
+});
+
+it('gives the ARRIVAL and DEPARTURE dates the same typography and color as their labels', () => {
+  expect(ticketLayoutStyles).toContain(
+    '.flight-ticket .leg-head strong,.flight-ticket .leg-head>span{font-size:13pt;font-weight:700;letter-spacing:.2mm;color:inherit}',
+  );
 });

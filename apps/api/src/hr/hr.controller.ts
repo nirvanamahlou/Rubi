@@ -36,6 +36,22 @@ export class HrController {
     @Inject(HrRadanDeviceService)
     private readonly device?: HrRadanDeviceService,
   ) {}
+  @Get('missions/petty-fund')
+  @Header('Cache-Control', 'private, no-store')
+  missionPettyFund(
+    @Query('branchId') branchId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.missionPettyFund(branchId, req.actor);
+  }
+  @Post('attendance/activation')
+  setAttendanceActivation(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.setAttendanceActivation(body, key, req.actor);
+  }
   @Post('attendance/:id/manual')
   editAttendance(
     @Param('id') id: string,

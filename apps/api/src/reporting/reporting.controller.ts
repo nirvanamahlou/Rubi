@@ -154,6 +154,12 @@ export class ReportingController {
     return this.service.metadata(code, request.actor);
   }
 
+  @Get(':code/readiness')
+  @Header('Cache-Control', 'private, no-store')
+  readiness(@Param('code') code: string, @Req() request: AuthenticatedRequest) {
+    return this.service.readiness(code, request.actor);
+  }
+
   @Post(':code/query')
   query(
     @Param('code') code: string,

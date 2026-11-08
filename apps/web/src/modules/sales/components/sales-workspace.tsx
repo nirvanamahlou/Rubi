@@ -1,4 +1,5 @@
 'use client';
+import { SalesInsuranceDocuments } from '@/modules/reservations/components/reservation-insurance-documents';
 import { FloatingContractPurchaseDialog } from './floating-contract-purchase-dialog';
 import { canSelfServeSalesContract } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
@@ -665,6 +666,7 @@ export function SalesWorkspace() {
                           label="مدارک"
                           className="h-8 min-w-0 px-2 text-xs shadow-sm"
                         />
+                        <SalesInsuranceDocuments contractId={contract.id} />
                       </div>
                     </td>
                   </tr>

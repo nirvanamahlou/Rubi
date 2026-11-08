@@ -136,20 +136,23 @@ export function getHrResource(
     key: `field${index}`,
     label,
     type:
-      label === 'کارمند'
-        ? 'employee'
-        : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
-          ? 'date'
-          : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label) ||
-              label === 'مهلت ثبت ساعتی (ساعت روز مرخصی)'
-            ? 'time'
-            : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
-                !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
-              ? 'money'
-              : ['تعداد روز', 'ظرفیت'].includes(label)
-                ? 'decimal'
-                : 'text',
+      key === 'time.penaltySettings' && index < 2
+        ? 'decimal'
+        : label === 'کارمند'
+          ? 'employee'
+          : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
+            ? 'date'
+            : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label)
+              ? 'time'
+              : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
+                  !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
+                ? 'money'
+                : ['تعداد روز', 'ظرفیت'].includes(label) ||
+                    label.startsWith('مهلت ثبت ')
+                  ? 'decimal'
+                  : 'text',
     required:
+      key === 'time.penaltySettings' ||
       (key === 'time.leavePolicies' && index < 5) ||
       (index === 0 && key !== 'organization.positions') ||
       (key === 'organization.positions' && label === 'عنوان شغلی') ||
@@ -244,6 +247,7 @@ export function isHrSharedResource(section: string, tab: string) {
         'templateDays',
         'calculationSettings',
         'leavePolicies',
+        'penaltySettings',
         'leaveTypes',
         'holidays',
       ].includes(tab)) ||

@@ -126,6 +126,7 @@ const fieldOptions = (
   label: string,
   peopleOptions: readonly string[] = defaultPeopleOptions,
 ): readonly string[] | undefined => {
+  if (label.startsWith('معافیت ')) return ['بله', 'خیر'];
   if (label === 'وضعیت تجهیز')
     return [
       'سالم',
@@ -262,6 +263,7 @@ const fieldOptions = (
 };
 
 const fieldType = (label: string): ContextualFieldType => {
+  if (/^مهلت ثبت (روزانه|ساعتی) \(روز قبل\)$/.test(label)) return 'number';
   if (
     /رزومه|فایل پیوست|^فایل$|^مدرک هزینه$|فایل قرارداد|مدارک مرخصی/.test(label)
   )
@@ -444,16 +446,19 @@ function buildInitialFormValues(
         ? field.type === 'date'
           ? persianDateToIso(context.initialValues[index] ?? '')
           : (context.initialValues[index] ?? '')
-        : isAutomaticRegistrationDate(field.label)
-          ? todayIso()
-          : context.section === 'lifecycle' &&
-              context.tab === 'settlement' &&
-              field.label === 'وضعیت تأیید مالی'
-            ? 'در انتظار تأیید مالی'
-            : (field.options?.[0] ??
-              (isAutomaticCodeField(field, index)
-                ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
-                : '')),
+        : context.tab === 'penaltySettings' &&
+            field.label.startsWith('مبلغ جریمه')
+          ? '50000'
+          : isAutomaticRegistrationDate(field.label)
+            ? todayIso()
+            : context.section === 'lifecycle' &&
+                context.tab === 'settlement' &&
+                field.label === 'وضعیت تأیید مالی'
+              ? 'در انتظار تأیید مالی'
+              : (field.options?.[0] ??
+                (isAutomaticCodeField(field, index)
+                  ? `HR-${context.section}-${context.tab}-${String(Date.now()).slice(-6)}`.toUpperCase()
+                  : '')),
     ]),
   );
   for (const field of fields) {
@@ -1077,7 +1082,9 @@ export function ContextualHrForm({
                           field.label,
                         )
                           ? '0.01'
-                          : undefined
+                          : field.label.startsWith('مهلت ثبت ')
+                            ? '1'
+                            : undefined
                       }
                       max={
                         workingHours &&
@@ -1085,7 +1092,9 @@ export function ContextualHrForm({
                           field.label,
                         )
                           ? '48'
-                          : undefined
+                          : field.label.startsWith('مهلت ثبت ')
+                            ? '365'
+                            : undefined
                       }
                       onChange={(event) => update(field.id, event.target.value)}
                       placeholder={field.placeholder}

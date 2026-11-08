@@ -152,3 +152,27 @@ it('derives old optional service flags from canonical allocations without changi
     ),
   ).toEqual(['a']);
 });
+
+it('renders one combined hotel and transfer form for the same broker when separate output is unchecked', () => {
+  const intake = fixture();
+  const settings = intake.workflow.supplierFormSettings!;
+  settings.hotelTransferSplit = false;
+  settings.transferBrokerId = settings.brokerId!;
+  settings.hotelTransferSeparate = false;
+  const before = structuredClone(intake);
+  expect(supplierDocumentKinds(settings)).toEqual(['HOTEL']);
+  const combined = supplierDocumentScope(intake);
+  expect(combined.workflow.supplierFormSettings?.flags.hotel).toBe(true);
+  expect(combined.workflow.supplierFormSettings?.flags.transfer).toBe(true);
+  expect(supplierFormData(combined).passengers).toHaveLength(2);
+  const html = reservationPdfHtml(
+    combined,
+    {},
+    'data:image/png;base64,AA==',
+    '',
+  );
+  expect(html).toContain('HOTEL INFORMATION');
+  expect(html).toContain('TRANSFER');
+  expect(() => supplierDocumentScope(intake, 'TRANSFER')).toThrow();
+  expect(intake).toEqual(before);
+});

@@ -4,6 +4,7 @@ import type {
 } from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
+import { InsuranceAutomation } from './insurance/insurance-automation';
 import { Optional } from '@nestjs/common';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import {
@@ -319,6 +320,9 @@ export class ReservationsPublicService {
     @Optional()
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(InsuranceAutomation)
+    private readonly insurance?: InsuranceAutomation,
   ) {}
 
   async receive(
@@ -358,6 +362,7 @@ export class ReservationsPublicService {
       throw new ConflictException(
         'نسخه درخواست رزرو با اطلاعات قبلی متفاوت است.',
       );
+    await this.insurance?.enqueue(row.id);
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 

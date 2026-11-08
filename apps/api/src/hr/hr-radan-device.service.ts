@@ -34,6 +34,7 @@ type DeviceSource = {
   username: string;
   password: string;
   dateOffsetDays: number;
+  dateCorrectedFrom?: string | undefined;
 };
 
 @Injectable()
@@ -42,6 +43,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   private stopped = true;
   private nextSyncAt: string | null = null;
   private running = false;
+  private readonly fullSyncAt = new Map<string, number>();
   private readonly logger = new Logger(HrRadanDeviceService.name);
   private latest: Record<string, unknown> = { state: 'idle' };
   constructor(
@@ -51,7 +53,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     if (process.env.HR_RADAN_ENABLED !== 'true') return;
     this.stopped = false;
-    this.schedule();
+    void this.tick().finally(() => this.schedule());
   }
   onModuleDestroy() {
     this.stopped = true;
@@ -75,7 +77,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       const actor = await this.iam.authenticateAttendanceConnectorV1(
         process.env.HR_RADAN_ACTOR_ID ?? '',
       );
-      await this.sync(actor);
+      const startedAt = Date.now();
+      const result = await this.sync(actor, true);
+      this.logger.log(
+        `Attendance poll completed: ${String(result.state)} (${Date.now() - startedAt}ms)`,
+      );
     } catch {
       this.latest = { state: 'error', at: new Date().toISOString() };
       this.logger.warn(
@@ -122,7 +128,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
     return branchId;
   }
-  async sync(actor: AuthenticatedActor) {
+  async sync(actor: AuthenticatedActor, scheduled = false) {
     this.authorize(actor);
     if (this.running)
       throw new ConflictException(
@@ -142,6 +148,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         username,
         password,
         dateOffsetDays: 1,
+        dateCorrectedFrom: process.env.HR_RADAN_DATE_CORRECTED_FROM,
       },
     ];
     const secondaryBranch = process.env.HR_RADAN_SECONDARY_BRANCH_ID;
@@ -181,7 +188,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       )) {
         try {
           results.push({
-            ...(await this.syncSource(source, actor)),
+            ...(await this.syncSource(source, actor, scheduled)),
             branchId: source.branchId,
           });
         } catch (error) {
@@ -211,14 +218,40 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       this.running = false;
     }
   }
-  private async syncSource(config: DeviceSource, actor: AuthenticatedActor) {
+  private async syncSource(
+    config: DeviceSource,
+    actor: AuthenticatedActor,
+    scheduled: boolean,
+  ) {
     const { base, username, password, branchId, dateOffsetDays } = config;
+    if (config.dateCorrectedFrom) isoDate(config.dateCorrectedFrom);
     const provider = new RadanDeviceClient(base, username, password);
     await provider.login();
     const users = await provider.list<RadanUser>('/V1/Users', 'users');
+    const today = localClockParts(new Date()).date;
+    const source = config.source ?? `radan:${branchId}`;
+    const full =
+      !scheduled || Date.now() - (this.fullSyncAt.get(source) ?? 0) >= 3600000;
+    const from = full
+      ? attendanceFrom(
+          new Date(isoDate(today).getTime() - 31 * 86400000)
+            .toISOString()
+            .slice(0, 10),
+        )
+      : attendanceFrom(
+          new Date(isoDate(today).getTime() - 86400000)
+            .toISOString()
+            .slice(0, 10),
+        );
+    const rawFrom = new Date(
+      isoDate(from).getTime() - dateOffsetDays * 86400000,
+    )
+      .toISOString()
+      .slice(0, 10);
     const clockings = await provider.list<RadanPunch>(
       '/V1/Ta/Clockings',
       'clockings',
+      full ? undefined : rawFrom,
     );
     const byId = new Map(users.map((u) => [String(u.id), u]));
     const codes = users
@@ -226,13 +259,6 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       .filter(Boolean);
     if (new Set(codes).size !== codes.length)
       throw new Error('Ambiguous provider personnel codes');
-    const today = localClockParts(new Date()).date;
-    const from = attendanceFrom(
-      new Date(isoDate(today).getTime() - 31 * 86400000)
-        .toISOString()
-        .slice(0, 10),
-    );
-    const source = config.source ?? `radan:${branchId}`;
     let skipped = 0;
     let invalid = 0;
     const punches = clockings.flatMap((p) => {
@@ -259,7 +285,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       let date: string;
       try {
         date = new Date(
-          isoDate(match[1]!).getTime() + dateOffsetDays * 86400000,
+          isoDate(match[1]!).getTime() +
+            (config.dateCorrectedFrom && match[1]! >= config.dateCorrectedFrom
+              ? 0
+              : dateOffsetDays) *
+              86400000,
         )
           .toISOString()
           .slice(0, 10);
@@ -332,7 +362,9 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         true,
         [...(moved.get(date) ?? [])],
       );
+    if (full) this.fullSyncAt.set(source, Date.now());
     return {
+      mode: full ? 'full' : 'recent',
       state: 'ready',
       at: new Date().toISOString(),
       from,

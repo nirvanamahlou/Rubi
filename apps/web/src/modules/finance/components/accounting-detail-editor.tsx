@@ -27,6 +27,7 @@ import type {
 } from '@nora/contracts';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
+import Link from '@/i18n/link';
 import {
   AccountingButton,
   AccountingDeleteButtons,
@@ -61,17 +62,17 @@ export function AccountingDetailEditor({
   run,
   busy,
 }: {
-  book: AccountingSnapshotV1;
+  book: AccountingSnapshotV1 | null;
   kind: 'detail-types' | 'details';
   run: PersistedEditorRun;
   busy: boolean;
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const types = book.configurations.filter(
+  const types = (book?.configurations ?? []).filter(
     (row) => row.kind === 'detail-types',
   );
-  const rows: RecordRow[] = kind === 'details' ? book.details : types;
+  const rows: RecordRow[] = kind === 'details' ? (book?.details ?? []) : types;
   const [selected, setSelected] = useState<RecordRow | null>(
     () => rows.find((row) => row.id === params.get('id')) ?? null,
   );
@@ -84,7 +85,7 @@ export function AccountingDetailEditor({
   const isSystem = isType && selected?.attributes.isSystem === true;
   const close = () =>
     router.push(
-      `/finance/accounting/general-ledger/accounts/lists/${kind}?bookId=${book.book.id}`,
+      `/finance/accounting/general-ledger/accounts/lists/${kind}${book ? `?bookId=${book.book.id}` : ''}`,
     );
   const [manualCode, setManualCode] = useState(false);
   const [ownerPage, setOwnerPage] = useState(1);
@@ -108,7 +109,9 @@ export function AccountingDetailEditor({
   const type = types.find((row) => row.id === draft.typeId);
   const [ownerSearch, setOwnerSearch] = useState('');
   const personTitle = !isType && ['شخص', 'شرکت'].includes(type?.title ?? '');
-  const detailRows = book.details.filter((row) => row.typeId === draft.typeId);
+  const detailRows = (book?.details ?? []).filter(
+    (row) => row.typeId === draft.typeId,
+  );
   const width = detailWidth(type?.attributes.classificationNumberLength);
   const suggesting =
     !isType &&
@@ -126,10 +129,13 @@ export function AccountingDetailEditor({
   const personEditor =
     ownerDialog === 'new' ? newKind === 'person' : type?.title === 'شخص';
   const profile = useQuery({
-    queryKey: ['ledger-person', book.book.branchId, ownerDialog],
-    queryFn: () => customersApi.ledgerPerson(ownerDialog!, book.book.branchId),
+    queryKey: ['ledger-person', book?.book.branchId, ownerDialog],
+    queryFn: () => customersApi.ledgerPerson(ownerDialog!, book!.book.branchId),
     enabled:
-      !!ownerDialog && !['choose', 'new'].includes(ownerDialog) && personEditor,
+      !!book &&
+      !!ownerDialog &&
+      !['choose', 'new'].includes(ownerDialog) &&
+      personEditor,
     gcTime: 0,
     retry: false,
   });
@@ -137,11 +143,13 @@ export function AccountingDetailEditor({
     queryKey: [
       'accounting',
       'detail-owner-edit',
-      book.book.branchId,
+      book?.book.branchId,
       ownerDialog,
     ],
-    queryFn: () => customersApi.ledgerCompany(ownerDialog!, book.book.branchId),
+    queryFn: () =>
+      customersApi.ledgerCompany(ownerDialog!, book!.book.branchId),
     enabled:
+      !!book &&
       !!ownerDialog &&
       !['choose', 'new'].includes(ownerDialog) &&
       !personEditor,
@@ -152,7 +160,7 @@ export function AccountingDetailEditor({
     queryKey: [
       'accounting',
       'detail-title',
-      book.book.branchId,
+      book?.book.branchId,
       type?.title,
       ownerSearch,
       ownerPage,
@@ -163,13 +171,13 @@ export function AccountingDetailEditor({
         kind: type?.title === 'شرکت' ? 'organization' : 'person',
         status: 'active',
         role: 'all',
-        branchId: book.book.branchId,
+        branchId: book!.book.branchId,
         sortBy: 'displayName',
         sortDirection: 'asc',
         page: ownerPage,
         pageSize: 30,
       }),
-    enabled: personTitle,
+    enabled: !!book && personTitle,
   });
   function editDetail(id: string) {
     const row = detailRows.find((item) => item.id === id);
@@ -249,7 +257,7 @@ export function AccountingDetailEditor({
   const parentTypes = types.filter(
     (row) => row.id !== selected?.id && row.active,
   );
-  const parents = book.details.filter(
+  const parents = (book?.details ?? []).filter(
     (row) =>
       row.active &&
       row.id !== selected?.id &&
@@ -322,17 +330,24 @@ export function AccountingDetailEditor({
         reset={fresh}
         close={close}
       />
-      <div className="flex items-center justify-between border-b pb-2">
-        <h2 className="font-bold">{isType ? 'نوع تفصیلی' : 'حساب تفصیلی'}</h2>
-        <AccountingButton variant="outline" onClick={close}>
-          فهرست
-        </AccountingButton>
-      </div>
+      {!isType && (
+        <div className="flex items-center justify-between border-b pb-2">
+          <h2 className="font-bold">حساب تفصیلی</h2>
+          <AccountingButton variant="outline" onClick={close}>
+            فهرست
+          </AccountingButton>
+        </div>
+      )}
       <form
         data-accounting-inline-form
-        className="space-y-4 rounded-lg border bg-muted/15 p-4"
+        className={
+          isType
+            ? styles.typeForm
+            : 'space-y-4 rounded-lg border bg-muted/15 p-4'
+        }
         onSubmit={(event) => {
           event.preventDefault();
+          if (!book) return;
           const after = accountingSaveDisposition(event);
           const attributes = {
             ...selected?.attributes,
@@ -367,7 +382,11 @@ export function AccountingDetailEditor({
           });
         }}
       >
-        <div role="tablist" className="flex gap-4 border-b pb-2">
+        <div
+          role="tablist"
+          aria-label={isType ? 'اطلاعات نوع تفصیلی' : 'اطلاعات حساب تفصیلی'}
+          className={isType ? styles.typeTabs : 'flex gap-4 border-b pb-2'}
+        >
           {[
             ['main', 'اطلاعات اصلی'],
             ['notes', 'یادداشت'],
@@ -384,7 +403,10 @@ export function AccountingDetailEditor({
             </button>
           ))}
         </div>
-        <div hidden={tab !== 'main'} className={styles.panel}>
+        <div
+          hidden={tab !== 'main'}
+          className={`${styles.panel} ${isType ? styles.typePanel : ''}`}
+        >
           {isType ? (
             <div className={styles.columns + ' ' + styles.typeColumns}>
               <div>
@@ -393,8 +415,9 @@ export function AccountingDetailEditor({
                 {field('defaultFirstCode', 'اولین کد پیش فرض')}
               </div>
               <div>
-                <FormField label="نوع تفصیلی پدر">
+                <FormField label="نوع تفصیلی پدر" id="detail-parentTypeId">
                   <SearchCombobox
+                    id="detail-parentTypeId"
                     label="نوع تفصیلی پدر"
                     value={draft.parentTypeId}
                     onValueChange={(value) => update('parentTypeId', value)}
@@ -409,7 +432,7 @@ export function AccountingDetailEditor({
                   'طول شماره طبقه بندی',
                   true,
                 )}
-                <label className="flex items-center gap-2">
+                <label className={styles.parentControl}>
                   <input
                     type="checkbox"
                     checked={draft.enforceParent}
@@ -583,7 +606,7 @@ export function AccountingDetailEditor({
           <AccountingSetupNotes
             notes={notes}
             onChange={setNotes}
-            book={book}
+            book={book ?? undefined}
             record={
               selected
                 ? {
@@ -597,7 +620,15 @@ export function AccountingDetailEditor({
             }
           />
         </div>
-        <AccountingSaveButtons busy={busy} />
+        {!book && (
+          <p role="status" className={styles.bookNotice}>
+            برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.{' '}
+            <Link href="/finance/accounting/general-ledger/base-information/ledgers">
+              تعریف دفتر کل
+            </Link>
+          </p>
+        )}
+        <AccountingSaveButtons busy={busy || !book} />
       </form>
       {ownerDialog === 'choose' ? (
         <Dialog
@@ -638,6 +669,7 @@ export function AccountingDetailEditor({
         </Dialog>
       ) : ownerDialog &&
         personEditor &&
+        book &&
         (ownerDialog === 'new' || profile.data) ? (
         <LedgerPersonDialog
           key={ownerDialog}
@@ -648,7 +680,9 @@ export function AccountingDetailEditor({
         />
       ) : (
         ownerDialog &&
-        (!personEditor && (ownerDialog === 'new' || ownerRecord.data) ? (
+        (book &&
+        !personEditor &&
+        (ownerDialog === 'new' || ownerRecord.data) ? (
           <LedgerCompanyDialog
             key={ownerDialog}
             initial={ownerDialog === 'new' ? undefined : ownerRecord.data?.data}

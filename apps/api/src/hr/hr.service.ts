@@ -1,3 +1,7 @@
+import {
+  inactiveAttendance,
+  attendanceForUse,
+} from './hr-attendance-activation';
 import { canEditAttendance } from './hr-manual-attendance-policy';
 import { ProcurementMissionPort } from '../procurement/procurement-mission.module';
 import type { UploadedDocumentFile } from '../documents/documents.service';
@@ -480,6 +484,170 @@ export class HrService {
       managers: new Map(managers.map((item) => [item.id, item.name])),
     };
   }
+  private validatePenaltySettings(values: string[]) {
+    for (const value of values.slice(0, 2))
+      if (!/^\d{1,12}$/.test(value))
+        throw new BadRequestException(
+          'مبلغ جریمه باید عدد صحیح غیرمنفی به تومان باشد.',
+        );
+    validate.isoDate(values[2]!);
+    for (const value of values.slice(3))
+      if (!['بله', 'خیر'].includes(value))
+        throw new BadRequestException('وضعیت معافیت معتبر نیست.');
+  }
+  private async canManuallyEditAttendance(actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('hr.manage')) return false;
+    const users =
+      (await this.iam.describeMessagingParticipants?.([actor.userId])) ?? [];
+    return canEditAttendance(
+      actor,
+      users.find((user) => user.id === actor.userId)?.username,
+    );
+  }
+
+  async dailyPenalty(row: RecordRow): Promise<string | null> {
+    if (inactiveAttendance(row)) return null;
+    if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
+      return null;
+    const date = (row.values as string[])[1];
+    if (!date) return null;
+    const policies = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId: row.branchId,
+        section: 'time',
+        tab: 'penaltySettings',
+        status: 'فعال',
+        deletedAt: null,
+      },
+      take: 1001,
+    });
+    if (policies.length > 1000)
+      throw new ConflictException('تعداد تنظیمات جریمه بیش از حد مجاز است.');
+    const policy = policies
+      .filter(
+        (item) =>
+          item.tab === 'penaltySettings' &&
+          item.status === 'فعال' &&
+          (item.values as string[])[2]! <= date,
+      )
+      .sort(
+        (a, b) =>
+          (b.values as string[])[2]!.localeCompare(
+            (a.values as string[])[2]!,
+          ) ||
+          b.updatedAt.getTime() - a.updatedAt.getTime() ||
+          b.id.localeCompare(a.id),
+      )[0];
+    if (!policy) return null;
+    const source = await this.database.client.hrRecord.findMany({
+      where: {
+        branchId: row.branchId,
+        deletedAt: null,
+        OR: [
+          {
+            section: 'time',
+            tab: {
+              in: [
+                'penaltySettings',
+                'shift',
+                'workingHours',
+                'mission',
+                'leave',
+                'corrections',
+              ],
+            },
+          },
+          {
+            section: 'requests',
+            tab: { in: ['radanLeave', 'radanMission', 'leave'] },
+          },
+          { section: 'expenses', tab: 'mission' },
+          {
+            section: 'time',
+            tab: 'checkins',
+            employeeId: row.employeeId,
+            AND: [
+              {
+                values: {
+                  path: ['1'],
+                  gte: new Date(Date.parse(date) - 2 * 86400000)
+                    .toISOString()
+                    .slice(0, 10),
+                },
+              },
+              {
+                values: {
+                  path: ['1'],
+                  lte: new Date(Date.parse(date) + 4 * 86400000)
+                    .toISOString()
+                    .slice(0, 10),
+                },
+              },
+            ],
+          },
+        ],
+      },
+      take: 10001,
+    });
+    if (source.length > 10000)
+      throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+    const rates = policy.values as string[];
+    const view = this.attendanceView(source, row.employeeId, date);
+    if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
+    if (
+      rates[5] === 'بله' &&
+      source.some(
+        (item) =>
+          item.employeeId === row.employeeId &&
+          item.tab === 'corrections' &&
+          validate.APPROVED.has(item.status) &&
+          view.selected.some((punch) => punch.parentId === item.id) &&
+          (item.data as HrWorkflowData).attendanceDeviceError === true,
+      )
+    )
+      return '0';
+    const metrics = attendanceScheduleMetrics(
+      view.events,
+      view.shiftStart,
+      view.shiftEnd,
+      Number(validate.digits(view.shiftValues?.[3] ?? '0')) || 0,
+    );
+    const intervals = source
+      .filter(
+        (item) =>
+          item.employeeId === row.employeeId &&
+          validate.APPROVED.has(item.status) &&
+          ((['mission', 'radanMission'].includes(item.tab) &&
+            rates[3] === 'بله') ||
+            (['leave', 'radanLeave'].includes(item.tab) &&
+              rates[4] === 'بله' &&
+              (item.values as string[])[4] === 'ساعتی')),
+      )
+      .map((item) => {
+        const data = item.data as HrWorkflowData;
+        const values = item.values as string[];
+        return [
+          Date.parse(data.startsAt ?? `${values[2]}T00:00:00+03:30`),
+          Date.parse(data.endsAt ?? `${values[3]}T23:59:59+03:30`),
+        ] as [number, number];
+      })
+      .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    const coverage = approvedLeaveCoverage(
+      view.events,
+      view.shiftStart,
+      view.shiftEnd,
+      intervals,
+    );
+    return new Prisma.Decimal(rates[0]!)
+      .mul(Math.max(0, (metrics.lateMinutes ?? 0) - coverage.lateCredit))
+      .add(
+        new Prisma.Decimal(rates[1]!).mul(
+          Math.max(0, (metrics.earlyMinutes ?? 0) - coverage.earlyCredit),
+        ),
+      )
+      .toFixed(0);
+  }
+
   private async recordDtos(rows: RecordRow[], actor: AuthenticatedActor) {
     const labels = await this.assignmentLabels(rows, actor);
     return Promise.all(rows.map((row) => this.recordDto(row, actor, labels)));
@@ -545,7 +713,14 @@ export class HrService {
       deletedAt: row.deletedAt?.toISOString() ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
-      data: sensitive ? {} : (publicHrData(row.data) as HrWorkflowData),
+      data: sensitive
+        ? {}
+        : {
+            ...(publicHrData(row.data) as HrWorkflowData),
+            ...(schema.key === 'time.attendance'
+              ? { dailyPenaltyToman: await this.dailyPenalty(row) }
+              : {}),
+          },
     };
   }
   async dashboardCharts(
@@ -738,7 +913,7 @@ export class HrService {
         .map(({ id, name, code }) => ({ id, name, code })),
       capabilities: {
         read: true,
-        manualAttendance: canEditAttendance(actor),
+        manualAttendance: await this.canManuallyEditAttendance(actor),
         write: this.has(actor, 'hr.manage'),
         approve: this.has(actor, 'hr.approve'),
         sensitive: this.has(actor, 'hr.sensitive'),
@@ -824,6 +999,12 @@ export class HrService {
       filters.section = validate.text(input.section, 'بخش', 40);
     if (input.tab) filters.tab = validate.text(input.tab, 'نوع', 40);
     if (input.employeeId) filters.employeeId = validate.uuid(input.employeeId);
+    if (
+      input.section === 'time' &&
+      input.tab === 'attendance' &&
+      !input.employeeId
+    )
+      filters.employee = { status: 'فعال', deletedAt: null };
     if (input.parentId) filters.parentId = validate.uuid(input.parentId);
     if (input.status) filters.status = validate.text(input.status, 'وضعیت', 80);
     if (input.from || input.to) {
@@ -2120,14 +2301,14 @@ export class HrService {
       return { id, deleted: true };
     });
   }
-  private writeResource(
+  private async writeResource(
     schema: HrResourceDefinition,
     actor: AuthenticatedActor,
     employee?: Employee | null,
   ) {
     if (
       ['time.checkins', 'time.corrections'].includes(schema.key) &&
-      !canEditAttendance(actor)
+      !(await this.canManuallyEditAttendance(actor))
     )
       throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
     if (schema.readOnly || systemResources.has(schema.key))
@@ -2178,6 +2359,20 @@ export class HrService {
     if (Array.isArray(submitted) && employee && canonicalEmployeeColumn >= 0)
       submitted[canonicalEmployeeColumn] = employee.name;
     const values = validate.recordValues(submitted, schema);
+    if (schema.key === 'expenses.claims' && data.missionExpense) {
+      const expense = data.missionExpense;
+      if (
+        !new Prisma.Decimal(expense.amount).equals(values[4]!) ||
+        (data.currency && data.currency !== values[3]) ||
+        !data.startsAt ||
+        validate.localClockParts(new Date(data.startsAt)).date !== values[2]
+      )
+        throw new BadRequestException(
+          'اطلاعات هزینه با مقادیر ثبت‌شده یکسان نیست.',
+        );
+      data.currency = values[3]!;
+    }
+
     const employeeColumn = schema.columns.indexOf('کارمند');
     if (employeeColumn >= 0 && employee) values[employeeColumn] = employee.name;
     if (
@@ -2593,6 +2788,30 @@ export class HrService {
     );
     return row ? parseMonthlyLeavePolicy(row.values as string[]) : null;
   }
+  async missionPettyFund(branchId: string, actor: AuthenticatedActor) {
+    this.require(actor, 'hr.manage');
+    this.branch(actor, validate.uuid(branchId));
+    if (!this.missionPetty)
+      throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+    return this.missionPetty.summary(branchId, actor);
+  }
+  private async workbenchLeaveEmployee(
+    tx: Tx,
+    branchId: string,
+    senderId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.branch(actor, branchId);
+    const employee = await tx.hrEmployee.findFirst({
+      where: { userId: senderId, deletedAt: null, status: 'فعال' },
+    });
+    if (!employee)
+      throw new BadRequestException(
+        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
+      );
+    this.branch(actor, employee.branchId);
+    return employee;
+  }
   async validateWorkbenchLeaveSubmission(
     tx: Tx,
     branchId: string,
@@ -2600,13 +2819,12 @@ export class HrService {
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
   ) {
-    const employee = await tx.hrEmployee.findFirst({
-      where: { branchId, userId: senderId, deletedAt: null, status: 'فعال' },
-    });
-    if (!employee)
-      throw new BadRequestException(
-        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
-      );
+    const employee = await this.workbenchLeaveEmployee(
+      tx,
+      branchId,
+      senderId,
+      actor,
+    );
     await this.validateLeaveSubmission(tx, employee, leave, actor);
   }
   private async validateLeaveSubmission(
@@ -2774,18 +2992,13 @@ export class HrService {
   ) {
     this.require(actor, 'hr.manage');
     this.branch(actor, branchId);
-    const employee = await tx.hrEmployee.findFirst({
-      where: {
-        userId: senderId,
-        branchId,
-        deletedAt: null,
-        status: 'فعال',
-      },
-    });
-    if (!employee)
-      throw new BadRequestException(
-        'پرونده فعال کارمند به حساب درخواست‌کننده متصل نیست.',
-      );
+    const employee = await this.workbenchLeaveEmployee(
+      tx,
+      branchId,
+      senderId,
+      actor,
+    );
+    branchId = employee.branchId;
     await tx.$queryRaw`SELECT id FROM hr_employees WHERE id=${employee.id}::uuid FOR UPDATE`;
     const schema = getHrResource('requests', 'radanLeave')!;
     await this.approve(tx, schema, actor, employee);
@@ -2852,7 +3065,17 @@ export class HrService {
     branchId: string,
     leave: WorkbenchLeaveInputV1,
     actor: AuthenticatedActor,
+    senderId?: string,
   ) {
+    if (senderId)
+      branchId = (
+        await this.workbenchLeaveEmployee(
+          this.database.client,
+          branchId,
+          senderId,
+          actor,
+        )
+      ).branchId;
     const today = validate.localClockParts(new Date()).date;
     for (
       let at = Date.parse(leave.from);
@@ -2876,7 +3099,10 @@ export class HrService {
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
     this.chartCoordinates(schema, data);
-    if (data.missionExpense && schema.key !== 'expenses.mission')
+    if (
+      data.missionExpense &&
+      !['expenses.mission', 'expenses.claims'].includes(schema.key)
+    )
       throw new BadRequestException('هزینه فقط برای مأموریت مجاز است.');
     const networkPassword = this.devicePassword(
       input.privateData,
@@ -2904,7 +3130,7 @@ export class HrService {
         const employee = input.employeeId
           ? await this.employee(tx, validate.uuid(input.employeeId), actor)
           : null;
-        this.writeResource(schema, actor, employee);
+        await this.writeResource(schema, actor, employee);
         if (schema.employeeRequired && !employee)
           throw new BadRequestException('انتخاب شناسه کارمند الزامی است.');
         const branchId = this.branch(
@@ -3013,6 +3239,8 @@ export class HrService {
             values,
             data,
           );
+        if (schema.key === 'time.penaltySettings')
+          this.validatePenaltySettings(values);
         if (schema.key === 'time.leavePolicies')
           parseMonthlyLeavePolicy(values);
         if (
@@ -3041,7 +3269,11 @@ export class HrService {
             actor,
           );
         }
-        const state = validate.status(input.status, schema.approval);
+        const state = validate.status(
+          input.status,
+          schema.approval,
+          schema.key === 'time.penaltySettings' ? 'فعال' : 'پیش‌نویس',
+        );
         if (data.approvalRoute?.length && validate.APPROVED.has(state))
           throw new BadRequestException(
             'درخواست دارای روند باید ابتدا برای تأیید ثبت شود.',
@@ -3122,7 +3354,7 @@ export class HrService {
           });
         }
         if (
-          schema.key === 'expenses.mission' &&
+          ['expenses.mission', 'expenses.claims'].includes(schema.key) &&
           data.missionExpense?.referToPetty
         ) {
           if (!validate.APPROVED.has(state))
@@ -3146,6 +3378,7 @@ export class HrService {
               ...(expense.receipt ? { receipt: expense.receipt } : {}),
             },
             actor,
+            data.currency,
           );
           await tx.hrRecord.update({
             where: { id: row.id },
@@ -3206,10 +3439,7 @@ export class HrService {
       : undefined;
     const saved = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
-      if ((row.data as HrWorkflowData).pettyRegistrationId)
-        throw new ConflictException(
-          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
-        );
+
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
@@ -3220,8 +3450,7 @@ export class HrService {
       if (providedData?.missionExpense) {
         if (
           row.section !== 'expenses' ||
-          row.tab !== 'mission' ||
-          providedData.missionExpense.referToPetty
+          !['mission', 'claims'].includes(row.tab)
         )
           throw new BadRequestException(
             'ارجاع هزینه تنها هنگام ثبت مأموریت مجاز است.',
@@ -3379,9 +3608,15 @@ export class HrService {
           throw new ForbiddenException('تأیید درخواست خود مجاز نیست.');
       } else if (approvalAction)
         await this.approve(tx, schema, actor, employee);
-      else this.writeResource(schema, actor, employee);
+      else await this.writeResource(schema, actor, employee);
       const cancel = state === 'لغوشده' && validate.APPROVED.has(row.status);
-      if (schema.approval && validate.FINAL.has(row.status) && !cancel)
+      if (
+        schema.approval &&
+        validate.FINAL.has(row.status) &&
+        !cancel &&
+        (!['expenses.mission', 'expenses.claims'].includes(schema.key) ||
+          (input.parentId !== undefined && input.parentId !== row.parentId))
+      )
         throw new ConflictException(
           'رکورد نهایی تغییرپذیر نیست؛ اصلاحیه مرتبط ثبت کنید.',
         );
@@ -3516,6 +3751,8 @@ export class HrService {
               parentId,
               row.id,
             );
+      if (schema.key === 'time.penaltySettings')
+        this.validatePenaltySettings(values);
       if (schema.key === 'time.leavePolicies') parseMonthlyLeavePolicy(values);
       if (
         ['time.leave', 'requests.leave'].includes(schema.key) &&
@@ -3657,6 +3894,38 @@ export class HrService {
             `${row.branchId}:${row.id}:time.biometric`,
           ),
         };
+      if (['expenses.mission', 'expenses.claims'].includes(schema.key)) {
+        const previous = (row.data as HrWorkflowData).pettyRegistrationId;
+        const expense = data.missionExpense;
+        if ((previous || expense?.referToPetty) && !this.missionPetty)
+          throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+        if (previous)
+          await this.missionPetty!.reverse(tx, previous, row.branchId, actor);
+        delete (persistedData as HrWorkflowData).pettyRegistrationId;
+        if (expense?.referToPetty) {
+          if (!validate.APPROVED.has(state))
+            throw new BadRequestException(
+              'ارجاع به تنخواه نیازمند مأموریت تأییدشده است.',
+            );
+          const posted = await this.missionPetty!.register(
+            tx,
+            {
+              id: randomUUID(),
+              branchId: row.branchId,
+              title: expense.title,
+              occurredAt: data.startsAt,
+              amount: expense.amount,
+              costCenter: expense.costCenter,
+              fee: expense.fee,
+              description: expense.description,
+              ...(expense.receipt ? { receipt: expense.receipt } : {}),
+            },
+            actor,
+            data.currency,
+          );
+          (persistedData as HrWorkflowData).pettyRegistrationId = posted.id;
+        }
+      }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
         data: {
@@ -3895,10 +4164,7 @@ export class HrService {
     let affected: RecordRow | undefined;
     const result = await this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
-      if ((row.data as HrWorkflowData).pettyRegistrationId)
-        throw new ConflictException(
-          'مأموریت ثبت‌شده در تنخواه قابل تغییر یا حذف نیست.',
-        );
+
       affected = row;
       if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
         const sourceId = row.sharedSourceId ?? row.id;
@@ -3906,7 +4172,7 @@ export class HrService {
         const current = await this.record(tx, id, actor);
         if (current.version !== v)
           throw new ConflictException('نسخه رکورد تغییر کرده است.');
-        this.writeResource(
+        await this.writeResource(
           validate.resource(row.section, row.tab),
           actor,
           null,
@@ -3982,13 +4248,23 @@ export class HrService {
       const employee = row.employeeId
         ? await this.employee(tx, row.employeeId, actor)
         : null;
-      this.writeResource(schema, actor, employee);
-      if (schema.approval && validate.FINAL.has(row.status))
+      await this.writeResource(schema, actor, employee);
+      if (
+        schema.approval &&
+        validate.FINAL.has(row.status) &&
+        !['expenses.mission', 'expenses.claims'].includes(schema.key)
+      )
         throw new ConflictException(
           'تاریخچه نهایی حذف نمی‌شود؛ از لغو یا اصلاحیه استفاده کنید.',
         );
       if (await tx.hrRecord.count({ where: { parentId: id, deletedAt: null } }))
         throw new ConflictException('پرونده دارای رکورد وابسته فعال است.');
+      const pettyId = (row.data as HrWorkflowData).pettyRegistrationId;
+      if (pettyId) {
+        if (!this.missionPetty)
+          throw new ConflictException('سرویس تنخواه در دسترس نیست.');
+        await this.missionPetty.reverse(tx, pettyId, row.branchId, actor);
+      }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: v, deletedAt: null },
         data: { deletedAt: new Date(), version: { increment: 1 } },
@@ -4387,7 +4663,7 @@ export class HrService {
         throw new ConflictException('قرارداد فعال هم‌پوشان وجود دارد.');
     }
     if (['time.corrections', 'requests.attendance'].includes(schema.key)) {
-      if (!canEditAttendance(actor))
+      if (!(await this.canManuallyEditAttendance(actor)))
         throw new ForbiddenException(
           'ویرایش دستی تردد برای این حساب مجاز نیست.',
         );
@@ -5140,20 +5416,164 @@ export class HrService {
       selected,
     };
   }
+  async setAttendanceActivation(
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    if (!(await this.canManuallyEditAttendance(actor)))
+      throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
+    const input = validate.object(body, [
+      'employeeIds',
+      'from',
+      'to',
+      'active',
+      'recordId',
+      'version',
+    ]);
+    if (typeof input.active !== 'boolean')
+      throw new BadRequestException('وضعیت معتبر نیست.');
+    const from = validate.isoDate(input.from),
+      to = validate.isoDate(input.to);
+    if (to < from || to.getTime() - from.getTime() > 365 * 86400000)
+      throw new BadRequestException('بازه باید حداکثر یک سال باشد.');
+    if (
+      !Array.isArray(input.employeeIds) ||
+      !input.employeeIds.length ||
+      input.employeeIds.length > 200
+    )
+      throw new BadRequestException('کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.');
+    const ids = [
+      ...new Set(input.employeeIds.map((value) => validate.uuid(value))),
+    ];
+    if (ids.length * (1 + (to.getTime() - from.getTime()) / 86400000) > 2000)
+      throw new BadRequestException(
+        'در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.',
+      );
+    return this.command(
+      actor,
+      key,
+      { operation: 'attendance.activation', input },
+      async (tx) => {
+        if (input.recordId) {
+          const record = await this.record(
+            tx,
+            validate.uuid(input.recordId),
+            actor,
+          );
+          if (record.version !== validate.version(input.version))
+            throw new ConflictException('نسخه کارکرد تغییر کرده است.');
+          if (
+            record.section !== 'time' ||
+            record.tab !== 'attendance' ||
+            ids.length !== 1 ||
+            record.employeeId !== ids[0] ||
+            (record.values as string[])[1] !== input.from ||
+            input.from !== input.to
+          )
+            throw new BadRequestException('رکورد کارکرد معتبر نیست.');
+        }
+        let changed = 0;
+        for (const id of ids) {
+          const employee = await this.employee(tx, id, actor);
+          for (let at = from.getTime(); at <= to.getTime(); at += 86400000) {
+            const date = new Date(at).toISOString().slice(0, 10);
+            await this.assertOpenPeriod(tx, employee.branchId, date);
+            const rows = await tx.hrRecord.findMany({
+              where: {
+                branchId: employee.branchId,
+                employeeId: id,
+                section: 'time',
+                tab: 'attendance',
+                deletedAt: null,
+                values: { path: ['1'], equals: date },
+              },
+            });
+            for (const row of rows) {
+              const data = (row.data ?? {}) as HrWorkflowData;
+              if (inactiveAttendance(row) === !input.active) continue;
+              const status = input.active
+                ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                : 'غیرفعال';
+              const next = {
+                ...data,
+                attendanceActive: input.active,
+                attendancePreviousStatus: input.active ? status : row.status,
+              };
+              await tx.hrRecord.update({
+                where: { id: row.id },
+                data: { status, data: json(next), version: { increment: 1 } },
+              });
+              await this.audit(
+                tx,
+                actor,
+                { branchId: row.branchId, employeeId: id, recordId: row.id },
+                'attendance.activation',
+                { date, active: input.active },
+                row.version + 1,
+                row.status,
+                status,
+              );
+              changed++;
+            }
+            if (!rows.length && !input.active) {
+              const row = await tx.hrRecord.create({
+                data: {
+                  branchId: employee.branchId,
+                  employeeId: id,
+                  section: 'time',
+                  tab: 'attendance',
+                  code: `HR-ATT-${randomUUID()}`,
+                  effectiveAt: validate.isoDate(date),
+                  status: 'غیرفعال',
+                  values: [employee.name, date, '—', '0:00', '—', '—'],
+                  searchText: `${employee.name} ${date}`,
+                  data: {
+                    attendanceActive: false,
+                    attendancePreviousStatus: 'در انتظار تردد',
+                  },
+                },
+              });
+              await this.audit(
+                tx,
+                actor,
+                {
+                  branchId: employee.branchId,
+                  employeeId: id,
+                  recordId: row.id,
+                },
+                'attendance.activation',
+                { date, active: false },
+                1,
+              );
+              changed++;
+            }
+          }
+        }
+        return { changed };
+      },
+    );
+  }
   async editAttendance(
     id: string,
     body: unknown,
     key: unknown,
     actor: AuthenticatedActor,
   ) {
-    if (!canEditAttendance(actor))
+    if (!(await this.canManuallyEditAttendance(actor)))
       throw new ForbiddenException('ویرایش دستی تردد برای این حساب مجاز نیست.');
     const input = validate.object(body, [
       'version',
       'arrival',
       'departure',
       'reason',
+      'deviceError',
     ]);
+    if (
+      input.deviceError !== undefined &&
+      typeof input.deviceError !== 'boolean'
+    )
+      throw new BadRequestException('وضعیت خطای دستگاه معتبر نیست.');
     const version = validate.version(input.version),
       reason = validate.text(input.reason, 'دلیل', 500);
     const result = await this.command(
@@ -5208,6 +5628,7 @@ export class HrService {
               startsAt: start.toISOString(),
               endsAt: end.toISOString(),
               reason,
+              attendanceDeviceError: input.deviceError === true,
             },
             searchText: employee.name,
           },
@@ -5233,6 +5654,7 @@ export class HrService {
             arrival: input.arrival,
             departure: input.departure,
             reason,
+            deviceError: input.deviceError === true,
           },
           1,
         );
@@ -5541,6 +5963,10 @@ export class HrService {
                     ? 'حاضر'
                     : 'غایب';
           const calculatedData = {
+            ...((existing?.data as HrWorkflowData | undefined)
+              ?.attendanceActive === false
+              ? { attendanceActive: false, attendancePreviousStatus: status }
+              : {}),
             ...(settings
               ? {
                   calculationSettingsId: settings.id,
@@ -5580,9 +6006,11 @@ export class HrService {
             overtimeMinutes: overtime,
             exceptionCodes: reviewExceptions,
           };
+          const effectiveStatus =
+            existing && inactiveAttendance(existing) ? 'غیرفعال' : status;
           if (
             existing &&
-            existing.status === status &&
+            existing.status === effectiveStatus &&
             existing.effectiveAt?.getTime() ===
               validate.isoDate(date).getTime() &&
             isDeepStrictEqual(existing.values, values) &&
@@ -5596,7 +6024,7 @@ export class HrService {
                   values,
                   effectiveAt: validate.isoDate(date),
                   searchText: values.join(' '),
-                  status,
+                  status: effectiveStatus,
                   data: calculatedData,
                   version: { increment: 1 },
                 },
@@ -6636,7 +7064,7 @@ export class HrService {
           throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
         return {
           employees: employees.map((employee) => this.employeeDto(employee)),
-          records: await this.recordDtos(operational, actor),
+          records: await this.recordDtos(attendanceForUse(operational), actor),
           references: await this.recordDtos(references, actor),
         };
       },

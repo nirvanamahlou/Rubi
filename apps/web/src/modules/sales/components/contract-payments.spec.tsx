@@ -238,3 +238,17 @@ it('keeps older masked account responses usable and hides stale selections after
   expect(render('USD')).not.toContain('Legacy account');
   expect(render('USD')).toContain('disabled');
 });
+
+it('renders the FX bank-transfer destination without required marker or required combobox', () => {
+  const html = renderToStaticMarkup(
+    <ContractPaymentAccountSelect
+      method="BANK_TRANSFER"
+      accounts={[]}
+      currencyCode="EUR"
+      value=""
+      onChange={() => undefined}
+    />,
+  );
+  expect(html).toContain('حساب مقصد پرداخت');
+  expect(html).not.toMatch(/required|aria-required="true"/);
+});

@@ -35,23 +35,27 @@ export const recordValue = (record: HrRecordDto | undefined, label: string) =>
 // Keep persisted column positions stable; retired inputs are only hidden in UI/export.
 export function retiredHrColumns(section: string, tab: string): string[] {
   const key = `${section}.${tab}`;
-  return key === 'organization.branches'
-    ? ['تاریخ اثر']
-    : key === 'organization.units'
-      ? ['مدیر', 'واحد والد']
-      : key === 'organization.positions'
-        ? ['عنوان سمت', 'واحد', 'رده', 'ظرفیت', 'تاریخ اثر']
-        : key === 'lifecycle.promotion'
-          ? ['سمت فعلی', 'رده فعلی']
-          : key === 'contracts.active'
-            ? ['موضوع و تعهدات', 'مرجع حل اختلاف']
-            : key === 'time.shift'
-              ? ['تقویم تعطیلات']
-              : key === 'recruitment.interviews'
-                ? ['عنوان شغل']
-                : key === 'assets.list'
-                  ? ['شماره سریال']
-                  : [];
+  return key === 'expenses.mission'
+    ? ['مسئول تأیید']
+    : key === 'expenses.claims'
+      ? ['مرحله تأیید']
+      : key === 'organization.branches'
+        ? ['تاریخ اثر']
+        : key === 'organization.units'
+          ? ['مدیر', 'واحد والد']
+          : key === 'organization.positions'
+            ? ['عنوان سمت', 'واحد', 'رده', 'ظرفیت', 'تاریخ اثر']
+            : key === 'lifecycle.promotion'
+              ? ['سمت فعلی', 'رده فعلی']
+              : key === 'contracts.active'
+                ? ['موضوع و تعهدات', 'مرجع حل اختلاف']
+                : key === 'time.shift'
+                  ? ['تقویم تعطیلات']
+                  : key === 'recruitment.interviews'
+                    ? ['عنوان شغل']
+                    : key === 'assets.list'
+                      ? ['شماره سریال']
+                      : [];
 }
 
 export function parentFieldLabel(section: string, tab: string): string {

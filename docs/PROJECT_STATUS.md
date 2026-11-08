@@ -1,4 +1,46 @@
+## HR penalty settings persistence — 2026-11-08
+
+## REPORT-MONEY-FORMAT-1108 — PC-C
+
+Report table/chart money and CSV/XLSX compound amounts use ASCII comma thousands separators. Raw decimal API values, sorting and per-currency calculations are unchanged; Excel numeric cells retain numeric values and their existing thousands number format, long decimals remain exact text. 132 API reporting tests and 18 Web model checks pass; scoped lint and clean CI validate the change. No data/schema/migration/dependency or deployment changes.
+
+Reopening penalty settings resolves the saved record for the selected branch/organization or headquarters scope and uses the existing versioned update flow. Branch switching remounts the form; other resource forms remain unchanged. Five focused tests and scoped ESLint pass; production compilation succeeded, full typecheck/build in progress. No schema or API changes.
+
+## HR fast attendance sync — 2026-11-08
+
+## REPORT-READINESS-1108 — PC-C — integration follow-up
+
+2026-11-08 PC-C REPORT-READINESS-1108: read-only production inventory completed; activate organizational Sales, future departures, real ticket SLA and own overdue calendar. HR expiry API uses explicit dates with an empty-data warning; existing HR-only catalog exclusion retained. All 16 blocked sources expose business reasons and required inputs before Run in the result panel. Readiness endpoint does not grant business-data execution. Details: docs/tasks/REPORT-SOURCE-READINESS-1108.md. No DB/schema/migration/seed/FX/deploy.
+
+REPORT-READINESS-1108: 124 targeted API and 24 Web tests pass; read-only live-source/XLSX validation passes for organization sales, future travel and SLA. Local full typecheck is blocked by stale shared generated contracts/Prisma artifacts; clean CI is required. Production unchanged.
+
+
+One-minute non-overlapping polling with bounded newest-first recent reads; full hourly/manual/startup reconciliation preserved. Both sources verified read-only. No identity, offsets, permissions or schema changes. Focused validation and deployment recorded in task completion.
+## ATTENDANCE-PENALTIES-1108 — PC-B — READY_FOR_CI
+
+Owner authorizes effective-dated late/early penalty settings (Toman), approved exemptions, daily attendance projection and manual clock edits limited to IAM usernames demo/nima. Reserve HR contracts registry/data, HR service policy/projection, Web settings/navigation/attendance editor and tests/translations. No payroll deduction or schema change; use existing HR reference records and Decimal arithmetic. Validation: 228 existing HR Web/translation tests, 8 final form/attendance cases, 19 targeted API cases, one real PostgreSQL penalty integration scenario, contracts build and Web TypeScript/scoped lint passed. API TypeScript is locally blocked by stale generated Prisma types in unrelated upstream modules; hosted generation/build gates are authoritative. Extended API HR suite passed all 269 enabled cases (61 opt-in database cases skipped). Manual edits carry an explicit confirmed-device-error flag and audit entry; old device events remain intact. Final-head hosted gates precede merge.
+
+## FX-TRANSFER-DESTINATION-1108 — 2026-11-08
+
+PC-B: Sales foreign-currency BANK_TRANSFER payment declaration no longer requires a destination account. Required marker and combobox required flag use the same policy as submission; empty selection is serialized to null. Optional blank destination does not depend on an account lookup succeeding, but any provided account still needs existing currency/lookup validation and backend branch/active-account authorization. IRR and other noncash methods keep their current UI requirements. Backend already accepts null/omitted declarations; actual Finance receipt confirmation remains separate. No production transaction, schema, API or dependency changes.
+
+Validation:26 Web and11 API tests pass, including actual form submission after currency change and server persistence without a destination. Existing selected-account, incompatible-currency, branch authorization, cash and idempotency regressions retained. Scoped lint/full Web types and final-head hosted build/tests/migration gates control publication under standing workflow. No deployment.
+
+## HR attendance freshness and current employees — 2026-11-07
+
+Production read-only diagnosis: both workstation tunnels respond; primary Radan has nine raw 2026-11-06 punches mapped once to 2026-11-07, and Nora contains eighteen daily rows for Saturday with last processing at 12:30 UTC. Secondary Radan returns no Saturday punches (latest raw 2026-11-05). Add one startup catch-up before resuming unchanged clock slots, current-employee scope for shared attendance list/count, current-only selector/projection, and visible-page refresh each minute. Preserve explicit personnel-profile historical queries and stored records. Focused connector/query tests:21 pass; projection tests:6 pass; scoped lint passes. No schema or dependency change.
+
+## HR leave and mission fixes — 2026-11-07
+
+Both monthly leave notice controls now accept integer days (0–365), with legacy hourly cutoff compatibility. HR mission fund previews use a narrow HR-manage port retaining custodian/manager and branch enforcement, without requiring purchase-list access. Workbench leave resolves the explicitly linked active sender employee independently of request destination, and approval/reconciliation use that personnel branch; missing links are never guessed. Focused unit/form tests and two isolated PostgreSQL workflows pass, including canonical cross-branch persistence and fund preview. Production account mapping remains pending for unlinked accounts.
+
+## CHAT-MESSAGE-SEARCH-1107 — PC-B — READY_FOR_CI
+
+User authorizes in-conversation message search beside resize controls, push and develop merge. Reserve Messaging list search query/repository filtering, client and composer search results/pagination, tests and translations. Server-side history search stays within authorized conversation; search does not mark unrelated messages read. No schema/dependency/deployment. Validation: 97 Web/translation tests, 30 API tests and all 8 real PostgreSQL messaging tests passed; scoped lint passed. The first simultaneous local database run timed out in the existing attachment upload; an isolated rerun passed all cases. Coverage includes history beyond the current feed, non-overlapping cursor pages, authorization and unread preservation. Final-head hosted gates precede merge.
+
 ## COMBINED-HOTEL-NEXT-1107 — PC-C — VALIDATING
+
+MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete expense helper and approval inputs/column hidden without moving persisted positions. Standalone expense form shares mission petty-cash fields, supports parent mission, evidence and currency. Mission row opens all child expenses with edit/delete controls. Procurement-owned transaction port retains original debits and writes idempotent linked reversal credits on HR expense edit/delete, preserving branch/custodian controls and atomic balance rollback. Local isolated PostgreSQL test passes create, replay, edit, stale version, dependent delete guard, claim debit and full reversal; three focused port tests pass. No schema/dependency change. Hosted final-head gates required.
 
 Automatic primary checkout previously followed the trip return even after a subsequent hotel was added, causing overlapping stays and a silently disabled pricing navigation button. Automatic checkout now follows the next stay check-in; explicit manual dates remain authoritative. The same hotel validation result drives both navigation and an actionable message, preserving all existing room/date/journey guards. Added model/payload and actual parent-button regressions for hotel-only, flight+hotel, manual overlap, incomplete rooms and invalid itineraries. Sales suite:788 passed, one existing skip; final added flight+hotel case and focused combined checks pass (31). Scoped lint and Web TypeScript passed; final build and exact-head hosted gates remain required. No API, schema, migration, dependency or deployment changes.
 
@@ -9,6 +51,18 @@ Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI f
 ## DASHBOARD-EXCLUSIONS-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
 Translated 49 mixed-language exclusions; all 84 KPI exclusion strings are Persian-only. Chart limitations display Persian report/permission wording instead of projection jargon and an internal permission code. Existing access checks preserved. 58 Dashboard/i18n tests passed (one existing skip); formatting, lint and Web build/TypeScript validate this copy change. Extends PR1436; no API/schema/data change or deployment.
+
+## DASHBOARD-DATA-ACTIVATION-1108 — PC-C — READY_FOR_REVIEW
+
+Read-only production catalogue audit covers 319 tables (155 populated), 4,030 columns and 721 FKs. Every 84 KPI/91 chart definition now has explicit business input requirements; 33 KPI definitions and 34 charts have native source wiring, conditional on scope/filters/completeness. Added owner-public capacity, Sales events/stays/staff, issuance, protected Call Center, Support, HR attendance, Documents and canonical customer behavior readers. Missing approved costs/posted journals/thresholds/attribution are explicitly unavailable; no fabricated money, averages or history. Focused API56 and Web/translation102 tests pass (one existing skip); API typecheck passes. API production compilation and scoped lint pass. Fresh post-integration API regressions67 plus Reporting/HR40 and rendered availability regression1 pass. Hosted Linux quality, build and PostgreSQL gates succeeded on integrated implementation; final-head full gates tracked in Draft PR1488. Local Web typecheck passes; Windows cross-drive dependency junction prevents local Webpack build, so hosted Linux build remains required. No migration/dependency/data mutation/deployment. Full widget ledger and populated-table audit: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md. Draft develop handoff.
+
+## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — READY_FOR_CI
+
+عنوان «فیچرهای استفاده‌شده در فرمول» در پنل تعریف KPI با وزن قلم ملایم‌تر و هماهنگ با متن این بخش نمایش داده می‌شود؛ سایر عنوان‌ها و رفتار محاسبه ثابت می‌مانند.
+
+اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint محدود، build قراردادها، typecheck کامل وب، build تولیدی وب (۶۷ مسیر) و بررسی diff موفق شدند. بررسی Prettier برای دو فایل بزرگ TypeScript هشدار قالب‌بندی داد؛ برای تغییر یک کلاس، بازنویسی گسترده اعمال نشد.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
 
 ## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
 
@@ -45,7 +99,6 @@ Removed payment-history panels and the internal source UUID row from the Finance
 ## HR-MISSION-ATTENDANCE-1105 — PC-A — READY_FOR_CI
 
 Payroll/profile cleanup, restricted manual attendance and mission/petty registration integration. See [handoff](tasks/HR-MISSION-ATTENDANCE-1105.md). No migration or deployment. Exact manual-editor IAM identity must be configured at release.
-
 
 ## CALL-CENTER-FOLLOWUP-REVIEW-1105 — PC-C — READY_FOR_CI / NO DEPLOY
 
@@ -88,7 +141,6 @@ The missed-callback Register Request action was hidden when browser session perm
 Validation: four API capability tests, twelve existing IAM request-assignee tests and nine Web action tests. Local full typechecking with borrowed dependency links is not valid for this newer develop snapshot: generated contracts and Prisma types are stale; clean hosted gates are required before merge and deployment. Production deployment must preserve peer overlays and use the shared lock and verified backup.
 
 Candidate overlay validation: API/Web production builds passed; 4 API and 154 Web tests passed (one pre-existing skipped test). All four gates passed for the first integrated head; repeat hosted validation after the latest develop integration. Deployment uses the existing live baseline and preserves peer overlays; no grant or schema changes.
-
 
 Owner authorizes a bounded server release of approved Call Center, Dashboard and Reports work. CallForm explicitly exposes every source and outcome choice rather than silently truncating to five; default behavior of the shared selector remains unchanged elsewhere.17 popup/selector regressions and scoped lint pass. Release will preserve current unrelated production source/settings, validate required public reporting adapters, build and test a candidate, verify encrypted server-only backup and deploy under the existing lock with rollback and Worker/API/AMI checks. No IAM grants, schema/migrations, dependency or business-data writes are included.
 ## NOTIFICATION-CLEAR-COUNTER-1104 — PC-B — READY_FOR_CI
@@ -2115,6 +2167,20 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## 2026-11-08 — انتخاب و وضعیت بیمه هر مسافر
+
+وضعیت: تکمیل و ادغام در develop؛ برای اعمال روی سرور، API و Web این نسخه باید با هم مستقر شوند. اگر بیمه در قرارداد ثبت شده ولی به هیچ مسافری تخصیص ندارد، پیام مشخص و راهنمای ویرایش اسامی نمایش داده می‌شود.
+
+`INSURANCE-SELECTION-1108` توسط PC-A: بیمه‌نامه و صف صدور، تخصیص فعلی بیمه در قرارداد را از سرویس عمومی فروش می‌خوانند. مسافر بدون رکورد صدور نیز همراه علت آماده‌نبودن نمایش داده می‌شود؛ بیمه‌نامه موجود با تغییر نسخه intake ناپدید نمی‌شود. آماده‌سازی درخواست‌های ثبت‌نشده با مجوز مدیریت اسناد و حفظ یکتایی درخواست ممکن است. در ویرایش قرارداد، خدمات بیمه هر مسافر قابل افزودن و برداشتن است.
+
+۴۲ تست API، ۱۴ تست Web و ۳ بررسی ترجمه، lint محدود، TypeScript کامل و buildهای API/Web پاس شدند. Schema، Migration و Dependency تغییر نکرده‌اند. اتصال موجود تراویس آزمایشی است؛ صدور واقعی و استقرار سرور در این واحد انجام نشده است.
+
+## 2026-11-08 — تطبیق تاریخ پرواز واچر با قرارداد
+
+- `VOUCHER-FLIGHT-DATE-1108` روی `PC-A` با Commit `5c6956a77` در `develop` ادغام شد: تاریخ پرواز رفت و برگشت در واچر همیشه از projection فعلی قرارداد خوانده می‌شود و تاریخ ذخیره‌شده قدیمی نمی‌تواند واچر را یک روز عقب بیندازد.
+- فرم کارگزار همچنان تاریخ صریح نسخه ذخیره‌شده خودش را حفظ می‌کند و سایر فیلدهای ذخیره‌شده واچر تغییر نمی‌کنند.
+- ۲۴ تست هدفمند Web، ESLint محدود، TypeScript کامل Web و build تولیدی ۶۷ مسیر پاس شدند؛ Schema، Migration، Dependency، داده عملیاتی و استقرار تغییر نکرده‌اند.
 
 ## 2026-11-07 — فرم ترکیبی هتل و ترانسفر
 
@@ -8890,8 +8956,6 @@ Owner requests removal of the credit-limit/financial-balance guidance sentence f
 
 Read-only production schema/count audit and candidate verification cover every catalogue identifier. Eleven additional report codes now use owning-module native projections instead of sample-table assumptions; total16 Backend codes execute and generate complete-column XLSX,15 remain in the general Web catalogue under the existing HR exclusion. Current registered-purchase sums independently reconcile by currency. Unsupported legacy sources are honestly pending; all21 remaining reports and the partial-scope requirements are listed in docs/tasks/REPORTING-READINESS-1103.md. Preserve source permissions, branch/own boundaries, cancelled-sale exclusion, Decimal, five-row preview, chosen sort, B Nazanin export and latest Dashboard/Call Center work. No schema, dependency, IAM or business-data writes and no application deployment. Final exact-head hosted gates control the owner-authorized develop merge.
 
-
-
 ## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
 
 Owner requests incoming correspondence cards/filters/table and sender, correct breadcrumbs, B Nazanin exports and immediate incoming-file viewing without the unavailable scanner gate; push/develop merge authorized. Reserve correspondence Web, bounded Documents upload/list/delivery API and shared form/contracts/tests, navigation aliases, English catalog and own notes. Sole migration owner PC-B for additive Document.senderName/isIncomingLetter; prior Marketing reservation merged/released. API producer and Web consumer ship optional fields together. Preserve branch/domain permissions, confidentiality grants and known malware blocks. Also repair module/type content filtering used by the merged Marketing consumer. No dependency or operational deployment changes.
@@ -8908,16 +8972,8 @@ GHESTIROO-DOCUMENT-LOGO-1103 owner refinement: transparent logo backing, no whit
 GHESTIROO-DOCUMENT-LOGO-1103 validation: supplied PNG copied byte-for-byte (SHA256 CA5F88006E9CBE292C8898AA1C5F6C362CBCF499BB7E8CE7A4F3210C4CBA151B). All 61 focused tests, scoped ESLint, web typecheck and i18n sync check pass. Synthetic Chromium visual QA covers contract/reservation/voucher; issuer logos preserve original colors with transparent backing per owner refinement. Local build first attempt hit host ENOSPC; own build cache removed and retry in progress. No schema, migration, dependency, operational data or deployment changes. Ready for final-head CI and authorized develop merge.
 GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local build retry ended with Next worker exit 4294967295 after earlier ENOSPC; production-build verification delegated to the required clean-checkout CI gate. All 61 focused tests and scoped lint/typecheck remain passing. No deployment. Merge requires all final-head checks successful.
 
-
 ## LEDGER-SOURCE-PARITY-1103 — PC-B — IN_PROGRESS
 Fresh read-only source observations confirm chart-first navigation without a form-mode selector. Removed unbound form preview, GL KPI/hero additions and compacted the tree; automatic authorized-book resolution prefers active main book. Reference data validates (222 accounts,26 detail types), but production data activation is not established. Scoped tests pass; broader suite timeout passed on isolated rerun. Host memory blocked remaining lint/type/build; local route responds200 after bounded source copy. Full GL comparison is ongoing; no production deployment or complete-parity claim. See tasks/LEDGER-SOURCE-PARITY-1103.md.
-
-
-
-
-
-
-
 
 ## CORRESPONDENCE-ALL-USERS-1103 — PC-B — IN_PROGRESS
 
@@ -8945,7 +9001,6 @@ Owner reports the new shift form is not visible on local HR time page. Reserve H
 
 Owner requests weekly named shifts with employee multi-selection, self-service shift history and schedule/device-based attendance status; push/develop merge authorized. Reserve HR API/Web/contracts, bounded Workbench shift consumer, own translations/tests and notes. Existing same-owner HR scopes are integrated in develop. Additive optional weekday column and atomic bulk assignment endpoint preserve legacy dated shifts; no schema/migration/dependency change. Preserve employee/branch authorization, closed periods, source punches and historical assignments.
 
-
 HR-WEEKLY-SHIFTS-1103 implementation: weekday-aware recurring assignments use existing employee FK records, atomic/idempotent multi-employee create, bounded validity dates, per-record versioned edit/archive and closed-period protection. Workbench exposes only the linked employee shifts even without broad HR access. Device sync processes all 32 lookback dates, including empty days, to persist present/absent/non-working statuses; unfinished shifts wait and incomplete punches retain review status. Both attendance grids include status. Existing nine-value shifts remain compatible; weekly end times are authoritative. No migration, dependency, operational data or deployment changes.
 
 HR-WEEKLY-SHIFTS-1103 validation: 56 focused Web/translation tests pass; HR suite initially 232 pass/2 expectations changed/47 opt-in skipped, corrected expectations plus all five new disposable PostgreSQL scenarios pass in a 26-test rerun. Tests cover atomic bulk rollback, replay, branch/permission scope, real device pairs, absence/rest days, overnight shifts, future shifts, self-only projection, versioned edit/delete and closed periods. Local API typecheck hit Node heap limit after contracts rebuild; clean final-head CI typechecks/build/tests remain mandatory before authorized develop merge. Source freeze/release on verified merge.
@@ -8959,7 +9014,6 @@ Validation: 68 Procurement API tests passed, including six disposable PostgreSQL
 ## DOCUMENTS-CLOSE-COPY-1103 — PC-B
 
 Owner requests a visible top-left close button in Document view and removal of two upload guidance sentences; push/develop merge authorized. Reserve Documents detail/upload components, bounded optional close-button control in shared DialogContent and own notes. Prior Correspondence scope released by merged PR1337. No active overlapping writer found; no API/schema/dependency/deployment changes. Default shared-dialog behavior stays compatible.
-
 
 ### LEDGER-SOURCE-PARITY-1103 — ادامه تطبیق، تکمیل‌نشده
 
@@ -9002,7 +9056,6 @@ Read-only production audit found no RECEIPT document type or PROCUREMENT_FINANCE
 
 CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay/custom-policy regression passes; database build/typecheck, scoped ESLint, formatting and five CI-policy checks pass. Initial cold Docker startup exceeded the default five-second test budget; database readiness and a bounded integration-test timeout resolved it. No production records have yet changed. Exact-head hosted quality/tests/migrations/build gates precede merge.
 
-
 2026-11-04 PC-B FINANCE-PUBLISH-1104: owner explicitly requests publishing and merging all completed Finance changes, including the bounded implementation in PR1345. Integrate latest develop in clean voucher-source-1104 worktree; preserve both work logs and translation additions. This supersedes the previous draft-only publication hold, not the documented incomplete full-GL parity. No additional voucher-type implementation, source data import, migration or production deployment in this publication. Final-head hosted quality/tests/build/migration checks must all pass before merge. Finance inbox changes already merged separately in PR1365.
 
 ## CASH-PAYMENT-ACCOUNT-1104 — PC-A — VALIDATING
@@ -9010,7 +9063,6 @@ CONTRACT-RECEIPT-1104 local validation: actual PostgreSQL18 empty/partial/replay
 Cash contract payment entry no longer requires the bank-account selector or a successful account-directory lookup. Switching to cash clears the prior selection and submission sends a null destination; other methods retain matching-currency account validation. Existing API accepts accountless entries and still queues Finance confirmation with audit/idempotency intact. Added Web regression for cash/missing/loading/failed account lookup and all noncash methods, plus API persistence regression. No schema, migration, grants or production financial writes. Hosted exact-head quality/tests/build gates precede authorized develop merge.
 
 CASH-PAYMENT-ACCOUNT-1104 validation: 15 focused Web and 10 API/Finance regressions, scoped lint and full Web TypeScript passed. Exact-optional nullable account payload normalized to null. Final-head hosted build/quality/tests/database gates remain mandatory before merge; no runtime rollout.
-
 
 FINANCE-INBOX-LAYOUT-1104 — PC-B — ACTIVE: owner requests six inbox presentation changes and authorizes push/develop merge. Branch codex/pc-b-finance-inbox-layout-1104 from develop74ad64ab2. Reserve finance-inbox-live-workspace, bounded optional PDF visibility in finance-export-actions, existing presentation checks and own notes. Remove the overview disclosure label/control while keeping its contents visible, account helper and follow-up panel; move Excel to request-list header and pagination to its footer; hide only inbox PDF action, preserve shared history/receipt exports and all request/filter/payment/access behavior. No API/schema/dependency/operational data or deployment changes.
 
@@ -9026,7 +9078,6 @@ Applied all44 owner browser annotations (41/42 share one target): remove specifi
 
 The two general-ledger detail forms use scoped type and title tables, editable user-defined titles, Customers-owned person and organization dialogs, and independent fixed-width digit-string numbering. The server validates owner identity and scope, duplicates, classification width, parent rules and concurrent allocation. Legacy unlinked owner titles remain historical and are never attached by name. Local disposable PostgreSQL passed 68 accounting tests and the populated legacy migration preserved a nine-character code and its identity. Eight Web/translation checks passed. Browser QA with synthetic data verified both forms, padded suggestions, reopening a populated row, organization drawer and rejection of zero width. Local Rubi Web3100/API4192 were stopped before the task. Migration and visual verification used isolated QA only.
 Scoped ESLint, API/Web typechecks, production builds (65 Web routes), offline catalogs and reference validation passed. Both synthetic browser views were recorded outside Git.
-
 
 TRAVEL-UI-ANNOTATIONS-1104 — PC-B — ACTIVE: owner authorizes nine annotated presentation changes and push/develop merge. Branch codex/pc-b-travel-ui-annotations-1104 from developa569718d6. Reserve only purchase-hub supplier card/category layout and existing assertion, Ticket Catalog eyebrow, hotel saved-pack visible labels, Reservations Excel action placement and three specified purchase helper paragraphs, and own status. Prior UI-COPY-CLEANUP-1104 is merged/frozen in PR1377. Preserve command/query handlers, branch/permission guards, amounts, export payload and all user data. No schema, API, dependencies or deployment changes.
 
@@ -9048,11 +9099,7 @@ The title chooser opens the company editor for new and existing legal entities. 
 Validation: 90 API tests including a PostgreSQL transaction rollback/no-orphan case, ID and version checks; 17 Web, Documents-client and localization checks passed. Prerequisite is the person profile commit bcffdd0fd. Deploy both additive migrations before using the new forms.
 Production API/Web builds, typechecks, scoped lint and formatting passed. Verified pre-existing person ciphertext compatibility and cross-kind rejection.
 
-
 NOTIFICATION-CLEAR-PERSISTENCE-1105 — PC-B: owner reports cleared bell items returning. Scope: notification center and regression only. Persist dismissals for acknowledged audit entries outside the bounded display cache, and wait for server clear confirmation before removing its entries. Preserve unread items, audit records and existing API/permissions. No migration.
-
-
-
 
 ## CALL-CENTER-OWNER-UNIT-SCOPE-1105 — PC-C — IN_PROGRESS
 
@@ -9064,7 +9111,6 @@ CALL-CENTER-OWNER-UNIT-SCOPE-1105:57 targeted checks pass (36 unit/security/HR,1
 
 KPI drill-down/report refresh used POST read endpoints and was misclassified by the global fetch notification tracker as a new Customer Affairs record. Exact six existing Call Center query paths now bypass generic mutation notifications (including query strings/trailing slash); real call, note and request saves retain their notifications. No notification history, API, KPI refresh, permissions or operational data is changed.38 focused tracker/feed/read-client checks and scoped lint pass; full Web type/build and publication verification pending. PC-B notification-center persistence files untouched.
 
-
 ## CALL-REQUEST-ALERT-1105 — PC-C — SOURCE_READY
 
 Call Center workflow assignments/reminders now emit recipient-scoped call-center.assigned notifications with a queue anchor. Closure notices use call-center.closed, so they do not activate the alert. The bell displays a red upper-right pulse while an authorized assignment is unread; existing persistent mark-read/mark-all and stale-feed guards dismiss it. Opening the notification expands and focuses the follow-up queue and clears queue filters. Unread assignments are prioritized before bounded feed pagination. Existing legacy notices remain visible. No migration or production data changes.
@@ -9075,11 +9121,9 @@ Validation: scoped API/Web ESLint and 56 targeted tests pass, including all 27 w
 
 Workbench recipients include active HR employee unit membership through linked active internal IAM accounts, retaining branch checks and transactional revalidation. HR inbox integrates directed Workbench requests with review/delete actions; sender sees approved/rejected/revision decisions. Structured daily/hourly leave uses the native HR approval/balance/overlap/closed-period rules in the same database transaction, then reconciles attendance. Employee leave view includes legacy and Workbench leave; full-day approved leave has zero late/early/deficit and leave status. Native Jalali year extraction uses date parts. No schema/dependency or production changes. Verification: targeted API/UI tests and isolated PostgreSQL approval/replay/rollback/attendance tests passed. Web production build passed; final-head checks precede merge.
 
-
 ## WORKBENCH-GROUPS-HR-ASSIGNMENT-1105
 
 Removed the four owner-selected helper paragraphs in Finance inbox and Workbench notes/favorites/activity. Group details and editing now use responsive member cards, owner badges, separated edit fields, bounded scrolling and a stable action footer. Employee assignment history compares resolved persisted organizational values, so sending an unchanged jobTitleId or editing personal details no longer creates a spurious assignment; actual organizational changes retain audited history. Added a real PostgreSQL repeated-save regression. No migration, historic-record deletion, operational data writes or deployment. Scoped lint, nine existing Web behavior tests and three translation checks passed; API/Web type checks and production builds passed. Both isolated PostgreSQL scenarios passed, including unchanged title/personal edit without a new assignment and a genuine organizational correction retaining its audit/history. Hosted gates remain required before merge.
-
 
 ## CALL-QUEUE-MINE-1105 — PC-C — SOURCE_READY
 
@@ -9100,7 +9144,6 @@ Corrected shared completion criteria: optional caller name and unknown immutable
 ## FINANCE-REQUEST-ATTACHMENTS-1105
 
 Sales receipt request details show source-scoped payment evidence with clean authorized image previews, binary downloads, pagination and loading/error states. Source version remains in command concurrency checks but is removed from the detail display. Finance read permits only payment-specific evidence in actor branches; generic contract read and upload permissions are unchanged. Fifteen API/HTTP regressions passed including branch isolation, wrong payment rejection and upload denial. No migration, operational data changes or deployment.
-
 
 ## HR-REVIEW-MESSAGE-ALERTS-1105
 
@@ -9134,7 +9177,6 @@ PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User se
 
 PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
-
 ## FINANCE-APPROVAL-DOWNLOAD-1107 — 2026-11-07
 
 PC-B: owner-requested inbox approval groups and receipt download implemented. Default pending / approved controls filter server-side before pagination, totals and Excel export; switches reset selection/page. Completed Sales receipts and paid reservation groups are retained through their public source projections; Sales branch scope and legacy callers preserved. Reservation ready-on-handoff alone is not financial approval. Confirmed receipts no longer show approve/correction commands.
@@ -9143,13 +9185,9 @@ Receipt PDF/JPEG/PNG downloads can proceed from the source-bound Sales endpoint 
 
 Validation:169 focused API and18 Web tests pass; Web typecheck caught and corrected the native Button primary variant. Shared local dependency artifacts require API tests to resolve the existing generated database package and current Contracts source through a temporary external test config. Final-head hosted full build/type/test/migration gates remain required before authorized develop merge. Source reservation freezes on push.
 
-
 ## REPORT-COPY-CLEANUP-1107 — PC-C — IN_PROGRESS
 
 PC-C; base23875a289; branch codex/pc-c-report-copy-cleanup-1107. User requests removal of five selected technical helper/provenance texts from every report section. Reserve shared reporting-workspace.tsx and existing spec only plus own docs. Presentation-only; preserve filters, snapshots, producer metadata and authorization. No current overlapping writer found.
-
-
-
 
 ## CALL-OWNER-UNIT-FIX-1107 — PC-C — IN_PROGRESS
 
@@ -9163,7 +9201,6 @@ PC-C; base d9985d1c4; branch codex/pc-c-call-unit-manager-audit-1107. Owner exte
 Existing recipient-scoped call-center.assigned events now use the same bottom-right popup as internal messages. Exact queue link and same-page open-queue event retained; read/seen/historical/inaccessible items excluded.8 focused tests pass against current Contracts sources. No API/schema/migration changes; production publication pending.
 
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
-
 
 ## NOTIFICATION-HR-REFRESH-1107 — 2026-11-07
 
@@ -9200,6 +9237,22 @@ without its unrelated HR scope. Details: tasks/BACKGROUND-NOTIFICATIONS-1107.md.
 Dashboard بازهٔ زمانی: متن گزینهٔ زیر نشانگر و گزینهٔ دارای تمرکز سفید می‌شود؛ رفتار انتخاب و سایر فیلترها ثابت می‌ماند. تست Dashboard: ۱۹ موفق و یک ردشدهٔ از قبل موجود؛ lint، typecheck و build تولیدی Web با ۶۷ مسیر موفق‌اند. بدون تغییر API یا داده و بدون انتشار سرور.
 
 CALENDAR-DAY-ACTIONS-1107: day context actions open existing note/event/request forms with selected date; note reminder date/time optional and persisted through existing personal Notes API. Calendar includes dated notes and linked request entries. No schema migration. Focused calendar/note/submission tests:11 passed; scoped lint passed. Final Web typecheck and scoped ESLint passed. Hosted checks required before merge.
+
+## Combined hotel and transfer supplier form — 2026-11-08
+
+Reservations now keeps the hotel broker as the transfer broker and produces one
+combined hotel/transfer supplier form by default without showing the redundant
+«کارگزار ترانسفر جدا از هتل» checkbox. An explicit transfer-broker change still
+records separate output automatically; returning to the hotel broker keeps the
+combined mode. Existing saved modes and historical forms are not rewritten.
+Focused 26 tests and the full Reservations Web suite (664 passed, 4 existing
+skips), scoped lint, Web TypeScript and the production Web build passed. No API,
+schema, migration, dependency, runtime or operational-data change.
+
+INTEGRATE-TRANSFER-DEFAULT-1108: owner-requested source2e6219682 integrated with current develop on a separate branch; only a status-header conflict required resolution, retaining the combined-broker note and current HR heading. Published peer branch remains unchanged. Four source CI gates are green; final integration PR gates remain required. No migration or deployment.
+
+INTEGRATE-TRANSFER-DEFAULT-1108 correctness: two interaction regressions reproduced invalid split=true/separate=false after explicitly choosing the hotel broker or clearing a transfer broker. The integration-only handler now clears split-only draft settings on recombination, retaining price inputs and leaving saved settings/source objects untouched.28 focused interaction/document-scope checks and scoped lint pass; full integration-head hosted gates remain mandatory. Original peer branch is preserved. No API, schema, migration, dependency, data or deployment change.
+
 ## 2026-11-07 — RESERVATION-CONTRACT-VALUES-1107 — READY_FOR_CI
 
 PC-A; branch codex/pc-a-reservation-contract-values-1107, base cbc8d334b.
@@ -9227,8 +9280,70 @@ RESERVATION-CONTRACT-VALUES-1107 local validation:325 Web reservation checks pas
 RESERVATION-CONTRACT-VALUES-1107: implementation88d99324b published in PR1468. Scoped ESLint, full Web typecheck, formatting/diff checks and final production Web build (67 routes) pass. Hosted quality found only two extra blank lines in the own assignment entry; formatting corrected without source changes. All exact-final-head hosted gates must pass before merge; reservation releases on verified merge.
 
 RESERVATION-CONTRACT-VALUES-1107 hosted full suite:4672 Web checks passed and one old PDF assertion still expected insurance text in the removed OTHER SERVICES column. Replace that display expectation with column-absence plus retained model-allocation assertions. Quality, production builds and PostgreSQL gates are green; repeat final-head CI after this test-only alignment.
-## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — READY_FOR_REVIEW
 
-عنوان «فیچرهای استفاده‌شده در فرمول» در پنل تعریف KPI با وزن قلم ملایم‌تر و هماهنگ با متن این بخش نمایش داده می‌شود؛ سایر عنوان‌ها و رفتار محاسبه ثابت می‌مانند.
+2026-11-07 PC-C SERVICE-ROUTE-CURRENCIES-1107: service/route rows consolidate exact per-currency amounts using +; contract/passenger counts deduplicate by contract ID before pagination. Native source and export/chart money arrays shared. 13 focused tests passed (includes XLSX content), formatting passed; full local typecheck blocked by stale shared contracts/Prisma artifacts; hosted checks required. No FX conversion, migration or deployment.
 
-اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint محدود، build قراردادها، typecheck کامل وب، build تولیدی وب (۶۷ مسیر) و بررسی diff موفق شدند. بررسی Prettier برای دو فایل بزرگ TypeScript هشدار قالب‌بندی داد؛ برای تغییر یک کلاس، بازنویسی گسترده اعمال نشد.
+## 2026-11-07 — Ticket multi-airline marks and leg-date typography
+
+- PC-A reserved the shared presentation-only flight-ticket layout and focused
+  regression on `codex/pc-a-ticket-multi-airline-labels-1107`.
+- Scope is limited to one header mark per distinct ticket carrier and matching
+  ARRIVAL/DEPARTURE date typography; no data, API, schema or runtime change.
+- Implemented deduplicated multi-carrier marks with compact two-airline sizing;
+  dates now share the row label's 13pt/700 inherited-color typography.
+- Layout tests 9/9 and related consumers 43/43 pass with one existing optional
+  skip; scoped lint, Web TypeScript and the 67-route production build pass.
+
+## DASHBOARD-DECISION-AUDIT-1108 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-decision-audit-1108 from origin/develop. Owner authorizes read-only server/source reconciliation of Dashboard charts, obsolete decision-tag removal and supported source completion. Reserve Dashboard visual card/details, availability/lineage/registry, native Reporting Dashboard trend mapping/tests and bounded task/status notes. Prior complete-sources committed branch is an ancestor of develop; its uncommitted reporting.contracts.ts is excluded. No schema/dependency/operational data or permission changes. Server inspection is counts/metadata only.
+
+DASHBOARD-DECISION-AUDIT-1108: 93 registry chart slots audited against native dispatcher; Treasury receipt/refund source added and reconciled in a production READ ONLY transaction. Accepted 001/004 chart metadata removed; raw decision badges replaced by Persian details, available even without chart data. Credit/SLA/marketing policies remain business decisions. No production writes or rollout. Translation scope includes three preserved legacy catalogue entries to avoid regeneration loss.
+
+2026-11-08 PC-C REPORT-CURRENCY-ROWS-1108: currency-independent report rows, + separators, canonical contract/item deduplication and explicit producer grouping for cancellations/purchases. Shared sourceValues and per-currency chart series used for tables and exports. 114 API reporting tests and 11 Web client tests passed; local Web rendering blocked by missing Radix/Tailwind dependencies; scoped API lint passed. No schema/migration/FX/deployment. See docs/tasks/REPORT-CURRENCY-ROWS-1108.md.
+
+
+ATTENDANCE-ACTIVATION-1108 PC-B IN_PROGRESS: reversible attendance exclusion; preserves device punches.
+## 2026-11-08 — PC-D — Detail type form visibility and reference layout
+
+The detail-type route now renders its own editor when no authorized accounting ledger exists, instead of silently substituting ledger creation. The compact two-column main tab matches the owner's Rahkaran reference fields, with title and 1–20 classification length required, optional second title/default-first-code/parent/enforce-parent, and full-width description. Missing-ledger state retains editable draft fields and notes, explains the prerequisite, links to ledger creation, and blocks commands/save actions. Existing ledger-scoped persistence, authorization and FK requirements remain unchanged. Four real-workspace rendering regressions cover empty/available/error book states and the ledger route. Thirteen focused tests, scoped ESLint, Web TypeScript, formatting and 67-route production build passed; a temporary local SSR preview confirmed the two-column layout. No schema, migration, dependencies or production data changes. Publication target and live rollout require the owner's explicit authorization.
+
+## RESERVATION-BROKER-EMAIL-1108 — PC-A — VALIDATED / IT CONFIGURATION PENDING
+
+User clarifies that NOTICE belongs only inside the reservation PDF; email contains
+one PDF attachment and no text/HTML body. Existing form appearance and PDF template
+are preserved. The authenticated Web route renders the saved current hotel form,
+checks version and signs the immutable PDF digest; API independently verifies the
+signature, permission, branch, selected company and designated audited broker email.
+Encrypted durable outbox and workflow revision commit together; PostgreSQL claims,
+bounded retries and UNKNOWN recovery avoid blind duplicate sends. Results reach
+the initiating employee through the existing notification center. Default off until
+IT supplies the SMTP identity/settings and a controlled mailbox acceptance is done.
+
+Validation:33 focused API tests,8 real PostgreSQL tests,92 Web/PDF/i18n tests and a
+real Chrome single/multipage PDF smoke test passed. Visual review confirms NOTICE
+in the existing final form section. All226 migrations apply on isolated PostgreSQL18;
+Prisma generation, Contracts/Database/Config builds, scoped API/Web lint and full
+API/Web typechecks pass. Final API/Web production builds and draft PR recorded in
+the task handoff. Additive migration must precede a coordinated API/Web rollout.
+No real email, operational data/settings/schema change, deployment or merge.
+See tasks/RESERVATION-BROKER-EMAIL-1108.md for IT intake and private configuration.
+
+RESERVATION-BROKER-EMAIL-1108 final local gates: API production build and Web production build (67 routes) both pass. SMTP remains disabled pending IT; draft branch publication only.
+
+RESERVATION-BROKER-EMAIL-1108 delivery: implementation fc9713987 pushed; draft PR1498 to develop, author Amin-tech11 verified. API/Web production builds pass (67 Web routes). All local gates and IT instructions are in docs/tasks/RESERVATION-BROKER-EMAIL-1108.md. Source frozen; bounded Migration/Dependency reservations released. No merge, deploy, real email or operational data/schema/settings changes. Dedicated test PostgreSQL container stopped after validation. Hosted PR gates and IT-controlled live acceptance remain pending.
+
+## RESERVATION-BROKER-EMAIL-CI-1108 — PC-A — FIX VALIDATED
+
+PR1498 head c45e0cd3a had green quality/build/PostgreSQL gates and one failing Web
+price-save regression. Separate price Save from real PDF email dispatch; only the
+explicit Send to broker action can dispatch. Preserve old sent-form snapshots.
+11 targeted Web and34 mail API tests, lint, Web typecheck/build (67 routes), and
+actual Chrome PDF smoke pass. Added disabled-background-dispatch safety coverage.
+No real email, runtime settings, migration/dependency or UI appearance changes.
+Five shared docs/catalogue merge conflicts remain pending merge authorization.
+SELF-ATTENDANCE-PENALTY-1108 PC-B: expose the existing authoritative daily penalty in self attendance history; no recalculation in browser or new policy.
+
+RESERVATION-BROKER-EMAIL-CI-1108: owner approved task-branch-only synchronization; shared docs/catalogue conflicts resolved without removing upstream records or translation values. Final integrated CI remains required. No deploy, real mail or PR-to-develop merge.
+
+RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real PDF smoke pass. Task branch synchronized with develop; no PR merge conflicts. Two ledger formatting separators corrected after hosted quality feedback. Final-head hosted checks pending. Real email remains disabled; no deployment or merge to develop.

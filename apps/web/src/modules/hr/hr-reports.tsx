@@ -1,4 +1,5 @@
 'use client';
+import { eligibleAttendanceRecords } from './employee-attendance-dataset';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton, HrEmpty, HrLoading } from './hr-controls';
 import { FileBarChart2, Search } from 'lucide-react';
@@ -91,7 +92,7 @@ export function HrReports({
         } else {
           const items = await allHrRecords(query);
           if (!active) return;
-          setRecords(items);
+          setRecords(eligibleAttendanceRecords(items));
         }
         setLoadedRange(requestKey);
         setError('');

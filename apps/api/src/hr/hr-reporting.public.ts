@@ -30,6 +30,7 @@ export async function readHrAttendanceReporting(
         branchId: { in: sourceBranches(actor, scalar('branch')) },
         section: 'time',
         tab: 'attendance',
+        NOT: { status: 'غیرفعال' },
         deletedAt: null,
         employee: { deletedAt: null },
         effectiveAt: range,

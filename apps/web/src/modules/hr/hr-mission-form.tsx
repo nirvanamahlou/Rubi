@@ -1,7 +1,8 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { procurementRequest } from '@/modules/procurement/api';
+import { useHrReferenceData } from './hr-reference-data';
+import { hrRequest } from './hr-api';
 import type {
   HrRecordDto,
   HrWorkflowData,
@@ -28,6 +29,11 @@ export function HrMissionForm({
   onClose: () => void;
   onSaved: (r: HrRecordDto) => void;
 }) {
+  const references = useHrReferenceData(store);
+  const claim = target.source.tab === 'claims';
+  const [parentId, setParentId] = useState(
+    target.record?.parentId ?? target.parent?.id ?? '',
+  );
   const queryClient = useQueryClient();
   const record = target.record,
     old = record?.values ?? [],
@@ -38,7 +44,7 @@ export function HrMissionForm({
   const employee = store.data!.employees.find((e) => e.id === employeeId);
   const [destination, setDestination] = useState(old[1] ?? ''),
     [from, setFrom] = useState(old[2] ?? ''),
-    [to, setTo] = useState(old[3] ?? ''),
+    [to, setTo] = useState(claim ? (old[2] ?? '') : (old[3] ?? '')),
     [purpose, setPurpose] = useState(old[4] ?? '');
   const clock = (v?: string) =>
     v
@@ -51,8 +57,10 @@ export function HrMissionForm({
       : '';
   const [start, setStart] = useState(clock(record?.data.startsAt)),
     [end, setEnd] = useState(clock(record?.data.endsAt));
-  const [amount, setAmount] = useState(expense?.amount ?? '0'),
-    [refer, setRefer] = useState(false),
+  const [amount, setAmount] = useState(
+      expense?.amount ?? (claim ? old[4] : undefined) ?? '0',
+    ),
+    [refer, setRefer] = useState(expense?.referToPetty ?? false),
     [title, setTitle] = useState(expense?.title ?? ''),
     [center, setCenter] = useState(expense?.costCenter ?? ''),
     [fee, setFee] = useState(expense?.fee ?? '0'),
@@ -65,18 +73,23 @@ export function HrMissionForm({
     [error, setError] = useState('');
   const attempt = useRef({ body: '', key: crypto.randomUUID() }),
     uploadId = useRef(crypto.randomUUID());
-  const locked = Boolean(record?.data.pettyRegistrationId);
+  const locked = false;
   const fund = useQuery({
-    queryKey: ['procurement', 'petty-fund', employee?.branchId],
+    queryKey: ['hr', 'mission-petty-fund', employee?.branchId],
     queryFn: () =>
-      procurementRequest<{ balance: string; currencyCode: string } | null>(
-        `/petty-fund?branchId=${encodeURIComponent(employee!.branchId)}`,
+      hrRequest<{
+        balance: string;
+        currencyCode: string;
+        canRegister: boolean;
+      } | null>(
+        `/missions/petty-fund?branchId=${encodeURIComponent(employee!.branchId)}`,
       ),
     enabled: refer && Boolean(employee),
   });
-  const currency = refer
-    ? fund.data?.currencyCode
-    : (record?.data.currency ?? 'IRR');
+  const [currencyOverride, setCurrencyOverride] = useState(
+    record?.data.currency ?? (claim ? old[3] : undefined) ?? 'IRR',
+  );
+  const currency = refer ? fund.data?.currencyCode : currencyOverride;
   return (
     <Dialog
       open
@@ -89,7 +102,7 @@ export function HrMissionForm({
         aria-describedby={undefined}
         className="max-h-[90dvh] max-w-3xl overflow-y-auto"
       >
-        <DialogTitle>ماموریت</DialogTitle>
+        <DialogTitle>{claim ? 'ثبت هزینه مستقل' : 'ماموریت'}</DialogTitle>
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
@@ -124,8 +137,14 @@ export function HrMissionForm({
               }
               const data: HrWorkflowData = {
                 currency: currency ?? 'IRR',
-                startsAt: new Date(`${from}T${start}:00+03:30`).toISOString(),
-                endsAt: new Date(`${to}T${end}:00+03:30`).toISOString(),
+                startsAt: new Date(
+                  `${from}T${claim ? '12:00' : start}:00+03:30`,
+                ).toISOString(),
+                ...(claim
+                  ? {}
+                  : {
+                      endsAt: new Date(`${to}T${end}:00+03:30`).toISOString(),
+                    }),
                 missionExpense: {
                   amount,
                   title: title || purpose,
@@ -138,10 +157,21 @@ export function HrMissionForm({
               };
               const input = {
                 section: 'expenses',
-                tab: 'mission',
+                tab: claim ? 'claims' : 'mission',
+                ...(claim && parentId ? { parentId } : {}),
                 branchId: employee.branchId,
                 employeeId,
-                values: [employee.name, destination, from, to, purpose, '—'],
+                values: claim
+                  ? [
+                      employee.name,
+                      destination || 'عادی',
+                      from,
+                      currency ?? 'IRR',
+                      amount,
+                      proof ? `document://${proof.id}` : '',
+                      'ثبت اولیه',
+                    ]
+                  : [employee.name, destination, from, to, purpose, '—'],
                 status: 'تأییدشده',
                 data,
               };
@@ -149,8 +179,15 @@ export function HrMissionForm({
               if (body !== attempt.current.body)
                 attempt.current = { body, key: crypto.randomUUID() };
               const saved = record
-                ? await store.update(record, { values: input.values, data })
+                ? await store.update(record, {
+                    values: input.values,
+                    ...(claim ? { parentId: parentId || null } : {}),
+                    data,
+                  })
                 : await store.create(input, attempt.current.key);
+              void queryClient.invalidateQueries({
+                queryKey: ['hr', 'mission-petty-fund'],
+              });
               onSaved(saved);
               onClose();
               void queryClient.invalidateQueries({
@@ -206,44 +243,104 @@ export function HrMissionForm({
                 }
               />
             </label>
-            <label className={ui.field}>
-              مقصد
-              <input
-                required
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-              />
-            </label>
-            <label className={ui.field}>
-              هدف مأموریت
-              <input
-                required
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-              />
-            </label>
-            <label className={ui.field}>
-              تاریخ رفت
-              <DatePicker value={from} onChange={setFrom} />
-            </label>
-            <label className={ui.field}>
-              تاریخ برگشت
-              <DatePicker value={to} onChange={setTo} />
-            </label>
-            <label className={ui.field}>
-              ساعت رفت
-              <TimePicker
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-              />
-            </label>
-            <label className={ui.field}>
-              ساعت برگشت
-              <TimePicker
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-              />
-            </label>
+            {claim ? (
+              <>
+                <label className={ui.field}>
+                  مأموریت مرجع
+                  <NativeSearchSelect
+                    value={parentId}
+                    disabled={
+                      record?.status === 'تأییدشده' ||
+                      record?.status === 'تاییدشده'
+                    }
+                    onChange={(e) => setParentId(e.target.value)}
+                  >
+                    <option value="">بدون مأموریت (هزینه مستقل)</option>
+                    {references.data.records
+                      .filter(
+                        (r) =>
+                          r.section === 'expenses' &&
+                          r.tab === 'mission' &&
+                          r.employeeId === employeeId &&
+                          !r.deletedAt,
+                      )
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.code} · {r.values[1]}
+                        </option>
+                      ))}
+                  </NativeSearchSelect>
+                </label>
+                <label className={ui.field}>
+                  نوع هزینه
+                  <input
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                  />
+                </label>
+                <label className={ui.field}>
+                  تاریخ هزینه
+                  <DatePicker value={from} onChange={setFrom} />
+                </label>
+              </>
+            ) : (
+              <>
+                {' '}
+                <label className={ui.field}>
+                  مقصد
+                  <input
+                    required
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                  />
+                </label>
+                <label className={ui.field}>
+                  هدف مأموریت
+                  <input
+                    required
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                  />
+                </label>
+                <label className={ui.field}>
+                  تاریخ رفت
+                  <DatePicker value={from} onChange={setFrom} />
+                </label>
+                <label className={ui.field}>
+                  تاریخ برگشت
+                  <DatePicker value={to} onChange={setTo} />
+                </label>
+                <label className={ui.field}>
+                  ساعت رفت
+                  <TimePicker
+                    value={start}
+                    onChange={(e) => setStart(e.target.value)}
+                  />
+                </label>
+                <label className={ui.field}>
+                  ساعت برگشت
+                  <TimePicker
+                    value={end}
+                    onChange={(e) => setEnd(e.target.value)}
+                  />
+                </label>
+              </>
+            )}
+            {claim && (
+              <label className={ui.field}>
+                ارز
+                <input
+                  required
+                  maxLength={3}
+                  pattern="[A-Z]{3}"
+                  value={currency ?? ''}
+                  disabled={refer}
+                  onChange={(e) =>
+                    setCurrencyOverride(e.target.value.toUpperCase())
+                  }
+                />
+              </label>
+            )}
             <label className={ui.field}>
               هزینه {currency ? `(${currency})` : ''}
               <MoneyInput value={amount} onValueChange={setAmount} />
@@ -252,7 +349,7 @@ export function HrMissionForm({
               <input
                 type="checkbox"
                 checked={refer}
-                disabled={Boolean(record)}
+                disabled={busy}
                 onChange={(e) => setRefer(e.target.checked)}
               />
               ارجاع به تنخواه
@@ -291,6 +388,14 @@ export function HrMissionForm({
               />
             </label>
           </fieldset>
+          {refer && fund.data && !fund.data.canRegister ? (
+            <p role="alert">
+              فقط مسئول تنخواه یا مدیر خرید می‌تواند هزینه ثبت کند.
+            </p>
+          ) : null}
+          {refer && fund.data === null ? (
+            <p role="alert">ابتدا حساب تنخواه این شعبه را تنظیم کنید.</p>
+          ) : null}
           {refer && fund.error ? (
             <p role="alert">{fund.error.message}</p>
           ) : null}
@@ -308,13 +413,11 @@ export function HrMissionForm({
                 locked ||
                 !employee ||
                 !from ||
-                !to ||
-                !start ||
-                !end ||
-                (refer && !fund.data)
+                (!claim && (!to || !start || !end)) ||
+                (refer && (!fund.data || !fund.data.canRegister))
               }
             >
-              ثبت مأموریت
+              {claim ? 'ثبت هزینه مستقل' : 'ثبت مأموریت'}
             </HrButton>
             <HrButton onClick={onClose} disabled={busy}>
               انصراف

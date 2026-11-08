@@ -45,6 +45,34 @@ function fact(overrides: Partial<ReportingFactRow> = {}): ReportingFactRow {
   };
 }
 
+it('combines currencies before pagination and counts each source item only once', () => {
+  const result = buildTravelReportResult({
+    code: 'agency_performance',
+    now: new Date(),
+    query: { filters: {}, page: 1, pageSize: 5, timezone: 'Asia/Tehran' },
+    facts: [
+      fact({ id: 'irr', sourceItemId: 'item', currencyCode: 'IRR' }),
+      fact({
+        id: 'usd',
+        sourceItemId: 'item',
+        currencyCode: 'USD',
+        salesAmount: new Prisma.Decimal('25'),
+      }),
+    ],
+  });
+  expect(result.total).toBe(1);
+  expect(result.rows[0]?.orderCount).toBe(1);
+  expect(result.rows[0]?.passengerCount).toBe(3);
+  expect(result.rows[0]?.ticketCount).toBe(3);
+  expect(result.rows[0]?.sourceValues?.salesAmount).toBe(
+    '12000000 ریال + 25 $',
+  );
+  expect(result.rows[0]?.amountsByCurrency).toEqual([
+    { currencyCode: 'IRR', amount: '12000000' },
+    { currencyCode: 'USD', amount: '25' },
+  ]);
+});
+
 describe('travel reporting approved projection', () => {
   it('keeps cancelled pipeline rows separate without adding them or drafts to confirmed sales totals', () => {
     const input = {

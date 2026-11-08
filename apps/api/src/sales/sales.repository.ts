@@ -1,4 +1,5 @@
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
+import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 import {
   SalesReceiptAccountsPublic,
   salesReceiptDestination,
@@ -449,6 +450,23 @@ export class SalesRepository {
           : {},
       ],
     };
+    if (query.status !== 'CANCELLED') {
+      // Reservations cancellation is independent of Sales status. Resolve the
+      // latest intake/workflow before pagination, counts and Excel export.
+      const candidates = await this.database.client.salesContract.findMany({
+        where,
+        select: { id: true },
+      });
+      const cancelled = await readReservationReportingCancellations(
+        this.database.client,
+        candidates.map((row) => row.id),
+      );
+      if (cancelled.size)
+        where.AND = [
+          ...(Array.isArray(where.AND) ? where.AND : [where.AND ?? {}]),
+          { id: { notIn: [...cancelled.keys()] } },
+        ];
+    }
     const page = Math.max(1, query.page ?? 1);
     // Date-filtered contract lists are intentionally expanded for operational review.
     // The regular list remains capped to keep the default dashboard responsive.

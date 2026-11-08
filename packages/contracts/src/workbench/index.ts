@@ -109,6 +109,8 @@ export interface WorkbenchHrPerformanceV1 {
     lateMinutes: number | null;
     overtimeMinutes: number | null;
     deficitMinutes: number | null;
+    /** Authoritative HR daily penalty in Toman; null means no applicable rule. */
+    dailyPenaltyToman?: string | null;
   }[];
   /** Current Persian month, from reviewed HR attendance. Null means no reliable measurement. */
   monthlyAttendance?: {
