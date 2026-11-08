@@ -215,9 +215,6 @@ export function ReservationOperationsWorkspace({
           <header className={styles.header}>
             <div>
               <h1>رزرواسیون</h1>
-              {available && (
-                <Link href="/reservations/insurance">بیمه مسافرتی</Link>
-              )}
             </div>
             <span className={styles.badge}>
               {preview
@@ -249,6 +246,9 @@ export function ReservationOperationsWorkspace({
                   {label}
                 </button>
               ))}
+            {available && (
+              <Link href="/reservations/insurance">بیمه مسافرتی</Link>
+            )}
           </nav>
           {!available && (
             <section

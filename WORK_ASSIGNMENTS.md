@@ -4,6 +4,14 @@ Owner requests an exhaustive read-only audit of populated production tables agai
 
 Contract wiring: ReportingNativeDashboard consumes only owner-public readers for ticket inventory, Sales events/stays and customer signals, Customer identity/deduplication, HR attendance, Support, native Call Center reports, Documents compliance and Reservation issuance. Internal DashboardSourceMetric gains optional unit/snapshot (no historical state fabricated); DashboardSourceResult may declare per-metric partial failures. Reporting HTTP visual V1 gains optional missingMetrics, consumed by the existing Dashboard projection client; old consumers ignore it and old servers remain supported. Reserve matching Reporting contracts/client changes and additive Web English overrides with offline API/standalone catalogue synchronization. Native Call Center report/actor checks and UI remain unchanged.
 
+Validation/handoff: Draft PR1488. Local native/source/identity/money regressions67 pass; fresh post-integration Reporting/HR regressions40 pass; Dashboard/i18n103 including rendered availability regression1 pass (one existing skip). API/Web typechecks, API compilation and scoped lint pass. Nine owner-public readers verified in read-only production aggregates. Windows cross-drive Web build is replaced by required hosted Linux production build; hosted quality/build/PostgreSQL gates succeeded on integrated implementation, final-head full checks tracked in PR. No own port3000 listener, schema/dependency/data mutation, merge or deployment. Exhaustive ledger: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md.
+
+## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
+
+Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.
+
+Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped ESLint and all 31 existing workspace tests pass. No merge or deployment yet; source scope freezes on publication.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
@@ -11569,6 +11577,14 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-flight-date-1108` from latest `orig
 VOUCHER-FLIGHT-DATE-1108 validation: 24 focused Web tests, scoped ESLint, full Web TypeScript and the 67-route production build pass. Voucher output takes both flight calendar dates from the current contract projection while supplier-form revisions retain their explicitly saved dates; the stored settings object remains unchanged. No API, schema, dependency, runtime data or deployment changes.
 
 VOUCHER-FLIGHT-DATE-1108 merged directly to `origin/develop` at `5c6956a77` under the owner's explicit instruction on 2026-11-08. Source reservation is released; no deployment was requested.
+
+## DETAIL-TYPE-LAYOUT-1108 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; branch codex/pc-d-detail-type-layout-1108, created from PC-D-Integration and fast-forwarded to current develop for the already-merged detail editor. Owner explicitly delegated detail accounts/types to PC-D and PC-B in this chat. Reserve accounting-workspace.tsx, accounting-detail-editor.tsx/module.css, bounded nullable unsaved-note context in accounting-setup-notes.tsx and focused route/render regression tests, own task/status notes. Restore the requested type form even when no authorized ledger exists and match the supplied two-column Rahkaran reference. Preserve book-scoped FK/authorization, existing persistence and required title/length (1–20). No automatic ledger creation, schema/migration/dependency changes or operational data writes. Publish task branch under standing commit/push authorization; integration follows explicit destination authorization.
+
+DETAIL-TYPE-LAYOUT-1108 validation: four new normal-entry rendering regressions and nine related tests pass, scoped ESLint/Web TypeScript/formatting and all 67 production Web routes build. Local rendered preview confirms compact field rows and two columns. Source locks freeze/release at task commit; missing ledger explicitly blocks persistence while leaving the requested form visible. No operational data writes or deployment.
+
+DETAIL-TYPE-LAYOUT-1108: owner selected direct develop merge only on 2026-11-08; live deployment remains unapproved. Extend bounded reservation to four new Web-only en-overrides.json labels found by English coverage. API/standalone labels are unchanged.
 
 ## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
 
