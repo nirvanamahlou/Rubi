@@ -11,11 +11,12 @@ import {
 } from '@/components/ui/overlays';
 
 type Summary = {
+  canPrepare?: boolean;
   sandbox: boolean;
   total: number;
   ready: boolean;
   policies: {
-    id: string;
+    id: string | null;
     customerId: string;
     passengerName: string;
     ready: boolean;
@@ -25,11 +26,12 @@ type Summary = {
     sandbox: boolean;
   }[];
 };
-export async function insuranceResponse(path: string) {
+export async function insuranceResponse(path: string, method = 'GET') {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
   const send = () =>
     fetch(base + '/' + path, {
+      method,
       credentials: 'include',
       cache: 'no-store',
     });
@@ -104,7 +106,8 @@ export function ReservationInsuranceDocuments({
     try {
       const selected =
         data?.policies.filter(
-          (p) => p.ready && (!policyId || p.id === policyId),
+          (p): p is typeof p & { id: string } =>
+            p.ready && p.id !== null && (!policyId || p.id === policyId),
         ) ?? [];
       await downloadInsurancePolicies(path, selected, (blob, filename) => {
         const url = URL.createObjectURL(blob);
@@ -122,6 +125,18 @@ export function ReservationInsuranceDocuments({
       setBusy(false);
     }
   }
+  async function prepare() {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await insuranceResponse(path + '/prepare', 'POST');
+      setData(await response.json());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'دریافت بیمه‌نامه ناموفق بود.');
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="grid gap-3" dir="rtl">
       <p>حالت آزمایشی تراویس؛ نتیجهٔ آزمایش، بیمه‌نامهٔ واقعی مسافر نیست.</p>
@@ -132,19 +147,24 @@ export function ReservationInsuranceDocuments({
         <p>بیمه برای این قرارداد انتخاب نشده است.</p>
       ) : (
         <>
+          {data.canPrepare && data.policies.some((p) => !p.id) && (
+            <Button disabled={busy} onClick={() => void prepare()}>
+              آماده‌سازی بیمه‌نامه‌های انتخاب‌شده
+            </Button>
+          )}
           <p>
             {data.policies.filter((p) => p.status === 'ISSUED').length} /{' '}
             {data.total}
           </p>
           {data.policies.map((p, index) => (
-            <div key={p.id} className="rounded border p-3">
+            <div key={p.customerId} className="rounded border p-3">
               <strong>{p.passengerName || <>مسافر {index + 1}</>}</strong> ·{' '}
               <bdi>{p.policyNumber ?? 'در انتظار صدور'}</bdi>
               {p.error && <p role="status">{p.error}</p>}
               <Button
                 variant="outline"
                 disabled={!p.ready || busy}
-                onClick={() => void download(p.id)}
+                onClick={() => p.id && void download(p.id)}
               >
                 دانلود PDF بیمه‌نامه
               </Button>
