@@ -138,6 +138,8 @@ const metrics: Readonly<Record<string, readonly Feature[]>> = {
   'lead-growth-rate': ['leads', 'buyers', 'receipts'],
 };
 const visualMetrics: Readonly<Record<string, readonly string[]>> = {
+  'treasury-flow': ['collected', 'refunded'],
+
   'customer-service-distribution': ['customer-service-usage'],
   'customer-interest-distribution': ['customer-interest-count'],
   'employee-calls-by-agent': [

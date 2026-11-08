@@ -11619,6 +11619,14 @@ RESERVATION-TRANSFER-COMBINED-1107 validation: 19 focused Web tests, scoped ESLi
 
 RESERVATION-TRANSFER-COMBINED-1107 merged directly to `origin/develop` at `e71be45f7` after the owner's explicit confirmation on 2026-11-07. Source reservation is released; no deployment was requested.
 
+## DASHBOARD-DECISION-AUDIT-1108 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-decision-audit-1108 from origin/develop. Owner authorizes read-only server/source reconciliation of Dashboard charts, obsolete decision-tag removal and supported source completion. Reserve Dashboard visual card/details, availability/lineage/registry, native Reporting Dashboard trend mapping/tests and bounded task/status notes. Prior complete-sources committed branch is an ancestor of develop; its uncommitted reporting.contracts.ts is excluded. No schema/dependency/operational data or permission changes. Server inspection is counts/metadata only.
+
+DASHBOARD-DECISION-AUDIT-1108 bounded translation reservation: seven new Dashboard strings in en-overrides.json and their offline generated API/standalone English catalogue entries only; preserve all peer entries. No runtime policy changes.
+
+DASHBOARD-DECISION-AUDIT-1108: 93 registry chart slots audited against native dispatcher; Treasury receipt/refund source added and reconciled in a production READ ONLY transaction. Accepted 001/004 chart metadata removed; raw decision badges replaced by Persian details, available even without chart data. Credit/SLA/marketing policies remain business decisions. No production writes or rollout. Translation scope includes three preserved legacy catalogue entries to avoid regeneration loss.
+
 REPORT-CURRENCY-ROWS-1108 | PC-C | codex/pc-c-report-currency-rows-1108 | Reporting currency consolidation + owner source grouping metadata (sales/reservations), focused tests | IN_PROGRESS | user explicitly authorizes all report currency rows; no migration/FX/deploy
 REPORT-CURRENCY-ROWS-1108 READY_FOR_CI: optional internal producer identity/count metadata consumed by Reporting; owning readers retain all authorization. Existing public amountsByCurrency/sourceValues contract reused; no external contract migration. Source scope explicitly authorized by user's all-report request.
 
