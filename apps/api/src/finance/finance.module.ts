@@ -1,3 +1,4 @@
+import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { ExchangeOfficeModule } from './exchange-offices/exchange-office.module';
 import {
   FinancePartyReceipts,
@@ -37,6 +38,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
+    LegalEntitiesModule,
     BankAccountModule,
     ExchangeOfficeModule,
     FinancePartnerModule,

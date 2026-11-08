@@ -1,3 +1,7 @@
+# CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
+
+Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
+
 ## CALL-CENTER-TODAY-FILTERS-1108 — PC-C
 
 Today Calls gains three explicitly requested local filters beside refresh: direction, outcome and connected-to. Filtering occurs before authorized server counts/paging; changing filters resets paging and snapshot. See docs/tasks/CALL-CENTER-TODAY-FILTERS-1108.md for compatibility, verification and Draft PR handoff. No deployment.

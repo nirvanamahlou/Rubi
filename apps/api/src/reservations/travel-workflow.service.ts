@@ -1,3 +1,4 @@
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { reservationHasTransfer } from '@nora/contracts';
 import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
@@ -56,6 +57,9 @@ export class TravelWorkflowService {
     @Optional()
     @Inject(ReservationMailService)
     private readonly mail?: ReservationMailService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
   /** Read-only document defaults; never manufacture a supplier confirmation. */
   async floatingDocumentOutput<
@@ -71,7 +75,15 @@ export class TravelWorkflowService {
       return intake;
     let branding = intake.workflow.branding;
     if (!branding) {
-      const { data } = await this.entities.current(actor);
+      const { data } = this.companyScope
+        ? {
+            data: {
+              legalEntity: await this.companyScope.owner(
+                intake.snapshot.contractId,
+              ),
+            },
+          }
+        : await this.entities.current(actor);
       if (!data.legalEntity)
         throw new BadRequestException('ابتدا شرکت صادرکننده را انتخاب کنید.');
       branding = {
@@ -108,8 +120,25 @@ export class TravelWorkflowService {
       },
     });
     if (!row) throw new NotFoundException('درخواست یافت نشد.');
-    const workflow = row.workflowRevisions[0]?.state as unknown as
+    let workflow = row.workflowRevisions[0]?.state as unknown as
       TravelWorkflowStateV1 | undefined;
+    if (
+      this.companyScope &&
+      (!workflow?.branding || workflow.branding.kind === 'OWN')
+    ) {
+      const owner = await this.companyScope.owner(row.contractId);
+      workflow = {
+        ...(workflow ?? initialTravelWorkflow()),
+        branding: {
+          ...workflow?.branding,
+          kind: 'OWN',
+          referenceId: owner.id,
+          name: owner.persianName,
+          logoFileId: owner.logoFileId,
+          companyCode: owner.code,
+        },
+      };
+    }
     const arrangement = row.arrangements[0];
     const original = row.snapshot as unknown as SalesReservationRequestV1;
     const saved = currentOutput
@@ -233,7 +262,15 @@ export class TravelWorkflowService {
               throw new BadRequestException(
                 'اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.',
               );
-            const { data } = await this.entities.current(actor);
+            const { data } = this.companyScope
+              ? {
+                  data: {
+                    legalEntity: await this.companyScope.owner(
+                      intake.snapshot.contractId,
+                    ),
+                  },
+                }
+              : await this.entities.current(actor);
             return this.mail.prepare(
               intake.workflow,
               command,
@@ -257,7 +294,15 @@ export class TravelWorkflowService {
       )
         throw new BadRequestException('سربرگ معتبر انتخاب کنید.');
       if (command.branding?.kind === 'OWN') {
-        const { data } = await this.entities.current(actor);
+        const { data } = this.companyScope
+          ? {
+              data: {
+                legalEntity: await this.companyScope.owner(
+                  intake.snapshot.contractId,
+                ),
+              },
+            }
+          : await this.entities.current(actor);
         if (!data.legalEntity)
           throw new BadRequestException('ابتدا شرکت صادرکننده را انتخاب کنید.');
         branding = {

@@ -41,9 +41,11 @@ export async function contractParties(
   tx: Prisma.TransactionClient,
   branchIds: readonly string[],
   search: string,
+  scope: Prisma.SalesContractWhereInput = {},
 ) {
   const rows = await tx.salesContract.findMany({
     where: {
+      AND: [scope],
       branchId: { in: [...branchIds] },
       status: active,
       OR: [
@@ -72,9 +74,10 @@ export async function partyContractBalance(
   tx: Prisma.TransactionClient,
   branchId: string,
   payerId: string,
+  scope: Prisma.SalesContractWhereInput = {},
 ): Promise<FinancePartyBalanceV1> {
   const rows = await tx.salesContract.findMany({
-    where: { branchId, payerCustomerId: payerId, status: active },
+    where: { AND: [scope], branchId, payerCustomerId: payerId, status: active },
     include,
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     take: 5001,

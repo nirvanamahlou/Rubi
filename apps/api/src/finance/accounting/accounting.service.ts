@@ -56,6 +56,7 @@ import type {
   IamPermissionCode,
 } from '@nora/contracts';
 import { DatabaseService } from '../../database/database.service';
+import { ContractCompanyScope } from '../../sales/contract-company-scope.public';
 import { MasterDataService } from '../../master-data/master-data.service';
 import { accountingCurrencies } from './accounting.currency-directory';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
@@ -252,6 +253,9 @@ export class AccountingService {
     @Optional()
     @Inject(MasterDataService)
     private readonly master?: MasterDataService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -783,6 +787,7 @@ export class AccountingService {
       throw new NotFoundException('نشانگر رویداد در شعبه مجاز پیدا نشد.');
     const events = await this.database.client.financeAccountingEvent.findMany({
       where: {
+        AND: [(await this.companyScope?.eventWhere(actor)) ?? {}],
         branchId: book.branchId,
         ...(query.pending === 'true' ? { journalId: null } : {}),
         ...(before
