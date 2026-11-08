@@ -5599,5 +5599,13 @@
   "اتصال بیمه‌گر روی سرور تنظیم نشده است.": "The insurance provider connection is not configured on the server.",
   "درخواست صدور برای این مسافر هنوز ثبت نشده است.": "An issuance request has not yet been registered for this passenger.",
   "در انتظار پردازش درخواست بیمه‌گر.": "Waiting for the insurer to process the request.",
-  "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer."
+  "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer.",
+  "ثبت وضعیت": "Save status",
+  "غیرفعال‌سازی کارکرد": "Deactivate attendance",
+  "بازه تاریخ و کارکنان را انتخاب کنید.": "Select a date range and employees.",
+  "جست‌وجوی کارکنان": "Search employees",
+  "بازه باید حداکثر یک سال باشد.": "The date range must not exceed one year.",
+  "کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.": "Select up to 200 employees.",
+  "در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.": "Up to 2,000 employee attendance days can be changed at once.",
+  "نام یا کد پرسنلی": "Name or personnel code"
 }

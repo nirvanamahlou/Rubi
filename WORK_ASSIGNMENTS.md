@@ -11587,3 +11587,11 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
+
+Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
+
+ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.
+
+ATTENDANCE-ACTIVATION-1108 consumer review: reserve bounded hr-dashboard.tsx, hr-reports.tsx, radan-reports.ts and contextual attendance options in hr-record-form.tsx. The legacy browser projections also consume eligible attendance; keep history rows visible. No competing active HR writer.

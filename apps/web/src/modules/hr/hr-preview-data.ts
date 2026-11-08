@@ -14,6 +14,7 @@ export interface HrPreviewDataset {
   rows: readonly (readonly HrPreviewCell[])[];
   totalLabel: string;
   recordIds?: readonly string[];
+  inactiveRecordIds?: readonly string[];
   versions?: readonly number[];
   employeeIds?: readonly (string | null)[];
   parentIds?: readonly (string | null)[];
