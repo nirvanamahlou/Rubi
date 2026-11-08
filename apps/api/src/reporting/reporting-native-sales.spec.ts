@@ -107,11 +107,26 @@ describe('native Sales report source and shared preview/export path', () => {
       { ...actor, permissions: [...actor.permissions, 'customers.read'] },
       true,
     );
+    expect(client.customer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          kind: 'ORGANIZATION',
+          ownerBranchId: { in: ['branch'] },
+        }),
+      }),
+    );
     expect(result.total).toBe(1);
     expect(result.rows[0]?.orderCount).toBe(1);
     expect(result.rows[0]?.passengerCount).toBe(3);
     expect(result.rows[0]?.primaryDimension).toBe('سازمان نمونه');
     expect(result.columns.map((c) => c.key)).not.toContain('grossProfit');
+  });
+  it('requires customer-source permission before resolving organizational identities', async () => {
+    const { client } = fixture();
+    await expect(
+      nativeSalesReport(client, 'agency_performance', query, actor),
+    ).rejects.toThrow('مجوز مشاهده منبع این گزارش وجود ندارد.');
+    expect(client.customer.findMany).not.toHaveBeenCalled();
   });
   it('uses departure date rather than creation date for future travel', async () => {
     const { client, findMany } = fixture();
