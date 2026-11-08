@@ -257,6 +257,10 @@ export function HotelRoomQuotationEditor({
                   value && value.id !== (hotelBroker?.id ?? draft.brokerId),
                 ),
               };
+              if (!next.hotelTransferSeparate) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+              }
               if (value) {
                 next.transferBrokerId = value.id;
                 next.transferBrokerName = value.name;

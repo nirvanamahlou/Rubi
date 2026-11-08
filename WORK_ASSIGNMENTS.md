@@ -11599,3 +11599,5 @@ HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date 
 ## INTEGRATE-TRANSFER-DEFAULT-1108 — PC-A — IN_PROGRESS
 
 Owner explicitly requests merge of transfer-separate-default-1108 source2e6219682 into develop. PR1491 is dirty against current develop. Reserve an independent integration branch codex/pc-a-integrate-transfer-default-1108 and bounded conflict resolution in the source's reservation editor/test and central task/status notes only. Preserve the published peer branch unchanged, all current develop changes and original source ancestry. No migration, dependencies, data or deployment. Final exact-head hosted gates precede merge; release on verified merge.
+
+INTEGRATE-TRANSFER-DEFAULT-1108 bounded correctness extension: reproduced two failures when explicitly selecting the hotel broker or clearing a transfer broker after split mode; API rejects hotelTransferSplit=true with hotelTransferSeparate=false. Reserve minimal handler cleanup and two focused interaction regressions on the integration branch only. Preserve initial saved modes and original peer branch; no API/schema/dependency changes.

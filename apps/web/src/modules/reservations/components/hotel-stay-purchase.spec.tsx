@@ -689,3 +689,42 @@ it('preserves an explicit combined mode saved by a legacy supplier form', () => 
       .hotelTransferSeparate,
   ).toBe(false);
 });
+
+it.each([null, { id: 'shared', name: 'HOTEL' }])(
+  'clears split-only settings when the transfer broker returns to the hotel default: %j',
+  (value) => {
+    const draft = defaultVoucherSettings(request, {});
+    Object.assign(draft, {
+      brokerId: 'shared',
+      transferBrokerId: 'other',
+      hotelTransferSeparate: true,
+      hotelTransferSplit: true,
+      hotelTransferReturn: {
+        amount: '20',
+        currencyCode: 'IRR',
+        brokerId: 'return',
+      },
+      supplierFormPrices: { transferPp: { amount: '10', currencyCode: 'IRR' } },
+    });
+    const before = structuredClone(draft);
+    const update = vi.fn();
+    const lookup = nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: request.id,
+        update,
+        currencies: [],
+        busy: false,
+        nights: 6,
+        hotelBroker: { id: 'shared', name: 'HOTEL' },
+      }),
+    ).find((node) => node.type === ReservationPurchaseBrokerLookup)!;
+    (lookup.props.onChange as (value: unknown) => void)(value);
+    const next = update.mock.calls[0]![0];
+    expect(next.hotelTransferSeparate).toBe(false);
+    expect(next.hotelTransferSplit).toBe(false);
+    expect(next.hotelTransferReturn).toBeUndefined();
+    expect(next.supplierFormPrices).toEqual(before.supplierFormPrices);
+    expect(draft).toEqual(before);
+  },
+);
