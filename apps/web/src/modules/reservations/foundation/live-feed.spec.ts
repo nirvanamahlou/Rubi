@@ -594,3 +594,28 @@ it('preserves room categories through decoding and exports a separate family/tri
     familyTripleRooms: 2,
   });
 });
+
+it('reuses the exact reservation row projection for branch-authorized Finance readers', () => {
+  const finance = {
+    ...session,
+    user: { ...session.user, permissions: ['finance.read'] },
+  } as LoginResponse;
+  expect(decodeIntake(envelope(), finance, 'finance')).toEqual(
+    decodeIntake(envelope(), session),
+  );
+  expect(() => decodeIntake(envelope(), finance)).toThrow();
+  expect(() =>
+    decodeIntake(
+      envelope(),
+      { ...session, user: { ...session.user, permissions: [] } },
+      'finance',
+    ),
+  ).toThrow();
+  expect(
+    decodeIntake(
+      envelope(),
+      { ...finance, user: { ...finance.user, branches: [] } },
+      'finance',
+    ),
+  ).toEqual([]);
+});

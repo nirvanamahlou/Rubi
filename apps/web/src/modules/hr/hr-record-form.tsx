@@ -1067,7 +1067,11 @@ function HrRecordFormFields({
               }
               const status = showStatus
                 ? raw.at(-1) || (definition.approval ? 'پیش‌نویس' : 'فعال')
-                : (target.record?.status ?? 'پیش‌نویس');
+                : target.source.tab === 'calculationSettings'
+                  ? target.record?.status === 'غیرفعال'
+                    ? 'غیرفعال'
+                    : 'فعال'
+                  : (target.record?.status ?? 'پیش‌نویس');
               const input: HrRecordCreate = prepareHrCommand(
                 {
                   branchId,

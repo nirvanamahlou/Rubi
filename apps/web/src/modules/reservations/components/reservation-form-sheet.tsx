@@ -33,6 +33,7 @@ export function useReservationFormReferences(
   intake: ReservationFormIntake,
   active: boolean,
   salesContractId?: string,
+  finance = false,
 ) {
   const [loaded, setLoaded] = useState<{
     key: string;
@@ -71,7 +72,7 @@ export function useReservationFormReferences(
       : []),
     ...flights.map((f) => ['airline-name', f.carrierNameSnapshot]),
   ].filter((entry): entry is string[] => !!entry);
-  const key = JSON.stringify({ entries, requestId: intake.id });
+  const key = JSON.stringify({ entries, requestId: intake.id, finance });
   useEffect(() => {
     if (!active) return;
     let live = true;
@@ -92,7 +93,7 @@ export function useReservationFormReferences(
                 page: 1,
                 pageSize: 100,
               },
-              salesContractId ? 'sales' : 'reservations',
+              salesContractId ? 'sales' : finance ? 'finance' : 'reservations',
             );
             const data = result.data.find((record) =>
               [record.name, record.attributes.englishName].includes(id),
@@ -102,7 +103,7 @@ export function useReservationFormReferences(
           const { data } = await masterDataApi.detail(
             resource,
             id,
-            salesContractId ? 'sales' : 'reservations',
+            salesContractId ? 'sales' : finance ? 'finance' : 'reservations',
           );
           return { id, data };
         } catch {
@@ -111,12 +112,14 @@ export function useReservationFormReferences(
       }),
     ).then(async (results) => {
       const extra = await loadOutputReferences(async (path) => {
+        if (finance && path.includes('/voucher-brokers?'))
+          path = '/master-data/brokers?' + path.split('?')[1];
         const response = await fetch(
           getPublicApiBaseUrl() +
             (path.startsWith('/master-data/')
               ? path.replace(
                   '/master-data/',
-                  `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/`,
+                  `/master-data/selections/${salesContractId ? 'sales' : finance ? 'finance' : 'reservations'}/`,
                 )
               : path),
           {
@@ -143,7 +146,7 @@ export function useReservationFormReferences(
     return () => {
       live = false;
     };
-  }, [key, active, intake.id, salesContractId]);
+  }, [key, active, intake.id, salesContractId, finance]);
   return {
     references: loaded?.key === key ? loaded.references : {},
     ready: !active || loaded?.key === key,

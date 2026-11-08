@@ -5757,5 +5757,10 @@
   "بارگذاری از پرداخت مالی": "Uploaded from a financial payment",
   "فهرست صرافی‌ها در دسترس نیست.": "The exchange office directory is unavailable.",
   "کشور انتخاب‌شده معتبر نیست.": "The selected country is invalid.",
-  "منبع پرداخت معتبر نیست.": "Invalid payment source."
+  "منبع پرداخت معتبر نیست.": "Invalid payment source.",
+  "با سلام، درخواست پرداخت مساعده دارم. مبلغ درخواستی: تاریخ مورد نیاز: علت درخواست: نحوه بازپرداخت:": "Hello, I request a salary advance. Requested amount: Required date: Reason: Repayment method:",
+  "تأیید و ارسال به منابع انسانی": "Approve and send to HR",
+  "جانشین احتمالی:": "Proposed substitute:",
+  "خلاصه مالی قرارداد": "Contract financial summary",
+  "گیرنده منابع انسانی در این شعبه تعریف نشده است.": "No HR recipient is configured for this branch."
 }

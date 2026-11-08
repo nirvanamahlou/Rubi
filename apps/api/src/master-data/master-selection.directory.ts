@@ -63,6 +63,7 @@ const travel: MasterDataResource[] = [
 const resources: Record<string, readonly MasterDataResource[]> = {
   sales: [...travel, 'organizations', 'acquaintance-methods'],
   reservations: travel,
+  finance: travel,
   customers: [...geography, 'organizations', 'acquaintance-methods'],
   organizations: [...geography, 'currencies', 'organizations'],
   accounting: ['currencies', 'sales-channels', 'cities', 'regions'],

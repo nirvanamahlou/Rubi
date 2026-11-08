@@ -41,6 +41,7 @@ const workflows = {
       'b2b.rate.manage',
     ],
   },
+  finance: { routes: ['/finance/requests'], permissions: ['finance.read'] },
   accounting: {
     routes: [
       '/finance/accounting/general-ledger/base-information',
