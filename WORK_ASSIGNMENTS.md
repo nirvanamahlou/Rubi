@@ -1,4 +1,3 @@
-
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
