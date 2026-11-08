@@ -1,3 +1,9 @@
+## RESERVATION-INSURANCE-NAV-1108 — PC-A — READY_FOR_REVIEW
+
+Reserve only the insurance header link placement in foundation/workspace.tsx and matching navigation-link CSS. User authorizes matching sibling tabs and develop merge. Prior reservation scopes are published/merged; preserve their changes. No API, schema, dependency or data changes.
+
+Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped ESLint and all 31 existing workspace tests pass. No merge or deployment yet; source scope freezes on publication.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
@@ -11569,6 +11575,14 @@ REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization i
 
 REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.
 
+## DETAIL-TYPE-LAYOUT-1108 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; branch codex/pc-d-detail-type-layout-1108, created from PC-D-Integration and fast-forwarded to current develop for the already-merged detail editor. Owner explicitly delegated detail accounts/types to PC-D and PC-B in this chat. Reserve accounting-workspace.tsx, accounting-detail-editor.tsx/module.css, bounded nullable unsaved-note context in accounting-setup-notes.tsx and focused route/render regression tests, own task/status notes. Restore the requested type form even when no authorized ledger exists and match the supplied two-column Rahkaran reference. Preserve book-scoped FK/authorization, existing persistence and required title/length (1–20). No automatic ledger creation, schema/migration/dependency changes or operational data writes. Publish task branch under standing commit/push authorization; integration follows explicit destination authorization.
+
+DETAIL-TYPE-LAYOUT-1108 validation: four new normal-entry rendering regressions and nine related tests pass, scoped ESLint/Web TypeScript/formatting and all 67 production Web routes build. Local rendered preview confirms compact field rows and two columns. Source locks freeze/release at task commit; missing ledger explicitly blocks persistence while leaving the requested form visible. No operational data writes or deployment.
+
+DETAIL-TYPE-LAYOUT-1108: owner selected direct develop merge only on 2026-11-08; live deployment remains unapproved. Extend bounded reservation to four new Web-only en-overrides.json labels found by English coverage. API/standalone labels are unchanged.
+
 ## INSURANCE-SELECTION-1108 — PC-A — DONE/MERGED
 
 Owner authorizes current-contract insurance selection, per-passenger issuance reasons and insurance allocation editing, tests and develop merge. Reserve Reservations insurance automation and documents UI, Customers internal insurance identity projection, passenger-service-editor and focused regressions. Consume existing public Sales current-execution port; preserve provider idempotency, issued identities, branch/source authorization and sandbox restriction. No migration/dependency or live issuance/deployment. Previous insurance scopes are merged/frozen. Additive missing-policy summary rows ship with Web consumer; no shared schema changes.
@@ -11580,3 +11594,5 @@ Validation: 42 API regressions across insurance, identity and contract amendment
 Final integration retains concurrent HR/Reporting changes and regenerates combined English catalogues. Selected insurance with no passenger allocation now directs users to the passenger insurance checkbox. The owner authorizes direct develop integration; source reservation releases with this change. Server rollout requires both API and Web; no migration. An upstream Windows-1252 dash in the status document was normalized to the same UTF-8 dash so the merged document remains readable.
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
+
+REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.

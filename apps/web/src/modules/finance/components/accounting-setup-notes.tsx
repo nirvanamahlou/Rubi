@@ -35,7 +35,7 @@ export function AccountingSetupNotes({
 }: {
   notes: SetupNote[];
   onChange: (notes: SetupNote[]) => void;
-  book: AccountingSnapshotV1;
+  book: AccountingSnapshotV1 | undefined;
   record?: { id: string; entityType: string; title: string } | undefined;
   requireDate?: boolean;
 }) {
@@ -189,7 +189,7 @@ export function AccountingSetupNotes({
           ) : null}
         </DialogContent>
       </Dialog>
-      {record ? (
+      {record && book ? (
         <AccountingAttachments book={book} record={record} />
       ) : (
         <fieldset className="rounded border p-3">

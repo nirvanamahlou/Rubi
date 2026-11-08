@@ -1,4 +1,8 @@
 {
+  "اطلاعات حساب تفصیلی": "Detail account information",
+  "اطلاعات نوع تفصیلی": "Detail account type information",
+  "برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.": "Create an accounting ledger before saving a detail account type.",
+  "تعریف دفتر کل": "Create accounting ledger",
   "تاریخ شروع اعتبار": "Effective start date",
   "تأیید خطای دستگاه": "Confirm device error",
   "تعداد تنظیمات جریمه بیش از حد مجاز است.": "Too many penalty settings.",
