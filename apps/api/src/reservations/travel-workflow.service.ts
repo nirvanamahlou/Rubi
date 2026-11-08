@@ -4,6 +4,8 @@ import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
   reservationHotelStays,
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
   salesContractFlights,
   readLegacyServiceParties,
   reservationFlightOutputKey,
@@ -308,6 +310,14 @@ export class TravelWorkflowService {
           );
         let next: TravelWorkflowStateV1;
         try {
+          if (command.action === 'SUPPLIER_FORM_SETTINGS')
+            assertReservationTransferCounts(
+              command.voucherSettings?.hotelTransferCounts,
+              reservationTransferPassengerLimit(
+                intake.snapshot,
+                command.hotelStayKey,
+              ),
+            );
           next = transitionTravelWorkflow(
             currentOutput ? intake.workflow : state,
             command,

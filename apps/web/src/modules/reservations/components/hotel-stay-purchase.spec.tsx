@@ -312,6 +312,30 @@ it('submits distinct transfer brokers and prices per direction in the same atomi
   ).toBe(3);
 });
 
+it('shows an error above the booked transfer limit and removes the old helper sentence', () => {
+  const settings = defaultVoucherSettings(request, {});
+  settings.hotelTransferCounts = { outbound: 3, returning: 0 };
+  const controls = nodes(
+    HotelRoomQuotationEditor({
+      draft: settings,
+      requestId: request.id,
+      update: vi.fn(),
+      currencies: [],
+      busy: false,
+      nights: 3,
+      transferLimit: 2,
+    }),
+  );
+  expect(controls.some((node) => node.props.role === 'alert')).toBe(true);
+  expect(
+    controls.some(
+      (node) =>
+        node.props.children ===
+        'مبلغ و تعداد صفر مجاز است؛ ترانسفر در تعداد اتاق و شب ضرب نمی‌شود.',
+    ),
+  ).toBe(false);
+});
+
 it('exposes both transfer checkboxes and enables independent return quotation without changing counts', () => {
   const settings = defaultVoucherSettings(request, {});
   settings.hotelTransferCounts = { outbound: 2, returning: 1 };

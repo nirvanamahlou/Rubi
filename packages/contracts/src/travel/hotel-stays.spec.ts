@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import {
   hotelRoomQuotationTotal,
+  reservationTransferPassengerLimit,
+  assertReservationTransferCounts,
   reservationHotelStays,
   reservationHotelTransferKeys,
   scopeReservationHotel,
@@ -110,4 +112,50 @@ it('charges a combined round-trip fare once per passenger and rejects unequal le
   expect(() =>
     hotelTransferChargeableCount({ outbound: 2, returning: 1 }, true),
   ).toThrow();
+});
+
+it('bounds each transfer leg by booked paying guests, excluding infants and the 2–6 band', () => {
+  const source = structuredClone(
+    snapshot,
+  ) as unknown as SalesReservationRequestV1;
+  source.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeNameSnapshot: 'Family',
+      adults: 2,
+      childAges: [1, 2, 5, 6, 11],
+    },
+  ];
+  const limit = reservationTransferPassengerLimit(source);
+  expect(limit).toBe(4);
+  expect(() =>
+    assertReservationTransferCounts({ outbound: 4, returning: 4 }, limit),
+  ).not.toThrow();
+  expect(() =>
+    assertReservationTransferCounts({ outbound: 5, returning: 0 }, limit),
+  ).toThrow();
+  expect(() =>
+    assertReservationTransferCounts({ outbound: 0, returning: 5 }, limit),
+  ).toThrow();
+  expect(() =>
+    assertReservationTransferCounts({ outbound: 0, returning: 0 }, limit),
+  ).not.toThrow();
+  expect(() =>
+    assertReservationTransferCounts({ outbound: 1.5, returning: 0 }, limit),
+  ).toThrow();
+});
+
+it('uses contract age bands when room occupancy is unavailable', () => {
+  const source = {
+    passengerIds: ['adult', 'young', 'older', 'infant'],
+    passengerAssignments: [
+      { customerId: 'adult', ageCategory: 'ADT' },
+      { customerId: 'young', ageCategory: 'CHD', childAgeBand: 'AGE_2_6' },
+      { customerId: 'older', ageCategory: 'CHD', childAgeBand: 'AGE_6_12' },
+      { customerId: 'infant', ageCategory: 'INF' },
+      { customerId: 'removed', ageCategory: 'ADT' },
+    ],
+    serviceSelections: [],
+  } as unknown as SalesReservationRequestV1;
+  expect(reservationTransferPassengerLimit(source)).toBe(2);
 });

@@ -64,6 +64,15 @@ it('does not copy primary transfers to an unrelated additional hotel', () => {
   });
 });
 
+it('excludes the booked 2–6 child band from transfer defaults', () => {
+  const source = snapshot();
+  source.passengerAssignments![1]!.childAgeBand = 'AGE_2_6';
+  expect(contractHotelTransferCounts(source, 'hotel')).toEqual({
+    outbound: 1,
+    returning: 1,
+  });
+});
+
 it('retains legacy booked aggregate counts even while passenger registration is incomplete', () => {
   const source = snapshot();
   source.serviceSelections = source.serviceSelections.filter(

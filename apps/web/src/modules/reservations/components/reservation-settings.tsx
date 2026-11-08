@@ -6,6 +6,10 @@ import {
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { hotelFormScope } from '../model/hotel-form-scope';
 import { reservationHasTransfer, reservationHotelStays } from '@nora/contracts';
+import {
+  assertReservationTransferCounts,
+  reservationTransferPassengerLimit,
+} from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
@@ -360,6 +364,15 @@ export function ReservationSettingsForm({
   }, [intake.id, intake.workflow.version]);
   async function save(sendToBroker = showDocument, pricesOnly = false) {
     if (busy || intake.workflow.supplierStatus === 'CANCELLED') return;
+    try {
+      assertReservationTransferCounts(
+        draft.hotelTransferCounts,
+        reservationTransferPassengerLimit(intake.snapshot),
+      );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'عملیات نامعتبر');
+      return;
+    }
     if (!pricesOnly && (activeDirectory.loading || activeDirectory.error)) {
       setError(
         activeDirectory.error ||
@@ -767,6 +780,9 @@ export function ReservationSettingsForm({
                 )}
                 {!!quotation.settings.rooms?.length && !legacyQuotation && (
                   <HotelRoomQuotationEditor
+                    transferLimit={reservationTransferPassengerLimit(
+                      quotation.intake.snapshot,
+                    )}
                     requestId={quotation.intake.id}
                     canSplitTransfers={
                       (quotation.intake.hotelStayOrdinal ?? 1) > 1 ||

@@ -19,6 +19,7 @@ export function HotelRoomQuotationEditor({
   canSplitTransfers = true,
   nights,
   hotelBroker,
+  transferLimit = 500,
 }: {
   draft: VoucherSettingsV1;
   requestId: string;
@@ -29,6 +30,7 @@ export function HotelRoomQuotationEditor({
   canSplitTransfers?: boolean;
   nights: number;
   hotelBroker?: { id: string; name: string } | null;
+  transferLimit?: number;
 }) {
   const rooms = draft.rooms ?? [];
   const prices =
@@ -319,7 +321,8 @@ export function HotelRoomQuotationEditor({
             <Input
               type="number"
               min="0"
-              max="500"
+              max={transferLimit}
+              aria-invalid={counts[key] > transferLimit}
               step="1"
               disabled={busy}
               value={counts[key]}
@@ -418,7 +421,11 @@ export function HotelRoomQuotationEditor({
           </bdi>
         </p>
         <p>
-          مبلغ و تعداد صفر مجاز است؛ ترانسفر در تعداد اتاق و شب ضرب نمی‌شود.
+          {Math.max(counts.outbound, counts.returning) > transferLimit && (
+            <span role="alert">
+              تعداد نفرات ترانسفر از تعداد مسافران مشمول قرارداد بیشتر است.
+            </span>
+          )}
         </p>
       </fieldset>
     </div>

@@ -21,6 +21,7 @@ import {
 } from '@nestjs/common';
 import {
   hotelNights,
+  reservationTransferPassengerLimit,
   hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
@@ -440,6 +441,10 @@ export class ReservationServicePurchaseService {
       TravelWorkflowStateV1 | undefined;
     if (formState?.outputSourceSnapshot)
       snapshot = formState.outputSourceSnapshot;
+    const bookedTransferLimit = reservationTransferPassengerLimit(
+      snapshot,
+      input.hotelStayKey,
+    );
     const stay =
       input.hotelStayKey !== undefined
         ? reservationHotelStays(snapshot).find(
@@ -540,11 +545,7 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
     if (stay) {
       const counts = input.hotelTransferCounts;
-      const limit = (stay.hotel.rooms ?? []).reduce(
-        (sum, room) =>
-          sum + room.adults + room.childAges.filter((age) => age >= 2).length,
-        0,
-      );
+      const limit = bookedTransferLimit;
       if (
         !counts ||
         (input.hotelTransferRoundTrip &&
