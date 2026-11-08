@@ -45,6 +45,14 @@ export class ReservationInsuranceController {
     return this.insurance.saveDraft(body, req.actor);
   }
   @Header('Cache-Control', 'private, no-store')
+  @Get('policies/:id/passenger')
+  correction(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.insurance.correction(id, req.actor);
+  }
+  @Header('Cache-Control', 'private, no-store')
   @Get('policies/:id/history')
   history(
     @Param('id', ParseUUIDPipe) id: string,

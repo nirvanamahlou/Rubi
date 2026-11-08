@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type {
   InsuranceDraftInputV1,
+  InsurancePassengerInputV1,
   InsurancePolicyRowV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -30,12 +31,11 @@ import {
   type InsuranceSettingsResponse,
 } from './client';
 import styles from './workspace.module.css';
-import { currencySymbol } from '@/lib/currency-symbol';
 import {
-  canCorrectInsurance,
-  InsuranceCorrection,
-  InsuranceRequirements,
-} from './correction';
+  InsurancePassengerFields,
+  InsuranceInputGuide,
+} from './passenger-fields';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 const emptyFilter = {
   search: '',
@@ -54,11 +54,6 @@ export function InsurancePolicies({
   const [query, setQuery] = useState(emptyFilter);
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
-  useEffect(() => {
-    const refresh = () => setRevision((value) => value + 1);
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, []);
   const [result, setResult] = useState<InsuranceListResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -249,6 +244,7 @@ export function InsurancePolicies({
           </Button>
         </div>
       </div>
+      <InsuranceInputGuide />
       <div className={styles.metrics}>
         {[
           ['بیمه‌نامه‌ها', result?.count ?? 0],
@@ -422,32 +418,21 @@ export function InsurancePolicies({
                     <td dir="ltr">{row.issuedAt?.slice(0, 10) ?? '—'}</td>
                     <td>
                       <div className={styles.actions}>
-                        {row.automatic ? (
-                          <InsuranceCorrection
-                            customerId={row.customerId}
-                            passengerName={row.passengerName}
-                            disabled={
-                              !result.canManage ||
-                              !canCorrectInsurance(row.status)
-                            }
-                          />
-                        ) : (
-                          <Button
-                            variant="outline"
-                            disabled={
-                              !result.canManage ||
-                              ![
-                                'DRAFT',
-                                'INPUT_ERROR',
-                                'PROVIDER_ERROR',
-                              ].includes(row.status)
-                            }
-                            onClick={() => setTarget(row)}
-                          >
-                            <FilePenLine size={15} />
-                            اصلاح
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          disabled={
+                            !result.canManage ||
+                            ![
+                              'DRAFT',
+                              'INPUT_ERROR',
+                              'PROVIDER_ERROR',
+                            ].includes(row.status)
+                          }
+                          onClick={() => setTarget(row)}
+                        >
+                          <FilePenLine size={15} />
+                          اصلاح
+                        </Button>
                         <Button
                           variant="outline"
                           onClick={() => void showHistory(row.id)}
@@ -611,7 +596,7 @@ export function InsurancePolicies({
   );
 }
 
-function InsuranceDraft({
+export function InsuranceDraft({
   target,
   saved,
 }: {
@@ -619,11 +604,13 @@ function InsuranceDraft({
   saved: () => void;
 }) {
   const previous = 'version' in target ? target : null;
+  const previousId = previous?.id;
   const [settings, setSettings] = useState<InsuranceSettingsResponse | null>(
     null,
   );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [personLoading, setPersonLoading] = useState(Boolean(previous));
   const [draft, setDraft] = useState<InsuranceDraftInputV1>({
     intakeId: target.intakeId,
     customerId: target.customerId,
@@ -649,6 +636,25 @@ function InsuranceDraft({
       active = false;
     };
   }, [target.branchId]);
+  useEffect(() => {
+    if (!previousId) return;
+    let active = true;
+    insuranceRequest<{ data: InsurancePassengerInputV1 }>(
+      'policies/' + previousId + '/passenger',
+    )
+      .then((r) => {
+        if (active) setDraft((current) => ({ ...current, passenger: r.data }));
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setPersonLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [previousId]);
   const country = settings?.config.countries.find(
     (c) => c.providerCountryCode === draft.destinationCode,
   );
@@ -676,12 +682,28 @@ function InsuranceDraft({
         void save();
       }}
     >
-      <InsuranceRequirements />
       {error && (
         <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
+      <InsuranceInputGuide />
+      {previous &&
+        (personLoading ? (
+          <p>در حال دریافت اطلاعات بیمه‌شده…</p>
+        ) : draft.passenger ? (
+          <InsurancePassengerFields
+            value={draft.passenger}
+            disabled={busy}
+            onChange={(passenger) =>
+              setDraft((current) => ({ ...current, passenger }))
+            }
+          />
+        ) : (
+          <p role="alert">
+            اطلاعات بیمه‌شده دریافت نشد؛ پنجره را دوباره باز کنید.
+          </p>
+        ))}
       <div className={styles.fields}>
         <label>
           کشور
@@ -757,9 +779,18 @@ function InsuranceDraft({
       </label>
       <Button
         type="submit"
-        disabled={busy || !settings || !draft.departureDate || !draft.planCode}
+        disabled={
+          busy ||
+          personLoading ||
+          Boolean(previous && !draft.passenger) ||
+          !settings ||
+          !draft.departureDate ||
+          !draft.planCode
+        }
       >
-        ذخیره پیش‌نویس
+        {previous?.automatic
+          ? 'ذخیره اصلاحات و تلاش مجدد صدور'
+          : 'ذخیره پیش‌نویس'}
       </Button>
     </form>
   );

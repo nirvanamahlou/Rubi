@@ -26,6 +26,7 @@ import { NotificationsService } from '../../notifications/notifications.service'
 import { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
 
 type State = {
+  useDraft?: boolean;
   phase?: 'QUEUED' | 'CREATING' | 'CREATED' | 'CONFIRMING' | 'ISSUED';
   fingerprint?: string;
 };
@@ -188,7 +189,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         identity.intake.branchId,
       );
       const country = config.countries.find(
-        (c) => c.active && c.countryId === destination?.countryId,
+        (c) =>
+          c.active &&
+          (state.useDraft
+            ? c.providerCountryCode === row.destinationCode
+            : c.countryId === destination?.countryId),
       );
       const insurance = identity.snapshot.serviceSelections.find(
         (s) =>
@@ -199,10 +204,16 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
               p.serviceClientKeys.includes(s.clientKey),
           ),
       );
-      const plan = country?.plans.find(
-        (p) => p.masterPlanId === insurance?.referenceId,
+      const plan = country?.plans.find((p) =>
+        state.useDraft
+          ? p.providerPlanCode === row.planCode
+          : p.masterPlanId === insurance?.referenceId,
       );
-      const departureDate = contract.departureDate.toISOString().slice(0, 10);
+      const departureDate = (
+        state.useDraft ? row.departureDate : contract.departureDate
+      )
+        .toISOString()
+        .slice(0, 10);
       const lastDay =
         [
           contract.returnNotBefore?.toISOString().slice(0, 10),
@@ -224,12 +235,14 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           .filter((d): d is string => Boolean(d))
           .sort()
           .at(-1) ?? departureDate;
-      const durationDays = Math.max(
-        1,
-        Math.ceil(
-          (Date.parse(lastDay) - Date.parse(departureDate)) / 86400000,
-        ) + 1,
-      );
+      const durationDays = state.useDraft
+        ? row.durationDays
+        : Math.max(
+            1,
+            Math.ceil(
+              (Date.parse(lastDay) - Date.parse(departureDate)) / 86400000,
+            ) + 1,
+          );
       if (
         !country ||
         !plan ||
@@ -291,7 +304,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         providerId = result.providerId;
         await save({
           providerId,
-          automation: { phase: 'CREATED', fingerprint },
+          automation: {
+            phase: 'CREATED',
+            fingerprint,
+            useDraft: state.useDraft === true,
+          },
         });
       }
       if (!providerId) {
@@ -301,13 +318,21 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           planCode: plan.providerPlanCode,
           departureDate: new Date(departureDate),
           durationDays,
-          automation: { phase: 'CREATING', fingerprint },
+          automation: {
+            phase: 'CREATING',
+            fingerprint,
+            useDraft: state.useDraft === true,
+          },
           lastError: null,
         });
         providerId = String(await this.provider.createPolicy(input));
         await save({
           providerId,
-          automation: { phase: 'CREATED', fingerprint },
+          automation: {
+            phase: 'CREATED',
+            fingerprint,
+            useDraft: state.useDraft === true,
+          },
         });
       }
       const expected = {
@@ -319,7 +344,13 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       result = await this.provider.policy(Number(providerId), expected);
       if (!result?.active) {
         if (state.phase === 'CONFIRMING') throw new Error(); // Confirm outcome is reconciled, not blindly replayed.
-        await save({ automation: { phase: 'CONFIRMING', fingerprint } });
+        await save({
+          automation: {
+            phase: 'CONFIRMING',
+            fingerprint,
+            useDraft: state.useDraft === true,
+          },
+        });
         await this.provider.confirmPolicy(Number(providerId));
         result = await this.provider.policy(Number(providerId), expected);
       }
@@ -345,7 +376,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
             currencyCode: result!.currencyCode,
             pdfUrl: result!.pdfUrl,
             issuedAt: new Date(),
-            automation: { phase: 'ISSUED', fingerprint },
+            automation: {
+              phase: 'ISSUED',
+              fingerprint,
+              useDraft: state.useDraft === true,
+            },
             lastError: null,
             processingUntil: null,
             nextAttemptAt: null,
