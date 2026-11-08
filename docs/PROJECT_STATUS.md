@@ -1,3 +1,6 @@
+## HR-ATTENDANCE-OPTIONAL-1108
+Manual attendance arrival, departure and reason are optional. One-sided corrections emit only the supplied punch; empty clocks preserve existing attendance. Permissions, closed periods and optimistic versions remain enforced. Focused regression tests and scoped lint passed; full local API build is blocked by unrelated contracts exports and missing nodemailer dependency. No migration or deployment.
+
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
