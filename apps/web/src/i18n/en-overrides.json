@@ -1,4 +1,6 @@
 {
+  "قیمت کارگزار": "Broker price",
+  "قیمت رفت یا برگشت جدا": "Separate outbound or return price",
   "دسترسی به این عملیات مجاز نیست.": "Access to this operation is not permitted.",
   "درخواست معتبر نیست.": "The request is invalid.",
   "ارسال ایمیل یادداشت انجام نشد": "The email could not be sent.",

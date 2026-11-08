@@ -1,3 +1,4 @@
+import { ReservationCurrencySelect } from './reservation-currencies';
 import type { ReservationPurchaseBatchInputV1 } from '@nora/contracts';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -526,7 +527,7 @@ it('round-trip checkbox uses one population input and disables split pricing', (
     (n) => n.type === 'input' && n.props.type === 'checkbox',
   )[0]!;
   (checkbox.props.onChange as (event: unknown) => void)({
-    target: { checked: true },
+    target: { checked: false },
   });
   Object.assign(draft, update.mock.calls[0]![0]);
   expect(draft).toMatchObject({
@@ -752,3 +753,44 @@ it.each([null, { id: 'shared', name: 'HOTEL' }])(
     expect(draft).toEqual(before);
   },
 );
+
+it('inherits hotel currency until the transfer currency is manually selected', () => {
+  let draft = defaultVoucherSettings(request, {});
+  h.ref = 0;
+  const renderEditor = () => {
+    h.ref = 0;
+    return nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: request.id,
+        update: (next) => {
+          draft = next;
+        },
+        currencies: [],
+        busy: false,
+        nights: 3,
+      }),
+    );
+  };
+  const changeCurrency = (label: string, value: string) => {
+    const control = renderEditor().find(
+      (n) => n.type === ReservationCurrencySelect && n.props.label === label,
+    )!;
+    (control.props.onChange as (value: string) => void)(value);
+  };
+  changeCurrency('ارز خرید هتل', 'EUR');
+  expect(draft.supplierFormPrices?.transferPp?.currencyCode).toBe('EUR');
+  changeCurrency('ارز خرید هتل', 'USD');
+  expect(draft.supplierFormPrices?.transferPp?.currencyCode).toBe('USD');
+  changeCurrency('ارز ترانسفر', 'IRR');
+  changeCurrency('ارز خرید هتل', 'EUR');
+  expect(draft.supplierFormPrices?.transferPp?.currencyCode).toBe('IRR');
+  const checkbox = renderEditor().find(
+    (n) => n.type === 'input' && n.props.type === 'checkbox',
+  )!;
+  expect(checkbox.props.checked).toBe(false);
+  (checkbox.props.onChange as (event: unknown) => void)({
+    target: { checked: true },
+  });
+  expect(draft.hotelTransferRoundTrip).toBe(false);
+});

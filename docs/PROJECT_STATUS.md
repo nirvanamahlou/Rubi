@@ -1,3 +1,11 @@
+## AMENDMENT-AIRLINE-1108 — 2026-11-08
+
+PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
+
+## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
+
+Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
 ## HR penalty settings persistence — 2026-11-08
 
 ## REPORT-MONEY-FORMAT-1108 — PC-C
@@ -9141,6 +9149,10 @@ Removed the four owner-selected helper paragraphs in Finance inbox and Workbench
 
 Global Call Center queue defaults to MINE. Tab positions swap to My work, Open, Closed, All; contact dossier default and all backend scopes/counts remain unchanged. Six existing workflow/layout checks and scoped lint pass. Previous alert PR1397 queue navigation is aligned with MINE so it cannot undo the newer default. Full local type/build attempt is subject to the shared old dependency artifact limitation; final hosted CI remains required. No server deployment.
 
+## RESERVATION-CALL-VISIBILITY-1108 — PC-C — READY_FOR_CI
+
+Production read-only diagnosis found current native HR managers with own-only Call Center permissions excluded from their unit contacts because the read scope still depended on manual team grants/IAM profiles. Strict-policy contacts and reports now use the published HR manager/current-unit/company projection intersected with active internal branch accounts. Ordinary staff remain self-only; demotion/transfer is immediate, executable workflow/recording/global/legacy policies are unchanged.40 focused tests and20 real PostgreSQL answer/ingress/access cases pass, including own-read-only manager inbound/outbound/contact search/report SQL, transfer/demotion and native eligibility. API types/build and scoped lint pass. Read-only candidate acceptance on current production data confirms every one of the affected employee's nine visible contacts is accessible to the unit manager, without expanding that employee's own scope. No schema/dependency/grant or HR/call data change. Full exact-head hosted gates precede merge and bounded release. Details: tasks/RESERVATION-CALL-VISIBILITY-1108.md.
+
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
 Owner confirmed an exact two-manager/three-extra-recipient Call Center assignment exception. Protected exact-ID policy feeds both selector and save validation; active internal branch checks and all other department/team/self policies remain intact. Own-created target requests remain readable without expanding contact history. No schema/dependency/HR/stored-grant change.52 focused tests pass; full types/build and hosted gates precede approved merge/publication. See tasks/SALES-REQUEST-ASSIGNEES-1107.md.
@@ -9359,5 +9371,9 @@ SELF-ATTENDANCE-PENALTY-1108 PC-B: expose the existing authoritative daily penal
 RESERVATION-BROKER-EMAIL-CI-1108: owner approved task-branch-only synchronization; shared docs/catalogue conflicts resolved without removing upstream records or translation values. Final integrated CI remains required. No deploy, real mail or PR-to-develop merge.
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real PDF smoke pass. Task branch synchronized with develop; no PR merge conflicts. Two ledger formatting separators corrected after hosted quality feedback. Final-head hosted checks pending. Real email remains disabled; no deployment or merge to develop.
+
+## REPORTING-BOOTSTRAP-CYCLE-1108 — PC-C — IN_PROGRESS
+
+Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, DashboardOperationalSources, a full application module-graph regression and bounded status/task notes. Production activation of a43bb8a failed on Reporting -> CustomerAffairs -> Sales -> Reservations -> System -> Reporting; reviewed rollback restored healthy 0c4cedf6b. Preserve all public call-report authorization and newly activated sources. No Sales/Customer Affairs private readers, schema, dependencies or operational data changes.
 
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
