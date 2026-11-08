@@ -1,10 +1,7 @@
-## Insurance correction — 2026-11-08 — PC-A — INTEGRATED / FINAL CI
 
-INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in the document summary and policy management table, linked to the exact passenger's existing authorized Customer record. Shared in-form guidance covers identity/passport/contact/travel prerequisites; manual draft correction remains versioned, issued-policy and provider fingerprint guards remain unchanged. Policy management refreshes on returning to the tab. No migration, dependencies, provider calls or deployment. Validation and develop PR/merge pending; see tasks/INSURANCE-CORRECTION-1108.md.
+## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
-56 focused Web/Customer regressions passed. Final fetch discovered active overlapping PR1507 (codex/insurance-amend-1108), including the same policies.tsx editor and insurance APIs. Repository instructions require owner coordination before source integration; local candidate is preserved and no develop merge was attempted.
-
-Owner subsequently authorized coordination and integration preserving both branches. Coordination receipt: PR1507 issuecomment-6720292840. Integrated PR1507 at9ba91b1e4 with latest develop; policy-management inline identity editor and API/retry guards are retained alongside the document-summary correction dialog, exact passenger link, in-form requirements and list focus refresh. Standalone Web production build67 routes, typecheck/lint and56 focused tests passed; integrated verification and final hosted gates precede authorized merge. No deployment.
+PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel voucher now has one continuous passenger/service table; Chrome prints continuation pages with column headings only, retaining row order and complete rows. Hotel, flight and tour sections are not restarted for passenger chunks. All room details remain inline; obsolete estimated physical page numbers are hidden. 56 focused output tests and actual Chrome PDF checks for6/40/80 synthetic passengers pass; all rendered pages visually inspected. Scoped lint, full Web TypeScript and67-route production build pass. Integrated to develop under owner authorization; no own migration, dependency, operational data or deployment changes.
 
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
@@ -9384,4 +9381,14 @@ Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, Dashbo
 
 UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.
 
+PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing dialog to the viewport. Opt-in compact table reduces field widths/spacing, keeps sticky headings and highlights the focused row. Identity authorization and save paths unchanged; no migration or deployment. Local checks and final hosted CI required before authorized develop merge.
+
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.
+
+## Insurance correction — 2026-11-08 — PC-A — INTEGRATED / FINAL CI
+
+INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in the document summary and policy management table, linked to the exact passenger's existing authorized Customer record. Shared in-form guidance covers identity/passport/contact/travel prerequisites; manual draft correction remains versioned, issued-policy and provider fingerprint guards remain unchanged. Policy management refreshes on returning to the tab. No migration, dependencies, provider calls or deployment. Validation and develop PR/merge pending; see tasks/INSURANCE-CORRECTION-1108.md.
+
+56 focused Web/Customer regressions passed. Final fetch discovered active overlapping PR1507 (codex/insurance-amend-1108), including the same policies.tsx editor and insurance APIs. Repository instructions require owner coordination before source integration; local candidate is preserved and no develop merge was attempted.
+
+Owner subsequently authorized coordination and integration preserving both branches. Coordination receipt: PR1507 issuecomment-6720292840. Integrated PR1507 at9ba91b1e4 with latest develop; policy-management inline identity editor and API/retry guards are retained alongside the document-summary correction dialog, exact passenger link, in-form requirements and list focus refresh. Standalone Web production build67 routes, typecheck/lint and56 focused tests passed; integrated verification and final hosted gates precede authorized merge. No deployment.

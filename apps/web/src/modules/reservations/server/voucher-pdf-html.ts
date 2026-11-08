@@ -9,13 +9,11 @@ import {
   voucherPassengerServices,
   voucherPassengerCells,
   voucherServiceColumns,
-  voucherPassengerPageUnits,
 } from '../model/voucher-passenger-services';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
 import {
-  reservationPassengerPages,
   reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -102,12 +100,7 @@ function voucherHotelPdfHtml(
   const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
     ? voucherPassengerServices(intake, data)
     : {};
-  const pages = voucher
-    ? reservationPassengerPages(
-        data.passengers,
-        voucherPassengerPageUnits(settings, data.notes, journeys.length > 0),
-      )
-    : [data.passengers];
+  const pages = [data.passengers];
   const heading = (n: string, title: string, note: string) =>
     `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;
   const fields = (items: unknown[][], cls: string) =>
@@ -120,7 +113,7 @@ function voucherHotelPdfHtml(
   ) =>
     `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, row) => `<tr>${r.map((v, column) => `<td${different[row] && [6, 7].includes(column) ? ' class="differentStay"' : ''} dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const roomAppendices =
-    !settings || settings.flags.hotel
+    !voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const hotelHtml =
@@ -152,7 +145,7 @@ function voucherHotelPdfHtml(
         ? table(
             ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
             data.roomBreakdown
-              .slice(0, 4)
+              .slice(0, voucher ? undefined : 4)
               .map((r) => [
                 r.ordinal,
                 r.roomType,

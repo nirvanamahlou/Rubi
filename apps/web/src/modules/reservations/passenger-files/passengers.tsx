@@ -41,6 +41,7 @@ export interface ReservationPassengerEditor {
 export function ReservationPassengers({
   id,
   readOnly = false,
+  compact = false,
   ageEditor,
   serviceEditor,
   rowActions,
@@ -51,6 +52,7 @@ export function ReservationPassengers({
 }: {
   id: string;
   readOnly?: boolean;
+  compact?: boolean;
   ageEditor?: (customerId: string) => ReactNode;
   serviceEditor?: (customerId: string) => ReactNode;
   rowActions?: (customerId: string) => ReactNode;
@@ -271,7 +273,7 @@ export function ReservationPassengers({
         </p>
       )}
       {message && <p role="status">{message}</p>}
-      <div className={styles.tableWrap}>
+      <div className={`${styles.tableWrap} ${compact ? styles.compact : ''}`}>
         <table className={styles.table}>
           <thead>
             <tr>

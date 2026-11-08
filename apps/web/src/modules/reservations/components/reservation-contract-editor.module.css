@@ -3,6 +3,24 @@
   gap: 14px;
 }
 
+:global([role='dialog']):has(.passengerWorkspace) {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.passengerWorkspace {
+  min-width: 0;
+}
+
+.passengerWorkspace .header {
+  padding: 10px 14px;
+}
+
 .header {
   display: flex;
   align-items: center;
