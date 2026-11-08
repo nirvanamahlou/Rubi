@@ -44,6 +44,12 @@ MISSION-EXPENSE-ACTIONS-1107: Sales delivery dialog spacing improved; obsolete e
 
 Automatic primary checkout previously followed the trip return even after a subsequent hotel was added, causing overlapping stays and a silently disabled pricing navigation button. Automatic checkout now follows the next stay check-in; explicit manual dates remain authoritative. The same hotel validation result drives both navigation and an actionable message, preserving all existing room/date/journey guards. Added model/payload and actual parent-button regressions for hotel-only, flight+hotel, manual overlap, incomplete rooms and invalid itineraries. Sales suite:788 passed, one existing skip; final added flight+hotel case and focused combined checks pass (31). Scoped lint and Web TypeScript passed; final build and exact-head hosted gates remain required. No API, schema, migration, dependency or deployment changes.
 
+## AMIN-OPEN-PRS-AUDIT-1108 — PC-C — COMPLETE
+
+Amin-tech11 open-PR review completed on 2026-11-08T09:58:05.425Z. PR1475 and PR1478 CI/conflicts repaired in isolated PC-C worktrees and merged after eight green final-head gates each. Newly discovered PR1502 was reviewed, rechecked after its owner synchronized develop, and observed merged with eight green final-head gates. All three tested heads and actual merge commits are ancestors of origin/develop. Final author-filtered open-PR inventory was empty. This audit performed no server connection, deployment, production data mutation, migration execution or main-branch change.
+
+Handoff and revisions: docs/tasks/AMIN-OPEN-PRS-AUDIT-1108.md. Bootstrap recovery ownership and any separately authorized publication remain with its original task; this audit did not change that runtime or active source.
+
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
@@ -56,7 +62,7 @@ Translated 49 mixed-language exclusions; all 84 KPI exclusion strings are Persia
 
 Read-only production catalogue audit covers 319 tables (155 populated), 4,030 columns and 721 FKs. Every 84 KPI/91 chart definition now has explicit business input requirements; 33 KPI definitions and 34 charts have native source wiring, conditional on scope/filters/completeness. Added owner-public capacity, Sales events/stays/staff, issuance, protected Call Center, Support, HR attendance, Documents and canonical customer behavior readers. Missing approved costs/posted journals/thresholds/attribution are explicitly unavailable; no fabricated money, averages or history. Focused API56 and Web/translation102 tests pass (one existing skip); API typecheck passes. API production compilation and scoped lint pass. Fresh post-integration API regressions67 plus Reporting/HR40 and rendered availability regression1 pass. Hosted Linux quality, build and PostgreSQL gates succeeded on integrated implementation; final-head full gates tracked in Draft PR1488. Local Web typecheck passes; Windows cross-drive dependency junction prevents local Webpack build, so hosted Linux build remains required. No migration/dependency/data mutation/deployment. Full widget ledger and populated-table audit: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md. Draft develop handoff.
 
-## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — READY_FOR_CI
+## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — MERGED
 
 عنوان «فیچرهای استفاده‌شده در فرمول» در پنل تعریف KPI با وزن قلم ملایم‌تر و هماهنگ با متن این بخش نمایش داده می‌شود؛ سایر عنوان‌ها و رفتار محاسبه ثابت می‌مانند.
 
@@ -68,7 +74,7 @@ AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to 
 
 Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).
 
-## 2026-11-07 — DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — READY_FOR_CI
+## 2026-11-07 — DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — MERGED
 
 در کارت مشترک نمودارهای داشبورد، برچسب آبی نوع نمودار حذف می‌شود. نام نوع نمودار برای دسترس‌پذیری و توضیحات حفظ می‌شود و نشان‌های زرد `DEC-OPEN` باقی می‌مانند چون به تصمیم‌های باز کسب‌وکار اشاره دارند.
 

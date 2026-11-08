@@ -62,6 +62,12 @@ MISSION-EXPENSE-ACTIONS-1107 — PC-A — IMPLEMENTED: reserve HR expense forms,
 
 COMPUTER_ID=PC-C; branch codex/pc-c-combined-hotel-next-1107 from develop cbc8d334b. Owner explicitly assigns fixing the disabled first-step Next action after adding composite contract hotels and authorizes develop merge after all checks. Reserve bounded Sales Web hotel itinerary/date/room validation, corresponding editor and form regression tests, additive error translations if needed, and own docs. Previous multi-hotel/parity sources are merged; their stale ledger headings do not reserve new implementation. Preserve explicit stay dates, room references, primary guest composition, pricing, optional journeys and server validation. No schema, dependency, API or deployment changes.
 
+## AMIN-OPEN-PRS-AUDIT-1108 — PC-C — COMPLETE
+
+Amin-tech11 open-PR review completed on 2026-11-08T09:58:05.425Z. PR1475 and PR1478 CI/conflicts repaired in isolated PC-C worktrees and merged after eight green final-head gates each. Newly discovered PR1502 was reviewed, rechecked after its owner synchronized develop, and observed merged with eight green final-head gates. All three tested heads and actual merge commits are ancestors of origin/develop. Final author-filtered open-PR inventory was empty. This audit performed no server connection, deployment, production data mutation, migration execution or main-branch change.
+
+Handoff and revisions: docs/tasks/AMIN-OPEN-PRS-AUDIT-1108.md. Bootstrap recovery ownership and any separately authorized publication remain with its original task; this audit did not change that runtime or active source.
+
 ## AMIN-OPEN-PRS-AUDIT-1107 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes reviewing every open Amin-tech11 PR, correcting CI failures and merge conflicts, and merging only fully green final heads. Initial scope: PR1436 KPI definitions/source copy, PR1453 range-hover contrast, PR1467 release docs. Existing Dashboard scopes are clean/frozen READY_FOR_REVIEW; current authorization supersedes earlier draft-only delivery. Reserve integration of these PR branches, bounded Dashboard/translation conflict fixes and own handoff records; preserve calculation, authorization, data, peer changes and all CI gates. No deployment, migration or dependency changes.
@@ -78,7 +84,7 @@ Contract wiring: ReportingNativeDashboard consumes only owner-public readers for
 
 Validation/handoff: Draft PR1488. Local native/source/identity/money regressions67 pass; fresh post-integration Reporting/HR regressions40 pass; Dashboard/i18n103 including rendered availability regression1 pass (one existing skip). API/Web typechecks, API compilation and scoped lint pass. Nine owner-public readers verified in read-only production aggregates. Windows cross-drive Web build is replaced by required hosted Linux production build; hosted quality/build/PostgreSQL gates succeeded on integrated implementation, final-head full checks tracked in PR. No own port3000 listener, schema/dependency/data mutation, merge or deployment. Exhaustive ledger: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md.
 
-## DASHBOARD-KPI-FEATURE-HEADING-1107 — PC-C — READY_FOR_CI
+## DASHBOARD-KPI-FEATURE-HEADING-1107 — PC-C — MERGED
 
 COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-feature-heading-1107` from latest `origin/develop`. Owner requests the “فیچرهای استفاده‌شده در فرمول” heading in every KPI definition panel to use the same readable font weight as regular section content. Reserve only that heading in `dashboard-workspace.tsx`, its existing Dashboard source regression in `dashboard.spec.ts`, and bounded task/status notes. Preserve all other headings, feature rows, calculations and behavior. No API, data, permissions, dependencies or deployment changes.
 
@@ -90,7 +96,7 @@ AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to 
 
 COMPUTER_ID=PC-C. User requests actual database/source verification for all KPI/chart feature descriptions. Reserve Dashboard source-description presentation, new widget lineage metadata and regression, additive English keys and own audit notes. Read-only production schema/FK and deployed native producer inspection; no records, configuration or data mutations. Distinguish active native lineage from required but unconnected sources for every widget. Extend own PR1436; no API/schema/dependency changes.
 
-## DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — PC-C — READY_FOR_CI
+## DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — PC-C — MERGED
 
 COMPUTER_ID=PC-C; branch `codex/pc-c-dashboard-chart-labels-1107` from latest `origin/develop`. Remove only the blue chart-kind badge shared by Dashboard visual cards so every chart is cleaner. Keep chart-kind wording in accessible figure names, captions and explanatory details, and retain amber DEC-OPEN decision badges. Reserve only the shared card presentation and its Dashboard source regression plus bounded task/status notes. No calculation, data, API, permission, dependency, deployment or other badge changes.
 
