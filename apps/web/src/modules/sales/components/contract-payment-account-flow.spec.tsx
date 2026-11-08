@@ -151,7 +151,7 @@ it('saves the selected account and closes entry without forcing another receipt'
     nodes(render()).some((node) => node.props.paymentId === 'payment'),
   ).toBe(false);
 });
-it('clears a selected account after currency changes and blocks submitting without a compatible destination', async () => {
+it('clears a selected account after currency changes and submits an FX transfer without a destination', async () => {
   render();
   await effects();
   const dialogs = nodes(render()).filter((node) => node.type === Dialog);
@@ -160,6 +160,8 @@ it('clears a selected account after currency changes and blocks submitting witho
   await effects();
   change(ContractPaymentAccountSelect, 'account');
   change(ContractPaymentCurrencySelect, 'USD');
+  change(MoneyInput, '920', 'onValueChange');
+  change(SalesDatePicker, '2026-10-27');
   expect(
     nodes(render()).find((node) => node.type === ContractPaymentAccountSelect)!
       .props.value,
@@ -172,5 +174,14 @@ it('clears a selected account after currency changes and blocks submitting witho
       preventDefault: () => void;
     }) => Promise<void>
   )({ preventDefault: vi.fn() });
-  expect(h.add).not.toHaveBeenCalled();
+  expect(h.add).toHaveBeenCalledWith(
+    'contract',
+    expect.objectContaining({
+      currencyCode: 'USD',
+      amount: '920',
+      method: 'BANK_TRANSFER',
+      destinationAccountId: null,
+    }),
+    expect.any(String),
+  );
 });

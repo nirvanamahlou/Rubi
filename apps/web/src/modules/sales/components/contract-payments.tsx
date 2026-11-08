@@ -40,7 +40,10 @@ import {
   validateSalesCurrencySelection,
 } from './sales-currency-select';
 import { calculateContractPaymentShare } from '../model/contract-payment-share';
-import { paymentDestinationIsValid } from '../model/payment-destination';
+import {
+  paymentDestinationIsRequired,
+  paymentDestinationIsValid,
+} from '../model/payment-destination';
 
 const empty: SalesPaymentInput = {
   amount: '',
@@ -62,6 +65,7 @@ export function ContractPaymentAccountSelect({
   onChange: (value: string) => void;
 }) {
   if (method === 'CASH') return null;
+  const required = paymentDestinationIsRequired({ method, currencyCode });
   const eligible = accounts.filter(
     (account) => account.currencyCode === currencyCode,
   );
@@ -96,11 +100,11 @@ export function ContractPaymentAccountSelect({
     </span>
   );
   return (
-    <FormField label="حساب مقصد پرداخت" required>
+    <FormField label="حساب مقصد پرداخت" required={required}>
       <SearchCombobox
         label="حساب مقصد پرداخت"
         placeholder="انتخاب حساب مقصد"
-        required
+        required={required}
         value={value}
         disabled={!eligible.length}
         onValueChange={onChange}
@@ -403,7 +407,7 @@ export function ContractPayments({
         destinationAccountId:
           payment.method === 'CASH'
             ? null
-            : (payment.destinationAccountId ?? null),
+            : payment.destinationAccountId || null,
         dueAt: new Date(payment.dueAt).toISOString(),
         version: contract.version,
       };
@@ -717,7 +721,7 @@ export function ContractPayments({
                         destinationAccountId:
                           method === 'CASH'
                             ? null
-                            : (payment.destinationAccountId ?? null),
+                            : payment.destinationAccountId || null,
                         method: method as SalesPaymentMethod,
                       })
                     }

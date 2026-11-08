@@ -24,6 +24,12 @@ Implemented after MANIFEST with matching tab surface and keyboard focus. Scoped 
 
 > > > > > > > origin/develop
 
+## FX-TRANSFER-DESTINATION-1108 — PC-B — ACTIVE
+
+Owner requests optional destination account for foreign-currency bank-transfer declarations in Sales payments. Reserve payment-destination helper, contract-payments selector/serialization, focused UI/flow and existing server persistence regressions, own notes. Backend already accepts omitted destinations and validates provided references through branch/currency/active account scope. Preserve IRR/other-method requirements, actual Finance receipt approval, idempotency and source ownership. No API/schema/dependency/financial transactions or deployment.
+
+FX-TRANSFER-DESTINATION-1108 validation:26 Web/11 API checks pass; native server omission contract is unchanged. Source frozen on push; preserve all final-head quality/build/test/migration gates before standing authorized develop merge. No deployment or payment registration.
+
 ## HR-ATTENDANCE-FAST-1108 — PC-A — ACTIVE
 
 Reserve Radan client bounded recent pagination, one-minute non-overlapping polling and hourly full reconciliation, focused tests and bounded connector deployment. Base origin/develop a4e85b83f. Validation:23 focused tests, scoped lint and API TypeScript pass. Preserve source offsets, mappings, permissions and manual corrections; no schema/dependency changes.
