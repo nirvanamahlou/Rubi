@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { HrRecordDto } from '@nora/contracts';
 import {
   employeeAttendanceDataset,
+  eligibleAttendanceRecords,
   recentAttendanceDataset,
 } from './employee-attendance-dataset';
 const record = (
@@ -208,4 +209,31 @@ it('shows the authoritative Toman daily penalty in both attendance views', () =>
   expect(recent.rows[0]![recent.columns.indexOf('جریمه روز')]).toBe(
     employee.rows[0]![employee.columns.indexOf('جریمه روز')],
   );
+});
+
+it('marks excluded days consistently in HR and employee tables without dropping their history', () => {
+  const day = {
+    ...record('attendance', ['Worker', '2026-11-08']),
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  const normal = record('attendance', ['Worker', '2026-11-09']);
+  for (const data of [
+    employeeAttendanceDataset([day, normal]),
+    recentAttendanceDataset([day, normal], []),
+  ]) {
+    expect(data.inactiveRecordIds).toEqual([day.id]);
+    expect(data.rows).toHaveLength(2);
+  }
+});
+
+it('excludes disabled days and their punches from cached dashboard and report inputs', () => {
+  const day = {
+    ...record('attendance', ['Worker', '2026-11-08']),
+    status: 'غیرفعال',
+    data: { attendanceActive: false },
+  };
+  const punch = record('checkins', ['Worker', '2026-11-08', '09:00', 'ورود']);
+  const other = record('attendance', ['Worker', '2026-11-09']);
+  expect(eligibleAttendanceRecords([day, punch, other])).toEqual([other]);
 });

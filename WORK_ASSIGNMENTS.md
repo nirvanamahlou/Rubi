@@ -11575,6 +11575,8 @@ REPORT-READINESS-1108 scope clarification: Customers-owned scoped organization i
 
 REPORT-READINESS-1108 READY_FOR_CI: four general catalogue sources and blocked-report prerequisites implemented; 124 API/24 Web targeted tests pass. No migrations, seeds, dependency changes or deployment.
 
+REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
+
 ## DETAIL-TYPE-LAYOUT-1108 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D; branch codex/pc-d-detail-type-layout-1108, created from PC-D-Integration and fast-forwarded to current develop for the already-merged detail editor. Owner explicitly delegated detail accounts/types to PC-D and PC-B in this chat. Reserve accounting-workspace.tsx, accounting-detail-editor.tsx/module.css, bounded nullable unsaved-note context in accounting-setup-notes.tsx and focused route/render regression tests, own task/status notes. Restore the requested type form even when no authorized ledger exists and match the supplied two-column Rahkaran reference. Preserve book-scoped FK/authorization, existing persistence and required title/length (1–20). No automatic ledger creation, schema/migration/dependency changes or operational data writes. Publish task branch under standing commit/push authorization; integration follows explicit destination authorization.
@@ -11596,3 +11598,11 @@ Final integration retains concurrent HR/Reporting changes and regenerates combin
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
 
 REPORT-READINESS-1108 CI/MERGE FOLLOW-UP: owner explicitly authorizes PR1490 develop merge after all final-head checks, with no server deployment. All eight checks passed on f0efaf976; merge blocked only by concurrent append-only status/assignment conflicts. Both owners' entries retained; rerun final-head CI after synchronization.
+
+## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
+
+Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
+
+ATTENDANCE-ACTIVATION-1108 validation: 36 focused API checks and one real PostgreSQL persistence/rollback test passed; 8 attendance dataset and3 translation checks passed; Web TypeScript and scoped API/Web lint pass. Full local API typecheck encounters existing stale Prisma-generated fields in unrelated modules; hosted regenerated full gates required before merge. No migration/dependency/deployment.
+
+ATTENDANCE-ACTIVATION-1108 consumer review: reserve bounded hr-dashboard.tsx, hr-reports.tsx, radan-reports.ts and contextual attendance options in hr-record-form.tsx. The legacy browser projections also consume eligible attendance; keep history rows visible. No competing active HR writer.
