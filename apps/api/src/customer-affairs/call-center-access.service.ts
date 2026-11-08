@@ -49,6 +49,21 @@ export class CallCenterAccessService {
     const db = tx ?? this.db.client;
     const manager = callbackManagers().includes(actor.userId);
     const ids = new Set<string>();
+    const assigned = await db.customerAffairsTicket.findMany({
+      where: {
+        branchId,
+        category: 'CALL_CENTER_REQUEST',
+        executionOwnerUserId: actor.userId,
+        callCenterContactId: { not: null },
+      },
+      select: {
+        callCenterContactId: true,
+        callCenterCalls: { select: { id: true } },
+      },
+    });
+    const assignedContacts = new Set(
+      assigned.map((row) => row.callCenterContactId),
+    );
     let after: string | undefined;
     for (;;) {
       const rows = await db.callCenterTelephonySession.findMany({
@@ -75,24 +90,15 @@ export class CallCenterAccessService {
         );
         if (!missedInbound(t)) continue;
         const user = await this.singleRingingUser(branchId, t, db);
-        if (user ? user === actor.userId : manager)
+        if (
+          (user ? user === actor.userId : manager) ||
+          (callsOnly && assignedContacts.has(row.call.contactId))
+        )
           ids.add(callsOnly ? row.callId : row.call.contactId);
       }
       if (rows.length < 200) break;
       after = rows.at(-1)!.id;
     }
-    const assigned = await db.customerAffairsTicket.findMany({
-      where: {
-        branchId,
-        category: 'CALL_CENTER_REQUEST',
-        executionOwnerUserId: actor.userId,
-        callCenterContactId: { not: null },
-      },
-      select: {
-        callCenterContactId: true,
-        callCenterCalls: { select: { id: true } },
-      },
-    });
     for (const row of assigned) {
       if (callsOnly) for (const call of row.callCenterCalls) ids.add(call.id);
       else ids.add(row.callCenterContactId!);

@@ -896,6 +896,19 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await expect(
         calls.getCall(foreign.callId, actor(expert), branchId),
       ).rejects.toThrow();
+      await expect(
+        read.history(actor(expert), branchId, own.contactId, 'calls', {
+          pageSize: 50,
+          after: foreign.callId,
+        } as never),
+      ).rejects.toThrow('نشانگر تاریخچه معتبر نیست.');
+      const legacyList = await calls.list(actor(expert), branchId, {
+        page: 1,
+        pageSize: 50,
+      });
+      const listed = legacyList.data.find((r) => r.id === own.contactId)!;
+      expect(listed.calls.map((r) => r.id)).toEqual([shared.callId]);
+      expect(listed.callCount).toBe(2);
       expect(
         (await calls.getCall(foreign.callId, actor(other), branchId)).data.id,
       ).toBe(foreign.callId);
@@ -1422,6 +1435,14 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       expect(await canSee(manager, record.contactId)).toBe(true);
       expect(await canSee(expert, record.contactId)).toBe(false);
       expect(await canSee(other, record.contactId)).toBe(false);
+      expect(
+        await db.callCenterCall.count({
+          where: {
+            id: record.callId,
+            AND: [await policy.callWhere(actor(expert), branchId)],
+          },
+        }),
+      ).toBe(0);
       const wf = new CallCenterWorkflowService(
         database,
         crypto,
@@ -1446,6 +1467,14 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ).rejects.toThrow('خارج از محدوده');
       await wf.saveRequest(actor(manager), branchId, record.contactId, input);
       expect(await canSee(expert, record.contactId)).toBe(true);
+      expect(
+        await db.callCenterCall.count({
+          where: {
+            id: record.callId,
+            AND: [await policy.callWhere(actor(expert), branchId)],
+          },
+        }),
+      ).toBe(1);
       expect(
         await db.customerAffairsTicket.count({
           where: {
