@@ -56,9 +56,25 @@ Translated 49 mixed-language exclusions; all 84 KPI exclusion strings are Persia
 
 Read-only production catalogue audit covers 319 tables (155 populated), 4,030 columns and 721 FKs. Every 84 KPI/91 chart definition now has explicit business input requirements; 33 KPI definitions and 34 charts have native source wiring, conditional on scope/filters/completeness. Added owner-public capacity, Sales events/stays/staff, issuance, protected Call Center, Support, HR attendance, Documents and canonical customer behavior readers. Missing approved costs/posted journals/thresholds/attribution are explicitly unavailable; no fabricated money, averages or history. Focused API56 and Web/translation102 tests pass (one existing skip); API typecheck passes. API production compilation and scoped lint pass. Fresh post-integration API regressions67 plus Reporting/HR40 and rendered availability regression1 pass. Hosted Linux quality, build and PostgreSQL gates succeeded on integrated implementation; final-head full gates tracked in Draft PR1488. Local Web typecheck passes; Windows cross-drive dependency junction prevents local Webpack build, so hosted Linux build remains required. No migration/dependency/data mutation/deployment. Full widget ledger and populated-table audit: docs/tasks/DASHBOARDS-DATA-ACTIVATION-1108.md. Draft develop handoff.
 
+## 2026-11-07 — DASHBOARD-KPI-FEATURE-HEADING-1107 — READY_FOR_CI
+
+عنوان «فیچرهای استفاده‌شده در فرمول» در پنل تعریف KPI با وزن قلم ملایم‌تر و هماهنگ با متن این بخش نمایش داده می‌شود؛ سایر عنوان‌ها و رفتار محاسبه ثابت می‌مانند.
+
+اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint محدود، build قراردادها، typecheck کامل وب، build تولیدی وب (۶۷ مسیر) و بررسی diff موفق شدند. بررسی Prettier برای دو فایل بزرگ TypeScript هشدار قالب‌بندی داد؛ برای تغییر یک کلاس، بازنویسی گسترده اعمال نشد.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
+
 ## DASHBOARD-SOURCE-AUDIT-1107 — PC-C — READY_FOR_REVIEW
 
 Read-only production schema audit found 318 tables/views, 4,020 columns and 721 foreign keys. All five deployed native Dashboard readers match the inspected source. Corrected active KPI/chart feature lineage to contracts, price components, refunds, Finance-approved payments, canonical buyer history and lead handoffs; service kind is classification, not service revenue. Required but unwired sources are explicitly marked unconfirmed, including accounting metrics. 58 Dashboard/i18n tests passed (one existing skip); scoped lint/format passed. No data, schema or API changes. Extends PR1436; see [audit evidence](tasks/DASHBOARDS-SOURCE-AUDIT-1107.md).
+
+## 2026-11-07 — DASHBOARD-REMOVE-CHART-KIND-TAGS-1107 — READY_FOR_CI
+
+در کارت مشترک نمودارهای داشبورد، برچسب آبی نوع نمودار حذف می‌شود. نام نوع نمودار برای دسترس‌پذیری و توضیحات حفظ می‌شود و نشان‌های زرد `DEC-OPEN` باقی می‌مانند چون به تصمیم‌های باز کسب‌وکار اشاره دارند.
+
+اعتبارسنجی: ۱۹ آزمون داشبورد پاس شد و ۱ مورد از قبل skip بود؛ ESLint، build قراردادها، typecheck وب و build تولیدی وب با ۶۷ مسیر موفق شدند. تگ نوع نمودار حذف شد و شناسه‌های DEC-OPEN حفظ شدند.
+
+AMIN-OPEN-PRS-AUDIT-1108 / PC-C: owner authorizes fixing this PR and merging to develop only after every final-head gate passes; server publication is forbidden. Reserve only this existing Dashboard presentation change, its regression, CI formatting and own handoff notes. Preserve all current data activation, source lineage, access checks, peer changes and CI gates.
 
 ## DASHBOARD-FORMULA-PERSIAN-1107 — PC-C — READY_FOR_REVIEW
 
@@ -9343,3 +9359,5 @@ RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real
 ## REPORTING-BOOTSTRAP-CYCLE-1108 — PC-C — IN_PROGRESS
 
 Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, DashboardOperationalSources, a full application module-graph regression and bounded status/task notes. Production activation of a43bb8a failed on Reporting -> CustomerAffairs -> Sales -> Reservations -> System -> Reporting; reviewed rollback restored healthy 0c4cedf6b. Preserve all public call-report authorization and newly activated sources. No Sales/Customer Affairs private readers, schema, dependencies or operational data changes.
+
+UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.

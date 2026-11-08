@@ -1500,7 +1500,7 @@ function KpiDefinitionPanel({
 
             <section aria-labelledby="kpi-calculation-features-title">
               <h3
-                className="text-sm font-black text-foreground"
+                className="text-sm font-semibold text-foreground"
                 id="kpi-calculation-features-title"
               >
                 فیچرهای استفاده‌شده در فرمول
@@ -3020,9 +3020,6 @@ function ProjectionSlot({
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
 
-  const visualLabel = isEmployeeComparison
-    ? 'مقایسه عملکرد تیم'
-    : visualLabels[resolvedKind];
   const reportCode = dashboardReportCodeFromDrilldown(drilldown);
   const report = reportCode
     ? reportCatalog.find((candidate) => candidate.code === reportCode)
@@ -3051,9 +3048,6 @@ function ProjectionSlot({
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <Badge className="bg-blue-50 text-[10px] text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-              {visualLabel}
-            </Badge>
             <div
               className={cn(
                 'flex items-center gap-1.5',

@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHrReferenceData } from './hr-reference-data';
@@ -380,7 +381,7 @@ export function HrMissionForm({
               مدرک
               <input
                 type="file"
-                accept="application/pdf,image/png,image/jpeg"
+                accept={RECEIPT_FILE_ACCEPT}
                 onChange={(e) => {
                   setFile(e.target.files?.[0] ?? null);
                   setReceipt(undefined);
