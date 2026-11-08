@@ -1,3 +1,4 @@
+import { eligibleAttendanceRecords } from './employee-attendance-dataset';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
 
@@ -168,7 +169,7 @@ export function buildRadanReport(
     );
   const ids = new Set(people.map((e) => e.id));
   const rank = new Map(people.map((e, i) => [e.id, i]));
-  const source = records
+  const source = eligibleAttendanceRecords(records)
     .filter((r) => r.employeeId && ids.has(r.employeeId) && !r.deletedAt)
     .sort(
       (a, b) =>

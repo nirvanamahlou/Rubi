@@ -1252,3 +1252,8 @@ a.card:hover {
     border-inline-end: 0;
   }
 }
+
+.table tbody tr[data-attendance-inactive] > td {
+  background: light-dark(#e5e7eb, #30343b);
+  color: light-dark(#525866, #b9c0ca);
+}

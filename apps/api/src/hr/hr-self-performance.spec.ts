@@ -408,3 +408,40 @@ it('returns newest-first own history with stored metrics and registration proven
   expect(query.where.employeeId).toBe('employee');
   expect(query.where.employee.userId).toBe('self');
 });
+
+it('excludes inactive days from history, totals and today punches', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-08T10:00:00Z'));
+  try {
+    const f = fixture();
+    f.client.hrRecord.findMany.mockImplementation(async (q) =>
+      q.where.tab === 'attendance'
+        ? [
+            {
+              values: ['User', '2026-11-08'],
+              status: 'غیرفعال',
+              data: {
+                attendanceActive: false,
+                firstIn: '2026-11-08T05:30:00Z',
+                lateMinutes: 50,
+                overtimeMinutes: 60,
+              },
+            },
+          ]
+        : q.where.tab === 'checkins'
+          ? [
+              {
+                parentId: null,
+                values: ['User', '2026-11-08', '09:00', 'ورود'],
+              },
+            ]
+          : [],
+    );
+    const result = await f.service.get(actor);
+    expect(result.attendanceHistory).toEqual([]);
+    expect(result.monthlyAttendance?.lateMinutes).toBeNull();
+    expect(result.todayAttendance?.firstIn).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});

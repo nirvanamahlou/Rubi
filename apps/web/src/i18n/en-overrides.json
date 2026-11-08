@@ -1,4 +1,8 @@
 {
+  "اطلاعات حساب تفصیلی": "Detail account information",
+  "اطلاعات نوع تفصیلی": "Detail account type information",
+  "برای ثبت نوع تفصیلی، ابتدا دفتر حسابداری را تعریف کنید.": "Create an accounting ledger before saving a detail account type.",
+  "تعریف دفتر کل": "Create accounting ledger",
   "تاریخ شروع اعتبار": "Effective start date",
   "تأیید خطای دستگاه": "Confirm device error",
   "تعداد تنظیمات جریمه بیش از حد مجاز است.": "Too many penalty settings.",
@@ -5596,5 +5600,13 @@
   "درخواست صدور برای این مسافر هنوز ثبت نشده است.": "An issuance request has not yet been registered for this passenger.",
   "در انتظار پردازش درخواست بیمه‌گر.": "Waiting for the insurer to process the request.",
   "فایل بیمه‌نامه هنوز از بیمه‌گر دریافت نشده است.": "The policy document has not yet been received from the insurer.",
-  "محل اقامت:": "Accommodation:"
+  "محل اقامت:": "Accommodation:",
+  "ثبت وضعیت": "Save status",
+  "غیرفعال‌سازی کارکرد": "Deactivate attendance",
+  "بازه تاریخ و کارکنان را انتخاب کنید.": "Select a date range and employees.",
+  "جست‌وجوی کارکنان": "Search employees",
+  "بازه باید حداکثر یک سال باشد.": "The date range must not exceed one year.",
+  "کارکنان را انتخاب کنید؛ حداکثر ۲۰۰ نفر.": "Select up to 200 employees.",
+  "در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.": "Up to 2,000 employee attendance days can be changed at once.",
+  "نام یا کد پرسنلی": "Name or personnel code"
 }
