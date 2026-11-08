@@ -17,7 +17,11 @@ describe('Sales receipt destination public boundary', () => {
       'payer',
     );
     expect(findMany).toHaveBeenCalledWith({
-      where: { branchId: 'branch', isActive: true },
+      where: {
+        branchId: 'branch',
+        currencyCode: { not: null },
+        isActive: true,
+      },
       select: {
         id: true,
         title: true,

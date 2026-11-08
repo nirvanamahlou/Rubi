@@ -28,7 +28,10 @@ export const bankAccountsApi = {
     ),
   create: (
     bankId: string,
-    input: CompanyBankAccountInputV1 & { branchId: string; requestId: string },
+    input: CompanyBankAccountInputV1 & {
+      branchId: string | null;
+      requestId: string;
+    },
   ) =>
     apiRequest<CompanyBankAccountV1>(path(bankId), {
       method: 'POST',
