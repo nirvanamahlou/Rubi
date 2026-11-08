@@ -604,6 +604,7 @@ export function InsuranceDraft({
   saved: () => void;
 }) {
   const previous = 'version' in target ? target : null;
+  const previousId = previous?.id;
   const [settings, setSettings] = useState<InsuranceSettingsResponse | null>(
     null,
   );
@@ -636,10 +637,10 @@ export function InsuranceDraft({
     };
   }, [target.branchId]);
   useEffect(() => {
-    if (!previous) return;
+    if (!previousId) return;
     let active = true;
     insuranceRequest<{ data: InsurancePassengerInputV1 }>(
-      'policies/' + previous.id + '/passenger',
+      'policies/' + previousId + '/passenger',
     )
       .then((r) => {
         if (active) setDraft((current) => ({ ...current, passenger: r.data }));
@@ -653,7 +654,7 @@ export function InsuranceDraft({
     return () => {
       active = false;
     };
-  }, [previous?.id]);
+  }, [previousId]);
   const country = settings?.config.countries.find(
     (c) => c.providerCountryCode === draft.destinationCode,
   );
