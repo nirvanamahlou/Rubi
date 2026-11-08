@@ -403,8 +403,6 @@ it('explains cancelled policies and contracts instead of displaying a misleading
 });
 
 it('retains only locally generated provider diagnostics in the policy error', async () => {
-  const { TravisDiagnosticError } =
-    await import('../../integrations/insurance/travis-sandbox.service');
   const f = fixture();
   f.provider.createPolicy.mockRejectedValueOnce(
     new TravisDiagnosticError('ثبت درخواست بیمه: موبایل (کد 400).'),
