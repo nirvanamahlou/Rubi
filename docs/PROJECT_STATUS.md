@@ -1306,6 +1306,10 @@ apply the existing permission decision to every catalogued screen tab. No data,
 API, schema, dependency or IAM-grant change.
 Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
 
+## 2026-11-08 — TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
+
+Removed the highlighted transfer quotation helper. Transfer defaults exclude infants and the contract's 2–6 child band; Web and API enforce a canonical per-leg paying-passenger limit. Purchase validation captures the contract limit before operational room overrides. Focused regression checks cover free children, bounds, UI error and rejection before writes. Owner authorizes develop merge after all final-head hosted gates. No migration, dependency, operational data or deployment change. See docs/tasks/TRANSFER-COUNT-GUARD-1108.md.
+
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native

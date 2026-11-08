@@ -176,6 +176,54 @@ export function reservationHotelTransferCounts(
   };
 }
 
+/** Canonical booked occupancy; the 2–6 band (under six) and infants are free. */
+export function reservationTransferPassengerLimit(
+  snapshot: SalesReservationRequestV1,
+  stayKey?: string,
+) {
+  const hotel = stayKey
+    ? reservationHotelStays(snapshot).find((stay) => stay.key === stayKey)
+        ?.hotel
+    : snapshot.hotelSelection;
+  if (hotel?.rooms?.length)
+    return hotel.rooms.reduce(
+      (sum, room) =>
+        sum + room.adults + room.childAges.filter((age) => age >= 6).length,
+      0,
+    );
+  const members = new Set(snapshot.passengerIds);
+  if (!members.size) {
+    const parties = readLegacyServiceParties(snapshot.serviceSelections);
+    return Math.max(
+      0,
+      ...Object.values(parties ?? {}).map(
+        (party) => party.adults + party.children,
+      ),
+    );
+  }
+  return [...members].filter((id) => {
+    const person = snapshot.passengerAssignments?.find(
+      (person) => person.customerId === id,
+    );
+    return person?.ageCategory !== 'INF' && person?.childAgeBand !== 'AGE_2_6';
+  }).length;
+}
+
+export function assertReservationTransferCounts(
+  counts: { outbound: number; returning: number } | undefined,
+  limit: number,
+) {
+  if (
+    counts &&
+    [counts.outbound, counts.returning].some(
+      (count) => !Number.isSafeInteger(count) || count < 0 || count > limit,
+    )
+  )
+    throw Error(
+      'تعداد نفرات ترانسفر از تعداد مسافران مشمول قرارداد بیشتر است.',
+    );
+}
+
 /** Round-trip fares charge each passenger once; both leg populations must match. */
 export function hotelTransferChargeableCount(
   counts: { outbound: number; returning: number },

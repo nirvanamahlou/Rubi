@@ -53,9 +53,9 @@ const fixture = () =>
     },
     workflow: { roomOrder: ['a', 'b', 'baby'], ageOverrides: {}, note: '' },
   }) as unknown as ReservationFormIntake;
-it('counts independently selected outbound and return transfers without treating infants as transfer seats', () => {
+it('counts each transfer leg without charging infants or the 2–6 child band', () => {
   const intake = fixture();
-  expect(supplierTransferCounts(intake)).toEqual({ outbound: 2, returning: 1 });
+  expect(supplierTransferCounts(intake)).toEqual({ outbound: 1, returning: 1 });
   const settings = defaultVoucherSettings(intake, {});
   settings.passengers.find((p) => p.id === 'b')!.selected = false;
   intake.workflow.supplierFormSettings = settings;
