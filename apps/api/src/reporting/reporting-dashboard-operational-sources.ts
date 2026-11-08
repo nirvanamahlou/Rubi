@@ -2,6 +2,7 @@ import { readCustomerBehaviorDashboard } from '../customers/customer-behavior-da
 import { readHrDashboard } from '../hr/hr-dashboard.public';
 import { readReservationDashboard } from '../reservations/reservation-dashboard.public';
 import { Inject, Injectable } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { CallCenterDashboardSource } from '../customer-affairs/call-center-dashboard.public';
 import { DatabaseService } from '../database/database.service';
 import { readTicketDashboard } from '../ticket-catalog/ticket-dashboard.public';
@@ -15,8 +16,7 @@ import type { DashboardSourceQuery } from '../common/dashboard-source';
 export class DashboardOperationalSources {
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
-    @Inject(CallCenterDashboardSource)
-    private readonly calls: CallCenterDashboardSource,
+    @Inject(ModuleRef) private readonly modules: ModuleRef,
   ) {}
   get readers() {
     return [
@@ -36,7 +36,12 @@ export class DashboardOperationalSources {
       },
       {
         source: 'customer-affairs.dashboard.attributed-calls.v1',
-        read: (q: DashboardSourceQuery) => this.calls.read(q),
+        // The application owns the public provider. Resolve it only after boot;
+        // importing its full command module here creates a Sales/Reservations cycle.
+        read: (q: DashboardSourceQuery) =>
+          this.modules
+            .get(CallCenterDashboardSource, { strict: false })
+            .read(q),
       },
       {
         source: 'tickets.dashboard.current-capacity.v1',
