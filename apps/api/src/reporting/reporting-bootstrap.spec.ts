@@ -24,7 +24,7 @@ describe('full application module graph', () => {
     ].entries())
       vi.stubEnv(key, Buffer.alloc(32, index + 1).toString('base64'));
     vi.stubEnv('CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION', '1');
-    const { AppModule } = await import('../app.module');
+    const { AppModule } = await import('../app.module.js');
     const config = new ApplicationConfig();
     const container = new NestContainer(config);
     const scanner = new DependenciesScanner(
@@ -36,7 +36,7 @@ describe('full application module graph', () => {
     await expect(scanner.scan(AppModule)).resolves.toBeUndefined();
     expect(container.getModules().size).toBeGreaterThan(20);
     const { CallCenterDashboardSource } =
-      await import('../customer-affairs/call-center-dashboard.public');
+      await import('../customer-affairs/call-center-dashboard.public.js');
     expect(
       [...container.getModules().values()].filter((module) =>
         module.providers.has(CallCenterDashboardSource),
@@ -45,9 +45,9 @@ describe('full application module graph', () => {
   }, 30000);
   it('defers the public call reader until a request and preserves its authorization query', async () => {
     const { DashboardOperationalSources } =
-      await import('./reporting-dashboard-operational-sources');
+      await import('./reporting-dashboard-operational-sources.js');
     const { CallCenterDashboardSource } =
-      await import('../customer-affairs/call-center-dashboard.public');
+      await import('../customer-affairs/call-center-dashboard.public.js');
     const read = vi
       .fn()
       .mockResolvedValue({ source: 'calls', state: 'forbidden', metrics: {} });
