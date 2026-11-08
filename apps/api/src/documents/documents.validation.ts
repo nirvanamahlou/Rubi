@@ -31,6 +31,8 @@ const mimeByExtension: Readonly<Record<string, readonly string[]>> = {
   png: ['image/png'],
   jpg: ['image/jpeg'],
   jpeg: ['image/jpeg'],
+  jfif: ['image/jpeg'],
+  xls: ['application/vnd.ms-excel'],
   txt: ['text/plain'],
   csv: ['text/csv', 'text/plain'],
   docx: [
@@ -108,6 +110,10 @@ export function validateUploadFile(
 
   const bytes = input.magicBytes;
   const magicValid =
+    (input.detectedMimeType === 'application/vnd.ms-excel' &&
+      [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1].every(
+        (value, index) => bytes[index] === value,
+      )) ||
     (input.detectedMimeType === 'application/pdf' &&
       [0x25, 0x50, 0x44, 0x46].every(
         (value, index) => bytes[index] === value,

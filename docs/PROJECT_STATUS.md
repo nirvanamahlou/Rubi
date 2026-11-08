@@ -9339,3 +9339,5 @@ SELF-ATTENDANCE-PENALTY-1108 PC-B: expose the existing authoritative daily penal
 RESERVATION-BROKER-EMAIL-CI-1108: owner approved task-branch-only synchronization; shared docs/catalogue conflicts resolved without removing upstream records or translation values. Final integrated CI remains required. No deploy, real mail or PR-to-develop merge.
 
 RESERVATION-BROKER-EMAIL-CI-1108 integrated checks:717 Web/34 API tests and real PDF smoke pass. Task branch synchronized with develop; no PR merge conflicts. Two ledger formatting separators corrected after hosted quality feedback. Final-head hosted checks pending. Real email remains disabled; no deployment or merge to develop.
+
+UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messaging and receipt upload support, native storage and download retained.

@@ -1,4 +1,5 @@
 'use client';
+import { RECEIPT_FILE_ACCEPT, receiptFileSupported } from '@nora/contracts';
 
 import type {
   MessagingContactV1,
@@ -1310,7 +1311,7 @@ export function MessageComposer({
                   id="workbench-message-files"
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept={RECEIPT_FILE_ACCEPT}
                   onChange={(event) => {
                     const picked = Array.from(event.target.files ?? []);
                     event.target.value = '';
@@ -1319,11 +1320,11 @@ export function MessageComposer({
                       picked.some(
                         (file) =>
                           file.size > 10 * 1024 * 1024 ||
-                          !/\.(pdf|jpe?g|png)$/i.test(file.name),
+                          !receiptFileSupported(file.name, file.type),
                       )
                     )
                       return setError(
-                        'حداکثر ۱۰ فایل PDF یا تصویر و هر فایل تا ۱۰ مگابایت انتخاب کنید.',
+                        'حداکثر ۱۰ فایل تصویر، PDF یا Excel و هر فایل تا ۱۰ مگابایت انتخاب کنید.',
                       );
                     setAttachments((current) => [...current, ...picked]);
                   }}
