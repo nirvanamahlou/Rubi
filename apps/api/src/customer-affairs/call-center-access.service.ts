@@ -153,13 +153,18 @@ export class CallCenterAccessService {
       permissions.includes(
         `customer_affairs.call_center.${purpose === 'workflow' ? prefix : prefix + '.own'}`,
       );
-    const team = permissions.includes(
-      `customer_affairs.call_center.${prefix}.team`,
-    );
+    const nativeRead = answeredCallAccess() && purpose !== 'workflow';
+    const managed = nativeRead
+      ? await this.accounts.managedReadUsers(actor, branchId, tx)
+      : [];
+    const team =
+      !nativeRead &&
+      permissions.includes(`customer_affairs.call_center.${prefix}.team`);
     if (!own && !team) throw new ForbiddenException();
     return [
       ...new Set([
         ...(own ? [actor.userId] : []),
+        ...managed,
         ...(team
           ? await this.directory.callCenterTeam(actor, branchId, tx)
           : []),
