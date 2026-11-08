@@ -11574,7 +11574,6 @@ Final integration retains concurrent HR/Reporting changes and regenerates combin
 
 HR-ATTENDANCE-FAST-1108: owner confirms source date corrected; primary raw-date cutover2026-11-08 stops adding a day for new punches, preserving older offsets.
 
-
 ## ATTENDANCE-ACTIVATION-1108 — PC-B — READY_FOR_CI
 
 Owner requests reversible employee/date attendance exclusion, bulk range and individual editor, muted rows and exclusion from performance/penalty/report/payroll consumers. Reserve HR API/service/consumer helpers and tests, additive HR workflow contract, HR Web forms/datasets/table styling, own translations and notes. Previous HR scopes merged/frozen; current develop3b2bcf365 retained. Keep demo/nima manual authority, branch scope, closed-period checks, raw punches and audit. No dependencies/migrations or production data changes.
