@@ -1,3 +1,19 @@
+## JAHAN-NORA-LIVE-1108 — PC-D — RELEASE_PREPARATION
+
+COMPUTER_ID=PC-D; codex/pc-d-jahan-nora-live-1108. The owner requests actual
+Jahan Bastan/Nora connection. Reserve synchronization of existing own PR1466 with
+current develop, additive conflict resolution of own/shared status notes and
+derived English catalogues, and focused connector compatibility validation.
+The original task's explicit develop destination continues for this PR. No new
+application capability, schema, dependency, IAM grant or secret is introduced.
+Producer public API is now reachable, but its admin readiness reports missing
+public HTTPS origin, deployed environment and persistent connector encryption key.
+Live Nora still has ERP v1 and no dedicated Jahan consumer files. Real production
+acceptance depends on secure producer configuration and compatible consumer
+deployment. Existing no-merge/deploy boundary is retained until release approval;
+this step prepares a concrete reviewable consumer update. No conflicting source
+writer of the connector leaves was found; preserve all peer changes.
+
 ## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
