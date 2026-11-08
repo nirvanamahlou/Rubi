@@ -4,6 +4,11 @@ import { Button } from '@/components/ui/button';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
+  canCorrectInsurance,
+  InsuranceCorrection,
+  InsuranceRequirements,
+} from '../insurance/correction';
+import {
   Dialog,
   DialogContent,
   DialogTrigger,
@@ -141,6 +146,7 @@ export function ReservationInsuranceDocuments({
   return (
     <section className="grid gap-3" dir="rtl">
       <p>حالت آزمایشی تراویس؛ نتیجهٔ آزمایش، بیمه‌نامهٔ واقعی مسافر نیست.</p>
+      <InsuranceRequirements />
       {error && <p role="alert">{error}</p>}
       {!data ? (
         <p role="status">در حال دریافت اطلاعات…</p>
@@ -166,6 +172,12 @@ export function ReservationInsuranceDocuments({
               <strong>{p.passengerName || <>مسافر {index + 1}</>}</strong> ·{' '}
               <bdi>{p.policyNumber ?? 'در انتظار صدور'}</bdi>
               {p.error && <p role="status">{p.error}</p>}
+              {canCorrectInsurance(p.status) && (
+                <InsuranceCorrection
+                  customerId={p.customerId}
+                  passengerName={p.passengerName}
+                />
+              )}
               <Button
                 variant="outline"
                 disabled={!p.ready || busy}

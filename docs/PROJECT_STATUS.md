@@ -1,6 +1,6 @@
 ## EXPERT-CALL-ISOLATION-1108 — 2026-11-08
 
-The owner requires experts to see only their own verified calls, and current HR managers their current unit's verified calls. This supersedes the earlier ANSWERED rule allowing an authorized contact's entire history. A shared telephone/contact is identity, not a grant to every call. Latest-call selection, counts, filters, reports, history, direct-call reads and completed-call edits must correlate responsibility to that exact call. Verified shared-extension responsibility and outbound-origin snapshots remain valid; callback visibility is restricted to the missed call or explicitly linked assigned-request calls. Operational offer/claim popup access remains separate. Native HR manager projection, pinned global identities and executive-only recording downloads are unchanged. No operational data rewrite or migration.
+The owner requires experts to see only their own verified calls, and current HR managers their current unit's verified calls. This supersedes the earlier ANSWERED rule allowing an authorized contact's entire history. A shared telephone/contact is identity, not a grant to every call. Latest-call selection, counts, filters, reports, history, direct-call reads and completed-call edits must correlate responsibility to that exact call. Verified shared-extension responsibility and outbound-origin snapshots remain valid; callback visibility is restricted to the missed call or explicitly linked assigned-request calls. Operational offer/claim popup access remains separate. Native HR manager projection, pinned global identities and executive-only recording downloads are unchanged. No operational data rewrite or migration. All201 Call Center/callback tests pass on a freshly migrated isolated PostgreSQL18 database, with full API type/build and scoped lint. PR1512 integrated the concurrent insurance/transfer develop changes; final-head hosted gates remain required.
 
 ## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
@@ -1308,6 +1308,10 @@ content. The bounded fix permits only uncatalogued local tabs while continuing t
 apply the existing permission decision to every catalogued screen tab. No data,
 API, schema, dependency or IAM-grant change.
 Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
+## 2026-11-08 — TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
+
+Removed the highlighted transfer quotation helper. Transfer defaults exclude infants and the contract's 2–6 child band; Web and API enforce a canonical per-leg paying-passenger limit. Purchase validation captures the contract limit before operational room overrides. Focused regression checks cover free children, bounds, UI error and rejection before writes. Owner authorizes develop merge after all final-head hosted gates. No migration, dependency, operational data or deployment change. See docs/tasks/TRANSFER-COUNT-GUARD-1108.md.
 
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
@@ -9387,3 +9391,11 @@ UPLOAD-FILE-FORMATS-1108 PC-B in progress: consistent JFIF/PDF/XLS/XLSX messagin
 PASSENGER-FULLSCREEN-1108 PC-A: passenger correction tab expands its containing dialog to the viewport. Opt-in compact table reduces field widths/spacing, keeps sticky headings and highlights the focused row. Identity authorization and save paths unchanged; no migration or deployment. Local checks and final hosted CI required before authorized develop merge.
 
 EXTERNAL-BANK-SOURCE-1108 PC-B: optional external bank source form, true nullable branch/currency explicitly confirmed by owner. Existing ordinary accounts and financial consumer scope preserved. Validation and hosted gates pending; no production rollout.
+
+## Insurance correction — 2026-11-08 — PC-A — INTEGRATED / FINAL CI
+
+INSURANCE-CORRECTION-1108 adds automatic insurance correction entry points in the document summary and policy management table, linked to the exact passenger's existing authorized Customer record. Shared in-form guidance covers identity/passport/contact/travel prerequisites; manual draft correction remains versioned, issued-policy and provider fingerprint guards remain unchanged. Policy management refreshes on returning to the tab. No migration, dependencies, provider calls or deployment. Validation and develop PR/merge pending; see tasks/INSURANCE-CORRECTION-1108.md.
+
+56 focused Web/Customer regressions passed. Final fetch discovered active overlapping PR1507 (codex/insurance-amend-1108), including the same policies.tsx editor and insurance APIs. Repository instructions require owner coordination before source integration; local candidate is preserved and no develop merge was attempted.
+
+Owner subsequently authorized coordination and integration preserving both branches. Coordination receipt: PR1507 issuecomment-6720292840. Integrated PR1507 at9ba91b1e4 with latest develop; policy-management inline identity editor and API/retry guards are retained alongside the document-summary correction dialog, exact passenger link, in-form requirements and list focus refresh. Standalone Web production build67 routes, typecheck/lint and56 focused tests passed; integrated verification and final hosted gates precede authorized merge. No deployment.

@@ -5719,6 +5719,7 @@
   "در هر بار حداکثر ۲۰۰۰ روز کارکرد قابل تغییر است.": "Up to 2,000 employee attendance days can be changed at once.",
   "نام یا کد پرسنلی": "Name or personnel code",
   "جریمه روز (تومان)": "Daily penalty (Toman)",
+  "تعداد نفرات ترانسفر از تعداد مسافران مشمول قرارداد بیشتر است.": "The transfer passenger count exceeds the eligible passengers booked in the contract.",
   "پیوست پیام باید تصویر، PDF یا فایل Excel باشد.": "Message attachments must be images, PDF or Excel files.",
   "مدرک باید تصویر، PDF یا فایل Excel و در محدودهٔ حجم مجاز باشد.": "Evidence must be an image, PDF or Excel file within the permitted size limit.",
   "حداکثر ۱۰ فایل تصویر، PDF یا Excel و هر فایل تا ۱۰ مگابایت انتخاب کنید.": "Select up to 10 image, PDF or Excel files, each no larger than 10 MB.",
