@@ -211,20 +211,18 @@ describe('audited native Dashboard activation', () => {
       const result = await readHrDashboard(
         {
           hrRecord: {
-            findMany: vi
-              .fn()
-              .mockResolvedValue([
-                {
-                  id: 'day',
-                  employeeId: 'employee',
-                  branchId: 'branch',
-                  effectiveAt: at,
-                  updatedAt: at,
-                  status: 'حاضر',
-                  data,
-                  employee: { unit: 'Unit' },
-                },
-              ]),
+            findMany: vi.fn().mockResolvedValue([
+              {
+                id: 'day',
+                employeeId: 'employee',
+                branchId: 'branch',
+                effectiveAt: at,
+                updatedAt: at,
+                status: 'حاضر',
+                data,
+                employee: { unit: 'Unit' },
+              },
+            ]),
           },
         } as never,
         query,
