@@ -428,7 +428,8 @@ describe('ReportingWorkspace', () => {
     expect(table).toContain('مانده تسویه');
     expect(table).not.toContain('اقدام رزرو در انتظار');
     expect(table).not.toContain('۱ مورد');
-    expect(table).toContain('900000');
+    expect(table).toContain('900,000');
+    expect(table).not.toContain('>900000<');
     expect(table).toContain('350000');
     expect(table).toContain('صفحه');
     expect(table).toContain('۵ رکورد در هر صفحه');

@@ -1,8 +1,8 @@
 ## HR-PENALTY-PERSIST-1108 — PC-A — ACTIVE
 
-## REPORT-MONEY-FORMAT-1108 — PC-C — IN_PROGRESS
+## REPORT-MONEY-FORMAT-1108 — PC-C — CI FOLLOW-UP
 
-Base d140c45ac; branch codex/pc-c-report-money-format-1108. Reserve report result presentation, export renderer and focused precision/formatting tests. Comma thousands separators for all monetary displays including multi-currency cells; preserve raw API decimals, sorting, counts, currency isolation and Excel numeric fidelity. No source data, schema, dependency, merge or deployment changes.
+Base d140c45ac; branch codex/pc-c-report-money-format-1108. Reserve report result presentation, export renderer and focused precision/formatting tests. Comma thousands separators for all monetary displays including multi-currency cells; preserve raw API decimals, sorting, counts, currency isolation and Excel numeric fidelity. Owner authorizes PR1499 develop merge after all final-head CI; no deployment. Extend bounded scope to the existing workspace regression: retain raw 900000 fixture and assert grouped 900,000 output. No source data, schema or dependency changes.
 
 Reserve penalty settings form reopening and branch-scoped existing-record resolution, focused Web tests. Prior PC-B penalty implementation is merged; preserve its calculations and contracts. No schema or dependency changes.
 
