@@ -15,8 +15,112 @@ const unavailable = () =>
   new ServiceUnavailableException('اتصال آزمایشی بیمه تنظیم نشده است.');
 const invalid = () => new BadGatewayException('اطلاعات بیمه دریافت نشد.');
 /** Only locally generated diagnostics may cross into policy history. */
-export class TravisDiagnosticError extends BadGatewayException {}
-const diagnostic = (path: string, code: number, value?: unknown) => {
+export type TravisProviderDiagnostic = {
+  httpStatus: number;
+  code: number;
+  messages: string[];
+  fields: string[];
+};
+export class TravisDiagnosticError extends BadGatewayException {
+  constructor(
+    message: string,
+    readonly providerDiagnostic?: TravisProviderDiagnostic,
+  ) {
+    super(message);
+  }
+}
+/** Derive the provider's civil date from the saved Gregorian date, without timezone drift. */
+export function travisBirthDate(input: object): object {
+  const body = input as Record<string, unknown>;
+  const person = body.person as Record<string, unknown> | undefined;
+  if (!person || typeof person.birthDate !== 'string') return input;
+  const date = new Date(person.birthDate);
+  if (!Number.isFinite(date.getTime())) return input;
+  const parts = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const jalaliBirthDate = ['year', 'month', 'day']
+    .map((type) => parts.find((part) => part.type === type)!.value)
+    .join('/');
+  return { ...body, person: { ...person, jalaliBirthDate } };
+}
+function providerMessages(
+  envelope: Record<string, unknown>,
+  input?: object,
+): string[] {
+  const secrets: string[] = [];
+  const collect = (value: unknown, depth = 0) => {
+    if (depth > 4) return;
+    if (typeof value === 'string' && value.length >= 2) secrets.push(value);
+    else if (value && typeof value === 'object')
+      for (const nested of Object.values(value)) collect(nested, depth + 1);
+  };
+  collect(input);
+  if (process.env.TRAVIS_SANDBOX_API_KEY)
+    secrets.push(process.env.TRAVIS_SANDBOX_API_KEY);
+  const messages: string[] = [];
+  const clean = (value: unknown, depth = 0) => {
+    if (depth > 4 || messages.length >= 5) return;
+    if (typeof value === 'string') {
+      let text = value;
+      for (const secret of secrets.sort((a, b) => b.length - a.length))
+        text = text.split(secret).join('[redacted]');
+      text = text
+        .replace(
+          /\b(?:api[-_ ]?key|token|secret|password)[A-Za-z0-9_-]*/gi,
+          '[credential]',
+        )
+        .replace(/https?:\/\/\S+/gi, '[url]')
+        .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[email]')
+        .replace(/[A-Za-z_-]*\d[A-Za-z0-9_-]{5,}/g, '[identifier]')
+        .replace(/[A-Za-z0-9_+=/-]{24,}/g, '[token]')
+        .replace(/[0-9\u06f0-\u06f9\u0660-\u0669]{6,}/g, '[number]')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 350);
+      if (text) messages.push(text);
+    } else if (Array.isArray(value))
+      value.slice(0, 10).forEach((item) => clean(item, depth + 1));
+    else if (value && typeof value === 'object')
+      Object.values(value)
+        .slice(0, 20)
+        .forEach((item) => clean(item, depth + 1));
+  };
+  clean(envelope.messages);
+  clean(envelope.message);
+  if (
+    envelope.errors &&
+    typeof envelope.errors === 'object' &&
+    !Array.isArray(envelope.errors)
+  ) {
+    for (const [field, value] of Object.entries(envelope.errors)) {
+      if (
+        /^(nationalCode|passportNo|firstName|lastName|firstNameLatin|lastNameLatin|birthDate|jalaliBirthDate|gender|mobile|email|isIranian|sourceCountryId|destinationCountryId|durationOfStay|planId|travelKind|travelTypeId|person)$/i.test(
+          field.split('.').at(-1) ?? '',
+        )
+      )
+        clean(value);
+    }
+  }
+  return [...new Set(messages)];
+}
+const diagnostic = (
+  path: string,
+  code: number,
+  envelope?: unknown,
+  input?: object,
+  httpStatus = code,
+) => {
+  const details =
+    envelope && typeof envelope === 'object'
+      ? (envelope as Record<string, unknown>)
+      : {};
+  const value = details.errors;
+  const messages = providerMessages(details, input);
   const stage = path.endsWith('/Create')
     ? 'ثبت درخواست'
     : path.endsWith('/Confirm')
@@ -30,6 +134,7 @@ const diagnostic = (path: string, code: number, value?: unknown) => {
     firstNameLatin: 'نام لاتین',
     lastNameLatin: 'نام خانوادگی لاتین',
     birthDate: 'تاریخ تولد',
+    jalaliBirthDate: 'تاریخ تولد',
     gender: 'جنسیت',
     mobile: 'موبایل',
     email: 'ایمیل',
@@ -67,7 +172,8 @@ const diagnostic = (path: string, code: number, value?: unknown) => {
             ? 'اطلاعات درخواست از سوی بیمه پذیرفته نشد'
             : 'پاسخ ناموفق سرویس بیمه';
   return new TravisDiagnosticError(
-    `${stage} بیمه: ${reason} (کد ${code}).${fields.length ? ' فیلدهای نیازمند بررسی: ' + [...new Set(fields)].join('، ') : ''}`,
+    `${stage} بیمه: ${reason} (کد ${code}).${fields.length ? ' فیلدهای نیازمند بررسی: ' + [...new Set(fields)].join('، ') : ''}${messages.length ? ' · ' + messages.join(' · ') : ''}`,
+    { httpStatus, code, messages, fields: [...new Set(fields)] },
   );
 };
 /** Fixed sandbox transport. Never accepts URLs, credentials or customer policy payloads from a browser. */
@@ -92,6 +198,7 @@ export class TravisSandboxService {
     method: 'POST' | 'PUT' = 'POST',
   ): Promise<unknown> {
     if (!this.configured()) throw unavailable();
+    if (path === '/api/Policies/Create' && body) body = travisBirthDate(body);
     try {
       const response = await fetch(origin + path, {
         method,
@@ -143,7 +250,9 @@ export class TravisSandboxService {
                 Number(value.code) <= 599
               ? Number(value.code)
               : response.status,
-          value.errors,
+          value,
+          body,
+          response.status,
         );
       if (value.data === undefined || value.data === null) throw invalid();
       return value.data;
@@ -204,6 +313,7 @@ export class TravisSandboxService {
       planId: number;
       passportNo: string;
       nationalCode: string;
+      trustedCreation?: boolean;
     },
   ) {
     const rows = await this.read('/api/Policies/Search', {
@@ -215,8 +325,13 @@ export class TravisSandboxService {
     if (
       row &&
       expected &&
-      (row.contractNo !== expected.contractNo ||
-        row.planId !== expected.planId ||
+      ((row.contractNo !== expected.contractNo &&
+        !(
+          expected.trustedCreation &&
+          (row.contractNo == null || row.contractNo === '')
+        )) ||
+        (row.planId || (row.plan as { id?: number } | undefined)?.id) !==
+          expected.planId ||
         row.passportNo !== expected.passportNo ||
         (row.person as { nationalCode?: unknown } | undefined)?.nationalCode !==
           expected.nationalCode)
