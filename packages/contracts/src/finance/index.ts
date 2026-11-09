@@ -354,6 +354,7 @@ export type FinanceRequestStatus =
   | 'PAYING'
   | 'PAID'
   | 'RECEIPT_CONFIRMED'
+  | 'RECEIPT_VOIDED'
   | 'REJECTED'
   | 'CANCELLED'
   | 'RETURNED'

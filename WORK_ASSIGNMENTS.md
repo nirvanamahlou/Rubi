@@ -1,3 +1,7 @@
+# RECEIPT-VOID-1109 — PC-B — READY_FOR_CI
+
+Base 68b538c9f. Reserve Sales receipt void status, additive migration, Finance receipt command and accounting source guard, inbox action and regressions. Additive contracts preserve existing clients. Local API and Web builds and targeted regressions passed. Existing journal reversal workflow is required for posted receipts. No production deployment or data change.
+
 # RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
 
 PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.

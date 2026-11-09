@@ -216,7 +216,10 @@ export class SalesRepository {
       where: {
         OR: [
           ...(includeConfirmed
-            ? [{ status: 'FINANCE_CONFIRMED' as const }]
+            ? [
+                { status: 'FINANCE_CONFIRMED' as const },
+                { status: 'FINANCE_VOIDED' as const },
+              ]
             : []),
           { status: 'PENDING_FINANCE_CONFIRMATION' },
           { status: 'SCHEDULED', dueAt: { lte: new Date() } },
@@ -1326,6 +1329,8 @@ export class SalesRepository {
           throw new BadRequestException(
             'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
           );
+        if (payment.status === 'FINANCE_VOIDED')
+          throw new ConflictException('این دریافت باطل شده است.');
         if (payment.financeConfirmedByRef) {
           if (payment.financeReceiptAccountId !== event.receiptAccountId)
             throw new ConflictException(
