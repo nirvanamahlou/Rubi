@@ -23,6 +23,7 @@ export function ContractFlightEditor({
   destinationCityId = '',
   destinationCountryId = '',
   workflow = 'sales',
+  international,
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
@@ -166,6 +167,14 @@ export function ContractFlightEditor({
         <FormField label="فرودگاه مبدأ">
           <FloatingFlightAirport
             label="فرودگاه مبدأ"
+            international={
+              international ??
+              Boolean(
+                originCountryId &&
+                destinationCountryId &&
+                originCountryId !== destinationCountryId,
+              )
+            }
             cityId={originCityId}
             countryId={originCountryId}
             workflow={workflow}
@@ -176,6 +185,14 @@ export function ContractFlightEditor({
         <FormField label="فرودگاه مقصد">
           <FloatingFlightAirport
             cityId={destinationCityId}
+            international={
+              international ??
+              Boolean(
+                originCountryId &&
+                destinationCountryId &&
+                originCountryId !== destinationCountryId,
+              )
+            }
             countryId={destinationCountryId}
             workflow={workflow}
             value={value.destinationAirport}

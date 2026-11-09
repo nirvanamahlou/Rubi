@@ -46,8 +46,27 @@ export async function loadFloatingAirports(
 export function preferredFloatingAirport(
   rows: readonly SalesFlightAirportV1[],
   cityId: string,
+  international = false,
 ) {
-  return rows.find((airport) => airport.cityId === cityId) ?? rows[0];
+  const eligible = floatingAirportChoices(rows, international);
+  return (
+    (international
+      ? eligible.find(
+          (airport) => airport.cityId === cityId && airport.code === 'IKA',
+        )
+      : undefined) ??
+    eligible.find((airport) => airport.cityId === cityId) ??
+    eligible[0]
+  );
+}
+
+export function floatingAirportChoices(
+  rows: readonly SalesFlightAirportV1[],
+  international: boolean,
+) {
+  return rows.filter(
+    (airport) => !international || airport.code.trim().toUpperCase() !== 'THR',
+  );
 }
 
 export function FloatingFlightAirport({
@@ -58,6 +77,7 @@ export function FloatingFlightAirport({
   onChange,
   label = 'فرودگاه مقصد',
   preferredId,
+  international = false,
 }: {
   cityId: string;
   countryId: string;
@@ -66,6 +86,7 @@ export function FloatingFlightAirport({
   onChange: (airport: SalesFlightAirportV1 | undefined) => void;
   label?: string;
   preferredId?: string | undefined;
+  international?: boolean;
 }) {
   const [result, setResult] = useState<{
     countryId: string;
@@ -95,10 +116,20 @@ export function FloatingFlightAirport({
   }, [countryId, workflow, retry]);
   const ready = result?.countryId === countryId;
   const rows = useMemo(
-    () => (result?.countryId === countryId ? result.rows : []),
-    [result, countryId],
+    () =>
+      floatingAirportChoices(
+        result?.countryId === countryId ? result.rows : [],
+        international,
+      ),
+    [result, countryId, international],
   );
   useEffect(() => {
+    if (international && value?.code.trim().toUpperCase() === 'THR') {
+      onChange(
+        ready ? preferredFloatingAirport(rows, cityId, true) : undefined,
+      );
+      return;
+    }
     const preferred = rows.find((airport) => airport.id === preferredId);
     if (preferredId) {
       if (preferred && value?.id !== preferred.id) onChange(preferred);
@@ -106,10 +137,19 @@ export function FloatingFlightAirport({
       return;
     }
     if (rows[0] && (!value || value.countryId !== countryId))
-      onChange(preferredFloatingAirport(rows, cityId));
+      onChange(preferredFloatingAirport(rows, cityId, international));
     else if (ready && value && value.countryId !== countryId)
       onChange(undefined);
-  }, [rows, value, cityId, countryId, onChange, ready, preferredId]);
+  }, [
+    rows,
+    value,
+    cityId,
+    countryId,
+    onChange,
+    ready,
+    preferredId,
+    international,
+  ]);
   return (
     <div className="grid gap-2">
       <SearchCombobox

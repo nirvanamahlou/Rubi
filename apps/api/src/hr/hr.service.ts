@@ -656,14 +656,15 @@ export class HrService {
     if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
     if (
       rates[5] === 'بله' &&
-      source.some(
-        (item) =>
-          item.employeeId === row.employeeId &&
-          item.tab === 'corrections' &&
-          validate.APPROVED.has(item.status) &&
-          view.selected.some((punch) => punch.parentId === item.id) &&
-          (item.data as HrWorkflowData).attendanceDeviceError === true,
-      )
+      ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
+        source.some(
+          (item) =>
+            item.employeeId === row.employeeId &&
+            item.tab === 'corrections' &&
+            validate.APPROVED.has(item.status) &&
+            view.selected.some((punch) => punch.parentId === item.id) &&
+            (item.data as HrWorkflowData).attendanceDeviceError === true,
+        ))
     )
       return '0';
     const metrics = attendanceScheduleMetrics(
@@ -4427,6 +4428,7 @@ export class HrService {
     schema: HrResourceDefinition,
     actor: AuthenticatedActor,
     employee: Employee | null,
+    allowPartialAttendance = false,
   ) {
     const values = row.values as string[];
     const data = row.data as HrWorkflowData;
@@ -4790,7 +4792,10 @@ export class HrService {
         throw new ForbiddenException(
           'ویرایش دستی تردد برای این حساب مجاز نیست.',
         );
-      if (!employee || !data.startsAt || !data.endsAt)
+      if (
+        !employee ||
+        (!allowPartialAttendance && (!data.startsAt || !data.endsAt))
+      )
         throw new BadRequestException(
           'اصلاح حضور نیازمند زمان شروع و پایان UTC معتبر است.',
         );
@@ -4799,6 +4804,7 @@ export class HrService {
         [data.startsAt, 'ورود'],
         [data.endsAt, 'خروج'],
       ] as const) {
+        if (!at) continue;
         const moment = new Date(at);
         const { date, time } = validate.localClockParts(moment);
         await this.assertOpenPeriod(tx, row.branchId, date);
@@ -5697,8 +5703,10 @@ export class HrService {
       typeof input.deviceError !== 'boolean'
     )
       throw new BadRequestException('وضعیت خطای دستگاه معتبر نیست.');
-    const version = validate.version(input.version),
-      reason = validate.text(input.reason, 'دلیل', 500);
+    const version = validate.version(input.version);
+    const arrival = validate.text(input.arrival, 'ورود', 5, true);
+    const departure = validate.text(input.departure, 'خروج', 5, true);
+    const reason = validate.text(input.reason, 'دلیل', 500, true);
     const result = await this.command(
       actor,
       key,
@@ -5711,80 +5719,119 @@ export class HrService {
           !attendance.employeeId
         )
           throw new BadRequestException('رکورد کارکرد معتبر نیست.');
+        if (attendance.version !== version)
+          throw new ConflictException('نسخه کارکرد تغییر کرده است.');
         const date = (attendance.values as string[])[1]!;
+        const timingChanged = Boolean(arrival || departure);
+        if (!timingChanged && !reason && input.deviceError === undefined)
+          return { branchId: attendance.branchId, date, timingChanged };
+
         await this.assertOpenPeriod(tx, attendance.branchId, date);
-        const start = validate.localClockToUtc(
-          date,
-          validate.text(input.arrival, 'ورود', 5),
-        );
-        const end = validate.localClockToUtc(
-          date,
-          validate.text(input.departure, 'خروج', 5),
-        );
-        if (end <= start)
+        const previous = attendance.data as HrWorkflowData;
+        const correctedTime = (clock: string, existing?: string | null) =>
+          clock
+            ? validate
+                .localClockToUtc(
+                  existing
+                    ? validate.localClockParts(new Date(existing)).date
+                    : date,
+                  clock,
+                )
+                .toISOString()
+            : existing;
+        const start = correctedTime(arrival, previous.firstIn);
+        const end = correctedTime(departure, previous.lastOut);
+        if (timingChanged && start && end && end <= start)
           throw new BadRequestException('خروج باید پس از ورود باشد.');
         const changed = await tx.hrRecord.updateMany({
           where: { id: attendance.id, version, deletedAt: null },
-          data: { version: { increment: 1 } },
+          data: {
+            version: { increment: 1 },
+            ...(typeof input.deviceError === 'boolean'
+              ? {
+                  data: json({
+                    ...previous,
+                    attendanceDeviceError: input.deviceError,
+                  }),
+                }
+              : {}),
+          },
         });
         if (changed.count !== 1)
           throw new ConflictException('نسخه کارکرد تغییر کرده است.');
-        const employee = await this.employee(tx, attendance.employeeId, actor);
-        const correction = await tx.hrRecord.create({
-          data: {
-            branchId: attendance.branchId,
-            employeeId: employee.id,
-            section: 'time',
-            tab: 'corrections',
-            code: `HR-COR-${randomUUID()}`,
-            status: 'تأییدشده',
-            effectiveAt: validate.isoDate(date),
-            values: [
-              employee.name,
-              date,
-              '',
-              `${input.arrival} تا ${input.departure}`,
-              reason,
-              actor.userId,
-            ],
+        let correctionId = attendance.id;
+        if (timingChanged) {
+          const employee = await this.employee(
+            tx,
+            attendance.employeeId,
+            actor,
+          );
+          const timeLabel = (at?: string | null) =>
+            at ? validate.localClockParts(new Date(at)).time : '—';
+          const correction = await tx.hrRecord.create({
             data: {
-              startsAt: start.toISOString(),
-              endsAt: end.toISOString(),
-              reason,
-              attendanceDeviceError: input.deviceError === true,
+              branchId: attendance.branchId,
+              employeeId: employee.id,
+              section: 'time',
+              tab: 'corrections',
+              code: `HR-COR-${randomUUID()}`,
+              status: 'تأییدشده',
+              effectiveAt: validate.isoDate(date),
+              values: [
+                employee.name,
+                date,
+                '',
+                `${timeLabel(start)} تا ${timeLabel(end)}`,
+                reason,
+                actor.userId,
+              ],
+              data: {
+                ...(start ? { startsAt: start } : {}),
+                ...(end ? { endsAt: end } : {}),
+                reason,
+              },
+              searchText: employee.name,
             },
-            searchText: employee.name,
-          },
-        });
-        await this.effects(
-          tx,
-          correction,
-          validate.resource('time', 'corrections'),
-          actor,
-          employee,
-        );
+          });
+          await this.effects(
+            tx,
+            correction,
+            validate.resource('time', 'corrections'),
+            actor,
+            employee,
+            true,
+          );
+          correctionId = correction.id;
+        }
         await this.audit(
           tx,
           actor,
           {
             branchId: attendance.branchId,
-            employeeId: employee.id,
-            recordId: correction.id,
+            employeeId: attendance.employeeId,
+            recordId: correctionId,
           },
           'attendance.manual',
           {
             attendanceId: id,
-            arrival: input.arrival,
-            departure: input.departure,
-            reason,
-            deviceError: input.deviceError === true,
+            ...(arrival ? { arrival } : {}),
+            ...(departure ? { departure } : {}),
+            ...(reason ? { reason } : {}),
+            ...(typeof input.deviceError === 'boolean'
+              ? { deviceError: input.deviceError }
+              : {}),
           },
-          1,
+          timingChanged ? 1 : version + 1,
         );
-        return { branchId: attendance.branchId, date };
+        return { branchId: attendance.branchId, date, timingChanged };
       },
     );
-    await this.processAttendance(result, randomUUID(), actor);
+    if (result.timingChanged !== false)
+      await this.processAttendance(
+        { branchId: result.branchId, date: result.date },
+        randomUUID(),
+        actor,
+      );
     return this.recordDto(
       await this.record(this.database.client, id, actor),
       actor,
@@ -6085,7 +6132,12 @@ export class HrService {
                       (ongoing && events.some((e) => e.kind === 'ورود'))
                     ? 'حاضر'
                     : 'غایب';
+          const deviceError = (existing?.data as HrWorkflowData | undefined)
+            ?.attendanceDeviceError;
           const calculatedData = {
+            ...(deviceError === undefined
+              ? {}
+              : { attendanceDeviceError: deviceError }),
             ...((existing?.data as HrWorkflowData | undefined)
               ?.attendanceActive === false
               ? { attendanceActive: false, attendancePreviousStatus: status }

@@ -31,7 +31,8 @@ export function HrAttendanceEditor({
     [reason, setReason] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const [deviceError, setDeviceError] = useState(false);
+  const initialDeviceError = record.data.attendanceDeviceError === true;
+  const [deviceError, setDeviceError] = useState(initialDeviceError);
   const retry = useRef({ body: '', key: crypto.randomUUID() });
   return (
     <Dialog
@@ -61,10 +62,14 @@ export function HrAttendanceEditor({
             try {
               const body = JSON.stringify({
                 version: record.version,
-                arrival,
-                departure,
-                reason,
-                deviceError,
+                ...(arrival && arrival !== clock(record.data.firstIn)
+                  ? { arrival }
+                  : {}),
+                ...(departure && departure !== clock(record.data.lastOut)
+                  ? { departure }
+                  : {}),
+                ...(reason.trim() ? { reason } : {}),
+                ...(deviceError !== initialDeviceError ? { deviceError } : {}),
               });
               if (retry.current.body !== body)
                 retry.current = { body, key: crypto.randomUUID() };
@@ -88,7 +93,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             ورود
             <TimePicker
-              required
               value={arrival}
               onChange={(e) => setArrival(e.target.value)}
             />
@@ -96,7 +100,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             خروج
             <TimePicker
-              required
               value={departure}
               onChange={(e) => setDeparture(e.target.value)}
             />
@@ -104,7 +107,6 @@ export function HrAttendanceEditor({
           <label className={ui.field}>
             دلیل اصلاح
             <textarea
-              required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />

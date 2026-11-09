@@ -1,3 +1,9 @@
+# FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
+
+PC-A reserves floating-flight-airport component/helper/tests and ContractFlightEditor route integration. Base083cedb62; owner authorizes green develop merge. International floating routes exclude THR and prefer IKA within the selected Tehran city; domestic routes retain choices. Preserve directory workflow authorization and manual valid selections. No schema/dependency/deployment.
+
+Six targeted tests and scoped lint pass. Source frozen; final exact-head hosted gates precede owner-authorized develop merge. No deployment.
+
 # TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
 
 Validation follow-up reserves the one new report PDF caption's English catalogue key and deterministic offline catalogue synchronization. No unrelated translations or dependency changes.
@@ -19,6 +25,10 @@ Owner explicitly supersedes the selected-company Reservations list rule: one sha
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
+
+## RESERVATION-ROW-DETAILS-1109 — PC-A
+
+Remove the inline General Details button from Reservations table rows. Preserve the action panel and its permissions. Owner authorizes develop merge.
 
 ## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
 
@@ -11930,10 +11940,14 @@ Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx res
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develop0a209c797. User assigns bounded flight-purchase list date-filter presentation and authorizes green develop merge, no deployment. Reserve TicketPurchaseWorkspace date inputs, module-local flight-date predicate/tests, Web-only translation keys and own notes. No purchase/payment mutation, shared contracts, API, schema or dependency changes. No active overlapping purchase-list writer found; preserve PC-B Procurement ownership and existing Finance pricing/permission paths. Filter actual flight day inclusively and combine with existing status/search/parent filters; retain undated rows only without date restrictions.
 
+## TOUR-FORM-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-tour-form-1109 from origin/develop@083cedb62. Owner requests left new-tour action, multi-branch creation, city-default/country-selectable airports and persisted combined-tour checkbox, then green develop merge. Reserve tour-workspace/details-form and scoped helper/tests, additive optional travel/tours contract fields and tour-policy validation, Master Travel Directory airport reference validation and tests. Producer Ticket Catalog and Web consumer evolve together; old definitions remain readable, new fields optional. Multiple branches create independent authorized definitions using existing per-branch idempotent commands; no shared capacity or cross-branch image reuse. No schema/migration/dependency/deployment lock or changes.
+
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
 
-## RESERVATION-ROW-DETAILS-1109 — PC-A
+## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
 
-Remove the inline General Details button from Reservations table rows. Preserve the action panel and its permissions. Owner authorizes develop merge.
+Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
