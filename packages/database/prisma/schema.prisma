@@ -3918,6 +3918,7 @@ enum SalesPaymentStatus {
   PENDING_FINANCE_CONFIRMATION
   FINANCE_CONFIRMED
   FINANCE_REJECTED
+  FINANCE_VOIDED
 }
 
 enum SalesReservationRequestStatus {

@@ -1,4 +1,5 @@
 import { debitExchange } from './exchange-offices/exchange-payment';
+import { voidSalesReceipt } from './operations/void-sales-receipt';
 import { financialDate } from './accounting/accounting.financial-events';
 import {
   recordFinancialEvent,
@@ -369,7 +370,11 @@ export class FinanceInboxService {
           currencyCode: item.currencyCode,
         },
         settlement: null,
-        status: item.financeConfirmed ? 'RECEIPT_CONFIRMED' : 'NEW',
+        status: item.financeVoided
+          ? 'RECEIPT_VOIDED'
+          : item.financeConfirmed
+            ? 'RECEIPT_CONFIRMED'
+            : 'NEW',
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: item.createdByName,
@@ -957,6 +962,22 @@ export class FinanceInboxService {
       ),
     );
   }
+  async receiptVoid(
+    paymentId: string,
+    contractId: string,
+    actor: AuthenticatedActor,
+    command?: { reason: string; version: number },
+  ) {
+    return voidSalesReceipt(
+      this.database,
+      actor,
+      await this.sales.financeReceiptVoidScope(actor),
+      contractId,
+      paymentId,
+      command,
+    );
+  }
+
   async decideReceipt(
     paymentId: string,
     input: FinanceReceiptDecisionCommandV1,

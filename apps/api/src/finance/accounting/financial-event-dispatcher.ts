@@ -1,3 +1,5 @@
+import type { Prisma } from '@nora/database';
+import { voidedSalesReceiptEvent } from '../../sales/sales-receipt-void.public';
 import { isReceiptAllocation } from './receipt-funds.public';
 import {
   Inject,
@@ -39,20 +41,18 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
   }
-  async tick() {
+  async tick(scope?: { branchId?: string; requestId?: string }) {
     if (this.running) return;
     this.running = true;
     try {
-      const events = await this.database.client.financeAccountingEvent.findMany(
-        {
-          where: { journalId: null },
-          orderBy: [
-            { attemptedAt: { sort: 'asc', nulls: 'first' } },
-            { id: 'asc' },
-          ],
-          take: 25,
-        },
-      );
+      const events = await this.database.client.$queryRaw<
+        Prisma.FinanceAccountingEventGetPayload<object>[]
+      >`SELECT e.* FROM finance_accounting_events e
+        WHERE e."journalId" IS NULL
+          AND NOT (${voidedSalesReceiptEvent})
+          AND (${scope?.branchId ?? null}::uuid IS NULL OR e."branchId" = ${scope?.branchId ?? null}::uuid)
+          AND (${scope?.requestId ?? null}::uuid IS NULL OR e."requestId" = ${scope?.requestId ?? null}::uuid)
+        ORDER BY e."attemptedAt" ASC NULLS FIRST, e.id ASC LIMIT 25`;
       for (const event of events) {
         try {
           if (isReceiptAllocation(event.kind)) {

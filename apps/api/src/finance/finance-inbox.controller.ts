@@ -279,6 +279,35 @@ export class FinanceInboxController {
       ),
     };
   }
+  @Get('inbox/sales/:contractId/:paymentId/void')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('finance.read', 'finance.receipt.approve')
+  async receiptVoidPreview(
+    @Param('contractId', ParseUUIDPipe) contractId: string,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.receiptVoid(paymentId, contractId, request.actor),
+    };
+  }
+
+  @Post('inbox/sales/:contractId/:paymentId/void')
+  @RequirePermissions('finance.read', 'finance.receipt.approve')
+  async receiptVoid(
+    @Param('contractId', ParseUUIDPipe) contractId: string,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @Body() input: { reason: string; version: number },
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.receiptVoid(paymentId, contractId, request.actor, {
+        reason: input?.reason,
+        version: input?.version,
+      }),
+    };
+  }
+
   @Post('inbox/sales/:paymentId/decision')
   @RequirePermissions('finance.receipt.approve')
   async receiptDecision(
