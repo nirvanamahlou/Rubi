@@ -364,6 +364,35 @@ describe.skipIf(process.env.PROCUREMENT_REGISTRATIONS_DATABASE_TEST !== '1')(
         ).rejects.toThrow();
     });
 
+    it('hides reversed mission registrations while preserving the ledger entry', async () => {
+      const { row, reader, input } = await fund();
+      await registerPettyCash(database, documents, input, reader);
+      const entry =
+        await database.client.procurementPettyEntry.findUniqueOrThrow({
+          where: { id: input.id },
+        });
+      await database.client.procurementPettyEntry.create({
+        data: {
+          fundId: row.id,
+          actorId: actor.userId,
+          requestKey: entry.id,
+          amount: entry.amount.negated(),
+        },
+      });
+      const page = await listPettyRegistrations(
+        database,
+        { branchId: row.branchId },
+        reader,
+      );
+      expect(page.items).toEqual([]);
+      expect(page.hasMore).toBe(false);
+      expect(
+        await database.client.procurementPettyEntry.findUnique({
+          where: { id: input.id },
+        }),
+      ).toMatchObject({ title: input.title });
+    });
+
     it('lists persisted registrations by title/date/branch without adjustment rows', async () => {
       const { row, reader, input } = await fund();
       await registerPettyCash(database, documents, input, reader);

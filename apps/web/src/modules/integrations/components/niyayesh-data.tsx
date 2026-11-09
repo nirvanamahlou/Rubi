@@ -110,10 +110,12 @@ export function NiyayeshData({
   branchId,
   expectedSystemId,
   servicesOnly = false,
+  siteName,
 }: {
   branchId: string;
   expectedSystemId?: string;
   servicesOnly?: boolean;
+  siteName?: string;
 }) {
   const Container = servicesOnly ? 'section' : Card;
   const [dashboard, setDashboard] = useState<Awaited<
@@ -203,7 +205,9 @@ export function NiyayeshData({
     <Container className={servicesOnly ? 'space-y-4' : 'p-5 space-y-4'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         {!servicesOnly ? (
-          <h2 className="text-lg font-bold">داده‌های نیایش سیر</h2>
+          <h2 className="text-lg font-bold">
+            داده‌های {siteName ?? 'نیایش سیر'}
+          </h2>
         ) : null}
         <Button
           variant="outline"
@@ -215,8 +219,8 @@ export function NiyayeshData({
       </div>
       {!servicesOnly ? (
         <p className="text-sm text-muted-foreground">
-          اطلاعات مستقیم از API نیایش با مجوز شخصی شما دریافت می‌شود. این نما
-          داده‌ای را در مشتریان، فروش یا مالی نورا ثبت نمی‌کند.
+          اطلاعات مستقیم از API سایت انتخاب‌شده با مجوز شخصی شما دریافت می‌شود.
+          این نما داده‌ای را در مشتریان، فروش یا مالی نورا ثبت نمی‌کند.
         </p>
       ) : null}
       {ssoEnabled ? (
@@ -327,6 +331,14 @@ export function NiyayeshData({
                   branchId={branchId}
                   {...(expectedSystemId ? { systemId: expectedSystemId } : {})}
                   onSaved={() => setRevision((v) => v + 1)}
+                  {...(siteName
+                    ? {
+                        siteName,
+                        canFilter: true,
+                        availableResources:
+                          status?.resources.map((r) => r.code) ?? [],
+                      }
+                    : {})}
                 />
               ) : null}
               {view === 'imports' ? (
@@ -337,6 +349,7 @@ export function NiyayeshData({
                       ? { systemId: expectedSystemId }
                       : {})}
                     available={dashboard.imports}
+                    {...(siteName ? { siteName } : {})}
                     onApplied={() => setRevision((v) => v + 1)}
                   />
                 ) : (

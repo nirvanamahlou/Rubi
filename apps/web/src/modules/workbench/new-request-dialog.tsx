@@ -233,47 +233,48 @@ function NewRequestForm({
                 aria-hidden="true"
               />
               شرح درخواست *
-              <Button
-                type="button"
-                variant="outline"
-                disabled={pending || uploading}
-                onClick={() => {
-                  setLeave(null);
-                  setTitle('درخواست مساعده');
-                  setBody(
-                    'با سلام، درخواست پرداخت مساعده دارم.\nمبلغ درخواستی:\nتاریخ مورد نیاز:\nعلت درخواست:\nنحوه بازپرداخت:',
-                  );
-                }}
-              >
-                مساعده
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={pending || uploading}
-                className="ms-auto"
-                onClick={() => {
-                  setLeave(
-                    leave
-                      ? null
-                      : {
-                          from: initialDate ?? '',
-                          to: initialDate ?? '',
-                          mode: 'روزانه',
-                          reason: '',
-                          leaveType: 'استحقاقی',
-                        },
-                  );
-                  if (!leave) {
-                    setTitle('درخواست مرخصی');
+              <span className="ms-auto flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending || uploading}
+                  onClick={() => {
+                    setLeave(null);
+                    setTitle('درخواست مساعده');
                     setBody(
-                      'با سلام، درخواست مرخصی مطابق تاریخ و مدت درج‌شده را دارم.',
+                      'با سلام، درخواست پرداخت مساعده دارم.\nمبلغ درخواستی:\nتاریخ مورد نیاز:\nعلت درخواست:\nنحوه بازپرداخت:',
                     );
-                  }
-                }}
-              >
-                مرخصی
-              </Button>
+                  }}
+                >
+                  مساعده
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending || uploading}
+                  onClick={() => {
+                    setLeave(
+                      leave
+                        ? null
+                        : {
+                            from: initialDate ?? '',
+                            to: initialDate ?? '',
+                            mode: 'روزانه',
+                            reason: '',
+                            leaveType: 'استحقاقی',
+                          },
+                    );
+                    if (!leave) {
+                      setTitle('درخواست مرخصی');
+                      setBody(
+                        'با سلام، درخواست مرخصی مطابق تاریخ و مدت درج‌شده را دارم.',
+                      );
+                    }
+                  }}
+                >
+                  مرخصی
+                </Button>
+              </span>
             </span>
             <Textarea
               required

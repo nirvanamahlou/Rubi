@@ -1,6 +1,7 @@
 'use client';
 import { HrAttendanceActivationForm } from './hr-attendance-activation-form';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import { DatePicker } from '@/components/ui/date-picker';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -552,6 +553,40 @@ function AccessibleHrSection({
               ))}
             </NativeSearchSelect>
           </label>
+          {attendanceView && (
+            <>
+              <label>
+                از تاریخ
+                <DatePicker
+                  aria-label="از تاریخ"
+                  value={range.from}
+                  onChange={(value) => {
+                    const from = value.slice(0, 10);
+                    setRange(({ to }) => ({
+                      from,
+                      to: to && from > to ? '' : to,
+                    }));
+                    setPage(1);
+                  }}
+                />
+              </label>
+              <label>
+                تا تاریخ
+                <DatePicker
+                  aria-label="تا تاریخ"
+                  value={range.to}
+                  onChange={(value) => {
+                    const to = value.slice(0, 10);
+                    setRange(({ from }) => ({
+                      from: from && to && to < from ? '' : from,
+                      to,
+                    }));
+                    setPage(1);
+                  }}
+                />
+              </label>
+            </>
+          )}
           {section === 'contracts' && source.tab === 'active' ? (
             <label>
               پایان قرارداد
@@ -642,6 +677,7 @@ function AccessibleHrSection({
           <>
             <HrTable
               data={dataset}
+              pinEmployeeColumns={attendanceView}
               {...(attendanceView && store.data!.capabilities.manualAttendance
                 ? {
                     onEdit: (index: number) =>

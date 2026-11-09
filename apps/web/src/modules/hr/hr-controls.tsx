@@ -167,6 +167,7 @@ export function HrTable({
   onSelectionChange,
   showOpenButton = false,
   showSelection = true,
+  pinEmployeeColumns = false,
 }: {
   data: HrPreviewDataset;
   onOpen?: (index: number) => void;
@@ -181,6 +182,7 @@ export function HrTable({
   onSelectionChange?: (ids: ReadonlySet<string>) => void;
   showOpenButton?: boolean;
   showSelection?: boolean;
+  pinEmployeeColumns?: boolean;
 }) {
   const localSelection = useHrRowSelection(data.columns.join('|'));
   const selected = selectedIds ?? localSelection.selectedIds;
@@ -226,7 +228,11 @@ export function HrTable({
         aria-label="جدول رکوردها"
         aria-busy={busy}
       >
-        <table className={ui.table}>
+        <table
+          className={ui.table}
+          data-pin-employee={pinEmployeeColumns || undefined}
+          data-selection={showSelection || undefined}
+        >
           <thead>
             <tr>
               {showSelection ? (
@@ -241,7 +247,17 @@ export function HrTable({
                 </th>
               ) : null}
               {data.columns.map((column, i) => (
-                <th scope="col" key={`${i}-${column}`}>
+                <th
+                  scope="col"
+                  key={`${i}-${column}`}
+                  className={
+                    pinEmployeeColumns && i < 2
+                      ? i === 0
+                        ? ui.pinnedPersonnel
+                        : ui.pinnedEmployee
+                      : undefined
+                  }
+                >
                   {column}
                 </th>
               ))}
@@ -279,7 +295,12 @@ export function HrTable({
                   {data.columns.map((column, col) => (
                     <td
                       key={`${column}-${col}`}
-                      className={col === 1 ? ui.primaryCell : undefined}
+                      className={cn(
+                        col === 1 && ui.primaryCell,
+                        pinEmployeeColumns &&
+                          col < 2 &&
+                          (col === 0 ? ui.pinnedPersonnel : ui.pinnedEmployee),
+                      )}
                     >
                       {col === 1 && onOpen ? (
                         <button

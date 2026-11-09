@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { Alert, Card, EmptyState, Skeleton } from '@/components/ui/surfaces';
 import { catalogueSystems } from '../model';
-import { isGhestirooSystem } from '../system-connector';
+import { isGhestirooSystem, isJahanBastanSystem } from '../system-connector';
+import { JahanBastanConnection } from './jahan-bastan-connection';
 import {
   GhestirooConnection,
   type GhestirooConnectionState,
@@ -93,17 +94,26 @@ function NiyayeshSelectedSite(props: SelectedProps) {
       {...props}
       revision={revision}
       api={
-        <SiteApiConnection
-          branchId={props.registry.branchId}
-          system={props.system}
-          onSaved={() => setRevision((value) => value + 1)}
-        />
+        isJahanBastanSystem(props.system, props.registry) ? (
+          <JahanBastanConnection
+            branchId={props.registry.branchId}
+            system={props.system}
+            onSaved={() => setRevision((value) => value + 1)}
+          />
+        ) : (
+          <SiteApiConnection
+            branchId={props.registry.branchId}
+            system={props.system}
+            onSaved={() => setRevision((value) => value + 1)}
+          />
+        )
       }
       services={
         <NiyayeshData
           key={`${props.system.id}:${revision}`}
           branchId={props.registry.branchId}
           expectedSystemId={props.system.id}
+          siteName={props.system.name}
           servicesOnly
         />
       }

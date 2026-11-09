@@ -1269,7 +1269,7 @@ export class DocumentsService {
       Number(row.currentVersion.sizeBytes) < 1 ||
       Number(row.currentVersion.sizeBytes) > MASTER_DATA_LOGO_MAX_BYTES
     )
-      throw new ForbiddenException('لوگوی مدرک قابل مشاهده نیست.');
+      throw new ForbiddenException('لوگوی این رکورد قابل مشاهده نیست.');
     return this.previewFile(
       row.id,
       masterDataLogoActor(actor, 'documents.file.read'),

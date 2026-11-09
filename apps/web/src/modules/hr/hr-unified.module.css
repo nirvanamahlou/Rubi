@@ -307,12 +307,51 @@
   min-width: 170px;
   font-weight: 600;
 }
+.table[data-pin-employee] {
+  --attendance-selection-width: 0px;
+  --attendance-code-width: clamp(5.5rem, 10vw, 7rem);
+}
+.table[data-pin-employee][data-selection] {
+  --attendance-selection-width: 3rem;
+}
+.table[data-pin-employee]
+  :is(.selectionCell, .pinnedPersonnel, .pinnedEmployee) {
+  position: sticky;
+  z-index: 4;
+  box-sizing: border-box;
+}
+.table[data-pin-employee] .selectionCell {
+  inset-inline-start: 0;
+  width: var(--attendance-selection-width);
+  min-width: var(--attendance-selection-width);
+  max-width: var(--attendance-selection-width);
+}
+.table .pinnedPersonnel {
+  inset-inline-start: var(--attendance-selection-width);
+  width: var(--attendance-code-width);
+  min-width: var(--attendance-code-width);
+  max-width: var(--attendance-code-width);
+}
+.table[data-pin-employee] .pinnedEmployee {
+  min-width: clamp(8rem, 14vw, 10.625rem);
+  inset-inline-start: calc(
+    var(--attendance-selection-width) + var(--attendance-code-width)
+  );
+  border-inline-end: 1px solid var(--border);
+}
+.table[data-pin-employee]
+  th:is(.selectionCell, .pinnedPersonnel, .pinnedEmployee) {
+  z-index: 5;
+}
 .table .operationCell {
   position: sticky;
   inset-inline-end: 0;
   z-index: 2;
   width: 1%;
   border-inline-start: 1px solid var(--border);
+}
+.table[data-pin-employee] .operationCell {
+  position: static;
 }
 .table th.operationCell {
   z-index: 3;

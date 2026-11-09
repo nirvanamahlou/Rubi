@@ -801,6 +801,10 @@ Owner clarification retains first paid confirmed contract and selects the Financ
 
 Owner explicitly supersedes manually granted Call Center team-assignment authority with the active native HR employee grade «مدیر» and current HR organizational assignment. Recompute at directory reads and transactional saves; never cache the managerial decision in sessions or persist automatic role changes. Legacy manual team permission must not preserve authority after demotion or unit transfer. Retain existing base route/read/workflow and account/branch gates and pinned executive scope. HR exposes only active same-branch/company/unit linked account IDs; no names, job titles or fuzzy identity matching grants authority. Native HR currently stores a validated unit label and organizationBranchId rather than a unit FK; HR projection must resolve an unambiguous active native unit in that company/branch and fail closed on missing or ambiguous mapping. IAM profile unit is no longer the source for this request authority. HR-owned row locks at save revalidate manager grade/current unit and candidate membership; unlinked personnel do not gain privileges. No schema or automatic HR-account linking is implied.
 
+## JAHAN-BASTAN-NORA-1107
+
+The explicit 2026-11-07 task selects develop as Nora base and both PR destinations for this task. Push/CI/PR are authorized; merge/deployment are excluded. Existing worktrees/remotes are preserved.
+
 ## RESERVATION-BROKER-EMAIL-1108 — operational form versus email acceptance
 
 2026-11-08 / PC-A. User authorizes implementation of real reservation PDF email while
@@ -818,3 +822,8 @@ An API-hosted background dispatcher is used for this bounded slice with database
 claims across replicas; it owns no cross-module table and does not require a new
 Worker/Redis contract. A future separate Worker must consume the same public
 outbox contract rather than reading domain tables directly.
+
+
+## JAHAN-NORA-ACTIVATION-1109
+
+2026-11-09 / PC-D. The owner explicitly authorizes commit/push and merge of Nora to develop and Jahan to main for the actual connection. These concrete destinations supersede the original no-merge boundary and the generic PC-D-Integration preference for this bounded integration. Nora activation is limited to the related API/Web source under the shared deployment lock; retain all runtime secrets, peer source, persistent volumes, services and schema. Producer deployment readiness remains authoritative; no success or credential issuance is fabricated while its prerequisites are missing.

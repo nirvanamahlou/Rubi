@@ -1162,6 +1162,36 @@ export class HrService {
               ]
             : [{ createdAt: 'desc' }, { id: 'asc' }];
     const where = { AND: [this.recordScope(actor), filters] };
+    if (filters.section === 'organization' && filters.tab === 'units') {
+      // Shared units have a record per company. Pick one visible member before
+      // paginating so copies neither consume page slots nor inflate the total.
+      const candidates = await this.database.client.hrRecord.findMany({
+        where,
+        orderBy,
+        select: { id: true, sharedSourceId: true },
+      });
+      const seen = new Set<string>();
+      const unique = candidates.filter(({ id, sharedSourceId }) => {
+        const key = sharedSourceId ?? id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const ids = unique
+        .slice((page - 1) * pageSize, page * pageSize)
+        .map(({ id }) => id);
+      const rows = await this.database.client.hrRecord.findMany({
+        where: { AND: [where, { id: { in: ids } }] },
+        orderBy,
+      });
+      await this.auditRead(actor, 'records.list', rows.length);
+      return {
+        items: await this.recordDtos(rows, actor),
+        total: unique.length,
+        page,
+        pageSize,
+      };
+    }
     const [rows, total] = await Promise.all([
       this.database.client.hrRecord.findMany({
         where,

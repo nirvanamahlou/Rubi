@@ -21,6 +21,8 @@ import type {
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import { DatePicker } from '@/components/ui/date-picker';
+import { matchesFlightPurchaseDate } from './date-filter';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import {
   Dialog,
@@ -83,6 +85,11 @@ export function TicketPurchaseWorkspace({
     };
   }, [revision]);
   const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const [flightFrom, setFlightFrom] = useState('');
+  const [flightTo, setFlightTo] = useState('');
+  const invalidFlightRange = Boolean(
+    flightFrom && flightTo && flightFrom > flightTo,
+  );
   const updateFx = useCallback(
     (code: string, rate: string, suggested = false) =>
       setFxRates((old) =>
@@ -143,6 +150,7 @@ export function TicketPurchaseWorkspace({
             m.request.catalogProductReference === initialOfferId,
         )) &&
       (stage === 'ALL' || i.stage === stage) &&
+      matchesFlightPurchaseDate(i, flightFrom, flightTo) &&
       i.members
         .flatMap((m) => [
           m.request.title,
@@ -288,8 +296,8 @@ export function TicketPurchaseWorkspace({
         </section>
       )}
       <section className="overflow-hidden rounded-2xl border bg-card">
-        <div className="flex flex-wrap gap-3 border-b p-4">
-          <label className="flex flex-1 items-center gap-2">
+        <div className="flex flex-wrap items-end gap-3 border-b p-4">
+          <label className="flex min-w-60 flex-1 items-center gap-2">
             <Search className="size-4" />
             <Input
               aria-label="جست‌وجوی پرواز"
@@ -300,7 +308,7 @@ export function TicketPurchaseWorkspace({
           </label>
           <select
             aria-label="وضعیت خرید"
-            className="rounded-xl border bg-background px-3"
+            className="min-h-11 rounded-xl border bg-background px-3"
             value={stage}
             onChange={(e) => setStage(e.target.value)}
           >
@@ -311,7 +319,44 @@ export function TicketPurchaseWorkspace({
               </option>
             ))}
           </select>
+          <label className="grid min-w-44 gap-1 text-sm">
+            از تاریخ پرواز
+            <DatePicker
+              aria-label="از تاریخ پرواز"
+              value={flightFrom}
+              onChange={setFlightFrom}
+              filterCalendar
+            />
+          </label>
+          <label className="grid min-w-44 gap-1 text-sm">
+            تا تاریخ پرواز
+            <DatePicker
+              aria-label="تا تاریخ پرواز"
+              value={flightTo}
+              onChange={setFlightTo}
+              filterCalendar
+              aria-invalid={invalidFlightRange}
+            />
+          </label>
+          {(flightFrom || flightTo) && (
+            <Button
+              type="button"
+              variant="outline"
+              className="self-end"
+              onClick={() => {
+                setFlightFrom('');
+                setFlightTo('');
+              }}
+            >
+              پاک کردن فیلتر تاریخ پرواز
+            </Button>
+          )}
         </div>
+        {invalidFlightRange && (
+          <p role="alert" className="p-4 text-destructive">
+            بازه تاریخ معتبر نیست.
+          </p>
+        )}
         {error ? (
           <p role="alert" className="p-4 text-destructive">
             {error}

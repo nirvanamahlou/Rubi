@@ -1,0 +1,9 @@
+.selectedSupply[aria-pressed='true'] {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #fff !important;
+}
+
+.selectedSupply[aria-pressed='true']:hover {
+  background-color: #1e40af !important;
+}

@@ -996,50 +996,54 @@ it('loads the original Ghestiroo logo for the authorized reservation PDF instead
   expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
 });
 
-it('downloads a released Sales voucher with a private saved logo without general Documents access', async () => {
-  const saved = structuredClone(intake);
-  saved.snapshot.contractId = '00000000-0000-4000-8000-000000000099';
-  saved.workflow.branding = {
-    kind: 'OWN',
-    referenceId: id,
-    name: 'Company',
-    companyCode: 'NIYAYESH_SEIR_SAHAR',
-    logoFileId: id,
-  };
-  saved.workflow.voucherIssued = true;
-  saved.workflow.voucherSettings = {
-    ...saved.workflow.supplierFormSettings!,
-    leaderId: id,
-  };
-  const logoPath =
-    'http://api.test/api/v1/sales/contracts/' +
-    saved.snapshot.contractId +
-    '/travel-documents/branding-logo';
-  const fetcher = vi.fn(async (url: string) => {
-    if (url === logoPath)
-      return new Response(new Uint8Array([1, 2, 3]), {
-        headers: { 'Content-Type': 'image/png' },
-      });
-    if (url.endsWith('/travel-documents'))
-      return Response.json({ data: saved });
-    return new Response('{}', { status: 403 });
-  });
-  vi.stubGlobal('fetch', fetcher);
-  const response = await GET(
-    new Request(
-      'http://localhost/reservations/requests/' +
-        id +
-        '/pdf?kind=voucher&salesContractId=' +
-        saved.snapshot.contractId,
-    ),
-    { params: Promise.resolve({ id }) },
-  );
-  expect(response.status).toBe(200);
-  expect(fetcher.mock.calls.some(([url]) => url === logoPath)).toBe(true);
-  expect(
-    fetcher.mock.calls.some(([url]) =>
-      url.includes('/documents/' + id + '/preview'),
-    ),
-  ).toBe(false);
-  expect(renderer).toHaveBeenCalledOnce();
-});
+it.each([200, 403, 404])(
+  'downloads a released Sales voucher with a private saved logo without general Documents access (logo status %s)',
+  async (logoStatus) => {
+    const saved = structuredClone(intake);
+    saved.snapshot.contractId = '00000000-0000-4000-8000-000000000099';
+    saved.workflow.branding = {
+      kind: 'OWN',
+      referenceId: id,
+      name: 'Company',
+      companyCode: 'NIYAYESH_SEIR_SAHAR',
+      logoFileId: id,
+    };
+    saved.workflow.voucherIssued = true;
+    saved.workflow.voucherSettings = {
+      ...saved.workflow.supplierFormSettings!,
+      leaderId: id,
+    };
+    const logoPath =
+      'http://api.test/api/v1/sales/contracts/' +
+      saved.snapshot.contractId +
+      '/travel-documents/branding-logo';
+    const fetcher = vi.fn(async (url: string) => {
+      if (url === logoPath)
+        return new Response(new Uint8Array([1, 2, 3]), {
+          status: logoStatus,
+          headers: { 'Content-Type': 'image/png' },
+        });
+      if (url.endsWith('/travel-documents'))
+        return Response.json({ data: saved });
+      return new Response('{}', { status: 403 });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(
+      new Request(
+        'http://localhost/reservations/requests/' +
+          id +
+          '/pdf?kind=voucher&salesContractId=' +
+          saved.snapshot.contractId,
+      ),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(logoStatus === 403 ? 403 : 200);
+    expect(fetcher.mock.calls.some(([url]) => url === logoPath)).toBe(true);
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        url.includes('/documents/' + id + '/preview'),
+      ),
+    ).toBe(false);
+    expect(renderer).toHaveBeenCalledTimes(logoStatus === 403 ? 0 : 1);
+  },
+);

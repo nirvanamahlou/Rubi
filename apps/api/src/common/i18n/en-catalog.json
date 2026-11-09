@@ -8137,5 +8137,16 @@
   "لوگوی سربرگ ثبت نشده است.": "No letterhead logo has been saved.",
   "لوگوی مدرک در دسترس نیست.": "The document logo is unavailable.",
   "لوگوی مدرک قابل مشاهده نیست.": "The document logo cannot be viewed.",
-  "مدارک هنوز توسط مالی آزاد نشده است.": "Finance has not released the documents yet."
+  "مدارک هنوز توسط مالی آزاد نشده است.": "Finance has not released the documents yet.",
+  "اتصال این سایت قطع شده است.": "This website connection is disconnected.",
+  "این قرارداد فقط برای جهان باستان است.": "This contract is only for Jahan Bastan.",
+  "بازیابی ارتباط سایت هنوز تکمیل نشده است.": "Website connection recovery is still pending.",
+  "برای این اتصال، بسته جهان باستان را وارد کنید.": "Import a Jahan Bastan bundle for this connection.",
+  "برای هر شعبه یا اتصال، بسته مستقل جهان باستان بسازید.": "Generate a separate Jahan Bastan bundle for each branch or connection.",
+  "بسته اتصال این سایت ثبت نشده است.": "This website connection bundle has not been saved.",
+  "بسته اتصال جهان باستان معتبر نیست یا برای این نشانی نورا صادر نشده است.": "The Jahan Bastan bundle is invalid or was issued for another Nora origin.",
+  "جهان باستان پاسخ معتبر نداد؛ ذخیره تنظیمات به معنی اتصال موفق نیست.": "Jahan Bastan did not return a valid response; saved settings do not prove a successful connection.",
+  "جهان باستان پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.": "Jahan Bastan did not return a valid response; check its service and connection settings.",
+  "مجوز این داده در سایت انتخاب‌شده فعال نیست.": "You do not have permission for this data on the selected website.",
+  "هویت سایت، کاربر یا شعبه تطبیق ندارد.": "The website, user or branch identity does not match."
 }

@@ -11,7 +11,7 @@ function setup(approved = true) {
     },
     workflow: { supplierStatus: 'NEW' },
   };
-  const detail = vi.fn().mockResolvedValue({ data: {} }),
+  const detail = vi.fn().mockResolvedValue({ data: { branchId: 'branch' } }),
     floatingDocumentOutput = vi.fn(async (value: typeof intake) => ({
       ...value,
       workflow: {

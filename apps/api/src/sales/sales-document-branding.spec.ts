@@ -1,11 +1,13 @@
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 function setup() {
-  const detail = vi
-    .fn()
-    .mockResolvedValue({ data: { status: 'SENT_TO_RESERVATION' } });
+  const detail = vi.fn().mockResolvedValue({
+    data: { status: 'SENT_TO_RESERVATION', branchId: 'contract-branch' },
+  });
   const intake = {
+    branchId: 'contract-branch',
     workflow: {
       supplierStatus: 'CONFIRMED',
       branding: { logoFileId: 'saved-logo' },
@@ -28,15 +30,19 @@ function setup() {
     headers: {},
     ip: '127.0.0.1',
   } as never;
-  return { controller, req, detail, intake, release, preview };
+  return { controller, req, detail, intake, release, preview, forContract };
 }
 it('serves only the saved logo after contract scope and financial release, without document or reservation grants', async () => {
   const x = setup();
   await x.controller.logo('contract', x.req);
   expect(x.detail).toHaveBeenCalledWith('contract', x.req['actor']);
+  expect(x.forContract).toHaveBeenCalledWith('contract', ['contract-branch']);
   expect(x.preview).toHaveBeenCalledWith(
     'saved-logo',
-    x.req['actor'],
+    expect.objectContaining({
+      branchIds: ['branch', 'contract-branch'],
+      permissions: ['sales.contracts.read.own'],
+    }),
     expect.any(Object),
   );
 });
@@ -57,4 +63,17 @@ it.each([
   if (kind === 'no-logo') x.intake.workflow.branding.logoFileId = '';
   await expect(x.controller.logo('contract', x.req)).rejects.toThrow();
   expect(x.preview).not.toHaveBeenCalled();
+});
+
+it('distinguishes an inaccessible logo from a revoked contract release', async () => {
+  const x = setup();
+  x.preview.mockRejectedValueOnce(new ForbiddenException());
+  await expect(x.controller.logo('contract', x.req)).rejects.toBeInstanceOf(
+    NotFoundException,
+  );
+  x.release.mockResolvedValueOnce({ approved: false });
+  await expect(x.controller.logo('contract', x.req)).rejects.toBeInstanceOf(
+    ForbiddenException,
+  );
+  expect(x.preview).toHaveBeenCalledOnce();
 });

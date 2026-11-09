@@ -198,6 +198,8 @@ export class NiyayeshSsoService {
         const primary = await this.site.configuration();
         if (primary?.registrySystemId !== systemId) return { enabled: false };
         const selected = await this.site.configuration(systemId, branch);
+        if (selected?.protocol === 'jahan-bastan.nora.v1')
+          return { enabled: false };
         if (
           !selected ||
           ['origin', 'client', 'system', 'organization', 'environment'].some(

@@ -188,6 +188,8 @@ export class NiyayeshController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('systemId') systemId?: string,
+    @Query('q') query?: string,
+    @Query('status') status?: string,
   ) {
     const data = await this.service.resources(
       r.actor,
@@ -200,6 +202,8 @@ export class NiyayeshController {
       from,
       to,
       systemId,
+      query,
+      status,
     );
     await this.iam.recordSelfActivity(
       r.actor,

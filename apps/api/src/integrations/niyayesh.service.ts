@@ -18,6 +18,7 @@ import {
   type NiyayeshConnection,
 } from './niyayesh.client';
 import { SiteConnectionStore } from './site-connection.store';
+import { JahanRenewal } from './jahan-bastan.renewal';
 
 export const NIYAYESH_RESOURCES = {
   countries: 'کشورها',
@@ -120,7 +121,7 @@ export class NiyayeshService {
       !/^[A-Za-z0-9_-]{16,80}$/.test(value.command ?? '') ||
       (value.id &&
         (!/^[1-9]\d{0,14}$/.test(value.id) ||
-          !/^\d{1,15}$/.test(value.version ?? '')))
+          !/^\d{1,20}$/.test(value.version ?? '')))
     )
       throw new BadRequestException('اطلاعات فرم یا نسخه معتبر نیست.');
     if (
@@ -163,6 +164,7 @@ export class NiyayeshService {
       activeWindowSeconds: number;
       heartbeatSeconds: number;
       total: number | null;
+      groups: unknown[];
       nodes: unknown[];
       edges: unknown[];
     };
@@ -357,6 +359,11 @@ export class NiyayeshService {
       throw new BadRequestException('شناسه سایت معتبر نیست.');
     if (systemId && branch && this.siteConnections.ready()) {
       const saved = await this.siteConnections.read(branch, systemId);
+      if (saved?.protocol === 'jahan-bastan.nora.v1') {
+        if (!saved.jahan || saved.jahan.state !== 'ACTIVE')
+          throw new NotFoundException('اتصال این سایت قطع شده است.');
+        return new JahanRenewal(this.siteConnections).ensure(branch, systemId);
+      }
       if (saved) return saved;
     }
     const file = process.env.NIYAYESH_CONNECTION_FILE;
@@ -423,6 +430,25 @@ export class NiyayeshService {
         throw new NotFoundException('اتصال گزارش این سایت تنظیم نشده است.');
       return null;
     }
+    if (config.protocol === 'jahan-bastan.nora.v1') {
+      if (
+        !config.jahan ||
+        config.jahan.branchId !== branch ||
+        config.jahan.siteId !== 'jahan-bastan'
+      )
+        throw new ForbiddenException();
+      return {
+        config,
+        user: {
+          userId: actor.userId,
+          branchId: branch,
+          subject: actor.userId,
+          resources: config.jahan.resources.filter((resource) =>
+            config.managedAccess?.resources.includes(resource),
+          ),
+        },
+      };
+    }
     let user = config.users.find(
       (u) => u.userId === actor.userId && u.branchId === branch,
     );
@@ -461,6 +487,27 @@ export class NiyayeshService {
       return await niyayeshRead(config, subject, path, options);
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      if (
+        code === 'UPSTREAM_401' &&
+        config.protocol === 'jahan-bastan.nora.v1' &&
+        config.jahan?.pendingRenewal &&
+        config.registrySystemId
+      ) {
+        const recovered = await new JahanRenewal(this.siteConnections).ensure(
+          config.jahan.branchId,
+          config.registrySystemId,
+          true,
+        );
+        if (recovered && recovered.secret !== config.secret) {
+          try {
+            return await niyayeshRead(recovered, subject, path, options);
+          } catch {
+            throw new ServiceUnavailableException(
+              'بازیابی ارتباط سایت هنوز تکمیل نشده است.',
+            );
+          }
+        }
+      }
       if (code === 'UPSTREAM_404')
         throw new NotFoundException('این قابلیت یا رکورد در سایت موجود نیست.');
       if (code === 'UPSTREAM_409')
@@ -476,9 +523,15 @@ export class NiyayeshService {
             : 'فایل یا تنظیمات آن معتبر نیست؛ پیش‌نمایش و خطاها را بررسی کنید.',
         );
       if (code === 'UPSTREAM_403')
-        throw new ForbiddenException('مجوز این داده در پنل نیایش فعال نیست.');
+        throw new ForbiddenException(
+          config.protocol === 'jahan-bastan.nora.v1'
+            ? 'مجوز این داده در سایت انتخاب‌شده فعال نیست.'
+            : 'مجوز این داده در پنل نیایش فعال نیست.',
+        );
       throw new ServiceUnavailableException(
-        'نیایش پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.',
+        config.protocol === 'jahan-bastan.nora.v1'
+          ? 'جهان باستان پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.'
+          : 'نیایش پاسخ معتبر نداد؛ وضعیت سرویس و تنظیمات اتصال را بررسی کنید.',
       );
     }
   }
@@ -529,9 +582,19 @@ export class NiyayeshService {
     from?: string,
     to?: string,
     systemId?: string,
+    query?: string,
+    status?: string,
   ) {
     if (
       !Object.hasOwn(NIYAYESH_RESOURCES, resource) ||
+      (query !== undefined &&
+        (query.length > 100 ||
+          Array.from(query).some(
+            (character) =>
+              character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+          ))) ||
+      (status !== undefined &&
+        !['draft', 'published', 'archived'].includes(status)) ||
       !/^\d{1,15}$/.test(after) ||
       (id !== undefined && !/^\d{1,15}$/.test(id)) ||
       (metric !== undefined &&
@@ -569,7 +632,7 @@ export class NiyayeshService {
       : (metric ?? (resource === 'tours' ? 'tours' : undefined));
     const suffix = id
       ? `/${id}`
-      : `?after_id=${after}&limit=25${effectiveMetric ? `&metric=${effectiveMetric}` : ''}${reportMetric ? `&report_metric=${reportMetric}&from=${from}&to=${to}` : ''}`;
+      : `?after_id=${after}&limit=25${effectiveMetric ? `&metric=${effectiveMetric}` : ''}${reportMetric ? `&report_metric=${reportMetric}&from=${from}&to=${to}` : ''}${config.protocol === 'jahan-bastan.nora.v1' ? `${query ? `&q=${encodeURIComponent(query)}` : ''}${status ? `&status=${status}` : ''}` : ''}`;
     return this.read(
       config,
       user.subject,

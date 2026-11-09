@@ -38,27 +38,43 @@ export class SalesDocumentBrandingController {
     @Req() req: AuthenticatedRequest,
   ) {
     const { data: contract } = await this.sales.detail(id, req.actor);
-    const intake = await this.travel.forContract(id, req.actor.branchIds);
+    const intake = await this.travel.forContract(id, [contract.branchId]);
     const release = await this.delivery.readCustomerContract(id);
     if (
       !release.approved ||
       contract.status === 'CANCELLED' ||
       intake.workflow.supplierStatus === 'CANCELLED'
     )
-      throw new ForbiddenException('مدارک هنوز توسط مالی آزاد نشده است.');
-    const output = await this.travel.floatingDocumentOutput(intake, req.actor);
+      throw new ForbiddenException(
+        'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
+      );
+    const actor = {
+      ...req.actor,
+      branchIds: [...new Set([...req.actor.branchIds, intake.branchId])],
+    };
+    const output = await this.travel.floatingDocumentOutput(intake, actor);
     const logoId = output.workflow.branding?.logoFileId;
-    if (!logoId) throw new NotFoundException('لوگوی سربرگ ثبت نشده است.');
-    const file = await this.documents.previewReleasedTravelLogo(
-      logoId,
-      req.actor,
-      {
-        ...(req.ip ? { ipAddress: req.ip } : {}),
-        ...(req.headers['user-agent']
-          ? { userAgent: req.headers['user-agent'] }
-          : {}),
-      },
-    );
-    return new StreamableFile(file.stream, { type: file.mimeType });
+    if (!logoId)
+      throw new NotFoundException('لوگوی این رکورد قابل مشاهده نیست.');
+    try {
+      const file = await this.documents.previewReleasedTravelLogo(
+        logoId,
+        actor,
+        {
+          ...(req.ip ? { ipAddress: req.ip } : {}),
+          ...(req.headers['user-agent']
+            ? { userAgent: req.headers['user-agent'] }
+            : {}),
+        },
+      );
+      return new StreamableFile(file.stream, { type: file.mimeType });
+    } catch (error) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      )
+        throw new NotFoundException('لوگوی این رکورد قابل مشاهده نیست.');
+      throw error;
+    }
   }
 }

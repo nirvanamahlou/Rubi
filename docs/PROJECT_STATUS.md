@@ -1,3 +1,7 @@
+# MANIFEST-DEFAULTS-1109 — PC-A — IN_PROGRESS
+
+Reserve manifest-export.tsx, local selected-button styling and focused checks. Owner requests blue selected charter/floating control and Turkey default destination, with green develop merge. Base 0a209c797; no schema/dependency/deployment. Default resolves active Master Data and preserves manual edits/clears during loading.
+
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
 Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
@@ -8893,6 +8897,37 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## JAHAN-NORA-LIVE-1108 — PC-D — RELEASE_PREPARATION
+
+The owner requested actual connection through both production panels. Owner login
+to Jahan was restored. Its public native capabilities endpoint now returns JSON401
+without redirect, but the actual admin panel blocks issuance on all three missing
+deployment prerequisites: public HTTPS origin, production/staging environment and
+persistent dedicated encryption key. The ordinary site settings form cannot edit
+those server variables. No connection credentials or commercial records were
+created. Nora's live Jahan form is still ERP v1 and its API image has no dedicated
+consumer files. These are independent deployment prerequisites, not a failed save.
+
+Existing consumer PR1466 is synchronized with develop77bc0bee0. Five conflicts
+were limited to additive status/decision notes and derived English catalogues;
+all peer notes are retained and catalogues regenerated from the canonical source.
+No new consumer capability, dependency, schema, IAM grant or secret change.
+259 related API tests and73 Web tests pass, with existing opt-in integration tests
+remaining skipped. Scoped lint, API/Web types, formatting and both production
+builds pass (67 Web routes). Hosted final-head gates precede release approval. Production connection
+remains unverified until secure producer setup and consumer deployment are done.
+
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
+encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
+Excel, anonymous presence and read-only reports. Future commerce and SSO remain
+DISABLED. Synthetic producer/consumer and existing connector regressions pass;
+GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
+See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+
 ## SITE-API-FORMS-1104 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 Add editable API settings and separate save/test actions for all three other
@@ -9465,11 +9500,23 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
 
 
+## HR-REQUEST-DOWNLOAD-1109 - PC-B
+
+Daily attendance filters use the business date and pin the selection, personnel code and employee columns. Mission reversals are excluded from petty-cash registration pagination while retaining the ledger. Leave and advance templates sit together; reservation inbox rows open the existing contract details. Released Sales PDFs use contract-scoped logo access and can render without unavailable legacy branding. No schema change.
+
 ## COMPACT-MESSAGE-BUBBLES-1108 - PC-B
 
 Chat bubbles use content-sized responsive widths,14px body text,24px line spacing,8px vertical padding and32px forward/reaction controls. Reply/forward spacing is tighter. Six existing chat checks and scoped lint pass; light/dark synthetic class preview shows168px to144px sample height without horizontal overflow. Styling only; no API, dependency, schema or production deployment. Final hosted gates precede owner-authorized develop merge.
 
 HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and PostgreSQL migration/seed gates passed. Full test inventory exposed fourteen missing English labels, now translated in Web and API catalogs; three inventory tests pass. Full isolated HR PostgreSQL run passed the company transfer and 48 other cases; an existing authorization fixture incorrectly used the explicitly permitted demo identity and was corrected to a separate unauthorized synthetic manager. Final full rerun and hosted gates pending. PR1522. No Radan or operational data changes.
+
+## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — 2026-11-09
+
+Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
+
+## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
+
+Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
 
 
 

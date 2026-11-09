@@ -98,7 +98,7 @@ export class SalesController {
     @Req() req: AuthenticatedRequest,
   ) {
     const { data: contract } = await this.service.detail(id, req.actor);
-    const intake = await this.travel.forContract(id, req.actor.branchIds);
+    const intake = await this.travel.forContract(id, [contract.branchId]);
     const authorization = await this.delivery.readCustomerContract(id);
     if (
       !authorization.approved ||
@@ -109,12 +109,10 @@ export class SalesController {
         'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
       );
     if (isFloatingSalesContract(intake.snapshot.serviceSelections)) {
-      const output = await this.travel.floatingDocumentOutput(
-        intake,
-        req.actor,
-      );
+      const actor = { ...req.actor, branchIds: [intake.branchId] };
+      const output = await this.travel.floatingDocumentOutput(intake, actor);
       const ticketDocuments =
-        await this.ticketDocuments!.issueFloatingForDelivery(output, req.actor);
+        await this.ticketDocuments!.issueFloatingForDelivery(output, actor);
       return { data: { ...output, ticketDocuments }, delivery: authorization };
     }
     return { data: intake, delivery: authorization };
