@@ -11982,7 +11982,7 @@ Optional attendance editor fields and partial manual clock commands. Preserves p
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
 
-## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — IN_PROGRESS
+## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — READY_FOR_CI
 
 User explicitly requests all nine real customer dossier connections, security
 tests and develop merge. Reserve additive owner public projections in Sales,
@@ -11992,3 +11992,7 @@ Branch codex/pc-a-customer-dossier-connections-1109 from develop87067a3b6.
 Exact UUID customer matching; customer/branch/company/archive/own-scope guards;
 financial values restricted to buyer/payer. No schema/dependency, IAM grants,
 operational writes or deployment. Source errors remain explicit unavailable.
+Bounded CI reservation adds customer-dossier.postgres.spec.ts to the existing
+disposable reporting PostgreSQL job, proving actual SQL customer/branch/owner/
+archive and passenger-finance isolation with transaction rollback. Source locks
+release on publication; PR1556 full final-head checks gate authorized merge.

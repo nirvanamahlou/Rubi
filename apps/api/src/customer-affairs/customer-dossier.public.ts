@@ -39,14 +39,12 @@ export async function readAffairsCustomerDossier(
         id,
         state: 'ready',
         hasMore: rows.length > 50,
-        rows: rows
-          .slice(0, 50)
-          .map((r) => ({
-            id: r.id,
-            reference: r.trackingNumber,
-            status: r.stage,
-            occurredAt: r.createdAt.toISOString(),
-          })),
+        rows: rows.slice(0, 50).map((r) => ({
+          id: r.id,
+          reference: r.trackingNumber,
+          status: r.stage,
+          occurredAt: r.createdAt.toISOString(),
+        })),
       });
     } else {
       const rows = await db.customerAffairsTicket.findMany({
@@ -70,14 +68,12 @@ export async function readAffairsCustomerDossier(
         id,
         state: 'ready',
         hasMore: rows.length > 50,
-        rows: rows
-          .slice(0, 50)
-          .map((r) => ({
-            id: r.id,
-            reference: r.trackingNumber,
-            status: r.status,
-            occurredAt: r.createdAt.toISOString(),
-          })),
+        rows: rows.slice(0, 50).map((r) => ({
+          id: r.id,
+          reference: r.trackingNumber,
+          status: r.status,
+          occurredAt: r.createdAt.toISOString(),
+        })),
       });
     }
   }

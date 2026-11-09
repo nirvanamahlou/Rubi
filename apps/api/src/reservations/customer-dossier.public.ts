@@ -71,27 +71,23 @@ export async function readReservationCustomerDossier(
       id: 'tickets',
       state: 'ready',
       hasMore: tickets.length > 50,
-      rows: tickets
-        .slice(0, 50)
-        .map((r) => ({
-          id: r.id,
-          reference: r.number,
-          status: 'ISSUED',
-          occurredAt: r.issuedAt.toISOString(),
-        })),
+      rows: tickets.slice(0, 50).map((r) => ({
+        id: r.id,
+        reference: r.number,
+        status: 'ISSUED',
+        occurredAt: r.issuedAt.toISOString(),
+      })),
     },
     {
       id: 'insurance',
       state: 'ready',
       hasMore: insurance.length > 50,
-      rows: insurance
-        .slice(0, 50)
-        .map((r) => ({
-          id: r.id,
-          reference: r.policyNumber ?? r.id,
-          status: r.status,
-          occurredAt: r.createdAt.toISOString(),
-        })),
+      rows: insurance.slice(0, 50).map((r) => ({
+        id: r.id,
+        reference: r.policyNumber ?? r.id,
+        status: r.status,
+        occurredAt: r.createdAt.toISOString(),
+      })),
     },
     {
       id: 'vouchers',
@@ -100,14 +96,12 @@ export async function readReservationCustomerDossier(
       rows:
         intakes.length > 1000
           ? []
-          : vouchers
-              .slice(0, 50)
-              .map((r) => ({
-                id: r.id,
-                reference: r.id,
-                status: 'ISSUED',
-                occurredAt: r.receivedAt.toISOString(),
-              })),
+          : vouchers.slice(0, 50).map((r) => ({
+              id: r.id,
+              reference: r.id,
+              status: 'ISSUED',
+              occurredAt: r.receivedAt.toISOString(),
+            })),
     },
   ];
 }

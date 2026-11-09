@@ -21,11 +21,9 @@ describe('customer dossier HTTP boundary', () => {
       branchIds: ['branch'],
       permissions: ['customers.read'],
     };
-    const read = vi
-      .fn()
-      .mockImplementation(async (customerId: string) => ({
-        data: { customerId, sections: [] },
-      }));
+    const read = vi.fn().mockImplementation(async (customerId: string) => ({
+      data: { customerId, sections: [] },
+    }));
     const module = await Test.createTestingModule({
       controllers: [CustomersController],
       providers: [
