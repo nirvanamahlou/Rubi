@@ -143,3 +143,34 @@ describe('Call Center paginated read transport', () => {
     ).rejects.toMatchObject({ name: 'AbortError' });
   });
 });
+
+it('sends only the three local Today filters and omits cleared values', async () => {
+  transport.mockImplementation(
+    async () => new Response(JSON.stringify({ data: [], meta: { total: 0 } })),
+  );
+  await readApi.todayCalls(
+    'branch',
+    1,
+    undefined,
+    new AbortController().signal,
+    { direction: 'OUTBOUND', outcome: 'UNKNOWN', unit: 'فروش' },
+  );
+  expect(JSON.parse(transport.mock.calls.at(-1)![1].body)).toEqual({
+    page: 1,
+    pageSize: 20,
+    direction: 'OUTBOUND',
+    outcome: 'UNKNOWN',
+    unit: 'فروش',
+  });
+  await readApi.todayCalls(
+    'branch',
+    1,
+    undefined,
+    new AbortController().signal,
+    { direction: '', outcome: '', unit: '' },
+  );
+  expect(JSON.parse(transport.mock.calls.at(-1)![1].body)).toEqual({
+    page: 1,
+    pageSize: 20,
+  });
+});

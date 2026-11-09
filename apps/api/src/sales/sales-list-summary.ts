@@ -1,4 +1,7 @@
-import { readLegacyServiceParties } from '@nora/contracts';
+import {
+  readLegacyServiceParties,
+  salesContractFlights,
+} from '@nora/contracts';
 import type {
   SalesContractDetail,
   SalesContractSummary,
@@ -17,10 +20,12 @@ export function salesListTravelSummary(
       ?.metadata?.dateCalendarSystem;
     return value === 'persian' || value === 'gregorian' ? value : fallback;
   };
+  const flights = salesContractFlights(
+    detail.servicesDetail,
+    detail.ticketSelections,
+  );
   const flightDate = (direction: 'OUTBOUND' | 'RETURN') => {
-    const ticket = detail.ticketSelections.find(
-      (t) => t.direction === direction,
-    );
+    const ticket = flights.find((t) => t.direction === direction);
     return ticket
       ? {
           date: new Intl.DateTimeFormat('en-CA', {
@@ -41,7 +46,7 @@ export function salesListTravelSummary(
           calendar: calendar(hotel?.serviceClientKey, 'gregorian'),
         }
       : null;
-  const hasFlights = detail.ticketSelections.length > 0;
+  const hasFlights = flights.length > 0;
   const travelDates = {
     outbound:
       flightDate('OUTBOUND') ??

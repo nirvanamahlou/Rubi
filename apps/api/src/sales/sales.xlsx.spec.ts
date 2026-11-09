@@ -140,16 +140,21 @@ describe('Sales XLSX download', () => {
       );
       expect(list).toHaveBeenCalledWith(
         { search: 'TRACK', settlementStatus: 'UNPAID' },
-        scope === 'all'
-          ? {}
-          : {
-              branchId: { in: ['b'] },
-              ...(scope === 'own'
-                ? {
-                    ownerUserId: 'actor',
-                  }
-                : {}),
-            },
+        {
+          AND: [
+            scope === 'all'
+              ? {}
+              : {
+                  branchId: { in: ['b'] },
+                  ...(scope === 'own'
+                    ? {
+                        ownerUserId: 'actor',
+                      }
+                    : {}),
+                },
+            {},
+          ],
+        },
         false,
         SALES_EXPORT_LIMIT,
       );
@@ -284,7 +289,7 @@ it.each([
     } as unknown as AuthenticatedActor;
     await service.exportXlsx({}, actor);
     await service.dashboard(actor);
-    expect(dashboardRows).toHaveBeenCalledWith(expectedScope);
+    expect(dashboardRows).toHaveBeenCalledWith({ AND: [expectedScope, {}] });
     if (name === 'مدیر فروش')
       await expect(
         service.detail('outside-contract', actor),
@@ -305,7 +310,7 @@ it.each([
     }
     expect(list).toHaveBeenCalledWith(
       {},
-      expectedScope,
+      { AND: [expectedScope, {}] },
       false,
       SALES_EXPORT_LIMIT,
     );

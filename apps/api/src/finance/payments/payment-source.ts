@@ -1,3 +1,4 @@
+import { exchangePaymentSource } from '../exchange-offices/exchange-payment';
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
@@ -5,7 +6,11 @@ import type { MasterProcurementDirectory } from '../../master-data/master-procur
 export async function paymentSource(
   tx: Prisma.TransactionClient,
   directory: MasterProcurementDirectory | undefined,
-  input: { accountId?: string | null; payingSupplierId?: string | null },
+  input: {
+    accountId?: string | null;
+    payingSupplierId?: string | null;
+    exchangeOfficeId?: string | null;
+  },
   currencyCode: string,
   branchId: string,
   policy:
@@ -13,6 +18,15 @@ export async function paymentSource(
     | 'ACCOUNT_ONLY'
     | 'ACCOUNT_OR_SUPPLIER' = 'SUPPLIER_FOR_FOREIGN',
 ) {
+  if (input.exchangeOfficeId) {
+    if (
+      policy !== 'ACCOUNT_OR_SUPPLIER' ||
+      input.accountId ||
+      input.payingSupplierId
+    )
+      throw new BadRequestException('منبع پرداخت معتبر نیست.');
+    return exchangePaymentSource(tx, input.exchangeOfficeId, currencyCode);
+  }
   if (
     (policy === 'ACCOUNT_OR_SUPPLIER' && input.payingSupplierId) ||
     (currencyCode !== 'IRR' && policy === 'SUPPLIER_FOR_FOREIGN')
@@ -32,6 +46,8 @@ export async function paymentSource(
       account: null,
       payingSupplierId: supplier.id,
       payingSupplierName: supplier.label,
+      exchangeOfficeId: null,
+      exchangeOfficeName: null,
     };
   }
   if (!input.accountId || input.payingSupplierId)
@@ -57,6 +73,8 @@ export async function paymentSource(
     },
     payingSupplierId: null,
     payingSupplierName: null,
+    exchangeOfficeId: null,
+    exchangeOfficeName: null,
   };
 }
 

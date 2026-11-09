@@ -1,3 +1,5 @@
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import { ContractArchiveController } from './contract-archive.controller';
 import { Module } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
@@ -12,7 +14,7 @@ import { LegalEntitiesService } from './legal-entities.service';
 
 @Module({
   imports: [IamModule],
-  controllers: [LegalEntitiesController],
+  controllers: [ContractArchiveController, LegalEntitiesController],
   providers: [
     AuthGuard,
     PermissionGuard,
@@ -21,8 +23,9 @@ import { LegalEntitiesService } from './legal-entities.service';
       provide: DOCUMENT_TEMPLATE_POLICY_PORT,
       useExisting: FailClosedDocumentTemplatePolicyAdapter,
     },
+    ContractCompanyScope,
     LegalEntitiesService,
   ],
-  exports: [LegalEntitiesService],
+  exports: [LegalEntitiesService, ContractCompanyScope],
 })
 export class LegalEntitiesModule {}

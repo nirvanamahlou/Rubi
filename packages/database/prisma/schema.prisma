@@ -30,6 +30,9 @@ enum AuditOutcome {
 }
 
 model User {
+  exchangeAudits                  FinanceExchangeAudit[]
+  exchangeOffices                 FinanceExchangeOffice[]
+  exchangeMovements               FinanceExchangeMovement[]
   tourDepartureLifecycleRevisions TourDepartureLifecycleRevision[]
   pettyCashEntries                ProcurementPettyEntry[]
 
@@ -1024,6 +1027,7 @@ enum MasterOrganizationContactChannel {
 }
 
 model MasterCountry {
+  exchangeOffices       FinanceExchangeOffice[]
   id                    String                      @id @default(uuid()) @db.Uuid
   code                  String                      @unique @db.Char(2)
   name                  String                      @db.VarChar(160)
@@ -1215,6 +1219,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  exchangeBalances                     FinanceExchangeBalance[]
   hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
   procurementQuotationCurrencycodeRows ProcurementQuotation[]      @relation("ProcurementQuotationCurrencycode")
@@ -3218,6 +3223,7 @@ enum LegalEntityDocumentIssueStatus {
 }
 
 model LegalEntity {
+  salesContracts                            SalesContract[]
   procurementInvoiceIssuerlegalentityidRows ProcurementInvoice[]         @relation("ProcurementInvoiceIssuerlegalentityid")
   id                                        String                       @id @default(uuid()) @db.Uuid
   code                                      String                       @unique @db.VarChar(40)
@@ -4007,6 +4013,9 @@ model SalesContractNumberCounter {
 }
 
 model SalesContract {
+  legalEntityId             String?                        @map("legal_entity_id") @db.Uuid
+  legalEntity               LegalEntity?                   @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
+  hiddenAt                  DateTime?                      @map("hidden_at") @db.Timestamptz(3)
   insurancePolicies         ReservationInsurancePolicy[]
   financialWorkflows        AccountingWorkflow[]
   receiptAllocations        SalesReceiptAllocation[]
@@ -4059,6 +4068,7 @@ model SalesContract {
   @@index([status, settlementStatus, reservationStatus])
   @@index([customerId, updatedAt])
   @@index([departureDate, originId, destinationId])
+  @@index([legalEntityId, hiddenAt, departureDate])
   @@map("sales_contracts")
 }
 
@@ -4639,6 +4649,10 @@ model FinanceTicketPurchaseCostRevision {
  * Finance-owned append-only payment evidence; only full settlement releases cost to Sales.
  */
 model FinanceTicketPurchasePaymentRevision {
+  exchangeOfficeId   String?                           @db.Uuid
+  exchangeOfficeName String?                           @db.VarChar(200)
+  exchangeOffice     FinanceExchangeOffice?            @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
+  exchangeMovement   FinanceExchangeMovement?
   payingSupplierName String?                           @db.VarChar(200)
   payingSupplierId   String?                           @db.Uuid
   payingSupplier     MasterSupplier?                   @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
@@ -4925,6 +4939,10 @@ model FinanceReminderDelivery {
 }
 
 model FinanceProcurementInvoiceRevision {
+  exchangeOfficeId    String?                     @db.Uuid
+  exchangeOfficeName  String?                     @db.VarChar(200)
+  exchangeOffice      FinanceExchangeOffice?      @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
+  exchangeMovement    FinanceExchangeMovement?
   purchaseFxSnapshots FinancePurchaseFxSnapshot[]
   payingSupplierName  String?                     @db.VarChar(200)
   paymentCurrencyCode String?                     @db.VarChar(3)
@@ -4995,6 +5013,10 @@ model ReservationServicePurchase {
 }
 
 model FinanceSupplierPaymentRevision {
+  exchangeOfficeId   String?                      @db.Uuid
+  exchangeOfficeName String?                      @db.VarChar(200)
+  exchangeOffice     FinanceExchangeOffice?       @relation(fields: [exchangeOfficeId], references: [id], onDelete: Restrict)
+  exchangeMovement   FinanceExchangeMovement?
   payingSupplierName String?                      @db.VarChar(200)
   payingSupplierId   String?                      @db.Uuid
   payingSupplier     MasterSupplier?              @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
@@ -8393,4 +8415,72 @@ model ReservationNoteMail {
 
   @@index([status, nextAttemptAt])
   @@map("reservation_note_mail")
+}
+
+model FinanceExchangeOffice {
+  audits           FinanceExchangeAudit[]
+  id               String                                 @id @default(uuid()) @db.Uuid
+  title            String                                 @db.VarChar(200)
+  countryId        String?                                @db.Uuid
+  country          MasterCountry?                         @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  address          String?                                @db.VarChar(1000)
+  phone            String?                                @db.VarChar(80)
+  isActive         Boolean                                @default(true)
+  version          Int                                    @default(1)
+  deletedAt        DateTime?                              @db.Timestamptz(3)
+  createdAt        DateTime                               @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                               @updatedAt @db.Timestamptz(3)
+  createdByUserId  String                                 @db.Uuid
+  createdBy        User                                   @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  balances         FinanceExchangeBalance[]
+  supplierPayments FinanceSupplierPaymentRevision[]
+  ticketPayments   FinanceTicketPurchasePaymentRevision[]
+  invoicePayments  FinanceProcurementInvoiceRevision[]
+
+  @@index([deletedAt, isActive, title])
+}
+
+model FinanceExchangeBalance {
+  id           String                    @id @default(uuid()) @db.Uuid
+  officeId     String                    @db.Uuid
+  office       FinanceExchangeOffice     @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  currencyCode String                    @db.Char(3)
+  currency     MasterCurrency            @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+  amount       Decimal                   @default(0) @db.Decimal(24, 4)
+  movements    FinanceExchangeMovement[]
+
+  @@unique([officeId, currencyCode])
+}
+
+model FinanceExchangeMovement {
+  id                String                                @id @default(uuid()) @db.Uuid
+  balanceId         String                                @db.Uuid
+  balance           FinanceExchangeBalance                @relation(fields: [balanceId], references: [id], onDelete: Restrict)
+  delta             Decimal                               @db.Decimal(24, 4)
+  afterAmount       Decimal                               @db.Decimal(24, 4)
+  kind              String                                @db.VarChar(24)
+  actorUserId       String                                @db.Uuid
+  actor             User                                  @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt         DateTime                              @default(now()) @db.Timestamptz(3)
+  supplierPaymentId String?                               @unique @db.Uuid
+  supplierPayment   FinanceSupplierPaymentRevision?       @relation(fields: [supplierPaymentId], references: [id], onDelete: Restrict)
+  ticketPaymentId   String?                               @unique @db.Uuid
+  ticketPayment     FinanceTicketPurchasePaymentRevision? @relation(fields: [ticketPaymentId], references: [id], onDelete: Restrict)
+  invoicePaymentId  String?                               @unique @db.Uuid
+  invoicePayment    FinanceProcurementInvoiceRevision?    @relation(fields: [invoicePaymentId], references: [id], onDelete: Restrict)
+
+  @@index([balanceId, createdAt])
+}
+
+model FinanceExchangeAudit {
+  id          String                @id @default(uuid()) @db.Uuid
+  officeId    String                @db.Uuid
+  office      FinanceExchangeOffice @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  actorUserId String                @db.Uuid
+  actor       User                  @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  action      String                @db.VarChar(24)
+  metadata    Json
+  createdAt   DateTime              @default(now()) @db.Timestamptz(3)
+
+  @@index([officeId, createdAt])
 }

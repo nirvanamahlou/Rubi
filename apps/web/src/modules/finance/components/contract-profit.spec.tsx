@@ -77,9 +77,11 @@ it('preserves signed and large exact amounts and both cost sources', () => {
   expect(html).toContain('خرید بلیت ثبت‌شده در مالی');
 });
 
-it('does not expose unloaded financial data in the collapsed control', () => {
+it('shows an always-open titled section while loading financial data', () => {
   const html = renderToStaticMarkup(<ContractProfit id="synthetic" />);
-  expect(html).toContain('aria-expanded="false"');
+  expect(html).toContain('<h3');
+  expect(html).toContain('role="status"');
+  expect(html).not.toContain('aria-expanded');
   expect(html).not.toContain('<table');
 });
 

@@ -1,7 +1,11 @@
-import { RECEIPT_FILE_ACCEPT } from '@nora/contracts';
+import { FinanceReservationDetails } from './finance-reservation-details';
+import {
+  RECEIPT_FILE_ACCEPT,
+  attachmentMimeType,
+  documentMimeTypes,
+} from '@nora/contracts';
 import { FinanceRequestReceipts } from './finance-request-receipts';
 import { PartyReceipts } from './party-receipts';
-import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
   initialReceiptAccount,
   receiptAccountLabel,
@@ -9,13 +13,14 @@ import {
 } from '../model/receipt-account';
 import {
   PurchaseFxSummary,
-  PurchaseFxCaptures,
   PurchaseFxPaymentPreview,
 } from '../purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
+import { ContractFinancialSummary } from './contract-financial-summary';
 import { ContractProfit } from './contract-profit';
 import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
 import styles from './finance-inbox.module.css';
+import { exchangeOfficesApi } from '../api/exchange-offices-api';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
@@ -143,8 +148,6 @@ function sourceTone(source: FinanceInboxSource) {
 }
 
 export function FinanceInboxLiveWorkspace() {
-  const canPay =
-    useAccessPermissions()?.includes('finance.payment.create') ?? false;
   const ticketCommand = useRef<FinanceTicketPaymentCommandV1 | null>(null);
   const [paymentUncertain, setPaymentUncertain] = useState(false);
   const submitting = useRef(false);
@@ -180,6 +183,9 @@ export function FinanceInboxLiveWorkspace() {
   );
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [pagination, setPagination] = useState({ key: '', page: 1 });
+  const [generalItem, setGeneralItem] = useState<FinanceInboxItemV1 | null>(
+    null,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -226,9 +232,9 @@ export function FinanceInboxLiveWorkspace() {
   const [reason, setReason] = useState('');
   const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
   const [accountId, setAccountId] = useState('');
-  const [payingSupplierId, setPayingSupplierId] = useState('');
+  const [exchangeOfficeId, setExchangeOfficeId] = useState('');
   const [paymentSourceKind, setPaymentSourceKind] = useState<
-    'ACCOUNT' | 'SUPPLIER'
+    'ACCOUNT' | 'EXCHANGE'
   >('ACCOUNT');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [supplierPage, setSupplierPage] = useState(1);
@@ -292,7 +298,7 @@ export function FinanceInboxLiveWorkspace() {
     ? actionItem.amount?.currencyCode
     : actionItem?.amount?.currencyCode;
   const supplierPayment =
-    actionKind === 'PAYMENT' && paymentSourceKind === 'SUPPLIER';
+    actionKind === 'PAYMENT' && paymentSourceKind === 'EXCHANGE';
   const paymentAccount = supplierPayment
     ? undefined
     : accounts.find((account) => account.id === accountId);
@@ -309,11 +315,18 @@ export function FinanceInboxLiveWorkspace() {
     const timer = setTimeout(() => {
       setSupplierBusy(true);
       setSupplierError('');
-      void financeInboxApi
-        .payingSuppliers(supplierSearch, supplierPage)
+      void exchangeOfficesApi
+        .list({
+          search: supplierSearch,
+          page: String(supplierPage),
+          status: 'active',
+          currencyCode: paymentCurrency ?? '',
+        })
         .then((result) => {
           if (!active) return;
-          setSuppliers(result.items);
+          setSuppliers(
+            result.items.map((row) => ({ id: row.id, name: row.title })),
+          );
           setSupplierMore(result.hasMore);
         })
         .catch((error: unknown) => {
@@ -322,7 +335,7 @@ export function FinanceInboxLiveWorkspace() {
             setSupplierError(
               error instanceof Error
                 ? error.message
-                : 'فهرست تأمین‌کنندگان در دسترس نیست.',
+                : 'فهرست صرافی‌ها در دسترس نیست.',
             );
           }
         })
@@ -334,7 +347,7 @@ export function FinanceInboxLiveWorkspace() {
       active = false;
       clearTimeout(timer);
     };
-  }, [supplierPayment, supplierSearch, supplierPage]);
+  }, [supplierPayment, supplierSearch, supplierPage, paymentCurrency]);
 
   useEffect(() => {
     let active = true;
@@ -484,8 +497,8 @@ export function FinanceInboxLiveWorkspace() {
     setActionItem(item);
     setActionKind('PAYMENT');
     setAccountId(eligibleAccounts[0]?.id ?? '');
-    setPaymentSourceKind(eligibleAccounts.length ? 'ACCOUNT' : 'SUPPLIER');
-    setPayingSupplierId('');
+    setPaymentSourceKind(eligibleAccounts.length ? 'ACCOUNT' : 'EXCHANGE');
+    setExchangeOfficeId('');
     setSupplierSearch('');
     setSupplierPage(1);
     setPaymentMethodId(methods[0]?.id ?? '');
@@ -518,7 +531,12 @@ export function FinanceInboxLiveWorkspace() {
   ) {
     const options = (await documentsApi.options()).data;
     const documentType = options.documentTypes.find(
-      (type) => type.domain === 'FINANCE',
+      (type) =>
+        type.domain === 'FINANCE' &&
+        !type.requiresExpiry &&
+        documentMimeTypes(type.allowedMimeTypes).includes(
+          attachmentMimeType(file.name, file.type),
+        ),
     );
     const category = options.categories[0];
     const owner =
@@ -536,14 +554,35 @@ export function FinanceInboxLiveWorkspace() {
     form.set('branchId', item.branchReference);
     form.set('ownerUserId', owner.id);
     form.set('sourceModule', 'FINANCE');
-    form.set('sourceEntityType', 'FinanceTicketPurchasePayment');
+    form.set(
+      'sourceEntityType',
+      item.ticketPurchase
+        ? 'FinanceTicketPurchasePayment'
+        : item.source === 'RESERVATIONS'
+          ? 'FinanceSupplierPayment'
+          : 'FinanceProcurementInvoicePayment',
+    );
     form.set('sourceEntityId', paymentId);
     form.set('sourceDisplayLabel', `${item.title} · رسید پرداخت`);
     form.set('confidentiality', documentType.defaultConfidentiality);
-    form.set('versionNote', 'بارگذاری از پرداخت خرید بلیت');
+    form.set('versionNote', 'بارگذاری از پرداخت مالی');
     await documentsApi.upload(form);
   }
 
+  async function attachPaymentReceipt(
+    paymentId: string,
+    item: FinanceInboxItemV1,
+  ) {
+    if (!ticketReceiptFile) return;
+    try {
+      await uploadTicketPaymentReceipt(ticketReceiptFile, paymentId, item);
+    } catch {
+      setReceiptRetries((current) => [
+        ...current,
+        { id: paymentId, item, file: ticketReceiptFile },
+      ]);
+    }
+  }
   async function submitAction() {
     if (!actionItem || !actionKind || submitting.current) return;
     submitting.current = true;
@@ -579,7 +618,7 @@ export function FinanceInboxLiveWorkspace() {
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
           accountId: supplierPayment ? null : accountId,
-          payingSupplierId: supplierPayment ? payingSupplierId : null,
+          exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
           paymentMethodId,
           paidAmount,
           exchangeRateToIrr: exchangeRate,
@@ -628,23 +667,27 @@ export function FinanceInboxLiveWorkspace() {
         !actionItem.ticketPurchase
       ) {
         if (actionKind === 'PAYMENT') {
-          await financeInboxApi.payInvoice(actionItem.sourceReference, {
-            version: 1,
-            expectedVersion: actionItem.financeVersion ?? 0,
-            expectedSourceVersion: actionItem.sourceVersion,
-            accountId: supplierPayment ? null : accountId,
-            payingSupplierId: supplierPayment ? payingSupplierId : null,
-            paymentMethodId,
-            paidAmount,
-            exchangeRateToIrr: exchangeRate,
-            transferAt: new Date(
-              /[zZ]$|[+-]\d{2}:\d{2}$/.test(paidAt)
-                ? paidAt
-                : `${paidAt}+03:30`,
-            ).toISOString(),
-            paymentReference: paymentReference.trim() || null,
-            reason,
-          });
+          const result = await financeInboxApi.payInvoice(
+            actionItem.sourceReference,
+            {
+              version: 1,
+              expectedVersion: actionItem.financeVersion ?? 0,
+              expectedSourceVersion: actionItem.sourceVersion,
+              accountId: supplierPayment ? null : accountId,
+              exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
+              paymentMethodId,
+              paidAmount,
+              exchangeRateToIrr: exchangeRate,
+              transferAt: new Date(
+                /[zZ]$|[+-]\d{2}:\d{2}$/.test(paidAt)
+                  ? paidAt
+                  : `${paidAt}+03:30`,
+              ).toISOString(),
+              paymentReference: paymentReference.trim() || null,
+              reason,
+            },
+          );
+          await attachPaymentReceipt(result.data.id, actionItem);
         } else {
           await financeInboxApi.decideInvoice(actionItem.sourceReference, {
             version: 1,
@@ -655,14 +698,14 @@ export function FinanceInboxLiveWorkspace() {
           });
         }
       } else if (actionKind === 'PAYMENT') {
-        await financeInboxApi.paySupplier(
+        const result = await financeInboxApi.paySupplier(
           actionItem.sourceContextReference,
           actionItem.sourceReference,
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
             accountId: supplierPayment ? null : accountId,
-            payingSupplierId: supplierPayment ? payingSupplierId : null,
+            exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -675,6 +718,7 @@ export function FinanceInboxLiveWorkspace() {
             reason,
           },
         );
+        await attachPaymentReceipt(result.data.id, actionItem);
       } else {
         await financeInboxApi.decideReceipt(actionItem.sourceReference, {
           version: 1,
@@ -753,6 +797,26 @@ export function FinanceInboxLiveWorkspace() {
       className={`${styles.workspace} space-y-4`}
       aria-label="کارتابل یکپارچه مالی"
     >
+      <Dialog
+        open={Boolean(generalItem)}
+        onOpenChange={(open) => {
+          if (!open) setGeneralItem(null);
+        }}
+      >
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90dvh] max-w-5xl overflow-y-auto"
+        >
+          <DialogTitle>مشخصات کلی</DialogTitle>
+          {generalItem && (
+            <FinanceReservationDetails
+              key={generalItem.id}
+              id={generalItem.sourceContextReference}
+              contractNumber={generalItem.contractReference!}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       {receiptRetries.map((retry) => (
         <Card key={retry.id} className="space-y-3 p-4">
           <p>
@@ -1239,78 +1303,93 @@ export function FinanceInboxLiveWorkspace() {
               data.generatedAt > item.dueAt,
             );
             return (
-              <button
-                aria-pressed={active}
-                aria-controls="finance-request-details"
-                className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
-                key={item.id}
-                onClick={() => {
-                  setSelectedId(item.id);
-                }}
-                type="button"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={sourceTone(item.source)}>
-                        {item.source === 'PURCHASES'
-                          ? item.ticketPurchase
-                            ? 'خرید و تأمین'
-                            : 'تنخواه'
-                          : sourceLabels[item.source]}
-                      </Badge>
-                      <Badge>{statusLabels[item.status] ?? item.status}</Badge>
-                      {overdue ? (
-                        <Badge className="bg-rose-100 text-rose-700">
-                          سررسید گذشته
+              <div key={item.id} className="space-y-2">
+                <button
+                  aria-pressed={active}
+                  aria-controls="finance-request-details"
+                  className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                  }}
+                  type="button"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className={sourceTone(item.source)}>
+                          {item.source === 'PURCHASES'
+                            ? item.ticketPurchase
+                              ? 'خرید و تأمین'
+                              : 'تنخواه'
+                            : sourceLabels[item.source]}
                         </Badge>
-                      ) : null}
+                        <Badge>
+                          {statusLabels[item.status] ?? item.status}
+                        </Badge>
+                        {overdue ? (
+                          <Badge className="bg-rose-100 text-rose-700">
+                            سررسید گذشته
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                        {item.title}
+                      </h3>
                     </div>
-                    <h3 className="mt-2 break-words text-sm font-bold leading-6">
-                      {item.title}
-                    </h3>
+                    <p className={styles.requestAmount} dir="ltr">
+                      {money(item)}
+                    </p>
                   </div>
-                  <p className={styles.requestAmount} dir="ltr">
-                    {money(item)}
-                  </p>
-                </div>
-                {item.purchaseFx?.length ? (
-                  <div className={styles.rowFx}>
-                    <PurchaseFxSummary entries={item.purchaseFx} />
-                  </div>
-                ) : null}
-                {item.ticketPurchase ? (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    تعداد صندلی:{' '}
-                    {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
-                      '—'}{' '}
-                    · قیمت تکی:{' '}
-                    {item.ticketPurchase.unitCost
-                      ? item.ticketPurchase.unitCost +
-                        ' ' +
-                        (item.amount?.currencyCode ?? '')
-                      : 'ثبت نشده'}
-                  </p>
-                ) : null}
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                  <bdi className="break-all">
-                    {item.contractReference
-                      ? `قرارداد ${item.contractReference}`
-                      : ''}
-                  </bdi>
-                  <span>
-                    {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
-                  </span>
-                  {item.requesterDisplaySnapshot ? (
-                    <span>درخواست‌کننده: {item.requesterDisplaySnapshot}</span>
+                  {item.purchaseFx?.length ? (
+                    <div className={styles.rowFx}>
+                      <PurchaseFxSummary entries={item.purchaseFx} />
+                    </div>
                   ) : null}
-                  <span>سررسید: {faDate(item.dueAt)}</span>
-                  <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
-                    {active ? 'در حال مشاهده' : 'بررسی درخواست'}
-                    <ChevronLeft aria-hidden="true" className="size-4" />
-                  </span>
-                </div>
-              </button>
+                  {item.ticketPurchase ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      تعداد صندلی:{' '}
+                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                        '—'}{' '}
+                      · قیمت تکی:{' '}
+                      {item.ticketPurchase.unitCost
+                        ? item.ticketPurchase.unitCost +
+                          ' ' +
+                          (item.amount?.currencyCode ?? '')
+                        : 'ثبت نشده'}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <bdi className="break-all">
+                      {item.contractReference
+                        ? `قرارداد ${item.contractReference}`
+                        : ''}
+                    </bdi>
+                    <span>
+                      {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
+                    </span>
+                    {item.requesterDisplaySnapshot ? (
+                      <span>
+                        درخواست‌کننده: {item.requesterDisplaySnapshot}
+                      </span>
+                    ) : null}
+                    <span>سررسید: {faDate(item.dueAt)}</span>
+                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
+                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                      <ChevronLeft aria-hidden="true" className="size-4" />
+                    </span>
+                  </div>
+                </button>
+                {item.source === 'RESERVATIONS' && item.contractReference && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setGeneralItem(item)}
+                  >
+                    مشخصات کلی
+                  </Button>
+                )}
+              </div>
             );
           })}
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-4 py-4">
@@ -1393,12 +1472,6 @@ export function FinanceInboxLiveWorkspace() {
                       <PurchaseFxSummary entries={selected.purchaseFx} />
                     </div>
                   ) : null}
-                  {canPay && (
-                    <PurchaseFxCaptures
-                      entries={selected.purchaseFx}
-                      onSaved={() => setRevision((v) => v + 1)}
-                    />
-                  )}
 
                   {selected.reservationPurchase ? (
                     <div className="space-y-3 rounded-xl border border-border p-3">
@@ -1457,6 +1530,12 @@ export function FinanceInboxLiveWorkspace() {
                       ))}
                     </div>
                   ) : null}
+                  {selected.source === 'SALES' && (
+                    <ContractFinancialSummary
+                      key={selected.sourceContextReference}
+                      id={selected.sourceContextReference}
+                    />
+                  )}
                   <dl className={styles.detailFacts}>
                     {[
                       ['قرارداد', selected.contractReference ?? '—'],
@@ -1747,35 +1826,35 @@ export function FinanceInboxLiveWorkspace() {
                       value={paymentSourceKind}
                       onChange={(event) => {
                         setPaymentSourceKind(
-                          event.target.value as 'ACCOUNT' | 'SUPPLIER',
+                          event.target.value as 'ACCOUNT' | 'EXCHANGE',
                         );
                         setAccountId('');
-                        setPayingSupplierId('');
+                        setExchangeOfficeId('');
                       }}
                     >
                       <option value="ACCOUNT">حساب پرداخت‌کننده</option>
-                      <option value="SUPPLIER">تأمین‌کننده پرداخت‌کننده</option>
+                      <option value="EXCHANGE">صرافی</option>
                     </NativeSearchSelect>
                   </label>
                   <label className="grid gap-2">
                     {supplierPayment ? (
                       <>
-                        <span>تأمین‌کننده پرداخت‌کننده</span>
+                        <span>صرافی</span>
                         <Input
-                          aria-label="جست‌وجوی تأمین‌کننده پرداخت‌کننده"
+                          aria-label="جست‌وجوی صرافی"
                           value={supplierSearch}
                           onChange={(event) => {
                             setSupplierSearch(event.target.value);
                             setSupplierPage(1);
-                            setPayingSupplierId('');
+                            setExchangeOfficeId('');
                           }}
                         />
                         <NativeSearchSelect
                           required
-                          aria-label="تأمین‌کننده پرداخت‌کننده"
-                          value={payingSupplierId}
+                          aria-label="صرافی"
+                          value={exchangeOfficeId}
                           onChange={(event) =>
-                            setPayingSupplierId(event.target.value)
+                            setExchangeOfficeId(event.target.value)
                           }
                           disabled={supplierBusy}
                         >
@@ -1796,7 +1875,7 @@ export function FinanceInboxLiveWorkspace() {
                             disabled={supplierBusy || supplierPage === 1}
                             onClick={() => {
                               setSupplierPage(supplierPage - 1);
-                              setPayingSupplierId('');
+                              setExchangeOfficeId('');
                             }}
                           >
                             صفحه قبلی
@@ -1807,7 +1886,7 @@ export function FinanceInboxLiveWorkspace() {
                             disabled={supplierBusy || !supplierMore}
                             onClick={() => {
                               setSupplierPage(supplierPage + 1);
-                              setPayingSupplierId('');
+                              setExchangeOfficeId('');
                             }}
                           >
                             صفحه بعدی
@@ -1904,10 +1983,7 @@ export function FinanceInboxLiveWorkspace() {
                       {paymentCurrency}
                     </small>
                   </label>
-                  <p className="text-sm text-muted-foreground">
-                    می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در
-                    پرداخت‌های بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
-                  </p>
+
                   {paymentCurrency !== 'IRR' ? (
                     <label className="grid gap-2">
                       <span>نرخ روز ارز به ریال</span>
@@ -1955,7 +2031,7 @@ export function FinanceInboxLiveWorkspace() {
                       }
                     />
                   </label>
-                  {actionItem?.ticketPurchase ? (
+                  {
                     <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
                       <span className="flex items-center gap-2 font-semibold">
                         <FileUp className="size-4 text-primary" />
@@ -1968,12 +2044,8 @@ export function FinanceInboxLiveWorkspace() {
                           setTicketReceiptFile(event.target.files?.[0] ?? null)
                         }
                       />
-                      <small className="text-muted-foreground">
-                        پس از ثبت پرداخت، فایل در اسناد مالی با مرجع همین پرداخت
-                        ذخیره می‌شود.
-                      </small>
                     </label>
-                  ) : null}
+                  }
                 </>
               ) : null}
               {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
@@ -2080,7 +2152,7 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!(supplierPayment ? payingSupplierId : accountId) ||
+                    (!(supplierPayment ? exchangeOfficeId : accountId) ||
                       !paymentMethodId ||
                       !paidAmount))
                 }

@@ -36,6 +36,14 @@ export class HrController {
     @Inject(HrRadanDeviceService)
     private readonly device?: HrRadanDeviceService,
   ) {}
+  @Post('organization/company-scope/migrate')
+  migrateCompanyStructure(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.migrateCompanyStructure(body, key, req.actor);
+  }
   @Get('missions/petty-fund')
   @Header('Cache-Control', 'private, no-store')
   missionPettyFund(

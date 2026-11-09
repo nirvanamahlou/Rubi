@@ -352,3 +352,50 @@ it('retains day exclusion across device recalculation', async () => {
     attendanceActive: false,
   });
 });
+
+it('restores only provider-rejected punches when the provider later accepts the same source ID', async () => {
+  const f = fixture();
+  await f.hr.importDevicePunches(f.input, 'accepted', actor);
+  f.input.punches[0]!.accepted = false;
+  await f.hr.importDevicePunches(f.input, 'rejected', actor);
+  const rejected = [...f.records.values()][0]!;
+  expect(rejected.deletedAt).toBeInstanceOf(Date);
+  f.input.punches[0]!.accepted = true;
+  const result = await f.hr.importDevicePunches(f.input, 'reaccepted', actor);
+  expect(result.imported).toBe(1);
+  expect(f.records.size).toBe(1);
+  expect([...f.records.values()][0]!.deletedAt).toBeNull();
+});
+it('retains source seconds and repairs old minute-rounded timestamps even when the displayed values are unchanged', async () => {
+  const f = fixture();
+  await f.hr.importDevicePunches(f.input, 'minute-legacy', actor);
+  const input = {
+    ...f.input,
+    punches: f.input.punches.map((p) => ({
+      ...p,
+      occurredAt: '2026-11-01T05:50:47.000Z',
+    })),
+  };
+  expect(
+    (await f.hr.importDevicePunches(input, 'seconds-key', actor)).imported,
+  ).toBe(1);
+  expect([...f.records.values()][0]!.data).toMatchObject({
+    startsAt: '2026-11-01T05:50:47.000Z',
+  });
+  expect(
+    (await f.hr.importDevicePunches(input, 'seconds-replay', actor)).unchanged,
+  ).toBe(1);
+  await expect(
+    f.hr.importDevicePunches(
+      {
+        ...input,
+        punches: input.punches.map((p) => ({
+          ...p,
+          occurredAt: '2026-11-01T06:50:47.000Z',
+        })),
+      },
+      'invalid-minute',
+      actor,
+    ),
+  ).rejects.toThrow();
+});

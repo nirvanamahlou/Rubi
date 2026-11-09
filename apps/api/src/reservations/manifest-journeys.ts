@@ -1,3 +1,4 @@
+import { salesContractOnlyFlights } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import type {
   ReservationIntakeV1,
@@ -6,6 +7,7 @@ import type {
 
 export type ManifestJourney = SalesTicketSelectionInput & {
   transportType: 'FLIGHT' | 'BUS' | 'TRAIN';
+  flightSupplyType?: 'CHARTER' | 'FLOATING';
   departureTimeKnown?: boolean;
   originName?: string;
   destinationName?: string;
@@ -18,6 +20,29 @@ export function manifestJourneys(
   const journeys: ManifestJourney[] = (snapshot.ticketSelections ?? []).map(
     (ticket) => ({ ...ticket, transportType: 'FLIGHT' }),
   );
+  for (const flight of salesContractOnlyFlights(
+    snapshot.serviceSelections ?? [],
+  )) {
+    const identity = JSON.stringify([
+      flight.direction,
+      flight.originId,
+      flight.destinationId,
+      new Date(flight.departureAt).toISOString(),
+      new Date(flight.arrivalAt).toISOString(),
+      flight.carrierNameSnapshot.trim().toUpperCase(),
+      flight.serviceNumberSnapshot.trim().toUpperCase(),
+      flight.cabinClassCode,
+      flight.originAirport?.id,
+      flight.destinationAirport?.id,
+    ]);
+    journeys.push({
+      ...flight,
+      offerId:
+        'floating-' + createHash('sha256').update(identity).digest('hex'),
+      transportType: 'FLIGHT',
+      flightSupplyType: 'FLOATING',
+    });
+  }
   for (const service of snapshot.serviceSelections ?? []) {
     if (service.kind !== 'BUS' && service.kind !== 'TRAIN') continue;
     const m = service.metadata ?? {};

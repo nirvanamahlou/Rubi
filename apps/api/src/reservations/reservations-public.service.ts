@@ -2,6 +2,8 @@ import type {
   TravelWorkflowStateV1 as HotelFormWorkflowState,
   SalesReservationRequestV1 as HotelFormSourceSnapshot,
 } from '@nora/contracts';
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { InsuranceAutomation } from './insurance/insurance-automation';
@@ -323,6 +325,9 @@ export class ReservationsPublicService {
     @Optional()
     @Inject(InsuranceAutomation)
     private readonly insurance?: InsuranceAutomation,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
 
   async receive(
@@ -579,10 +584,15 @@ export class ReservationsPublicService {
   async financeHistoryPurchases(
     branchIds: readonly string[],
     requestId?: string,
+    actor?: AuthenticatedActor,
   ) {
+    const ids = actor ? await this.companyScope?.ids(actor) : undefined;
     return this.database.client.reservationServicePurchase.findMany({
       where: {
-        intake: { branchId: { in: [...branchIds] } },
+        intake: {
+          branchId: { in: [...branchIds] },
+          ...(ids ? { contractId: { in: ids } } : {}),
+        },
         ...(requestId ? { id: requestId } : {}),
       },
       select: {
@@ -644,11 +654,16 @@ export class ReservationsPublicService {
 
   /** Finance owns payment decisions; purchase evidence must not disappear with
    * a newer operational intake or the first page of the Reservations workspace. */
-  async listForFinance(branchIds: readonly string[]) {
+  async listForFinance(
+    branchIds: readonly string[],
+    actor?: AuthenticatedActor,
+  ) {
+    const ids = actor ? await this.companyScope?.ids(actor) : undefined;
     const rows = await this.database.client.reservationIntake.findMany({
       where: {
         branchId: { in: [...branchIds] },
         servicePurchases: { some: {} },
+        ...(ids ? { contractId: { in: ids } } : {}),
       },
       include: intakeInclude,
       orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
@@ -666,6 +681,7 @@ export class ReservationsPublicService {
     options: {
       page?: string | undefined;
       contractNumber?: string | undefined;
+      actor?: AuthenticatedActor;
     } = {},
   ) {
     if (
@@ -684,9 +700,13 @@ export class ReservationsPublicService {
         'شماره صفحه یا جست‌وجوی قرارداد معتبر نیست.',
       );
     const contractNumber = options.contractNumber?.trim();
+    const ids = options.actor
+      ? await this.companyScope?.ids(options.actor)
+      : undefined;
     const rows = await this.database.client.reservationIntake.findMany({
       where: {
         branchId: { in: [...branchIds] },
+        ...(ids ? { contractId: { in: ids } } : {}),
         ...(contractNumber
           ? {
               snapshot: {

@@ -1,3 +1,4 @@
+import { todayCallUnitPage } from './today-call-unit-page';
 import { callPerformanceStaff } from '../hr/hr-call-performance-directory';
 import { callCenterExpertTasks } from '../tasks/call-center-read';
 import {
@@ -574,12 +575,16 @@ export class CallCenterReadService {
     period?: 'today' | 'week',
   ) {
     const branchId = this.workflow.scope(actor, branch);
-    // Only paging is accepted semantically: contact-list filters never affect this KPI.
+    // Only Today accepts its three local controls; outer contact filters never affect KPI drilldowns.
     const q = {
       page: input.page,
       pageSize: input.pageSize,
       revision: input.revision,
-      outcome: period ? undefined : 'UNKNOWN',
+      outcome:
+        period === 'today' ? input.outcome : period ? undefined : 'UNKNOWN',
+      ...(period === 'today'
+        ? { direction: input.direction, unit: input.unit }
+        : {}),
     } as CallCenterSearchDto;
     return this.db.client.$transaction(
       async (tx) => {
@@ -609,9 +614,32 @@ export class CallCenterReadService {
           throw new ConflictException(
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
-        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND ${period ? Prisma.sql`a.occurred_at >= ${from}` : Prisma.sql`a.outcome IS NULL`}
+        const indexedFilters = { ...q };
+        delete indexedFilters.unit;
+        const predicate = Prisma.sql`(${this.conditions(branchId, indexedFilters)}) AND ${period ? Prisma.sql`a.occurred_at >= ${from}` : Prisma.sql`a.outcome IS NULL`}
         AND a.occurred_at <= ${now} AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')
         AND (${reportScope}) AND (${contactScope})`;
+        const meta = (total: number) => ({
+          total,
+          page: q.page,
+          pageSize: q.pageSize,
+          revision,
+          asOf: now.toISOString(),
+        });
+        if (period === 'today' && q.unit) {
+          const selected = await todayCallUnitPage(
+            tx,
+            predicate,
+            { page: q.page, pageSize: q.pageSize, unit: q.unit },
+            (rows) =>
+              this.calls.hydrateDestinations(
+                branchId,
+                rows.map((row) => this.calls.presentSummary(row)),
+                tx,
+              ),
+          );
+          return { data: selected.data, meta: meta(selected.total) };
+        }
         const count = await tx.$queryRaw<
           Array<{ total: bigint }>
         >`SELECT count(*) AS total
@@ -625,18 +653,19 @@ export class CallCenterReadService {
         const rows = await tx.callCenterCall.findMany({
           where: { id: { in: ids.map((r) => r.id) } },
         });
+        const summaries = rows.map((row) => this.calls.presentSummary(row));
+        const presented = new Map(
+          (period === 'today'
+            ? await this.calls.hydrateDestinations(branchId, summaries, tx)
+            : summaries
+          ).map((call) => [call.id, call]),
+        );
         return {
           data: ids.map((r) => ({
-            call: this.calls.presentSummary(rows.find((c) => c.id === r.id)!),
+            call: presented.get(r.id)!,
             callCount: Number(r.callCount),
           })),
-          meta: {
-            total: Number(count[0]!.total),
-            page: q.page,
-            pageSize: q.pageSize,
-            revision,
-            asOf: now.toISOString(),
-          },
+          meta: meta(Number(count[0]!.total)),
         };
       },
       {

@@ -109,7 +109,7 @@ describe('persisted finance transaction history', () => {
         where: {
           status: 'FINANCE_CONFIRMED',
           financeConfirmedAt: { not: null },
-          contract: { branchId: { in: ['branch-a'] } },
+          contract: { AND: [{ branchId: { in: ['branch-a'] } }, {}] },
           id: id(1),
         },
         take: 26,
@@ -266,6 +266,7 @@ describe('persisted finance transaction history', () => {
     expect(d.reservations.financeHistoryPurchases).toHaveBeenCalledWith(
       ['branch-a'],
       id(100),
+      actor,
     );
     expect(
       d.client.financeSupplierPaymentRevision.findMany.mock.calls[0]?.[0],

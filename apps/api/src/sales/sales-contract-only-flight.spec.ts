@@ -306,11 +306,15 @@ describe('Contract-only flights remain outside ticket inventory', () => {
     await repository.create(input, 'Sample', 'key', 'fingerprint', {
       userId: 'owner',
       branchId: 'branch',
+      legalEntityId: 'manually-selected-company',
     });
     expect(create.mock.calls[0]![0].data.metadata).toEqual(
       input.services[0]!.metadata,
     );
     expect(ticketCreate).not.toHaveBeenCalled();
+    expect(tx.salesContract.create.mock.calls[0]![0].data.legalEntityId).toBe(
+      'manually-selected-company',
+    );
     expect(tx.salesContract.create.mock.calls[0]![0].data.contractNumber).toBe(
       '120123',
     );

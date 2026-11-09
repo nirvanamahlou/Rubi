@@ -117,3 +117,22 @@ tests, typechecks, scoped lint, formatting and both production builds pass (67 W
 routes). Final-head CI remains a release gate. No production bundle, credential, grant or business write is made
 by this release-preparation step. A successful real connection test is still
 required after both deployment prerequisites are resolved.
+
+## Owner release authorization — 2026-11-09
+
+The owner now explicitly requests completing the connection through the sites or
+code, committing/pushing and merging Nora into develop and Jahan into main.
+This supersedes the original no-merge instruction for this integration. PR21's
+producer handoff is merged at81d7c25; the actual producer repair already existed
+in main through PR20. Nora PR1466 is synchronized again with current develop
+0fb77974b; both conflicts were additive shared status notes, with no application
+conflict. Preserve current peer work, original contract and security guards.
+
+Bounded Nora API/Web activation uses the existing shared deployment lock and
+retains runtime secrets/mounts, encrypted connector storage, other services and
+database schema. It is necessary for the requested panel connection, not a broad
+runtime refresh. Today the authenticated producer panel still reports all three
+missing deployment prerequisites and disables bundle generation. No credential
+or successful production connection can be claimed until secure producer
+configuration is actually applied. No substitute Host-derived origin, public
+test-mode exception, invented credentials or fake CONNECTED state is permitted.

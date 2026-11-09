@@ -24,7 +24,7 @@ describe('Sales Finance inbox projection', () => {
           { status: 'PENDING_FINANCE_CONFIRMATION' },
           { status: 'SCHEDULED', dueAt: { lte: expect.any(Date) } },
         ],
-        contract: { branchId: { in: ['branch-b', 'branch-a'] } },
+        contract: { AND: [{ branchId: { in: ['branch-b', 'branch-a'] } }, {}] },
       },
       include: {
         contract: {
@@ -53,7 +53,7 @@ describe('Sales Finance inbox projection', () => {
       expect.objectContaining({
         where: {
           OR: expect.arrayContaining([{ status: 'FINANCE_CONFIRMED' }]),
-          contract: { branchId: { in: ['branch-a'] } },
+          contract: { AND: [{ branchId: { in: ['branch-a'] } }, {}] },
         },
       }),
     );
@@ -112,6 +112,7 @@ describe('Sales Finance inbox projection', () => {
       expect(repository.pendingFinancePayments).toHaveBeenCalledWith(
         ['branch-a'],
         includeConfirmed,
+        {},
       );
       expect(result).toMatchObject([
         {

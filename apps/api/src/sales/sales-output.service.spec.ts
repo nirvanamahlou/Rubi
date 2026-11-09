@@ -3,6 +3,7 @@ import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedActor, SalesContractDetail } from '@nora/contracts';
 import { SalesOutputService } from './sales-output.service';
 import { SalesService } from './sales.service';
+import type { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import type { SalesRepository } from './sales.repository';
 import type {
   SalesCustomersPublicAdapter,
@@ -21,7 +22,7 @@ const actor: AuthenticatedActor = {
     'legal-entity.read',
   ],
 };
-function setup() {
+function setup(companyScope?: ContractCompanyScope) {
   const contract = {
     id: 'contract',
     customerId: 'buyer',
@@ -69,10 +70,22 @@ function setup() {
     customers as unknown as CustomerService,
     legal as unknown as LegalEntitiesService,
     iam as unknown as IamFinanceDirectory,
+    companyScope,
   );
   return { service, contract, sales, repo, customers, legal, iam };
 }
 describe('Sales saved output authorization', () => {
+  it('uses the saved contract issuer even when another company is selected', async () => {
+    const owner = vi.fn().mockResolvedValue({ id: 'company' });
+    const t = setup({ owner } as unknown as ContractCompanyScope);
+    t.legal.current.mockResolvedValue({
+      data: { isAggregate: false, legalEntity: { id: 'other-company' } },
+    });
+    await t.service.prepare('contract', actor);
+    expect(owner).toHaveBeenCalledWith('contract');
+    expect(t.legal.current).not.toHaveBeenCalled();
+    expect(t.legal.branding).toHaveBeenCalledWith('company', actor);
+  });
   it('uses the saved buyer contact even after the current customer address changes', async () => {
     const t = setup();
     t.contract.buyerContact = {

@@ -178,6 +178,8 @@ describe('consumer-scoped reference selection', () => {
       'ui.screen.reservations.home',
       'hotels',
     ],
+    ['finance', 'finance.read', 'ui.screen.finance.requests', 'hotels'],
+    ['finance', 'finance.read', 'ui.screen.finance.requests', 'countries'],
     ['customers', 'customers.read', 'ui.screen.customers.home', 'cities'],
     [
       'organizations',

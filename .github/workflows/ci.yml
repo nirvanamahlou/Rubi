@@ -267,7 +267,12 @@ jobs:
       - name: Prove company bank account encryption, CAS and audit atomicity
         env:
           NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts test/exchange-offices.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove leave approval routing and saved calculation settings repair
+        env:
+          NORA_RUN_WORKBENCH_REQUEST_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/workbench-hr-request.postgres.spec.ts --maxWorkers=1
 
       - name: Prove assistant read-only PostgreSQL and HTTP boundaries
         env:

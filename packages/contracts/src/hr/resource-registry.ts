@@ -61,6 +61,7 @@ const parentResources: Record<string, string[]> = {
 };
 const readOnly = new Set([
   'employee.internalContact',
+  'employee.companyScope',
   'requests.approvalAssignments',
   'time.minuteLedger',
   'payroll.importedPayslips',

@@ -233,7 +233,7 @@ export function ContractOutputButton({
           <DialogTitle>خروجی قرارداد برای مشتری</DialogTitle>
           {output && (
             <p className="text-sm">
-              شرکت فعال برای این نسخه:{' '}
+              شرکت ثبت‌شدهٔ قرارداد:{' '}
               <strong>{output.company.persianName}</strong> · قرارداد{' '}
               <bdi>{output.contract.contractNumber}</bdi>
             </p>

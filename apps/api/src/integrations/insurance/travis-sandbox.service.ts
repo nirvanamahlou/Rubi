@@ -14,6 +14,62 @@ const origin = 'https://sandboxapi.travis.ir';
 const unavailable = () =>
   new ServiceUnavailableException('اتصال آزمایشی بیمه تنظیم نشده است.');
 const invalid = () => new BadGatewayException('اطلاعات بیمه دریافت نشد.');
+/** Only locally generated diagnostics may cross into policy history. */
+export class TravisDiagnosticError extends BadGatewayException {}
+const diagnostic = (path: string, code: number, value?: unknown) => {
+  const stage = path.endsWith('/Create')
+    ? 'ثبت درخواست'
+    : path.endsWith('/Confirm')
+      ? 'تأیید صدور'
+      : 'دریافت اطلاعات';
+  const labels: Record<string, string> = {
+    nationalCode: 'کد ملی',
+    passportNo: 'شماره پاسپورت',
+    firstName: 'نام فارسی',
+    lastName: 'نام خانوادگی فارسی',
+    firstNameLatin: 'نام لاتین',
+    lastNameLatin: 'نام خانوادگی لاتین',
+    birthDate: 'تاریخ تولد',
+    gender: 'جنسیت',
+    mobile: 'موبایل',
+    email: 'ایمیل',
+    isIranian: 'ملیت',
+    sourceCountryId: 'کشور مبدا',
+    destinationCountryId: 'کشور مقصد',
+    durationOfStay: 'مدت سفر',
+    planId: 'طرح بیمه',
+    travelKind: 'نوع ویزا',
+    travelTypeId: 'نوع سفر',
+    person: 'مشخصات مسافر',
+  };
+  const fields =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.keys(value)
+          .slice(0, 50)
+          .flatMap((key) => {
+            const field = key
+              .replace(/^\$?\.?person\./i, '')
+              .replace(/^\$\./, '');
+            const known = Object.keys(labels).find(
+              (name) => name.toLowerCase() === field.toLowerCase(),
+            );
+            return known ? [labels[known]!] : [];
+          })
+      : [];
+  const reason =
+    code === 401 || code === 403
+      ? 'دسترسی یا کلید اتصال بیمه تأیید نشد'
+      : code === 429
+        ? 'تعداد درخواست‌ها بیش از حد مجاز است'
+        : code >= 500
+          ? 'خطای داخلی سرویس بیمه'
+          : code === 400 || code === 422
+            ? 'اطلاعات درخواست از سوی بیمه پذیرفته نشد'
+            : 'پاسخ ناموفق سرویس بیمه';
+  return new TravisDiagnosticError(
+    `${stage} بیمه: ${reason} (کد ${code}).${fields.length ? ' فیلدهای نیازمند بررسی: ' + [...new Set(fields)].join('، ') : ''}`,
+  );
+};
 /** Fixed sandbox transport. Never accepts URLs, credentials or customer policy payloads from a browser. */
 @Injectable()
 export class TravisSandboxService {
@@ -48,7 +104,7 @@ export class TravisSandboxService {
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: AbortSignal.timeout(15000),
       });
-      if (!response.ok || !response.body) throw invalid();
+      if (!response.body) throw diagnostic(path, response.status);
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
       let size = 0;
@@ -63,14 +119,43 @@ export class TravisSandboxService {
       } finally {
         await reader.cancel().catch(() => undefined);
       }
-      const value = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      } catch {
+        if (!response.ok) throw diagnostic(path, response.status);
+        throw invalid();
+      }
+      const value = parsed as {
         code?: number;
         data?: unknown;
+        errors?: unknown;
       };
-      if (value.code !== 200 || value.data === undefined || value.data === null)
+      if (!value || typeof value !== 'object' || Array.isArray(value))
         throw invalid();
+      if (!response.ok || value.code !== 200)
+        throw diagnostic(
+          path,
+          !response.ok
+            ? response.status
+            : Number.isSafeInteger(value.code) &&
+                Number(value.code) >= 100 &&
+                Number(value.code) <= 599
+              ? Number(value.code)
+              : response.status,
+          value.errors,
+        );
+      if (value.data === undefined || value.data === null) throw invalid();
       return value.data;
-    } catch {
+    } catch (error) {
+      if (error instanceof TravisDiagnosticError) throw error;
+      if (
+        error instanceof Error &&
+        ['TimeoutError', 'AbortError'].includes(error.name)
+      )
+        throw new TravisDiagnosticError(
+          'مهلت پاسخ سرویس بیمه تمام شد؛ وضعیت درخواست پیش از تلاش مجدد بررسی می‌شود.',
+        );
       throw invalid();
     } // Never expose upstream bodies, URLs or credentials in an error.
   }

@@ -1,4 +1,5 @@
 'use client';
+import { leaveDescription } from '@/modules/workbench/leave-description';
 import { LeaveEvidenceList } from './leave-evidence-list';
 import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
 import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
@@ -336,7 +337,7 @@ export function HrInbox({
         }}
       >
         <DialogContent
-          className="max-h-[85dvh] max-w-2xl overflow-y-auto p-0"
+          className="max-h-[90dvh] max-w-3xl overflow-y-auto p-0"
           dir="rtl"
         >
           <header className="flex items-center gap-3 border-b bg-primary/5 p-5 pl-12">
@@ -346,16 +347,16 @@ export function HrInbox({
             <DialogTitle>رسیدگی به درخواست</DialogTitle>
           </header>
           {review ? (
-            <div className="space-y-5 p-5">
-              <p className="text-lg font-bold">{review.subject}</p>
-              <p className="text-sm">
+            <div className="space-y-5 bg-muted/10 p-5 sm:p-6">
+              <p className="text-xl font-black">{review.subject}</p>
+              <p className="rounded-xl border bg-background px-4 py-3 text-sm text-muted-foreground">
                 {review.senderName} · {review.trackingNumber}
               </p>
               <p className="whitespace-pre-wrap rounded-xl bg-muted/30 p-4 text-sm leading-7">
-                {review.description}
+                {leaveDescription(review.description, review.leave, false)}
               </p>
               {review.leave ? (
-                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-4 gap-y-5 rounded-xl border bg-primary/5 p-4 text-sm [&_dd]:break-words [&_dt]:text-muted-foreground">
+                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-4 gap-y-5 rounded-2xl border border-primary/15 bg-background p-5 text-sm shadow-sm [&_dd]:break-words [&_dd]:font-semibold [&_dt]:text-muted-foreground">
                   <dt>تاریخ</dt>
                   <dd>
                     {new Date(review.leave.from).toLocaleDateString('fa-IR')} —{' '}

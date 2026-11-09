@@ -47,6 +47,7 @@ export interface WorkbenchRequestItemV1 {
   version?: number | undefined;
   substituteStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
   substituteReview?: boolean | undefined;
+  recipientReview?: boolean | undefined;
   leave?: WorkbenchLeaveInputV1 | undefined;
   source?: 'workbench' | 'hr' | undefined;
 }

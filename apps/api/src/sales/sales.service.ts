@@ -1,3 +1,4 @@
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 import { salesSupplyWhere } from './sales-supply-filter';
 import { isFloatingSalesContract } from '@nora/contracts';
 import { contractPassengerAgeCategory } from './sales.domain';
@@ -501,6 +502,9 @@ export class SalesService {
     @Optional()
     @Inject(PackageTourPricingService)
     private readonly packageQuotes?: PackageTourPricingService,
+    @Optional()
+    @Inject(ContractCompanyScope)
+    private readonly companyScope?: ContractCompanyScope,
   ) {}
 
   async availableHotelRoomRates(
@@ -880,6 +884,7 @@ export class SalesService {
         code: 'SALES_CONTRACT_FORBIDDEN',
         message: 'مجوز مشاهده قرارداد وجود ندارد.',
       });
+    scope = { AND: [scope, (await this.companyScope?.where(actor)) ?? {}] };
     if (query.customerType || query.agencyCustomerId) {
       const validation = Joi.object({
         customerType: Joi.string().valid('ALL', 'AGENCY', 'IN_PERSON'),
@@ -1024,6 +1029,7 @@ export class SalesService {
     const rows = await this.repository.customerDocumentDeliveryCandidates(
       actor.branchIds,
       contractNumber,
+      (await this.companyScope?.where(actor)) ?? {},
     );
     return rows.map((row) => ({
       contractId: row.id,
@@ -1076,6 +1082,7 @@ export class SalesService {
       after,
       take,
       requestId,
+      (await this.companyScope?.where(actor)) ?? {},
     );
     return rows.map((row) => ({
       id: row.id,
@@ -1111,6 +1118,7 @@ export class SalesService {
     const rows = await this.repository.pendingFinancePayments(
       actor.branchIds,
       includeConfirmed,
+      (await this.companyScope?.where(actor)) ?? {},
     );
     const names = new Map(
       (
@@ -1244,6 +1252,8 @@ export class SalesService {
     // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
+    const legalEntityId =
+      (await this.companyScope?.selected(actor, true)) ?? undefined;
     await assertFloatingFlightAirports(input.services, this.references);
     await assertHotelJourneyAirports(input, this.references);
     let validatedPublishedHotelId: string | undefined;
@@ -1271,7 +1281,10 @@ export class SalesService {
       customer.displayName,
       idempotencyKey,
       fingerprint,
-      this.context(actor, branchId, traceId),
+      {
+        ...this.context(actor, branchId, traceId),
+        ...(legalEntityId ? { legalEntityId } : {}),
+      },
     );
     return {
       data: presentSalesContract(row, undefined, this.buyerCrypto),
@@ -2145,7 +2158,12 @@ export class SalesService {
       throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
     const filters = validated.value as SalesReceivablesQuery;
     const rows = (
-      await this.repository.dashboardRows(this.readScope(actor))
+      await this.repository.dashboardRows({
+        AND: [
+          this.readScope(actor),
+          (await this.companyScope?.where(actor)) ?? {},
+        ],
+      })
     ).filter((row) => row.status !== 'CANCELLED');
     const sellerNames = new Map(
       (
@@ -2295,7 +2313,9 @@ export class SalesService {
         code: 'SALES_CONTRACT_FORBIDDEN',
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
-    const rows = await this.repository.dashboardRows(scope);
+    const rows = await this.repository.dashboardRows({
+      AND: [scope, (await this.companyScope?.where(actor)) ?? {}],
+    });
     const details = rows
       .filter((row) => row.status !== 'CANCELLED')
       .map((row) => presentSalesContract(row, undefined, this.buyerCrypto));

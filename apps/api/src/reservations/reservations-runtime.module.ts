@@ -371,6 +371,7 @@ export class ReservationRequestsController {
     if (!req.actor.permissions.includes('finance.financial_release.read'))
       throw new ForbiddenException();
     const rows = await this.service.list(req.actor.branchIds, {
+      actor: req.actor,
       contractNumber,
     });
     return {
@@ -427,6 +428,26 @@ export class ReservationRequestsController {
                 : null,
             }
           : null,
+      },
+    };
+  }
+  @Get(':id/finance-general-details')
+  @Header('Cache-Control', 'private, no-store')
+  async financeGeneralDetails(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('finance.read'))
+      throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    if (!this.table) throw new NotFoundException();
+    return {
+      data: {
+        ...intake,
+        contractDetails: await this.table.generalDetails(
+          intake.contractId,
+          req.actor,
+        ),
       },
     };
   }
@@ -831,9 +852,13 @@ export class ReservationRequestsController {
     @Query('page') page?: string,
     @Query('contractNumber') contractNumber?: string,
   ) {
-    if (!req.actor.permissions.includes('reservations.read'))
+    if (
+      !req.actor.permissions.includes('reservations.read') &&
+      !req.actor.permissions.includes('finance.read')
+    )
       throw new ForbiddenException('مجوز مشاهده رزرواسیون وجود ندارد.');
     const rows = await this.service.list(req.actor.branchIds, {
+      actor: req.actor,
       page,
       contractNumber,
     });

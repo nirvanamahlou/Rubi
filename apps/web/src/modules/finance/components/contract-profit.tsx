@@ -111,12 +111,10 @@ export function ContractProfitDetails({
 }
 
 export function ContractProfit({ id }: { id: string }) {
-  const [open, setOpen] = useState(false);
   const [value, setValue] = useState<SalesContractProfitV1 | null>(null);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!open) return;
     let live = true;
     salesApi
       .profit(id)
@@ -132,22 +130,11 @@ export function ContractProfit({ id }: { id: string }) {
     return () => {
       live = false;
     };
-  }, [id, open, retry]);
+  }, [id, retry]);
   return (
     <section className={styles.panel} dir="rtl">
-      <Button
-        type="button"
-        variant="outline"
-        aria-expanded={open}
-        onClick={() => {
-          setValue(null);
-          setError('');
-          setOpen((v) => !v);
-        }}
-      >
-        هزینه خرید و سود قرارداد
-      </Button>
-      {open && (
+      <h3 className="text-base font-bold">هزینه خرید و سود قرارداد</h3>
+      {
         <>
           {error ? (
             <p role="alert">
@@ -170,7 +157,7 @@ export function ContractProfit({ id }: { id: string }) {
             <ContractProfitDetails value={value} />
           )}
         </>
-      )}
+      }
     </section>
   );
 }

@@ -271,6 +271,7 @@ export interface ReservationManifestTicketTemplateV1 {
 }
 
 export interface ReservationManifestTicketCardV1 {
+  flightSupplyType?: 'CHARTER' | 'FLOATING';
   /** Ticket Catalog inventory; absent for legacy/ground tickets. */
   totalCapacity?: number;
   allocatedCapacity?: number;
@@ -481,6 +482,7 @@ export function reservationServicePurchaseTotal(
 
 export interface FinanceSupplierPaymentCommandV1 {
   payingSupplierId?: string | null;
+  exchangeOfficeId?: string | null;
   expectedVersion: number;
   status: 'PAID' | 'REJECTED';
   bankId?: string | null;

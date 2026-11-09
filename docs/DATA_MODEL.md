@@ -1078,3 +1078,15 @@ retention/key rotation must preserve decryptability of retained envelopes.
 ## External bank sources — 2026-11-08
 
 FinanceSettlementAccount.isExternal distinguishes optional external-source entries in the bank profile. The owner explicitly requires omitted branchId/currencyCode to remain NULL, without assigning an unrelated branch or default currency. Existing accounts remain isExternal=false; database CHECK requires branch/currency for ordinary accounts and a bank reference for external entries. Branchless external records follow the existing bank-directory resource permission, while entries with a branch retain branch scope. Lists/download of identifiers retain existing masked/reveal permissions and audit. Financial account selectors and payment validation exclude incomplete accounts. Scope/type changes are versioned, audited and rejected once the account has business references; identifiers are reencrypted against the new scope. Migration must precede API/Web rollout. No historical records are rewritten.
+
+## Exchange office currency funds (2026-11-08)
+
+Finance owns FinanceExchangeOffice, its per-currency FinanceExchangeBalance (Decimal24,4), append-only FinanceExchangeMovement and FinanceExchangeAudit. Country and currency reference Master Data through real foreign keys and the public directory. Only title is required; omitted balances create no artificial currency. Offices use soft deletion; historical payment links remain intact.
+
+Supplier, ticket and procurement invoice payment revisions can reference one exchange office, mutually exclusive with account/supplier funding. A conditional nonnegative debit and movement with the real payment FK commit inside the existing payment transaction. Replay/source-version guards run before debit; office version increments on every payment, so stale manual balance edits conflict. No automatic currency conversion or cross-currency offset is performed. Manual balance changes retain immutable delta/after-amount audit records. Directory mutations require finance.account.manage plus existing Master Data bank access; payment selectors retain finance.read/payment.create checks.
+
+## Request recipient routing and legacy calculation settings repair (2026-11-08)
+
+Structured Workbench leave retains its WORKBENCH_LEAVE timeline payload. A non-HR execution owner can record WORKBENCH_RECIPIENT_REVIEW; approval atomically reroutes executionUnit/owner to the branch HR directory and appends audit/notifications. It never creates native leave or consumes quota. HR final approval continues through the existing transactional HR public port. recipientReview is an optional server-derived view capability, never an authorization input.
+
+The calculationSettings form has no independent workflow status field. New saved configuration defaults active; explicit inactive configuration remains inactive. The forward repair migration activates valid legacy draft configuration only where no active branch setting exists and an editor audit can be retained. Repair increments version and appends CALCULATION_SETTINGS_REPAIR audit; existing attendance timestamps and shift rows are untouched.

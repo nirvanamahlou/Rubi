@@ -813,3 +813,8 @@ An API-hosted background dispatcher is used for this bounded slice with database
 claims across replicas; it owns no cross-module table and does not require a new
 Worker/Redis contract. A future separate Worker must consume the same public
 outbox contract rather than reading domain tables directly.
+
+
+## JAHAN-NORA-ACTIVATION-1109
+
+2026-11-09 / PC-D. The owner explicitly authorizes commit/push and merge of Nora to develop and Jahan to main for the actual connection. These concrete destinations supersede the original no-merge boundary and the generic PC-D-Integration preference for this bounded integration. Nora activation is limited to the related API/Web source under the shared deployment lock; retain all runtime secrets, peer source, persistent volumes, services and schema. Producer deployment readiness remains authoritative; no success or credential issuance is fabricated while its prerequisites are missing.

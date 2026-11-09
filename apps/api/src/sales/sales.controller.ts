@@ -213,6 +213,16 @@ export class SalesController {
     );
   }
 
+  @Get('contracts/:id/finance-summary')
+  @Header('Cache-Control', 'private, no-store')
+  async financeSummary(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const { data } = await this.service.detailForProfit(id, request.actor);
+    return { data: { balances: data.balances } };
+  }
+
   @Get('contracts/:id/profit')
   @Header('Cache-Control', 'private, no-store')
   contractProfit(

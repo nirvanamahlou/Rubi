@@ -105,3 +105,24 @@ describe('scoped reservation responsibility IAM boundary', () => {
     expect(s.create).toHaveBeenCalledTimes(1);
   });
 });
+
+it('keeps Finance responsibility lookups read-only and branch scoped', async () => {
+  const s = setup();
+  const finance = { ...actor, permissions: ['finance.read'] };
+  expect(
+    await s.service.reservationResponsibilityNames(
+      ['responsible'],
+      'allowed',
+      finance as never,
+    ),
+  ).toEqual(new Map([['responsible', 'Responsible']]));
+  await expect(
+    s.service.reservationResponsibilityNames(
+      ['responsible'],
+      'other',
+      finance as never,
+    ),
+  ).rejects.toThrow();
+
+  expect(s.create).not.toHaveBeenCalled();
+});
