@@ -1,4 +1,6 @@
 import { MasterDataModule } from '../master-data/master-data.module';
+import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
+import { CustomerDossierService } from './customer-dossier.service';
 import { CustomerInsuranceIdentity } from './customer-insurance-identity';
 import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
 import { SalesPeopleController } from './sales-people.controller';
@@ -17,6 +19,7 @@ import { CustomerSelectionController } from './customer-selection.controller';
 @Module({
   imports: [
     IamModule,
+    LegalEntitiesModule,
     MasterDataModule,
     forwardRef(() => SalesOperationalAmendmentModule),
   ],
@@ -32,6 +35,7 @@ import { CustomerSelectionController } from './customer-selection.controller';
     CustomerNationalIdProtector,
     CustomerRepository,
     CustomerService,
+    CustomerDossierService,
     CustomerInsuranceIdentity,
   ],
   exports: [CustomerService, CustomerInsuranceIdentity],

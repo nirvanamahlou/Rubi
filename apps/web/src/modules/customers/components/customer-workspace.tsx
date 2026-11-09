@@ -2,6 +2,7 @@
 import { uiConfirm } from '@/i18n/dialogs';
 
 import { CustomerBasicFields } from './customer-basic-fields';
+import { CustomerDossierPanel } from './customer-dossier-panel';
 
 import type {
   BranchReference,
@@ -174,18 +175,6 @@ function customerRoleLabel(roles: readonly CustomerRole[]) {
   if (customer && passenger) return 'مشتری و مسافر';
   return passenger ? 'مسافر' : 'مشتری';
 }
-
-const connectedDossierSections = [
-  ['درخواست‌ها', 'امور مشتریان'],
-  ['قراردادها', 'فروش'],
-  ['خدمات خریداری‌شده', 'فروش'],
-  ['بلیط‌ها', 'رزرواسیون'],
-  ['واچرها', 'رزرواسیون'],
-  ['بیمه‌نامه‌ها', 'رزرواسیون'],
-  ['پرداخت‌ها', 'مالی'],
-  ['چک‌ها', 'مالی'],
-  ['تیکت‌های پشتیبانی', 'امور مشتریان'],
-] as const;
 
 const CUSTOMER_SUPPORT_REQUEST_REASON = 'support-request';
 
@@ -2222,32 +2211,9 @@ export function CustomerDrawer({
             <TabsContent className="space-y-4" value="dossier">
               {customer ? <CustomerDocumentsPanel customer={customer} /> : null}
 
-              <Card className="space-y-4 p-4">
-                <div>
-                  <p className="font-bold">سوابق کامل پرونده</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    هر بخش پس از اتصال امن به سامانه مالک خود، اطلاعات واقعی
-                    همین مشتری یا مسافر را نشان می‌دهد.
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {connectedDossierSections.map(([label, owner]) => (
-                    <div
-                      className="flex items-center justify-between gap-3 rounded-xl border p-3"
-                      key={label}
-                    >
-                      <div>
-                        <p className="text-sm font-semibold">{label}</p>
-                        <p className="text-xs text-muted-foreground">{owner}</p>
-                      </div>
-                      <Badge className="bg-muted text-muted-foreground">
-                        در انتظار اتصال امن
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
+              {customer ? (
+                <CustomerDossierPanel customerId={customer.id} />
+              ) : null}
               <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <Button
                   onClick={() => {
