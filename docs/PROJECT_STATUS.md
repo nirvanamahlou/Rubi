@@ -1,3 +1,7 @@
+# RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
+
+PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.
+
 # FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
 
 PC-A reserves floating-flight-airport component/helper/tests and ContractFlightEditor route integration. Base083cedb62; owner authorizes green develop merge. International floating routes exclude THR and prefer IKA within the selected Tehran city; domestic routes retain choices. Preserve directory workflow authorization and manual valid selections. No schema/dependency/deployment.
@@ -26,6 +30,10 @@ Owner authorizes reversible archive before 1405/08/01, one-time historical compa
 
 Today Calls gains three explicitly requested local filters beside refresh: direction, outcome and connected-to. Filtering occurs before authorized server counts/paging; changing filters resets paging and snapshot. See docs/tasks/CALL-CENTER-TODAY-FILTERS-1108.md for compatibility, verification and Draft PR handoff. No deployment.
 
+# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
+
+Compact/mobile selected navigation now keeps white text/icons on solid blue across theme foreground changes. Cancellation message is rendered on its own reservation contract row, removed from the action panel; cancelled rows retain opaque red background/black text while selected, plus a blue outline.49 focused workspace/action/navigation checks, scoped lint and full Web TypeScript pass. Final hosted gates precede owner-authorized develop merge. No API/schema/dependency/data/deployment changes. Local checkout reused to avoid disk-full duplication; cache deletion was policy-blocked and no user files were deleted.
+
 ## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
 PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel voucher now has one continuous passenger/service table; Chrome prints continuation pages with column headings only, retaining row order and complete rows. Hotel, flight and tour sections are not restarted for passenger chunks. All room details remain inline; obsolete estimated physical page numbers are hidden. 56 focused output tests and actual Chrome PDF checks for6/40/80 synthetic passengers pass; all rendered pages visually inspected. Scoped lint, full Web TypeScript and67-route production build pass. Integrated to develop under owner authorization; no own migration, dependency, operational data or deployment changes.
@@ -33,6 +41,10 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
+
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
+
+Automatic insurance corrections trigger the existing leased automation immediately after durable save. Nested API errors and invalid field labels now reach the correction dialog; pending automatic drafts refresh for the provider result.41 API and16 Web focused tests pass. Owner authorizes final-green develop merge and bounded production release, preserving live peers and sandbox configuration. No migration/dependency/real-policy test. See docs/tasks/INSURANCE-CORRECT-SUBMIT-1109.md.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
@@ -9479,6 +9491,8 @@ Owner subsequently authorized coordination and integration preserving both branc
 
 
 
+RESERVATION-ROW-DETAILS-1109 removes the inline General Details button from Reservations table rows. The contract action panel retains General Details. All 18 focused tests pass.
+
 ## HR-COMPANY-SCOPE-1108 — implementation in progress
 
 IAM companies now supply HR company selectors independently of subsidiary records. Employee organizational membership is stored separately from physical attendance/finance ownership; selecting ALL or another company preserves the existing physical owner. Company creation is implemented through an IAM-owned transaction with HR and IAM administration permission checks, creator membership, audit and retry identity checks. Organization screen includes the company form. Focused tests: 21 frontend, 11 backend passed; scoped ESLint passed. Full migration of existing employee/unit memberships, subsidiary retirement with historical references preserved, full build, runtime validation and publication remain pending. No Radan writes, no production migration, no deployment.
@@ -9537,8 +9551,3 @@ Owner-requested tour definition controls: left header action, independent multi-
 ## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
-
-
-
-
-RESERVATION-ROW-DETAILS-1109 removes the inline General Details button from Reservations table rows. The contract action panel retains General Details. All 18 focused tests pass.

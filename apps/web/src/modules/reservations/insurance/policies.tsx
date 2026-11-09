@@ -62,6 +62,18 @@ export function InsurancePolicies({
   const [result, setResult] = useState<InsuranceListResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const pending = result?.data.some(
+    (row) => row.automatic && row.status === 'DRAFT',
+  );
+  useEffect(() => {
+    if (loading || !pending) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      setLoading(true);
+      setRevision((current) => current + 1);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [loading, pending]);
   const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState('');
   const [candidates, setCandidates] = useState<InsuranceCandidate[]>([]);
@@ -125,7 +137,10 @@ export function InsurancePolicies({
       'policies?' + new URLSearchParams({ ...query, page: String(page) }),
     )
       .then((r) => {
-        if (active) setResult(r);
+        if (active) {
+          setResult(r);
+          setError('');
+        }
       })
       .catch((e) => {
         if (active) {
@@ -395,7 +410,9 @@ export function InsurancePolicies({
                             : styles.badge
                         }
                       >
-                        {insuranceStatusLabels[row.status]}
+                        {row.automatic && row.status === 'DRAFT'
+                          ? 'در حال پردازش'
+                          : insuranceStatusLabels[row.status]}
                       </span>
                       {row.lastError && <small>{row.lastError}</small>}
                     </td>
@@ -664,13 +681,24 @@ export function InsuranceDraft({
     (c) => c.providerCountryCode === draft.destinationCode,
   );
   async function save() {
+    if (busy) return;
     setBusy(true);
     setError('');
     try {
       await insuranceRequest('draft', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          passenger: draft.passenger
+            ? Object.fromEntries(
+                Object.entries(draft.passenger).map(([key, value]) => [
+                  key,
+                  typeof value === 'string' ? value.trim() : value,
+                ]),
+              )
+            : undefined,
+        }),
       });
       saved();
     } catch (e) {

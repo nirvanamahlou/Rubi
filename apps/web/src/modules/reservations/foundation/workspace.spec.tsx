@@ -427,6 +427,10 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
     expect(html).toContain(`data-tone="${tone}"`);
   for (const label of ['واچر صادرشده', 'آماده صدور واچر هتل', 'ابطال‌شده'])
     expect(html).toContain(label);
+  expect(html.match(/این قرارداد باطل شده است/g)).toHaveLength(1);
+  expect(html).toMatch(
+    /<tr[^>]*data-cancelled="true"[^>]*>[\s\S]*?این قرارداد باطل شده است[\s\S]*?<\/tr>/,
+  );
   expect(html).toContain('aria-live="polite"');
   expect(html).toContain('درخواست جدید به');
   const denied = renderToStaticMarkup(

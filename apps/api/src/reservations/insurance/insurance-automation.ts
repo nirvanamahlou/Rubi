@@ -63,6 +63,17 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
+  /** Kick a committed correction now; leases/fingerprints still prevent duplicate issuance. */
+  requestImmediate(id: string) {
+    if (!this.provider.configured()) return;
+    void this.process(id).catch(() => {
+      Logger.warn(
+        'Insurance immediate attempt unavailable; durable retry remains queued.',
+        'InsuranceAutomation',
+      );
+    });
+  }
+
   /** Called only by the trusted Sales->Reservations inbox, before acknowledging its durable outbox. */
   async enqueue(intakeId: string) {
     const source = await this.db.client.reservationIntake.findUnique({

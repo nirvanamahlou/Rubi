@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, Logger } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import type { DatabaseService } from '../../database/database.service';
 import type { CustomerInsuranceIdentity } from '../../customers/customer-insurance-identity';
@@ -252,6 +252,24 @@ it('queues only selected insured passengers and does not contact the provider be
   f.policies.upsert.mockClear();
   await f.service.enqueue('intake');
   expect(f.policies.upsert).not.toHaveBeenCalled();
+});
+
+it('starts a committed correction without waiting for the periodic timer and safely defers a failed kick', async () => {
+  const f = fixture();
+  const process = vi
+    .spyOn(f.service, 'process')
+    .mockResolvedValueOnce(undefined);
+  f.service.requestImmediate('policy');
+  expect(process).toHaveBeenCalledExactlyOnceWith('policy');
+  f.provider.configured.mockReturnValueOnce(false);
+  f.service.requestImmediate('policy');
+  expect(process).toHaveBeenCalledTimes(1);
+  const warning = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined);
+  process.mockRejectedValueOnce(new Error('synthetic queue unavailable'));
+  f.service.requestImmediate('policy');
+  await Promise.resolve();
+  expect(warning).toHaveBeenCalled();
+  warning.mockRestore();
 });
 it('persists the provider-issued number and PDF and notifies only the contract owner', async () => {
   const f = fixture();

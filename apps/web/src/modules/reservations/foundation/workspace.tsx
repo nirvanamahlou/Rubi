@@ -754,6 +754,9 @@ export function ReservationOperationsWorkspace({
                               row.salesCorrectionPending !== false)
                           }
                           data-tone={statusTones[row.status]}
+                          data-cancelled={
+                            row.status === 'CANCELLED' || undefined
+                          }
                           data-selected={selected?.id === row.id}
                           aria-selected={selected?.id === row.id}
                           aria-label={`${row.contractNumber} · ${statusLabels[row.status]}`}
@@ -794,6 +797,11 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
+                                  {row.status === 'CANCELLED' && (
+                                    <small className={styles.cancelledLabel}>
+                                      این قرارداد باطل شده است
+                                    </small>
+                                  )}
                                   {row.amendedAt ||
                                   (row.correctedAt &&
                                     row.salesCorrectionPending !== false) ? (
