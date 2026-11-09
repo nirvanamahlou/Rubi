@@ -11852,6 +11852,10 @@ RESERVATION-MAIL-ACCEPTANCE-1108 — READY_FOR_CI: PR1519 published as41c971453.
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-return-date-1108 from develop de4a68e3b. Reserve Sales list travel-summary helper, focused regression and own task/status notes. User authorizes correct return-only contract dates and green develop merge; no deployment. The shared public salesContractFlights reader includes floating snapshots absent from ticketSelections; exact direction, per-service calendar and Tehran date are retained. No schema/dependency/API contract or data mutation. No overlapping active list-summary writer found. Eight targeted regression tests pass; final full gates required.
 
+## SALES-EXCLUDE-CANCELLED-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-exclude-cancelled-1109 from develop0fb77974b. User authorizes develop merge and bounded production repair. Reserve SalesRepository.dashboardRows, focused cancellation regressions and own notes. Use existing Reservations lifecycle public reader, excluding latest workflow cancellation and Sales CANCELLED consistently from dashboard and operational balances; preserve REOPEN, permissions, company/archive scope and historical financial evidence.16 targeted tests pass. No schema/dependency/data mutation. Full final-head hosted gates and backed-up rollback-capable API-only deployment required.
+
 ## COMPACT-MESSAGE-BUBBLES-1108 - PC-B - VALIDATED
 
 Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx responsive bubble spacing, typography and action sizing. Scoped ESLint and six existing chat/reaction checks pass. A synthetic source-class light/dark preview reduced sample height168px to144px without horizontal overflow; this is not live production UI acceptance. Final hosted gates precede owner-authorized merge. Bounded source lock released on publication. No API, dependency, schema or deployment change.

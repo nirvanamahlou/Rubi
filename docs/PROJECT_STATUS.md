@@ -1,3 +1,7 @@
+## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
+
+Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
+
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
