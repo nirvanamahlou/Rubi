@@ -4,6 +4,10 @@ Final follow-up fills flight-export hotel columns only from that passenger's act
 
 Issued-service Excel now begins with filtered unique passenger, contract, service/status and hotel KPIs. Detail rows include filtered passenger count per contract, PNR, issuance date, class/source and hotel check-in/check-out/night count. Gregorian timestamps restore the catalogue-defined Tehran time instead of exposing UTC ISO strings; hotel calendar dates are not shifted. Report service/hotel/date-basis filters reuse the project searchable combobox and keep explicit Search behavior.16 API and253 Web checks pass (one existing opt-in Web skip), scoped lint/full API and Web TypeScript/API and67-route Web production builds pass. Final hosted gates precede owner-authorized develop merge. No migration/dependency/data/deployment change.
 
+# MANIFEST-DEFAULTS-1109 — PC-A — IN_PROGRESS
+
+Reserve manifest-export.tsx, local selected-button styling and focused checks. Owner requests blue selected charter/floating control and Turkey default destination, with green develop merge. Base 0a209c797; no schema/dependency/deployment. Default resolves active Master Data and preserves manual edits/clears during loading.
+
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
 Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
@@ -9511,6 +9515,10 @@ Daily attendance filters use the business date and pin the selection, personnel 
 Chat bubbles use content-sized responsive widths,14px body text,24px line spacing,8px vertical padding and32px forward/reaction controls. Reply/forward spacing is tighter. Six existing chat checks and scoped lint pass; light/dark synthetic class preview shows168px to144px sample height without horizontal overflow. Styling only; no API, dependency, schema or production deployment. Final hosted gates precede owner-authorized develop merge.
 
 HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and PostgreSQL migration/seed gates passed. Full test inventory exposed fourteen missing English labels, now translated in Web and API catalogs; three inventory tests pass. Full isolated HR PostgreSQL run passed the company transfer and 48 other cases; an existing authorization fixture incorrectly used the explicitly permitted demo identity and was corrected to a separate unauthorized synthetic manager. Final full rerun and hosted gates pending. PR1522. No Radan or operational data changes.
+
+## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — 2026-11-09
+
+Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
 ## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
 

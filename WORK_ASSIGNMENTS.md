@@ -8,6 +8,10 @@ COMPUTER_ID=PC-A; codex/pc-a-ticket-report-export-1109 from origin/develop0a209c
 
 Implemented filtered unique-passenger/contract/service/status/hotel KPIs above the Excel table, per-contract filtered passenger counts, issuance/PNR/class/source and stay-night details. Gregorian Tehran presentation restores catalogue-defined wall time from UTC; date-only check-in/out stay unchanged. Shared SearchCombobox replaces service/hotel/date-basis native selects while preserving explicit Search.16 API regressions pass, Ticket Catalog248 checks pass with one existing opt-in skip after correcting a test-tree selector, plus five PDF-route checks; scoped lint and full API/Web TypeScript pass, API and67-route Web production builds pass. Exact-head hosted gates required before authorized merge. No schema/dependency/production change.
 
+# MANIFEST-DEFAULTS-1109 — PC-A — IN_PROGRESS
+
+Reserve manifest-export.tsx, local selected-button styling and focused checks. Owner requests blue selected charter/floating control and Turkey default destination, with green develop merge. Base 0a209c797; no schema/dependency/deployment. Default resolves active Master Data and preserves manual edits/clears during loading.
+
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
 Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
@@ -11921,6 +11925,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-exclude-cancelled-1109 from develop0fb
 ## COMPACT-MESSAGE-BUBBLES-1108 - PC-B - VALIDATED
 
 Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx responsive bubble spacing, typography and action sizing. Scoped ESLint and six existing chat/reaction checks pass. A synthetic source-class light/dark preview reduced sample height168px to144px without horizontal overflow; this is not live production UI acceptance. Final hosted gates precede owner-authorized merge. Bounded source lock released on publication. No API, dependency, schema or deployment change.
+
+## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develop0a209c797. User assigns bounded flight-purchase list date-filter presentation and authorizes green develop merge, no deployment. Reserve TicketPurchaseWorkspace date inputs, module-local flight-date predicate/tests, Web-only translation keys and own notes. No purchase/payment mutation, shared contracts, API, schema or dependency changes. No active overlapping purchase-list writer found; preserve PC-B Procurement ownership and existing Finance pricing/permission paths. Filter actual flight day inclusively and combine with existing status/search/parent filters; retain undated rows only without date restrictions.
 
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
