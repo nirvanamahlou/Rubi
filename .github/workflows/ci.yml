@@ -227,7 +227,7 @@ jobs:
           pnpm --filter @nora/database exec vitest run test/insurance-policy-postgres.spec.ts
           pnpm --filter @nora/contracts build
           pnpm --filter @nora/database build
-          pnpm --filter @nora/api exec vitest run src/reservations/insurance/insurance-lock.postgres.spec.ts --maxWorkers=1
+          pnpm --filter @nora/api exec vitest run src/reservations/insurance/insurance-lock.postgres.spec.ts src/reservations/insurance/standalone-insurance.postgres.spec.ts --maxWorkers=1
 
       - name: Prove hotel rate broker compatibility and foreign keys
         env:

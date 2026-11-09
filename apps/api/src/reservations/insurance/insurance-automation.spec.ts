@@ -11,6 +11,7 @@ import {
 import type { NotificationsService } from '../../notifications/notifications.service';
 import { InsuranceAutomation } from './insurance-automation';
 import type { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
+import type { InsuranceApplicantCrypto } from './insurance-applicant.crypto';
 
 it('uses current insurance allocations and shows a reason for every missing policy without issuing on a read', async () => {
   const f = fixture();
@@ -158,6 +159,16 @@ function fixture() {
       $transaction: vi.fn(async (fn: (client: typeof tx) => Promise<unknown>) =>
         fn(tx),
       ),
+      reservationInsuranceApplicant: {
+        findUniqueOrThrow: vi.fn(async () => ({
+          id: 'applicant',
+          branchId: 'branch',
+          createdByUserId: 'standalone-owner',
+          sourceCountryCode: '1',
+          encryptedData: 'synthetic-envelope',
+        })),
+      },
+      reservationInsuranceApplicantAccess: { create: vi.fn() },
     },
   };
   const identities = {
@@ -201,6 +212,7 @@ function fixture() {
         { id: 5, standardCode: 'TR' },
       ],
       plans: [{ id: 76 }],
+      durations: [{ days: 2 }, { days: 7 }, { days: 12 }],
     })),
     createPolicy: vi.fn(async () => 123),
     confirmPolicy: vi.fn(async () => undefined),
@@ -212,6 +224,21 @@ function fixture() {
     policyPdf: vi.fn(async () => Buffer.from('%PDF-synthetic')),
   };
   const notifications = { createWithinTransaction: vi.fn() };
+  const applicantCrypto = {
+    open: vi.fn(() => ({
+      nationalityCode: 'TUR',
+      nationalCode: '',
+      passportNo: 'SYNTHETIC123',
+      firstName: 'Synthetic',
+      lastName: 'Applicant',
+      firstNameLatin: 'SYNTHETIC',
+      lastNameLatin: 'APPLICANT',
+      gender: 'F',
+      birthDate: '1990-01-01',
+      mobile: '00000000000',
+      email: 'synthetic@example.invalid',
+    })),
+  };
   const sales = { currentExecution: vi.fn(async () => intake.snapshot) };
   const service = new InsuranceAutomation(
     db as unknown as DatabaseService,
@@ -220,6 +247,7 @@ function fixture() {
     provider as unknown as TravisSandboxService,
     notifications as unknown as NotificationsService,
     sales as unknown as SalesOperationalAmendmentService,
+    applicantCrypto as unknown as InsuranceApplicantCrypto,
   );
   const actor = {
     userId: 'owner',
@@ -238,6 +266,7 @@ function fixture() {
     settings,
     provider,
     notifications,
+    applicantCrypto,
     active,
     actor,
   };
@@ -297,6 +326,51 @@ it('persists the provider-issued number and PDF and notifies only the contract o
     }),
   );
   expect(JSON.stringify(f.row)).not.toContain('SYNTHETIC');
+});
+it('issues a standalone applicant without consulting a Sales contract or Customer', async () => {
+  const f = fixture();
+  Object.assign(f.row, {
+    applicantId: 'applicant',
+    contractId: null,
+    intakeId: null,
+    customerId: null,
+    automation: { phase: 'QUEUED', useDraft: true },
+    destinationCode: '5',
+    planCode: '76',
+    departureDate: new Date('2027-01-01'),
+    durationDays: 7,
+  });
+  await f.service.process('policy');
+  expect(f.row.status).toBe('ISSUED');
+  expect(f.identities.read).not.toHaveBeenCalled();
+  expect(f.db.client.masterCity.findUnique).not.toHaveBeenCalled();
+  expect(f.provider.createPolicy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      sourceCountryId: 1,
+      contractNo: 'policy',
+      person: expect.objectContaining({
+        nationalCode: 'SYNTHETIC123',
+        isIranian: false,
+      }),
+    }),
+  );
+  expect(f.notifications.createWithinTransaction).toHaveBeenCalledWith(
+    f.tx,
+    expect.objectContaining({
+      recipientUserIds: ['standalone-owner'],
+      href: '/reservations/insurance',
+    }),
+  );
+  expect(
+    f.db.client.reservationInsuranceApplicantAccess.create,
+  ).toHaveBeenCalledWith({
+    data: {
+      applicantId: 'applicant',
+      actorUserId: 'standalone-owner',
+      action: 'PROVIDER_READ',
+    },
+  });
+  expect(JSON.stringify(f.row)).not.toContain('SYNTHETIC123');
 });
 it('never repeats creation after an ambiguous timeout and reconciles by its exact local correlation', async () => {
   const f = fixture();
@@ -431,6 +505,31 @@ it('retains only locally generated provider diagnostics in the policy error', as
     lastError: 'ثبت درخواست بیمه: موبایل (کد 400).',
   });
   expect(f.provider.confirmPolicy).not.toHaveBeenCalled();
+  await f.service.process('policy');
+  await f.service.process('policy');
+  expect(f.row.lastError).toBe('ثبت درخواست بیمه: موبایل (کد 400).');
+  expect(f.row.automation).toMatchObject({
+    phase: 'CREATING',
+    firstError: 'ثبت درخواست بیمه: موبایل (کد 400).',
+  });
+  expect(f.provider.createPolicy).toHaveBeenCalledTimes(1);
+  f.provider.catalog.mockRejectedValueOnce(
+    new TravisDiagnosticError('خطای داخلی سرویس بیمه (کد 503).'),
+  );
+  await f.service.process('policy');
+  expect(f.row.lastError).toContain('موبایل (کد 400)');
+  expect(f.row.lastError).toContain('کد 503');
+});
+it('blocks unsupported periods before Create without inventing a longer duration', async () => {
+  const f = fixture();
+  f.intake.contract.returnNotBefore = new Date('2027-01-01');
+  await f.service.process('policy');
+  expect(f.row).toMatchObject({
+    status: 'INPUT_ERROR',
+    lastError: 'مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.',
+  });
+  expect(f.provider.createPolicy).not.toHaveBeenCalled();
+  expect(f.row.automation).toEqual({ phase: 'QUEUED' });
 });
 it('sends only documented PolicyCreateInput field names and integer identifiers', async () => {
   const f = fixture();

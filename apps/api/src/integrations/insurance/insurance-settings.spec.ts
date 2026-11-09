@@ -241,3 +241,29 @@ it('allows dedicated insurance managers without granting system settings managem
   ).toBe(false);
   expect(() => service.authorize(actor, 'other', true)).toThrow();
 });
+it('provides the issuance catalogue to document operators within their branch without granting settings write access', async () => {
+  const provider = {
+    catalog: vi.fn(async () => ({ durations: [{ days: 2 }] })),
+  };
+  const service = new InsuranceSettingsService(
+    {} as never,
+    {} as never,
+    provider as never,
+  );
+  const actor = {
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.documents.manage'],
+  } as AuthenticatedActor;
+  expect(await service.issuanceCatalog('branch', actor)).toEqual({
+    durations: [{ days: 2 }],
+  });
+  await expect(service.issuanceCatalog('other', actor)).rejects.toThrow();
+  await expect(
+    service.issuanceCatalog('branch', {
+      ...actor,
+      permissions: ['reservations.read'],
+    }),
+  ).rejects.toThrow();
+  await expect(service.providerCatalog('branch', actor)).rejects.toThrow();
+  expect(provider.catalog).toHaveBeenCalledTimes(1);
+});

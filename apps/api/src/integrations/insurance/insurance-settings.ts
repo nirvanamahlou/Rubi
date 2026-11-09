@@ -360,6 +360,14 @@ export class InsuranceSettingsService {
       throw new BadRequestException('اتصال آزمایشی بیمه تنظیم نشده است.');
     return this.provider.catalog();
   }
+  async issuanceCatalog(branchId: string, actor: AuthenticatedActor) {
+    this.authorize(actor, branchId);
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException();
+    if (!this.provider)
+      throw new BadRequestException('اتصال آزمایشی بیمه تنظیم نشده است.');
+    return this.provider.catalog();
+  }
   async references(
     branchId: string,
     actor: AuthenticatedActor,
