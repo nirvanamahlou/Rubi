@@ -563,3 +563,33 @@ it('sends only documented PolicyCreateInput field names and integer identifiers'
     expect(Number.isInteger(input[field])).toBe(true);
   expect(typeof input.person).toBe('object');
 });
+
+it('persists bounded provider business and HTTP diagnostics without overwriting the first failure', async () => {
+  const f = fixture();
+  const diagnostic = {
+    httpStatus: 200,
+    code: 400,
+    messages: ['Jalali birth date is required'],
+    fields: ['birthDate'],
+  };
+  f.provider.createPolicy.mockRejectedValueOnce(
+    new TravisDiagnosticError('Provider rejected birth date', diagnostic),
+  );
+  await f.service.process('policy');
+  expect(f.row.automation).toMatchObject({
+    providerDiagnostic: diagnostic,
+    firstError: 'Provider rejected birth date',
+  });
+});
+it('binds sparse provider reconciliation to the exact successful creation receipt', async () => {
+  const f = fixture();
+  await f.service.process('policy');
+  expect(f.provider.policy).toHaveBeenCalledWith(
+    expect.any(Number),
+    expect.objectContaining({
+      trustedCreation: true,
+      contractNo: 'policy',
+      planId: 76,
+    }),
+  );
+});
