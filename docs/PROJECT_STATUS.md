@@ -1,5 +1,9 @@
 # RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
 
+## REPORT-FILTERS-1109 — PC-C
+
+Source-aligned filters for all limited executable catalogue reports: authorized output-column choices, normalized visible-cell search, stable base choices, retained saved/run state, readable export snapshots, ISO-currency restoration and debounced refresh. Filter before paging; preserve per-currency money and pipeline cancellation exclusion. 166 API /81 Web tests pass; read-only live filter/XLSX checks pass for 18 permitted reports. Personal-calendar permission remains enforced. Full application bootstrap locally lacks nodemailer; clean CI is required. No schema/migration/data/dependency/deploy changes. Details: docs/tasks/REPORTING-FILTERS-1109.md.
+
 PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.
 
 # FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
