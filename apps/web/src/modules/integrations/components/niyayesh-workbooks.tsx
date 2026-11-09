@@ -27,11 +27,13 @@ export function NiyayeshWorkbooks({
   systemId,
   available,
   onApplied,
+  siteName = 'نیایش',
 }: {
   branchId: string;
   systemId?: string;
-  available: { kind: string; canApply: boolean }[];
+  available: { kind: string; canApply: boolean; canExport?: boolean }[];
   onApplied: () => void;
+  siteName?: string;
 }) {
   return (
     <div className="grid gap-5">
@@ -42,7 +44,9 @@ export function NiyayeshWorkbooks({
           {...(systemId ? { systemId } : {})}
           kind={w.kind}
           canApply={w.canApply}
+          canExport={w.canExport !== false}
           onApplied={onApplied}
+          siteName={siteName}
         />
       ))}
     </div>
@@ -55,12 +59,16 @@ function Workbook({
   kind,
   canApply,
   onApplied,
+  siteName,
+  canExport,
 }: {
   branchId: string;
   systemId?: string;
   kind: string;
   canApply: boolean;
   onApplied: () => void;
+  siteName: string;
+  canExport: boolean;
 }) {
   const info = workflows[kind];
   const [file, setFile] = useState<File | null>(null);
@@ -175,7 +183,7 @@ function Workbook({
           دانلود قالب استاندارد سایت
         </Button>
       </div>
-      {kind === 'hotels' ? (
+      {kind === 'hotels' && canExport ? (
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border p-4">
           <label className="grid gap-2 text-sm">
             شهر هتل برای خروجی Excel
@@ -267,7 +275,7 @@ function Workbook({
           }
           onClick={() => void run(true)}
         >
-          {busy ? 'در حال بررسی…' : 'تأیید و ثبت در سایت نیایش'}
+          {busy ? 'در حال بررسی…' : `تأیید و ثبت در سایت ${siteName}`}
         </Button>
       </div>
       {!canApply ? (
