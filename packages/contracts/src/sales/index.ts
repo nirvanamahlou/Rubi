@@ -87,7 +87,8 @@ export type SalesPaymentStatus =
   | 'SCHEDULED'
   | 'PENDING_FINANCE_CONFIRMATION'
   | 'FINANCE_CONFIRMED'
-  | 'FINANCE_REJECTED';
+  | 'FINANCE_REJECTED'
+  | 'FINANCE_VOIDED';
 
 export interface SalesMoney {
   amount: string;
@@ -489,6 +490,7 @@ export interface SalesFinanceSubmissionV1 {
 
 export interface SalesFinanceInboxPaymentV1 {
   financeConfirmed?: boolean;
+  financeVoided?: boolean;
   /** Existing Sales declaration; optional for historical payments. */
   destinationAccountTitle?: string | null;
   destinationAccountId?: string | null;

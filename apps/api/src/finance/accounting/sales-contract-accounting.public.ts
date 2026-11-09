@@ -1,3 +1,4 @@
+import { isSalesReceiptVoided } from '../../sales/sales-receipt-void.public';
 import { createHash } from 'node:crypto';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
@@ -141,6 +142,9 @@ export async function isCurrentSalesContractAccountingSource(
   tx: Tx,
   event: Event,
 ) {
+  if (event.source === 'SALES' && event.kind === 'CUSTOMER_RECEIPT') {
+    if (await isSalesReceiptVoided(tx, event.recordId)) return false;
+  }
   if (event.kind !== SALES_CONTRACT_EVENT) return true;
   const row = await salesContractAccountingSource(tx, event.requestId);
   if (event.source !== 'SALES' || !row || row.branchId !== event.branchId)
