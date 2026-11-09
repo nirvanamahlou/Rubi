@@ -40,6 +40,12 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correct-submit-1109 from current develop. Owner requests correct-and-immediate insurance submission, precise failure handling, develop merge and only this bounded production repair. Reserve Reservations insurance client/form/controller/automation input handling and focused tests; own task/status and bounded deployment tooling. Prior overlapping insurance amendment is merged; preserve issued-policy guards, provider fingerprints/leases, sandbox-only provider, customer CAS/audit and branch permissions. No schema/dependency/grant or live policy test. Production rollout must preserve peer overlays and shared deployment lease, verified backup, rollback and health/Worker checks; no full-develop publication authorized by this task.
+
+Bounded catalogue lease: mirror existing form-field labels newly used by API validation into generated offline API English catalogue only; preserve all peer keys and translation runtime.
+
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-cancel-reopen-capacity-1109 from develop0fb77974b. Owner authorizes cancellation/reopen capacity verification, necessary repair and develop merge. Reserve Ticket Catalog restore-capacity helper and focused regressions, Reservations cancellation-capacity regressions and narrow reopen guard, Sales flight-load lifecycle composition/tests and own status/task notes. Existing cancellation implementation is merged/frozen; preserve exact leg quantities, infant exclusion, public module boundaries, permissions and atomic rollback. No schema, dependency, live data or deployment changes. Existing Reservations public cancellation projection remains read-only.

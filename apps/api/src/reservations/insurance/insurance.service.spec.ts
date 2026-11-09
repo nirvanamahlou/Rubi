@@ -389,3 +389,17 @@ it.each([
     }),
   ).toThrow();
 });
+
+it('identifies the invalid insurance field without echoing its private value', () => {
+  const invalidEmail = 'synthetic-invalid-email';
+  try {
+    parseInsuranceDraft({
+      ...fixture().input,
+      passenger: { ...passenger, email: invalidEmail },
+    });
+    throw new Error('Expected input rejection');
+  } catch (error) {
+    expect((error as Error).message).toContain('ایمیل بیمه‌شده');
+    expect((error as Error).message).not.toContain(invalidEmail);
+  }
+});

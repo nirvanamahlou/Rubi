@@ -16,6 +16,7 @@ import { AuthGuard } from '../../iam/auth.guard';
 import type { AuthenticatedRequest } from '../../iam/iam.types';
 import { InsuranceSettingsService } from '../../integrations/insurance/insurance-settings';
 import { ReservationInsuranceService } from './insurance.service';
+import { InsuranceAutomation } from './insurance-automation';
 
 @Controller('reservations/insurance')
 @UseGuards(AuthGuard)
@@ -25,6 +26,8 @@ export class ReservationInsuranceController {
     private readonly insurance: ReservationInsuranceService,
     @Inject(InsuranceSettingsService)
     private readonly settings: InsuranceSettingsService,
+    @Inject(InsuranceAutomation)
+    private readonly automation: InsuranceAutomation,
   ) {}
   @Header('Cache-Control', 'private, no-store')
   @Get('policies')
@@ -41,8 +44,11 @@ export class ReservationInsuranceController {
   }
   @Header('Cache-Control', 'private, no-store')
   @Put('draft')
-  save(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
-    return this.insurance.saveDraft(body, req.actor);
+  async save(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    const saved = await this.insurance.saveDraft(body, req.actor);
+    // The durable correction must commit before any external insurance attempt.
+    if (saved.data.automatic) this.automation.requestImmediate(saved.data.id);
+    return saved;
   }
   @Header('Cache-Control', 'private, no-store')
   @Get('policies/:id/passenger')
