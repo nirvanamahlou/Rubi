@@ -42,9 +42,11 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
 
-## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — DEPLOYED
 
 Automatic insurance corrections trigger the existing leased automation immediately after durable save. Nested API errors and invalid field labels now reach the correction dialog; pending automatic drafts refresh for the provider result.41 API and16 Web focused tests pass. Owner authorizes final-green develop merge and bounded production release, preserving live peers and sandbox configuration. No migration/dependency/real-policy test. See docs/tasks/INSURANCE-CORRECT-SUBMIT-1109.md.
+
+PR1546 merged after all8 final-head CI checks passed; bounded Avina release is verified. Actual candidates pass41 API and19 Web/translation tests and Web canary. Live source hashes, unchanged environment/mounts, HTTPS health/assets, unauthorized insurance access, Worker authentication, AMI, recording timer and zero restarts pass. Fresh encrypted backup verified offserver; only the two specifically approved old backups retired after newer backup validation. No migration or provider-mode change. Receipt: /opt/rubi/insurance-correct-submit-1109/verified.json.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
