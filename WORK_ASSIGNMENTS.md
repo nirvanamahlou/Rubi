@@ -18,7 +18,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-cancel-reopen-capacity-1109 from develop0fb7
 
 Extend the existing mandatory ticket-sale-routes.postgres.spec.ts case with release/re-sale, rejected reopen, transactional rollback and two concurrent reopen attempts against one freed block. No CI workflow changes. Flight-load now composes latest Reservations cancellation through its existing public reader, moving operational cancellations out of sold load and back after reopen.
 
-Local targeted verification:36 API tests, scoped ESLint and formatting pass. Full API typecheck/build and final-head hosted gates are mandatory before merge. Docker is unavailable locally; real PostgreSQL proof runs in the existing hosted gate. Source freezes on publication and releases on verified merge.
+Local targeted verification:36 API tests, scoped ESLint, formatting, full API TypeScript and production API build pass. Implementation527b24140 published. Docker is unavailable locally; real PostgreSQL proof runs in the existing hosted gate. All final-head hosted gates remain mandatory before merge. Source freezes on publication and releases on verified merge.
 
 ## TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
 

@@ -14,4 +14,4 @@ Verification covers exact capacity, insufficient outbound/return capacity, activ
 
 No schema, migration, dependency, operational-data update or deployment. All exact-final-head hosted gates must pass before merge. Source reservations release on verified develop merge.
 
-Local targeted API checks:36 passed; scoped ESLint and formatting pass. Full API typecheck/build are checked before merge; real PostgreSQL execution remains the hosted gate.
+Implementation527b24140 published. Local targeted API checks:36 passed; scoped ESLint, formatting, full API TypeScript and production API build pass. Real PostgreSQL execution remains the mandatory hosted gate.
