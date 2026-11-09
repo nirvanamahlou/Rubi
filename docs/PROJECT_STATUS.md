@@ -9520,3 +9520,10 @@ Dashboard and operational receivable rows now exclude effective Reservations can
 
 
 
+# Sales Gregorian list dates — 2026-11-09
+
+Contract registration, travel and update dates use Gregorian display in the Sales
+list regardless of stored calendar choice. Travel date-only values retain UTC;
+registration/update timestamps retain Tehran timezone. Regression tests20/20 and
+scoped ESLint passed. No stored data or migration changes.
+

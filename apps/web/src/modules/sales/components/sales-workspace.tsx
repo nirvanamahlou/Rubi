@@ -80,7 +80,8 @@ export function ContractListContactRouteDate({
         </bdi>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        {new Date(contract.createdAt).toLocaleDateString('fa-IR', {
+        {new Date(contract.createdAt).toLocaleDateString('en-GB', {
+          calendar: 'gregory',
           timeZone: 'Asia/Tehran',
         })}
       </td>
@@ -136,8 +137,8 @@ export function ContractListTravelDates({
             <bdi dir="ltr">
               {value
                 ? new Date(`${value.date}T00:00:00Z`).toLocaleDateString(
-                    value.calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
-                    { timeZone: 'UTC' },
+                    'en-GB',
+                    { timeZone: 'UTC', calendar: 'gregory' },
                   )
                 : '—'}
             </bdi>
@@ -614,7 +615,10 @@ export function SalesWorkspace() {
                     </td>
                     <ContractListAmounts contract={contract} />
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
+                      {new Date(contract.updatedAt).toLocaleDateString('en-GB', {
+                        calendar: 'gregory',
+                        timeZone: 'Asia/Tehran',
+                      })}
                     </td>
                     <td className="px-4 py-3 last:pl-5">
                       <div className="grid min-w-96 grid-cols-5 gap-1.5">

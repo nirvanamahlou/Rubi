@@ -11923,3 +11923,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develo
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+# SALES-GREGORIAN-1109 — PC-A — VALIDATED
+
+User authorizes Gregorian-only Sales list dates and develop merge. Reserve
+sales-workspace.tsx, sales-workspace.spec.tsx and own documentation entries.
+Branch codex/pc-a-sales-gregorian-1109 from origin/develop@083cedb62.
+No API, schema, dependency or operational data changes. Sales list tests20/20
+and scoped ESLint passed. Source reservation releases with the review candidate.
