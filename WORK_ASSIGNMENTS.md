@@ -11992,6 +11992,10 @@ Optional attendance editor fields and partial manual clock commands. Preserves p
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
 
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — READY_FOR_CI
+
+Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.59 Dashboard tests, scoped lint, full Web TypeScript and67-route build pass; source frozen and editing scope released.
+
 ## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — READY_FOR_CI
 
 User explicitly requests all nine real customer dossier connections, security
