@@ -823,6 +823,39 @@ describe('DocumentsService security and persistence flow', () => {
     },
   );
 
+  it('previews only internal active BRAND images for a released travel document without broad Documents grants', async () => {
+    const logo = row({
+      domain: 'BRAND',
+      confidentiality: 'INTERNAL',
+      scanStatus: 'CLEAN',
+      mimeType: 'image/png',
+    });
+    repository.findDetail.mockResolvedValue(logo);
+    storage.openQuarantined.mockResolvedValue(
+      Readable.from([Buffer.from('png')]),
+    );
+    const seller = {
+      ...actor,
+      permissions: ['sales.contracts.read.own'],
+    } as AuthenticatedActor;
+    await expect(
+      service.previewReleasedTravelLogo(logo.id, seller, {}),
+    ).resolves.toMatchObject({ mimeType: 'image/png' });
+    for (const invalid of [
+      null,
+      { ...logo, archiveStatus: 'ARCHIVED' },
+      { ...logo, confidentiality: 'CONFIDENTIAL' },
+      { ...logo, documentType: { ...logo.documentType, domain: 'FINANCE' } },
+      { ...logo, currentVersion: null },
+    ]) {
+      repository.findDetail.mockResolvedValue(invalid);
+      await expect(
+        service.previewReleasedTravelLogo(logo.id, seller, {}),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    }
+    expect(storage.openQuarantined).toHaveBeenCalledOnce();
+  });
+
   it('previews a logo only when the BRAND document belongs to the exact Master Data record', async () => {
     const logoRow = row({
       domain: 'BRAND',

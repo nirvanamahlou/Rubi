@@ -87,7 +87,9 @@ describe('finance gate on passenger documents', () => {
     expect(forContract).not.toHaveBeenCalled();
   });
   it('does not return passenger content while Finance is blocked or revoked', async () => {
-    detail.mockResolvedValue({ data: { status: 'CONFIRMED' } });
+    detail.mockResolvedValue({
+      data: { status: 'CONFIRMED', branchId: 'contract-branch' },
+    });
     forContract.mockResolvedValue({
       id,
       snapshot: { secret: 'passenger data' },
@@ -96,7 +98,7 @@ describe('finance gate on passenger documents', () => {
     readCustomerContract.mockResolvedValue({ approved: false, version: 2 });
     const response = await get().expect(403);
     expect(JSON.stringify(response.body)).not.toContain('passenger data');
-    expect(forContract).toHaveBeenCalledWith(id, ['allowed-branch']);
+    expect(forContract).toHaveBeenCalledWith(id, ['contract-branch']);
   });
   it('blocks cancelled requests even after financial approval', async () => {
     readCustomerContract.mockResolvedValue({ approved: true });

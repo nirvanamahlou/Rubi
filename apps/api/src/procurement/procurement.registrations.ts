@@ -195,13 +195,35 @@ export async function listPettyRegistrations(
         }
       : {}),
   };
-  const rows = await database.client.procurementPettyEntry.findMany({
-    where,
-    include: { fund: true },
-    orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
-    skip: (page - 1) * 25,
-    take: 26,
-  });
+  const rows = await database.client.$transaction(
+    async (tx) => {
+      // A mission reversal uses the original entry ID as its request key.
+      const reversals = await tx.procurementPettyEntry.findMany({
+        where: {
+          fund: { branchId: branchId ?? { in: actor.branchIds } },
+          title: null,
+          amount: { gt: 0 },
+          requestKey: { not: null },
+        },
+        select: { requestKey: true },
+      });
+      return tx.procurementPettyEntry.findMany({
+        where: {
+          ...where,
+          id: {
+            notIn: reversals.flatMap(({ requestKey }) =>
+              requestKey ? [requestKey] : [],
+            ),
+          },
+        },
+        include: { fund: true },
+        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * 25,
+        take: 26,
+      });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+  );
   return {
     items: rows.slice(0, 25).map(dto),
     page,
