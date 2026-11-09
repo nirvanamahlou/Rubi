@@ -1,3 +1,9 @@
+# FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
+
+PC-A reserves floating-flight-airport component/helper/tests and ContractFlightEditor route integration. Base083cedb62; owner authorizes green develop merge. International floating routes exclude THR and prefer IKA within the selected Tehran city; domestic routes retain choices. Preserve directory workflow authorization and manual valid selections. No schema/dependency/deployment.
+
+Six targeted tests and scoped lint pass. Source frozen; final exact-head hosted gates precede owner-authorized develop merge. No deployment.
+
 # TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
 
 Validation follow-up reserves the one new report PDF caption's English catalogue key and deterministic offline catalogue synchronization. No unrelated translations or dependency changes.
