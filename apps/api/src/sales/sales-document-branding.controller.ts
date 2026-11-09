@@ -38,7 +38,7 @@ export class SalesDocumentBrandingController {
     @Req() req: AuthenticatedRequest,
   ) {
     const { data: contract } = await this.sales.detail(id, req.actor);
-    const intake = await this.travel.forContract(id, req.actor.branchIds);
+    const intake = await this.travel.forContract(id, [contract.branchId]);
     const release = await this.delivery.readCustomerContract(id);
     if (
       !release.approved ||
@@ -46,14 +46,19 @@ export class SalesDocumentBrandingController {
       intake.workflow.supplierStatus === 'CANCELLED'
     )
       throw new ForbiddenException('مدارک هنوز توسط مالی آزاد نشده است.');
-    const output = await this.travel.floatingDocumentOutput(intake, req.actor);
+    const actor = {
+      ...req.actor,
+      branchIds: [...new Set([...req.actor.branchIds, intake.branchId])],
+    };
+    const output = await this.travel.floatingDocumentOutput(intake, actor);
     const logoId = output.workflow.branding?.logoFileId;
     if (!logoId) throw new NotFoundException('لوگوی سربرگ ثبت نشده است.');
-    const file = await this.documents.previewReleasedTravelLogo(
-      logoId,
-      req.actor,
-      { ipAddress: req.ip, userAgent: req.headers['user-agent'] },
-    );
+    const file = await this.documents.previewReleasedTravelLogo(logoId, actor, {
+      ...(req.ip ? { ipAddress: req.ip } : {}),
+      ...(req.headers['user-agent']
+        ? { userAgent: req.headers['user-agent'] }
+        : {}),
+    });
     return new StreamableFile(file.stream, { type: file.mimeType });
   }
 }

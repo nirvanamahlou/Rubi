@@ -181,18 +181,23 @@ async function buildPdf(
           ? `/sales/contracts/${salesContractId}/travel-documents/branding-logo`
           : `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
       );
-      if (!logoResponse.ok)
-        return fail(
-          'دریافت لوگوی سربرگ مجاز نیست یا لوگو آماده نیست.',
-          logoResponse.status,
-        );
-      const mime = logoResponse.headers.get('content-type')?.split(';')[0];
-      if (!mime || !['image/png', 'image/jpeg', 'image/webp'].includes(mime))
-        return fail('فرمت لوگو برای PDF پشتیبانی نمی‌شود.', 400);
-      const bytes = Buffer.from(await logoResponse.arrayBuffer());
-      if (!bytes.length || bytes.length > 5_000_000)
-        return fail('اندازه لوگو معتبر نیست.', 400);
-      logo = `data:${mime};base64,${bytes.toString('base64')}`;
+      if (salesContractId && [403, 404].includes(logoResponse.status)) {
+        // A legacy brand asset can be unavailable independently of the contract.
+        logo = '';
+      } else {
+        if (!logoResponse.ok)
+          return fail(
+            'دریافت لوگوی سربرگ مجاز نیست یا لوگو آماده نیست.',
+            logoResponse.status,
+          );
+        const mime = logoResponse.headers.get('content-type')?.split(';')[0];
+        if (!mime || !['image/png', 'image/jpeg', 'image/webp'].includes(mime))
+          return fail('فرمت لوگو برای PDF پشتیبانی نمی‌شود.', 400);
+        const bytes = Buffer.from(await logoResponse.arrayBuffer());
+        if (!bytes.length || bytes.length > 5_000_000)
+          return fail('اندازه لوگو معتبر نیست.', 400);
+        logo = `data:${mime};base64,${bytes.toString('base64')}`;
+      }
     } else {
       const asset =
         branding.kind === 'OWN'

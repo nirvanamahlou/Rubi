@@ -4,8 +4,11 @@ import { SalesDocumentBrandingController } from './sales-document-branding.contr
 function setup() {
   const detail = vi
     .fn()
-    .mockResolvedValue({ data: { status: 'SENT_TO_RESERVATION' } });
+    .mockResolvedValue({
+      data: { status: 'SENT_TO_RESERVATION', branchId: 'contract-branch' },
+    });
   const intake = {
+    branchId: 'contract-branch',
     workflow: {
       supplierStatus: 'CONFIRMED',
       branding: { logoFileId: 'saved-logo' },
@@ -13,12 +16,10 @@ function setup() {
   };
   const forContract = vi.fn().mockResolvedValue(intake);
   const release = vi.fn().mockResolvedValue({ approved: true });
-  const preview = vi
-    .fn()
-    .mockResolvedValue({
-      stream: Readable.from(['png']),
-      mimeType: 'image/png',
-    });
+  const preview = vi.fn().mockResolvedValue({
+    stream: Readable.from(['png']),
+    mimeType: 'image/png',
+  });
   const controller = new SalesDocumentBrandingController(
     { detail } as never,
     { forContract, floatingDocumentOutput: vi.fn(async (x) => x) } as never,
@@ -30,15 +31,19 @@ function setup() {
     headers: {},
     ip: '127.0.0.1',
   } as never;
-  return { controller, req, detail, intake, release, preview };
+  return { controller, req, detail, intake, release, preview, forContract };
 }
 it('serves only the saved logo after contract scope and financial release, without document or reservation grants', async () => {
   const x = setup();
   await x.controller.logo('contract', x.req);
   expect(x.detail).toHaveBeenCalledWith('contract', x.req['actor']);
+  expect(x.forContract).toHaveBeenCalledWith('contract', ['contract-branch']);
   expect(x.preview).toHaveBeenCalledWith(
     'saved-logo',
-    x.req['actor'],
+    expect.objectContaining({
+      branchIds: ['branch', 'contract-branch'],
+      permissions: ['sales.contracts.read.own'],
+    }),
     expect.any(Object),
   );
 });
