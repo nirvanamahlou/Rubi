@@ -656,7 +656,7 @@ export class HrService {
     if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
     if (
       rates[5] === 'بله' &&
-      ((row.data as HrWorkflowData).attendanceDeviceError ??
+      ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
         source.some(
           (item) =>
             item.employeeId === row.employeeId &&

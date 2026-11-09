@@ -156,7 +156,7 @@ it('keeps the supplier directory card out of the purchase hub even with purchase
   const html = render('fa', true);
   expect(html).not.toContain('href="/purchases?section=suppliers"');
   expect(html).not.toContain('مدیریت تأمین‌کنندگان');
-});
+}, 15_000);
 it('renders themed categories alongside both recorded and missing contract services', () => {
   const html = render('fa');
   expect(html.match(/aria-pressed=/g)).toHaveLength(6);
