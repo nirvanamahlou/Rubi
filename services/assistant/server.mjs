@@ -68,6 +68,7 @@ export function createAssistantServer({
         if (!response.writableEnded) deadline.abort();
       });
       const conversationRequest = request.url === '/v2/assistant/conversation';
+      const reportingRequest = request.url === '/v1/assistant/reporting';
       let actorId;
       let action;
       let optionsRequest = false;
@@ -154,6 +155,7 @@ export function createAssistantServer({
           request.url !== '/v1/executive/snapshot' &&
           !action &&
           !optionsRequest &&
+          !reportingRequest &&
           !conversationRequest
         )
           throw new ServiceError(404, 'NOT_FOUND');
@@ -232,6 +234,24 @@ export function createAssistantServer({
           const options = await runTool('sales.filter-options', cookie);
           outcome = 'SUCCESS';
           send(200, options);
+          return;
+        }
+        if (reportingRequest) {
+          const catalog = await runTool('reporting.catalog', cookie);
+          const dashboard = await runTool('dashboard.snapshot', cookie);
+          const releaseActor = await authenticate(
+            cookie,
+            deadline.signal,
+            actorId,
+          );
+          requireToolAccess(releaseActor, 'reporting.catalog');
+          requireToolAccess(releaseActor, 'dashboard.snapshot');
+          if (
+            actor.branchIds.some((id) => !releaseActor.branchIds.includes(id))
+          )
+            throw new ServiceError(403, 'FORBIDDEN');
+          outcome = 'SUCCESS';
+          send(200, { version: 1, catalog, dashboard });
           return;
         }
         const result = await runPreparedAction({

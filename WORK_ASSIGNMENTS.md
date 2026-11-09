@@ -12010,3 +12010,8 @@ Bounded CI reservation adds customer-dossier.postgres.spec.ts to the existing
 disposable reporting PostgreSQL job, proving actual SQL customer/branch/owner/
 archive and passenger-finance isolation with transaction rollback. Source locks
 release on publication; PR1556 full final-head checks gate authorized merge.
+
+## ASSISTANT-REPORT-TOOLS-1109 — PC-C — IN_PROGRESS
+
+Owner requests AI tool development from Reporting/Dashboard public sources. Reserve services/assistant reporting-source leaf/tests, tools registry and server bounded read route/tests, own assessment/status. Consumer-only integration: existing reports/catalog and reports/dashboard/projection GET contracts remain unchanged; ERP owns IAM, money and aggregation. No direct cross-module table access, schema, dependencies, model payload expansion, write tools or deployment. New endpoint additive, existing actions compatible.
+ASSISTANT-REPORT-TOOLS-1109: backend groundwork SOURCE_READY;74 tests and syntax checks passed. Web/conversation integration and live validation remain pending; no deployment.

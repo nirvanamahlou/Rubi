@@ -6,6 +6,12 @@ import {
   projectFilteredSource,
 } from './report-filters.mjs';
 import { ServiceError } from './errors.mjs';
+import {
+  validCatalog,
+  projectCatalog,
+  validDashboard,
+  projectDashboard,
+} from './reporting-source.mjs';
 import { personalFollowUps } from './personal-source.mjs';
 import { validSalesSource, projectSalesSource } from './sales-source.mjs';
 import {
@@ -53,6 +59,30 @@ const personal = (id, path, key, limit, description) => ({
   }),
 });
 const definitions = [
+  {
+    id: 'reporting.catalog',
+    domain: 'reporting',
+    scope: 'AUTHORIZED_BRANCHES',
+    base: 'core',
+    path: '/reports/catalog',
+    permissions: ['reports.view.catalog', 'reporting.read'],
+    description:
+      'Authorized report availability, without row data or internal database view names',
+    validate: validCatalog,
+    project: projectCatalog,
+  },
+  {
+    id: 'dashboard.snapshot',
+    domain: 'reporting',
+    scope: 'AUTHORIZED_BRANCHES',
+    base: 'core',
+    path: '/reports/dashboard/projection?range=month',
+    permissions: ['reporting.read'],
+    description:
+      'Current-month authoritative dashboard KPI evidence, not a forecast',
+    validate: validDashboard,
+    project: projectDashboard,
+  },
   {
     id: 'sales.filter-options',
     version: 2,

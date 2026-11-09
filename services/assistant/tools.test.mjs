@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import { TOOLS, PERSONAL_TOOLS, getTool, validateToolInput } from './tools.mjs';
 
 test('legacy and filtered read contracts have validators, bounded limits and native grants', () => {
-  assert.equal(TOOLS.length, 10);
-  assert.equal(TOOLS.filter((tool) => tool.version === 1).length, 6);
+  assert.equal(TOOLS.length, 12);
+  assert.equal(TOOLS.filter((tool) => tool.version === 1).length, 8);
   assert.equal(PERSONAL_TOOLS.length, 3);
-  assert.equal(new Set(TOOLS.map((tool) => tool.path)).size, 10);
+  assert.equal(new Set(TOOLS.map((tool) => tool.path)).size, 12);
   for (const tool of TOOLS) {
     assert.equal(getTool(tool.id), tool);
     assert.equal(tool.method, 'GET');

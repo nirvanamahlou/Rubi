@@ -99,6 +99,35 @@ async function harness(t, options = {}) {
       response.end();
       return;
     }
+    if (options.reporting && request.url === '/api/v1/reports/catalog') {
+      response.end(
+        JSON.stringify([
+          {
+            code: 'RPT-001',
+            title: 'Synthetic sales',
+            grain: 'ORDER',
+            version: 1,
+            producerStatus: 'READY',
+          },
+        ]),
+      );
+      return;
+    }
+    if (
+      options.reporting &&
+      request.url === '/api/v1/reports/dashboard/projection?range=month'
+    ) {
+      response.end(
+        JSON.stringify({
+          state: 'empty',
+          message: 'Synthetic empty source',
+          metadata: null,
+          metrics: {},
+          visuals: {},
+        }),
+      );
+      return;
+    }
     if (request.url === '/api/v1/workbench/calendar') {
       response.end(
         JSON.stringify({
@@ -1168,4 +1197,37 @@ test('plain model replies reauthenticate before release and never fetch or audit
   });
   assert.equal(denied.status, 401);
   assert.ok(!JSON.stringify(await denied.json()).includes('Synthetic reply'));
+});
+
+test('reporting HTTP route rejects anonymous, write and arbitrary selectors before source reads', async (t) => {
+  const h = await harness(t, { permissions: [] });
+  assert.equal((await h.get('', '/v1/assistant/reporting')).status, 401);
+  assert.equal(
+    (await h.get(undefined, '/v1/assistant/reporting', 'POST')).status,
+    405,
+  );
+  assert.equal(
+    (await h.get(undefined, '/v1/assistant/reporting?sql=select')).status,
+    404,
+  );
+  assert.equal((await h.get(undefined, '/v1/assistant/reporting')).status, 403);
+  assert.ok(!h.calls.some((x) => x.path.startsWith('/api/v1/reports/')));
+});
+
+test('reporting HTTP composition uses native public sources without converting empty data into zero', async (t) => {
+  const h = await harness(t, {
+    permissions: ['reports.view.catalog', 'reporting.read'],
+    reporting: true,
+  });
+  const response = await h.get(undefined, '/v1/assistant/reporting');
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.catalog.reports[0].code, 'RPT-001');
+  assert.equal(body.dashboard.state, 'empty');
+  assert.deepEqual(body.dashboard.metrics, {});
+  assert.ok(
+    h.calls.some(
+      (x) => x.path === '/api/v1/reports/dashboard/projection?range=month',
+    ),
+  );
 });

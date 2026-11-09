@@ -9584,3 +9584,6 @@ URLs, payment references or check identifiers are returned. Unauthorized, unavai
 and empty sources render separately; customer/company changes clear prior data.
 Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
 No migration, dependency or operational-data changes. Full hosted checks gate merge.
+
+## ASSISTANT-REPORT-TOOLS-1109
+Consumer-only registry tools now read authorized report catalogue and native current-month Dashboard KPI projection. Additive authenticated /v1/assistant/reporting uses the existing executor and final release IAM checks; no model payload expansion, DB write or migration.74 native tests passed. This backend foundation is not yet wired to Web/conversation or deployed. Details: docs/tasks/ASSISTANT-REPORT-TOOLS-1109.md.
