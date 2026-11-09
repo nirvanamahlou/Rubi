@@ -27,7 +27,11 @@ import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
-import { TravelDocument, useTravelLogo } from './travel-document';
+import {
+  TravelDocument,
+  useTravelLogo,
+  readTravelLogo,
+} from './travel-document';
 import { ReservationSettingsForm } from './reservation-settings';
 const intake = {
   snapshot: {
@@ -387,3 +391,27 @@ it.each([false, true])(
     expect(html).not.toContain('niyayehseir.com');
   },
 );
+
+it('loads Sales preview branding from the released contract instead of the generic archive', async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(new Uint8Array([1]), {
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    );
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const result = await readTravelLogo('private-logo', 'contract');
+    expect(result.blob.size).toBe(1);
+    expect(fetcher.mock.calls[0]?.[0]).toContain(
+      '/sales/contracts/contract/travel-documents/branding-logo',
+    );
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

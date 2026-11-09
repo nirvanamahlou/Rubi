@@ -22,6 +22,23 @@ import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+export async function readTravelLogo(fileId: string, salesContractId?: string) {
+  if (!salesContractId) return documentsApi.preview(fileId);
+  const url =
+    getPublicApiBaseUrl() +
+    '/sales/contracts/' +
+    encodeURIComponent(salesContractId) +
+    '/travel-documents/branding-logo';
+  const options = {
+    credentials: 'include' as const,
+    cache: 'no-store' as const,
+  };
+  let response = await fetch(url, options);
+  if (response.status === 401 && (await refreshAuthenticatedSession()))
+    response = await fetch(url, options);
+  if (!response.ok) throw new Error('لوگوی مدرک در دسترس نیست.');
+  return { blob: await response.blob() };
+}
 export function useTravelLogo(
   branding: TravelBrandingV1 | null,
   withoutLogo = false,
@@ -46,7 +63,7 @@ export function useTravelLogo(
       .then(({ blob }) => {
         if (!active) return;
         url = URL.createObjectURL(blob);
-        setLoaded({ id: fileId, logo: url, error: '' });
+        setLoaded({ id: contextKey, logo: url, error: '' });
       })
       .catch(() => {
         if (active)
@@ -61,9 +78,10 @@ export function useTravelLogo(
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [fileId]);
+  }, [fileId, salesContractId, contextKey]);
   if (withoutLogo) return { logo: '', error: '' };
-  if (fileId) return loaded?.id === fileId ? loaded : { logo: '', error: '' };
+  if (fileId)
+    return loaded?.id === contextKey ? loaded : { logo: '', error: '' };
   if (!branding) return { logo: '', error: '' };
   if (branding.kind === 'OWN' && branding.companyCode === 'NIYAYESH_SEIR_SAHAR')
     return { logo: '/brand/niyayesh-seir-full.png', error: '' };
@@ -106,6 +124,7 @@ export function TravelDocument({
     intake.workflow.branding,
     voucher &&
       (unbranded || intake.workflow.branding?.voucherWithoutLogo === true),
+    salesContractId,
   );
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
