@@ -11977,3 +11977,7 @@ Group mention suggestions and transactional notifications, and membership-scoped
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
+
+## HR-INBOX-REQUEST-TITLE-1109 — PC-A
+
+Reserve the HR requests table title column. Keep the request type filter and review actions.

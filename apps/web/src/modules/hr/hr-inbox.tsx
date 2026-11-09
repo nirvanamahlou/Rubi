@@ -168,11 +168,12 @@ export function HrInbox({
     }
   };
   const data = {
-    columns: ['کد', 'نوع درخواست', 'کارمند', 'شرکت', 'تاریخ ایجاد', 'وضعیت'],
+    columns: ['کد', 'عنوان درخواست', 'کارمند', 'شرکت', 'تاریخ ایجاد', 'وضعیت'],
     rows: [
       ...visibleItems.map((item) => [
         item.code,
-        item.data.requestSubtype ?? sourceForRecord(item).label,
+        item.values[item.columns.indexOf('عنوان درخواست')]?.trim() ||
+          (item.data.requestSubtype ?? sourceForRecord(item).label),
         store.data!.employees.find(
           (employee) => employee.id === item.employeeId,
         )?.name ??
@@ -192,7 +193,7 @@ export function HrInbox({
       ]),
       ...filteredWorkbench.map((item) => [
         item.trackingNumber,
-        item.leave ? 'مرخصی میزکار' : item.subject,
+        item.subject,
         item.senderName,
         store.data!.branches.find((branch) => branch.id === item.branchId)
           ?.name ?? '',
