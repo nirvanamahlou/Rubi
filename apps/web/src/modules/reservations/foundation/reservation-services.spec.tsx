@@ -4,7 +4,7 @@ import type { RequestView } from './model';
 
 const row = (value: Partial<RequestView>) => value as RequestView;
 
-it('groups round-trip services by actual kind and preserves every distinct title', () => {
+it('groups round-trip services with flight directions and a single transfer caption', () => {
   expect(
     reservationServiceGroups(
       row({
@@ -24,7 +24,7 @@ it('groups round-trip services by actual kind and preserves every distinct title
     {
       kind: 'TRANSFER',
       label: 'ترانسفر',
-      titles: ['ترانسفر رفت', 'ترانسفر برگشت'],
+      titles: [],
     },
   ]);
 });
@@ -59,7 +59,7 @@ it('keeps the same category order for differently ordered contract services', ()
   ).toEqual(['HOTEL', 'FLIGHT', 'INSURANCE']);
 });
 
-it('omits only the generic hotel caption and keeps specific hotel details', () => {
+it('keeps hotel names in their dedicated column, not the services summary', () => {
   expect(
     reservationServiceGroups(
       row({
@@ -72,8 +72,34 @@ it('omits only the generic hotel caption and keeps specific hotel details', () =
       }),
     ),
   ).toEqual([
-    { kind: 'HOTEL', label: 'هتل', titles: ['Custom hotel stay'] },
+    { kind: 'HOTEL', label: 'هتل', titles: [] },
     { kind: 'OTHER', label: 'سایر خدمات', titles: ['اقامت هتل'] },
+  ]);
+});
+
+it('removes only the floating contract-only qualifier and deduplicates compact flight titles', () => {
+  expect(
+    reservationServiceGroups(
+      row({
+        serviceItems: [
+          { kind: 'FLIGHT', title: 'بلیط رفت — شناور (فقط این قرارداد)' },
+          { kind: 'FLIGHT', title: 'بلیط برگشت — شناور (فقط این قرارداد)' },
+          { kind: 'FLIGHT', title: 'بلیط رفت — شناور' },
+          { kind: 'OTHER', title: 'راهنما (فقط این قرارداد)' },
+        ],
+      }),
+    ),
+  ).toEqual([
+    {
+      kind: 'FLIGHT',
+      label: 'پرواز',
+      titles: ['بلیط رفت — شناور', 'بلیط برگشت — شناور'],
+    },
+    {
+      kind: 'OTHER',
+      label: 'سایر خدمات',
+      titles: ['راهنما (فقط این قرارداد)'],
+    },
   ]);
 });
 
