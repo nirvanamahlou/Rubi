@@ -25,13 +25,11 @@ function setup(journal: object | null, refunds = 0) {
   const tx = {
     $queryRaw: vi.fn(),
     financeAccountingEvent: {
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          journal,
-          _count: { financialWorkflows: 0 },
-          derivedEvents: [],
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        journal,
+        _count: { financialWorkflows: 0 },
+        derivedEvents: [],
+      }),
     },
   };
   return {

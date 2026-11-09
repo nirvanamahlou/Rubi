@@ -41,7 +41,7 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
   }
-  async tick() {
+  async tick(scope?: { branchId?: string; requestId?: string }) {
     if (this.running) return;
     this.running = true;
     try {
@@ -50,6 +50,8 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
       >`SELECT e.* FROM finance_accounting_events e
         WHERE e."journalId" IS NULL
           AND NOT (${voidedSalesReceiptEvent})
+          AND (${scope?.branchId ?? null}::uuid IS NULL OR e."branchId" = ${scope?.branchId ?? null}::uuid)
+          AND (${scope?.requestId ?? null}::uuid IS NULL OR e."requestId" = ${scope?.requestId ?? null}::uuid)
         ORDER BY e."attemptedAt" ASC NULLS FIRST, e.id ASC LIMIT 25`;
       for (const event of events) {
         try {
