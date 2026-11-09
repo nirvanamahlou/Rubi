@@ -9514,6 +9514,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## TOUR-FORM-1109 — PC-A — READY_FOR_CI
+
+Owner-requested tour definition controls: left header action, independent multi-branch creation with retained successes/retry, automatic city airport defaults and same-country airport overrides for both ends, removed manual IATA input, persisted optional combined-tour checkbox. Backward-compatible V1 details fields; Master Data public reference validation preserves boundaries. 8 focused Web and49 API tests pass. Full final-head gates required before authorized develop merge. No schema/migration/dependency, operational data or deployment changes. See tasks/TOUR-FORM-1109.md.
+
 ## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.

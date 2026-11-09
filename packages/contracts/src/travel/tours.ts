@@ -22,6 +22,8 @@ export interface TourPackageInputV1 {
     installmentTerms?: string;
     refundRules?: string;
     originAirportCode?: string;
+    destinationAirportCode?: string;
+    isCombined?: boolean;
     durationDays?: number;
     rating?: number;
     transport?: 'FLIGHT' | 'TRAIN';

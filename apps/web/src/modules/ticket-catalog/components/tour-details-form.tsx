@@ -80,6 +80,7 @@ export function TourDetailsForm({
   onChange,
   airlines,
   airports,
+  destinationAirports = [],
   branches,
   branchId,
 }: {
@@ -88,6 +89,7 @@ export function TourDetailsForm({
   currencies?: MasterDataRecord[];
   airlines: MasterDataRecord[];
   airports: MasterDataRecord[];
+  destinationAirports?: MasterDataRecord[];
   branches: BranchReference[];
   branchId: string;
 }) {
@@ -190,20 +192,15 @@ export function TourDetailsForm({
               ])}
             onChange={(v) => patch('originAirportCode', v)}
           />
-          <FormField label="کد سه‌حرفی فرودگاه مبدأ (ورود دستی)">
-            <Input
-              aria-label="کد سه‌حرفی فرودگاه مبدأ"
-              dir="ltr"
-              maxLength={3}
-              value={value.originAirportCode ?? ''}
-              onChange={(e) =>
-                patch(
-                  'originAirportCode',
-                  e.target.value.toUpperCase().replace(/[^A-Z]/g, ''),
-                )
-              }
-            />
-          </FormField>
+          <Menu
+            label="فرودگاه مقصد"
+            value={value.destinationAirportCode ?? ''}
+            choices={destinationAirports.map((airport) => [
+              String(airport.attributes.iataCode),
+              `${airport.name} (${airport.attributes.iataCode})`,
+            ])}
+            onChange={(v) => patch('destinationAirportCode', v)}
+          />
           <FormField label="مدت سفر (روز)">
             <Input
               aria-label="مدت سفر (روز)"
