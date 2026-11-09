@@ -1,3 +1,7 @@
+import {
+  voidedSalesReceiptEvent,
+  voidedSalesReceiptIds,
+} from '../../sales/sales-receipt-void.public';
 import { fiscalYearAttributes } from './accounting.fiscal-year';
 import { listFilterAttributes } from './accounting-list-filter';
 import { trialBalanceTable } from './accounting.trial-balance';
@@ -761,7 +765,7 @@ export class AccountingService {
     >`
       WITH classified AS (
         SELECT e.kind, e.currency, e.amount,
-          CASE WHEN j.id IS NULL THEN 'UNLINKED' WHEN j."bookId"<>${book.id}::uuid THEN 'OTHER_BOOK'
+          CASE WHEN ${voidedSalesReceiptEvent} THEN 'VOIDED' WHEN j.id IS NULL THEN 'UNLINKED' WHEN j."bookId"<>${book.id}::uuid THEN 'OTHER_BOOK'
             WHEN EXISTS (SELECT 1 FROM accounting_journals r WHERE r."reversalOfId"=j.id AND r.status='POSTED') THEN 'REVERSED'
             ELSE j.status END AS state
         FROM finance_accounting_events e LEFT JOIN accounting_journals j ON j.id=e."journalId"
@@ -789,7 +793,21 @@ export class AccountingService {
       where: {
         AND: [(await this.companyScope?.eventWhere(actor)) ?? {}],
         branchId: book.branchId,
-        ...(query.pending === 'true' ? { journalId: null } : {}),
+        ...(query.pending === 'true'
+          ? {
+              journalId: null,
+              NOT: {
+                source: 'SALES',
+                kind: 'CUSTOMER_RECEIPT',
+                recordId: {
+                  in: await voidedSalesReceiptIds(
+                    this.database.client,
+                    book.branchId,
+                  ),
+                },
+              },
+            }
+          : {}),
         ...(before
           ? {
               OR: [

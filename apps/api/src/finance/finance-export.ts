@@ -25,6 +25,7 @@ export const financeStatusNames: Record<string, string> = {
   READY_FOR_PAYMENT: 'آماده پرداخت',
   PAYING: 'پرداخت جزئی',
   PAID: 'تسویه',
+  RECEIPT_VOIDED: 'باطل‌شده',
   RECEIPT_CONFIRMED: 'دریافت تأییدشده',
   CORRECTION_REQUIRED: 'برگشت برای اصلاح',
   REJECTED: 'ردشده',

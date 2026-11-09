@@ -1278,13 +1278,8 @@ describe.skipIf(!url)(
       });
       const scopedDatabase = {
         client: {
+          $queryRaw: db.$queryRaw.bind(db),
           financeAccountingEvent: {
-            findMany: (args: { where: object }) =>
-              db.financeAccountingEvent.findMany({
-                ...args,
-                where: { ...args.where, branchId },
-                take: 25,
-              }),
             updateMany: db.financeAccountingEvent.updateMany.bind(
               db.financeAccountingEvent,
             ),
@@ -1297,7 +1292,7 @@ describe.skipIf(!url)(
         service,
         { reminderPrincipal: async () => maker } as never,
       );
-      await dispatcher.tick();
+      await dispatcher.tick({ branchId });
       expect(
         (
           await db.financeAccountingEvent.findUniqueOrThrow({
@@ -1318,7 +1313,7 @@ describe.skipIf(!url)(
           })
         ).lastError,
       ).toBeTruthy();
-      await dispatcher.tick();
+      await dispatcher.tick({ branchId });
       expect(
         await db.accountingJournal.count({
           where: { sourceKey: next.sourceKey },
@@ -1330,7 +1325,7 @@ describe.skipIf(!url)(
         service,
         { reminderPrincipal: async () => null } as never,
       );
-      await noAuthority.tick();
+      await noAuthority.tick({ branchId });
       expect(
         (
           await db.financeAccountingEvent.findUniqueOrThrow({

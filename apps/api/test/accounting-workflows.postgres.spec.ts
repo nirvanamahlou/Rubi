@@ -452,12 +452,8 @@ describe.skipIf(!url)(
       const dispatcher = new FinancialEventDispatcher(
         {
           client: {
+            $queryRaw: db.$queryRaw.bind(db),
             financeAccountingEvent: {
-              findMany: (args: { where: object }) =>
-                db.financeAccountingEvent.findMany({
-                  ...args,
-                  where: { ...args.where, requestId: next.id },
-                }),
               updateMany: db.financeAccountingEvent.updateMany.bind(
                 db.financeAccountingEvent,
               ),
@@ -468,8 +464,8 @@ describe.skipIf(!url)(
         service,
         { reminderPrincipal: async () => maker } as never,
       );
-      await dispatcher.tick();
-      await dispatcher.tick();
+      await dispatcher.tick({ requestId: next.id });
+      await dispatcher.tick({ requestId: next.id });
       events = await db.financeAccountingEvent.findMany({
         where: { requestId: next.id, kind: SALES_CONTRACT_EVENT },
         include: { journal: true },

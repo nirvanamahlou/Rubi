@@ -1,3 +1,7 @@
+# RECEIPT-VOID-1109 — PC-B — READY_FOR_CI
+
+Base 68b538c9f. Reserve Sales receipt void status, additive migration, Finance receipt command and accounting source guard, inbox action and regressions. Additive contracts preserve existing clients. Local API and Web builds and targeted regressions passed. Existing journal reversal workflow is required for posted receipts. No production deployment or data change.
+
 # RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
 
 PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.
@@ -11886,6 +11890,12 @@ COMPUTER_ID=PC-A; codex/pc-a-navigation-cancelled-labels-1109 from develop e32d4
 
 Owner clarified the compact/mobile active module appeared blue with black text. Active link and icon now pin white foreground over solid blue independent of theme tokens. Cancellation message appears once beneath the contract number in its own table row, removed from the actions panel. Cancelled cells use opaque red/black even when selected, with blue selection outline.49 focused workspace/action/navigation regressions, scoped lint and full Web TypeScript pass; final hosted production gates required before authorized merge. No operational state or permission behavior changed.
 
+# HEADER-USER-ROLE-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-header-user-role-1109 from develop cda23c1ea. Owner clarifies the header must show each user's real assigned title, including custom per-user manual roles, rather than only the default administrator role; display must persist across expanded/compact layouts. Reserve Web header-session projection/tests, shared role label/date placement and bounded app-shell utility slot, own status notes. Align selection with existing IAM manual-access title priority, preserve authentication, permissions, profile menu and UTC date behavior. No API/schema/dependency/data/deployment change. User authorizes green develop merge; prior shell reservation merged/released.
+
+25 focused header/session/navigation checks and scoped ESLint pass. Custom per-user titles precede templates/admin; unknown real labels survive tab cache reads, technical personal grants are omitted, empty titles do not fabricate a manager label. Role badge is independent of desktop date visibility; utility controls can wrap within the available header width. Full Web typecheck/build and final hosted gates required before merge. No operational writes.
+
 ## VOUCHER-CONTINUITY-1108 — PC-A — DONE/MERGED
 
 Owner authorizes removing OTHER SERVICES from vouchers and continuous passenger/service tables without repeated hotel/service sections, tests and develop merge. Reserve voucher passenger columns/cells, preview/PDF pagination and print CSS, hotel output grouping counts and focused regressions. Preserve canonical allocations, per-hotel scope, all selected passengers/rooms, existing authorization and supplier forms. No schema/dependency/migration/deployment. Logical voucher count must not be printed as a physical page count after native pagination.
@@ -11987,3 +11997,22 @@ Group mention suggestions and transactional notifications, and membership-scoped
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
+
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — READY_FOR_CI
+
+Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.59 Dashboard tests, scoped lint, full Web TypeScript and67-route build pass; source frozen and editing scope released.
+
+## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — READY_FOR_CI
+
+User explicitly requests all nine real customer dossier connections, security
+tests and develop merge. Reserve additive owner public projections in Sales,
+Reservations and Customer Affairs; Customers aggregation/controller/module/UI,
+shared response contract, focused tests, translation keys and own docs.
+Branch codex/pc-a-customer-dossier-connections-1109 from develop87067a3b6.
+Exact UUID customer matching; customer/branch/company/archive/own-scope guards;
+financial values restricted to buyer/payer. No schema/dependency, IAM grants,
+operational writes or deployment. Source errors remain explicit unavailable.
+Bounded CI reservation adds customer-dossier.postgres.spec.ts to the existing
+disposable reporting PostgreSQL job, proving actual SQL customer/branch/owner/
+archive and passenger-finance isolation with transaction rollback. Source locks
+release on publication; PR1556 full final-head checks gate authorized merge.

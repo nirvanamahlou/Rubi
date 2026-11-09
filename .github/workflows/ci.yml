@@ -245,7 +245,7 @@ jobs:
       - name: Prove company-wide first paid customer classification
         env:
           NORA_RUN_REPORTING_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run src/sales/sales-dashboard-customers.postgres.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run src/sales/sales-dashboard-customers.postgres.spec.ts src/customers/customer-dossier.postgres.spec.ts --maxWorkers=1
 
       - name: Prove financial source, refund and petty-cash atomicity
         env:

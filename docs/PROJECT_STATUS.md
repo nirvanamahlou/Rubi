@@ -34,6 +34,9 @@ Today Calls gains three explicitly requested local filters beside refresh: direc
 
 Compact/mobile selected navigation now keeps white text/icons on solid blue across theme foreground changes. Cancellation message is rendered on its own reservation contract row, removed from the action panel; cancelled rows retain opaque red background/black text while selected, plus a blue outline.49 focused workspace/action/navigation checks, scoped lint and full Web TypeScript pass. Final hosted gates precede owner-authorized develop merge. No API/schema/dependency/data/deployment changes. Local checkout reused to avoid disk-full duplication; cache deletion was policy-blocked and no user files were deleted.
 
+# HEADER-USER-ROLE-1109 — PC-A — READY_FOR_CI
+
+Header role titles now follow the existing IAM user-access editor: assigned per-user manual title first, then actual nontechnical role name. Custom titles are no longer dropped by the fixed job-title allowlist and administrator labels are not fabricated. Role badge is outside the desktop-only date container, retaining its session subscription across expanded/compact layouts. No permission, authentication, API/schema/dependency/data/deployment change. Final tests and hosted gates precede owner-authorized develop merge.
 ## VOUCHER-CONTINUITY-1108 — 2026-11-08
 
 PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel voucher now has one continuous passenger/service table; Chrome prints continuation pages with column headings only, retaining row order and complete rows. Hotel, flight and tour sections are not restarted for passenger chunks. All room details remain inline; obsolete estimated physical page numbers are hidden. 56 focused output tests and actual Chrome PDF checks for6/40/80 synthetic passengers pass; all rendered pages visually inspected. Scoped lint, full Web TypeScript and67-route production build pass. Integrated to develop under owner authorization; no own migration, dependency, operational data or deployment changes.
@@ -9570,3 +9573,18 @@ Dashboard and operational receivable rows now exclude effective Reservations can
 ## RESERVATION-LATEST-PDF-1109 — PC-A — READY_FOR_CI
 
 Reservation PDF GET now uses the latest saved settings/NOTICE instead of replacing them with the last sent snapshot. The QR share matches the current saved output; existing public snapshots and sent revisions remain immutable. Per-hotel scoping, voucher/release/access guards, form appearance and disabled SMTP are preserved.79 focused Web and30 API regressions pass. No schema/dependency/runtime/settings/data or deployment change. See tasks/RESERVATION-LATEST-PDF-1109.md. Exact-head full hosted gates precede the authorized develop merge; final evidence stays in the PR.
+
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C
+
+Removed mini trend SVGs/currency legends beneath every Dashboard KPI card and their chart loading placeholders/reserved space. Keep numeric amounts and currency symbols, comparison badges, missing-input explanations, card details and all full-size visualizations. Remove obsolete mini-chart-only source expectations/helper/imports; shared chart palette retained.59 Dashboard tests pass with1 existing skip. Full Web checks and exact-head hosted gates precede owner-authorized develop merge. Explicitly no deployment, API/data/schema/dependency change.
+
+## Customer dossier connections — 2026-11-09
+
+All nine dossier categories now use owner public read projections and a Customers
+aggregation endpoint. Exact customer identity, branch, company/archive and Sales
+own/branch scope are enforced. Payment/check amounts require both Finance and
+Sales payment access and buyer/payer linkage. No sensitive document bytes, provider
+URLs, payment references or check identifiers are returned. Unauthorized, unavailable
+and empty sources render separately; customer/company changes clear prior data.
+Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
+No migration, dependency or operational-data changes. Full hosted checks gate merge.

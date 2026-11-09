@@ -483,8 +483,17 @@ describe('Customer Operations workspace boundaries', () => {
       'تیکت‌های پشتیبانی',
       'مشاهده Timeline',
     ])
-      expect(source).toContain(section);
-    expect(source).toContain('در انتظار اتصال امن');
+      expect(
+        source +
+          readFileSync(
+            new URL('./customer-dossier-panel.tsx', import.meta.url),
+            'utf8',
+          ),
+      ).toContain(section);
+    expect(source).toContain(
+      '<CustomerDossierPanel customerId={customer.id} />',
+    );
+    expect(source).not.toContain('در انتظار اتصال امن');
     expect(source).toContain('<CustomerDocumentsPanel customer={customer} />');
     expect(source).not.toContain('در انتظار زیرساخت مدارک');
     expect(customerDocumentsPanelSource).toContain('افزودن مدرک');

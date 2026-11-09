@@ -1130,6 +1130,7 @@ export class SalesService {
     return rows.map((row) => ({
       version: 1,
       financeConfirmed: row.status === 'FINANCE_CONFIRMED',
+      financeVoided: row.status === 'FINANCE_VOIDED',
       paymentId: row.id,
       contractId: row.contract.id,
       contractNumber: row.contract.contractNumber,
@@ -2392,6 +2393,10 @@ export class SalesService {
           'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT' as const,
       },
     };
+  }
+
+  async financeReceiptVoidScope(actor: AuthenticatedActor) {
+    return (await this.companyScope?.where(actor)) ?? {};
   }
 
   financeReceipt(
