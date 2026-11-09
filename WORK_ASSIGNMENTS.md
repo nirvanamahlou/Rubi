@@ -48,6 +48,10 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-advisory-lock-1109 from origin/develop68b538c9f. Follow-up to owner-authorized insurance repair/merge/bounded release: reproduce and fix the remaining correction HTTP500, without issuing a passenger policy. Reserve insurance.service.ts and a real Prisma/PostgreSQL regression test, own task/status docs, and only the existing insurance PostgreSQL gate command in .github/workflows/ci.yml. No other active insurance/CI command writer found; prior source work is merged. No migration/dependency/schema/API/provider-mode changes. Preserve transactional serialization, CAS, audit, provider idempotency and peer production overlays. Bounded API-only deployment and real PostgreSQL lock proof required; no destructive cleanup authorized by this unit.
+
 ## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correct-submit-1109 from current develop. Owner requests correct-and-immediate insurance submission, precise failure handling, develop merge and only this bounded production repair. Reserve Reservations insurance client/form/controller/automation input handling and focused tests; own task/status and bounded deployment tooling. Prior overlapping insurance amendment is merged; preserve issued-policy guards, provider fingerprints/leases, sandbox-only provider, customer CAS/audit and branch permissions. No schema/dependency/grant or live policy test. Production rollout must preserve peer overlays and shared deployment lease, verified backup, rollback and health/Worker checks; no full-develop publication authorized by this task.

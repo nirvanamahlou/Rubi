@@ -126,6 +126,17 @@ export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
   return draft;
 }
 
+/** Preserve the transaction lock while returning a type Prisma can deserialize. */
+export async function lockInsurancePolicy(
+  tx: Prisma.TransactionClient,
+  contractId: string,
+  customerId: string,
+) {
+  await tx.$queryRaw(
+    Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + contractId + ':' + customerId}, 0))::text AS locked`,
+  );
+}
+
 @Injectable()
 export class ReservationInsuranceService {
   constructor(
@@ -418,9 +429,7 @@ export class ReservationInsuranceService {
         'کشور و طرح فعال بیمه را در تنظیمات انتخاب کنید.',
       );
     return this.db.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + intake.contractId + ':' + input.customerId}, 0))`,
-      );
+      await lockInsurancePolicy(tx, intake.contractId, input.customerId);
       await tx.$queryRaw(
         Prisma.sql`SELECT id FROM reservation_insurance_policies WHERE "contractId" = ${intake.contractId}::uuid AND "customerId" = ${input.customerId}::uuid FOR UPDATE`,
       );
@@ -577,9 +586,7 @@ export class ReservationInsuranceService {
     if (!row) throw new NotFoundException();
     await this.customers.detail(row.customerId, actor);
     return this.db.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + row.contractId + ':' + row.customerId}, 0))`,
-      );
+      await lockInsurancePolicy(tx, row.contractId, row.customerId);
       const current = await tx.reservationInsurancePolicy.findUniqueOrThrow({
         where: { id },
       });
