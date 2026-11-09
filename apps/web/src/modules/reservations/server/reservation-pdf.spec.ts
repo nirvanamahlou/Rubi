@@ -40,6 +40,7 @@ import {
   supplierFormData,
 } from '../model/voucher-settings';
 import type { ReservationFormIntake } from '../model/reservation-form';
+import { reservationHotelStays } from '@nora/contracts';
 const id = '00000000-0000-4000-8000-000000000001';
 const intake = {
   id,
@@ -199,7 +200,7 @@ describe('reservation PDF route', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(renderer).not.toHaveBeenCalled();
   });
-  it('downloads the sent price snapshot even if an unsent edit has different amounts', async () => {
+  it('downloads current saved prices while retaining the earlier sent price snapshot', async () => {
     const sent = {
       ...intake.workflow.supplierFormSettings!,
       hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
@@ -227,6 +228,10 @@ describe('reservation PDF route', () => {
     expect(result.status).toBe(200);
     expect(renderer.mock.calls[0]?.[0]).toHaveProperty(
       'workflow.supplierFormSettings.hotelPurchasePrices',
+      draft.hotelPurchasePrices,
+    );
+    expect(renderer.mock.calls[0]?.[0]).toHaveProperty(
+      'workflow.sentSupplierFormSettings.hotelPurchasePrices',
       sent.hotelPurchasePrices,
     );
   });
@@ -787,7 +792,91 @@ it('loads the new Jahan logo for the authorized reservation PDF instead of an ol
   expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
 });
 
-it('publishes only the sent supplier form and keeps public voucher issuance guards', async () => {
+it.each([false, true])(
+  'downloads latest saved form and NOTICE without changing sent history (hotel scoped=%s)',
+  async (scoped) => {
+    const value = structuredClone(intake);
+    const current = value.workflow.supplierFormSettings!;
+    current.text.remarks = 'LATEST SAVED NOTICE';
+    current.text.broker = 'LATEST SAVED SUPPLIER';
+    current.text.checkIn = '2026-11-12';
+    const sent = structuredClone(current);
+    sent.text.remarks = 'PREVIOUS SENT NOTICE';
+    sent.text.broker = 'PREVIOUS SENT SUPPLIER';
+    sent.text.checkIn = '2026-11-01';
+    value.workflow.sentSupplierFormSettings = sent;
+    value.workflow.sentSupplierFormVersion = 2;
+    let query = '';
+    if (scoped) {
+      value.snapshot.hotelSelection = {
+        serviceClientKey: 'hotel',
+        hotelId: id,
+        hotelNameSnapshot: 'SYNTHETIC HOTEL',
+        cityId: 'synthetic-city',
+        roomTypeId: 'synthetic-room-type',
+        occupancy: 2,
+        inventoryStatus: 'AVAILABLE',
+        checkInDate: '2026-11-01',
+        checkOutDate: '2026-11-15',
+        roomCount: 1,
+        rooms: [],
+      };
+      const key = reservationHotelStays(value.snapshot)[0]!.key;
+      value.workflow.hotelSupplierForms = {
+        [key]: {
+          settings: current,
+          sentSettings: sent,
+          sentVersion: 2,
+          status: 'REQUESTED',
+        },
+      };
+      query = `?hotelStayKey=${encodeURIComponent(key)}`;
+    }
+    const original = structuredClone(value.workflow);
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async (url: string, options?: RequestInit) => {
+        expect(options?.method ?? 'GET').toBe('GET');
+        return Response.json({
+          data: url.includes('/master-data/')
+            ? { id, name: 'SYNTHETIC HOTEL', attributes: {} }
+            : value,
+        });
+      });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(new Request(request().url + query), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/pdf');
+    const [output, refs, logo, css] = renderer.mock.calls[0]!;
+    const html = reservationPdfHtml(output, refs, logo, css);
+    expect(html).toContain('LATEST SAVED NOTICE');
+    expect(html).toContain('LATEST SAVED SUPPLIER');
+    expect(output.workflow.supplierFormSettings.text.checkIn).toBe(
+      '2026-11-12',
+    );
+    expect(html).not.toContain('PREVIOUS SENT NOTICE');
+    expect(output.workflow.sentSupplierFormSettings).toEqual(sent);
+    expect(output.workflow.sentSupplierFormVersion).toBe(2);
+    expect(value.workflow).toEqual(original);
+    expect(
+      fetcher.mock.calls.every(
+        (call) => !call[1]?.method || call[1].method === 'GET',
+      ),
+    ).toBe(true);
+    const historyHtml = reservationPdfHtml(
+      { ...value, workflow: { ...value.workflow, supplierFormSettings: sent } },
+      refs,
+      logo,
+      css,
+    );
+    expect(historyHtml).toContain('PREVIOUS SENT NOTICE');
+    expect(historyHtml).not.toContain('LATEST SAVED NOTICE');
+  },
+);
+
+it('publishes the latest saved supplier form and keeps public voucher issuance guards', async () => {
   publishing.enabled = true;
   const value = {
     ...intake,
@@ -797,14 +886,16 @@ it('publishes only the sent supplier form and keeps public voucher issuance guar
         ...intake.workflow.supplierFormSettings!,
         text: {
           ...intake.workflow.supplierFormSettings!.text,
-          broker: 'UNSENT DRAFT',
+          broker: 'LATEST SAVED FORM',
+          remarks: 'LATEST SAVED NOTICE',
         },
       },
       sentSupplierFormSettings: {
         ...intake.workflow.supplierFormSettings!,
         text: {
           ...intake.workflow.supplierFormSettings!.text,
-          broker: 'SAVED FORM',
+          broker: 'PREVIOUS SENT FORM',
+          remarks: 'PREVIOUS SENT NOTICE',
         },
       },
     },
@@ -817,9 +908,11 @@ it('publishes only the sent supplier form and keeps public voucher issuance guar
     params: Promise.resolve({ id }),
   });
   expect(response.status).toBe(200);
-  expect(publishing.html).toContain('SAVED FORM');
+  expect(publishing.html).toContain('LATEST SAVED FORM');
+  expect(publishing.html).toContain('LATEST SAVED NOTICE');
   expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
-  expect(publishing.html).not.toContain('UNSENT DRAFT');
+  expect(publishing.html).not.toContain('PREVIOUS SENT FORM');
+  expect(publishing.html).not.toContain('PREVIOUS SENT NOTICE');
   expect(renderer).not.toHaveBeenCalled();
   publishing.html = '';
   const voucher = await GET(

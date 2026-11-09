@@ -119,14 +119,8 @@ async function buildPdf(
         return fail('اقامت هتل معتبر نیست.', 400);
       }
     }
-    if (
-      !voucher &&
-      mailVersion === undefined &&
-      intake.workflow.sentSupplierFormSettings
-    ) {
-      intake.workflow.supplierFormSettings =
-        intake.workflow.sentSupplierFormSettings;
-    }
+    // Downloads and their QR share use the current saved form. Sent snapshots
+    // remain untouched for the revision history and issued-form views.
     if (!voucher) {
       try {
         intake = supplierDocumentScope(
