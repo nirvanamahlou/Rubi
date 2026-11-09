@@ -470,6 +470,7 @@ export class MasterTravelDirectory {
     destinationId: string;
     hotelIds: readonly string[];
     insuranceId?: string;
+    details?: { originAirportCode?: string; destinationAirportCode?: string };
   }) {
     for (const cityId of [input.originId, input.destinationId].filter(
       Boolean,
@@ -495,6 +496,58 @@ export class MasterTravelDirectory {
       );
       if (data.status !== 'active')
         throw new BadRequestException('بیمه انتخاب‌شده فعال نیست.');
+    }
+    for (const [cityId, code] of [
+      [input.originId, input.details?.originAirportCode],
+      [input.destinationId, input.details?.destinationAirportCode],
+    ] as const) {
+      if (!code) continue;
+      if (!cityId)
+        throw new BadRequestException('ابتدا شهر فرودگاه را انتخاب کنید.');
+      const { data: city } = await this.master.detail('cities', cityId);
+      let matched = false;
+      for (let page = 1; ; page++) {
+        const result = await this.master.list('airports', {
+          search: code,
+          status: 'active',
+          page,
+          pageSize: 100,
+          sortBy: 'name',
+          sortDirection: 'asc',
+        });
+        for (const airport of result.data) {
+          if (
+            airport.status !== 'active' ||
+            airport.attributes.iataCode !== code
+          )
+            continue;
+          if (airport.attributes.cityId === cityId) {
+            matched = true;
+            break;
+          }
+          let countryId = airport.attributes.countryId;
+          if (!countryId && typeof airport.attributes.cityId === 'string') {
+            const linked = await this.master.detail(
+              'cities',
+              airport.attributes.cityId,
+            );
+            countryId = linked.data.attributes.countryId;
+          }
+          if (
+            city.attributes.countryId &&
+            countryId === city.attributes.countryId
+          ) {
+            matched = true;
+            break;
+          }
+        }
+        if (matched || !result.data.length || page * 100 >= result.meta.total)
+          break;
+      }
+      if (!matched)
+        throw new BadRequestException(
+          'فرودگاه باید فعال و متعلق به کشور شهر انتخاب‌شده باشد.',
+        );
     }
   }
 }

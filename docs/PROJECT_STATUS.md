@@ -9516,6 +9516,10 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
 
 
+## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
+
+The manual attendance form accepts optional entry, exit, reason and device-error fields. A missing clock preserves its existing timestamp or remains missing. Metadata-only edits retain the punch sequence. Clock edits still use the authorized correction workflow and reject reversed intervals. No migration required.
+
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B
 
 Daily attendance filters use the business date and pin the selection, personnel code and employee columns. Mission reversals are excluded from petty-cash registration pagination while retaining the ledger. Leave and advance templates sit together; reservation inbox rows open the existing contract details. Released Sales PDFs use contract-scoped logo access and can render without unavailable legacy branding. No schema change.
@@ -9529,6 +9533,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 ## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — 2026-11-09
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
+
+## TOUR-FORM-1109 — PC-A — READY_FOR_CI
+
+Owner-requested tour definition controls: left header action, independent multi-branch creation with retained successes/retry, automatic city airport defaults and same-country airport overrides for both ends, removed manual IATA input, persisted optional combined-tour checkbox. Backward-compatible V1 details fields; Master Data public reference validation preserves boundaries. 8 focused Web and49 API tests pass. Full final-head gates required before authorized develop merge. No schema/migration/dependency, operational data or deployment changes. See tasks/TOUR-FORM-1109.md.
 
 ## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
 

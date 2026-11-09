@@ -11942,6 +11942,14 @@ Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx res
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develop0a209c797. User assigns bounded flight-purchase list date-filter presentation and authorizes green develop merge, no deployment. Reserve TicketPurchaseWorkspace date inputs, module-local flight-date predicate/tests, Web-only translation keys and own notes. No purchase/payment mutation, shared contracts, API, schema or dependency changes. No active overlapping purchase-list writer found; preserve PC-B Procurement ownership and existing Finance pricing/permission paths. Filter actual flight day inclusively and combine with existing status/search/parent filters; retain undated rows only without date restrictions.
 
+## TOUR-FORM-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-tour-form-1109 from origin/develop@083cedb62. Owner requests left new-tour action, multi-branch creation, city-default/country-selectable airports and persisted combined-tour checkbox, then green develop merge. Reserve tour-workspace/details-form and scoped helper/tests, additive optional travel/tours contract fields and tour-policy validation, Master Travel Directory airport reference validation and tests. Producer Ticket Catalog and Web consumer evolve together; old definitions remain readable, new fields optional. Multiple branches create independent authorized definitions using existing per-branch idempotent commands; no shared capacity or cross-branch image reuse. No schema/migration/dependency/deployment lock or changes.
+
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+
+## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
+
+Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.

@@ -1,4 +1,11 @@
 {
+  "ابتدا شهر فرودگاه را انتخاب کنید.": "Select the airport city first.",
+  "فرودگاه باید فعال و متعلق به کشور شهر انتخاب‌شده باشد.": "The airport must be active and in the selected city's country.",
+  "تعریف شعبه‌های ثبت‌شده حفظ شد؛ در صورت خطا، دوباره ذخیره کنید تا شعبه‌های باقی‌مانده ثبت شوند.": "Completed branches are saved. If an error occurs, save again to submit the remaining branches.",
+  "شعبه‌ها": "Branches",
+  "تور ترکیبی": "Combined tour",
+  "برای هر شعبه یک تعریف مستقل ثبت می‌شود. تصویر تور را در ویرایش همان شعبه اضافه کنید.": "A separate tour is created for each branch. Add the tour image when editing that branch.",
+  "تصویر تور را در ویرایش همان شعبه اضافه کنید.": "Add the tour image when editing that branch.",
   "W5 یا IRM یا MAHAN AIR": "W5, IRM or MAHAN AIR",
   "کد IATA، ICAO یا Callsign را وارد کنید؛ قالب IATA / ICAO هم مجاز است.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
   "کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
