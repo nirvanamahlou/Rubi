@@ -1,10 +1,14 @@
-## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
+# SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
-Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.
+Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
 
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
+
+## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
+
+Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.
 
 ## HR-COMPANY-SCOPE-1108 — PC-A — IN_PROGRESS
 
@@ -15,6 +19,14 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
+## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-cancel-reopen-capacity-1109 from develop0fb77974b. Owner authorizes cancellation/reopen capacity verification, necessary repair and develop merge. Reserve Ticket Catalog restore-capacity helper and focused regressions, Reservations cancellation-capacity regressions and narrow reopen guard, Sales flight-load lifecycle composition/tests and own status/task notes. Existing cancellation implementation is merged/frozen; preserve exact leg quantities, infant exclusion, public module boundaries, permissions and atomic rollback. No schema, dependency, live data or deployment changes. Existing Reservations public cancellation projection remains read-only.
+
+Extend the existing mandatory ticket-sale-routes.postgres.spec.ts case with release/re-sale, rejected reopen, transactional rollback and two concurrent reopen attempts against one freed block. No CI workflow changes. Flight-load now composes latest Reservations cancellation through its existing public reader, moving operational cancellations out of sold load and back after reopen.
+
+Local targeted verification:36 API tests, scoped ESLint, formatting, full API TypeScript and production API build pass. Implementation527b24140 published. Docker is unavailable locally; real PostgreSQL proof runs in the existing hosted gate. All final-head hosted gates remain mandatory before merge. Source freezes on publication and releases on verified merge.
 
 ## TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
 

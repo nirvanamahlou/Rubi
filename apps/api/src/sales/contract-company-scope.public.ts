@@ -55,6 +55,15 @@ export class ContractCompanyScope {
     return rows.map(({ id }) => id);
   }
 
+  /** Shared operational queue; issuer selection is not an authorization scope. */
+  async reservationInboxIds(branchIds: readonly string[]) {
+    const rows = await this.db.client.salesContract.findMany({
+      where: { hiddenAt: null, branchId: { in: [...branchIds] } },
+      select: { id: true },
+    });
+    return rows.map(({ id }) => id);
+  }
+
   async excludedReferences(actor: AuthenticatedActor) {
     const rows = await this.db.client.salesContract.findMany({
       where: { NOT: await this.where(actor) },

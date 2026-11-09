@@ -49,6 +49,27 @@ function setup() {
   return { scope, tx, entities };
 }
 describe('saved contract company and reversible archive', () => {
+  it('shares reservation contracts across issuers without selecting aggregate context', async () => {
+    const t = setup();
+    t.tx.salesContract.findMany.mockResolvedValue([
+      { id: 'company-a-contract' },
+      { id: 'company-b-contract' },
+    ] as never);
+    expect(await t.scope.reservationInboxIds(['branch'])).toEqual([
+      'company-a-contract',
+      'company-b-contract',
+    ]);
+    expect(t.tx.salesContract.findMany).toHaveBeenCalledWith({
+      where: { hiddenAt: null, branchId: { in: ['branch'] } },
+      select: { id: true },
+    });
+    expect(t.entities.current).not.toHaveBeenCalled();
+    await t.scope.reservationInboxIds([]);
+    expect(t.tx.salesContract.findMany).toHaveBeenLastCalledWith({
+      where: { hiddenAt: null, branchId: { in: [] } },
+      select: { id: true },
+    });
+  });
   it('uses the selected company for new writes and all visible lists', async () => {
     const t = setup();
     expect(await t.scope.selected(actor, true)).toBe('selected-company');
