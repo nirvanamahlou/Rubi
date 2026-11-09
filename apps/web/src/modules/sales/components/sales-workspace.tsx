@@ -615,10 +615,13 @@ export function SalesWorkspace() {
                     </td>
                     <ContractListAmounts contract={contract} />
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(contract.updatedAt).toLocaleDateString('en-GB', {
-                        calendar: 'gregory',
-                        timeZone: 'Asia/Tehran',
-                      })}
+                      {new Date(contract.updatedAt).toLocaleDateString(
+                        'en-GB',
+                        {
+                          calendar: 'gregory',
+                          timeZone: 'Asia/Tehran',
+                        },
+                      )}
                     </td>
                     <td className="px-4 py-3 last:pl-5">
                       <div className="grid min-w-96 grid-cols-5 gap-1.5">
