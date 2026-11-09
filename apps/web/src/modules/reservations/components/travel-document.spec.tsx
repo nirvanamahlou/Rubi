@@ -393,6 +393,7 @@ it.each([false, true])(
 );
 
 it('loads Sales preview branding from the released contract instead of the generic archive', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://api.test/api/v1');
   const fetcher = vi.fn().mockResolvedValue(
     new Response(new Uint8Array([1]), {
       headers: { 'Content-Type': 'image/png' },
@@ -411,5 +412,6 @@ it('loads Sales preview branding from the released contract instead of the gener
     });
   } finally {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   }
 });

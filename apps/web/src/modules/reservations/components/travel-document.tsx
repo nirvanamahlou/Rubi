@@ -24,8 +24,10 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 export async function readTravelLogo(fileId: string, salesContractId?: string) {
   if (!salesContractId) return documentsApi.preview(fileId);
+  const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('سرویس مدارک پیکربندی نشده است.');
   const url =
-    getPublicApiBaseUrl() +
+    base +
     '/sales/contracts/' +
     encodeURIComponent(salesContractId) +
     '/travel-documents/branding-logo';
@@ -34,10 +36,7 @@ export async function readTravelLogo(fileId: string, salesContractId?: string) {
     cache: 'no-store' as const,
   };
   let response = await fetch(url, options);
-  if (
-    response.status === 401 &&
-    (await refreshAuthenticatedSession(getPublicApiBaseUrl()))
-  )
+  if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await fetch(url, options);
   if (!response.ok) throw new Error('لوگوی مدرک در دسترس نیست.');
   return { blob: await response.blob() };
