@@ -42,9 +42,11 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
 
-## INSURANCE-ADVISORY-LOCK-1109 — PC-A — VALIDATING
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — DEPLOYED
 
 The remaining correction HTTP500 is reproduced as Prisma P2010 decoding PostgreSQL void from the advisory-lock query. A shared text-cast lock helper preserves serialization for correction and confirmation. Real Prisma/PostgreSQL regression checks extend the existing mandatory insurance gate. No passenger data mutation, policy issuance, provider-mode change, migration or dependency change. Owner's existing bounded repair/merge/deploy authorization applies. See docs/tasks/INSURANCE-ADVISORY-LOCK-1109.md.
+
+PR1552 merged after all8 exact-head checks succeeded; bounded API release verified.41 insurance tests and3 real adapter/lock concurrency tests pass in the candidate image. The actual compiled helper succeeds on the live database in a read-only rolled-back transaction. Web remains unchanged, Worker image/environment remains unchanged and is recreated for API namespace; health/static assets/401 boundaries/Worker/AMI/recording and zero restarts pass. Fresh encrypted backup verified offserver. No additional cleanup or passenger issuance performed. Receipt: /opt/rubi/insurance-advisory-lock-1109/verified.json.
 
 ## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
 

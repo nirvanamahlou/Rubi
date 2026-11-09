@@ -48,9 +48,11 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
-## INSURANCE-ADVISORY-LOCK-1109 — PC-A — ACTIVE
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — COMPLETE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-advisory-lock-1109 from origin/develop68b538c9f. Follow-up to owner-authorized insurance repair/merge/bounded release: reproduce and fix the remaining correction HTTP500, without issuing a passenger policy. Reserve insurance.service.ts and a real Prisma/PostgreSQL regression test, own task/status docs, and only the existing insurance PostgreSQL gate command in .github/workflows/ci.yml. No other active insurance/CI command writer found; prior source work is merged. No migration/dependency/schema/API/provider-mode changes. Preserve transactional serialization, CAS, audit, provider idempotency and peer production overlays. Bounded API-only deployment and real PostgreSQL lock proof required; no destructive cleanup authorized by this unit.
+
+PR1552 merged as cda23c1ea2611e112f477e441e09ea2627c27777 after all8 final-head hosted checks passed.41 candidate insurance tests and3 separate real Prisma/PostgreSQL tests pass;5 local CI-policy tests pass. Bounded API-only release completed with unchanged Web/Worker images, environment/mounts and migrations. Worker recreated only for API namespace; health/assets/auth/AMI/recording checks pass. The compiled live lock helper also succeeds inside a read-only rolled-back transaction. Fresh encrypted checkpoint verified offserver; no policy issued or passenger record changed for testing. Source/CI leases released. Completion-only handoff branch codex/pc-a-insurance-lock-handoff-1109 updates these3 documentation files. Receipt: /opt/rubi/insurance-advisory-lock-1109/verified.json.
 
 ## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
 
