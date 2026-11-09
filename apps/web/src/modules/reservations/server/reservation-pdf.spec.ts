@@ -812,11 +812,15 @@ it.each([false, true])(
         serviceClientKey: 'hotel',
         hotelId: id,
         hotelNameSnapshot: 'SYNTHETIC HOTEL',
+        cityId: 'synthetic-city',
+        roomTypeId: 'synthetic-room-type',
+        occupancy: 2,
+        inventoryStatus: 'AVAILABLE',
         checkInDate: '2026-11-01',
         checkOutDate: '2026-11-15',
         roomCount: 1,
         rooms: [],
-      } as NonNullable<ReservationFormIntake['snapshot']['hotelSelection']>;
+      };
       const key = reservationHotelStays(value.snapshot)[0]!.key;
       value.workflow.hotelSupplierForms = {
         [key]: {
@@ -831,13 +835,14 @@ it.each([false, true])(
     const original = structuredClone(value.workflow);
     const fetcher = vi
       .fn()
-      .mockImplementation(async (url: string, _options?: RequestInit) =>
-        Response.json({
+      .mockImplementation(async (url: string, options?: RequestInit) => {
+        expect(options?.method ?? 'GET').toBe('GET');
+        return Response.json({
           data: url.includes('/master-data/')
             ? { id, name: 'SYNTHETIC HOTEL', attributes: {} }
             : value,
-        }),
-      );
+        });
+      });
     vi.stubGlobal('fetch', fetcher);
     const response = await GET(new Request(request().url + query), {
       params: Promise.resolve({ id }),
