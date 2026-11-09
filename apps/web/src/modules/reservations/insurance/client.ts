@@ -55,9 +55,11 @@ export async function insuranceRequest<T>(
   const value = await response.json().catch(() => null);
   if (!response.ok)
     throw new Error(
-      typeof value?.message === 'string'
-        ? value.message
-        : 'اطلاعات بیمه دریافت نشد.',
+      typeof value?.error?.message === 'string'
+        ? value.error.message
+        : typeof value?.message === 'string'
+          ? value.message
+          : 'اطلاعات بیمه دریافت نشد.',
     );
   return value as T;
 }

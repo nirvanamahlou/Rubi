@@ -83,8 +83,30 @@ export { insurancePassengerIds } from '@nora/contracts';
 
 export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
   const result = draftSchema.validate(raw, { convert: false });
-  if (result.error)
-    throw new BadRequestException('اطلاعات درخواست بیمه معتبر نیست.');
+  if (result.error) {
+    const labels: Record<string, string> = {
+      'passenger.firstName': 'نام فارسی',
+      'passenger.lastName': 'نام خانوادگی فارسی',
+      'passenger.firstNameLatin': 'نام انگلیسی مطابق پاسپورت',
+      'passenger.lastNameLatin': 'نام خانوادگی انگلیسی مطابق پاسپورت',
+      'passenger.nationalityCode': 'کد تابعیت سه‌حرفی',
+      'passenger.nationalCode': 'کد ملی ایرانی',
+      'passenger.passportNo': 'شماره گذرنامه',
+      'passenger.birthDate': 'تاریخ تولد',
+      'passenger.gender': 'جنسیت',
+      'passenger.mobile': 'موبایل بیمه‌شده',
+      'passenger.email': 'ایمیل بیمه‌شده',
+      destinationCode: 'کشور',
+      planCode: 'طرح بیمه',
+      departureDate: 'تاریخ سفر',
+      durationDays: 'مدت سفر (روز)',
+      notes: 'یادداشت',
+    };
+    const label = labels[result.error.details[0]?.path.join('.') ?? ''];
+    throw new BadRequestException(
+      ['اطلاعات درخواست بیمه معتبر نیست.', label].filter(Boolean).join(' · '),
+    );
+  }
   const draft = result.value as InsuranceDraftInputV1;
   const date = new Date(draft.departureDate + 'T00:00:00.000Z');
   if (

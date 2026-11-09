@@ -18,6 +18,10 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
 
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
+
+Automatic insurance corrections trigger the existing leased automation immediately after durable save. Nested API errors and invalid field labels now reach the correction dialog; pending automatic drafts refresh for the provider result.41 API and16 Web focused tests pass. Owner authorizes final-green develop merge and bounded production release, preserving live peers and sandbox configuration. No migration/dependency/real-policy test. See docs/tasks/INSURANCE-CORRECT-SUBMIT-1109.md.
+
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
 Existing cancellation releases exact charter allocations and reopen is capacity-checked transactionally. Strengthened restore locking/reference validation and blocked known-charter reopen without current ticket identities. Flight-load now uses the existing Reservations public cancellation reader, excluding operationally cancelled contracts from sold load and restoring them after reopen. Added boundary/hold/rollback checks and extended the existing mandatory PostgreSQL gate with release/re-sale and competing reopen proof. No schema, dependency, operational data or deployment change. Owner authorizes develop merge after all final-head hosted gates. See docs/tasks/CANCEL-REOPEN-CAPACITY-1109.md.
