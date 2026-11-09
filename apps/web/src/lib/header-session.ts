@@ -1,4 +1,4 @@
-import { USER_JOB_TITLES, type LoginResponse } from '@nora/contracts';
+import { MANUAL_ACCESS_ROLE_PREFIX, type LoginResponse } from '@nora/contracts';
 
 const HEADER_SESSION_STORAGE_KEY = 'nora:header-session:v1';
 const HEADER_SESSION_CHANGED_EVENT = 'nora:header-session-changed';
@@ -22,11 +22,7 @@ function browserSessionStorage(): HeaderSessionStorage | null {
 }
 
 function selectedHeaderRoleName(roleNames: readonly string[]) {
-  return (
-    roleNames.find((name) =>
-      USER_JOB_TITLES.includes(name as (typeof USER_JOB_TITLES)[number]),
-    ) ?? (roleNames.includes('مدیر سیستم') ? USER_JOB_TITLES[0] : undefined)
-  );
+  return roleNames.map((name) => name.trim()).find(Boolean);
 }
 
 function isHeaderSessionIdentity(
@@ -65,14 +61,15 @@ export function rememberHeaderSession(
   loggedInAt = new Date().toISOString(),
   storage: HeaderSessionStorage | null = browserSessionStorage(),
 ): HeaderSessionIdentity {
-  const assignedRoles = user.roles ?? [];
+  const assignedRoles = (user.roles ?? []).filter((role) => role.name.trim());
+  // Match IAM's user-access editor: its per-user title takes precedence over templates.
   const selectedTitle =
-    assignedRoles.find(({ name }) =>
-      USER_JOB_TITLES.includes(name as (typeof USER_JOB_TITLES)[number]),
-    )?.name ??
-    (assignedRoles.some(({ code }) => code === 'administrator')
-      ? USER_JOB_TITLES[0]
-      : undefined);
+    assignedRoles
+      .find(({ code }) => code.startsWith(MANUAL_ACCESS_ROLE_PREFIX))
+      ?.name.trim() ??
+    assignedRoles
+      .find(({ code }) => !code.startsWith('personal-access-'))
+      ?.name.trim();
   const identity: HeaderSessionIdentity = {
     displayName: user.displayName.trim() || 'کاربر سامانه',
     loggedInAt,
