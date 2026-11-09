@@ -184,6 +184,39 @@ it('saves correction with encrypted identifiers and contacts, optimistic concurr
     }),
   );
   expect(tx.customerContact.upsert).toHaveBeenCalledTimes(2);
+  for (const [target, code] of [
+    ['nationalIdFingerprint', 'CUSTOMER_NATIONAL_ID_EXISTS'],
+    ['passportNumberFingerprint', 'CUSTOMER_PASSPORT_NUMBER_EXISTS'],
+  ]) {
+    const databaseError = { code: 'P2002', meta: { target: [target] } };
+    tx.customer.updateMany.mockRejectedValueOnce(databaseError);
+    const failure = await f.service
+      .saveCorrection(
+        tx as never,
+        'person',
+        input,
+        { userId: 'operator' } as never,
+        'branch',
+      )
+      .catch((error) => error);
+    expect(failure.getStatus()).toBe(409);
+    expect(failure.getResponse().code).toBe(code);
+    expect(JSON.stringify(failure.getResponse())).not.toContain(
+      input.nationalCode,
+    );
+    expect(tx.customerContact.upsert).toHaveBeenCalledTimes(2);
+  }
+  const unexpected = new Error('database unavailable');
+  tx.customer.updateMany.mockRejectedValueOnce(unexpected);
+  await expect(
+    f.service.saveCorrection(
+      tx as never,
+      'person',
+      input,
+      { userId: 'operator' } as never,
+      'branch',
+    ),
+  ).rejects.toBe(unexpected);
   const audit = JSON.stringify(tx.customerAuditEvent.create.mock.calls);
   for (const secret of [
     input.nationalCode,

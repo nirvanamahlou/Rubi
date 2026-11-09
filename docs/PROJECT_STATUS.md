@@ -9588,3 +9588,6 @@ URLs, payment references or check identifiers are returned. Unauthorized, unavai
 and empty sources render separately; customer/company changes clear prior data.
 Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
 No migration, dependency or operational-data changes. Full hosted checks gate merge.
+
+INSURANCE-DRAFT-ERROR-1109: owner-coordinated repair translates national/passport identity uniqueness conflicts in insurance correction into safe409 instead of generic500. Existing uniqueness and transaction rollback remain; no provider issuance or business-data mutation. Read-only real case confirmed identity belongs to a different customer. Tests/CI tracked on dedicated branch; see docs/tasks/INSURANCE-DRAFT-ERROR-1109.md.
+

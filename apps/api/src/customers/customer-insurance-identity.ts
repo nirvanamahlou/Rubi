@@ -133,28 +133,49 @@ export class CustomerInsuranceIdentity {
         ? this.ids.protect(input.nationalCode)
         : {};
     const passport = this.ids.protectPassportNumber(input.passportNo);
-    const updated = await tx.customer.updateMany({
-      where: {
-        id: customerId,
-        version: input.version,
-        kind: 'PERSON',
-        isActive: true,
-      },
-      data: {
-        firstName: input.firstName,
-        lastName: input.lastName,
-        displayName: input.firstName + ' ' + input.lastName,
-        passportFirstName: input.firstNameLatin,
-        passportLastName: input.lastNameLatin,
-        nationalityCode: input.nationalityCode,
-        gender: input.gender,
-        birthDate: new Date(input.birthDate + 'T00:00:00Z'),
-        ...national,
-        ...passport,
-        version: { increment: 1 },
-        updatedByUserId: actor.userId,
-      },
-    });
+    const updated = await tx.customer
+      .updateMany({
+        where: {
+          id: customerId,
+          version: input.version,
+          kind: 'PERSON',
+          isActive: true,
+        },
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+          displayName: input.firstName + ' ' + input.lastName,
+          passportFirstName: input.firstNameLatin,
+          passportLastName: input.lastNameLatin,
+          nationalityCode: input.nationalityCode,
+          gender: input.gender,
+          birthDate: new Date(input.birthDate + 'T00:00:00Z'),
+          ...national,
+          ...passport,
+          version: { increment: 1 },
+          updatedByUserId: actor.userId,
+        },
+      })
+      .catch((error: unknown) => {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'P2002'
+        ) {
+          const target = 'meta' in error ? JSON.stringify(error.meta) : '';
+          const passport = target?.includes('passportNumberFingerprint');
+          throw new ConflictException({
+            code: passport
+              ? 'CUSTOMER_PASSPORT_NUMBER_EXISTS'
+              : 'CUSTOMER_NATIONAL_ID_EXISTS',
+            message: passport
+              ? 'برای این شماره پاسپورت قبلاً پرونده ثبت شده است.'
+              : 'برای این کد ملی قبلاً پرونده ثبت شده است.',
+          });
+        }
+        throw error;
+      });
     if (!updated.count)
       throw new ConflictException(
         'اطلاعات مسافر تغییر کرده است؛ دوباره دریافت کنید.',
