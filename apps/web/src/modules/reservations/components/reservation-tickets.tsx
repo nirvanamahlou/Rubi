@@ -64,6 +64,7 @@ export function ReservationTickets({
   const { logo } = useTravelLogo(
     branding,
     unbranded || branding?.ticketWithoutLogo === true,
+    salesContractId,
   );
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
