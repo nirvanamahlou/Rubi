@@ -227,12 +227,15 @@ function Navigation({
     const link = (
       <Link
         aria-current={active ? 'page' : undefined}
+        style={
+          active ? { backgroundColor: '#185abd', color: '#ffffff' } : undefined
+        }
         className={cn(
           'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
           compact ? 'h-full min-h-8' : 'min-h-10 py-2 text-xs leading-[1.8]',
           mobile
             ? active
-              ? 'bg-primary text-primary-foreground shadow-sm'
+              ? 'bg-[#185abd] text-white shadow-sm'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             : active
               ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
@@ -244,6 +247,7 @@ function Navigation({
       >
         <Icon
           strokeWidth={1.7}
+          style={active ? { color: '#ffffff' } : undefined}
           aria-hidden="true"
           className={cn(
             'size-[17px] shrink-0',
