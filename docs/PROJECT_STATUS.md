@@ -1,7 +1,3 @@
-# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
-
-Compact/mobile selected navigation now keeps white text/icons on solid blue across theme foreground changes. Cancellation message is rendered on its own reservation contract row, removed from the action panel; cancelled rows retain opaque red background/black text while selected, plus a blue outline.49 focused workspace/action/navigation checks and scoped lint pass. Full typecheck and final hosted gates precede owner-authorized develop merge. No API/schema/dependency/data/deployment changes. Local checkout reused to avoid disk-full duplication; cache deletion was policy-blocked and no user files were deleted.
-
 # TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
 
 Final follow-up fills flight-export hotel columns only from that passenger's actual hotel assignment, including saved individual stay dates; flight dates/status and row counts stay independent.17 API checks, the extra flight-card regression and five language/document checks pass. Saved synthetic XLSX independently reloads with correct KPIs, local Gregorian times, stay nights, leading zeros and filter/freeze metadata. One new PDF caption translation and deterministic offline catalogue sync included.
@@ -9528,5 +9524,6 @@ Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace sear
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
 
+# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
 
-
+Compact/mobile selected navigation now keeps white text/icons on solid blue across theme foreground changes. Cancellation message is rendered on its own reservation contract row, removed from the action panel; cancelled rows retain opaque red background/black text while selected, plus a blue outline.49 focused workspace/action/navigation checks and scoped lint pass. Full typecheck and final hosted gates precede owner-authorized develop merge. No API/schema/dependency/data/deployment changes. Local checkout reused to avoid disk-full duplication; cache deletion was policy-blocked and no user files were deleted.

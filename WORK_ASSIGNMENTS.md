@@ -1,9 +1,3 @@
-# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
-
-COMPUTER_ID=PC-A; codex/pc-a-navigation-cancelled-labels-1109 from develop e32d4726d, reusing own clean checkout after disk-full prevented a new worktree. Reserve bounded app-shell navigation selection styles, Reservations foundation action-panel/table status presentation and focused checks; own status/task notes. Owner authorizes readable selected navigation, moving cancelled message from actions to its contract row with opaque black text, tests and develop merge. Preserve cancellation permissions/disabled actions, status transitions, route access and group collapse behavior. No API/schema/dependency/data/deployment changes. Central app-shell lease is limited to selected presentation; no active overlapping source owner found.
-
-Owner clarified the compact/mobile active module appeared blue with black text. Active link and icon now pin white foreground over solid blue independent of theme tokens. Cancellation message appears once beneath the contract number in its own table row, removed from the actions panel. Cancelled cells use opaque red/black even when selected, with blue selection outline.49 focused workspace/action/navigation regressions and scoped lint pass; full types and hosted production gates required before authorized merge. No operational state or permission behavior changed.
-
 # TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
 
 Validation follow-up reserves the one new report PDF caption's English catalogue key and deterministic offline catalogue synchronization. No unrelated translations or dependency changes.
@@ -11939,3 +11933,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develo
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+
+# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-navigation-cancelled-labels-1109 from develop e32d4726d, reusing own clean checkout after disk-full prevented a new worktree. Reserve bounded app-shell navigation selection styles, Reservations foundation action-panel/table status presentation and focused checks; own status/task notes. Owner authorizes readable selected navigation, moving cancelled message from actions to its contract row with opaque black text, tests and develop merge. Preserve cancellation permissions/disabled actions, status transitions, route access and group collapse behavior. No API/schema/dependency/data/deployment changes. Central app-shell lease is limited to selected presentation; no active overlapping source owner found.
+
+Owner clarified the compact/mobile active module appeared blue with black text. Active link and icon now pin white foreground over solid blue independent of theme tokens. Cancellation message appears once beneath the contract number in its own table row, removed from the actions panel. Cancelled cells use opaque red/black even when selected, with blue selection outline.49 focused workspace/action/navigation regressions and scoped lint pass; full types and hosted production gates required before authorized merge. No operational state or permission behavior changed.
