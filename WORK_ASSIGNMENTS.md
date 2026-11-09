@@ -52,7 +52,9 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
-## INSURANCE-STANDALONE-1109 — PC-A — ACTIVE
+## INSURANCE-STANDALONE-1109 — PC-A — DEPLOYED / RELEASED
+
+PR1559 merged to develop as294e6b0b27375f749255fa09b48a09d44e0fc0e3 after all eight exact-head checks passed for dc25af58a10e9e9701924d883a528d8563cee668. Bounded API/Web images insurance-standalone-1109 activated with only additive migration20261109100000. Live environment/mount hashes, peer source overlays, unrelated services, old/new assets, authentication, Worker/AMI/recording and runtime schema privileges verified. Real disposable PostgreSQL proofs passed on the release image; browser confirmed fresh standalone form and permitted-duration dropdown without submitting a policy. Fresh encrypted checkpoint is verified off-server. Schema/migration, central CI/runtime-module, DTO/catalogue and Customer validation-port leases for this unit are released. Documentation handoff only remains; see the task note for rollback and receipts.
 
 Bounded Customers port lease: CustomerInsuranceIdentity exposes only its existing Iranian national-ID validation for standalone request input; no Customer row is created/read/changed by that port. Customers remains producer of identity validation, Reservations consumes it. No Customer module/registry change.
 
