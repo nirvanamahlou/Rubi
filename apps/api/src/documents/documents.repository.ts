@@ -448,6 +448,13 @@ export class DocumentsRepository {
     return { rows, total };
   }
 
+  findProfilePhoto(id: string, ownerUserId: string) {
+    return this.database.client.document.findFirst({
+      where: { id, ownerUserId, archiveStatus: 'ACTIVE' },
+      include: documentDetailInclude,
+    });
+  }
+
   findDetail(
     id: string,
     branchIds: readonly string[],

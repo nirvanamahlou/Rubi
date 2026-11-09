@@ -27,7 +27,7 @@ import * as validate from './messaging.validation';
 
 type ParticipantDescription = Pick<
   MessagingContactV1,
-  'id' | 'displayName' | 'username'
+  'id' | 'displayName' | 'username' | 'hasProfilePhoto'
 >;
 
 @Injectable()
@@ -314,6 +314,30 @@ export class MessagingService {
         .filter((userId) => userId !== actor.userId),
     });
     return { data: await this.mapMessage(row) };
+  }
+
+  async avatar(
+    id: string,
+    userId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ) {
+    const conversation = await this.assertConversation(
+      validate.uuid(id, 'گفت‌وگو'),
+      actor,
+    );
+    const memberId = validate.uuid(userId, 'کاربر');
+    if (!conversation.members.some((member) => member.userId === memberId))
+      throw new NotFoundException('عکس پروفایل ثبت نشده است.');
+    const identity = await this.iam.personalProfile(memberId);
+    const documentId = identity.profile?.photoDocumentId;
+    if (!documentId) throw new NotFoundException('عکس پروفایل ثبت نشده است.');
+    return this.documents.previewMessagingProfilePhoto(
+      documentId,
+      memberId,
+      actor,
+      metadata,
+    );
   }
 
   private async assertConversation(id: string, actor: AuthenticatedActor) {

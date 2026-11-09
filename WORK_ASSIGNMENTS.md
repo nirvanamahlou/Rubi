@@ -11968,6 +11968,10 @@ Attendance date filters and pinned employee columns, mission reversal visibility
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-latest-pdf-1109 from develop@cc34a653b. Owner requests downloaded reservation PDF use the latest saved form/NOTICE while previous sent versions remain in history; preserve form appearance and disabled real email. Reserve the reservation PDF route's saved-versus-sent selection, reservation-pdf.spec.ts regressions and bounded own task/status notes. Published contract PDF access work is integrated; preserve its release/authorization guards and all voucher behavior. No API/schema/migration/dependency, history mutation, operational data/settings, SMTP or deployment change. Existing green develop merge authorization applies after all exact-head gates.
 
+## MESSAGING-MENTIONS-1109 - PC-B
+
+Group mention suggestions and transactional notifications, and membership-scoped Workbench avatars on incoming messages. Additive messaging contracts and read endpoint. No migration or dependency change.
+
 ## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
 
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
