@@ -21,7 +21,7 @@ const cities = [
   { id: 'b', attributes: { countryId: 'one' } },
   { id: 'c', attributes: { countryId: 'two' } },
 ].map((value) => record({ ...value, resource: 'cities' }));
-const airports = [
+const airportRows: Pick<MasterDataRecord, 'id' | 'name' | 'attributes'>[] = [
   {
     id: 'other-city',
     name: 'Other',
@@ -34,7 +34,8 @@ const airports = [
     attributes: { cityId: 'c', iataCode: 'CCC' },
   },
   { id: 'no-code', name: 'No code', attributes: { cityId: 'a' } },
-].map(record);
+];
+const airports = airportRows.map(record);
 describe('tour airport selection', () => {
   it('defaults to the city airport rather than the first airport of the country', () => {
     expect(defaultTourAirport('a', airports)).toBe('AAA');
