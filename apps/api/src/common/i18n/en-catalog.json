@@ -258,6 +258,12 @@
   "عدم شمول": "Exclude",
   "مراحل بعدی در راهکاران قابل مشاهده نیست": "The subsequent stages cannot be viewed in Rahkaran",
   "صدور سند معکوس تعدیل ماهیت": "Issuance of reverse document of nature adjustment",
+  "دریافت سوابق ناموفق بود؛ دوباره تلاش کنید.": "Could not load records. Please try again.",
+  "در حال دریافت سوابق": "Loading records",
+  "این بخش موقتاً در دسترس نیست.": "This section is temporarily unavailable.",
+  "مجوز مشاهده این بخش را ندارید.": "You do not have permission to view this section.",
+  "سابقه‌ای ثبت نشده است.": "No records have been registered.",
+  "۵۰ سابقه اخیر نمایش داده می‌شود.": "Showing the 50 most recent records.",
   "تاریخ میلادی و ساعت تعریف‌شده به وقت تهران": "Gregorian dates and defined Tehran times",
   "(کد": "(code",
   "بیمه:": "insurance:",
@@ -6824,6 +6830,7 @@
   "در تنظیمات عمومی مجاز نیست.": "Not allowed in public settings.",
   "در حال انجام": "in progress",
   "در حال بررسی": "under review",
+  "در گروه به شما اشاره شد": "You were mentioned in a group",
   "در Context برابر ALL صدور خروجی ممنوع است.": "It is forbidden to issue output in Context equal to ALL.",
   "درجه هتل": "Hotel class",
   "درجه هتل باید عدد صحیح بین ۱ تا ۵ باشد.": "Hotel grade must be an integer between 1 and 5.",
@@ -8146,6 +8153,5 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing.",
-  "در گروه به شما اشاره شد": "You were mentioned in a group"
+  "version برای ویرایش الزامی است.": "version is required for editing."
 }

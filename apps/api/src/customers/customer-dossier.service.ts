@@ -28,11 +28,11 @@ export class CustomerDossierService {
   ): Promise<CustomerDossierResponse> {
     if (!(await this.customers.find(customerId, actor.branchIds)))
       throw new NotFoundException();
-    const scope = dossierSalesScope(
-      actor,
-      customerId,
-      await this.company.where(actor),
-    );
+    const scope = dossierSalesScope(actor, customerId, {})
+      ? this.company
+          .where(actor)
+          .then((company) => dossierSalesScope(actor, customerId, company))
+      : Promise.resolve(null);
     const safe = async (
       ids: CustomerDossierSection['id'][],
       read: () => Promise<CustomerDossierSection[]>,
@@ -49,15 +49,24 @@ export class CustomerDossierService {
       }
     };
     const sources = await Promise.all([
-      safe(['contracts', 'services', 'payments', 'checks'], () =>
-        readSalesCustomerDossier(this.db.client, actor, customerId, scope),
+      safe(['contracts', 'services', 'payments', 'checks'], async () =>
+        readSalesCustomerDossier(
+          this.db.client,
+          actor,
+          customerId,
+          await scope,
+        ),
       ),
       safe(['requests', 'support'], () =>
         readAffairsCustomerDossier(this.db.client, actor, customerId),
       ),
       safe(['tickets', 'vouchers', 'insurance'], async () => {
-        const refs = scope
-          ? await customerDossierContractReferences(this.db.client, scope)
+        const contractScope = await scope;
+        const refs = contractScope
+          ? await customerDossierContractReferences(
+              this.db.client,
+              contractScope,
+            )
           : null;
         return readReservationCustomerDossier(
           this.db.client,
