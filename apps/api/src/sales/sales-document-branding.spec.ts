@@ -1,12 +1,11 @@
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 function setup() {
-  const detail = vi
-    .fn()
-    .mockResolvedValue({
-      data: { status: 'SENT_TO_RESERVATION', branchId: 'contract-branch' },
-    });
+  const detail = vi.fn().mockResolvedValue({
+    data: { status: 'SENT_TO_RESERVATION', branchId: 'contract-branch' },
+  });
   const intake = {
     branchId: 'contract-branch',
     workflow: {
@@ -64,4 +63,17 @@ it.each([
   if (kind === 'no-logo') x.intake.workflow.branding.logoFileId = '';
   await expect(x.controller.logo('contract', x.req)).rejects.toThrow();
   expect(x.preview).not.toHaveBeenCalled();
+});
+
+it('distinguishes an inaccessible logo from a revoked contract release', async () => {
+  const x = setup();
+  x.preview.mockRejectedValueOnce(new ForbiddenException());
+  await expect(x.controller.logo('contract', x.req)).rejects.toBeInstanceOf(
+    NotFoundException,
+  );
+  x.release.mockResolvedValueOnce({ approved: false });
+  await expect(x.controller.logo('contract', x.req)).rejects.toBeInstanceOf(
+    ForbiddenException,
+  );
+  expect(x.preview).toHaveBeenCalledOnce();
 });

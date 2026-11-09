@@ -181,7 +181,7 @@ async function buildPdf(
           ? `/sales/contracts/${salesContractId}/travel-documents/branding-logo`
           : `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
       );
-      if (salesContractId && [403, 404].includes(logoResponse.status)) {
+      if (salesContractId && logoResponse.status === 404) {
         // A legacy brand asset can be unavailable independently of the contract.
         logo = '';
       } else {

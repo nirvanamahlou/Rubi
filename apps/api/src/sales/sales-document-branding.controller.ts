@@ -53,12 +53,25 @@ export class SalesDocumentBrandingController {
     const output = await this.travel.floatingDocumentOutput(intake, actor);
     const logoId = output.workflow.branding?.logoFileId;
     if (!logoId) throw new NotFoundException('لوگوی سربرگ ثبت نشده است.');
-    const file = await this.documents.previewReleasedTravelLogo(logoId, actor, {
-      ...(req.ip ? { ipAddress: req.ip } : {}),
-      ...(req.headers['user-agent']
-        ? { userAgent: req.headers['user-agent'] }
-        : {}),
-    });
-    return new StreamableFile(file.stream, { type: file.mimeType });
+    try {
+      const file = await this.documents.previewReleasedTravelLogo(
+        logoId,
+        actor,
+        {
+          ...(req.ip ? { ipAddress: req.ip } : {}),
+          ...(req.headers['user-agent']
+            ? { userAgent: req.headers['user-agent'] }
+            : {}),
+        },
+      );
+      return new StreamableFile(file.stream, { type: file.mimeType });
+    } catch (error) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      )
+        throw new NotFoundException('لوگوی سربرگ در دسترس نیست.');
+      throw error;
+    }
   }
 }

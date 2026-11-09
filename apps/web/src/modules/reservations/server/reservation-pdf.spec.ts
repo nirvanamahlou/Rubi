@@ -1037,13 +1037,13 @@ it.each([200, 403, 404])(
       ),
       { params: Promise.resolve({ id }) },
     );
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(logoStatus === 403 ? 403 : 200);
     expect(fetcher.mock.calls.some(([url]) => url === logoPath)).toBe(true);
     expect(
       fetcher.mock.calls.some(([url]) =>
         url.includes('/documents/' + id + '/preview'),
       ),
     ).toBe(false);
-    expect(renderer).toHaveBeenCalledOnce();
+    expect(renderer).toHaveBeenCalledTimes(logoStatus === 403 ? 0 : 1);
   },
 );
