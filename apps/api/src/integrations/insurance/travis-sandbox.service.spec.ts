@@ -1,3 +1,4 @@
+import type { TravisDiagnosticError } from './travis-sandbox.service';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { InsuranceSettingsService } from './insurance-settings';
@@ -353,10 +354,7 @@ it('retains the exact provider validation message and HTTP/business codes while 
     expect(String(error)).not.toMatch(
       /ABC1234567|private@example|synthetic-sandbox-test-key/,
     );
-    expect(
-      (error as import('./travis-sandbox.service').TravisDiagnosticError)
-        .providerDiagnostic,
-    ).toMatchObject({
+    expect((error as TravisDiagnosticError).providerDiagnostic).toMatchObject({
       httpStatus: 200,
       code: 400,
       messages: expect.arrayContaining(['تاریخ تولد شمسی اجباری است']),
