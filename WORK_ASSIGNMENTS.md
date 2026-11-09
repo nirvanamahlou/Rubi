@@ -6,6 +6,10 @@ Owner explicitly supersedes the selected-company Reservations list rule: one sha
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
 
+## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
+
+Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.
+
 ## HR-COMPANY-SCOPE-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes company/branch separation, shared organization units and employees with editable membership, and preservation of historical links. Radan is read-only: preserve both existing API connections, source mappings, personnel IDs and attendance provenance. Branch codex/pc-a-hr-company-scope-1108. Reserve HR organization catalog, employee company assignment and scoped forms, contracts and regression tests. No external Radan writes. Physical ownership branch IDs must remain stable for financial, document and attendance records. No schema migration reserved until active migration owner is released. Extend scope to IAM-owned company creation through IamService, HR company controller and organization editor; no IAM permission model changes.
