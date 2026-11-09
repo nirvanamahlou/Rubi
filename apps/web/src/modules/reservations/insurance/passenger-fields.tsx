@@ -4,7 +4,9 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import styles from './workspace.module.css';
 
-export function InsuranceInputGuide() {
+export function InsuranceInputGuide({
+  standalone = false,
+}: { standalone?: boolean } = {}) {
   return (
     <details className={styles.card}>
       <summary>اطلاعات لازم برای صدور بیمه و روش ورود</summary>
@@ -26,14 +28,18 @@ export function InsuranceInputGuide() {
       </p>
       <p>
         کشور مقصد و طرح فعال را از فهرست بیمه انتخاب کنید. تاریخ سفر از تقویم و
-        مدت سفر به روز، شامل روز رفت و برگشت، ثبت شود. کشور مبدأ از قرارداد
-        خوانده می‌شود. تاریخ تولد به میلادی ارسال می‌شود؛ متد صدور مستندشده فیلد
-        جداگانه تاریخ شروع سفر ندارد و تاریخ سفر در درخواست داخلی سامانه نگهداری
-        می‌شود.
+        مدت بیمه از فهرست مدت‌های مجاز بیمه‌گر انتخاب شود؛ روز رفت و برگشت را در
+        مدت پوشش لحاظ کنید.
+        {standalone
+          ? ' کشور مبدأ را انتخاب کنید؛ قرارداد فروش لازم نیست. '
+          : ' کشور مبدأ از قرارداد خوانده می‌شود. '}
+        تاریخ تولد به میلادی ارسال می‌شود؛ متد صدور مستندشده فیلد جداگانه تاریخ
+        شروع سفر ندارد و تاریخ سفر در درخواست داخلی سامانه نگهداری می‌شود.
       </p>
       <p>
         شماره و مبلغ بیمه پس از تأیید بیمه‌گر ثبت می‌شود. در حالت آزمایشی، خروجی
-        بیمه‌نامه واقعی نیست. اصلاح اطلاعات مسافر در پرونده او نیز ذخیره می‌شود.
+        بیمه‌نامه واقعی نیست.
+        {!standalone && ' اصلاح اطلاعات مسافر در پرونده او نیز ذخیره می‌شود.'}
       </p>
       <a
         href="https://sandboxapi.travis.ir/swagger/index.html"

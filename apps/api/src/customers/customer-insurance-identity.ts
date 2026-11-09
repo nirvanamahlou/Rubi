@@ -16,7 +16,10 @@ import type {
   InsurancePassengerInputV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
-import { CustomerNationalIdProtector } from './customer-national-id';
+import {
+  CustomerNationalIdProtector,
+  isValidIranianNationalId,
+} from './customer-national-id';
 import { CustomerContactCrypto } from './customer-contact.crypto';
 import { CustomerRepository } from './customer.repository';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
@@ -24,6 +27,13 @@ import { SalesOperationalAmendmentService } from '../sales/sales-operational-ame
 /** Internal provider-only projection; never exposed through an HTTP customer endpoint. */
 @Injectable()
 export class CustomerInsuranceIdentity {
+  validateApplicant(input: InsurancePassengerInputV1) {
+    if (
+      input.nationalityCode === 'IRN' &&
+      !isValidIranianNationalId(input.nationalCode)
+    )
+      throw new BadRequestException('کد ملی معتبر نیست.');
+  }
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(CustomerNationalIdProtector)

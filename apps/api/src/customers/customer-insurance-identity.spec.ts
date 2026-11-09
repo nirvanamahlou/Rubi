@@ -71,6 +71,22 @@ function fixture() {
   );
   return { intake, person, db, ids, contacts, repository, service, sales };
 }
+it('validates standalone national identity through the Customer public port without reading or changing a Customer', () => {
+  const f = fixture();
+  expect(() =>
+    f.service.validateApplicant({
+      nationalityCode: 'IRN',
+      nationalCode: '0000000000',
+    } as never),
+  ).toThrow('کد ملی');
+  expect(() =>
+    f.service.validateApplicant({
+      nationalityCode: 'TUR',
+      nationalCode: '',
+    } as never),
+  ).not.toThrow();
+  expect(f.repository.auditSensitiveRead).not.toHaveBeenCalled();
+});
 it('provides only selected insured identities to the internal provider and records the sensitive read', async () => {
   const f = fixture();
   const output = await f.service.read('intake', 'person');
