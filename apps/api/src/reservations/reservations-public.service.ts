@@ -700,9 +700,7 @@ export class ReservationsPublicService {
         'شماره صفحه یا جست‌وجوی قرارداد معتبر نیست.',
       );
     const contractNumber = options.contractNumber?.trim();
-    const ids = options.actor
-      ? await this.companyScope?.ids(options.actor)
-      : undefined;
+    const ids = await this.companyScope?.reservationInboxIds(branchIds);
     const rows = await this.database.client.reservationIntake.findMany({
       where: {
         branchId: { in: [...branchIds] },
