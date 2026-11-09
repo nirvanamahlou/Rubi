@@ -30,6 +30,8 @@ import {
   downloadIssuedTicketReport,
 } from '../api/issued-tickets';
 import { TicketDatePicker } from './ticket-date-picker';
+import { SearchCombobox } from '@/components/ui/search-combobox';
+import { reportGregorianTime } from '../model/report-time';
 
 export const serviceLabels: Record<string, string> = {
   all: 'همه خدمات',
@@ -227,52 +229,47 @@ export function IssuedTicketsWorkspace({
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="نوع خدمت" id="report-service">
-            <select
+            <SearchCombobox
               id="report-service"
-              className="h-11 w-full rounded-lg border bg-background px-3"
-              value={query.serviceKind}
-              onChange={(e) =>
-                filter({ serviceKind: e.target.value, hotelId: 'all' })
+              value={query.serviceKind ?? 'all'}
+              onValueChange={(serviceKind) =>
+                filter({ serviceKind, hotelId: 'all' })
               }
-            >
-              {Object.entries(serviceLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              options={Object.entries(serviceLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+            />
           </FormField>
           <FormField label="هتل" id="report-hotel">
-            <select
+            <SearchCombobox
               id="report-hotel"
-              className="h-11 w-full rounded-lg border bg-background px-3"
-              value={query.hotelId}
-              onChange={(e) =>
+              value={query.hotelId ?? 'all'}
+              onValueChange={(hotelId) =>
                 filter({
-                  hotelId: e.target.value,
-                  serviceKind:
-                    e.target.value === 'all' ? query.serviceKind : 'HOTEL',
+                  hotelId,
+                  serviceKind: hotelId === 'all' ? query.serviceKind : 'HOTEL',
                 })
               }
-            >
-              <option value="all">همه هتل‌ها</option>
-              {reportOptions?.hotels.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: 'all', label: 'همه هتل‌ها' },
+                ...(reportOptions?.hotels ?? []).map((h) => ({
+                  value: h.id,
+                  label: h.name,
+                })),
+              ]}
+            />
           </FormField>
           <FormField label="مبنای تاریخ" id="report-date-basis">
-            <select
+            <SearchCombobox
               id="report-date-basis"
-              className="h-11 w-full rounded-lg border bg-background px-3"
-              value={query.dateBasis}
-              onChange={(e) => filter({ dateBasis: e.target.value })}
-            >
-              <option value="ISSUED">صدور / ثبت درخواست</option>
-              <option value="TRAVEL">حرکت / ورود هتل</option>
-            </select>
+              value={query.dateBasis ?? 'ISSUED'}
+              onValueChange={(dateBasis) => filter({ dateBasis })}
+              options={[
+                { value: 'ISSUED', label: 'صدور / ثبت درخواست' },
+                { value: 'TRAVEL', label: 'حرکت / ورود هتل' },
+              ]}
+            />
           </FormField>
           <FormField label="جست‌وجوی کلی" id="issued-ticket-search">
             <Input
@@ -501,10 +498,9 @@ export function IssuedTicketsWorkspace({
               </p>
               {ticket.departureAt ? (
                 <p className="text-sm" dir="ltr">
-                  {new Intl.DateTimeFormat('en-GB', {
-                    timeZone: 'Asia/Tehran',
-                    dateStyle: 'medium',
-                  }).format(new Date(ticket.departureAt))}
+                  {reportGregorianTime(
+                    ticket.checkInDate || ticket.departureAt,
+                  )}
                   {ticket.checkOutDate ? ' → ' + ticket.checkOutDate : ''}
                 </p>
               ) : null}

@@ -5,6 +5,7 @@ import {
 } from '@nora/contracts';
 
 export interface IssuedTicketRow {
+  customerId?: string;
   id: string;
   contractNumber: string;
   passengerDisplayName: string;
@@ -83,6 +84,7 @@ export function issuedRows(
       return [
         {
           id: doc.id + ':' + key,
+          customerId: doc.customerId,
           contractNumber: snapshot.contractNumber,
           passengerDisplayName:
             passenger.displayNameSnapshot?.trim() || 'نام مسافر ثبت نشده',

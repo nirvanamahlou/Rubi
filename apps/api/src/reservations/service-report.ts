@@ -59,6 +59,7 @@ export function allocatedServiceRows(
           ].find((v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v));
           return {
             id: `${id}:${p.customerId}:${s.clientKey}`,
+            customerId: p.customerId,
             contractNumber: snapshot.contractNumber,
             passengerDisplayName:
               p.displayNameSnapshot?.trim() || 'نام مسافر ثبت نشده',

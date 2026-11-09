@@ -1,3 +1,7 @@
+# TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
+
+Issued-service Excel now begins with filtered unique passenger, contract, service/status and hotel KPIs. Detail rows include filtered passenger count per contract, PNR, issuance date, class/source and hotel check-in/check-out/night count. Gregorian timestamps restore the catalogue-defined Tehran time instead of exposing UTC ISO strings; hotel calendar dates are not shifted. Report service/hotel/date-basis filters reuse the project searchable combobox and keep explicit Search behavior.16 API and253 Web checks pass (one existing opt-in Web skip), scoped lint/full API and Web TypeScript/API and67-route Web production builds pass. Final hosted gates precede owner-authorized develop merge. No migration/dependency/data/deployment change.
+
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
 Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
