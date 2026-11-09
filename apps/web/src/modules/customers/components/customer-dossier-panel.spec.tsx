@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import type * as ReactModule from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CustomerDossierResponse } from '@nora/contracts';
 vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
@@ -13,7 +14,7 @@ const fixture = vi.hoisted(() => ({
   calls: 0,
 }));
 vi.mock('react', async (original) => ({
-  ...(await original<typeof import('react')>()),
+  ...(await original<typeof ReactModule>()),
   useState: (initial: unknown) => {
     const n = fixture.calls++;
     return [n % 3 === 0 ? fixture.result : initial, vi.fn()];
