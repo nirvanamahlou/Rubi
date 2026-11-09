@@ -5420,6 +5420,25 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           where: { OR: [{ id: unit.id }, { sharedSourceId: unit.id }] },
         }),
       ).toBe(owner.branchIds.length);
+      for (const companyId of [undefined, branchB]) {
+        const query = {
+          section: 'organization',
+          tab: 'units',
+          ...(companyId ? { companyId } : {}),
+        };
+        const listed = await service.listRecords(query, owner);
+        expect(
+          listed.items.filter(
+            (row) => row.values[0] === 'Synthetic shared unit',
+          ),
+        ).toHaveLength(1);
+        const paginated = await service.listRecords(
+          { ...query, pageSize: 1 },
+          owner,
+        );
+        expect(paginated.items).toHaveLength(1);
+        expect(paginated.total).toBe(listed.items.length);
+      }
       const shared = await service.listRecords(
         { section: 'time', tab: 'attendance', companyId: branchB },
         owner,
