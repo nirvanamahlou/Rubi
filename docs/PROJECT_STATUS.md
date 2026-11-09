@@ -9570,3 +9570,15 @@ Reservation PDF GET now uses the latest saved settings/NOTICE instead of replaci
 ## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C
 
 Removed mini trend SVGs/currency legends beneath every Dashboard KPI card and their chart loading placeholders/reserved space. Keep numeric amounts and currency symbols, comparison badges, missing-input explanations, card details and all full-size visualizations. Remove obsolete mini-chart-only source expectations/helper/imports; shared chart palette retained.59 Dashboard tests pass with1 existing skip. Full Web checks and exact-head hosted gates precede owner-authorized develop merge. Explicitly no deployment, API/data/schema/dependency change.
+
+## Customer dossier connections — 2026-11-09
+
+All nine dossier categories now use owner public read projections and a Customers
+aggregation endpoint. Exact customer identity, branch, company/archive and Sales
+own/branch scope are enforced. Payment/check amounts require both Finance and
+Sales payment access and buyer/payer linkage. No sensitive document bytes, provider
+URLs, payment references or check identifiers are returned. Unauthorized, unavailable
+and empty sources render separately; customer/company changes clear prior data.
+Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
+No migration, dependency or operational-data changes. Full hosted checks gate merge.
+

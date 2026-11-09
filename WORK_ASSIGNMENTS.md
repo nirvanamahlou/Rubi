@@ -11986,6 +11986,21 @@ Optional attendance editor fields and partial manual clock commands. Preserves p
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
 
-## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — RESERVED
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — READY_FOR_CI
 
-Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.
+Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.59 Dashboard tests, scoped lint, full Web TypeScript and67-route build pass; source frozen and editing scope released.
+
+## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — READY_FOR_CI
+
+User explicitly requests all nine real customer dossier connections, security
+tests and develop merge. Reserve additive owner public projections in Sales,
+Reservations and Customer Affairs; Customers aggregation/controller/module/UI,
+shared response contract, focused tests, translation keys and own docs.
+Branch codex/pc-a-customer-dossier-connections-1109 from develop87067a3b6.
+Exact UUID customer matching; customer/branch/company/archive/own-scope guards;
+financial values restricted to buyer/payer. No schema/dependency, IAM grants,
+operational writes or deployment. Source errors remain explicit unavailable.
+Bounded CI reservation adds customer-dossier.postgres.spec.ts to the existing
+disposable reporting PostgreSQL job, proving actual SQL customer/branch/owner/
+archive and passenger-finance isolation with transaction rollback. Source locks
+release on publication; PR1556 full final-head checks gate authorized merge.
