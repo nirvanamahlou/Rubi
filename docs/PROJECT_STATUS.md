@@ -9526,3 +9526,5 @@ Dashboard and operational receivable rows now exclude effective Reservations can
 
 
 
+
+RESERVATION-ROW-DETAILS-1109 removes the inline General Details button from Reservations table rows. The contract action panel retains General Details. All 18 focused tests pass.
