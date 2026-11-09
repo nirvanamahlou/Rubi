@@ -42,6 +42,7 @@ export async function readTravelLogo(fileId: string, salesContractId?: string) {
 export function useTravelLogo(
   branding: TravelBrandingV1 | null,
   withoutLogo = false,
+  salesContractId?: string,
 ) {
   const [loaded, setLoaded] = useState<{
     id: string;
@@ -54,12 +55,12 @@ export function useTravelLogo(
       ['JAHAN_BASTAN', 'GHESATI_RO'].includes(branding.companyCode ?? ''))
       ? null
       : branding?.logoFileId;
+  const contextKey = `${salesContractId ?? ''}:${fileId ?? ''}`;
   useEffect(() => {
     if (!fileId) return;
     let active = true;
     let url = '';
-    void documentsApi
-      .preview(fileId)
+    void readTravelLogo(fileId, salesContractId)
       .then(({ blob }) => {
         if (!active) return;
         url = URL.createObjectURL(blob);
@@ -68,7 +69,7 @@ export function useTravelLogo(
       .catch(() => {
         if (active)
           setLoaded({
-            id: fileId,
+            id: contextKey,
             logo: '',
             error:
               'لوگوی سربرگ در دسترس نیست؛ خروجی تا دریافت لوگو آماده نمی‌شود.',
