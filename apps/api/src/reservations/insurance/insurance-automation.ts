@@ -33,6 +33,7 @@ type State = {
   fingerprint?: string;
   firstError?: string;
   latestError?: string;
+  creationReceipt?: { providerId: string; contractNo: string; planId: number };
 };
 const message = {
   input: 'اطلاعات هویتی، پاسپورت و تماس بیمه‌شده را تکمیل کنید.',
@@ -402,6 +403,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           automation: {
             ...state,
             phase: 'CREATED',
+            creationReceipt: {
+              providerId,
+              contractNo: id,
+              planId: input.planId,
+            },
             fingerprint,
             useDraft: state.useDraft === true,
           },
@@ -428,6 +434,11 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           automation: {
             ...state,
             phase: 'CREATED',
+            creationReceipt: {
+              providerId,
+              contractNo: id,
+              planId: input.planId,
+            },
             fingerprint,
             useDraft: state.useDraft === true,
           },
@@ -438,6 +449,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         planId: input.planId,
         passportNo: input.passportNo,
         nationalCode: identity.person.nationalCode,
+        trustedCreation:
+          state.creationReceipt?.providerId === providerId &&
+          state.creationReceipt?.contractNo === id &&
+          state.creationReceipt?.planId === input.planId,
       };
       result = await this.provider.policy(Number(providerId), expected);
       if (!result?.active) {
@@ -538,6 +553,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
                 automation: {
                   ...state,
                   firstError,
+                  ...(cause instanceof TravisDiagnosticError &&
+                  cause.providerDiagnostic
+                    ? { providerDiagnostic: cause.providerDiagnostic }
+                    : {}),
                   latestError:
                     error === message.pending
                       ? (state.latestError ?? firstError)
