@@ -5801,10 +5801,5 @@
   "قرارداد در شرکت انتخاب‌شده یافت نشد.": "Contract not found in the selected company.",
   "قراردادهای با شروع سفر قبل از ۱ آبان ۱۴۰۵؛ مربوط به شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts starting before 23 October 2026 for the selected company. Restoration applies to all three modules.",
   "قراردادهای پنهان‌شده و بازگردانی": "Archived contracts and restoration",
-  "قراردادهای موردنظر را انتخاب کنید.": "Select the requested contracts.",
-  "سرویس مدارک پیکربندی نشده است.": "The document service is not configured.",
-  "لوگوی سربرگ ثبت نشده است.": "No letterhead logo has been saved.",
-  "لوگوی مدرک در دسترس نیست.": "The document logo is unavailable.",
-  "لوگوی مدرک قابل مشاهده نیست.": "The document logo cannot be viewed.",
-  "مدارک هنوز توسط مالی آزاد نشده است.": "Finance has not released the documents yet."
+  "قراردادهای موردنظر را انتخاب کنید.": "Select the requested contracts."
 }

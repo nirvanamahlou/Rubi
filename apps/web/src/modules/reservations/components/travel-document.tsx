@@ -38,6 +38,7 @@ export async function readTravelLogo(fileId: string, salesContractId?: string) {
   let response = await fetch(url, options);
   if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await fetch(url, options);
+  if (response.status === 404) return { blob: null };
   if (!response.ok) throw new Error('لوگوی مدرک در دسترس نیست.');
   return { blob: await response.blob() };
 }
@@ -65,6 +66,10 @@ export function useTravelLogo(
     void readTravelLogo(fileId, salesContractId)
       .then(({ blob }) => {
         if (!active) return;
+        if (!blob) {
+          setLoaded({ id: contextKey, logo: '', error: '' });
+          return;
+        }
         url = URL.createObjectURL(blob);
         setLoaded({ id: contextKey, logo: url, error: '' });
       })
@@ -152,6 +157,7 @@ export function TravelDocument({
         ));
   const enabled =
     ((voucher && unbranded) ||
+      (voucher && !!salesContractId) ||
       !!logo ||
       (voucher && state.branding?.voucherWithoutLogo === true) ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&

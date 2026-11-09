@@ -402,7 +402,7 @@ it('loads Sales preview branding from the released contract instead of the gener
   vi.stubGlobal('fetch', fetcher);
   try {
     const result = await readTravelLogo('private-logo', 'contract');
-    expect(result.blob.size).toBe(1);
+    expect(result.blob?.size).toBe(1);
     expect(fetcher.mock.calls[0]?.[0]).toContain(
       '/sales/contracts/contract/travel-documents/branding-logo',
     );
@@ -415,3 +415,25 @@ it('loads Sales preview branding from the released contract instead of the gener
     vi.unstubAllEnvs();
   }
 });
+
+it.each([403, 404])(
+  'handles a Sales preview logo response %s without bypassing financial denial',
+  async (status) => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://api.test/api/v1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('{}', { status })),
+    );
+    try {
+      if (status === 404)
+        await expect(readTravelLogo('missing', 'contract')).resolves.toEqual({
+          blob: null,
+        });
+      else
+        await expect(readTravelLogo('private', 'contract')).rejects.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  },
+);
