@@ -9562,3 +9562,14 @@ Dashboard and operational receivable rows now exclude effective Reservations can
 ## RESERVATION-LATEST-PDF-1109 — PC-A — READY_FOR_CI
 
 Reservation PDF GET now uses the latest saved settings/NOTICE instead of replacing them with the last sent snapshot. The QR share matches the current saved output; existing public snapshots and sent revisions remain immutable. Per-hotel scoping, voucher/release/access guards, form appearance and disabled SMTP are preserved.79 focused Web and30 API regressions pass. No schema/dependency/runtime/settings/data or deployment change. See tasks/RESERVATION-LATEST-PDF-1109.md. Exact-head full hosted gates precede the authorized develop merge; final evidence stays in the PR.
+## Customer dossier connections — 2026-11-09
+
+All nine dossier categories now use owner public read projections and a Customers
+aggregation endpoint. Exact customer identity, branch, company/archive and Sales
+own/branch scope are enforced. Payment/check amounts require both Finance and
+Sales payment access and buyer/payer linkage. No sensitive document bytes, provider
+URLs, payment references or check identifiers are returned. Unauthorized, unavailable
+and empty sources render separately; customer/company changes clear prior data.
+Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
+No migration, dependency or operational-data changes. Full hosted checks gate merge.
+
