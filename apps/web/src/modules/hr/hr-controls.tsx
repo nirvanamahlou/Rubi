@@ -405,8 +405,10 @@ export function HrConfirmDelete({
   title,
   onClose,
   onConfirm,
+  chartOnly = false,
 }: {
   title: string;
+  chartOnly?: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }) {
@@ -422,8 +424,9 @@ export function HrConfirmDelete({
       <DialogContent dir="rtl" className={ui.confirmDialog}>
         <DialogTitle>حذف {title}</DialogTitle>
         <DialogDescription>
-          این رکورد از فهرست‌های فعال و گزارش‌ها کنار گذاشته می‌شود. سابقه تغییر
-          برای پیگیری حفظ خواهد شد.
+          {chartOnly
+            ? 'این گره از چارت کنار گذاشته می‌شود.'
+            : 'این رکورد از فهرست‌های فعال و گزارش‌ها کنار گذاشته می‌شود. سابقه تغییر برای پیگیری حفظ خواهد شد.'}
         </DialogDescription>
         {error ? <p role="alert">{error}</p> : null}
         <div className={ui.actions}>

@@ -6,6 +6,10 @@ Owner explicitly supersedes the selected-company Reservations list rule: one sha
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
 
+## HR-EMPTY-CHART-1109 — PC-A — IN_PROGRESS
+
+Owner requests a blank organizational chart for manual rebuilding while retaining HR catalog records. Reserve chart projection, chart form placement metadata, and focused regression. No schema or production data migration.
+
 ## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
 
 Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.

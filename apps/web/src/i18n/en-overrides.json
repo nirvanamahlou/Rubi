@@ -5801,5 +5801,6 @@
   "قرارداد در شرکت انتخاب‌شده یافت نشد.": "Contract not found in the selected company.",
   "قراردادهای با شروع سفر قبل از ۱ آبان ۱۴۰۵؛ مربوط به شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts starting before 23 October 2026 for the selected company. Restoration applies to all three modules.",
   "قراردادهای پنهان‌شده و بازگردانی": "Archived contracts and restoration",
-  "قراردادهای موردنظر را انتخاب کنید.": "Select the requested contracts."
+  "قراردادهای موردنظر را انتخاب کنید.": "Select the requested contracts.",
+  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart."
 }
