@@ -45,14 +45,17 @@ export class SalesDocumentBrandingController {
       contract.status === 'CANCELLED' ||
       intake.workflow.supplierStatus === 'CANCELLED'
     )
-      throw new ForbiddenException('مدارک هنوز توسط مالی آزاد نشده است.');
+      throw new ForbiddenException(
+        'مدارک مسافر تا تأیید تحویل مدارک توسط مالی در دسترس فروش نیست.',
+      );
     const actor = {
       ...req.actor,
       branchIds: [...new Set([...req.actor.branchIds, intake.branchId])],
     };
     const output = await this.travel.floatingDocumentOutput(intake, actor);
     const logoId = output.workflow.branding?.logoFileId;
-    if (!logoId) throw new NotFoundException('لوگوی سربرگ ثبت نشده است.');
+    if (!logoId)
+      throw new NotFoundException('لوگوی این رکورد قابل مشاهده نیست.');
     try {
       const file = await this.documents.previewReleasedTravelLogo(
         logoId,
@@ -70,7 +73,7 @@ export class SalesDocumentBrandingController {
         error instanceof ForbiddenException ||
         error instanceof NotFoundException
       )
-        throw new NotFoundException('لوگوی سربرگ در دسترس نیست.');
+        throw new NotFoundException('لوگوی این رکورد قابل مشاهده نیست.');
       throw error;
     }
   }
