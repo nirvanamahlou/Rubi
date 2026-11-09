@@ -393,13 +393,11 @@ it.each([false, true])(
 );
 
 it('loads Sales preview branding from the released contract instead of the generic archive', async () => {
-  const fetcher = vi
-    .fn()
-    .mockResolvedValue(
-      new Response(new Uint8Array([1]), {
-        headers: { 'Content-Type': 'image/png' },
-      }),
-    );
+  const fetcher = vi.fn().mockResolvedValue(
+    new Response(new Uint8Array([1]), {
+      headers: { 'Content-Type': 'image/png' },
+    }),
+  );
   vi.stubGlobal('fetch', fetcher);
   try {
     const result = await readTravelLogo('private-logo', 'contract');
