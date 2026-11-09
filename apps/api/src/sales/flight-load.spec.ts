@@ -55,10 +55,16 @@ const row = () => ({
   ],
 });
 const findMany = vi.fn(),
+  reservationIntakes = vi.fn(),
   documentDetails = vi.fn(),
   currentSelections = vi.fn();
 const service = new FlightLoadService(
-  { client: { salesContract: { findMany } } } as unknown as DatabaseService,
+  {
+    client: {
+      salesContract: { findMany },
+      reservationIntake: { findMany: reservationIntakes },
+    },
+  } as unknown as DatabaseService,
   { documentDetails, currentSelections } as unknown as TicketPublicService,
   {
     detail: async (_: string, id: string) => ({ data: { name: id + ' city' } }),
@@ -67,6 +73,7 @@ const service = new FlightLoadService(
 beforeEach(() => {
   vi.resetAllMocks();
   findMany.mockResolvedValue([row()]);
+  reservationIntakes.mockResolvedValue([]);
   documentDetails.mockResolvedValue({});
   currentSelections.mockImplementation(async (s: SalesTicketSelectionInput[]) =>
     s.map((f) => ({
@@ -156,8 +163,42 @@ describe('exact ticket flight-load contracts', () => {
     expect(findMany).not.toHaveBeenCalled();
   });
   it('keeps cancelled rows separate and never includes drafts in sold totals', async () => {
-    await service.contracts(offerId, actor, true);
-    expect(findMany.mock.calls[0]![0].where.AND[1].status).toBe('CANCELLED');
+    findMany.mockResolvedValue([{ ...row(), status: 'CANCELLED' }]);
+    const result = await service.contracts(offerId, actor, true);
+    expect(findMany.mock.calls[0]![0].where.AND[1].status.in).toContain(
+      'CANCELLED',
+    );
+    expect(result.totals.contracts).toBe(1);
+    expect(result.data[0]!.status).toBe('CANCELLED');
+  });
+  it('moves an operationally cancelled contract out of sold load and back after reopen', async () => {
+    reservationIntakes.mockResolvedValue([
+      {
+        contractId: 'contract',
+        workflowRevisions: [
+          { state: { supplierStatus: 'CANCELLED' }, createdAt: new Date() },
+        ],
+      },
+    ]);
+    expect((await service.contracts(offerId, actor)).totals.seats).toBe(0);
+    const cancelled = await service.contracts(offerId, actor, true);
+    expect(cancelled.data[0]!.status).toBe('CANCELLED');
+    expect(cancelled.totals.seats).toBe(2);
+    expect(reservationIntakes.mock.calls[0]![0].where).toEqual({
+      contractId: { in: ['contract'] },
+    });
+    reservationIntakes.mockResolvedValue([
+      {
+        contractId: 'contract',
+        workflowRevisions: [
+          { state: { supplierStatus: 'NEW' }, createdAt: new Date() },
+        ],
+      },
+    ]);
+    expect((await service.contracts(offerId, actor)).totals.seats).toBe(2);
+    expect(
+      (await service.contracts(offerId, actor, true)).totals.contracts,
+    ).toBe(0);
   });
   it('uses service-specific legacy aggregate counts without summing the return party', async () => {
     const data = row();

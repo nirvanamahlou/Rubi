@@ -1,33 +1,6 @@
-## JAHAN-NORA-LIVE-1108 — PC-D — RELEASE_PREPARATION
+# SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
-The owner requested actual connection through both production panels. Owner login
-to Jahan was restored. Its public native capabilities endpoint now returns JSON401
-without redirect, but the actual admin panel blocks issuance on all three missing
-deployment prerequisites: public HTTPS origin, production/staging environment and
-persistent dedicated encryption key. The ordinary site settings form cannot edit
-those server variables. No connection credentials or commercial records were
-created. Nora's live Jahan form is still ERP v1 and its API image has no dedicated
-consumer files. These are independent deployment prerequisites, not a failed save.
-
-Existing consumer PR1466 is synchronized with develop77bc0bee0. Five conflicts
-were limited to additive status/decision notes and derived English catalogues;
-all peer notes are retained and catalogues regenerated from the canonical source.
-No new consumer capability, dependency, schema, IAM grant or secret change.
-259 related API tests and73 Web tests pass, with existing opt-in integration tests
-remaining skipped. Scoped lint, API/Web types, formatting and both production
-builds pass (67 Web routes). Hosted final-head gates precede release approval. Production connection
-remains unverified until secure producer setup and consumer deployment are done.
-
-## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
-
-Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
-encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
-Excel, anonymous presence and read-only reports. Future commerce and SSO remain
-DISABLED. Synthetic producer/consumer and existing connector regressions pass;
-GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
-See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
-
-Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
 
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
@@ -44,6 +17,12 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
+
+## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
+
+Existing cancellation releases exact charter allocations and reopen is capacity-checked transactionally. Strengthened restore locking/reference validation and blocked known-charter reopen without current ticket identities. Flight-load now uses the existing Reservations public cancellation reader, excluding operationally cancelled contracts from sold load and restoring them after reopen. Added boundary/hold/rollback checks and extended the existing mandatory PostgreSQL gate with release/re-sale and competing reopen proof. No schema, dependency, operational data or deployment change. Owner authorizes develop merge after all final-head hosted gates. See docs/tasks/CANCEL-REOPEN-CAPACITY-1109.md.
+
+Implementation527b24140 published;36 targeted API tests, scoped lint/formatting, full API types and production build pass. Docker is unavailable locally; real PostgreSQL proof is required in the existing hosted gate before merge.
 
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
@@ -8913,6 +8892,37 @@ Correct source share from call count to unique contact count, latest matching so
 ## CALL-CENTER-REMOVE-REPORT-KPIS-1102 — PC-C — SOURCE ONLY
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
+
+## JAHAN-NORA-LIVE-1108 — PC-D — RELEASE_PREPARATION
+
+The owner requested actual connection through both production panels. Owner login
+to Jahan was restored. Its public native capabilities endpoint now returns JSON401
+without redirect, but the actual admin panel blocks issuance on all three missing
+deployment prerequisites: public HTTPS origin, production/staging environment and
+persistent dedicated encryption key. The ordinary site settings form cannot edit
+those server variables. No connection credentials or commercial records were
+created. Nora's live Jahan form is still ERP v1 and its API image has no dedicated
+consumer files. These are independent deployment prerequisites, not a failed save.
+
+Existing consumer PR1466 is synchronized with develop77bc0bee0. Five conflicts
+were limited to additive status/decision notes and derived English catalogues;
+all peer notes are retained and catalogues regenerated from the canonical source.
+No new consumer capability, dependency, schema, IAM grant or secret change.
+259 related API tests and73 Web tests pass, with existing opt-in integration tests
+remaining skipped. Scoped lint, API/Web types, formatting and both production
+builds pass (67 Web routes). Hosted final-head gates precede release approval. Production connection
+remains unverified until secure producer setup and consumer deployment are done.
+
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+Dedicated jahan-bastan.nora.v1 producer/consumer implemented with existing IAM,
+encrypted branch/site CAS storage, durable renewal/revocation, native catalog and
+Excel, anonymous presence and read-only reports. Future commerce and SSO remain
+DISABLED. Synthetic producer/consumer and existing connector regressions pass;
+GitHub exact-head CI gates two develop PRs. No merge/deployment authorization.
+See [task and connection guide](docs/tasks/JAHAN-BASTAN-NORA-1107.md).
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
 
 ## SITE-API-FORMS-1104 — PC-D — LIVE_VALIDATED / FINAL_CI
 

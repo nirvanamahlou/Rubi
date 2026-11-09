@@ -1,3 +1,12 @@
+## SHARED-RESERVATION-INBOX-1109 — 2026-11-09
+
+The owner's explicit follow-up supersedes CONTRACT-COMPANY-ARCHIVE-1108 only for
+the Reservations operational inbox: selected issuer company must not filter its
+contracts. Sales supplies non-hidden contract IDs within authorized branches;
+Reservations applies these IDs before search/paging. Sales and Finance company
+filters, archive state, action permissions and saved document owner remain intact.
+No aggregate-company permission is granted by this operational queue.
+
 ## EXPERT-CALL-ISOLATION-1108 — 2026-11-08
 
 The owner requires experts to see only their own verified calls, and current HR managers their current unit's verified calls. This supersedes the earlier ANSWERED rule allowing an authorized contact's entire history. A shared telephone/contact is identity, not a grant to every call. Latest-call selection, counts, filters, reports, history, direct-call reads and completed-call edits must correlate responsibility to that exact call. Verified shared-extension responsibility and outbound-origin snapshots remain valid; callback visibility is restricted to the missed call or explicitly linked assigned-request calls. Operational offer/claim popup access remains separate. Native HR manager projection, pinned global identities and executive-only recording downloads are unchanged. No operational data rewrite or migration.

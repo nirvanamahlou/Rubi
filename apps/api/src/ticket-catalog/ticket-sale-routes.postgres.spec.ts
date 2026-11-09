@@ -265,6 +265,104 @@ describe.skipIf(!url)(
       }
       expect(final.carrierName).toBe('Updated Air');
       expect(final.economyBaggageKg?.toString()).toBe('35');
+      // Cancellation frees the exact allocation; the published seat block is unchanged.
+      const cancelledContract = contracts[first]!;
+      await client.$transaction((tx) =>
+        service.releaseContract(cancelledContract, tx),
+      );
+      await client.$transaction((tx) =>
+        service.releaseContract(cancelledContract, tx),
+      );
+      const released = (
+        await service.manifestInventory([offer.id], [branch])
+      )[0]!;
+      expect(released.totalCapacity).toBe(final.totalCapacity);
+      expect(released.allocatedCapacity).toBe(allocated - 2);
+      const cancelledSelection = await service.currentSelections(
+        [selection(first === 0 ? b : c)],
+        branch,
+      );
+      const competingContract = randomUUID();
+      expect(
+        (
+          await service.reserve(
+            current,
+            branch,
+            competingContract,
+            released.remainingCapacity,
+          )
+        ).available,
+      ).toBe(true);
+      await expect(
+        client.$transaction((tx) =>
+          service.restoreContract(
+            tx,
+            cancelledContract,
+            branch,
+            cancelledSelection,
+          ),
+        ),
+      ).rejects.toThrow('ظرفیت');
+      expect(
+        await client.ticketOfferCapacityAllocation.findUniqueOrThrow({
+          where: {
+            contractId_direction: {
+              contractId: cancelledContract,
+              direction: 'OUTBOUND',
+            },
+          },
+        }),
+      ).toMatchObject({ status: 'RELEASED', quantity: 2 });
+      await client.$transaction((tx) =>
+        service.releaseContract(competingContract, tx),
+      );
+      await expect(
+        client.$transaction(async (tx) => {
+          await service.restoreContract(
+            tx,
+            cancelledContract,
+            branch,
+            cancelledSelection,
+          );
+          throw new Error('synthetic reopen rollback');
+        }),
+      ).rejects.toThrow('synthetic reopen rollback');
+      expect(
+        await client.ticketOfferCapacityAllocation.findUniqueOrThrow({
+          where: {
+            contractId_direction: {
+              contractId: cancelledContract,
+              direction: 'OUTBOUND',
+            },
+          },
+        }),
+      ).toMatchObject({ status: 'RELEASED', quantity: 2 });
+      const reopenRace = await Promise.allSettled([
+        client.$transaction((tx) =>
+          service.restoreContract(
+            tx,
+            cancelledContract,
+            branch,
+            cancelledSelection,
+          ),
+        ),
+        client.$transaction((tx) =>
+          service.restoreContract(tx, competingContract, branch, current),
+        ),
+      ]);
+      expect(
+        reopenRace.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(
+        reopenRace.filter((result) => result.status === 'rejected'),
+      ).toHaveLength(1);
+      const reopened = (
+        await service.manifestInventory([offer.id], [branch])
+      )[0]!;
+      expect(reopened.totalCapacity).toBe(final.totalCapacity);
+      expect(reopened.allocatedCapacity).toBeLessThanOrEqual(
+        reopened.totalCapacity,
+      );
     }, 20000);
   },
 );

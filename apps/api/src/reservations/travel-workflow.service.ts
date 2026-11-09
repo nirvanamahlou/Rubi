@@ -418,6 +418,13 @@ export class TravelWorkflowService {
               intake.snapshot,
               actor.branchIds,
             );
+            if (
+              snapshot.selectedTicketOfferIds?.length &&
+              !snapshot.ticketSelections?.length
+            )
+              throw new ConflictException(
+                'بلیط انتخاب‌شده تغییر کرده یا قابل رزرو نیست.',
+              );
             await this.tickets.restoreContract(
               tx,
               intake.contractId,

@@ -1,38 +1,6 @@
-## JAHAN-NORA-ACTIVATION-1109 — PC-D — IN_PROGRESS
+# SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
-COMPUTER_ID=PC-D; existing codex/pc-d-jahan-bastan-nora-1107 / PR1466 continues.
-Latest explicit owner request authorizes corrections, commits, pushes and merge
-to Nora develop and Jahan main, with actual connection through panels or code.
-This supersedes the earlier no-merge boundary for this integration. Reserve only
-own consumer synchronization, status/decision notes, required validation and
-bounded Nora API/Web activation under the existing avina-deploy.lock. Preserve
-runtime environment, persistent encrypted connector volume/key, all peer source
-and other services. No new schema, dependency, IAM grant or production business
-test writes. Producer PR21 is merged to main81d7c25; its actual admin readiness
-still blocks bundle issuance on all three secure deployment prerequisites.
-Do not bypass that gate or weaken TLS/HMAC/replay/public-destination checks.
-
-## JAHAN-NORA-LIVE-1108 — PC-D — SOURCE_VALIDATED
-
-COMPUTER_ID=PC-D; codex/pc-d-jahan-nora-live-1108. The owner requests actual
-Jahan Bastan/Nora connection. Reserve synchronization of existing own PR1466 with
-current develop, additive conflict resolution of own/shared status notes and
-derived English catalogues, and focused connector compatibility validation.
-The original task's explicit develop destination continues for this PR. No new
-application capability, schema, dependency, IAM grant or secret is introduced.
-Producer public API is now reachable, but its admin readiness reports missing
-public HTTPS origin, deployed environment and persistent connector encryption key.
-Live Nora still has ERP v1 and no dedicated Jahan consumer files. Real production
-acceptance depends on secure producer configuration and compatible consumer
-deployment. Existing no-merge/deploy boundary is retained until release approval;
-this step prepares a concrete reviewable consumer update. No conflicting source
-writer of the connector leaves was found; preserve all peer changes.
-
-## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
-
-COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
-
-Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
+Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
 
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
@@ -47,6 +15,14 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
+## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-cancel-reopen-capacity-1109 from develop0fb77974b. Owner authorizes cancellation/reopen capacity verification, necessary repair and develop merge. Reserve Ticket Catalog restore-capacity helper and focused regressions, Reservations cancellation-capacity regressions and narrow reopen guard, Sales flight-load lifecycle composition/tests and own status/task notes. Existing cancellation implementation is merged/frozen; preserve exact leg quantities, infant exclusion, public module boundaries, permissions and atomic rollback. No schema, dependency, live data or deployment changes. Existing Reservations public cancellation projection remains read-only.
+
+Extend the existing mandatory ticket-sale-routes.postgres.spec.ts case with release/re-sale, rejected reopen, transactional rollback and two concurrent reopen attempts against one freed block. No CI workflow changes. Flight-load now composes latest Reservations cancellation through its existing public reader, moving operational cancellations out of sold load and back after reopen.
+
+Local targeted verification:36 API tests, scoped ESLint, formatting, full API TypeScript and production API build pass. Implementation527b24140 published. Docker is unavailable locally; real PostgreSQL proof runs in the existing hosted gate. All final-head hosted gates remain mandatory before merge. Source freezes on publication and releases on verified merge.
 
 ## TRANSFER-COUNT-GUARD-1108 — PC-A — READY_FOR_CI
 
@@ -11215,6 +11191,42 @@ CALL-CENTER-SOURCE-SHARE-1102 — SOURCE_READY / DO NOT DEPLOY:16 API report/sea
 COMPUTER_ID=PC-C; latest origin/develop. Owner explicitly authorizes removing only the three report-summary cards: registered calls, unique phone contacts and needs completion. Reserve bounded ReportPanel stats JSX and now-unused Phone/FileText icon imports in workspace.tsx plus own docs. Preserve report heading/range/highlights, other KPIs, backend metrics, permissions and approved UI elsewhere. Source only, no production release consistent with preceding requests. No API/schema/dependency/CSS changes; published prior workspace source scopes frozen.
 
 CALL-CENTER-REMOVE-REPORT-KPIS-1102 — SOURCE_READY / DO NOT DEPLOY: both existing report-highlights checks, scoped lint/format, full Web types and production build pass. Only ReportPanel stats wrapper and two unused icons removed; other metrics/cards/data preserved. No server commands or runtime changes. Source reservation freezes on publication.
+
+## JAHAN-NORA-ACTIVATION-1109 — PC-D — IN_PROGRESS
+
+COMPUTER_ID=PC-D; existing codex/pc-d-jahan-bastan-nora-1107 / PR1466 continues.
+Latest explicit owner request authorizes corrections, commits, pushes and merge
+to Nora develop and Jahan main, with actual connection through panels or code.
+This supersedes the earlier no-merge boundary for this integration. Reserve only
+own consumer synchronization, status/decision notes, required validation and
+bounded Nora API/Web activation under the existing avina-deploy.lock. Preserve
+runtime environment, persistent encrypted connector volume/key, all peer source
+and other services. No new schema, dependency, IAM grant or production business
+test writes. Producer PR21 is merged to main81d7c25; its actual admin readiness
+still blocks bundle issuance on all three secure deployment prerequisites.
+Do not bypass that gate or weaken TLS/HMAC/replay/public-destination checks.
+
+## JAHAN-NORA-LIVE-1108 — PC-D — SOURCE_VALIDATED
+
+COMPUTER_ID=PC-D; codex/pc-d-jahan-nora-live-1108. The owner requests actual
+Jahan Bastan/Nora connection. Reserve synchronization of existing own PR1466 with
+current develop, additive conflict resolution of own/shared status notes and
+derived English catalogues, and focused connector compatibility validation.
+The original task's explicit develop destination continues for this PR. No new
+application capability, schema, dependency, IAM grant or secret is introduced.
+Producer public API is now reachable, but its admin readiness reports missing
+public HTTPS origin, deployed environment and persistent connector encryption key.
+Live Nora still has ERP v1 and no dedicated Jahan consumer files. Real production
+acceptance depends on secure producer configuration and compatible consumer
+deployment. Existing no-merge/deploy boundary is retained until release approval;
+this step prepares a concrete reviewable consumer update. No conflicting source
+writer of the connector leaves was found; preserve all peer changes.
+
+## JAHAN-BASTAN-NORA-1107 — PC-D — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-D; codex/pc-d-jahan-bastan-nora-1107. Owner authorizes two develop PRs, commits, pushes and mandatory CI; no merge/deployment. Reserve Integrations connection transport/lifecycle/storage/renewal, native consumers, selected-site UI/contracts/tests and own notes. No Nora schema/dependency/business module writes. Producer reserves connector-owned additive migration/models/repositories/services/API, bounded native catalog service extraction, settings UI, anonymous presence and tests. Prior SITE-API-FORMS scope merged; no active target overlap found. Contract jahan-bastan.nora.v1, producer first. Details docs/tasks/JAHAN-BASTAN-NORA-1107.md in Nora and docs/nora-connector.md in producer.
+
+Review: [Nora PR1466](https://github.com/nirvanamahlou/Rubi/pull/1466) and [producer PR18](https://github.com/nirvanamahlou/Jahan-Bastan/pull/18). Exact-head CI must stay green; no PR merge/deployment. Existing IAM is authoritative.
 
 ## SITE-API-FORMS-1104 — PC-D — LIVE_VALIDATED / FINAL_CI
 
