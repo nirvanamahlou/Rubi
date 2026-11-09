@@ -9491,6 +9491,8 @@ Owner subsequently authorized coordination and integration preserving both branc
 
 
 
+RESERVATION-ROW-DETAILS-1109 removes the inline General Details button from Reservations table rows. The contract action panel retains General Details. All 18 focused tests pass.
+
 ## HR-COMPANY-SCOPE-1108 — implementation in progress
 
 IAM companies now supply HR company selectors independently of subsidiary records. Employee organizational membership is stored separately from physical attendance/finance ownership; selecting ALL or another company preserves the existing physical owner. Company creation is implemented through an IAM-owned transaction with HR and IAM administration permission checks, creator membership, audit and retry identity checks. Organization screen includes the company form. Focused tests: 21 frontend, 11 backend passed; scoped ESLint passed. Full migration of existing employee/unit memberships, subsidiary retirement with historical references preserved, full build, runtime validation and publication remain pending. No Radan writes, no production migration, no deployment.

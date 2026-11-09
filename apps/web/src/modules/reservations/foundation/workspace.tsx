@@ -15,15 +15,6 @@ import {
 
 import { Suspense, useState } from 'react';
 import { ContractCorrectionDeepLink } from '../components/contract-correction-history';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/overlays';
-import { ReservationGeneralDetails } from '../components/reservation-general-details';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -794,34 +785,6 @@ export function ReservationOperationsWorkspace({
                                   : value
                               }
                             >
-                              {index === 0 && (
-                                <div
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button size="sm" variant="outline">
-                                        مشخصات کلی
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent
-                                      dir="rtl"
-                                      className="max-h-[92dvh] overflow-y-auto sm:max-w-3xl"
-                                    >
-                                      <DialogTitle className="pe-10">
-                                        مشخصات کلی
-                                      </DialogTitle>
-                                      <DialogDescription>
-                                        قرارداد {row.contractNumber} ·{' '}
-                                        {row.customerName}
-                                      </DialogDescription>
-                                      <ReservationGeneralDetails
-                                        request={row}
-                                      />
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                              )}
                               {index === 0 ? (
                                 <button
                                   type="button"
