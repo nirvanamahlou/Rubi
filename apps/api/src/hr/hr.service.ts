@@ -2902,7 +2902,7 @@ export class HrService {
     });
     const row = rows.find(
       (r) =>
-        (r.values as string[]).length === 7 &&
+        [7, 8].includes((r.values as string[]).length) &&
         (r.values as string[])[0] === type,
     );
     return row ? parseMonthlyLeavePolicy(row.values as string[]) : null;
@@ -2979,7 +2979,9 @@ export class HrService {
       employee.branchId,
       leave.leaveType ?? 'استحقاقی',
     );
-    if (policy) assertLeaveDeadline(leave, policy, new Date());
+    if (!policy)
+      throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
+    assertLeaveDeadline(leave, policy, new Date());
     if (leave.substituteUserId) {
       if (
         leave.substituteUserId === employee.userId ||
@@ -4545,108 +4547,72 @@ export class HrService {
         })
       )
         throw new ConflictException('مرخصی تأییدشده هم‌پوشان وجود دارد.');
-      const settings = await tx.hrRecord.findFirst({
-        where: {
-          branchId: row.branchId,
-          section: 'time',
-          tab: 'calculationSettings',
-          status: 'فعال',
-          deletedAt: null,
-        },
-      });
-      const config = settings?.values as string[] | undefined;
-      let minutes = data.minutes ?? 0;
-      if (values[4] === 'روزانه') {
-        if (!config)
-          throw new ConflictException(
-            'ابتدا طول مرخصی روزانه را در تنظیمات کارکرد ثبت کنید.',
-          );
-        for (let at = from.getTime(); at <= to.getTime(); at += 86400000) {
-          const date = new Date(at).toISOString().slice(0, 10);
-          await this.assertOpenPeriod(tx, row.branchId, date);
-          if (config[2] === 'بله') {
-            const shifts = await tx.hrRecord.findMany({
-              where: {
-                branchId: row.branchId,
-                employeeId: employee.id,
-                section: 'time',
-                tab: 'shift',
-                status: 'فعال',
-                deletedAt: null,
-              },
-            });
-            const view = this.attendanceView(shifts, employee.id, date);
-            if (!view.shiftStart || !view.shiftEnd)
-              throw new ConflictException(
-                'طول شیفت مصوب برای روز مرخصی مشخص نیست.',
-              );
-            minutes +=
-              (view.shiftEnd.getTime() - view.shiftStart.getTime()) / 60000;
-          } else minutes += Number(config[3]);
-        }
-      } else await this.assertOpenPeriod(tx, row.branchId, values[2]!);
       const policy = await this.monthlyLeavePolicy(
         tx,
         row.branchId,
         values[1]!,
       );
-      if (policy) {
-        const leave = recordLeave(values, data);
-        assertMonthlyLeaveQuota(
-          leave,
-          policy,
-          peers
-            .filter((r) => (r.values as string[])[1] === values[1])
-            .map((r) =>
-              recordLeave(r.values as string[], r.data as HrWorkflowData),
-            ),
+      if (!policy)
+        throw new ConflictException(
+          'برای این نوع مرخصی سیاست فعال تعریف کنید.',
         );
-        // Grant each configured month once, under the same employee advisory lock.
-        for (const period of leaveUsage(leave).keys()) {
-          const [grantYear, grantMonth] = period.split('-').map(Number);
-          const ledgers = await tx.hrRecord.findMany({
-            where: {
-              employeeId: employee.id,
-              section: 'time',
-              tab: 'minuteLedger',
-              deletedAt: null,
-              status: 'تأییدشده',
-            },
-          });
-          const exists = ledgers.some((r) => {
-            const v = r.values as string[];
-            return (
-              Number(v[1]) === grantYear &&
-              Number(v[2]) === grantMonth &&
-              v[3] === values[1] &&
-              v[4] === 'سهمیه ماهانه'
-            );
-          });
-          if (!exists) {
-            const dayMinutes = Number(config?.[3]);
-            if (policy.daily > 0 && !(dayMinutes > 0))
-              throw new ConflictException(
-                'طول روز مرخصی را در تنظیمات کارکرد ثبت کنید.',
-              );
-            await this.minuteEntry(
-              tx,
-              employee,
-              grantYear!,
-              grantMonth!,
-              values[1]!,
-              Math.round(policy.daily * (dayMinutes || 0) + policy.hourly * 60),
-              'سهمیه ماهانه',
-              null,
-              actor,
-            );
-          }
+      let minutes = data.minutes ?? 0;
+      if (values[4] === 'روزانه') {
+        minutes = 0;
+        for (let at = from.getTime(); at <= to.getTime(); at += 86400000) {
+          await this.assertOpenPeriod(
+            tx,
+            row.branchId,
+            new Date(at).toISOString().slice(0, 10),
+          );
+          minutes += policy.dayMinutes;
+        }
+      } else await this.assertOpenPeriod(tx, row.branchId, values[2]!);
+      const leave = recordLeave(values, data);
+      assertMonthlyLeaveQuota(
+        leave,
+        policy,
+        peers
+          .filter((r) => (r.values as string[])[1] === values[1])
+          .map((r) =>
+            recordLeave(r.values as string[], r.data as HrWorkflowData),
+          ),
+      );
+      // Grant each configured month once, under the same employee advisory lock.
+      for (const period of leaveUsage(leave).keys()) {
+        const [grantYear, grantMonth] = period.split('-').map(Number);
+        const ledgers = await tx.hrRecord.findMany({
+          where: {
+            employeeId: employee.id,
+            section: 'time',
+            tab: 'minuteLedger',
+            deletedAt: null,
+            status: 'تأییدشده',
+          },
+        });
+        const exists = ledgers.some((r) => {
+          const v = r.values as string[];
+          return (
+            Number(v[1]) === grantYear &&
+            Number(v[2]) === grantMonth &&
+            v[3] === values[1] &&
+            v[4] === 'سهمیه ماهانه'
+          );
+        });
+        if (!exists) {
+          await this.minuteEntry(
+            tx,
+            employee,
+            grantYear!,
+            grantMonth!,
+            values[1]!,
+            Math.round(policy.daily * policy.dayMinutes + policy.hourly * 60),
+            'سهمیه ماهانه',
+            null,
+            actor,
+          );
         }
       }
-      if (
-        !policy &&
-        (await this.minuteBalance(tx, employee.id, year, values[1]!)) < minutes
-      )
-        throw new ConflictException('مانده دقیقه‌ای مرخصی کافی نیست.');
       const month = Number(
         new Intl.DateTimeFormat('en-u-ca-persian', {
           month: 'numeric',

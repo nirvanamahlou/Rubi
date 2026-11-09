@@ -351,24 +351,6 @@ function AccessibleHrSection({
             >
               گزارش PDF
             </HrButton>
-            {section === 'time' &&
-              source.tab === 'leavePolicies' &&
-              store.data!.capabilities.write && (
-                <HrButton
-                  onClick={() =>
-                    onForm({
-                      source: {
-                        section: 'time',
-                        tab: 'penaltySettings',
-                        label: 'تنظیمات جریمه',
-                        action: 'تنظیمات جریمه',
-                      },
-                    })
-                  }
-                >
-                  تنظیمات جریمه
-                </HrButton>
-              )}
             {writable && !calendar ? (
               <>
                 <HrButton onClick={() => setImporting(true)}>

@@ -1,3 +1,5 @@
+export const HR_DEFAULT_LEAVE_DAY_MINUTES = 465;
+
 /** Only controls directly observed in the authorized Radan audit. */
 export const HR_RADAN_COMPLETION_COLUMNS = {
   'requests.approvalAssignments': ['کارمند', 'اولویت'],

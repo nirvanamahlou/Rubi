@@ -2,7 +2,10 @@
 import { HrMissionForm } from './hr-mission-form';
 import { HrLeaveForm } from './hr-leave-form';
 import { WeeklyShiftForm } from './weekly-shift-form';
-import { isHrSharedResource } from '@nora/contracts';
+import {
+  HR_DEFAULT_LEAVE_DAY_MINUTES,
+  isHrSharedResource,
+} from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -877,7 +880,18 @@ function HrRecordFormFields({
                       ...(showStatus ? [target.record.status] : []),
                     ],
                   }
-                : {}),
+                : definition.key === 'time.leavePolicies'
+                  ? {
+                      initialValues: [
+                        '',
+                        ...definition.columns.map((label) =>
+                          label === 'طول مرخصی روزانه به دقیقه'
+                            ? String(HR_DEFAULT_LEAVE_DAY_MINUTES)
+                            : '',
+                        ),
+                      ],
+                    }
+                  : {}),
               holidayOptions: data.records
                 .filter(
                   (item) =>

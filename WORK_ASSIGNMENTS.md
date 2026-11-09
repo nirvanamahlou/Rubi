@@ -11923,3 +11923,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develo
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+
+## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
+
+Owner requests leave approvals to use the leave policy, and removes calculation settings and the penalty shortcut from the attendance settings view. Reserve HR leave policy, form, and approval tests. No schema migration.
