@@ -44,7 +44,7 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
             const rows = await tx.$queryRaw<{ acquired: boolean }[]>(
               Prisma.sql`SELECT pg_try_advisory_xact_lock(hashtextextended(${key}, 0)) AS acquired`,
             );
-            return rows[0].acquired;
+            return rows[0]?.acquired;
           });
         const operation = db.$transaction(async (tx) => {
           await lockInsurancePolicy(tx, contractId, customerId);
