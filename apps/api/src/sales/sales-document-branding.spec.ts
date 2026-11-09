@@ -13,12 +13,10 @@ function setup() {
   };
   const forContract = vi.fn().mockResolvedValue(intake);
   const release = vi.fn().mockResolvedValue({ approved: true });
-  const preview = vi
-    .fn()
-    .mockResolvedValue({
-      stream: Readable.from(['png']),
-      mimeType: 'image/png',
-    });
+  const preview = vi.fn().mockResolvedValue({
+    stream: Readable.from(['png']),
+    mimeType: 'image/png',
+  });
   const controller = new SalesDocumentBrandingController(
     { detail } as never,
     { forContract, floatingDocumentOutput: vi.fn(async (x) => x) } as never,
