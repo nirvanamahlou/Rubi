@@ -1,3 +1,4 @@
+import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 import {
   SalesFloatingPurchases,
   SalesFloatingPurchasesController,
@@ -59,6 +60,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    SalesDocumentBrandingController,
     SalesInsuranceDocumentsController,
     SalesPurchaseDraftController,
     SalesFloatingPurchasesController,

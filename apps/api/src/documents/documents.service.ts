@@ -1253,6 +1253,31 @@ export class DocumentsService {
     }
   }
 
+  /** Internal use only: caller resolves the saved logo after contract access and Finance release checks. */
+  async previewReleasedTravelLogo(
+    documentId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findDetail(documentId, actor.branchIds);
+    if (
+      !row ||
+      row.archiveStatus !== 'ACTIVE' ||
+      row.documentType.domain !== 'BRAND' ||
+      row.confidentiality !== 'INTERNAL' ||
+      !row.currentVersion ||
+      Number(row.currentVersion.sizeBytes) < 1 ||
+      Number(row.currentVersion.sizeBytes) > MASTER_DATA_LOGO_MAX_BYTES
+    )
+      throw new ForbiddenException('لوگوی مدرک قابل مشاهده نیست.');
+    return this.previewFile(
+      row.id,
+      masterDataLogoActor(actor, 'documents.file.read'),
+      metadata,
+      row,
+    );
+  }
+
   /** Archives only the BRAND document related to the supplied Master Data row. */
   async archiveMasterDataLogo(
     input: { documentId: string; resource: string; recordId: string },

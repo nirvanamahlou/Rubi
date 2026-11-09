@@ -274,7 +274,9 @@ export async function GET(
       !(branding.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
     ) {
       const logoResponse = await get(
-        `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
+        salesContractId
+          ? `/sales/contracts/${salesContractId}/travel-documents/branding-logo`
+          : `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
       );
       if (!logoResponse.ok)
         return fail(
