@@ -11871,3 +11871,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-exclude-cancelled-1109 from develop0fb
 ## COMPACT-MESSAGE-BUBBLES-1108 - PC-B - VALIDATED
 
 Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx responsive bubble spacing, typography and action sizing. Scoped ESLint and six existing chat/reaction checks pass. A synthetic source-class light/dark preview reduced sample height168px to144px without horizontal overflow; this is not live production UI acceptance. Final hosted gates precede owner-authorized merge. Bounded source lock released on publication. No API, dependency, schema or deployment change.
+
+## HR-REQUEST-DOWNLOAD-1109 - PC-B - IN_PROGRESS
+
+Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
