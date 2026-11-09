@@ -17,6 +17,7 @@ import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { passengerAgeYears } from './sales.domain';
+import { readReservationReportingCancellations } from '../reservations/reservation-reporting-cancellations.public';
 
 export const emptyFlightComposition = (): FlightLoadCompositionV1 => ({
   adults: 0,
@@ -59,23 +60,22 @@ export class FlightLoadService {
           branchId: { in: [...actor.branchIds] },
           ...(!branch ? { ownerUserId: actor.userId } : {}),
         };
-    const rows = await this.database.client.salesContract.findMany({
+    const candidates = await this.database.client.salesContract.findMany({
       where: {
         AND: [
           scope,
           {
             branchId: { in: [...actor.branchIds] },
             ticketSelections: { some: { offerId } },
-            status: cancelled
-              ? 'CANCELLED'
-              : {
-                  in: [
-                    'CONFIRMED',
-                    'SENT_TO_RESERVATIONS',
-                    'IN_PROGRESS',
-                    'COMPLETED',
-                  ],
-                },
+            status: {
+              in: [
+                'CONFIRMED',
+                'SENT_TO_RESERVATIONS',
+                'IN_PROGRESS',
+                'COMPLETED',
+                ...(cancelled ? (['CANCELLED'] as const) : []),
+              ],
+            },
           },
         ],
       },
@@ -102,10 +102,19 @@ export class FlightLoadService {
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 10001,
     });
-    if (rows.length > 10000)
+    if (candidates.length > 10000)
       throw new BadRequestException(
         'تعداد قراردادها بیش از حد مجاز گزارش است.',
       );
+    const cancellations = await readReservationReportingCancellations(
+      this.database.client,
+      candidates.map((row) => row.id),
+    );
+    const rows = candidates.filter((row) => {
+      const isCancelled =
+        row.status === 'CANCELLED' || cancellations.has(row.id);
+      return cancelled ? isCancelled : !isCancelled;
+    });
     const cityIds = [
       ...new Set(
         rows.flatMap((r) =>
@@ -212,7 +221,9 @@ export class FlightLoadService {
           id: row.id,
           contractNumber: row.contractNumber,
           customerName: row.customerNameSnapshot,
-          status: row.status,
+          status: cancellations.has(row.id)
+            ? ('CANCELLED' as const)
+            : row.status,
           direction: selected.direction,
           originId: selected.originId,
           destinationId: selected.destinationId,
