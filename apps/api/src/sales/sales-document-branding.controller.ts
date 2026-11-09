@@ -52,7 +52,12 @@ export class SalesDocumentBrandingController {
     const file = await this.documents.previewReleasedTravelLogo(
       logoId,
       req.actor,
-      { ipAddress: req.ip, userAgent: req.headers['user-agent'] },
+      {
+        ...(req.ip ? { ipAddress: req.ip } : {}),
+        ...(req.headers['user-agent']
+          ? { userAgent: req.headers['user-agent'] }
+          : {}),
+      },
     );
     return new StreamableFile(file.stream, { type: file.mimeType });
   }
