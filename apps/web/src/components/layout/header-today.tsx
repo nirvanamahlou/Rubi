@@ -11,20 +11,11 @@ import {
   headerMinuteKey,
   subscribeHeaderDate,
 } from '@/lib/header-today';
-import {
-  getHeaderRoleLabel,
-  subscribeHeaderSession,
-} from '@/lib/header-session';
 
 const serverMinute = () => null;
 
 export function HeaderToday() {
   const preferences = useSystemPreferences();
-  const roleLabel = useSyncExternalStore(
-    subscribeHeaderSession,
-    getHeaderRoleLabel,
-    () => '',
-  );
   const minute = useSyncExternalStore(
     subscribeHeaderDate,
     headerMinuteKey,
@@ -41,15 +32,6 @@ export function HeaderToday() {
   const label = `${dateLabel} · ${timeLabel}`;
   return (
     <span className="flex min-w-0 items-center gap-2" data-header-today-group>
-      {roleLabel ? (
-        <span
-          className="max-w-36 truncate rounded-full border border-current/15 bg-current/5 px-2 py-0.5 text-[10px] font-semibold"
-          data-header-role-label
-          title={roleLabel}
-        >
-          {roleLabel}
-        </span>
-      ) : null}
       <time
         aria-label={label}
         className="flex min-h-5 min-w-0 max-w-full items-center gap-1.5 text-right text-xs font-medium text-current"
