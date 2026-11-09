@@ -279,6 +279,37 @@ describe('explicit manifest template public boundary', () => {
 });
 
 describe('public travel reference boundary', () => {
+  it('allows another airport in the same country and rejects a foreign airport or missing city', async () => {
+    let countryId = 'one';
+    const directory = new MasterTravelDirectory({
+      detail: vi.fn(async () => ({
+        data: { status: 'active', attributes: { countryId: 'one' } },
+      })),
+      list: vi.fn(async () => ({
+        data: [
+          {
+            status: 'active',
+            attributes: { iataCode: 'AAA', cityId: 'another', countryId },
+          },
+        ],
+        meta: { total: 1 },
+      })),
+    } as unknown as MasterDataService);
+    const input = {
+      originId: 'origin',
+      destinationId: '',
+      hotelIds: [],
+      details: { originAirportCode: 'AAA' },
+    };
+    await expect(
+      directory.assertTourReferences(input),
+    ).resolves.toBeUndefined();
+    countryId = 'foreign';
+    await expect(directory.assertTourReferences(input)).rejects.toThrow('کشور');
+    await expect(
+      directory.assertTourReferences({ ...input, originId: '' }),
+    ).rejects.toThrow('ابتدا شهر');
+  });
   it('skips unselected draft cities while still checking supplied insurance and cities', async () => {
     const detail = vi.fn(async () => ({
       data: { status: 'active', attributes: {} },

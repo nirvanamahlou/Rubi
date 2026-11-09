@@ -73,6 +73,23 @@ function setup(imagePatch = {}) {
   };
 }
 describe('tour details persistence boundary', () => {
+  it('persists and reloads both airport codes and the combined-tour flag', async () => {
+    const { service } = setup();
+    const details = {
+      version: 1,
+      originAirportCode: 'IKA',
+      destinationAirportCode: 'AYT',
+      isCombined: true,
+    };
+    const created = await service.createPackage(
+      { ...input, details },
+      actor,
+      id,
+      'combined-airports',
+    );
+    expect(created.data.details).toEqual(details);
+    expect((await service.packages(actor)).data[0]?.details).toEqual(details);
+  });
   it.each([
     { originId: '', destinationId: '' },
     { originId: id, destinationId: '' },

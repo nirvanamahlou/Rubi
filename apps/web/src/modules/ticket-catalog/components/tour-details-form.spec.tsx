@@ -35,6 +35,9 @@ describe('complete tour definition form', () => {
       html.indexOf('value="Beta"'),
     );
     expect(html).toContain('role="combobox"');
+    expect(html).toContain('aria-label="فرودگاه مبدأ"');
+    expect(html).toContain('aria-label="فرودگاه مقصد"');
+    expect(html).not.toContain('ورود دستی');
     for (const select of html.match(/<select[^>]*>/g) ?? [])
       expect(select).toContain('aria-hidden="true"');
     expect(html).not.toContain('type="date"');
