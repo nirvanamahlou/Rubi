@@ -17832,5 +17832,10 @@
   "فیلتر جست‌وجو باید متن باشد.": "The search filter must be text.",
   "فیلتر انتخاب‌شده با ستون‌های این گزارش سازگار نیست.": "The selected filter does not match this report’s columns.",
   "بانکی": "Bank",
-  "رسیدگی‌شده": "Resolved"
+  "رسیدگی‌شده": "Resolved",
+  "اسکن‌نشده": "Not scanned",
+  "بدون فایل": "No file",
+  "در دست اقدام": "In progress",
+  "روش دریافت": "Receipt method",
+  "ماژول مبدأ سند": "Document source module"
 }
