@@ -11964,6 +11964,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-tour-form-1109 from origin/develop@083cedb62
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
 
+## MESSAGING-MENTIONS-1109 - PC-B
+
+Group mention suggestions and transactional notifications, and membership-scoped Workbench avatars on incoming messages. Additive messaging contracts and read endpoint. No migration or dependency change.
+
 ## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
 
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.

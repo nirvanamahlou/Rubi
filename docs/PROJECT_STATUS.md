@@ -9526,6 +9526,10 @@ Delivery: PR1519;699 Reservations Web tests pass with5 existing skips. Source fr
 Sales list dates now use the existing shared flight snapshot reader for catalogue and contract-only/floating flights. A floating return-only flight appears in returning, with outbound empty; the generic contract departureDate/hotel fallback no longer invents an outbound flight. Eight targeted regressions pass, including both directions, Tehran midnight, calendars, catalogue round trip, return-only and hotel-only behavior. No schema/dependency/persistence/API shape changes. Final full quality/test/build/PostgreSQL gates precede the user-authorized develop merge; no deployment. See tasks/SALES-RETURN-DATE-1108.md.
 
 
+## MESSAGING-MENTIONS-1109 - PC-B
+
+Group message mentions resolve only current active recipients and replace the standard notification for each tagged member. The same transaction guards send retries and member changes. Incoming bubbles show the sender Workbench profile photo through a membership-scoped image endpoint, with initials as fallback. No migration required.
+
 ## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
 
 The manual attendance form accepts optional entry, exit, reason and device-error fields. A missing clock preserves its existing timestamp or remains missing. Metadata-only edits retain the punch sequence. Clock edits still use the authorized correction workflow and reject reversed intervals. No migration required.

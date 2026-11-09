@@ -54,6 +54,7 @@ describe.skipIf(!enabled)(
       recipientId = randomUUID(),
       outsiderId = randomUUID();
     let conversationId: string, groupId: string;
+    let documents: DocumentsService;
     const bytes = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0o0AAAAASUVORK5CYII=',
       'base64',
@@ -93,7 +94,14 @@ describe.skipIf(!enabled)(
       }
       await client.documentType.upsert({
         where: { code: 'WORKBENCH_FEEDBACK_ATTACHMENT' },
-        update: {},
+        update: {
+          allowedMimeTypes: [
+            'image/png',
+            'image/jpeg',
+            'application/pdf',
+            XLSX_MIME,
+          ],
+        },
         create: {
           code: 'WORKBENCH_FEEDBACK_ATTACHMENT',
           name: 'Synthetic attachment',
@@ -152,7 +160,7 @@ describe.skipIf(!enabled)(
           return false;
         },
       };
-      const documents = new DocumentsService(
+      documents = new DocumentsService(
         new DocumentsRepository({ client } as never, notifications),
         storage,
         processor as never,
@@ -170,6 +178,12 @@ describe.skipIf(!enabled)(
           )
             throw new Error('Invalid recipients');
           return { branchId, contacts: [] };
+        },
+        personalProfile(id: string) {
+          return client.user.findUniqueOrThrow({
+            where: { id },
+            include: { profile: true },
+          });
         },
         describeMessagingParticipants(ids: string[]) {
           return client.user.findMany({
@@ -201,6 +215,79 @@ describe.skipIf(!enabled)(
       await app?.close();
       await client?.$disconnect();
       if (root) await rm(root, { recursive: true, force: true });
+    });
+    it('notifies the mentioned group member once, without notifying an outsider', async () => {
+      const text = `Please check @msg-${recipientId}, @msg-${recipientId}. @msg-${outsiderId}`;
+      const body = { body: text, clientRequestId: `mention:${randomUUID()}` };
+      const send = () =>
+        request(app.getHttpServer())
+          .post(`/messaging/conversations/${groupId}/messages`)
+          .set('x-test-actor', senderId)
+          .send(body);
+      await send().expect(201);
+      await send().expect(201);
+      const notices = await client.notification.findMany({
+        where: { entityId: groupId, eventType: 'message.mentioned' },
+      });
+      expect(notices).toHaveLength(1);
+      expect(notices[0]).toMatchObject({
+        recipientUserId: recipientId,
+        actorUserId: senderId,
+      });
+      expect(notices[0]?.message).toContain('Synthetic group');
+      expect(
+        await client.notification.count({
+          where: {
+            entityId: groupId,
+            eventType: 'message.received',
+            message: text,
+          },
+        }),
+      ).toBe(0);
+    });
+
+    it('serves the Workbench photo to conversation members only', async () => {
+      await client.documentType.upsert({
+        where: { code: 'BRAND_ASSET_TEMPLATE' },
+        update: {},
+        create: {
+          code: 'BRAND_ASSET_TEMPLATE',
+          name: 'Synthetic brand',
+          domain: 'BRAND',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['image/png'],
+          maxFileSizeBytes: BigInt(5 * 1024 * 1024),
+          requiresExpiry: false,
+        },
+      });
+      await client.documentCategory.upsert({
+        where: { code: 'BRAND_ASSETS' },
+        update: {},
+        create: { code: 'BRAND_ASSETS', name: 'Synthetic brand' },
+      });
+      const photo = await documents.uploadOwnProfilePhoto(
+        { branchId, title: 'Synthetic avatar' },
+        {
+          buffer: bytes,
+          size: bytes.length,
+          mimetype: 'image/png',
+          originalname: 'avatar.png',
+        },
+        actors.get(senderId)!,
+        {},
+      );
+      await client.iamUserProfile.create({
+        data: { userId: senderId, photoDocumentId: photo.id },
+      });
+      const avatar = (viewer: string, target: string) =>
+        request(app.getHttpServer())
+          .get(`/messaging/conversations/${groupId}/avatars/${target}`)
+          .set('x-test-actor', viewer);
+      const response = await avatar(recipientId, senderId).expect(200);
+      expect(response.headers['content-type']).toMatch(/^image\/png/);
+      expect(response.body).toEqual(bytes);
+      await avatar(outsiderId, senderId).expect(403);
+      await avatar(recipientId, outsiderId).expect(404);
     });
     it.each(
       ['direct', 'group'].flatMap(
