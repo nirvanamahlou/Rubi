@@ -99,7 +99,21 @@ export class CallCenterReadService {
     if (teamUsers)
       terms.push(
         teamUsers.length
-          ? Prisma.sql`a.created_by_user_id IN (${Prisma.join(teamUsers.map((id) => Prisma.sql`${id}::uuid`))})`
+          ? Prisma.sql`(
+              ((a.origin IS NULL OR a.origin <> 'TELEPHONY')
+                AND a.created_by_user_id IN (${Prisma.join(teamUsers.map((id) => Prisma.sql`${id}::uuid`))}))
+              OR (a.origin='TELEPHONY' AND (
+                EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
+                  WHERE ar."callId"=a.id AND ar."userId" IN (${Prisma.join(teamUsers.map((id) => Prisma.sql`${id}::uuid`))}))
+                OR EXISTS(SELECT 1 FROM call_center_telephony_sessions s
+                  JOIN call_center_telephony_offers o ON o."sessionId"=s.id
+                  WHERE s."callId"=a.id AND s.synthetic=false AND o."mappingVersion">0
+                    AND o."userId" IN (${Prisma.join(teamUsers.map((id) => Prisma.sql`${id}::uuid`))})
+                    AND (a.direction='OUTBOUND' OR NOT EXISTS(
+                      SELECT 1 FROM call_center_answer_responsibilities answered WHERE answered."callId"=a.id
+                    )))
+              ))
+            )`
           : Prisma.sql`FALSE`,
       );
     if (q.agentId)
@@ -243,19 +257,8 @@ export class CallCenterReadService {
       true,
     );
     if (!this.workflow.access.scoped(actor)) return options;
-    if (
-      (await this.workflow.access.users(actor, branchId, 'contacts')) === null
-    )
-      return options;
-    const users = actor.permissions.some((p) =>
-      [
-        'customer_affairs.call_center.contacts.read.team',
-        'customer_affairs.call_center.reports.read.team',
-        'customer_affairs.call_center.workflow.manage.team',
-      ].includes(p),
-    )
-      ? await this.directory.callCenterTeam(actor, branchId)
-      : [actor.userId];
+    const users = await this.workflow.access.users(actor, branchId, 'contacts');
+    if (users === null) return options;
     return {
       units: options.units
         .map((unit) => ({
@@ -314,10 +317,15 @@ export class CallCenterReadService {
           delete sqlFilters.incomplete;
         }
         const predicate = Prisma.sql`(${this.conditions(branchId, sqlFilters, teamUsers)}) AND (${scope})`;
-        const matching =
+        const matchingCall =
           q.scope === 'ANY'
             ? Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.contact_id=c.id AND ${predicate})`
             : Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.id=(${latest}) AND ${predicate})`;
+        // The unit selector describes the displayed latest authorized call,
+        // even when the text search includes older calls on the same number.
+        const matching = teamUsers
+          ? Prisma.sql`(${matchingCall}) AND EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.id=(${latest}) AND ${this.conditions(branchId, {} as CallCenterSearchDto, teamUsers)})`
+          : matchingCall;
         if (columnFilters) {
           type Row = { id: string; latestId: string; callCount: bigint };
           const selected: {

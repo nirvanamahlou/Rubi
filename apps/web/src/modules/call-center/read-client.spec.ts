@@ -118,6 +118,30 @@ describe('Call Center paginated read transport', () => {
     });
     expect(searchBody(emptySearch)).toEqual({ scope: 'LATEST' });
   });
+  it('combines department and connected-person filters and clears them independently', () => {
+    const filters = {
+      ...emptySearch,
+      teamId: 'unit-id',
+      unit: 'کارشناس فروش - تست - 105',
+      source: 'سایت',
+    };
+    expect(searchBody(filters)).toEqual({
+      scope: 'LATEST',
+      teamId: 'unit-id',
+      unit: filters.unit,
+      source: 'سایت',
+    });
+    expect(searchBody({ ...filters, teamId: '' })).toEqual({
+      scope: 'LATEST',
+      unit: filters.unit,
+      source: 'سایت',
+    });
+    expect(searchBody({ ...filters, unit: '' })).toEqual({
+      scope: 'LATEST',
+      teamId: 'unit-id',
+      source: 'سایت',
+    });
+  });
   it('preserves denial status so stale private views can be cleared', async () => {
     transport.mockResolvedValue(
       new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 }),
