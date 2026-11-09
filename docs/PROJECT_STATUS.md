@@ -9551,3 +9551,5 @@ Owner-requested tour definition controls: left header action, independent multi-
 ## SALES-EXCLUDE-CANCELLED-1109 — PC-A — 2026-11-09
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
+
+FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on Finance inbox cards. Sales cards resolve linked reservation details by exact contract ID. 18 focused presentation and detail tests passed.

@@ -811,6 +811,7 @@ export function FinanceInboxLiveWorkspace() {
           {generalItem && (
             <FinanceReservationDetails
               key={generalItem.id}
+              source={generalItem.source === 'SALES' ? 'SALES' : 'RESERVATIONS'}
               id={generalItem.sourceContextReference}
               contractNumber={generalItem.contractReference!}
             />
@@ -1303,92 +1304,92 @@ export function FinanceInboxLiveWorkspace() {
               data.generatedAt > item.dueAt,
             );
             return (
-              <div key={item.id} className="space-y-2">
-                <button
-                  aria-pressed={active}
-                  aria-controls="finance-request-details"
-                  className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedId(item.id);
-                  }}
-                  type="button"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={sourceTone(item.source)}>
-                          {item.source === 'PURCHASES'
-                            ? item.ticketPurchase
-                              ? 'خرید و تأمین'
-                              : 'تنخواه'
-                            : sourceLabels[item.source]}
+              <div
+                key={item.id}
+                data-active={active}
+                className={`${styles.requestRow} relative border border-s-4 p-3 text-start ${active ? 'border-s-primary' : 'border-s-transparent'}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={sourceTone(item.source)}>
+                        {item.source === 'PURCHASES'
+                          ? item.ticketPurchase
+                            ? 'خرید و تأمین'
+                            : 'تنخواه'
+                          : sourceLabels[item.source]}
+                      </Badge>
+                      <Badge>{statusLabels[item.status] ?? item.status}</Badge>
+                      {overdue ? (
+                        <Badge className="bg-rose-100 text-rose-700">
+                          سررسید گذشته
                         </Badge>
-                        <Badge>
-                          {statusLabels[item.status] ?? item.status}
-                        </Badge>
-                        {overdue ? (
-                          <Badge className="bg-rose-100 text-rose-700">
-                            سررسید گذشته
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
-                        {item.title}
-                      </h3>
+                      ) : null}
                     </div>
+                    <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                      {item.title}
+                    </h3>
+                  </div>
+                  <div className="ms-auto flex flex-wrap items-center gap-2">
+                    {(item.source === 'RESERVATIONS' ||
+                      item.source === 'SALES') &&
+                      item.contractReference && (
+                        <Button
+                          className="relative z-10"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setGeneralItem(item)}
+                        >
+                          مشخصات کلی
+                        </Button>
+                      )}
                     <p className={styles.requestAmount} dir="ltr">
                       {money(item)}
                     </p>
                   </div>
-                  {item.purchaseFx?.length ? (
-                    <div className={styles.rowFx}>
-                      <PurchaseFxSummary entries={item.purchaseFx} />
-                    </div>
-                  ) : null}
-                  {item.ticketPurchase ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      تعداد صندلی:{' '}
-                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
-                        '—'}{' '}
-                      · قیمت تکی:{' '}
-                      {item.ticketPurchase.unitCost
-                        ? item.ticketPurchase.unitCost +
-                          ' ' +
-                          (item.amount?.currencyCode ?? '')
-                        : 'ثبت نشده'}
-                    </p>
-                  ) : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                    <bdi className="break-all">
-                      {item.contractReference
-                        ? `قرارداد ${item.contractReference}`
-                        : ''}
-                    </bdi>
-                    <span>
-                      {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
-                    </span>
-                    {item.requesterDisplaySnapshot ? (
-                      <span>
-                        درخواست‌کننده: {item.requesterDisplaySnapshot}
-                      </span>
-                    ) : null}
-                    <span>سررسید: {faDate(item.dueAt)}</span>
-                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
-                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
-                      <ChevronLeft aria-hidden="true" className="size-4" />
-                    </span>
+                </div>
+                {item.purchaseFx?.length ? (
+                  <div className={styles.rowFx}>
+                    <PurchaseFxSummary entries={item.purchaseFx} />
                   </div>
-                </button>
-                {item.source === 'RESERVATIONS' && item.contractReference && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setGeneralItem(item)}
+                ) : null}
+                {item.ticketPurchase ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    تعداد صندلی:{' '}
+                    {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                      '—'}{' '}
+                    · قیمت تکی:{' '}
+                    {item.ticketPurchase.unitCost
+                      ? item.ticketPurchase.unitCost +
+                        ' ' +
+                        (item.amount?.currencyCode ?? '')
+                      : 'ثبت نشده'}
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                  <bdi className="break-all">
+                    {item.contractReference
+                      ? `قرارداد ${item.contractReference}`
+                      : ''}
+                  </bdi>
+                  <span>
+                    {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
+                  </span>
+                  {item.requesterDisplaySnapshot ? (
+                    <span>درخواست‌کننده: {item.requesterDisplaySnapshot}</span>
+                  ) : null}
+                  <span>سررسید: {faDate(item.dueAt)}</span>
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    aria-controls="finance-request-details"
+                    onClick={() => setSelectedId(item.id)}
+                    className="ms-auto inline-flex items-center gap-1 font-semibold text-primary after:absolute after:inset-0 after:rounded-[18px] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary"
                   >
-                    مشخصات کلی
-                  </Button>
-                )}
+                    {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                    <ChevronLeft aria-hidden="true" className="size-4" />
+                  </button>
+                </div>
               </div>
             );
           })}

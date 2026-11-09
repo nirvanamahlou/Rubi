@@ -11967,3 +11967,7 @@ Attendance date filters and pinned employee columns, mission reversal visibility
 ## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
 
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
+
+## FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 — PC-A
+
+Place General Details beside the Finance inbox amount and keep request selection a separate action. Reuse the authorized reservation detail flow and match Sales requests by contract ID. Frontend only.
