@@ -2,6 +2,10 @@
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
 
+# SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
+
+Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.
+
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
@@ -17,6 +21,12 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 ## AMENDMENT-AIRLINE-1108 — 2026-11-08
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
+
+## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
+
+Existing cancellation releases exact charter allocations and reopen is capacity-checked transactionally. Strengthened restore locking/reference validation and blocked known-charter reopen without current ticket identities. Flight-load now uses the existing Reservations public cancellation reader, excluding operationally cancelled contracts from sold load and restoring them after reopen. Added boundary/hold/rollback checks and extended the existing mandatory PostgreSQL gate with release/re-sale and competing reopen proof. No schema, dependency, operational data or deployment change. Owner authorizes develop merge after all final-head hosted gates. See docs/tasks/CANCEL-REOPEN-CAPACITY-1109.md.
+
+Implementation527b24140 published;36 targeted API tests, scoped lint/formatting, full API types and production build pass. Docker is unavailable locally; real PostgreSQL proof is required in the existing hosted gate before merge.
 
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 

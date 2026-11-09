@@ -83,7 +83,7 @@ function setup(remaining = 10) {
           capacityAllocations: state.allocations.filter(
             (a) => a.offerId === id && a.status === 'ACTIVE',
           ),
-          capacityHolds: [],
+          capacityHolds: [] as { quantity: number }[],
         })),
       ),
     },
@@ -105,6 +105,7 @@ function setup(remaining = 10) {
   };
   const snapshot = {
     passengerIds: [],
+    selectedTicketOfferIds: [] as string[],
     serviceSelections: [],
     ticketSelections: [
       { offerId: 'out', direction: 'OUTBOUND' },
@@ -189,6 +190,56 @@ describe('Reservations cancellation seat continuity', () => {
         .every((a) => a.status === 'RELEASED'),
     ).toBe(true);
   });
+  it('reopens at the exact remaining capacity and leaves the other contract untouched', async () => {
+    const f = setup(4);
+    await f.update('CANCEL');
+    await f.update('REOPEN');
+    expect(f.state().allocations[0]).toMatchObject({
+      quantity: 3,
+      status: 'ACTIVE',
+    });
+    expect(f.state().allocations[2]).toMatchObject({
+      contractId: 'other',
+      quantity: 1,
+      status: 'ACTIVE',
+    });
+  });
+  it('counts active temporary holds before reopening either leg', async () => {
+    const f = setup(10);
+    await f.update('CANCEL');
+    const offers = await f.tx.ticketPublishedOffer.findMany();
+    f.tx.ticketPublishedOffer.findMany.mockResolvedValueOnce(
+      offers.map((offer) => ({ ...offer, capacityHolds: [{ quantity: 7 }] })),
+    );
+    await expect(f.update('REOPEN')).rejects.toThrow('ظرفیت');
+    expect(f.state().workflow.supplierStatus).toBe('CANCELLED');
+    expect(
+      f
+        .state()
+        .allocations.slice(0, 2)
+        .every((a) => a.status === 'RELEASED'),
+    ).toBe(true);
+  });
+  it.each([0, -1, 1.5, Number.NaN])(
+    'rejects an invalid original seat quantity %s',
+    async (quantity) => {
+      const f = setup();
+      await f.update('CANCEL');
+      f.state().allocations[0]!.quantity = quantity;
+      await expect(f.update('REOPEN')).rejects.toThrow('بلیط');
+      expect(f.state().workflow.supplierStatus).toBe('CANCELLED');
+    },
+  );
+  it('rejects duplicate charter identities instead of restoring the same allocation twice', async () => {
+    const f = setup();
+    await f.update('CANCEL');
+    f.snapshot.ticketSelections = [
+      f.snapshot.ticketSelections[0]!,
+      f.snapshot.ticketSelections[0]!,
+    ];
+    await expect(f.update('REOPEN')).rejects.toThrow('بلیط');
+    expect(f.state().workflow.supplierStatus).toBe('CANCELLED');
+  });
   it('rolls back released seats if immutable workflow persistence fails', async () => {
     const f = setup();
     f.tx.reservationWorkflowRevision.create.mockRejectedValueOnce(
@@ -218,6 +269,15 @@ describe('Reservations cancellation seat continuity', () => {
     );
     await expect(f.update('REOPEN')).rejects.toThrow('Sales cancelled');
     expect(f.state().workflow.supplierStatus).toBe('CANCELLED');
+  });
+  it('does not reopen a charter request when its current ticket identities are missing', async () => {
+    const f = setup();
+    await f.update('CANCEL');
+    f.snapshot.ticketSelections = [];
+    f.snapshot.selectedTicketOfferIds = ['out'];
+    await expect(f.update('REOPEN')).rejects.toThrow('بلیط');
+    expect(f.state().workflow.supplierStatus).toBe('CANCELLED');
+    expect(f.state().allocations[0]!.status).toBe('RELEASED');
   });
   it('rejects missing allocations and unavailable branch offers without inventing seats', async () => {
     const f = setup();
