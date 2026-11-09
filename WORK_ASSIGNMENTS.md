@@ -11923,3 +11923,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develo
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+
+## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
+
+Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
