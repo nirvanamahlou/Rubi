@@ -505,13 +505,20 @@ export class SalesRepository {
     return { data, page, pageSize, total };
   }
 
-  dashboardRows(
+  async dashboardRows(
     where: Prisma.SalesContractWhereInput,
   ): Promise<SalesContractRow[]> {
-    return this.database.client.salesContract.findMany({
+    const rows = await this.database.client.salesContract.findMany({
       where,
       include: salesDetailInclude,
     });
+    const cancelled = await readReservationReportingCancellations(
+      this.database.client,
+      rows.map((row) => row.id),
+    );
+    return rows.filter(
+      (row) => row.status !== 'CANCELLED' && !cancelled.has(row.id),
+    );
   }
 
   private buyerContactJson(
