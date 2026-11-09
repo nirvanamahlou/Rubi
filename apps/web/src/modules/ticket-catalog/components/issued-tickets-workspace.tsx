@@ -494,14 +494,20 @@ export function IssuedTicketsWorkspace({
                   : ticket.direction === 'RETURN'
                     ? 'برگشت'
                     : ''}{' '}
-                · {ticket.hotelName || ticket.serviceTitle}
+                ·{' '}
+                {(ticket.serviceKind === 'HOTEL' && ticket.hotelName) ||
+                  ticket.serviceTitle}
               </p>
               {ticket.departureAt ? (
                 <p className="text-sm" dir="ltr">
                   {reportGregorianTime(
-                    ticket.checkInDate || ticket.departureAt,
+                    ticket.serviceKind === 'HOTEL'
+                      ? ticket.checkInDate || ticket.departureAt
+                      : ticket.departureAt,
                   )}
-                  {ticket.checkOutDate ? ' → ' + ticket.checkOutDate : ''}
+                  {ticket.serviceKind === 'HOTEL' && ticket.checkOutDate
+                    ? ' → ' + ticket.checkOutDate
+                    : ''}
                 </p>
               ) : null}
               {!ticket.serviceKind || ticket.serviceKind === 'FLIGHT' ? (

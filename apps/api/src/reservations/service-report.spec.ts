@@ -3,7 +3,11 @@ import type {
   AuthenticatedActor,
   SalesReservationRequestV1,
 } from '@nora/contracts';
-import { allocatedServiceRows, filterServiceRows } from './service-report';
+import {
+  allocatedServiceRows,
+  filterServiceRows,
+  reservationFlightRows,
+} from './service-report';
 import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 const snapshot = {
   contractNumber: 'SC-1',
@@ -36,6 +40,60 @@ const snapshot = {
   },
 } as unknown as SalesReservationRequestV1;
 describe('allocated services report', () => {
+  it('includes only the flight passenger assigned hotel stay without adding services or changing flight dates', () => {
+    const flight = {
+      serviceClientKey: 'flight',
+      direction: 'OUTBOUND',
+      originId: 'a',
+      destinationId: 'b',
+      departureAt: '2026-11-01T21:00:00Z',
+      arrivalAt: '2026-11-02T01:00:00Z',
+      carrierNameSnapshot: 'Airline',
+      serviceNumberSnapshot: 'T1',
+      cabinClassCode: 'ECONOMY',
+    };
+    const assigned = {
+      ...snapshot,
+      passengerAssignments: snapshot.passengerAssignments!.map((p) => ({
+        ...p,
+        serviceClientKeys: [...p.serviceClientKeys, 'flight'],
+      })),
+      ticketSelections: [flight],
+      serviceSelections: snapshot.serviceSelections.map((s) =>
+        s.kind === 'HOTEL'
+          ? {
+              ...s,
+              metadata: {
+                passengerHotelStaysV1: JSON.stringify({
+                  'hotel-person': {
+                    different: true,
+                    checkInDate: '2026-11-04',
+                    checkOutDate: '2026-11-09',
+                  },
+                }),
+              },
+            }
+          : s,
+      ),
+    } as unknown as SalesReservationRequestV1;
+    const rows = reservationFlightRows('i', assigned, [], false);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      customerId: 'hotel-person',
+      hotelId: 'hotel-id',
+      checkInDate: '2026-11-04',
+      checkOutDate: '2026-11-09',
+      departureAt: flight.departureAt,
+      serviceKind: 'FLIGHT',
+      reportStatus: 'ALLOCATED',
+    });
+    expect(rows[1]).toMatchObject({
+      customerId: 'visa-person',
+      hotelId: '',
+      checkInDate: '',
+      checkOutDate: '',
+    });
+  });
   it('includes hotel-only guests and assigned visa/insurance without inventing issuance', () => {
     const rows = allocatedServiceRows('intake', snapshot, false);
     expect(rows).toHaveLength(3);

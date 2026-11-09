@@ -1,5 +1,7 @@
 # TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
 
+Final follow-up fills flight-export hotel columns only from that passenger's actual hotel assignment, including saved individual stay dates; flight dates/status and row counts stay independent.17 API checks, the extra flight-card regression and five language/document checks pass. Saved synthetic XLSX independently reloads with correct KPIs, local Gregorian times, stay nights, leading zeros and filter/freeze metadata. One new PDF caption translation and deterministic offline catalogue sync included.
+
 Issued-service Excel now begins with filtered unique passenger, contract, service/status and hotel KPIs. Detail rows include filtered passenger count per contract, PNR, issuance date, class/source and hotel check-in/check-out/night count. Gregorian timestamps restore the catalogue-defined Tehran time instead of exposing UTC ISO strings; hotel calendar dates are not shifted. Report service/hotel/date-basis filters reuse the project searchable combobox and keep explicit Search behavior.16 API and253 Web checks pass (one existing opt-in Web skip), scoped lint/full API and Web TypeScript/API and67-route Web production builds pass. Final hosted gates precede owner-authorized develop merge. No migration/dependency/data/deployment change.
 
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
