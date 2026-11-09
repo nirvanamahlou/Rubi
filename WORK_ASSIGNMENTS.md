@@ -1,3 +1,7 @@
+# RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
+
+PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.
+
 # FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
 
 PC-A reserves floating-flight-airport component/helper/tests and ContractFlightEditor route integration. Base083cedb62; owner authorizes green develop merge. International floating routes exclude THR and prefer IKA within the selected Tehran city; domestic routes retain choices. Preserve directory workflow authorization and manual valid selections. No schema/dependency/deployment.
@@ -11861,6 +11865,12 @@ Owner-authorized recovery of PR1484 publication. Reserve ReportingModule, Dashbo
 Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. Reserve additive shared upload format helpers, Documents sniffing/validation/policy and tests, bounded Sales receipt preflight and Web receipt pickers (Sales, Procurement, Finance, HR mission), message composer and own translations/docs. Preserve branch/source authorization, existing storage/download paths, size limits and rejection of executables/macro formats. Existing HR scopes merged/released. No schema, dependency or production data changes. Excel policy family includes legacy XLS alongside XLSX; no database policy rewrite.
 
 UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.
+
+# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-navigation-cancelled-labels-1109 from develop e32d4726d, reusing own clean checkout after disk-full prevented a new worktree. Reserve bounded app-shell navigation selection styles, Reservations foundation action-panel/table status presentation and focused checks; own status/task notes. Owner authorizes readable selected navigation, moving cancelled message from actions to its contract row with opaque black text, tests and develop merge. Preserve cancellation permissions/disabled actions, status transitions, route access and group collapse behavior. No API/schema/dependency/data/deployment changes. Central app-shell lease is limited to selected presentation; no active overlapping source owner found.
+
+Owner clarified the compact/mobile active module appeared blue with black text. Active link and icon now pin white foreground over solid blue independent of theme tokens. Cancellation message appears once beneath the contract number in its own table row, removed from the actions panel. Cancelled cells use opaque red/black even when selected, with blue selection outline.49 focused workspace/action/navigation regressions, scoped lint and full Web TypeScript pass; final hosted production gates required before authorized merge. No operational state or permission behavior changed.
 
 ## VOUCHER-CONTINUITY-1108 — PC-A — DONE/MERGED
 
