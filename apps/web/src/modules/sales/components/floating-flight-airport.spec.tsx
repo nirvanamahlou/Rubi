@@ -3,11 +3,33 @@ import { listReferences } from '@/modules/ticket-catalog/api/references';
 import {
   loadFloatingAirports,
   preferredFloatingAirport,
+  floatingAirportChoices,
 } from './floating-flight-airport';
 vi.mock('@/modules/ticket-catalog/api/references', () => ({
   listReferences: vi.fn(),
 }));
 afterEach(() => vi.resetAllMocks());
+it('excludes Mehrabad on international routes and defaults Tehran to IKA without changing domestic priority', () => {
+  const airport = (code: string, cityId = 'tehran') => ({
+    id: code,
+    code,
+    cityId,
+    countryId: 'ir',
+    name: code,
+  });
+  const rows = [airport('THR'), airport('SYZ', 'shiraz'), airport('IKA')];
+  expect(floatingAirportChoices(rows, true).map((a) => a.code)).toEqual([
+    'SYZ',
+    'IKA',
+  ]);
+  expect(preferredFloatingAirport(rows, 'tehran', true)?.code).toBe('IKA');
+  expect(preferredFloatingAirport(rows, 'shiraz', true)?.code).toBe('SYZ');
+  expect(preferredFloatingAirport(rows, 'tehran', false)?.code).toBe('THR');
+  expect(floatingAirportChoices(rows, false)).toEqual(rows);
+  expect(
+    preferredFloatingAirport([airport('THR')], 'tehran', true),
+  ).toBeUndefined();
+});
 it('includes all destination-country cities, preserving directory priority across pages and excluding invalid codes', async () => {
   const record = (id: string, cityId = 'city', code = 'AYT') => ({
     id,
