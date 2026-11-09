@@ -59,6 +59,7 @@ export function allocatedServiceRows(
           ].find((v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v));
           return {
             id: `${id}:${p.customerId}:${s.clientKey}`,
+            customerId: p.customerId,
             contractNumber: snapshot.contractNumber,
             passengerDisplayName:
               p.displayNameSnapshot?.trim() || 'نام مسافر ثبت نشده',
@@ -145,6 +146,20 @@ export function reservationFlightRows(
           cancelled,
         ),
       );
+      // Hotel context is not hotel issuance evidence; retain the flight's own dates/status.
+      const hotel = snapshot.hotelSelection;
+      if (hotel && p.serviceClientKeys.includes(hotel.serviceClientKey)) {
+        const stay =
+          readPassengerHotelStays(snapshot.serviceSelections, hotel)?.[
+            p.customerId
+          ] ?? hotel;
+        for (const row of rows) {
+          row.hotelId = hotel.hotelId;
+          row.hotelName = hotel.hotelNameSnapshot;
+          row.checkInDate = stay.checkInDate;
+          row.checkOutDate = stay.checkOutDate;
+        }
+      }
       return saved
         ? rows
         : rows.map((r) => ({
