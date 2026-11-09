@@ -9581,4 +9581,3 @@ URLs, payment references or check identifiers are returned. Unauthorized, unavai
 and empty sources render separately; customer/company changes clear prior data.
 Focused security/unit/HTTP and UI regressions pass; API TypeScript/build pass.
 No migration, dependency or operational-data changes. Full hosted checks gate merge.
-
