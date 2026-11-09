@@ -783,6 +783,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       }
     });
     it('filters units by exact-call responsibility rather than the ingestion service account', async () => {
+      await db.integrationTelephonyMapping.upsert({
+        where: { connectionId_extension: { connectionId, extension: '404' } },
+        create: { connectionId, extension: '404', userId: expert },
+        update: {},
+      });
       const inbound = await emit(makeEvent('404'));
       const outbound = await emit({
         ...makeEvent('404', 'RINGING'),
