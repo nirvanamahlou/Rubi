@@ -11916,6 +11916,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-exclude-cancelled-1109 from develop0fb
 
 Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx responsive bubble spacing, typography and action sizing. Scoped ESLint and six existing chat/reaction checks pass. A synthetic source-class light/dark preview reduced sample height168px to144px without horizontal overflow; this is not live production UI acceptance. Final hosted gates precede owner-authorized merge. Bounded source lock released on publication. No API, dependency, schema or deployment change.
 
+## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develop0a209c797. User assigns bounded flight-purchase list date-filter presentation and authorizes green develop merge, no deployment. Reserve TicketPurchaseWorkspace date inputs, module-local flight-date predicate/tests, Web-only translation keys and own notes. No purchase/payment mutation, shared contracts, API, schema or dependency changes. No active overlapping purchase-list writer found; preserve PC-B Procurement ownership and existing Finance pricing/permission paths. Filter actual flight day inclusively and combine with existing status/search/parent filters; retain undated rows only without date restrictions.
+
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
