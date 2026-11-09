@@ -1,3 +1,7 @@
+# MANIFEST-DEFAULTS-1109 — PC-A — IN_PROGRESS
+
+Reserve manifest-export.tsx, local selected-button styling and focused checks. Owner requests blue selected charter/floating control and Turkey default destination, with green develop merge. Base 0a209c797; no schema/dependency/deployment. Default resolves active Master Data and preserves manual edits/clears during loading.
+
 # SHARED-RESERVATION-INBOX-1109 — PC-A — IN_PROGRESS
 
 Owner explicitly supersedes the selected-company Reservations list rule: one shared operational inbox across issuer companies, preserving authorized branches and hidden-contract exclusion. Reserve Reservations list and Sales public reservationInboxIds projection/tests; no migration/dependency/deployment. User authorizes develop merge after green checks. See docs/tasks/SHARED-RESERVATION-INBOX-1109.md.

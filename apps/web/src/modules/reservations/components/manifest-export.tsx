@@ -19,6 +19,7 @@ import {
 import { ManifestReferenceFilter } from './manifest-reference-filter';
 import { manifestReferenceQuery } from './manifest-reference-filter';
 import { masterDataApi } from '@/modules/master-data/api/client';
+import styles from './manifest-export.module.css';
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -107,6 +108,38 @@ export function ManifestExport() {
     useState<MasterDataRecord>();
   const [originFilter, setOriginFilter] = useState<MasterDataRecord>();
   const originEdited = useRef(false);
+  const destinationEdited = useRef(false);
+  useEffect(() => {
+    let active = true;
+    void masterDataApi
+      .list('countries', manifestReferenceQuery('ترکیه'), 'reservations')
+      .then(({ data }) => {
+        const turkey = data.find(
+          (record) =>
+            record.status === 'active' &&
+            [
+              record.name,
+              record.code,
+              record.attributes.englishName,
+              record.attributes.iso2Code,
+            ].some(
+              (value) =>
+                typeof value === 'string' &&
+                ['ترکیه', 'turkey', 'türkiye', 'turkiye', 'tr', 'tur'].includes(
+                  value.trim().toLowerCase(),
+                ),
+            ),
+        );
+        if (turkey && active && !destinationEdited.current)
+          setDestinationCountry(turkey);
+      })
+      .catch(() => {
+        // Optional default; manual destination selection remains available.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -319,6 +352,9 @@ export function ManifestExport() {
             key={type}
             type="button"
             aria-pressed={flightSupplyType === type}
+            className={
+              flightSupplyType === type ? styles.selectedSupply : undefined
+            }
             variant={flightSupplyType === type ? 'primary' : 'outline'}
             disabled={Boolean(busy)}
             onClick={() => {
@@ -386,6 +422,7 @@ export function ManifestExport() {
           resource="countries"
           value={destinationCountry}
           onSelect={(country) => {
+            destinationEdited.current = true;
             setDestinationCountry(country);
             setDestinationFilter(undefined);
           }}
