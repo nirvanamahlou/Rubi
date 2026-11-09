@@ -11985,3 +11985,7 @@ Group mention suggestions and transactional notifications, and membership-scoped
 Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
 
 RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
+
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — RESERVED
+
+Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.
