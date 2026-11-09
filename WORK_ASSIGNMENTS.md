@@ -12018,5 +12018,5 @@ archive and passenger-finance isolation with transaction rollback. Source locks
 release on publication; PR1556 full final-head checks gate authorized merge.
 
 ## INSURANCE-DRAFT-ERROR-1109 — PC-C — IN_PROGRESS
-Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
 
+Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
