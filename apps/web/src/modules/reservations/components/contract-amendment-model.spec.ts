@@ -59,6 +59,48 @@ const offer = {
   cabinClassCode: 'ECONOMY',
 } as TicketOfferV1;
 describe('contract amendment draft', () => {
+  it('hydrates saved child bands even when a legacy category disagrees, without changing the source', () => {
+    const source = {
+      ...contract,
+      passengersDetail: [
+        {
+          ...contract.passengersDetail[0]!,
+          birthDate: '',
+          ageCategory: 'ADT' as const,
+          childAgeBand: 'AGE_2_6' as const,
+        },
+      ],
+    };
+    const draft = amendmentFromContract(source);
+    expect(draft.passengerCategories.person).toBe('CHD');
+    expect(draft.passengers[0]?.childAgeBand).toBe('AGE_2_6');
+    expect(source.passengersDetail[0]?.ageCategory).toBe('ADT');
+  });
+  it.each([
+    ['2022-01-01', 'AGE_2_6'],
+    ['2018-01-01', 'AGE_6_12'],
+  ])(
+    'fills a missing child band using the travel date for %s',
+    (birthDate, band) => {
+      const draft = amendmentFromContract({
+        ...contract,
+        departureDate: '2026-11-10',
+        passengersDetail: [
+          { ...contract.passengersDetail[0]!, ageCategory: 'CHD', birthDate },
+        ],
+      });
+      expect(draft.passengers[0]?.childAgeBand).toBe(band);
+    },
+  );
+  it('does not invent a child band when no DOB or booked band exists', () => {
+    const draft = amendmentFromContract({
+      ...contract,
+      passengersDetail: [
+        { ...contract.passengersDetail[0]!, ageCategory: 'CHD', birthDate: '' },
+      ],
+    });
+    expect(draft.passengers[0]?.childAgeBand).toBeUndefined();
+  });
   it('preserves buyer, payer, exact amounts and passenger identity without resubmitting receipts', () => {
     const d = amendmentFromContract(contract);
     expect(d.payerCustomerId).toBe('payer');

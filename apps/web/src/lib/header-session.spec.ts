@@ -79,6 +79,61 @@ describe('header session identity', () => {
     expect(getHeaderRoleLabel(storage)).toBe('کارشناس فروش');
   });
 
+  it('prefers the user-specific title over an administrator or shared template', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(
+      {
+        ...user,
+        roles: [
+          { code: 'administrator', name: 'مدیر سیستم' },
+          { code: 'sales', name: 'کارشناس فروش' },
+          { code: 'manual-access-v3-user-1', name: '  مسئول رزرو بین‌الملل  ' },
+        ],
+      },
+      '2026-09-07T07:32:00.000Z',
+      storage,
+    );
+    expect(getHeaderRoleLabel(storage)).toBe('مسئول رزرو بین‌الملل');
+    expect(readHeaderSession(storage)?.roleNames).toEqual([
+      'مسئول رزرو بین‌الملل',
+    ]);
+  });
+
+  it('retains custom shared titles and never invents a manager title', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(
+      { ...user, roles: [{ code: 'custom', name: 'هماهنگ‌کننده سفر' }] },
+      '2026-09-07T07:32:00.000Z',
+      storage,
+    );
+    expect(getHeaderRoleLabel(storage)).toBe('هماهنگ‌کننده سفر');
+    rememberHeaderSession(
+      { ...user, roles: [{ code: 'administrator', name: 'مدیر سیستم' }] },
+      '2026-09-07T07:32:00.000Z',
+      storage,
+    );
+    expect(getHeaderRoleLabel(storage)).toBe('مدیر سیستم');
+    rememberHeaderSession(user, '2026-09-07T07:32:00.000Z', storage);
+    expect(getHeaderRoleLabel(storage)).toBe('');
+  });
+
+  it('does not present technical personal-access grants as the user job title', () => {
+    const storage = memoryStorage();
+    rememberHeaderSession(
+      {
+        ...user,
+        roles: [
+          { code: 'personal-access-user-1', name: 'Technical grant' },
+          { code: 'manual-access-v3-user-1', name: '  ' },
+          { code: 'custom', name: 'هماهنگ‌کننده سفر' },
+        ],
+      },
+      '2026-09-07T07:32:00.000Z',
+      storage,
+    );
+    expect(getHeaderRoleLabel(storage)).toBe('هماهنگ‌کننده سفر');
+  });
+
   it('formats a valid login time and safely handles an invalid value', () => {
     expect(formatHeaderLoginTime('2026-09-07T07:32:00.000Z')).toContain(':');
     expect(formatHeaderLoginTime('invalid')).toBe('—');

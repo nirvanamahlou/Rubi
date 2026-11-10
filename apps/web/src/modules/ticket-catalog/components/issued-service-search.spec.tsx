@@ -3,6 +3,7 @@ import type * as ReactModule from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { Button } from '@/components/ui';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { IssuedTicketsWorkspace } from './issued-tickets-workspace';
 const state = vi.hoisted(() => ({ values: [] as unknown[], index: 0 }));
 vi.mock('react', async (original) => ({
@@ -58,9 +59,9 @@ it('keeps filter edits pending until explicit Search and submits all filters tog
   expect(search).not.toHaveBeenCalled();
   tree = render();
   const hotel = tree.find(
-    (n) => n.type === 'select' && n.props.id === 'report-hotel',
+    (n) => n.type === SearchCombobox && n.props.id === 'report-hotel',
   )!;
-  (hotel.props.onChange as (e: unknown) => void)({ target: { value: 'h' } });
+  (hotel.props.onValueChange as (value: string) => void)('h');
   expect(search).not.toHaveBeenCalled();
   tree = render();
   const action = tree.find(
@@ -75,4 +76,23 @@ it('keeps filter edits pending until explicit Search and submits all filters tog
       page: 1,
     }),
   );
+});
+
+it('uses the shared searchable control for service, hotel and date basis without early requests', () => {
+  const search = vi.fn();
+  const tree = nodes(
+    IssuedTicketsWorkspace({ tickets: [], onDatesChange: search }),
+  );
+  for (const id of ['report-service', 'report-hotel', 'report-date-basis']) {
+    const control = tree.find(
+      (n) => n.props.id === id && n.type === SearchCombobox,
+    );
+    expect(control).toBeDefined();
+    expect(control?.props.options).toBeInstanceOf(Array);
+  }
+  const basis = tree.find(
+    (n) => n.props.id === 'report-date-basis' && n.type === SearchCombobox,
+  )!;
+  (basis.props.onValueChange as (value: string) => void)('TRAVEL');
+  expect(search).not.toHaveBeenCalled();
 });

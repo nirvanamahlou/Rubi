@@ -32,12 +32,12 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
-  it('identifies a cancelled selection explicitly without labelling active contracts cancelled', () => {
+  it('leaves the cancellation label on the contract row instead of the action panel', () => {
     expect(
       renderToStaticMarkup(
         <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
       ),
-    ).toContain('این قرارداد باطل شده است');
+    ).not.toContain('این قرارداد باطل شده است');
     expect(
       renderToStaticMarkup(<ContractActionPanel request={request} />),
     ).not.toContain('این قرارداد باطل شده است');

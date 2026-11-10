@@ -27,7 +27,11 @@ import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
-import { TravelDocument, useTravelLogo } from './travel-document';
+import {
+  TravelDocument,
+  useTravelLogo,
+  readTravelLogo,
+} from './travel-document';
 import { ReservationSettingsForm } from './reservation-settings';
 const intake = {
   snapshot: {
@@ -385,5 +389,51 @@ it.each([false, true])(
 
     expect(html).not.toContain('نیایش');
     expect(html).not.toContain('niyayehseir.com');
+  },
+);
+
+it('loads Sales preview branding from the released contract instead of the generic archive', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://api.test/api/v1');
+  const fetcher = vi.fn().mockResolvedValue(
+    new Response(new Uint8Array([1]), {
+      headers: { 'Content-Type': 'image/png' },
+    }),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const result = await readTravelLogo('private-logo', 'contract');
+    expect(result.blob?.size).toBe(1);
+    expect(fetcher.mock.calls[0]?.[0]).toContain(
+      '/sales/contracts/contract/travel-documents/branding-logo',
+    );
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  } finally {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  }
+});
+
+it.each([403, 404])(
+  'handles a Sales preview logo response %s without bypassing financial denial',
+  async (status) => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://api.test/api/v1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('{}', { status })),
+    );
+    try {
+      if (status === 404)
+        await expect(readTravelLogo('missing', 'contract')).resolves.toEqual({
+          blob: null,
+        });
+      else
+        await expect(readTravelLogo('private', 'contract')).rejects.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
   },
 );

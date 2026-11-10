@@ -1,0 +1,1 @@
+ALTER TYPE "SalesPaymentStatus" ADD VALUE 'FINANCE_VOIDED';

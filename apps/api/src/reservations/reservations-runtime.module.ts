@@ -15,6 +15,9 @@ import { InsuranceSettingsService } from '../integrations/insurance/insurance-se
 import { ReservationInsuranceController } from './insurance/insurance.controller';
 import { ReservationInsuranceService } from './insurance/insurance.service';
 import { InsuranceAutomation } from './insurance/insurance-automation';
+import { InsuranceApplicantCrypto } from './insurance/insurance-applicant.crypto';
+import { StandaloneInsuranceService } from './insurance/standalone-insurance.service';
+import { StandaloneInsuranceController } from './insurance/standalone-insurance.controller';
 import { InsuranceDocumentsController } from './insurance/insurance-documents.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { reservationOutputPassengers } from './reservation-passenger-output';
@@ -35,6 +38,7 @@ import {
 } from './reservation-purchase-query';
 import { issuedColumns, issuedValues } from './issued-ticket-report';
 import { buildIssuedTicketWorkbook } from './issued-ticket-workbook';
+import { buildServiceReportWorkbook } from './service-report-workbook';
 import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 import {
   SalesReservationTableModule,
@@ -164,34 +168,10 @@ export class ReservationRequestsController {
       query,
       req.actor!,
     );
-    const columns = [
-      ['contractNumber', 'شماره قرارداد'],
-      ['passengerDisplayName', 'مسافر'],
-      ['serviceKind', 'نوع خدمت'],
-      ['serviceTitle', 'خدمت'],
-      ['reportStatus', 'وضعیت خدمت'],
-      ['ticketNumber', 'شماره بلیط'],
-      ['origin', 'مبدأ'],
-      ['destination', 'مقصد'],
-      ['departureAt', 'زمان رفت'],
-      ['arrivalAt', 'زمان رسیدن'],
-      ['airline', 'ایرلاین'],
-      ['flightNumber', 'شماره پرواز'],
-      ['direction', 'رفت / برگشت'],
-      ['hotelName', 'هتل'],
-      ['checkInDate', 'ورود هتل'],
-      ['checkOutDate', 'خروج هتل'],
-    ] as const;
-    return new StreamableFile(
-      buildIssuedTicketWorkbook(
-        data.map((r) => columns.map(([k]) => String(r[k] ?? ''))),
-        columns.map(([, label]) => label),
-      ),
-      {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        disposition: 'attachment; filename="service-report.xlsx"',
-      },
-    );
+    return new StreamableFile(buildServiceReportWorkbook(data, query), {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: 'attachment; filename="service-report.xlsx"',
+    });
   }
   @Get('purchases')
   @Header('Cache-Control', 'private, no-store')
@@ -993,6 +973,7 @@ export class ReservationRequestsController {
   ],
   controllers: [
     ReservationInsuranceController,
+    StandaloneInsuranceController,
     InsuranceDocumentsController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
@@ -1007,6 +988,8 @@ export class ReservationRequestsController {
     InsuranceSettingsService,
     ReservationInsuranceService,
     InsuranceAutomation,
+    InsuranceApplicantCrypto,
+    StandaloneInsuranceService,
     BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,

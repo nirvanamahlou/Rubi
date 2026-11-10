@@ -742,10 +742,19 @@ export class IamService implements IamStepUpPort {
   async describeMessagingParticipants(ids: string[]) {
     const uniqueIds = [...new Set(ids)];
     if (!uniqueIds.length) return [];
-    return this.database.client.user.findMany({
+    const users = await this.database.client.user.findMany({
       where: { id: { in: uniqueIds } },
-      select: { id: true, displayName: true, username: true },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        profile: { select: { photoDocumentId: true } },
+      },
     });
+    return users.map(({ profile, ...user }) => ({
+      ...user,
+      ...(profile?.photoDocumentId ? { hasProfilePhoto: true } : {}),
+    }));
   }
 
   async listUserAccessOptions(actor: AuthenticatedActor) {

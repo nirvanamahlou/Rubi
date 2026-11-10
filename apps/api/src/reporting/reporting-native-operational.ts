@@ -209,7 +209,7 @@ export function assembleOperationalResult(
     }),
     filterOptions: {
       branch: actor.branchIds,
-      status: [
+      status: source.filterOptions?.status ?? [
         ...new Set(
           source.rows.flatMap((r) =>
             typeof r.values.status === 'string' ? [r.values.status] : [],

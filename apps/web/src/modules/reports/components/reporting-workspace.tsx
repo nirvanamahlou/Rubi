@@ -1,5 +1,10 @@
 'use client';
 import {
+  isOutputFilterKey,
+  reportFilterDisplayLabel,
+  type ReportColumnFilter,
+} from '../model/output-filters';
+import {
   formatReportMoney,
   isReportMoneyColumn,
 } from '../model/report-money-format';
@@ -201,12 +206,12 @@ const reportFilterApiKeys: Readonly<Record<string, string>> = {
   'منبع لید': 'leadSource',
 };
 
-function reportFilterApiValues(
+export function reportFilterApiValues(
   values: Readonly<Record<string, string>>,
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries(values).flatMap(([label, value]) => {
-      const key = reportFilterApiKeys[label];
+      const key = isOutputFilterKey(label) ? label : reportFilterApiKeys[label];
       return key && value ? [[key, value]] : [];
     }),
   );
@@ -290,11 +295,13 @@ function ReportSearchableSelect({
   const [query, setQuery] = useState('');
   const selected = options.find((option) => option.value === value);
   const normalizedQuery = query.trim().toLocaleLowerCase('fa');
-  const visibleOptions = options.filter((option) =>
+  const matchingOptions = options.filter((option) =>
     `${option.label} ${option.value}`
       .toLocaleLowerCase('fa')
       .includes(normalizedQuery),
   );
+
+  const visibleOptions = matchingOptions.slice(0, 100);
 
   useEffect(() => {
     if (!open) return;
@@ -321,7 +328,12 @@ function ReportSearchableSelect({
           }}
           type="button"
         >
-          <span className="truncate">{selected?.label ?? allLabel}</span>
+          <span className="truncate">
+            {selected?.label ??
+              (value !== 'ALL'
+                ? reportFilterDisplayLabel(value, label)
+                : allLabel)}
+          </span>
           <ChevronDown
             aria-hidden="true"
             className="size-4 text-muted-foreground"
@@ -370,6 +382,11 @@ function ReportSearchableSelect({
                   </button>
                 ),
               )}
+              {matchingOptions.length > visibleOptions.length ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  برای گزینه‌های بیشتر جست‌وجو کنید.
+                </p>
+              ) : null}
               {visibleOptions.length === 0 ? (
                 <p className="px-3 py-4 text-center text-xs text-muted-foreground">
                   {normalizedQuery
@@ -466,7 +483,9 @@ export function buildReportingFilterSnapshot({
   legalEntity,
   report,
   toDate,
+  columnFilters = [],
 }: {
+  columnFilters?: readonly ReportColumnFilter[];
   currency: string;
   filterValues: Readonly<Record<string, string>>;
   fromDate: string;
@@ -496,9 +515,18 @@ export function buildReportingFilterSnapshot({
     },
   ];
 
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i]!;
+    if (
+      !item.active &&
+      item.label !== 'بازه تاریخ' &&
+      !report.filters.includes(item.label)
+    )
+      items.splice(i, 1);
+  }
+
   report.filters
     .filter((filter) => !['بازه تاریخ', 'شرکت', 'ارز'].includes(filter))
-    .slice(0, 8)
     .forEach((filter) => {
       const value = filterValues[filter]?.trim() || 'ALL';
       items.push({
@@ -508,6 +536,18 @@ export function buildReportingFilterSnapshot({
       });
     });
 
+  for (const filter of columnFilters) {
+    const value = filterValues[filter.key];
+    items.push({
+      active: Boolean(value),
+      label: filter.label,
+      value: value
+        ? reportFilterDisplayLabel(value, filter.label)
+        : reportingAllFilterLabel(filter.label),
+    });
+  }
+  if (filterValues.search)
+    items.push({ active: true, label: 'جست‌وجو', value: filterValues.search });
   return items;
 }
 
@@ -516,8 +556,8 @@ function initialReportingFilterValues(
   urlValues: Readonly<Record<string, string>>,
 ): Record<string, string> {
   const applicableUrlValues = Object.fromEntries(
-    Object.entries(urlValues).filter(([label]) =>
-      report.filters.includes(label),
+    Object.entries(urlValues).filter(
+      ([label]) => report.filters.includes(label) || isOutputFilterKey(label),
     ),
   );
   if (typeof window === 'undefined') return applicableUrlValues;
@@ -537,7 +577,7 @@ function initialReportingFilterValues(
             key.length <= 64 &&
             report.filters.includes(key) &&
             typeof value === 'string' &&
-            value.length <= 120,
+            value.length <= 160,
         )
         .slice(0, 12),
     ) as Record<string, string>;
@@ -1859,9 +1899,10 @@ export function ReportingWorkspace({
   const [result, setResult] = useState<SalesByOrganizationReportResult | null>(
     null,
   );
-  const [availableFilterOptions, setAvailableFilterOptions] = useState<
-    SalesByOrganizationReportResult['filterOptions'] | null
-  >(null);
+  const [availableFilterOptions, setAvailableFilterOptions] = useState<{
+    code: string;
+    value: SalesByOrganizationReportResult['filterOptions'];
+  } | null>(null);
   const [runError, setRunError] = useState<ReportRunError | null>(null);
   const [running, setRunning] = useState(false);
   const [runHistoryRevision, setRunHistoryRevision] = useState(0);
@@ -1960,8 +2001,29 @@ export function ReportingWorkspace({
     selected.code === 'sales_by_organization' &&
     (legalEntity !== 'ALL' ||
       Object.entries(reportFilterValues).some(
-        ([label, value]) => value && !supportedConnectedFilterLabels.has(label),
+        ([label, value]) =>
+          value &&
+          !isOutputFilterKey(label) &&
+          !supportedConnectedFilterLabels.has(label),
       ));
+  const producerFilterOptions =
+    availableFilterOptions?.code === selected.code
+      ? availableFilterOptions.value
+      : result?.filterOptions;
+  const outputFilters = useMemo(
+    () =>
+      (
+        result?.filterOptions.columnFilters ??
+        producerFilterOptions?.columnFilters ??
+        []
+      ).flatMap((filter) => {
+        if (!selected.filters.includes(filter.label)) return [filter];
+        return reportFilterValues[filter.key]
+          ? [{ ...filter, label: 'ستون ' + filter.label }]
+          : [];
+      }),
+    [result, producerFilterOptions, selected.filters, reportFilterValues],
+  );
   const filterSnapshot = useMemo(
     () =>
       buildReportingFilterSnapshot({
@@ -1971,8 +2033,17 @@ export function ReportingWorkspace({
         legalEntity,
         report: selected,
         toDate,
+        columnFilters: outputFilters,
       }),
-    [currency, fromDate, legalEntity, reportFilterValues, selected, toDate],
+    [
+      currency,
+      fromDate,
+      legalEntity,
+      reportFilterValues,
+      selected,
+      toDate,
+      outputFilters,
+    ],
   );
   const reportExportQuery = useMemo(
     () => ({
@@ -1994,7 +2065,6 @@ export function ReportingWorkspace({
   );
   const activeFilterCount = filterSnapshot.filter((item) => item.active).length;
   const dateRangeError = reportingDateRangeError(fromDate, toDate);
-  const producerFilterOptions = result?.filterOptions ?? availableFilterOptions;
 
   function optionsForReportFilter(
     filter: string,
@@ -2016,7 +2086,7 @@ export function ReportingWorkspace({
             (value) =>
               salesStatusOptions.find((option) => option.value === value) ?? {
                 value,
-                label: value,
+                label: reportFilterDisplayLabel(value),
               },
           )
         : salesStatusOptions;
@@ -2028,7 +2098,13 @@ export function ReportingWorkspace({
     try {
       window.sessionStorage.setItem(
         `reporting.filters.${selected.code}`,
-        JSON.stringify(reportFilterValues),
+        JSON.stringify(
+          Object.fromEntries(
+            Object.entries(reportFilterValues).filter(
+              ([key]) => !isOutputFilterKey(key),
+            ),
+          ),
+        ),
       );
     } catch {
       // URL state still preserves non-identifying filter values.
@@ -2041,7 +2117,11 @@ export function ReportingWorkspace({
     void reportingApi
       .salesByOrganization({ reportCode: selected.code, pageSize: 1 })
       .then((preview) => {
-        if (current) setAvailableFilterOptions(preview.filterOptions);
+        if (current)
+          setAvailableFilterOptions({
+            code: selected.code,
+            value: preview.filterOptions,
+          });
       })
       .catch(() => {
         // The explicit Run action presents authentication or connection errors.
@@ -2088,6 +2168,7 @@ export function ReportingWorkspace({
 
   function selectCatalogReport(nextReport: ReportDefinition) {
     setSelected(nextReport);
+    setAvailableFilterOptions(null);
     setPersistFilterState(true);
     setResult(null);
     setRunError(null);
@@ -2125,7 +2206,10 @@ export function ReportingWorkspace({
     } else {
       setReportFilterValues((current) => {
         const next = { ...current };
-        delete next[label];
+        delete next[
+          outputFilters.find((filter) => filter.label === label)?.key ??
+            (label === 'جست‌وجو' ? 'search' : label)
+        ];
         return next;
       });
     }
@@ -2142,6 +2226,7 @@ export function ReportingWorkspace({
       if (changed || !running)
         void runReport(changed ? 1 : (result?.page ?? 1));
     },
+    300,
   );
 
   async function runReport(
@@ -2188,16 +2273,12 @@ export function ReportingWorkspace({
         reportFilterValues['وضعیت']
           ? { status: reportFilterValues['وضعیت'] }
           : {}),
-        filterValues:
-          selected.code === 'sales_by_organization'
-            ? {}
-            : reportFilterApiValues(reportFilterValues),
+        filterValues: reportFilterApiValues(reportFilterValues),
         page,
         pageSize: reportResultPageSize(mode),
         sort,
       });
       if (generation !== requestGeneration.current) return;
-      setAvailableFilterOptions(preview.filterOptions);
       setResult(preview);
     } catch (error) {
       if (generation === requestGeneration.current)
@@ -2636,7 +2717,14 @@ export function ReportingWorkspace({
                     id="report-currency"
                     label="ارز"
                     onValueChange={setCurrency}
-                    options={currencyOptions}
+                    options={
+                      connectedReportSelected && producerFilterOptions
+                        ? producerFilterOptions.currencyCodes.map((value) => ({
+                            value,
+                            label: currencySymbol(value),
+                          }))
+                        : currencyOptions
+                    }
                     value={currency}
                   />
                 ) : null}
@@ -2644,7 +2732,6 @@ export function ReportingWorkspace({
                   .filter(
                     (filter) => !['بازه تاریخ', 'شرکت', 'ارز'].includes(filter),
                   )
-                  .slice(0, 8)
                   .map((filter, index) => (
                     <ReportSearchableSelect
                       allLabel={reportingAllFilterLabel(filter)}
@@ -2663,6 +2750,45 @@ export function ReportingWorkspace({
                       value={reportFilterValues[filter] ?? 'ALL'}
                     />
                   ))}
+                {connectedReportSelected ? (
+                  <>
+                    {outputFilters.map((filter) => (
+                      <ReportSearchableSelect
+                        key={filter.key}
+                        id={'report-output-' + filter.key}
+                        label={filter.label}
+                        allLabel={reportingAllFilterLabel(filter.label)}
+                        options={filter.options.map((value) => ({
+                          value,
+                          label: reportFilterDisplayLabel(value, filter.label),
+                        }))}
+                        value={reportFilterValues[filter.key] ?? 'ALL'}
+                        onValueChange={(value) =>
+                          setReportFilterValues((current) => {
+                            const next = { ...current };
+                            if (value && value !== 'ALL')
+                              next[filter.key] = value;
+                            else delete next[filter.key];
+                            return next;
+                          })
+                        }
+                      />
+                    ))}
+                    <FormField id="report-output-search" label="جست‌وجو">
+                      <Input
+                        id="report-output-search"
+                        maxLength={160}
+                        value={reportFilterValues.search ?? ''}
+                        onChange={(event) =>
+                          setReportFilterValues((current) => ({
+                            ...current,
+                            search: event.target.value,
+                          }))
+                        }
+                      />
+                    </FormField>
+                  </>
+                ) : null}
               </div>
             </section>
             <div className="mt-5 grid gap-4 border-t pt-4 lg:grid-cols-[16rem_minmax(0,1fr)]">

@@ -590,7 +590,27 @@
   outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
-.requestTable td:nth-child(3) {
+.requestTable tbody tr[data-cancelled='true'] td,
+.requestTable tbody tr[data-cancelled='true'][data-selected='true'] td {
+  background: #f87171;
+  color: #000000;
+  opacity: 1;
+}
+.requestTable tbody tr[data-cancelled='true'][data-selected='true'] {
+  outline: 2px solid #185abd;
+  outline-offset: -2px;
+}
+.requestTable .cancelledLabel {
+  display: block;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: #f87171;
+  color: #000000;
+  opacity: 1;
+  font-size: 11px;
+  font-weight: 700;
+}
+.requestTable td:nth-child(5) {
   max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -608,7 +628,7 @@
   gap: 12px;
   margin: 12px 0;
 }
-.requestTable td:nth-child(n + 16):nth-child(-n + 20) {
+.requestTable td:nth-child(n + 18):nth-child(-n + 22) {
   max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;

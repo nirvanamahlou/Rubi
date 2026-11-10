@@ -63,6 +63,7 @@ import { NotificationCenter } from './notification-center';
 import { sidebarIcons } from './sidebar-icons';
 import { UserMenu } from './user-menu';
 import { HeaderToday } from './header-today';
+import { HeaderRoleLabel } from './header-role-label';
 import {
   PageBreadcrumbProvider,
   usePageBreadcrumbOverride,
@@ -227,12 +228,15 @@ function Navigation({
     const link = (
       <Link
         aria-current={active ? 'page' : undefined}
+        style={
+          active ? { backgroundColor: '#185abd', color: '#ffffff' } : undefined
+        }
         className={cn(
           'group flex min-w-0 items-center gap-2.5 overflow-hidden rounded-[10px] px-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300',
           compact ? 'h-full min-h-8' : 'min-h-10 py-2 text-xs leading-[1.8]',
           mobile
             ? active
-              ? 'bg-primary text-primary-foreground shadow-sm'
+              ? 'bg-[#185abd] text-white shadow-sm'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             : active
               ? 'bg-cyan-300/20 text-white ring-1 ring-inset ring-cyan-100/30 shadow-md shadow-blue-950/20'
@@ -244,6 +248,7 @@ function Navigation({
       >
         <Icon
           strokeWidth={1.7}
+          style={active ? { color: '#ffffff' } : undefined}
           aria-hidden="true"
           className={cn(
             'size-[17px] shrink-0',
@@ -685,7 +690,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-surface/90 shadow-sm shadow-blue-900/5 backdrop-blur-xl dark:border-border">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-3 py-2 sm:flex sm:h-14 sm:gap-3 sm:px-6 sm:py-0">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-3 py-2 sm:flex sm:min-h-14 sm:flex-wrap sm:gap-3 sm:px-6 sm:py-0">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -726,9 +731,10 @@ function AppShellContent({ children }: { children: ReactNode }) {
               <SearchDialog />
             </div>
             <div
-              className="ms-auto flex shrink-0 items-center gap-1"
+              className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1"
               data-header-utility-group
             >
+              <HeaderRoleLabel />
               <div className="hidden shrink-0 whitespace-nowrap lg:flex">
                 <HeaderToday />
               </div>

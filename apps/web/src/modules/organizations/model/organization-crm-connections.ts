@@ -23,6 +23,7 @@ const paymentStatus: Record<string, string> = {
   SCHEDULED: 'برنامه‌ریزی‌شده',
   PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',
   FINANCE_CONFIRMED: 'تأییدشده مالی',
+  FINANCE_VOIDED: 'باطل‌شده',
   FINANCE_REJECTED: 'ردشده مالی',
 };
 const settlementStatus: Record<string, string> = {

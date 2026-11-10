@@ -29,6 +29,7 @@ import {
   type InsuranceCandidate,
   type InsuranceListResponse,
   type InsuranceSettingsResponse,
+  type InsuranceProviderCatalog,
 } from './client';
 import styles from './workspace.module.css';
 import {
@@ -36,6 +37,8 @@ import {
   InsuranceInputGuide,
 } from './passenger-fields';
 import { currencySymbol } from '@/lib/currency-symbol';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+import { StandaloneInsuranceDraft } from './standalone-draft';
 
 const emptyFilter = {
   search: '',
@@ -45,10 +48,16 @@ const emptyFilter = {
   from: '',
   to: '',
 };
+type InsuranceHistory = {
+  version: number;
+  action: string;
+  createdAt: string;
+  snapshot?: { previousError?: string | null };
+};
 export function InsurancePolicies({
   branches,
 }: {
-  branches: { id: string }[];
+  branches: { id: string; name?: string }[];
 }) {
   const [filter, setFilter] = useState(emptyFilter);
   const [query, setQuery] = useState(emptyFilter);
@@ -62,7 +71,22 @@ export function InsurancePolicies({
   const [result, setResult] = useState<InsuranceListResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const pending = result?.data.some(
+    (row) => row.automatic && row.status === 'DRAFT',
+  );
+  useEffect(() => {
+    if (loading || !pending) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      setLoading(true);
+      setRevision((current) => current + 1);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [loading, pending]);
   const [adding, setAdding] = useState(false);
+  const [standalone, setStandalone] = useState<{
+    policy?: InsurancePolicyRowV1;
+  } | null>(null);
   const [search, setSearch] = useState('');
   const [candidates, setCandidates] = useState<InsuranceCandidate[]>([]);
   const [searching, setSearching] = useState(false);
@@ -116,16 +140,17 @@ export function InsurancePolicies({
   const [target, setTarget] = useState<
     InsuranceCandidate | InsurancePolicyRowV1 | null
   >(null);
-  const [history, setHistory] = useState<
-    { version: number; action: string; createdAt: string }[] | null
-  >(null);
+  const [history, setHistory] = useState<InsuranceHistory[] | null>(null);
   useEffect(() => {
     let active = true;
     insuranceRequest<InsuranceListResponse>(
       'policies?' + new URLSearchParams({ ...query, page: String(page) }),
     )
       .then((r) => {
-        if (active) setResult(r);
+        if (active) {
+          setResult(r);
+          setError('');
+        }
       })
       .catch((e) => {
         if (active) {
@@ -162,7 +187,7 @@ export function InsurancePolicies({
       setHistory(
         (
           await insuranceRequest<{
-            data: { version: number; action: string; createdAt: string }[];
+            data: InsuranceHistory[];
           }>('policies/' + id + '/history')
         ).data,
       );
@@ -238,6 +263,14 @@ export function InsurancePolicies({
           </Button>
           <Button
             disabled={!result?.canManage}
+            onClick={() => setStandalone({})}
+          >
+            <Plus size={16} />
+            درخواست بیمه
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!result?.canManage}
             onClick={() => {
               setAdding(true);
               setCandidates([]);
@@ -245,11 +278,11 @@ export function InsurancePolicies({
             }}
           >
             <Plus size={16} />
-            درخواست بیمه
+            بیمه از قرارداد
           </Button>
         </div>
       </div>
-      <InsuranceInputGuide />
+      <InsuranceInputGuide standalone />
       <div className={styles.metrics}>
         {[
           ['بیمه‌نامه‌ها', result?.count ?? 0],
@@ -384,7 +417,10 @@ export function InsurancePolicies({
               <tbody>
                 {result.data.map((row) => (
                   <tr key={row.id}>
-                    <td dir="ltr">{row.contractNumber}</td>
+                    <td dir="auto">
+                      {row.contractNumber ||
+                        (row.standalone ? 'بدون قرارداد' : '')}
+                    </td>
                     <td>{row.passengerName}</td>
                     <td dir="ltr">{row.policyNumber ?? ''}</td>
                     <td>
@@ -395,7 +431,9 @@ export function InsurancePolicies({
                             : styles.badge
                         }
                       >
-                        {insuranceStatusLabels[row.status]}
+                        {row.automatic && row.status === 'DRAFT'
+                          ? 'در حال پردازش'
+                          : insuranceStatusLabels[row.status]}
                       </span>
                       {row.lastError && <small>{row.lastError}</small>}
                     </td>
@@ -433,11 +471,29 @@ export function InsurancePolicies({
                               'PROVIDER_ERROR',
                             ].includes(row.status)
                           }
-                          onClick={() => setTarget(row)}
+                          onClick={() =>
+                            row.standalone
+                              ? setStandalone({ policy: row })
+                              : setTarget(row)
+                          }
                         >
                           <FilePenLine size={15} />
                           اصلاح
                         </Button>
+                        {row.standalone && row.status === 'ISSUED' && (
+                          <a
+                            href={
+                              getPublicApiBaseUrl() +
+                              '/reservations/insurance/standalone/' +
+                              row.id +
+                              '/pdf'
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            دانلود PDF بیمه‌نامه
+                          </a>
+                        )}
                         <Button
                           variant="outline"
                           onClick={() => void showHistory(row.id)}
@@ -492,6 +548,30 @@ export function InsurancePolicies({
           </div>
         </div>
       </section>
+      <Dialog
+        open={standalone !== null}
+        onOpenChange={(open) => {
+          if (!open) setStandalone(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>
+            {standalone?.policy ? 'اصلاح بیمه مستقل' : 'درخواست بیمه مستقل'}
+          </DialogTitle>
+          <DialogDescription>اطلاعات کامل متقاضی و سفر</DialogDescription>
+          {standalone && (
+            <StandaloneInsuranceDraft
+              branches={branches}
+              {...(standalone.policy ? { policy: standalone.policy } : {})}
+              saved={() => {
+                setStandalone(null);
+                setLoading(true);
+                setRevision((n) => n + 1);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent>
           <DialogTitle>آماده‌سازی درخواست بیمه</DialogTitle>
@@ -558,7 +638,9 @@ export function InsurancePolicies({
           </DialogDescription>
           {target && (
             <InsuranceDraft
-              key={target.customerId + target.intakeId}
+              key={
+                'id' in target ? target.id : target.customerId + target.intakeId
+              }
               target={target}
               saved={() => {
                 setTarget(null);
@@ -585,13 +667,19 @@ export function InsurancePolicies({
                 نسخه {h.version} ·{' '}
                 {h.action === 'DRAFT_SAVED'
                   ? 'ذخیره پیش‌نویس'
-                  : h.action === 'PROVIDER_CONFIRMED'
+                  : h.action === 'PROVIDER_CONFIRMED' ||
+                      h.action === 'SANDBOX_CONFIRMED'
                     ? 'تأیید صدور بیمه‌گر'
-                    : h.action}{' '}
+                    : h.action === 'STANDALONE_CREATED'
+                      ? 'ثبت درخواست مستقل'
+                      : h.action}{' '}
                 ·{' '}
                 <span dir="ltr">
                   {h.createdAt.slice(0, 16).replace('T', ' ')}
                 </span>
+                {h.snapshot?.previousError && (
+                  <p className={styles.error}>{h.snapshot.previousError}</p>
+                )}
               </li>
             ))}
           </ol>
@@ -617,8 +705,8 @@ export function InsuranceDraft({
   const [busy, setBusy] = useState(false);
   const [personLoading, setPersonLoading] = useState(Boolean(previous));
   const [draft, setDraft] = useState<InsuranceDraftInputV1>({
-    intakeId: target.intakeId,
-    customerId: target.customerId,
+    intakeId: target.intakeId ?? '',
+    customerId: target.customerId ?? '',
     destinationCode: previous?.destinationCode ?? '',
     planCode: previous?.planCode ?? '',
     departureDate: previous?.departureDate ?? '',
@@ -626,13 +714,23 @@ export function InsuranceDraft({
     notes: previous?.notes ?? '',
     expectedVersion: previous?.version ?? 0,
   });
+  const [catalog, setCatalog] = useState<InsuranceProviderCatalog | null>(null);
   useEffect(() => {
     let active = true;
-    insuranceRequest<InsuranceSettingsResponse>(
-      'settings?' + new URLSearchParams({ branchId: target.branchId }),
-    )
-      .then((r) => {
-        if (active) setSettings(r);
+    Promise.all([
+      insuranceRequest<InsuranceSettingsResponse>(
+        'settings?' + new URLSearchParams({ branchId: target.branchId }),
+      ),
+      insuranceRequest<InsuranceProviderCatalog>(
+        'issuance-catalog?' +
+          new URLSearchParams({ branchId: target.branchId }),
+      ),
+    ])
+      .then(([settings, catalog]) => {
+        if (active) {
+          setSettings(settings);
+          setCatalog(catalog);
+        }
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -663,14 +761,32 @@ export function InsuranceDraft({
   const country = settings?.config.countries.find(
     (c) => c.providerCountryCode === draft.destinationCode,
   );
+  const durationValid = Boolean(
+    catalog?.durations.some((d) => d.days === draft.durationDays),
+  );
   async function save() {
+    if (busy) return;
+    if (!durationValid) {
+      setError('مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
       await insuranceRequest('draft', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          passenger: draft.passenger
+            ? Object.fromEntries(
+                Object.entries(draft.passenger).map(([key, value]) => [
+                  key,
+                  typeof value === 'string' ? value.trim() : value,
+                ]),
+              )
+            : undefined,
+        }),
       });
       saved();
     } catch (e) {
@@ -760,17 +876,21 @@ export function InsuranceDraft({
         </label>
         <label>
           مدت سفر (روز)
-          <Input
-            type="number"
+          <NativeSearchSelect
             required
-            min={1}
-            max={365}
-            value={draft.durationDays}
-            disabled={busy}
+            value={durationValid ? String(draft.durationDays) : ''}
+            disabled={busy || !catalog}
             onChange={(e) =>
               setDraft({ ...draft, durationDays: Number(e.target.value) })
             }
-          />
+          >
+            <option value="">انتخاب مدت بیمه</option>
+            {catalog?.durations.map((d) => (
+              <option key={d.days} value={String(d.days)}>
+                {d.title}
+              </option>
+            ))}
+          </NativeSearchSelect>
         </label>
       </div>
       <label>
@@ -789,6 +909,7 @@ export function InsuranceDraft({
           personLoading ||
           Boolean(previous && !draft.passenger) ||
           !settings ||
+          !durationValid ||
           !draft.departureDate ||
           !draft.planCode
         }

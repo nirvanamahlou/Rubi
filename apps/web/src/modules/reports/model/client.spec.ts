@@ -365,6 +365,13 @@ it('keeps exact currency components for charts while the table uses one combined
     columns: [
       { key: 'salesAmount', label: 'مبالغ قرارداد به تفکیک ارز', kind: 'TEXT' },
     ],
+    columnFilters: [
+      {
+        key: 'columnPrimaryDimension',
+        label: 'شعبه',
+        options: ['مرکزی', 'شعبه دوم'],
+      },
+    ],
     rows: [
       {
         grainId: 'group',
@@ -397,6 +404,7 @@ it('keeps exact currency components for charts while the table uses one combined
     vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
   );
   const result = await reportingApi.salesByOrganization();
+  expect(result.filterOptions.columnFilters).toEqual(payload.columnFilters);
   expect(result.rows[0]?.amount).toBe('900');
   expect(result.rows[0]?.amountsByCurrency).toEqual(
     payload.rows[0]!.amountsByCurrency,

@@ -47,7 +47,12 @@ export function reservationServiceGroups(row: RequestView) {
       label: categories[kind]!,
       titles: [],
     };
-    const title = item.title.trim();
+    const title =
+      kind === 'HOTEL' || kind === 'TRANSFER'
+        ? ''
+        : kind === 'FLIGHT'
+          ? item.title.replace(/\s*\(فقط این قرارداد\)/g, '').trim()
+          : item.title.trim();
     if (
       title &&
       title !== group.label &&

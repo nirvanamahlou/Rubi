@@ -10,6 +10,7 @@ export const CLOSED_FINANCE_STATUSES = new Set([
   'APPROVED',
   'PAID',
   'RECEIPT_CONFIRMED',
+  'RECEIPT_VOIDED',
   'REJECTED',
   'CANCELLED',
   'RETURNED',
@@ -23,6 +24,7 @@ const statuses = [
   'PAYING',
   'PAID',
   'RECEIPT_CONFIRMED',
+  'RECEIPT_VOIDED',
   'REJECTED',
   'CANCELLED',
   'RETURNED',
@@ -45,6 +47,7 @@ export function isFinanceApproved(item: FinanceInboxItemV1) {
     'PAYING',
     'PAID',
     'RECEIPT_CONFIRMED',
+    'RECEIPT_VOIDED',
   ].includes(item.status);
 }
 /** Eight fractional digits, compared without binary floating-point conversion. */

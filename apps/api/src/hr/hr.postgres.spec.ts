@@ -465,17 +465,40 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           other,
         ),
       ).rejects.toThrow('ویرایش دستی');
-      const corrected = await service.editAttendance(
+      const noChange = await service.editAttendance(
         day.id,
-        {
-          version: day.version,
-          arrival: '09:30',
-          departure: '17:00',
-          reason: 'Synthetic',
-        },
+        { version: day.version },
         key(),
         manager,
       );
+      expect(noChange.version).toBe(day.version);
+      const arrivalOnly = await service.editAttendance(
+        day.id,
+        { version: day.version, arrival: '09:30', departure: '' },
+        key(),
+        manager,
+      );
+      expect(arrivalOnly.data).toMatchObject({
+        firstIn: `${date}T06:00:00.000Z`,
+        lastOut: null,
+      });
+      const corrected = await service.editAttendance(
+        day.id,
+        { version: arrivalOnly.version, departure: '17:00' },
+        key(),
+        manager,
+      );
+      const annotated = await service.editAttendance(
+        day.id,
+        { version: corrected.version, reason: 'Synthetic', deviceError: true },
+        key(),
+        manager,
+      );
+      expect(annotated.data).toMatchObject({
+        firstIn: `${date}T06:00:00.000Z`,
+        lastOut: `${date}T13:30:00.000Z`,
+        attendanceDeviceError: true,
+      });
       expect(corrected.data).toMatchObject({ registrationType: 'manual' });
       await service.processAttendance({ branchId, date }, key(), manager, true);
       expect(
@@ -483,6 +506,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           .data,
       ).toMatchObject({
         registrationType: 'manual',
+        attendanceDeviceError: true,
         firstIn: `${date}T06:00:00.000Z`,
       });
       await expect(

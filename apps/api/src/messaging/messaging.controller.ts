@@ -197,6 +197,27 @@ export class MessagingController {
     });
   }
 
+  @Get('conversations/:id/avatars/:userId')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async avatar(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const file = await this.service.avatar(
+      id,
+      userId,
+      request.actor,
+      requestMetadata(request),
+    );
+    return new StreamableFile(file.stream, {
+      type: file.mimeType,
+      length: file.sizeBytes,
+      disposition: 'inline',
+    });
+  }
+
   @Post('conversations/:id/forwards')
   forward(
     @Param('id') id: string,

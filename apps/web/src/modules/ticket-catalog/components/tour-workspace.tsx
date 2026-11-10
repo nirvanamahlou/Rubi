@@ -31,6 +31,8 @@ import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
 import { ContractFlightEditor } from '@/modules/sales/components/contract-flight-editor';
 import { TourDetailsForm } from './tour-details-form';
+import { defaultTourAirport, tourAirports } from './tour-airports';
+import { createTourBranches } from './tour-branches';
 import { TourOverview } from './tour-overview';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { activeTourTickets, tourTicketDates } from './tour-departure-tickets';
@@ -128,6 +130,7 @@ export function TourWorkspace({
   const [departures, setDepartures] = useState<TourDepartureV1[]>([]);
   const [branches, setBranches] = useState<BranchReference[]>([]);
   const [branch, setBranch] = useState('');
+  const [definitionBranches, setDefinitionBranches] = useState<string[]>([]);
   const [references, setReferences] = useState<{
     cities: MasterDataRecord[];
     insurance: MasterDataRecord[];
@@ -166,7 +169,11 @@ export function TourWorkspace({
   const attempts = useRef(new Map<string, string>());
   const pack = packages.find((item) => item.id === selected);
   const keyFor = (kind: string, payload: unknown) => {
-    const fingerprint = JSON.stringify([kind, branch, payload]);
+    const fingerprint = JSON.stringify([
+      kind,
+      kind === 'package' ? undefined : branch,
+      payload,
+    ]);
     if (!attempts.current.has(fingerprint))
       attempts.current.set(fingerprint, browserRandomUuid());
     return attempts.current.get(fingerprint)!;
@@ -326,6 +333,7 @@ export function TourWorkspace({
     );
 
   const showEditor = (item?: TourPackageV1) => {
+    setDefinitionBranches(item ? [item.branchId] : branch ? [branch] : []);
     setEditing(item);
     setDraft(
       item
@@ -393,25 +401,28 @@ export function TourWorkspace({
             ) : null}
           </div>
         ) : null}
-        {mode === 'definition' ? (
+        <div className="ms-auto flex flex-wrap items-center gap-2">
+          {mode === 'definition' ? (
+            <Button
+              className="order-last"
+              size="sm"
+              disabled={busy || loading}
+              onClick={() => showEditor()}
+            >
+              تعریف تور جدید
+            </Button>
+          ) : null}
           <Button
-            size="sm"
-            disabled={busy || loading}
-            onClick={() => showEditor()}
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setLoading(true);
+              setReload((value) => value + 1);
+            }}
           >
-            تعریف تور جدید
+            به‌روزرسانی
           </Button>
-        ) : null}
-        <Button
-          variant="outline"
-          disabled={busy}
-          onClick={() => {
-            setLoading(true);
-            setReload((value) => value + 1);
-          }}
-        >
-          به‌روزرسانی
-        </Button>
+        </div>
       </Card>
       {problem && (
         <div
@@ -502,14 +513,35 @@ export function TourWorkspace({
                   }
                 />
               </FormField>
-              <Choice
-                label="شعبه"
-                value={branch}
-                options={branches}
-                onChange={(value) => {
-                  if (!editing) setBranch(value);
-                }}
-              />
+              <fieldset
+                className="space-y-1 rounded-lg border p-2"
+                disabled={Boolean(editing)}
+              >
+                <legend className="text-sm font-semibold">شعبه‌ها</legend>
+                {branches.map((item) => (
+                  <label
+                    key={item.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={definitionBranches.includes(item.id)}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...definitionBranches, item.id]
+                          : definitionBranches.filter((id) => id !== item.id);
+                        setDefinitionBranches(next);
+                        setBranch(next[0] ?? '');
+                      }}
+                    />
+                    {item.name}
+                  </label>
+                ))}
+                <p className="text-xs text-muted-foreground">
+                  برای هر شعبه یک تعریف مستقل ثبت می‌شود. تصویر تور را در ویرایش
+                  همان شعبه اضافه کنید.
+                </p>
+              </fieldset>
               <Choice
                 label="شهر مبدأ"
                 value={draft.originId}
@@ -518,7 +550,12 @@ export function TourWorkspace({
                   const details = {
                     ...(draft.details ?? { version: 1 as const }),
                   };
-                  delete details.originAirportCode;
+                  const code = defaultTourAirport(
+                    originId,
+                    references.airports,
+                  );
+                  if (code) details.originAirportCode = code;
+                  else delete details.originAirportCode;
                   setDraft({ ...draft, originId, details });
                 }}
               />
@@ -526,9 +563,18 @@ export function TourWorkspace({
                 label="شهر مقصد"
                 value={draft.destinationId}
                 options={references.cities}
-                onChange={(destinationId) =>
-                  setDraft({ ...draft, destinationId, hotelIds: [] })
-                }
+                onChange={(destinationId) => {
+                  const details = {
+                    ...(draft.details ?? { version: 1 as const }),
+                  };
+                  const code = defaultTourAirport(
+                    destinationId,
+                    references.airports,
+                  );
+                  if (code) details.destinationAirportCode = code;
+                  else delete details.destinationAirportCode;
+                  setDraft({ ...draft, destinationId, hotelIds: [], details });
+                }}
               />
               <Choice
                 label="بیمه همراه تور"
@@ -547,6 +593,22 @@ export function TourWorkspace({
                 }
               />
               <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
+                <label className="flex gap-2">
+                  <input
+                    type="checkbox"
+                    checked={draft.details?.isCombined ?? false}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        details: {
+                          ...(draft.details ?? { version: 1 }),
+                          isCombined: event.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  تور ترکیبی
+                </label>
                 {(
                   [
                     ['transferOutbound', 'ترانسفر رفت'],
@@ -570,31 +632,68 @@ export function TourWorkspace({
                 value={draft.details ?? { version: 1 }}
                 onChange={(details) => setDraft({ ...draft, details })}
                 airlines={references.airlines}
-                airports={references.airports.filter(
-                  (airport) => airport.attributes.cityId === draft.originId,
+                airports={tourAirports(
+                  draft.originId,
+                  references.cities,
+                  references.airports,
+                )}
+                destinationAirports={tourAirports(
+                  draft.destinationId,
+                  references.cities,
+                  references.airports,
                 )}
                 branches={branches}
-                branchId={branch}
+                branchId={
+                  definitionBranches.length === 1 ? definitionBranches[0]! : ''
+                }
               />
               <Button
                 className="col-span-full justify-self-end"
                 size="sm"
-                disabled={!branch}
+                disabled={!definitionBranches.length}
                 onClick={() =>
                   void run(async () => {
-                    const result = editing
-                      ? await toursApi.updatePackage(
-                          editing.id,
-                          draft,
-                          editing.version,
-                          editing.branchId,
-                        )
-                      : await toursApi.createPackage(
-                          draft,
-                          branch,
-                          keyFor('package', draft),
-                        );
-                    setSelected(result.data.id);
+                    if (
+                      definitionBranches.length > 1 &&
+                      draft.details?.imageDocumentId
+                    )
+                      throw new Error(
+                        'تصویر تور را در ویرایش همان شعبه اضافه کنید.',
+                      );
+                    if (editing) {
+                      const result = await toursApi.updatePackage(
+                        editing.id,
+                        draft,
+                        editing.version,
+                        editing.branchId,
+                      );
+                      setSelected(result.data.id);
+                    } else {
+                      await createTourBranches(
+                        definitionBranches,
+                        (branchId) =>
+                          toursApi.createPackage(
+                            draft,
+                            branchId,
+                            keyFor('package', { branchId, draft }),
+                          ),
+                        (branchId, result) => {
+                          setPackages((current) => [
+                            ...current.filter(
+                              (item) => item.id !== result.data.id,
+                            ),
+                            result.data,
+                          ]);
+                          setDefinitionBranches((current) =>
+                            current.filter((id) => id !== branchId),
+                          );
+                          setNotice(
+                            'تعریف شعبه‌های ثبت‌شده حفظ شد؛ در صورت خطا، دوباره ذخیره کنید تا شعبه‌های باقی‌مانده ثبت شوند.',
+                          );
+                          setSelected(result.data.id);
+                        },
+                      );
+                    }
                     setCreating(false);
                     setDraft(emptyPackage);
                     setEditing(undefined);
@@ -645,6 +744,11 @@ export function TourWorkspace({
                           ['مدت سفر (روز)', pack.details.durationDays],
                           ['امتیاز', pack.details.rating],
                           ['مبدأ فرودگاهی', pack.details.originAirportCode],
+                          ['فرودگاه مقصد', pack.details.destinationAirportCode],
+                          [
+                            'تور ترکیبی',
+                            pack.details.isCombined ? 'بله' : undefined,
+                          ],
                           ['ایرلاین', pack.details.airlineName],
                           [
                             'قیمت پایه',

@@ -22,9 +22,30 @@ import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+export async function readTravelLogo(fileId: string, salesContractId?: string) {
+  if (!salesContractId) return documentsApi.preview(fileId);
+  const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('سرویس مدارک پیکربندی نشده است.');
+  const url =
+    base +
+    '/sales/contracts/' +
+    encodeURIComponent(salesContractId) +
+    '/travel-documents/branding-logo';
+  const options = {
+    credentials: 'include' as const,
+    cache: 'no-store' as const,
+  };
+  let response = await fetch(url, options);
+  if (response.status === 401 && (await refreshAuthenticatedSession(base)))
+    response = await fetch(url, options);
+  if (response.status === 404) return { blob: null };
+  if (!response.ok) throw new Error('لوگوی مدرک در دسترس نیست.');
+  return { blob: await response.blob() };
+}
 export function useTravelLogo(
   branding: TravelBrandingV1 | null,
   withoutLogo = false,
+  salesContractId?: string,
 ) {
   const [loaded, setLoaded] = useState<{
     id: string;
@@ -37,21 +58,25 @@ export function useTravelLogo(
       ['JAHAN_BASTAN', 'GHESATI_RO'].includes(branding.companyCode ?? ''))
       ? null
       : branding?.logoFileId;
+  const contextKey = `${salesContractId ?? ''}:${fileId ?? ''}`;
   useEffect(() => {
     if (!fileId) return;
     let active = true;
     let url = '';
-    void documentsApi
-      .preview(fileId)
+    void readTravelLogo(fileId, salesContractId)
       .then(({ blob }) => {
         if (!active) return;
+        if (!blob) {
+          setLoaded({ id: contextKey, logo: '', error: '' });
+          return;
+        }
         url = URL.createObjectURL(blob);
-        setLoaded({ id: fileId, logo: url, error: '' });
+        setLoaded({ id: contextKey, logo: url, error: '' });
       })
       .catch(() => {
         if (active)
           setLoaded({
-            id: fileId,
+            id: contextKey,
             logo: '',
             error:
               'لوگوی سربرگ در دسترس نیست؛ خروجی تا دریافت لوگو آماده نمی‌شود.',
@@ -61,9 +86,10 @@ export function useTravelLogo(
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [fileId]);
+  }, [fileId, salesContractId, contextKey]);
   if (withoutLogo) return { logo: '', error: '' };
-  if (fileId) return loaded?.id === fileId ? loaded : { logo: '', error: '' };
+  if (fileId)
+    return loaded?.id === contextKey ? loaded : { logo: '', error: '' };
   if (!branding) return { logo: '', error: '' };
   if (branding.kind === 'OWN' && branding.companyCode === 'NIYAYESH_SEIR_SAHAR')
     return { logo: '/brand/niyayesh-seir-full.png', error: '' };
@@ -106,6 +132,7 @@ export function TravelDocument({
     intake.workflow.branding,
     voucher &&
       (unbranded || intake.workflow.branding?.voucherWithoutLogo === true),
+    salesContractId,
   );
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -130,6 +157,7 @@ export function TravelDocument({
         ));
   const enabled =
     ((voucher && unbranded) ||
+      (voucher && !!salesContractId) ||
       !!logo ||
       (voucher && state.branding?.voucherWithoutLogo === true) ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&

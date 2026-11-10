@@ -1,3 +1,35 @@
+## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
+
+Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
+
+# RECEIPT-VOID-1109 — PC-B — READY_FOR_CI
+
+## REPORT-FILTERS-1109 — PC-C — READY_FOR_CI
+
+Base origin/develop; codex/pc-c-report-filters-1109. Reserve Reporting native result/filter projection, optional additive filter-definition metadata with Web consumer, filter form/state/export labels and focused tests. Existing owning-domain projections retain all authorization and query bounds; no owner-table access, schema, dependency or migration changes. User requests comprehensive real-output filters for limited executable reports. Prior PC-C reporting scopes are merged/frozen. Bounded additive common ReportSource.filterOptions metadata and Reservations-owned status options are reserved for this task; existing status predicates and module authority remain unchanged. 166 scoped API tests and 81 Web report tests pass; scoped lint passes. Read-only production filter/XLSX verification passes for all 18 reports permitted to the verification account; calendar permission is preserved. Full local bootstrap lacks nodemailer in shared dependencies; clean CI is required. No deployment or automatic merge.
+
+Base 68b538c9f. Reserve Sales receipt void status, additive migration, Finance receipt command and accounting source guard, inbox action and regressions. Additive contracts preserve existing clients. Local API and Web builds and targeted regressions passed. Existing journal reversal workflow is required for posted receipts. No production deployment or data change.
+
+# RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI
+
+PC-A; base4ec405ba0; reserve reservation-services.tsx and its existing regressions. Owner requests compact services column and green develop merge: omit floating contract-only qualifier, hotel details already in hotel column, and transfer direction/details. Preserve actual kinds, flight direction/supply and other-service labels; presentation only. No API/data/schema/dependency/deployment.
+
+# FLOATING-INTERNATIONAL-AIRPORTS-1109 — PC-A — READY_FOR_CI
+
+PC-A reserves floating-flight-airport component/helper/tests and ContractFlightEditor route integration. Base083cedb62; owner authorizes green develop merge. International floating routes exclude THR and prefer IKA within the selected Tehran city; domestic routes retain choices. Preserve directory workflow authorization and manual valid selections. No schema/dependency/deployment.
+
+Six targeted tests and scoped lint pass. Source frozen; final exact-head hosted gates precede owner-authorized develop merge. No deployment.
+
+# TICKET-REPORT-EXPORT-1109 — PC-A — READY_FOR_CI
+
+Validation follow-up reserves the one new report PDF caption's English catalogue key and deterministic offline catalogue synchronization. No unrelated translations or dependency changes.
+
+Final projection also attaches the actual assigned passenger hotel/date context to flight rows so the default flight Excel includes check-in/out. Unassigned passengers remain blank; passenger-specific stay overrides are honored and flight date/status/count are unchanged.17 API checks and the new flight-card regression pass; Gregorian flight display is independent of its hotel context. A saved synthetic XLSX was read by an independent workbook reader, verifying KPIs, times, stays, nights, leading zeros, merged captions and frozen/filtered header. Final hosted gates remain mandatory.
+
+COMPUTER_ID=PC-A; codex/pc-a-ticket-report-export-1109 from origin/develop0a209c797. Owner authorizes richer issued-service Excel, top filtered KPI summary, hotel check-in/out, Gregorian defined-time display, searchable service/hotel/date-basis filters and develop merge. Reserve Reservations service-report projection/export workbook/controller and focused tests, Ticket Catalog issued UI/model/PDF and regression tests; bounded status notes. Additive optional customerId read field is produced by Reservations and consumed for identity-based export counts; existing clients remain compatible. Preserve branch authorization, canonical UTC storage, date-only stays and formula-safe strings. No migration/dependency/operational writes/deployment. Prior issued-report scopes released; no active overlap found.
+
+Implemented filtered unique-passenger/contract/service/status/hotel KPIs above the Excel table, per-contract filtered passenger counts, issuance/PNR/class/source and stay-night details. Gregorian Tehran presentation restores catalogue-defined wall time from UTC; date-only check-in/out stay unchanged. Shared SearchCombobox replaces service/hotel/date-basis native selects while preserving explicit Search.16 API regressions pass, Ticket Catalog248 checks pass with one existing opt-in skip after correcting a test-tree selector, plus five PDF-route checks; scoped lint and full API/Web TypeScript pass, API and67-route Web production builds pass. Exact-head hosted gates required before authorized merge. No schema/dependency/production change.
+
 # MANIFEST-DEFAULTS-1109 — PC-A — IN_PROGRESS
 
 Reserve manifest-export.tsx, local selected-button styling and focused checks. Owner requests blue selected charter/floating control and Turkey default destination, with green develop merge. Base 0a209c797; no schema/dependency/deployment. Default resolves active Master Data and preserves manual edits/clears during loading.
@@ -9,6 +41,10 @@ Owner explicitly supersedes the selected-company Reservations list rule: one sha
 # CONTRACT-COMPANY-ARCHIVE-1108 — PC-A — VALIDATING
 
 Owner authorizes reversible archive before 1405/08/01, one-time historical company classification, selected-company new contracts, matching Sales/Reservations/contract Finance filters and persisted document issuer; develop merge and Avina deployment authorized. Scope includes additive Sales ownership/archive migration and Legal Entities public composition. Preserve all operational records and peers’ changes. See docs/tasks/CONTRACT-COMPANY-ARCHIVE-1108.md. No dependency changes.
+
+## RESERVATION-ROW-DETAILS-1109 — PC-A
+
+Remove the inline General Details button from Reservations table rows. Preserve the action panel and its permissions. Owner authorizes develop merge.
 
 ## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
 
@@ -23,6 +59,22 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 ## TRANSFER-PRICE-CONTROLS-1108 — PC-A — IN_PROGRESS
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
+
+## INSURANCE-STANDALONE-1109 — PC-A — ACTIVE
+
+Bounded Customers port lease: CustomerInsuranceIdentity exposes only its existing Iranian national-ID validation for standalone request input; no Customer row is created/read/changed by that port. Customers remains producer of identity validation, Reservations consumes it. No Customer module/registry change.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-standalone-1109 from origin/develop cda23c1ea. Owner explicitly authorizes allowed-duration selection, retaining original provider failures, full new-applicant insurance requests without Sales contracts, green develop merge and bounded Avina release. Reserve Reservations insurance API/Web/automation/tests, scoped Integrations issuance catalogue, insurance Contracts producer/consumer DTOs and additive English/offline catalogues. Sole Migration/Schema Owner PC-A for an additive encrypted standalone applicant/access-audit model and optional existing policy contract/intake/customer links with a strict contract-or-standalone constraint. Previous email migration source is confirmed merged (its branch is an ancestor of develop); no other active schema writer found. Reserve schema.prisma, the existing mandatory insurance PostgreSQL test/gate, bounded runtime-module registration, and own PRODUCT_REQUIREMENTS/DECISIONS/DATA_MODEL/status/task notes. No dependencies, fake Sales contract/Customer identities, changed Finance release rules, production-insurer switch or real customer test issuance. Provider leases/fingerprints and branch permissions remain mandatory. New applicant data is a Reservations-owned encrypted value object; existing Customer ownership remains intact. Shared DTO producer Reservations and consumer insurance Web ship together; existing contract shapes remain supported.
+
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-advisory-lock-1109 from origin/develop68b538c9f. Follow-up to owner-authorized insurance repair/merge/bounded release: reproduce and fix the remaining correction HTTP500, without issuing a passenger policy. Reserve insurance.service.ts and a real Prisma/PostgreSQL regression test, own task/status docs, and only the existing insurance PostgreSQL gate command in .github/workflows/ci.yml. No other active insurance/CI command writer found; prior source work is merged. No migration/dependency/schema/API/provider-mode changes. Preserve transactional serialization, CAS, audit, provider idempotency and peer production overlays. Bounded API-only deployment and real PostgreSQL lock proof required; no destructive cleanup authorized by this unit.
+
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correct-submit-1109 from current develop. Owner requests correct-and-immediate insurance submission, precise failure handling, develop merge and only this bounded production repair. Reserve Reservations insurance client/form/controller/automation input handling and focused tests; own task/status and bounded deployment tooling. Prior overlapping insurance amendment is merged; preserve issued-policy guards, provider fingerprints/leases, sandbox-only provider, customer CAS/audit and branch permissions. No schema/dependency/grant or live policy test. Production rollout must preserve peer overlays and shared deployment lease, verified backup, rollback and health/Worker checks; no full-develop publication authorized by this task.
+
+Bounded catalogue lease: mirror existing form-field labels newly used by API validation into generated offline API English catalogue only; preserve all peer keys and translation runtime.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
@@ -209,6 +261,10 @@ COMPUTER_ID=PC-C; base develop efed9ccd1; branch codex/pc-c-reservation-call-vis
 ## EXPERT-CALL-ISOLATION-1108 — PC-C — READY_FOR_CI
 
 COMPUTER_ID=PC-C; branch codex/pc-c-expert-call-isolation-1108 from develop80cbd9f58. Owner explicitly requires experts see only their own calls and native HR managers see their current team, with develop PR, complete CI and merge. Reserve CustomerAffairs call access/read/service and focused regression tests plus own documentation. Supersede old whole-contact-history policy for strict answered reads: shared telephone identity does not grant access to another employee's calls. Preserve shared-extension verified responsibility, trusted outbound origin, callback assignments, live popup operational claims, HR manager projection, global identities and recording restriction. No UI/schema/dependency/runtime changes in this source unit. Bounded Telephony history reader included; operational offer/claim paths unchanged. Read-only production audit confirms6 and3 cross-expert latest rows for two self-only sales experts. 84 focused tests including real PostgreSQL, full API TypeScript/build and scoped ESLint passed. Expanded201-test suite found four callback mock-contract mismatches, fixed with strict call-scope assertions; focused4-test rerun passed. A fresh isolated PostgreSQL18 run passes all201 tests; the previous reminder timeout also reproduced on baseline and does not occur on the clean database. All hosted gates remain mandatory after final integration. PR1512; append-only peer status conflict resolved retaining both records. Source freezes on final push and releases on verified merge; no production deployment in this unit.
+
+## CALL-CENTER-UNIT-FILTER-1109 — PC-C — READY_FOR_CI
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-unit-filter-1109 from develop19b96c5d7. Owner explicitly authorizes an independent Unit selector between source and connected-to, push/develop PR and merge after every CI gate. Reserve Call Center workspace/read client/CSS, CustomerAffairs read service and bounded tests plus own notes. Reuse existing optional teamId query and branch IAM unit directory; telephony filtering must use exact-call answer/origin/ringing evidence instead of the ingestion service account. Current native HR own/team visibility stays authoritative, including shared extensions. Producer CustomerAffairs and consumer Call Center ship together; existing clients with empty teamId unchanged, legacy manual calls retain creator-team semantics. No HR writer, schema, migration, dependency, grants or server publication. Prior Today Filter source is merged/released; queue filters and unrelated modules untouched. 46 API tests including real PostgreSQL unit/origin/transfer/shared-extension/manager-scope regressions and10 Web transport tests pass. Full API/Web types and scoped lint pass; API production build passes; Web production build and final hosted CI gate merge. PR1563; standalone unit-filter/report regression passes with its own explicit origin mapping fixture. Source freezes on publication and releases on verified merge.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -11840,6 +11896,18 @@ Owner requests JFIF, Excel (XLS/XLSX) and PDF in messaging and receipt uploads. 
 
 UPLOAD-FILE-FORMATS-1108 validation:131 targeted API checks,25 Web/translation checks and16 PostgreSQL/multipart messaging checks pass (14 general plus2 legacy XLS cases). JFIF/PDF/XLS/XLSX bytes survive upload, send, persistence and authorized download in direct/group chats; outsider delivery denied. Scoped API/Web lint and Web TypeScript pass. File-format aliases retain byte inspection; renamed ZIP/OLE and VBA containers/expansion abuse are rejected. No dependency/schema/production data changes. Final hosted full gates required before merge.
 
+# NAVIGATION-CANCELLED-LABELS-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-navigation-cancelled-labels-1109 from develop e32d4726d, reusing own clean checkout after disk-full prevented a new worktree. Reserve bounded app-shell navigation selection styles, Reservations foundation action-panel/table status presentation and focused checks; own status/task notes. Owner authorizes readable selected navigation, moving cancelled message from actions to its contract row with opaque black text, tests and develop merge. Preserve cancellation permissions/disabled actions, status transitions, route access and group collapse behavior. No API/schema/dependency/data/deployment changes. Central app-shell lease is limited to selected presentation; no active overlapping source owner found.
+
+Owner clarified the compact/mobile active module appeared blue with black text. Active link and icon now pin white foreground over solid blue independent of theme tokens. Cancellation message appears once beneath the contract number in its own table row, removed from the actions panel. Cancelled cells use opaque red/black even when selected, with blue selection outline.49 focused workspace/action/navigation regressions, scoped lint and full Web TypeScript pass; final hosted production gates required before authorized merge. No operational state or permission behavior changed.
+
+# HEADER-USER-ROLE-1109 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-header-user-role-1109 from develop cda23c1ea. Owner clarifies the header must show each user's real assigned title, including custom per-user manual roles, rather than only the default administrator role; display must persist across expanded/compact layouts. Reserve Web header-session projection/tests, shared role label/date placement and bounded app-shell utility slot, own status notes. Align selection with existing IAM manual-access title priority, preserve authentication, permissions, profile menu and UTC date behavior. No API/schema/dependency/data/deployment change. User authorizes green develop merge; prior shell reservation merged/released.
+
+25 focused header/session/navigation checks and scoped ESLint pass. Custom per-user titles precede templates/admin; unknown real labels survive tab cache reads, technical personal grants are omitted, empty titles do not fabricate a manager label. Role badge is independent of desktop date visibility; utility controls can wrap within the available header width. Full Web typecheck/build and final hosted gates required before merge. No operational writes.
+
 ## VOUCHER-CONTINUITY-1108 — PC-A — DONE/MERGED
 
 Owner authorizes removing OTHER SERVICES from vouchers and continuous passenger/service tables without repeated hotel/service sections, tests and develop merge. Reserve voucher passenger columns/cells, preview/PDF pagination and print CSS, hotel output grouping counts and focused regressions. Preserve canonical allocations, per-hotel scope, all selected passengers/rooms, existing authorization and supplier forms. No schema/dependency/migration/deployment. Logical voucher count must not be printed as a physical page count after native pagination.
@@ -11920,9 +11988,56 @@ Owner requests smaller blue/purple chat bubbles. Scope: message-composer.tsx res
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-date-filter-1109 from develop0a209c797. User assigns bounded flight-purchase list date-filter presentation and authorizes green develop merge, no deployment. Reserve TicketPurchaseWorkspace date inputs, module-local flight-date predicate/tests, Web-only translation keys and own notes. No purchase/payment mutation, shared contracts, API, schema or dependency changes. No active overlapping purchase-list writer found; preserve PC-B Procurement ownership and existing Finance pricing/permission paths. Filter actual flight day inclusively and combine with existing status/search/parent filters; retain undated rows only without date restrictions.
 
+## TOUR-FORM-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-tour-form-1109 from origin/develop@083cedb62. Owner requests left new-tour action, multi-branch creation, city-default/country-selectable airports and persisted combined-tour checkbox, then green develop merge. Reserve tour-workspace/details-form and scoped helper/tests, additive optional travel/tours contract fields and tour-policy validation, Master Travel Directory airport reference validation and tests. Producer Ticket Catalog and Web consumer evolve together; old definitions remain readable, new fields optional. Multiple branches create independent authorized definitions using existing per-branch idempotent commands; no shared capacity or cross-branch image reuse. No schema/migration/dependency/deployment lock or changes.
+
 ## HR-REQUEST-DOWNLOAD-1109 - PC-B - VALIDATED
 
 Attendance date filters and pinned employee columns, mission reversal visibility, adjacent request templates, reservation inbox details and contract-scoped PDF access. No schema lock.
+
+## RESERVATION-LATEST-PDF-1109 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-latest-pdf-1109 from develop@cc34a653b. Owner requests downloaded reservation PDF use the latest saved form/NOTICE while previous sent versions remain in history; preserve form appearance and disabled real email. Reserve the reservation PDF route's saved-versus-sent selection, reservation-pdf.spec.ts regressions and bounded own task/status notes. Published contract PDF access work is integrated; preserve its release/authorization guards and all voucher behavior. No API/schema/migration/dependency, history mutation, operational data/settings, SMTP or deployment change. Existing green develop merge authorization applies after all exact-head gates.
+
+## MESSAGING-MENTIONS-1109 - PC-B
+
+Group mention suggestions and transactional notifications, and membership-scoped Workbench avatars on incoming messages. Additive messaging contracts and read endpoint. No migration or dependency change.
+
+## OPTIONAL-ATTENDANCE-EDIT-1109 - PC-B
+
+Optional attendance editor fields and partial manual clock commands. Preserves permission and closed-period validation, existing clocks and approved correction processing. No schema change.
+
+RESERVATION-LATEST-PDF-1109 — READY_FOR_CI: current PDF and QR use latest saved NOTICE/settings; sent snapshots/history preserved.79 Web and30 API tests pass. Source freezes on publication and bounded locks release. No UI/template/schema/dependency/SMTP/runtime or deployment change. Full final-head hosted gates required before authorized develop merge.
+
+## DASHBOARD-KPI-NO-SPARKLINES-1109 — PC-C — READY_FOR_CI
+
+Owner requests removing mini trend charts beneath every Dashboard KPI card, then push/develop PR and merge after all exact-head gates; explicitly no deployment. Reserve dashboard-workspace.tsx KPI rendering and unused mini-chart helper/imports, existing Dashboard regression expectations and bounded task/status notes. Preserve amounts/currencies, comparison badges, unavailable reasons, card actions and full-size charts. No API/schema/dependency/runtime changes.59 Dashboard tests, scoped lint, full Web TypeScript and67-route build pass; source frozen and editing scope released.
+
+## CUSTOMER-DOSSIER-CONNECTIONS-1109 — PC-A — READY_FOR_CI
+
+User explicitly requests all nine real customer dossier connections, security
+tests and develop merge. Reserve additive owner public projections in Sales,
+Reservations and Customer Affairs; Customers aggregation/controller/module/UI,
+shared response contract, focused tests, translation keys and own docs.
+Branch codex/pc-a-customer-dossier-connections-1109 from develop87067a3b6.
+Exact UUID customer matching; customer/branch/company/archive/own-scope guards;
+financial values restricted to buyer/payer. No schema/dependency, IAM grants,
+operational writes or deployment. Source errors remain explicit unavailable.
+Bounded CI reservation adds customer-dossier.postgres.spec.ts to the existing
+disposable reporting PostgreSQL job, proving actual SQL customer/branch/owner/
+archive and passenger-finance isolation with transaction rollback. Source locks
+release on publication; PR1556 full final-head checks gate authorized merge.
+
+## INSURANCE-DRAFT-ERROR-1109 — PC-C — IN_PROGRESS
+
+Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
+
+## PASSENGER-EDITOR-LAYOUT-1110 — PC-A — VALIDATED
+
+Reserve passenger-files table CSS/markup, amendment draft age hydration and focused regressions. Preserve existing insurance worktree edits; independent branch from develop fdf5cd950. Fix table min-width override and checkbox sizing; retain booked child bands and infer only missing child bands from known DOB at travel date. No schema/dependency/production data changes. User authorizes develop merge after checks.
+
+PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
 
 ## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
 

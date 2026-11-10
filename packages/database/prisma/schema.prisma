@@ -30,6 +30,8 @@ enum AuditOutcome {
 }
 
 model User {
+  standaloneInsuranceApplicants   ReservationInsuranceApplicant[]
+  insuranceApplicantReads         ReservationInsuranceApplicantAccess[]
   exchangeAudits                  FinanceExchangeAudit[]
   exchangeOffices                 FinanceExchangeOffice[]
   exchangeMovements               FinanceExchangeMovement[]
@@ -276,7 +278,8 @@ model RolePermission {
 }
 
 model Branch {
-  pettyCashFunds ProcurementPettyFund[]
+  standaloneInsuranceApplicants ReservationInsuranceApplicant[]
+  pettyCashFunds                ProcurementPettyFund[]
 
   financialWorkflows   AccountingWorkflow[]
   telephonyConnections IntegrationTelephonyConnection[]
@@ -3918,6 +3921,7 @@ enum SalesPaymentStatus {
   PENDING_FINANCE_CONFIRMATION
   FINANCE_CONFIRMED
   FINANCE_REJECTED
+  FINANCE_VOIDED
 }
 
 enum SalesReservationRequestStatus {
@@ -8286,9 +8290,10 @@ model AccountingWorkflow {
 
 model ReservationInsurancePolicy {
   id              String                         @id @default(uuid()) @db.Uuid
-  contractId      String                         @db.Uuid
-  intakeId        String                         @db.Uuid
-  customerId      String                         @db.Uuid
+  contractId      String?                        @db.Uuid
+  intakeId        String?                        @db.Uuid
+  customerId      String?                        @db.Uuid
+  applicantId     String?                        @unique @db.Uuid
   provider        String                         @default("NOYAN") @db.VarChar(32)
   providerId      String?                        @db.VarChar(100)
   policyNumber    String?                        @db.VarChar(100)
@@ -8312,9 +8317,10 @@ model ReservationInsurancePolicy {
   nextAttemptAt   DateTime?                      @db.Timestamptz(3)
   createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
-  contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
-  intake          ReservationIntake              @relation(fields: [intakeId], references: [id], onDelete: Restrict)
-  customer        Customer                       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  contract        SalesContract?                 @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  intake          ReservationIntake?             @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  customer        Customer?                      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  applicant       ReservationInsuranceApplicant? @relation(fields: [applicantId], references: [id], onDelete: Restrict)
   revisions       ReservationInsuranceRevision[]
 
   @@unique([contractId, customerId, provider])
@@ -8323,6 +8329,39 @@ model ReservationInsurancePolicy {
   @@index([intakeId, status, createdAt])
   @@index([automatic, status, nextAttemptAt], map: "reservation_insurance_auto_due_idx")
   @@map("reservation_insurance_policies")
+}
+
+model ReservationInsuranceApplicant {
+  id                 String                                @id @default(uuid()) @db.Uuid
+  branchId           String                                @db.Uuid
+  createdByUserId    String                                @db.Uuid
+  requestKey         String                                @unique @db.Uuid
+  requestFingerprint String                                @db.VarChar(64)
+  displayName        String                                @db.VarChar(300)
+  encryptedData      String
+  sourceCountryCode  String                                @db.VarChar(40)
+  createdAt          DateTime                              @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime                              @updatedAt @db.Timestamptz(3)
+  branch             Branch                                @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  creator            User                                  @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  policy             ReservationInsurancePolicy?
+  accesses           ReservationInsuranceApplicantAccess[]
+
+  @@index([branchId, createdAt])
+  @@map("reservation_insurance_applicants")
+}
+
+model ReservationInsuranceApplicantAccess {
+  id          String                        @id @default(uuid()) @db.Uuid
+  applicantId String                        @db.Uuid
+  actorUserId String                        @db.Uuid
+  action      String                        @db.VarChar(40)
+  createdAt   DateTime                      @default(now()) @db.Timestamptz(3)
+  applicant   ReservationInsuranceApplicant @relation(fields: [applicantId], references: [id], onDelete: Restrict)
+  actor       User                          @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([applicantId, createdAt])
+  @@map("reservation_insurance_applicant_access")
 }
 
 model ReservationInsuranceRevision {

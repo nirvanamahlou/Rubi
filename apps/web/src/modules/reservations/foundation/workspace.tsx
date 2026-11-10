@@ -15,15 +15,6 @@ import {
 
 import { Suspense, useState } from 'react';
 import { ContractCorrectionDeepLink } from '../components/contract-correction-history';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/overlays';
-import { ReservationGeneralDetails } from '../components/reservation-general-details';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -763,6 +754,9 @@ export function ReservationOperationsWorkspace({
                               row.salesCorrectionPending !== false)
                           }
                           data-tone={statusTones[row.status]}
+                          data-cancelled={
+                            row.status === 'CANCELLED' || undefined
+                          }
                           data-selected={selected?.id === row.id}
                           aria-selected={selected?.id === row.id}
                           aria-label={`${row.contractNumber} · ${statusLabels[row.status]}`}
@@ -782,7 +776,9 @@ export function ReservationOperationsWorkspace({
                             <td
                               key={reservationColumns[index]}
                               data-room-category={
-                                (index >= 5 && index <= 8) || undefined
+                                ['SGL', 'DBL', 'EXT', 'FAM/TPL'].includes(
+                                  reservationColumns[index]!,
+                                ) || undefined
                               }
                               data-has-note={index === 1 && !!row.hasNotes}
                               title={
@@ -791,34 +787,6 @@ export function ReservationOperationsWorkspace({
                                   : value
                               }
                             >
-                              {index === 0 && (
-                                <div
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button size="sm" variant="outline">
-                                        مشخصات کلی
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent
-                                      dir="rtl"
-                                      className="max-h-[92dvh] overflow-y-auto sm:max-w-3xl"
-                                    >
-                                      <DialogTitle className="pe-10">
-                                        مشخصات کلی
-                                      </DialogTitle>
-                                      <DialogDescription>
-                                        قرارداد {row.contractNumber} ·{' '}
-                                        {row.customerName}
-                                      </DialogDescription>
-                                      <ReservationGeneralDetails
-                                        request={row}
-                                      />
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                              )}
                               {index === 0 ? (
                                 <button
                                   type="button"
@@ -831,6 +799,11 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
+                                  {row.status === 'CANCELLED' && (
+                                    <small className={styles.cancelledLabel}>
+                                      این قرارداد باطل شده است
+                                    </small>
+                                  )}
                                   {row.amendedAt ||
                                   (row.correctedAt &&
                                     row.salesCorrectionPending !== false) ? (
@@ -841,10 +814,13 @@ export function ReservationOperationsWorkspace({
                                 </button>
                               ) : reservationColumns[index] === 'خدمات' ? (
                                 <ReservationServices row={row} />
-                              ) : index === 10 || index === 11 ? (
+                              ) : reservationColumns[index] === 'اقدام هتل' ||
+                                reservationColumns[index] === 'تأیید هتل' ? (
                                 <HotelTableAction
                                   row={row}
-                                  confirmation={index === 11}
+                                  confirmation={
+                                    reservationColumns[index] === 'تأیید هتل'
+                                  }
                                   canManage={access.permissions.includes(
                                     'reservations.documents.manage',
                                   )}
@@ -859,10 +835,11 @@ export function ReservationOperationsWorkspace({
                                     'reservations.documents.manage',
                                   )}
                                 />
-                              ) : index === 12 || index === 45 ? (
+                              ) : reservationColumns[index] === 'اصلاح' ||
+                                reservationColumns[index] === 'ابطال' ? (
                                 <ContractTableAction
                                   row={row}
-                                  cancel={index === 45}
+                                  cancel={reservationColumns[index] === 'ابطال'}
                                   access={access}
                                 />
                               ) : (

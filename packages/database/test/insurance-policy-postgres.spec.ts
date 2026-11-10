@@ -27,6 +27,7 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
           'ReservationIntake',
           'customers',
           'iam_users',
+          'branches',
         ])
           await client.query(`CREATE TABLE "${table}" (id uuid PRIMARY KEY)`);
         const contract = randomUUID(),
@@ -141,6 +142,87 @@ describe.skipIf(process.env.INSURANCE_POLICY_TEST !== '1')(
         await deny('DELETE FROM reservation_insurance_policies WHERE id=$1', [
           id,
         ]);
+        await client.query(
+          readFileSync(
+            resolve(
+              __dirname,
+              '../prisma/migrations/20261109100000_standalone_insurance_applicants/migration.sql',
+            ),
+            'utf8',
+          ),
+        );
+        expect(
+          (
+            await client.query(
+              'SELECT "contractId", "customerId", "applicantId" FROM reservation_insurance_policies WHERE id=$1',
+              [id],
+            )
+          ).rows[0],
+        ).toEqual({
+          contractId: contract,
+          customerId: customer,
+          applicantId: null,
+        });
+        const branch = randomUUID(),
+          applicant = randomUUID(),
+          requestKey = randomUUID(),
+          standalone = randomUUID();
+        await client.query('INSERT INTO branches VALUES ($1)', [branch]);
+        const applicantInsert =
+          'INSERT INTO reservation_insurance_applicants (id,"branchId","createdByUserId","requestKey","requestFingerprint","displayName","encryptedData","sourceCountryCode","updatedAt") VALUES ($1,$2,$3,$4,$5,\'Synthetic Applicant\',$6,\'1\',NOW())';
+        const envelope =
+          'synthetic-encrypted-envelope-placeholder-with-no-personal-values';
+        await client.query(applicantInsert, [
+          applicant,
+          branch,
+          actor,
+          requestKey,
+          'f'.repeat(64),
+          envelope,
+        ]);
+        await deny(applicantInsert, [
+          randomUUID(),
+          branch,
+          actor,
+          requestKey,
+          'f'.repeat(64),
+          envelope,
+        ]);
+        await deny(applicantInsert, [
+          randomUUID(),
+          randomUUID(),
+          actor,
+          randomUUID(),
+          'f'.repeat(64),
+          envelope,
+        ]);
+        const independent =
+          'INSERT INTO reservation_insurance_policies (id,"applicantId","destinationCode","planCode","departureDate","durationDays",automatic,sandbox,"updatedAt") VALUES ($1,$2,\'5\',\'76\',\'2027-01-01\',7,true,true,NOW())';
+        await client.query(independent, [standalone, applicant]);
+        await deny(independent, [randomUUID(), applicant]);
+        await deny(independent, [randomUUID(), randomUUID()]);
+        await deny(
+          'UPDATE reservation_insurance_policies SET "contractId"=$1 WHERE id=$2',
+          [contract, standalone],
+        );
+        await deny(
+          'UPDATE reservation_insurance_policies SET "applicantId"=NULL WHERE id=$1',
+          [standalone],
+        );
+        await deny(
+          'UPDATE reservation_insurance_policies SET "customerId"=NULL WHERE id=$1',
+          [id],
+        );
+        await deny('DELETE FROM reservation_insurance_applicants WHERE id=$1', [
+          applicant,
+        ]);
+        const reader = randomUUID();
+        await client.query('INSERT INTO iam_users VALUES ($1)', [reader]);
+        await client.query(
+          'INSERT INTO reservation_insurance_applicant_access (id,"applicantId","actorUserId",action) VALUES ($1,$2,$3,\'CORRECTION_READ\')',
+          [randomUUID(), applicant, reader],
+        );
+        await deny('DELETE FROM iam_users WHERE id=$1', [reader]);
       } finally {
         await client.query('ROLLBACK');
         await client.end();

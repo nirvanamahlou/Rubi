@@ -102,6 +102,9 @@ function fixture() {
       .mockResolvedValue({ id: intakeId, contractId, branchId, snapshot }),
   };
   const settings = {
+    issuanceCatalog: vi
+      .fn()
+      .mockResolvedValue({ durations: [{ days: 7 }, { days: 8 }] }),
     read: vi.fn().mockResolvedValue({
       config: {
         countries: [
@@ -195,6 +198,21 @@ describe('passenger insurance ownership and lifecycle', () => {
       f.service.saveDraft({ ...f.input, expectedVersion: 1 }, f.actor),
     ).rejects.toThrow();
     expect(f.policies.update).not.toHaveBeenCalled();
+  });
+  it('rejects unsupported duration or unavailable catalogue before a policy/identity write', async () => {
+    const f = fixture();
+    await expect(
+      f.service.saveDraft({ ...f.input, durationDays: 1 }, f.actor),
+    ).rejects.toThrow('مدت بیمه');
+    expect(f.identities.saveCorrection).not.toHaveBeenCalled();
+    expect(f.policies.create).not.toHaveBeenCalled();
+    f.settings.issuanceCatalog.mockRejectedValueOnce(
+      new Error('catalogue unavailable'),
+    );
+    await expect(f.service.saveDraft(f.input, f.actor)).rejects.toThrow(
+      'catalogue unavailable',
+    );
+    expect(f.policies.create).not.toHaveBeenCalled();
   });
   it('rejects missing entitlement, unauthorized identity and inactive mapping', async () => {
     const f = fixture();
@@ -388,4 +406,18 @@ it.each([
       passenger: { ...passenger, ...patch },
     }),
   ).toThrow();
+});
+
+it('identifies the invalid insurance field without echoing its private value', () => {
+  const invalidEmail = 'synthetic-invalid-email';
+  try {
+    parseInsuranceDraft({
+      ...fixture().input,
+      passenger: { ...passenger, email: invalidEmail },
+    });
+    throw new Error('Expected input rejection');
+  } catch (error) {
+    expect((error as Error).message).toContain('ایمیل بیمه‌شده');
+    expect((error as Error).message).not.toContain(invalidEmail);
+  }
 });

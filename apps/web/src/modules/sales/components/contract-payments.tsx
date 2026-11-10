@@ -568,6 +568,7 @@ export function ContractPayments({
                 {
                   {
                     FINANCE_CONFIRMED: 'تأییدشده مالی',
+                    FINANCE_VOIDED: 'باطل‌شده',
                     FINANCE_REJECTED: 'ردشده توسط مالی',
                     SCHEDULED: 'برنامه‌ریزی‌شده',
                     PENDING_FINANCE_CONFIRMATION: 'در انتظار تأیید مالی',

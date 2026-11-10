@@ -274,7 +274,7 @@ export function ReservationPassengers({
       )}
       {message && <p role="status">{message}</p>}
       <div className={`${styles.tableWrap} ${compact ? styles.compact : ''}`}>
-        <table className={styles.table}>
+        <table className={styles.table} data-passenger-editor>
           <thead>
             <tr>
               <th>نام</th>
