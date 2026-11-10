@@ -80,7 +80,7 @@ function grid(count = 2): PackageTourCostGridV1 {
         },
       ],
     })),
-  } as PackageTourCostGridV1;
+  } as unknown as PackageTourCostGridV1;
 }
 const definition = (count = 2) => ({
   id: 'combo',
