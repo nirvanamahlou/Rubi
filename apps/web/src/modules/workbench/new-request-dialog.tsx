@@ -272,15 +272,7 @@ function NewRequestForm({
                   variant="outline"
                   disabled={pending || uploading}
                   onClick={() => {
-                    setLeave(
-                      (current) =>
-                        current && {
-                          ...current,
-                          substitute: undefined,
-                          substituteUserId: undefined,
-                          attachmentIds: undefined,
-                        },
-                    );
+                    setLeave(null);
                     setTitle('درخواست مساعده');
                     setBody(
                       'با سلام، درخواست پرداخت مساعده دارم.\nمبلغ درخواستی:\nتاریخ مورد نیاز:\nعلت درخواست:\nنحوه بازپرداخت:',
