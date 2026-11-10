@@ -9710,3 +9710,11 @@ Per-ticket export template override uses the same published Master Data projecti
 Ordered city destinations and per-destination nights are stored in versioned Tour definitions. Combined stays are consecutive from the departure date and must end on the tour end date. Sales suggestions match only the origin and any actual tour destination; unrelated single-city tours are excluded. Pricing reads each city's rates for its own stay, permits multiple complete hotel/room combinations, sums exact purchase amounts by currency and stores one editable sale per combination. Publications freeze the combinations and all rate sources have restrictive FK links; legacy independent hotel publications are unchanged. Published Sales selection applies every stay and server quote validation rejects missing/changed hotels, dates or room compositions. The banner bridge transfers sale amounts only. Additive nullable JSON columns and a restrictive source-link table; no dependency or production-data/deployment changes. Focused shared/API/Web tests and exact-head full hosted gates precede user-authorized develop merge.
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
+
+## HR Radan synchronization
+
+Minute polls use a recent two-day window, with a 31-day daily recovery pass and
+an optional manual date range. The connector caches personnel, scopes routine
+work calculations to affected employees, and exposes per-source success totals.
+Existing attendance records and period locks remain authoritative. Verification:
+40 focused tests passed; deployment pending.
