@@ -149,6 +149,9 @@ export function HotelStayPurchase({
     quote.hotelTransferRoundTrip ?? !request.workflow?.supplierFormSettings;
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    hotelTransferSeparate: quote.hotelTransferSeparate === true,
+    hotelTransferSplit:
+      quote.hotelTransferSeparate === true && quote.hotelTransferSplit === true,
     hotelTransferRoundTrip: defaultRoundTrip,
     hotelTransferCounts:
       request.workflow?.supplierFormSettings?.hotelTransferRoundTrip &&

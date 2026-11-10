@@ -2,6 +2,7 @@ import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { expect, it } from 'vitest';
 import {
   defaultVoucherSettings,
+  defaultSupplierFormSettings,
   supplierFormData,
   voucherFormData,
 } from './voucher-settings';
@@ -339,4 +340,35 @@ it('keeps passenger services and room allocation in the supplier revision only',
   ).not.toContain('ROOM 1 - Double');
   expect(JSON.stringify(intake.snapshot)).toBe(before);
   expect(voucherFormData(intake, {}).passengers[0]!.outboundFlight).toBe(false);
+});
+
+it('defaults the separate transfer supplier to false for new and legacy forms and only restores an explicit saved choice', () => {
+  const intake = {
+    receivedAt: '2026-11-10T00:00:00Z',
+    snapshot: {
+      contractNumber: 'SYNTHETIC',
+      passengerIds: [],
+      passengerAssignments: [],
+      serviceSelections: [],
+      hotelSelection: null,
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const fresh = defaultVoucherSettings(intake, {});
+  expect(fresh.hotelTransferSeparate).toBe(false);
+  expect(fresh.hotelTransferSplit).toBe(false);
+  const legacy = structuredClone(fresh);
+  delete legacy.hotelTransferSeparate;
+  legacy.hotelTransferSplit = true;
+  intake.workflow.supplierFormSettings = legacy;
+  const restored = defaultSupplierFormSettings(intake, {});
+  expect(restored.hotelTransferSeparate).toBe(false);
+  expect(restored.hotelTransferSplit).toBe(false);
+  intake.workflow.supplierFormSettings = {
+    ...legacy,
+    hotelTransferSeparate: true,
+  };
+  const selected = defaultSupplierFormSettings(intake, {});
+  expect(selected.hotelTransferSeparate).toBe(true);
+  expect(selected.hotelTransferSplit).toBe(true);
 });
