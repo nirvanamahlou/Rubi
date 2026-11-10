@@ -1303,6 +1303,10 @@ Reserve architecture and deployment baselines, remediation evidence and the exis
 
 Reserve HR-owned Finance referral projection, Finance inbox consumer and targeted tests. Preserve existing referral scope, response eligibility and source failure handling. No schema or API contract changes.
 
+## MARKETING-SCOPED-PANEL-LOAD-1110 — PC-B — READY_FOR_CI
+
+Reserve Marketing durable panel loading, its existing UI tests and project notes. Skip campaign reads for panels without a campaign dependency and prevent superseded loads from replacing current records. No API, dependency or schema changes.
+
 ## CONTRACT-DOMAIN-ENTRYPOINTS-1110 — PC-B — READY_FOR_CI
 
 Reserve additive Contracts package exports for pure Sales pricing and upload formats, selected existing consumers and verification. Keep the root export and existing symbols available. No dependency version, lockfile, schema or API changes.

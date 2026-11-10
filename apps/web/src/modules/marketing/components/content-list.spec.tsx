@@ -59,6 +59,7 @@ vi.mock('react', async (original) => ({
   useEffect: vi.fn(),
   useMemo: (callback: () => unknown) => callback(),
   useCallback: (callback: unknown) => callback,
+  useRef: (initial: unknown) => ({ current: initial }),
 }));
 vi.mock('../api/records-client', () => ({
   marketingApi: {
@@ -141,6 +142,29 @@ beforeEach(() => {
   state.campaigns.mockResolvedValue({ data: [] });
   state.save.mockResolvedValue({ data: asset });
   state.remove.mockResolvedValue({});
+});
+
+it('loads audience assets without fetching campaigns and discards an older response', async () => {
+  let resolveOlder!: (value: { data: MarketingAssetViewV1[] }) => void;
+  const older = new Promise<{ data: MarketingAssetViewV1[] }>((resolve) => {
+    resolveOlder = resolve;
+  });
+  const fresh = { ...asset, id: 'new-segment', kind: 'SEGMENT' as const };
+  state.assets
+    .mockReturnValueOnce(older)
+    .mockResolvedValueOnce({ data: [fresh] });
+  const tree = nodes(DurableSegmentsPanel({ onNotice: notice }));
+  const retry = tree.find((node) => typeof node.props.onRetry === 'function')!
+    .props.onRetry as () => void;
+  retry();
+  retry();
+  await vi.waitFor(() => expect(state.values[2]).toEqual([fresh]));
+  expect(state.assets.mock.calls).toEqual([['SEGMENT'], ['SEGMENT']]);
+  expect(state.campaigns).not.toHaveBeenCalled();
+  resolveOlder({ data: [{ ...fresh, id: 'old-segment' }] });
+  await older;
+  await Promise.resolve();
+  expect(state.values[2]).toEqual([fresh]);
 });
 
 function intake(mode: 'leads' | 'scoring' = 'leads') {
