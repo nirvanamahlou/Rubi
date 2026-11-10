@@ -176,7 +176,8 @@ export function buildHotelPackageTable(input: {
         rates
           .filter(
             (rate) =>
-              rate.adults === 2 &&
+              (rate.adults === 2 ||
+                (rate.adults === 0 && rate.manualPricing)) &&
               rate.childAges.length === 1 &&
               (rate.childAges[0]!.min >= 6 ||
                 /CWB|CHD\s*WB|with\s*bed|با\s*تخت/i.test(rate.composition)),

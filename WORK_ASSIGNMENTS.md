@@ -12047,6 +12047,10 @@ Reserve passenger-files table CSS/markup, amendment draft age hydration and focu
 
 PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
 
+HOTEL-FACTOR-DEFAULTS-1110 — PC-A: reserve manual hotel combination defaults/UI, shared exact pricing and occupancy composition, API validation and focused tests. User confirms standalone one-child tariff; double2, single1.5, child6–12; zero coefficient allowed. Existing saved rates retained. No migration/dependency or live data edits. Develop merge authorized after gates.
+
+HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ESLint and Contracts build passed. Final hosted gates required; no deployment requested.
+
 ## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.

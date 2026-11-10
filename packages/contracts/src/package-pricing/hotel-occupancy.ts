@@ -154,6 +154,37 @@ export function quoteHotelOccupancy(
               : row.amount,
           ),
         );
+      if (!prices.length && ages.length) {
+        const nightly = options.filter(
+          (row) => row.startsOn <= date && row.endsOnExclusive > date,
+        );
+        const value = (row: HotelOccupancyRateV1) =>
+          units(
+            input.priceBasis === 'SALE'
+              ? (row.saleAmount ?? row.amount)
+              : row.amount,
+          );
+        const bases = nightly
+          .filter((row) => row.adults === adults && row.childAges.length === 0)
+          .map(value);
+        if (!bases.length || new Set(bases.map(String)).size !== 1) return null;
+        let combined = bases[0]!;
+        for (const age of ages) {
+          const child = nightly
+            .filter(
+              (row) =>
+                row.adults === 0 &&
+                row.manualPricing &&
+                row.childAges.length === 1 &&
+                hotelChildrenFit([age], row.childAges),
+            )
+            .map(value);
+          if (!child.length || new Set(child.map(String)).size !== 1)
+            return null;
+          combined += child[0]!;
+        }
+        prices.push(combined);
+      }
       if (!prices.length) return null;
       if (new Set(prices.map(String)).size !== 1) return null;
       total += prices.reduce((a, b) => (a < b ? a : b));
