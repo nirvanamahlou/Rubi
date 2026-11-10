@@ -1,3 +1,7 @@
+## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
+
+Base origin/develop1bb9a4625; codex/pc-c-report-chart-metrics-1110. Reserve Reports Web chart rendering, numeric metric selection, existing API-result adapter metadata and focused regressions; own task/status and bounded new English catalogue labels. Dashboard source is read-only design reference. Preserve independent currency scales, unique report grain, source values and export/table behavior. No API/schema/dependency/data/deployment change. Prior Reporting scopes merged/frozen.
+
 ## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
 
 Base origin/develop4620591c2; codex/pc-c-report-excel-bidi-1110. Reserve Reporting XLSX monetary-cell presentation and focused export regressions, own task/status notes. Fix mixed RTL/LTR currency amount labels without changing values, aggregation, CSV/API or authorization. Prior Reporting source is merged/frozen. No schema/dependency/data/deployment. Owner authorizes PR and develop merge only after all exact-head CI gates pass.

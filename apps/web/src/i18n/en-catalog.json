@@ -17837,5 +17837,8 @@
   "بدون فایل": "No file",
   "در دست اقدام": "In progress",
   "روش دریافت": "Receipt method",
-  "ماژول مبدأ سند": "Document source module"
+  "ماژول مبدأ سند": "Document source module",
+  "راهنمای ارزهای نمودار": "Chart currency legend",
+  "سهم هر بخش براساس معیار انتخاب‌شده محاسبه شده است.": "Each share is calculated using the selected measure.",
+  "مبالغ ارزها با هم جمع نمی‌شوند؛ مقیاس هر ارز مستقل است.": "Currency amounts are not added together; each currency uses an independent scale."
 }
