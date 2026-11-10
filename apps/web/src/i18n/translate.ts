@@ -6,13 +6,18 @@ import englishOverrides from './en-overrides.json';
 import type { DisplayLanguage } from './language';
 import { isCurrencySymbol } from './currency-symbol';
 
-export const englishUiCatalog: Readonly<Record<string, string>> = {
-  ...englishCatalog,
-  ...accountingDocuments,
-  ...accountingPageKpis,
-  ...integrations,
-  ...englishOverrides,
-};
+let englishUiCatalog: Readonly<Record<string, string>> | undefined;
+
+export function getEnglishUiCatalog(): Readonly<Record<string, string>> {
+  return (englishUiCatalog ??= {
+    ...englishCatalog,
+    ...accountingDocuments,
+    ...accountingPageKpis,
+    ...integrations,
+    ...englishOverrides,
+  });
+}
+
 const persianScript = /[\u0600-\u06ff]/;
 const digits = /[\u0660-\u0669\u06f0-\u06f9]/g;
 
@@ -40,7 +45,7 @@ let phraseIndex: PhraseIndex | undefined;
 function getPhraseIndex(): PhraseIndex {
   if (phraseIndex) return phraseIndex;
   const phrases = new Map<string, Array<[string, string]>>();
-  for (const [source, target] of Object.entries(englishUiCatalog)) {
+  for (const [source, target] of Object.entries(getEnglishUiCatalog())) {
     if (!source || !target || !persianScript.test(source)) continue;
     const firstWord = source.match(/^[^\s:،؛؟«»,.()[\]]+/)?.[0] ?? source;
     const entries = phrases.get(firstWord) ?? [];
@@ -59,7 +64,7 @@ export function translateUiText(
 ): string {
   if (language === 'fa' || isCurrencySymbol(value.trim())) return value;
   const normalized = normalizeUiText(value);
-  const exact = englishUiCatalog[normalized];
+  const exact = getEnglishUiCatalog()[normalized];
   if (exact) {
     const leading = value.match(/^\s*/)?.[0] ?? '';
     const trailing = value.match(/\s*$/)?.[0] ?? '';

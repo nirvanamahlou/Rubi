@@ -9771,6 +9771,10 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## I18N-LAZY-CATALOG-1110
+
+Persian provider startup no longer merges English catalogs or computes English NextIntl messages. The first English render computes and caches them synchronously, preserving SSR and locale switching. A provider regression verifies Persian does not enumerate the English catalog and two English renders reuse the same merge. All 46 i18n tests passed. Catalog modules still ship with the initial JavaScript, so locale-specific asset delivery remains open.
+
 ## REPORTING-XLSX-MEMORY-1110
 
 XLSX rendering calculates capped column widths in a prepass and compresses row chunks without retaining the complete cell grid or worksheet XML. The worker transfers exactly the resulting bytes; pooled and sliced buffers are copied into a dedicated allocation before transfer. All eight inflated workbook entries were identical to develop for synthetic zero-row and 650-row reports. A synthetic 10,000 by 24 render reduced peak RSS from 358,752 to 208,484 KiB, while the resulting ZIP grew from 869,916 to 889,377 bytes. All 170 Reporting tests passed. The report query and compressed output still materialize in memory, and durable export scheduling remains open.

@@ -2,12 +2,14 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { englishUiCatalog } from './translate';
+import { getEnglishUiCatalog } from './translate';
 
 const require = createRequire(import.meta.url);
 const { inventory } = require('../../scripts/i18n-inventory.cjs') as {
   inventory: () => Array<{ text: string; files: string[] }>;
 };
+
+const englishUiCatalog = getEnglishUiCatalog();
 
 describe('English UI completeness', () => {
   let sourceLabels: ReturnType<typeof inventory>;
