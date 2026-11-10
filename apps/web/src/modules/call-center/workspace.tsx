@@ -326,7 +326,7 @@ function Content({
     outcome: 'نتیجه تماس',
     source: 'منبع',
     unit: 'وصل شده به',
-    teamId: 'تیم',
+    teamId: 'واحد',
     agentId: 'کارشناس',
     requestStatus: 'وضعیت درخواست',
     followUp: 'پیگیری',
@@ -340,7 +340,7 @@ function Content({
       ? (agents.find((a) => a.id === value)?.displayName ??
         'کارشناس انتخاب‌شده')
       : key === 'teamId'
-        ? (teams.find((t) => t.id === value)?.name ?? 'تیم انتخاب‌شده')
+        ? (teams.find((t) => t.id === value)?.name ?? 'واحد')
         : ((
             {
               ...outcomes,
@@ -476,6 +476,12 @@ function Content({
                 value={filters.source}
                 onChange={(v) => change('source', v)}
                 options={sources.map((v) => [v, v])}
+              />
+              <Select
+                label="واحد"
+                value={filters.teamId}
+                onChange={(v) => change('teamId', v)}
+                options={teams.map((team) => [team.id, team.name])}
               />
               <Select
                 label="وصل شده به"

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildReportingFilterSnapshot,
+  reportFilterApiValues,
   createAndDownloadReportExport,
   ReportCategorySelectOption,
   ReportDateRangeFields,
@@ -606,4 +607,34 @@ it('shows one organization table row with combined currencies and separates them
   expect(pie).toContain('راهنمای رنگ‌های نمودار IRR');
   expect(pie).toContain('راهنمای رنگ‌های نمودار EUR');
   expect(pie).not.toContain('900 ریال + 20 €');
+});
+
+it('retains output predicates in requests and readable filter snapshots', () => {
+  const values = {
+    columnPrimaryDimension: 'FLIGHT',
+    search: 'تهران',
+    شعبه: 'branch',
+  };
+  expect(reportFilterApiValues(values)).toEqual({
+    columnPrimaryDimension: 'FLIGHT',
+    search: 'تهران',
+    branch: 'branch',
+  });
+  const snapshot = buildReportingFilterSnapshot({
+    currency: 'ALL',
+    filterValues: values,
+    fromDate: '',
+    toDate: '',
+    legalEntity: 'ALL',
+    report: reportCatalog[0]!,
+    columnFilters: [
+      { key: 'columnPrimaryDimension', label: 'نوع خدمت', options: ['FLIGHT'] },
+    ],
+  });
+  expect(snapshot).toEqual(
+    expect.arrayContaining([
+      { active: true, label: 'نوع خدمت', value: 'پرواز' },
+      { active: true, label: 'جست‌وجو', value: 'تهران' },
+    ]),
+  );
 });

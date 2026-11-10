@@ -1,0 +1,9 @@
+# INSURANCE-STANDALONE-1109
+
+PC-A; owner authorizes implementation, final-green develop merge and bounded production release. Scope includes catalogue-only duration choice, preserving the first safe provider diagnostic through reconciliation, and a full new standalone applicant/travel form with no Sales contract prerequisite.
+
+The prior client allowed1 day, absent from the live vendor duration catalogue. A later ambiguous-outcome query overwrote the first400 diagnostic. Fix both before any new Create; do not round duration or retry an ambiguous Create. Lost past response text cannot be reconstructed.
+
+Architecture decision is recorded before implementation in DECISIONS.md and PRODUCT_REQUIREMENTS.md. A real standalone applicant record belongs to Reservations and stores encrypted identity/contact data, source-country reference, real branch/creator FKs and replay key. Existing policy links become optional only in the database-enforced standalone shape; contract policies retain all current real FKs and Finance/document constraints. No placeholder CRM customer/contract and no cross-module table writes. Private reads have their own audited FK records. One shared leased/fingerprinted provider state machine serves both origins. Compatibility producer is Reservations/Contracts; consumer is insurance Web, released together. Additive migration precedes API/Web and remains on rollback; no operational rows are deleted or invented.
+
+Synthetic tests must cover unsupported periods, catalogue failure, immutable primary error, no duplicate Create after ambiguity, fresh standalone form, branch/permission boundaries, replay/CAS, ciphertext/AAD protection and actual PostgreSQL constraints/rollback. Actual customer issuance is not a test. Preserve current sandbox endpoint, credentials, peer source overlays, encrypted checkpoints and shared deploy lease. Only this unit is published.

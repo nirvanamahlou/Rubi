@@ -31,12 +31,16 @@ describe('header date integration', () => {
       source.indexOf('</header>'),
     );
     expect(header).toContain('<HeaderToday />');
+    expect(header).toContain('<HeaderRoleLabel />');
+    expect(header.indexOf('<HeaderRoleLabel />')).toBeLessThan(
+      header.indexOf('className="hidden shrink-0 whitespace-nowrap lg:flex"'),
+    );
     expect(header.indexOf('<HeaderToday />')).toBeLessThan(
       header.indexOf('<HeaderActions />'),
     );
     expect(header).toContain('data-header-utility-group');
     expect(header).toContain(
-      'className="ms-auto flex shrink-0 items-center gap-1"',
+      'className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1"',
     );
     expect(header).toContain(
       'className="hidden shrink-0 whitespace-nowrap lg:flex"',

@@ -6,6 +6,8 @@ import {
   Headers,
   Inject,
   Param,
+  Optional,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -16,7 +18,11 @@ import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { CustomerListQuery } from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
-import { RequirePermissions } from '../iam/iam.decorators';
+import {
+  RequirePermissions,
+  RequireAccessControls,
+} from '../iam/iam.decorators';
+import { CustomerDossierService } from './customer-dossier.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 // Runtime imports are required for Nest emitDecoratorMetadata and ValidationPipe.
@@ -42,6 +48,9 @@ import { CustomerService } from './customer.service';
 export class CustomersController {
   constructor(
     @Inject(CustomerService) private readonly service: CustomerService,
+    @Optional()
+    @Inject(CustomerDossierService)
+    private readonly dossier?: CustomerDossierService,
   ) {}
 
   @Get('ledger-companies/:id')
@@ -242,6 +251,19 @@ export class CustomersController {
   @RequirePermissions('customers.read', 'iam.audit.read')
   audit(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
     return this.service.audit(id, request.actor);
+  }
+
+  @Get(':id/dossier')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @RequirePermissions('customers.read')
+  @RequireAccessControls('customers.tab.dossier')
+  dossierRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!this.dossier) throw new Error('Customer dossier service unavailable');
+    return this.dossier.read(id, request.actor);
   }
 
   @Get(':id')

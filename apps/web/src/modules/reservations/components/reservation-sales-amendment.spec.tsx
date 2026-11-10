@@ -216,3 +216,17 @@ it('offers floating flight creation when the selected contract ticket is catalog
     ),
   ).toContain('افزودن بلیط شناور');
 });
+
+it('always renders the flight amendment date in Gregorian without changing the saved ISO date', () => {
+  const html = renderToStaticMarkup(
+    <ReservationSalesAmendment
+      contract={contract}
+      section="FLIGHT"
+      onSaved={() => undefined}
+    />,
+  );
+  expect(html).toContain('January');
+  expect(html).toContain('2027');
+  expect(html).not.toContain('دی');
+  expect(contract.departureDate).toBe('2027-01-01');
+});

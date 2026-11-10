@@ -156,7 +156,12 @@ function exportFilterEntries(result: TravelReportResultV1): [string, string][] {
     entries.push(['محدوده شعب', snapshot.branchIds.join('، ')]);
   for (const [key, value] of Object.entries(snapshot.filters)) {
     const text = Array.isArray(value) ? value.join('، ') : String(value);
-    if (text) entries.push([exportFilterLabels[key] ?? key, text]);
+    if (text)
+      entries.push([
+        result.columnFilters?.find((filter) => filter.key === key)?.label ??
+          (key === 'search' ? 'جست‌وجو' : (exportFilterLabels[key] ?? key)),
+        text,
+      ]);
   }
   return entries.length ? entries : [['فیلترها', 'بدون فیلتر انتخابی']];
 }

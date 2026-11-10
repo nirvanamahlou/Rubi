@@ -782,6 +782,74 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         });
       }
     });
+    it('filters units by exact-call responsibility rather than the ingestion service account', async () => {
+      await db.integrationTelephonyMapping.upsert({
+        where: { connectionId_extension: { connectionId, extension: '404' } },
+        create: { connectionId, extension: '404', userId: expert },
+        update: {},
+      });
+      const inbound = await emit(makeEvent('404'));
+      const outbound = await emit({
+        ...makeEvent('404', 'RINGING'),
+        direction: 'OUT',
+        caller: { kind: 'UNKNOWN', value: null },
+        destination: { kind: 'KNOWN', value: '+12025558881' },
+      });
+      const shared = await emit(makeEvent('105'));
+      const transfer = makeEvent('404', 'RINGING');
+      const foreign = await emit(transfer);
+      await emit({
+        ...transfer,
+        externalEventId: randomUUID(),
+        extension: '301',
+        legId: '301',
+        kind: 'ANSWERED',
+      });
+      const global = await directory.callCenterActor(actor(demo));
+      const search = (who: AuthenticatedActor, teamId: string) =>
+        read.search(who, branchId, {
+          teamId,
+          scope: 'LATEST',
+          page: 1,
+          pageSize: 50,
+        } as never);
+      const sales = await search(global, unitId);
+      expect(sales.data.map((r) => r.id)).toEqual(
+        expect.arrayContaining([
+          inbound.contactId,
+          outbound.contactId,
+          shared.contactId,
+        ]),
+      );
+      expect(sales.data.map((r) => r.id)).not.toContain(foreign.contactId);
+      const finance = await search(global, otherUnit);
+      expect(finance.data.map((r) => r.id)).toContain(foreign.contactId);
+      expect(finance.data.map((r) => r.id)).not.toContain(inbound.contactId);
+      const report = await read.report(global, branchId, {
+        teamId: otherUnit,
+        query: transfer.caller.value,
+        from: new Date(Date.now() - 60000).toISOString(),
+        to: new Date(Date.now() + 1000).toISOString(),
+      } as never);
+      expect(report.data.calls).toBe(1);
+      expect((await search(actor(expert), otherUnit)).meta.total).toBe(0);
+      const original = actor(manager);
+      const nativeManager = {
+        ...original,
+        permissions: original.permissions.filter(
+          (code) => !code.endsWith('.team'),
+        ),
+      };
+      expect(
+        (await read.teams(nativeManager, branchId)).units
+          .find((u) => u.id === unitId)
+          ?.users.map((u) => u.id),
+      ).toContain(peer);
+      expect(
+        (await search(nativeManager, unitId)).data.map((r) => r.id),
+      ).toContain(outbound.contactId);
+      expect((await search(global, randomUUID())).meta.total).toBe(0);
+    }, 20000);
     it('uses receipt-time identity even if an extension changes before Worker processing', async () => {
       const event = makeEvent('404'),
         receipt = await events.receive(event, 'ISSABEL');

@@ -25,11 +25,15 @@ import { InsuranceSettingsService } from '../../integrations/insurance/insurance
 import { TravisSandboxService } from '../../integrations/insurance/travis-sandbox.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { SalesOperationalAmendmentService } from '../../sales/sales-operational-amendment.module';
+import { InsuranceApplicantCrypto } from './insurance-applicant.crypto';
 
 type State = {
   useDraft?: boolean;
   phase?: 'QUEUED' | 'CREATING' | 'CREATED' | 'CONFIRMING' | 'ISSUED';
   fingerprint?: string;
+  firstError?: string;
+  latestError?: string;
+  creationReceipt?: { providerId: string; contractNo: string; planId: number };
 };
 const message = {
   input: 'اطلاعات هویتی، پاسپورت و تماس بیمه‌شده را تکمیل کنید.',
@@ -37,6 +41,7 @@ const message = {
   pending:
     'نتیجه بیمه‌گر نامشخص است؛ استعلام انجام می‌شود و درخواست تکراری ارسال نمی‌شود.',
   changed: 'اطلاعات بیمه پس از ارسال تغییر کرده است؛ نتیجه باید بررسی شود.',
+  duration: 'مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.',
 };
 @Injectable()
 export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
@@ -54,6 +59,8 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     private readonly notifications: NotificationsService,
     @Inject(forwardRef(() => SalesOperationalAmendmentService))
     private readonly sales: SalesOperationalAmendmentService,
+    @Inject(InsuranceApplicantCrypto)
+    private readonly applicantCrypto: InsuranceApplicantCrypto,
   ) {}
   onModuleInit() {
     this.timer = setInterval(() => void this.dispatch(), 15000);
@@ -164,6 +171,64 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       this.running = false;
     }
   }
+  private async identity(
+    row: Prisma.ReservationInsurancePolicyGetPayload<Record<string, never>>,
+  ) {
+    if (row.applicantId) {
+      const applicant =
+        await this.db.client.reservationInsuranceApplicant.findUniqueOrThrow({
+          where: { id: row.applicantId },
+        });
+      const person = this.applicantCrypto.open(
+        applicant.id,
+        applicant.branchId,
+        applicant.encryptedData,
+      );
+      await this.db.client.reservationInsuranceApplicantAccess.create({
+        data: {
+          applicantId: applicant.id,
+          actorUserId: applicant.createdByUserId,
+          action: 'PROVIDER_READ',
+        },
+      });
+      return {
+        branchId: applicant.branchId,
+        ownerUserId: applicant.createdByUserId,
+        reference: 'بیمه مستقل',
+        contract: null,
+        snapshot: null,
+        sourceProviderCode: applicant.sourceCountryCode,
+        passportNo: person.passportNo,
+        person: {
+          nationalCode:
+            person.nationalityCode === 'IRN'
+              ? person.nationalCode
+              : person.passportNo,
+          isIranian: person.nationalityCode === 'IRN',
+          firstName: person.firstName,
+          lastName: person.lastName,
+          firstNameLatin: person.firstNameLatin,
+          lastNameLatin: person.lastNameLatin,
+          gender: person.gender === 'M' ? 1 : 2,
+          birthDate: new Date(person.birthDate + 'T00:00:00Z').toISOString(),
+          mobile: person.mobile,
+          email: person.email,
+        },
+      };
+    }
+    if (!row.intakeId || !row.customerId) throw new Error();
+    const identity = await this.identities.read(row.intakeId, row.customerId);
+    return {
+      branchId: identity.intake.branchId,
+      ownerUserId: identity.intake.contract.ownerUserId,
+      reference: identity.intake.contract.contractNumber,
+      contract: identity.intake.contract,
+      snapshot: identity.snapshot,
+      sourceProviderCode: null,
+      person: identity.person,
+      passportNo: identity.passportNo,
+    };
+  }
   async process(id: string) {
     const now = new Date();
     const leaseUntil = new Date(now.getTime() + 300000);
@@ -179,27 +244,30 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     });
     if (!claimed.count) return;
     let error: string = message.pending;
+    let state: State = {};
     try {
       const row =
         await this.db.client.reservationInsurancePolicy.findUniqueOrThrow({
           where: { id, processingUntil: leaseUntil },
         });
-      const state = (row.automation ?? {}) as State;
+      state = (row.automation ?? {}) as State;
       error = message.input;
-      const identity = await this.identities.read(row.intakeId, row.customerId);
+      const identity = await this.identity(row);
       error = message.config;
-      const contract = identity.intake.contract;
-      const destination = await this.db.client.masterCity.findUnique({
-        where: { id: contract.destinationId },
-        select: { countryId: true },
-      });
-      const origin = await this.db.client.masterCity.findUnique({
-        where: { id: contract.originId },
-        include: { country: true },
-      });
-      const config = await this.settings.automationConfig(
-        identity.intake.branchId,
-      );
+      const contract = identity.contract;
+      const destination = contract
+        ? await this.db.client.masterCity.findUnique({
+            where: { id: contract.destinationId },
+            select: { countryId: true },
+          })
+        : null;
+      const origin = contract
+        ? await this.db.client.masterCity.findUnique({
+            where: { id: contract.originId },
+            include: { country: true },
+          })
+        : null;
+      const config = await this.settings.automationConfig(identity.branchId);
       const country = config.countries.find(
         (c) =>
           c.active &&
@@ -207,10 +275,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
             ? c.providerCountryCode === row.destinationCode
             : c.countryId === destination?.countryId),
       );
-      const insurance = identity.snapshot.serviceSelections.find(
+      const insurance = identity.snapshot?.serviceSelections.find(
         (s) =>
           s.kind === 'INSURANCE' &&
-          identity.snapshot.passengerAssignments?.some(
+          identity.snapshot?.passengerAssignments?.some(
             (p) =>
               p.customerId === row.customerId &&
               p.serviceClientKeys.includes(s.clientKey),
@@ -222,20 +290,20 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           : p.masterPlanId === insurance?.referenceId,
       );
       const departureDate = (
-        state.useDraft ? row.departureDate : contract.departureDate
+        state.useDraft || !contract ? row.departureDate : contract.departureDate
       )
         .toISOString()
         .slice(0, 10);
       const lastDay =
         [
-          contract.returnNotBefore?.toISOString().slice(0, 10),
-          identity.snapshot.hotelSelection?.checkOutDate?.slice(0, 10),
-          ...(identity.snapshot.hotelSelection?.additionalStays ?? []).map(
+          contract?.returnNotBefore?.toISOString().slice(0, 10),
+          identity.snapshot?.hotelSelection?.checkOutDate?.slice(0, 10),
+          ...(identity.snapshot?.hotelSelection?.additionalStays ?? []).map(
             (s) => s.checkOutDate.slice(0, 10),
           ),
           ...salesContractFlights(
-            identity.snapshot.serviceSelections,
-            identity.snapshot.ticketSelections ?? [],
+            identity.snapshot?.serviceSelections ?? [],
+            identity.snapshot?.ticketSelections ?? [],
           )
             .filter((f) => f.direction === 'RETURN')
             .map((f) =>
@@ -260,13 +328,23 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         !plan ||
         !/^\d+$/.test(country.providerCountryCode) ||
         !/^\d+$/.test(plan.providerPlanCode) ||
-        !origin?.country.code ||
+        !(identity.sourceProviderCode || origin?.country.code) ||
         durationDays > 365
       )
         throw new Error();
       const catalog = await this.provider.catalog();
-      const source = catalog.countries.find(
-        (c) => c.standardCode === origin.country.code,
+      if (
+        !row.providerId &&
+        (!state.phase || state.phase === 'QUEUED') &&
+        !catalog.durations.some((duration) => duration.days === durationDays)
+      ) {
+        error = message.duration;
+        throw new Error();
+      }
+      const source = catalog.countries.find((c) =>
+        identity.sourceProviderCode
+          ? String(c.id) === identity.sourceProviderCode
+          : c.standardCode === origin?.country.code,
       );
       if (
         !source ||
@@ -294,8 +372,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         error = message.changed;
         throw new Error();
       }
-      const save = async (data: Prisma.ReservationInsurancePolicyUpdateInput) =>
-        this.db.client.reservationInsurancePolicy.update({
+      const save = async (
+        data: Prisma.ReservationInsurancePolicyUpdateInput,
+      ) => {
+        const saved = await this.db.client.reservationInsurancePolicy.update({
           where: {
             id,
             processingUntil: leaseUntil,
@@ -303,6 +383,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           },
           data,
         });
+        if (data.automation && typeof data.automation === 'object')
+          state = data.automation as State;
+        return saved;
+      };
       let providerId = row.providerId;
       let result: Awaited<ReturnType<TravisSandboxService['policy']>> = null;
       error = message.pending;
@@ -317,7 +401,13 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         await save({
           providerId,
           automation: {
+            ...state,
             phase: 'CREATED',
+            creationReceipt: {
+              providerId,
+              contractNo: id,
+              planId: input.planId,
+            },
             fingerprint,
             useDraft: state.useDraft === true,
           },
@@ -331,6 +421,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           departureDate: new Date(departureDate),
           durationDays,
           automation: {
+            ...state,
             phase: 'CREATING',
             fingerprint,
             useDraft: state.useDraft === true,
@@ -341,7 +432,13 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         await save({
           providerId,
           automation: {
+            ...state,
             phase: 'CREATED',
+            creationReceipt: {
+              providerId,
+              contractNo: id,
+              planId: input.planId,
+            },
             fingerprint,
             useDraft: state.useDraft === true,
           },
@@ -352,12 +449,17 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         planId: input.planId,
         passportNo: input.passportNo,
         nationalCode: identity.person.nationalCode,
+        trustedCreation:
+          state.creationReceipt?.providerId === providerId &&
+          state.creationReceipt?.contractNo === id &&
+          state.creationReceipt?.planId === input.planId,
       };
       result = await this.provider.policy(Number(providerId), expected);
       if (!result?.active) {
         if (state.phase === 'CONFIRMING') throw new Error(); // Confirm outcome is reconciled, not blindly replayed.
         await save({
           automation: {
+            ...state,
             phase: 'CONFIRMING',
             fingerprint,
             useDraft: state.useDraft === true,
@@ -389,6 +491,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
             pdfUrl: result!.pdfUrl,
             issuedAt: new Date(),
             automation: {
+              ...state,
               phase: 'ISSUED',
               fingerprint,
               useDraft: state.useDraft === true,
@@ -403,37 +506,64 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           data: {
             policyId: id,
             version: saved.version,
-            actorUserId: contract.ownerUserId,
+            actorUserId: identity.ownerUserId,
             action: 'SANDBOX_CONFIRMED',
             snapshot: {
               sandbox: true,
               policyNumber: saved.policyNumber,
               status: saved.status,
+              previousError: state.firstError ?? null,
             },
           },
         });
         await this.notifications.createWithinTransaction(tx, {
-          recipientUserIds: [contract.ownerUserId],
+          recipientUserIds: [identity.ownerUserId],
           actorUserId: null,
           sourceModule: 'reservations',
           eventType: 'insurance.sandbox.issued',
           title: 'بیمه‌نامه آزمایشی آماده شد',
-          message: `${contract.contractNumber} · ${saved.policyNumber}`,
+          message: `${identity.reference} · ${saved.policyNumber}`,
           entityType: 'RESERVATION_INSURANCE',
           entityId: id,
-          href: '/sales',
+          href: row.applicantId ? '/reservations/insurance' : '/sales',
         });
       });
     } catch (cause) {
       if (cause instanceof TravisDiagnosticError) error = cause.message;
+      const firstError =
+        state.firstError ??
+        (cause instanceof TravisDiagnosticError ? cause.message : undefined);
       await this.db.client.reservationInsurancePolicy.updateMany({
         where: { id, processingUntil: leaseUntil, status: { not: 'ISSUED' } },
         data: {
           status:
-            error === message.input || error === message.config
+            error === message.input ||
+            error === message.config ||
+            error === message.duration
               ? 'INPUT_ERROR'
               : 'PROVIDER_ERROR',
-          lastError: error,
+          lastError: (firstError &&
+          error !== firstError &&
+          error !== message.pending
+            ? firstError + ' · ' + error
+            : (firstError ?? error)
+          ).slice(0, 500),
+          ...(firstError
+            ? {
+                automation: {
+                  ...state,
+                  firstError,
+                  ...(cause instanceof TravisDiagnosticError &&
+                  cause.providerDiagnostic
+                    ? { providerDiagnostic: cause.providerDiagnostic }
+                    : {}),
+                  latestError:
+                    error === message.pending
+                      ? (state.latestError ?? firstError)
+                      : error,
+                },
+              }
+            : {}),
           processingUntil: null,
           nextAttemptAt: new Date(Date.now() + 60000),
         },

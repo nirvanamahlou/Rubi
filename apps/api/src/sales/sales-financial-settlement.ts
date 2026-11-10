@@ -95,11 +95,10 @@ export function netSalesPayments(
 }
 
 /** Sales owns its balance and status. Finance receives only the release facts. */
-export async function recalculateSalesSettlement(
+export async function salesSettlementBalances(
   tx: Prisma.TransactionClient,
   contractId: string,
-  actorId: string,
-  incrementVersion = true,
+  excludePaymentId?: string,
 ) {
   const [components, payments, incoming] = await Promise.all([
     tx.salesContractPriceComponent.findMany({ where: { contractId } }),
@@ -111,15 +110,26 @@ export async function recalculateSalesSettlement(
       where: { targetContractId: contractId },
     }),
   ]);
-  const balances = calculateSalesBalances(
+  return calculateSalesBalances(
     components.map((c) => ({
       type: c.type,
       title: c.title,
       amount: c.amount.toString(),
       currencyCode: c.currencyCode,
     })),
-    netSalesPayments(payments, incoming),
+    netSalesPayments(
+      payments.filter((payment) => payment.id !== excludePaymentId),
+      incoming,
+    ),
   );
+}
+export async function recalculateSalesSettlement(
+  tx: Prisma.TransactionClient,
+  contractId: string,
+  actorId: string,
+  incrementVersion = true,
+) {
+  const balances = await salesSettlementBalances(tx, contractId);
   const paid = balances.some((b) => new Prisma.Decimal(b.confirmedPaid).gt(0));
   const outstanding = balances.some((b) =>
     new Prisma.Decimal(b.outstanding).gt(0),

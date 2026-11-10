@@ -116,6 +116,11 @@ export interface TravelReportRowV1 {
 }
 
 export interface TravelReportResultV1 {
+  columnFilters?: readonly {
+    key: string;
+    label: string;
+    options: readonly string[];
+  }[];
   reportCode: string;
   reportVersion: number;
   grain: ReportingGrain;

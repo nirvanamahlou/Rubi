@@ -1,5 +1,6 @@
 import type { LedgerCompanyView, LedgerCompanyInput } from '@nora/contracts';
 import type {
+  CustomerDossierResponse,
   LedgerPersonInput,
   LedgerPersonView,
   PersonNote,
@@ -139,6 +140,11 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
+  dossier(id: string) {
+    return request<CustomerDossierResponse>(
+      `/${encodeURIComponent(id)}/dossier`,
+    );
+  },
   ledgerCompany(id: string, branch: string) {
     return request<{ data: LedgerCompanyView }>(
       '/ledger-companies/' + encodeURIComponent(id),

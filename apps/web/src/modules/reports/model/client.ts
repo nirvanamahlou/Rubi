@@ -1,4 +1,5 @@
 'use client';
+import type { ReportColumnFilter } from './output-filters';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -49,6 +50,7 @@ export interface SalesByOrganizationReportResult {
     filters: Readonly<Record<string, string | readonly string[]>>;
   };
   filterOptions: {
+    columnFilters?: readonly ReportColumnFilter[];
     labels?: Readonly<Record<string, string>>;
     branchIds: readonly string[];
     ownerUserIds: readonly string[];
@@ -112,6 +114,7 @@ export interface ReportingSavedReportRecord {
 }
 
 interface TravelReportResult {
+  columnFilters?: readonly ReportColumnFilter[];
   dataLayout?: 'SOURCE_COLUMNS';
   chartMeasure?: string;
   filterOptionLabels?: Readonly<Record<string, string>>;
@@ -332,6 +335,9 @@ export const reportingApi = {
         },
         filterSnapshot: travel.filterSnapshot,
         filterOptions: {
+          ...(travel.columnFilters
+            ? { columnFilters: travel.columnFilters }
+            : {}),
           ...(travel.filterOptionLabels
             ? { labels: travel.filterOptionLabels }
             : {}),
@@ -341,7 +347,11 @@ export const reportingApi = {
           statuses: travel.filterOptions.status ?? [],
         },
         capabilities: {
-          filters: Object.keys(travel.filterOptions),
+          filters: [
+            ...Object.keys(travel.filterOptions),
+            'search',
+            ...(travel.columnFilters?.map((filter) => filter.key) ?? []),
+          ],
           sort: travel.columns?.map((column) => column.key) ?? ['salesAmount'],
           unsupportedFilters: [],
         },

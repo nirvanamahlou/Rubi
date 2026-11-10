@@ -79,13 +79,14 @@ export interface InsuranceDraftInputV1 {
 }
 
 export interface InsurancePolicyRowV1 {
+  standalone?: boolean;
   automatic?: boolean;
   sandbox?: boolean;
   lastError?: string | null;
   id: string;
-  intakeId: string;
+  intakeId: string | null;
   branchId: string;
-  customerId: string;
+  customerId: string | null;
   contractNumber: string;
   passengerName: string;
   policyNumber: string | null;
@@ -101,4 +102,18 @@ export interface InsurancePolicyRowV1 {
   cancelledAt: string | null;
   notes: string;
   version: number;
+}
+
+/** A real standalone applicant; no synthetic Sales/Customer identifiers. */
+export interface InsuranceStandaloneInputV1 {
+  branchId: string;
+  requestKey: string;
+  sourceCountryCode: string;
+  destinationCode: string;
+  planCode: string;
+  departureDate: string;
+  durationDays: number;
+  notes: string;
+  expectedVersion: number;
+  passenger: InsurancePassengerInputV1;
 }
