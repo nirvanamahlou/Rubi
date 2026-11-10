@@ -24,6 +24,22 @@ const row: CustomerEntryRow = {
 };
 
 describe('Direct table calendar', () => {
+  it.each(['gregorian', 'persian'] as const)(
+    'shows a secondary Persian birthday only during Gregorian Sales entry (%s)',
+    (mode) => {
+      const html = renderToStaticMarkup(
+        <CustomerEntrySheet
+          rows={[row]}
+          showPassportExpiry
+          salesDatePolicy
+          calendarMode={mode}
+          onCalendarModeChange={vi.fn()}
+        />,
+      );
+      expect(html.includes('dateTime="2000-03-20"')).toBe(mode === 'gregorian');
+      expect(html).not.toContain('dateTime="2030-03-20"');
+    },
+  );
   it('places independently labelled birthday and expiry triggers in their cells without a modal', () => {
     const html = renderToStaticMarkup(
       <CustomerEntrySheet
