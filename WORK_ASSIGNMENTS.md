@@ -643,6 +643,10 @@ Replace free-text provider-country code/name/English controls with read-only dis
 
 Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
 
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
