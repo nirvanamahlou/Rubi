@@ -4,9 +4,9 @@ import { reservationDay, serviceLabels } from './model';
 export const reservationColumns = [
   'شماره قرارداد',
   'مقصد',
+  'Hotel',
   'تاریخ رفت',
   'تاریخ برگشت',
-  'Hotel',
   'Check in',
   'Check out',
   'SGL',
@@ -97,9 +97,9 @@ export function reservationCells(row: RequestView): string[] {
   return [
     row.contractNumber,
     text(row.destination),
+    text(row.hotelName),
     tableDate(s?.departureDate ?? row.travelDate),
     tableDate(s?.returnDate),
-    text(row.hotelName),
     tableDate(row.checkIn),
     tableDate(row.checkOut),
     number(row.singleRooms),

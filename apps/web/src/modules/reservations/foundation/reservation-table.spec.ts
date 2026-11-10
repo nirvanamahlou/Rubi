@@ -271,7 +271,7 @@ it('keeps FAM/TPL alongside equally scoped room counters and shifts workflow fla
   ]);
 });
 
-it('places Gregorian flight dates third and fourth before the hotel in both table and export', () => {
+it('places the hotel third before flight dates in both table and export', () => {
   const source = {
     ...row('120541'),
     destination: 'ANTALYA',
@@ -285,22 +285,22 @@ it('places Gregorian flight dates third and fourth before the hotel in both tabl
   expect(reservationColumns.slice(0, 5)).toEqual([
     'شماره قرارداد',
     'مقصد',
+    'Hotel',
     'تاریخ رفت',
     'تاریخ برگشت',
-    'Hotel',
   ]);
   expect(reservationCells(source).slice(0, 5)).toEqual([
     '120541',
     'ANTALYA',
+    'Synthetic Hotel',
     '06/11/2026',
     '13/11/2026',
-    'Synthetic Hotel',
   ]);
   expect(reservationExportRows([source])[1]).toEqual(reservationCells(source));
   expect(
     reservationCells({ ...row('LEGACY'), travelDate: '2026-11-06' }).slice(
-      2,
-      4,
+      3,
+      5,
     ),
   ).toEqual(['06/11/2026', '—']);
 });
