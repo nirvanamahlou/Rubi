@@ -4,6 +4,55 @@ import {
   quoteHotelOccupancy,
 } from '../src/package-pricing';
 describe('manual hotel purchase and sale prices', () => {
+  it.each(['0', '0.5'])(
+    'adds only the independent child tariff (%s) to the adult room price',
+    (coefficient) => {
+      const common = {
+        startsOn: '2026-10-01',
+        endsOnExclusive: '2026-11-01',
+        currencyCode: 'EUR',
+        board: '',
+      };
+      const rates = [
+        {
+          ...common,
+          adults: 2,
+          childAges: [],
+          composition: 'DBL',
+          amount: '200',
+        },
+        {
+          ...common,
+          adults: 0,
+          childAges: [{ min: 6, maxExclusive: 12 }],
+          composition: 'CWB',
+          amount: calculateManualHotelPrices('100', coefficient, 'EUR')!
+            .purchase,
+          manualPricing: {
+            baseAmount: '100',
+            coefficient,
+            adjustment: { kind: 'AMOUNT' as const, value: '0' },
+          },
+        },
+      ];
+      const input = {
+        adults: 2,
+        childAges: [8],
+        rooms: 1,
+        checkIn: '2026-10-05',
+        checkOut: '2026-10-07',
+      };
+      expect(quoteHotelOccupancy(rates, input)?.amount).toBe(
+        coefficient === '0' ? '400' : '500',
+      );
+      expect(
+        quoteHotelOccupancy(rates, { ...input, childAges: [5] }),
+      ).toBeNull();
+      expect(
+        quoteHotelOccupancy(rates, { ...input, childAges: [12] }),
+      ).toBeNull();
+    },
+  );
   it.each([
     [{ kind: 'AMOUNT' as const, value: '0' }, '200.00'],
     [{ kind: 'PERCENT' as const, value: '10' }, '220.00'],
@@ -38,7 +87,10 @@ describe('manual hotel purchase and sale prices', () => {
     ).toBeNull();
     expect(calculateManualHotelPrices('1.5', '2', 'IRR')).toBeNull();
     expect(calculateManualHotelPrices('999999999999', '999', 'EUR')).toBeNull();
-    expect(calculateManualHotelPrices('1', '0', 'EUR')).toBeNull();
+    expect(calculateManualHotelPrices('1', '0', 'EUR')).toEqual({
+      purchase: '0.00',
+      sale: '0.00',
+    });
   });
   it('keeps default purchase quoting and opts Sales into sale quoting', () => {
     const rates = [

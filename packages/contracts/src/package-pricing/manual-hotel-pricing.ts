@@ -26,8 +26,7 @@ export function calculateManualHotelPrices(
   const b = scale(base, 2),
     c = scale(coefficient, 3),
     v = scale(adjustment.value, 2);
-  if (b <= 0n || c <= 0n || (currency === 'IRR' && b % 100n !== 0n))
-    return null;
+  if (b <= 0n || c < 0n || (currency === 'IRR' && b % 100n !== 0n)) return null;
   const round = (amount: bigint, divisor: bigint) =>
     (amount + divisor / 2n) / divisor;
   const precision = currency === 'IRR' ? 0 : 2;
@@ -42,7 +41,7 @@ export function calculateManualHotelPrices(
     sale = adjustment.kind === 'SET' ? units : purchase + units;
   }
   const maximum = precision === 0 ? 999999999999n : 99999999999999n;
-  if (purchase <= 0n || purchase > maximum || sale < 0n || sale > maximum)
+  if (purchase < 0n || purchase > maximum || sale < 0n || sale > maximum)
     return null;
   const format = (value: bigint) =>
     precision === 0

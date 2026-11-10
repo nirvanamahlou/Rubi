@@ -109,7 +109,7 @@ const roomRate = Joi.object({
         })
           .unknown(false)
           .optional(),
-        adults: Joi.number().integer().min(1).max(20).required(),
+        adults: Joi.number().integer().min(0).max(20).required(),
         childAges: Joi.array()
           .max(10)
           .items(
@@ -317,6 +317,13 @@ export function validateRatePack(
           'برای هر نوع اتاق یک بورد مشخص انتخاب کنید.',
         );
       for (const tariff of room.occupancyRates ?? []) {
+        if (
+          tariff.adults === 0 &&
+          (!tariff.manualPricing || tariff.childAges.length !== 1)
+        )
+          throw new BadRequestException(
+            'نرخ مستقل کودک باید برای یک کودک باشد.',
+          );
         if (tariff.manualPricing) {
           const composition = JSON.stringify([
             tariff.adults,

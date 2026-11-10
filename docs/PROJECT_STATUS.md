@@ -9608,3 +9608,8 @@ INSURANCE-DRAFT-ERROR-1109: owner-coordinated repair translates national/passpor
 PASSENGER-EDITOR-LAYOUT-1110: correcting compact passenger table width/checkbox overflow and booked child-band hydration. No schema/dependency or operational data changes; focused and hosted checks gate authorized develop merge.
 
 PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
+
+
+HOTEL-FACTOR-DEFAULTS-1110 — PC-A: reserve manual hotel combination defaults/UI, shared exact pricing and occupancy composition, API validation and focused tests. User confirms standalone one-child tariff; double2, single1.5, child6–12; zero coefficient allowed. Existing saved rates retained. No migration/dependency or live data edits. Develop merge authorized after gates.
+
+HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ESLint and Contracts build passed. Final hosted gates required; no deployment requested.
