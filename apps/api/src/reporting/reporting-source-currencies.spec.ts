@@ -74,7 +74,9 @@ describe('source currency consolidation', () => {
     const sheet = strFromU8(
       unzipSync(new Uint8Array(file.buffer))['xl/worksheets/sheet1.xml']!,
     );
-    expect(sheet).toContain('9,007,199,254,740,993.1234 ریال + 25 $');
+    expect(sheet.replaceAll('\u200e', '').replaceAll('\u00a0', ' ')).toContain(
+      '9,007,199,254,740,993.1234 ریال + 25 $',
+    );
     expect(source.rows[0]?.values.currencyCode).toBe('IRR');
   });
   it('does not merge different producer IDs with identical labels and counts distinct purchases additively', () => {

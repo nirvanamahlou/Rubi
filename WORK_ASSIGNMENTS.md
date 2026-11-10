@@ -1,3 +1,7 @@
+## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
+
+Base origin/develop4620591c2; codex/pc-c-report-excel-bidi-1110. Reserve Reporting XLSX monetary-cell presentation and focused export regressions, own task/status notes. Fix mixed RTL/LTR currency amount labels without changing values, aggregation, CSV/API or authorization. Prior Reporting source is merged/frozen. No schema/dependency/data/deployment. Owner authorizes PR and develop merge only after all exact-head CI gates pass.
+
 ## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
 
 Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
@@ -578,6 +582,10 @@ Owner authorizes responsive redesign of Reservations passenger/room amendment an
 ## INSURANCE-PROVIDER-ERRORS-1108 — PC-A
 
 Owner requests official input/output contract verification and actionable insurance errors, then develop merge. Reserve Travis transport diagnostics, automation safe error propagation and focused tests. Official live Swagger PolicyCreateInput/Person inspected read-only. Never expose upstream free text, identity, credentials or URLs. No provider issuance, schema, dependency or deployment.
+
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -6019,6 +6027,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - درخواست مالک در 2026-09-19: بلیط‌های تعریف‌شده در «مدیریت بلیط» باید همان منبع انتخاب در «قرارداد جدید» باشند؛ پیشنهادهای قدیمی یا محلیِ نامرتبط در فرم قرارداد نمایش داده نشوند و ثبت بلیط جدید قابل انتخاب باشد.
 - `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
+
+## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
+
+Owner requests leave approvals to use the leave policy, and removes calculation settings and the penalty shortcut from the attendance settings view. Reserve HR leave policy, form, and approval tests. No schema migration.
 
 ## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — ACTIVE
 
@@ -12039,6 +12051,8 @@ Reserve passenger-files table CSS/markup, amendment draft age hydration and focu
 
 PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
 
-## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
+## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — IN_PROGRESS
 
-Owner requests leave approvals to use the leave policy, and removes calculation settings and the penalty shortcut from the attendance settings view. Reserve HR leave policy, form, and approval tests. No schema migration.
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.
+
+RESERVATION-CANCELLED-SELECTION-1110 validation:56 focused queue/table/action-panel tests and scoped ESLint pass. Cancellation notice is attached only to the selected cancelled contract identity; no queue cell contains the repeated text, while cancelled rows retain their red state. Source reservation releases on frozen publication; exact-head hosted gates precede authorized develop merge. No deployment requested.
