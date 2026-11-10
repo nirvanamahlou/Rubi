@@ -70,3 +70,21 @@ it('loads registered templates beyond the first page and does not hide an incomp
     loadAllManifestTemplates(async () => ({ data: [], hasMore: true }), ''),
   ).rejects.toThrow();
 });
+
+it('shows the explicit builtin label in the export dropdown while preserving ordinary offer defaults', () => {
+  const options = [
+    { value: 'DEFAULT_MANIFEST', label: 'دیفالت منیفست' },
+    { value: 'REPORT', label: 'گزارش‌گیری' },
+  ];
+  for (const option of options) {
+    const html = renderToStaticMarkup(
+      <ManifestTemplatePicker
+        value={option.value}
+        builtinOptions={options}
+        onChange={() => undefined}
+      />,
+    );
+    expect(html).toContain(option.label);
+    expect(html).not.toContain('قالب انتخاب‌شده');
+  }
+});
