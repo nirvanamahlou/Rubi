@@ -458,7 +458,14 @@ it('does not require included city tour or guide costs while retaining actual pu
     ...intake,
     servicePurchases: [
       ...intake.servicePurchases!,
-      purchase('guide-cost', ['tour-guide'], '10', 'USD'),
+      {
+        ...intake.servicePurchases![0]!,
+        id: 'guide-cost',
+        serviceClientKey: 'tour-guide',
+        coveredServiceClientKeys: ['tour-guide'],
+        amount: '10',
+        currencyCode: 'USD',
+      },
     ],
   };
   expect(
