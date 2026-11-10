@@ -4900,6 +4900,8 @@ Individual agreed package totals per passenger/currency are persisted with exact
   `CUSTOMER-001` را آغاز می‌کند.
 - Handoff با PR شماره ۱۲ و Merge Commit `0af31c2` وارد `develop` شد.
 
+HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
+
 ## برنامه اجرایی Sprint دوم
 
 ### `SPRINT2-PLANNING-001` — PC-A — `DONE`
