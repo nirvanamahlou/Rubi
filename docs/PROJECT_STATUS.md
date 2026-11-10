@@ -9763,6 +9763,10 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## MARKETING-SCOPED-PANEL-LOAD-1110
+
+Audience segments and automation load their authorized assets without fetching the complete campaign collection. Durable panel loads ignore superseded responses, including failed requests after a newer refresh starts. All 120 Marketing Web tests and scoped ESLint passed. Other asset lists and dependent campaign pickers still use their existing collections.
+
 ## CONTRACT-DOMAIN-ENTRYPOINTS-1110
 
 The Contracts package exposes dedicated Sales pricing and upload-format entry points. Selected Web and API consumers use the leaves and the root retains its existing exports. A fresh Node process loaded two Contracts files for the two leaves compared with 107 after importing the root. Both CommonJS and ESM resolve the leaves, which share the same implementations as the root. The Contracts build and 47 focused API/Web tests passed. Other domains and their DTO/display separation remain open.
