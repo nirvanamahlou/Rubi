@@ -1,3 +1,7 @@
+## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
+
+Base origin/develop4620591c2; codex/pc-c-report-excel-bidi-1110. Reserve Reporting XLSX monetary-cell presentation and focused export regressions, own task/status notes. Fix mixed RTL/LTR currency amount labels without changing values, aggregation, CSV/API or authorization. Prior Reporting source is merged/frozen. No schema/dependency/data/deployment. Owner authorizes PR and develop merge only after all exact-head CI gates pass.
+
 ## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
 
 Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.

@@ -1,3 +1,7 @@
+## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
+
+Shared Reporting XLSX monetary text now uses explicit LTR cell direction, bounded amount/currency pairs and wrapping height. Preserve RTL sheet, B Nazanin, exact decimals and unchanged source/CSV. 167 targeted Reporting tests pass. Synthetic output generated; desktop modal automation was unreliable, so visual acceptance is not claimed. Owner authorizes develop PR/merge after all exact-head hosted gates; no deployment. See docs/tasks/REPORTING-EXCEL-BIDI-1110.md.
+
 ## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
 
 Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
