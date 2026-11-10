@@ -1,3 +1,7 @@
+## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
+
+Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
+
 # RECEIPT-VOID-1109 — PC-B — READY_FOR_CI
 
 Base 68b538c9f. Reserve Sales receipt void status, additive migration, Finance receipt command and accounting source guard, inbox action and regressions. Additive contracts preserve existing clients. Local API and Web builds and targeted regressions passed. Existing journal reversal workflow is required for posted receipts. No production deployment or data change.
