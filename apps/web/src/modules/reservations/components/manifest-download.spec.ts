@@ -98,9 +98,11 @@ describe('manifest download', () => {
 });
 
 it('sends an explicit template override and isolates its retry key from default and other templates', async () => {
-  const request = vi.fn(async (_path: string, _init: RequestInit) =>
-    fileResponse(),
-  );
+  const request = vi.fn(async (path: string, init: RequestInit) => {
+    expect(path).toContain('.xlsx');
+    expect(init.method).toBe('POST');
+    return fileResponse();
+  });
   const keys = new Map<string, string>();
   for (const manifestTemplateId of [
     undefined,
