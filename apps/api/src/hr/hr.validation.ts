@@ -1,4 +1,3 @@
-import { privateHrResource } from './hr-private-values';
 import { validateCompletionValues } from './hr-radan-completion.domain';
 import {
   HR_DEFAULT_LEAVE_DAY_MINUTES,
@@ -276,22 +275,9 @@ export function recordValues(
           !/^\d{1,8}(\.\d{1,2})?$/.test(digits(normalized))
         )
           throw new BadRequestException(`${field.label} باید عدد معتبر باشد.`);
-        if (
-          /پوشیده/.test(field.label) &&
-          normalized &&
-          !/[•*]/.test(normalized)
-        )
+        if (field.maskedOnly && normalized && !/[•*]/.test(normalized))
           throw new BadRequestException(
             'این فیلد فقط مقدار پوشیده را می‌پذیرد.',
-          );
-        if (
-          /شبا|کارت|CVV|رمز/i.test(field.label) &&
-          !privateHrResource(schema.key) &&
-          normalized &&
-          !/[•*]/.test(normalized)
-        )
-          throw new BadRequestException(
-            'اطلاعات بانکی خام باید در سامانه مالک و با مجوز تخصصی نگهداری شود.',
           );
         return normalized;
       }),

@@ -1291,6 +1291,10 @@ COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after
 
 Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatting, i18n, Web/API types and builds pass. Docker Web3100/API4192 are healthy on rubi-integrations-local:1017-site-onboarding-v2 with unchanged schema, no migration/seed and retained volumes. Browser verified direct entry, inline brand, Back retention, loopback rejection, actual existing-system save/audit, light/dark and mobile. No sample site or URL saved; four systems remain. Ready for local review; publication awaits a new explicit instruction.
 
+## HR-CALCULATION-FIELDS-1110 — PC-B — READY_FOR_CI
+
+Reserve the shared calculation-settings field metadata and versioned legacy adapter, its registry projection, API validation and attendance calculation consumers, and focused tests. Preserve legacy array and fieldN persistence, public payloads, and existing attendance rules. No HrService, schema, dependency or deployment changes.
+
 ## TYPE-AWARE-LINT-1110 — PC-B — READY_FOR_CI
 
 Reserve the API and Web ESLint config overlays for selected authentication, scanner and report export files, the document scanner entry point if needed, and focused verification. No dependency or workflow changes.
