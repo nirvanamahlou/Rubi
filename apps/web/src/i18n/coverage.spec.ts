@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { englishUiCatalog } from './translate';
 
 const require = createRequire(import.meta.url);
@@ -10,8 +10,14 @@ const { inventory } = require('../../scripts/i18n-inventory.cjs') as {
 };
 
 describe('English UI completeness', () => {
+  let sourceLabels: ReturnType<typeof inventory>;
+
+  beforeAll(() => {
+    sourceLabels = inventory();
+  }, 120000);
+
   it('requires an English translation for every new application label or visible error', () => {
-    const missing = inventory().filter(({ text }) => !englishUiCatalog[text]);
+    const missing = sourceLabels.filter(({ text }) => !englishUiCatalog[text]);
     expect(missing.map(({ text, files }) => ({ text, files }))).toEqual([]);
   }, 30000);
 
@@ -46,7 +52,7 @@ describe('English UI completeness', () => {
         .trim()
         .slice(0, -1),
     ) as Record<string, string>;
-    for (const { text, files } of inventory()) {
+    for (const { text, files } of sourceLabels) {
       if (files.some((file) => file.startsWith('apps/api/src/')))
         expect(api[text], text).toBe(englishUiCatalog[text]);
       if (files.some((file) => file.startsWith('apps/web/public/')))
