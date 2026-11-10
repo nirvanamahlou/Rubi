@@ -185,18 +185,7 @@ export interface BranchReference {
   name: string;
 }
 
-export interface LoginResponse {
-  user: {
-    id: string;
-    username: string;
-    email: string | null;
-    displayName: string;
-    permissions: IamPermissionCode[];
-    branches: BranchReference[];
-    /** Active assigned role labels for the signed-in user; optional for older clients. */
-    roles?: Array<{ code: string; name: string }>;
-  };
-}
+export type { LoginResponse } from './session';
 
 export interface IamMfaStatusV1 {
   enabled: boolean;

@@ -1,7 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CustomerMutationRequest } from '@nora/contracts';
+import type { CustomerMutationRequest, LoginResponse } from '@nora/contracts';
 import { customersApi, salesPeopleApi, customerErrorMessage } from './client';
 import { SessionRefreshUnavailableError } from '@/lib/auth-session';
+
+function session(branches: LoginResponse['user']['branches']): LoginResponse {
+  return {
+    user: {
+      id: 'synthetic-user',
+      username: 'synthetic',
+      displayName: 'Synthetic',
+      email: null,
+      permissions: [],
+      branches,
+    },
+  };
+}
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 afterEach(() => {
@@ -91,7 +104,7 @@ describe('customers browser client', () => {
     ];
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ user: { id: 'synthetic-user', branches } }),
+      json: async () => session(branches),
     });
     vi.stubGlobal('fetch', fetchMock);
     const [first, second] = await Promise.all([
@@ -118,7 +131,7 @@ describe('customers browser client', () => {
       .mockRejectedValueOnce(new Error('network failure'))
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
+        json: async () => session([]),
       });
     vi.stubGlobal('fetch', fetchMock);
     await expect(customersApi.branchReferences()).rejects.toBeInstanceOf(
@@ -235,7 +248,7 @@ describe('customers browser client', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
+        json: async () => session([]),
       })
       .mockResolvedValueOnce({
         ok: true,

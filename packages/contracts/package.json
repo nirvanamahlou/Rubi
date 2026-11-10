@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./iam/session": {
+      "types": "./dist/iam/session.d.ts",
+      "default": "./dist/iam/session.js"
+    },
     "./sales/pricing": {
       "types": "./dist/sales/pricing.d.ts",
       "default": "./dist/sales/pricing.js"
