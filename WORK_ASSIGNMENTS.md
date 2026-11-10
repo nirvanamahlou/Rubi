@@ -1311,6 +1311,10 @@ Reserve architecture and deployment baselines, remediation evidence and the exis
 
 Reserve HR-owned Finance referral projection, Finance inbox consumer and targeted tests. Preserve existing referral scope, response eligibility and source failure handling. No schema or API contract changes.
 
+## I18N-LAZY-CATALOG-1110 — PC-B — READY_FOR_CI
+
+Reserve Web translation catalog initialization, provider messages and affected tests. Preserve translation precedence, English SSR and locale switching. No catalog contents, dependency or deployment changes.
+
 ## REPORTING-XLSX-MEMORY-1110 — PC-B — READY_FOR_CI
 
 Reserve Reporting XLSX renderer and worker output handoff, focused export tests and status evidence. Preserve report rows, layout, authorization and storage contract. No ReportService, repository, dependency, migration or deployment changes.
