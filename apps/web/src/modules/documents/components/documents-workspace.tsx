@@ -43,7 +43,7 @@ import type {
   DocumentOptionsResponseV1,
   DocumentUpdateInputV1,
 } from '@nora/contracts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { documentsApi, DocumentsApiError } from '../api/client';
 import { DOCUMENT_FAVORITES_CHANGED } from '../model/favorites';
@@ -323,6 +323,7 @@ function DocumentRecordActions({
 
 export function DocumentsWorkspace() {
   const router = useRouter();
+  const loadSequence = useRef(0);
   const [section, setSection] = useState<SectionKey>('overview');
   const [sectionDomain, setSectionDomain] = useState<DocumentDomainCode | null>(
     null,
@@ -411,7 +412,17 @@ export function DocumentsWorkspace() {
   );
   const effectiveQuery = useMemo(() => {
     const active = sections.find((item) => item.key === section);
-    const domain = sectionDomain ?? active?.domain;
+    const domain =
+      sectionDomain ??
+      (section === 'procurement' || section === 'hr'
+        ? undefined
+        : active?.domain);
+    const domains =
+      !domain && section === 'procurement'
+        ? 'PROCUREMENT,FINANCE'
+        : !domain && section === 'hr'
+          ? 'HUMAN_RESOURCES,ORGANIZATION'
+          : undefined;
     const serverPersonalView =
       personalView === 'owned'
         ? ('OWNED' as const)
@@ -419,10 +430,13 @@ export function DocumentsWorkspace() {
           ? ('UPLOADED' as const)
           : personalView === 'recent'
             ? ('RECENTLY_VIEWED' as const)
-            : undefined;
+            : personalView === 'favorites'
+              ? ('FAVORITES' as const)
+              : undefined;
     return {
       ...query,
       ...(domain ? { domain } : {}),
+      ...(domains ? { domains } : {}),
       ...(section === 'expired'
         ? { attention: 'INCOMPLETE_OR_EXPIRED' as const }
         : {}),
@@ -431,31 +445,25 @@ export function DocumentsWorkspace() {
   }, [personalView, query, section, sectionDomain]);
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true);
     setError('');
     try {
-      if (personalView === 'favorites') {
-        const response = await documentsApi.favorites();
-        const pageSize = effectiveQuery.pageSize ?? 10;
-        const start = ((effectiveQuery.page ?? 1) - 1) * pageSize;
-        setDocuments(response.data.slice(start, start + pageSize));
-        setTotal(response.data.length);
-        setTotalPages(Math.max(1, Math.ceil(response.data.length / pageSize)));
-      } else {
-        const response = await documentsApi.list(effectiveQuery);
-        setDocuments(response.data);
-        setTotal(response.meta.total);
-        setTotalPages(response.meta.totalPages);
-      }
+      const response = await documentsApi.list(effectiveQuery);
+      if (sequence !== loadSequence.current) return;
+      setDocuments(response.data);
+      setTotal(response.meta.total);
+      setTotalPages(response.meta.totalPages);
       setSelected(new Set());
     } catch (caught) {
+      if (sequence !== loadSequence.current) return;
       const apiError = caught instanceof DocumentsApiError ? caught : null;
       setError(apiError?.message ?? 'ارتباط با سرویس اسناد برقرار نشد.');
       setErrorStatus(apiError?.status ?? 0);
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
-  }, [effectiveQuery, personalView]);
+  }, [effectiveQuery]);
 
   useEffect(() => {
     void load();
@@ -502,13 +510,13 @@ export function DocumentsWorkspace() {
     setPersonalView(null);
     setActiveArchiveToolKey(null);
     setSection(next);
-    setSectionDomain(
-      next === 'procurement'
-        ? 'PROCUREMENT'
-        : next === 'hr'
-          ? 'HUMAN_RESOURCES'
-          : null,
-    );
+    setSectionDomain(null);
+    setQuery(defaultQuery);
+    setSelected(new Set());
+  }
+
+  function changeDomain(domain: DocumentDomainCode | null) {
+    setSectionDomain(domain);
     setQuery(defaultQuery);
     setSelected(new Set());
   }
@@ -1934,14 +1942,21 @@ export function DocumentsWorkspace() {
           >
             <span className="me-2 text-sm font-bold">دامنه فعال:</span>
             <Button
-              onClick={() => setSectionDomain('PROCUREMENT')}
+              onClick={() => changeDomain(null)}
+              size="sm"
+              variant={sectionDomain === null ? 'primary' : 'outline'}
+            >
+              همه
+            </Button>
+            <Button
+              onClick={() => changeDomain('PROCUREMENT')}
               size="sm"
               variant={sectionDomain === 'PROCUREMENT' ? 'primary' : 'outline'}
             >
               خرید و تدارکات
             </Button>
             <Button
-              onClick={() => setSectionDomain('FINANCE')}
+              onClick={() => changeDomain('FINANCE')}
               size="sm"
               variant={sectionDomain === 'FINANCE' ? 'primary' : 'outline'}
             >
@@ -1958,14 +1973,21 @@ export function DocumentsWorkspace() {
           >
             <span className="me-2 text-sm font-bold">دامنه فعال:</span>
             <Button
-              onClick={() => setSectionDomain('ORGANIZATION')}
+              onClick={() => changeDomain(null)}
+              size="sm"
+              variant={sectionDomain === null ? 'primary' : 'outline'}
+            >
+              همه
+            </Button>
+            <Button
+              onClick={() => changeDomain('ORGANIZATION')}
               size="sm"
               variant={sectionDomain === 'ORGANIZATION' ? 'primary' : 'outline'}
             >
               سازمان
             </Button>
             <Button
-              onClick={() => setSectionDomain('HUMAN_RESOURCES')}
+              onClick={() => changeDomain('HUMAN_RESOURCES')}
               size="sm"
               variant={
                 sectionDomain === 'HUMAN_RESOURCES' ? 'primary' : 'outline'

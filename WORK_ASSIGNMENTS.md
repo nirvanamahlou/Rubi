@@ -8,6 +8,10 @@ Owner requests per-passenger Insurance, City Tour and Guide allocation in Reserv
 
 ## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
 
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Base3370748ca. Owner authorizes fixing floating-flight MANIFEST exports and green develop merge. Reserve ReservationManifestService passengerRows journey lookup and existing floating regression fixture/tests; own bounded status notes. Reuse the authoritative manifestJourneys resolver already used by list, assignment filtering and Report so PNL/custom output can find contract-only flights. Preserve exact ticket identity, own leg assignments, branch/cancellation/new-only rules and legacy charter output. Prior PNL/default scope merged in PR1586; no active writer. No schema/dependency/data/deployment changes.
+
 Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
 
 26 focused interaction/date/offer API/i18n checks, scoped ESLint and full Web TypeScript pass. Production Web build and exact-head hosted gates complete validation before authorized develop merge. Source lease releases on verified merge.
@@ -638,6 +642,10 @@ Owner requests city-tour/guide/insurance toggles, required active-plan choice fo
 ## INSURANCE-COUNTRY-SELECT-1110 — PC-A — READY_FOR_CI
 
 Replace free-text provider-country code/name/English controls with read-only displays and an always-visible themed searchable provider country selector. Load the existing protected catalog automatically for managers, retain manual retry, keep legacy saved options visible and never rewrite existing mappings on catalog reads. Adding a Master Data country can prefill only a unique exact ISO match; English names come from the matching canonical reference or an ISO display name, never another country. Key the settings form by branch to isolate late responses. Six focused client/mapping/selection tests pass, including rate/plan preservation; full exact-head quality/tests/build/PostgreSQL gates precede authorized develop merge. No schema, dependency, live issuance, data writes or deployment changes; source reservations release after verified merge.
+
+## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
+
+Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -12156,3 +12164,8 @@ Owner requests per-export Manifest template selection with ticket-defined defaul
 User authorizes complete multi-destination tour definition, exact destination filtering, sequential nights, per-destination rates and selectable hotel combinations with a shared package sale, tests and develop merge. Reserve Ticket Catalog definitions/policy/public reader, Master Travel reference validation, Package Pricing shared contracts/calculator/UI/persistence and Sales picker/published quote validation. Additive nullable draft/publication JSON fields reserved as sole bounded migration; no dependency changes or production deployment. Preserve source rate FKs, immutable publications, branch/permissions and legacy single destinations. User confirms consecutive stays and summed purchase cost. Producer and consumer contracts evolve together, with old tours and publications unchanged.
 
 COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricingTourCombinationSource link for every draft/publication hotel rate, alongside nullable immutable combination snapshots. Source and sole migration reservations release on frozen PR publication; no operational database or deployment changed. Tests cover consecutive 2/3-city pricing, route filtering, sale publication, airfare-once, forged stay rejection and three-city UI rendering.
+
+## DOCUMENTS-SECTIONS-1110 — PC-B — IN_PROGRESS
+Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
+
+DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
