@@ -1,5 +1,9 @@
 'use client';
-import type { AuthenticatedActor, MarketingAssetViewV1 } from '@nora/contracts';
+import type {
+  AuthenticatedActor,
+  MarketingAssetViewV1,
+  MarketingPromotionPageQueryV1,
+} from '@nora/contracts';
 import {
   Download,
   Eye,
@@ -96,7 +100,8 @@ export function MarketingPromotionsPanel({
   onClose: () => void;
   onNotice: (message: string) => void;
 }) {
-  const kind = tab === 'specials' ? 'OFFER' : 'COUPON';
+  const kind: MarketingPromotionPageQueryV1['kind'] =
+    tab === 'specials' ? 'OFFER' : 'COUPON';
   const title = kind === 'OFFER' ? 'پیشنهادهای ویژه' : 'کدهای تخفیف';
   const [rows, setRows] = useState<MarketingAssetViewV1[]>([]);
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
@@ -125,7 +130,7 @@ export function MarketingPromotionsPanel({
   const page = navigation.kind === kind ? navigation.page : 1;
   const goTo = (next: number) => setNavigation({ kind, page: next });
   const filters = useCallback(
-    () => ({
+    (): MarketingPromotionPageQueryV1 => ({
       kind,
       ...(status !== 'all' ? { status } : {}),
       ...(search.trim() ? { search: search.trim() } : {}),
