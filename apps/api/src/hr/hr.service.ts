@@ -71,6 +71,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  HR_ATTENDANCE_STATUSES,
   HR_RESOURCE_KEYS,
   getHrResource,
   type AuthenticatedActor,
@@ -5566,8 +5567,19 @@ export class HrService {
       'active',
       'recordId',
       'version',
+      'status',
     ]);
     if (typeof input.active !== 'boolean')
+      throw new BadRequestException('وضعیت معتبر نیست.');
+    const requestedStatus = HR_ATTENDANCE_STATUSES.find(
+      (status) => status === input.status,
+    );
+    if (
+      input.status !== undefined &&
+      (!input.recordId ||
+        !input.active ||
+        (input.status !== null && !requestedStatus))
+    )
       throw new BadRequestException('وضعیت معتبر نیست.');
     const from = validate.isoDate(input.from),
       to = validate.isoDate(input.to);
@@ -5617,6 +5629,9 @@ export class HrService {
             await this.assertOpenPeriod(tx, employee.branchId, date);
             const rows = await tx.hrRecord.findMany({
               where: {
+                ...(typeof input.recordId === 'string'
+                  ? { id: input.recordId }
+                  : {}),
                 branchId: employee.branchId,
                 employeeId: id,
                 section: 'time',
@@ -5627,15 +5642,32 @@ export class HrService {
             });
             for (const row of rows) {
               const data = (row.data ?? {}) as HrWorkflowData;
-              if (inactiveAttendance(row) === !input.active) continue;
+              const inactive = inactiveAttendance(row);
+              const override =
+                input.status === undefined
+                  ? data.attendanceStatusOverride
+                  : requestedStatus;
+              if (
+                inactive === !input.active &&
+                override === data.attendanceStatusOverride
+              )
+                continue;
+              const calculated =
+                inactive || data.attendanceStatusOverride
+                  ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                  : row.status;
               const status = input.active
-                ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                ? override?.startsWith('حاضر')
+                  ? 'حاضر'
+                  : (override ?? calculated)
                 : 'غیرفعال';
               const next = {
                 ...data,
                 attendanceActive: input.active,
-                attendancePreviousStatus: input.active ? status : row.status,
+                attendancePreviousStatus: calculated,
               };
+              if (override) next.attendanceStatusOverride = override;
+              else delete next.attendanceStatusOverride;
               await tx.hrRecord.update({
                 where: { id: row.id },
                 data: { status, data: json(next), version: { increment: 1 } },
@@ -5645,7 +5677,11 @@ export class HrService {
                 actor,
                 { branchId: row.branchId, employeeId: id, recordId: row.id },
                 'attendance.activation',
-                { date, active: input.active },
+                {
+                  date,
+                  active: input.active,
+                  statusOverride: override ?? null,
+                },
                 row.version + 1,
                 row.status,
                 status,
@@ -6141,13 +6177,18 @@ export class HrService {
                     : 'غایب';
           const deviceError = (existing?.data as HrWorkflowData | undefined)
             ?.attendanceDeviceError;
+          const override = (existing?.data as HrWorkflowData | undefined)
+            ?.attendanceStatusOverride;
           const calculatedData = {
             ...(deviceError === undefined
               ? {}
               : { attendanceDeviceError: deviceError }),
-            ...((existing?.data as HrWorkflowData | undefined)
-              ?.attendanceActive === false
-              ? { attendanceActive: false, attendancePreviousStatus: status }
+            ...(existing && inactiveAttendance(existing)
+              ? { attendanceActive: false }
+              : {}),
+            ...(override ? { attendanceStatusOverride: override } : {}),
+            ...(override || (existing && inactiveAttendance(existing))
+              ? { attendancePreviousStatus: status }
               : {}),
             ...(settings
               ? {
@@ -6189,7 +6230,11 @@ export class HrService {
             exceptionCodes: reviewExceptions,
           };
           const effectiveStatus =
-            existing && inactiveAttendance(existing) ? 'غیرفعال' : status;
+            existing && inactiveAttendance(existing)
+              ? 'غیرفعال'
+              : override?.startsWith('حاضر')
+                ? 'حاضر'
+                : (override ?? status);
           if (
             existing &&
             existing.status === effectiveStatus &&
