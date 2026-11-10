@@ -12066,3 +12066,11 @@ HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ES
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.
 
 RESERVATION-CANCELLED-SELECTION-1110 validation:56 focused queue/table/action-panel tests and scoped ESLint pass. Cancellation notice is attached only to the selected cancelled contract identity; no queue cell contains the repeated text, while cancelled rows retain their red state. Source reservation releases on frozen publication; exact-head hosted gates precede authorized develop merge. No deployment requested.
+
+# SALES-GREGORIAN-1109 — PC-A — VALIDATED
+
+User authorizes Gregorian-only Sales list dates and develop merge. Reserve
+sales-workspace.tsx, sales-workspace.spec.tsx and own documentation entries.
+Branch codex/pc-a-sales-gregorian-1109 from origin/develop@083cedb62.
+No API, schema, dependency or operational data changes. Sales list tests20/20
+and scoped ESLint passed. Source reservation releases with the review candidate.

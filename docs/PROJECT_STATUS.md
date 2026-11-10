@@ -9593,7 +9593,6 @@ Dashboard and operational receivable rows now exclude effective Reservations can
 
 
 
-
 ## RESERVATION-LATEST-PDF-1109 — PC-A — READY_FOR_CI
 
 Reservation PDF GET now uses the latest saved settings/NOTICE instead of replacing them with the last sent snapshot. The QR share matches the current saved output; existing public snapshots and sent revisions remain immutable. Per-hotel scoping, voucher/release/access guards, form appearance and disabled SMTP are preserved.79 focused Web and30 API regressions pass. No schema/dependency/runtime/settings/data or deployment change. See tasks/RESERVATION-LATEST-PDF-1109.md. Exact-head full hosted gates precede the authorized develop merge; final evidence stays in the PR.
@@ -9630,3 +9629,10 @@ HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ES
 ## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — READY_FOR_CI
 
 Removed the permanent cancellation sentence from every cancelled Reservations queue row. The sentence appears beside the selected cancelled contract number in the existing live selection panel, and disappears for an active or empty selection. Red cancellation row styling and existing action/access rules are retained.56 focused table/workspace/action-panel tests and scoped ESLint pass. No API/schema/dependency or operational data change. All exact-head hosted gates are required before the owner-authorized develop merge; no deployment requested.
+
+# Sales Gregorian list dates — 2026-11-09
+
+Contract registration, travel and update dates use Gregorian display in the Sales
+list regardless of stored calendar choice. Travel date-only values retain UTC;
+registration/update timestamps retain Tehran timezone. Regression tests20/20 and
+scoped ESLint passed. No stored data or migration changes.
