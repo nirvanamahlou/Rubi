@@ -7,6 +7,7 @@ import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
 import { ContractTableAction } from './contract-table-action';
 import { HotelTableAction } from './hotel-table-action';
 import { ReservationServices } from './reservation-services';
+import { ResizableRequestTable } from './resizable-request-table';
 import {
   reservationColumns,
   reservationCells,
@@ -726,24 +727,7 @@ export function ReservationOperationsWorkspace({
                   aria-label="جدول درخواست‌های رزرواسیون"
                   tabIndex={0}
                 >
-                  <table className={styles.requestTable}>
-                    <thead>
-                      <tr>
-                        {reservationColumns.map((column) => (
-                          <th
-                            key={column}
-                            scope="col"
-                            data-room-category={
-                              ['SGL', 'DBL', 'EXT', 'FAM/TPL'].includes(
-                                column,
-                              ) || undefined
-                            }
-                          >
-                            {column}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+                  <ResizableRequestTable>
                     <tbody>
                       {result.filteredRows.map((row) => (
                         <tr
@@ -853,15 +837,9 @@ export function ReservationOperationsWorkspace({
                                   title={
                                     index === 1 ? String(value) : undefined
                                   }
-                                  style={
+                                  className={
                                     index === 1
-                                      ? {
-                                          display: 'block',
-                                          maxWidth: 120,
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                          whiteSpace: 'nowrap',
-                                        }
+                                      ? styles.destinationText
                                       : undefined
                                   }
                                 >
@@ -873,7 +851,7 @@ export function ReservationOperationsWorkspace({
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </ResizableRequestTable>
                 </div>
               )}
             </section>
