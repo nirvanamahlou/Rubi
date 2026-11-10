@@ -12190,3 +12190,7 @@ DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint 
 Scope: HR inbox category grouping, employee pay document form using existing employee.docs and Documents APIs, employee requests tab label. No migration/dependency changes. Base origin/develop 0d6317420. Files: hr-inbox, hr-navigation, hr-employee-profile and new scoped helpers/components/tests.
 
 HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web typecheck and production build verified. Uses existing API authorization and RESTRICTED document storage; no server deployment or migration. PR review pending.
+
+## SYSTEM-ACTIVITY-1110 — PC-A — IN_PROGRESS
+
+Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.

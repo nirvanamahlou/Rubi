@@ -5864,5 +5864,12 @@
   "درخواست‌ها و مأموریت‌ها": "Requests and assignments",
   "ذخیره مدرک انجام نشد.": "Could not save the document.",
   "فایل این مدرک در دسترس نیست.": "The file for this document is unavailable.",
-  "مشاهده مدرک حقوق و پرداخت کارمند": "View employee pay document"
+  "مشاهده مدرک حقوق و پرداخت کارمند": "View employee pay document",
+  "دریافت تاریخچه انجام نشد. دوباره تلاش کنید.": "Could not load history. Try again.",
+  "در حال دریافت تاریخچه…": "Loading history…",
+  "فعالیتی برای نمایش وجود ندارد.": "No activity to display.",
+  "اقدام": "Action",
+  "پیام‌رسان": "Messenger",
+  "قیمت‌گذاری پکیج": "Package pricing",
+  "کارها": "Tasks"
 }
