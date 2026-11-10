@@ -9591,8 +9591,6 @@ Owner-requested tour definition controls: left header action, independent multi-
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
 
-
-
 ## RESERVATION-LATEST-PDF-1109 — PC-A — READY_FOR_CI
 
 Reservation PDF GET now uses the latest saved settings/NOTICE instead of replacing them with the last sent snapshot. The QR share matches the current saved output; existing public snapshots and sent revisions remain immutable. Per-hotel scoping, voucher/release/access guards, form appearance and disabled SMTP are preserved.79 focused Web and30 API regressions pass. No schema/dependency/runtime/settings/data or deployment change. See tasks/RESERVATION-LATEST-PDF-1109.md. Exact-head full hosted gates precede the authorized develop merge; final evidence stays in the PR.
@@ -9636,3 +9634,5 @@ Contract registration, travel and update dates use Gregorian display in the Sale
 list regardless of stored calendar choice. Travel date-only values retain UTC;
 registration/update timestamps retain Tehran timezone. Regression tests20/20 and
 scoped ESLint passed. No stored data or migration changes.
+
+FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on Finance inbox cards. Sales cards resolve linked reservation details by exact contract ID. 18 focused presentation and detail tests passed.

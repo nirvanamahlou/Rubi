@@ -12078,3 +12078,7 @@ sales-workspace.tsx, sales-workspace.spec.tsx and own documentation entries.
 Branch codex/pc-a-sales-gregorian-1109 from origin/develop@083cedb62.
 No API, schema, dependency or operational data changes. Sales list tests20/20
 and scoped ESLint passed. Source reservation releases with the review candidate.
+
+## FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 — PC-A
+
+Place General Details beside the Finance inbox amount and keep request selection a separate action. Reuse the authorized reservation detail flow and match Sales requests by contract ID. Frontend only.
