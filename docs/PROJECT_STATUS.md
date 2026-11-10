@@ -9639,4 +9639,8 @@ list regardless of stored calendar choice. Travel date-only values retain UTC;
 registration/update timestamps retain Tehran timezone. Regression tests20/20 and
 scoped ESLint passed. No stored data or migration changes.
 
-FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on Finance inbox cards. Sales cards resolve linked reservation details by exact contract ID. 18 focused presentation and detail tests passed.
+FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on Finance inbox cards. Sales cards retain the current contract financial summary and authorized receipt reversal action. 18 focused presentation and detail tests passed.
+
+## HR-RADAN-PRODUCTION-1101 — DEPLOYED
+
+Merged Radan attendance integration is active on Avina with Tehran quarter-hour peak/full-hour off-peak slots. Initial72 real punches yield43 daily summaries; automatic17:00 run verifies idempotence and next17:15 slot. Public HTTPS health/authenticated status/HR200, preserved Call Center code and unchanged Worker image/data services verified after encrypted/offsite backups. Exact native codes and existing working hours retained; one unmatched source punch remains unresolved. Company workstation bridge must stay running. No migration, grants or Radan writes. See tasks/HR-RADAN-PRODUCTION-1101.md.

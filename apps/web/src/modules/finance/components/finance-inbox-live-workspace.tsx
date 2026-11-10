@@ -1365,7 +1365,12 @@ export function FinanceInboxLiveWorkspace() {
                     {item.source === 'SALES' &&
                       item.status === 'RECEIPT_CONFIRMED' &&
                       permissions?.includes('finance.receipt.approve') && (
-                        <Button className="relative z-10" variant="outline" size="sm" onClick={() => setVoidItem(item)}>
+                        <Button
+                          className="relative z-10"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setVoidItem(item)}
+                        >
                           ابطال دریافت
                         </Button>
                       )}

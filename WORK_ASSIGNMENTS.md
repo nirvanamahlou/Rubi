@@ -12086,3 +12086,9 @@ and scoped ESLint passed. Source reservation releases with the review candidate.
 ## FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 — PC-A
 
 Place General Details beside the Finance inbox amount and keep request selection a separate action. Reuse the authorized reservation detail flow and match Sales requests by contract ID. Frontend only.
+
+## HR-RADAN-PRODUCTION-1101 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B. Owner explicitly authorizes production activation of merged HR Radan integration with the existing Tehran quarter-hour peak/full-hour off-peak schedule. Reserve bounded deployment preparation, source-compatible HR/API/Web overlays, private branch/session/provider configuration and native scoped acceptance plus own task/status notes. Preserve current live Call Center and other peer overlays, unchanged Worker/data services, existing shared deployment lock, encrypted backup and rollback. No migration/destructive operation, grants or source-system writes. Initial pull is an owner-authorized activation check; recurring pulls follow the requested slots.
+
+HR-RADAN-PRODUCTION-1101 — DEPLOYED / VERIFIED. API73fa43f66e7e and Web6af6ea7d78e3 activate the merged HR adapter while preserving current Call Center hashes, unchanged Worker image and data-service containers. Encrypted database/doc/config backups and offsite/DPAPI recovery checkpoint verified before locked cutover. Native initial72-punch /43-summary import passes; the actual17:00 Tehran scheduled run reports0 imported /72 unchanged and advances to17:15. Public HTTPS health/status/HR200, unauthenticated401, correct Worker namespace and no restart verified. One unmatched code remains unresolved; no employee identity, missing exit, grant or source write invented. Task note records ownership, cadence, rollback and workstation bridge dependency.
