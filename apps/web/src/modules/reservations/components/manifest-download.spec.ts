@@ -96,3 +96,30 @@ describe('manifest download', () => {
     ).rejects.toThrow('خالی');
   });
 });
+
+it('sends an explicit template override and isolates its retry key from default and other templates', async () => {
+  const request = vi.fn(async (_path: string, _init: RequestInit) =>
+    fileResponse(),
+  );
+  const keys = new Map<string, string>();
+  for (const manifestTemplateId of [
+    undefined,
+    'template-a',
+    'template-a',
+    'template-b',
+  ])
+    await requestManifestDownload(
+      { ...input, ...(manifestTemplateId ? { manifestTemplateId } : {}) },
+      request,
+      keys,
+    );
+  expect(
+    JSON.parse(String(request.mock.calls[1]![1].body)).manifestTemplateId,
+  ).toBe('template-a');
+  const values = request.mock.calls.map(
+    (call) => (call[1].headers as Record<string, string>)['Idempotency-Key'],
+  );
+  expect(values[1]).toBe(values[2]);
+  expect(values[0]).not.toBe(values[1]);
+  expect(values[3]).not.toBe(values[1]);
+});
