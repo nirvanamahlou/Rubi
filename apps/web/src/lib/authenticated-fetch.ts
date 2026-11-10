@@ -5,16 +5,17 @@ import { refreshAuthenticatedSession } from './auth-session';
 export async function authenticatedFetch(
   url: string,
   baseUrl: string,
-  init: RequestInit = {},
+  init: RequestInit & { timeoutMs?: number } = {},
 ): Promise<Response> {
-  const timeout = AbortSignal.timeout(30_000);
-  const signal = init.signal
-    ? AbortSignal.any([init.signal, timeout])
+  const { timeoutMs = 30_000, ...request } = init;
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = request.signal
+    ? AbortSignal.any([request.signal, timeout])
     : timeout;
   const options: RequestInit = {
     credentials: 'include',
     cache: 'no-store',
-    ...init,
+    ...request,
     signal,
   };
   const response = await localizedFetch(url, options);

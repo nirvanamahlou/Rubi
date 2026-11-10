@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## WORKBENCH-SHARED-TRANSPORT-1110
+
+Workbench messaging, personal endpoints and feedback use the shared cookie-authenticated transport. JSON requests use the existing 30-second deadline. Attachments and multipart requests allow 120 seconds. Caller cancellation remains linked and 401 can trigger one retry with the same request body. Existing domain error handling remains. All 102 Workbench and transport tests passed. Other Web adapters retain their existing transport.
+
 ## IAM-SESSION-RESPONSE-V1-1110
 
 Login and refresh decode the same versioned wire shape before updating browser identity. LoginResponse is inferred from the decoder and still exported at the Contracts root. Roles remain optional for older API responses; permission code strings remain forward-compatible and server authorization is authoritative. Malformed successful responses do not publish a recovered-session event. The Contracts build, 66 Web tests and 20 API tests passed, including real login and rotation against disposable PostgreSQL 18. The wire payload is unchanged. This decoder covers login and refresh; other HTTP schemas remain separate.

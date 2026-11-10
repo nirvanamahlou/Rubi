@@ -1,4 +1,4 @@
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type {
   IamPersonalProfileResponseV1,
   IamPersonalProfileUpdateInputV1,
@@ -14,7 +14,6 @@ import type {
   WorkbenchDailyPackageOptionsV1,
   DocumentDetailV1,
 } from '@nora/contracts';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export const PROFILE_PHOTO_CHANGED_EVENT = 'rubi:profile-photo-changed';
@@ -29,25 +28,14 @@ export class ProfilePhotoUnavailableError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-  retried = false,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(`${base}/workbench${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
+  const response = await authenticatedFetch(`${base}/workbench${path}`, base, {
     ...init,
+    ...(init?.body instanceof FormData ? { timeoutMs: 120_000 } : {}),
     headers: { accept: 'application/json', ...init?.headers },
   });
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return request<T>(path, init, true);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string | string[];
@@ -67,24 +55,14 @@ async function request<T>(
 
 async function requestBlob(
   path: string,
-  init?: RequestInit,
-  retried = false,
   fallback = 'دریافت عکس پروفایل انجام نشد.',
 ): Promise<Blob> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(`${base}/workbench${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: { accept: '*/*', ...init?.headers },
+  const response = await authenticatedFetch(`${base}/workbench${path}`, base, {
+    timeoutMs: 120_000,
+    headers: { accept: '*/*' },
   });
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return requestBlob(path, init, true, fallback);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string | string[];
@@ -131,8 +109,6 @@ export const workbenchPersonalApi = {
   dailyPackageFile: (id: string) =>
     requestBlob(
       `/daily-packages/${encodeURIComponent(id)}/file`,
-      undefined,
-      false,
       'دریافت پکیج انجام نشد.',
     ),
   procurementFollowUps: () =>

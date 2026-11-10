@@ -22,20 +22,22 @@ describe('profile photo save request', () => {
     const file = new File(['%PDF-1.4'], 'daily-package.pdf', {
       type: 'application/pdf',
     });
-    const signal = new AbortController().signal;
+    const controller = new AbortController();
     await workbenchPersonalApi.publishDailyPackage({
       branchId: 'branch',
       title: 'پکیج روز',
       file,
-      signal,
+      signal: controller.signal,
     });
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('http://api.local/api/v1/workbench/daily-packages');
     expect(init).toMatchObject({
       method: 'POST',
       credentials: 'include',
-      signal,
     });
+    expect(init.signal?.aborted).toBe(false);
+    controller.abort();
+    expect(init.signal?.aborted).toBe(true);
     const body = init.body as FormData;
     expect(body.get('branchId')).toBe('branch');
     expect(body.get('title')).toBe('پکیج روز');

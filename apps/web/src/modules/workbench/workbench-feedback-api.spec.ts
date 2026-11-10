@@ -7,6 +7,7 @@ vi.mock('@/lib/auth-session', () => ({
   refreshAuthenticatedSession: vi.fn().mockResolvedValue(false),
 }));
 
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { uploadWorkbenchFeedbackFiles } from './workbench-feedback-api';
 
 describe('Workbench feedback attachment client', () => {
@@ -48,5 +49,41 @@ describe('Workbench feedback attachment client', () => {
         body: expect.any(FormData),
       }),
     );
+  });
+  it('retries multipart only once after authentication rejection with the same body', async () => {
+    const refresh = vi.mocked(refreshAuthenticatedSession);
+    refresh.mockClear();
+    refresh.mockResolvedValueOnce({
+      user: {
+        id: 'synthetic',
+        username: 'synthetic',
+        displayName: 'Synthetic',
+        email: null,
+        permissions: [],
+        branches: [],
+      },
+    });
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 409 }));
+
+    await expect(
+      uploadWorkbenchFeedbackFiles({
+        feedbackId: 'feedback',
+        subject: 'پیشنهاد کارکنان',
+        branchId: 'branch',
+        anonymous: true,
+        files: [new File(['pdf'], 'test.pdf')],
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const first = fetchMock.mock.calls[0]?.[1];
+    const second = fetchMock.mock.calls[1]?.[1];
+    expect(first?.body).toBeInstanceOf(FormData);
+    expect(first?.body).toBe(second?.body);
+    expect(first?.signal).toBe(second?.signal);
+    expect(first?.signal).toBeInstanceOf(AbortSignal);
   });
 });
