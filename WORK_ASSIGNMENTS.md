@@ -1,3 +1,7 @@
+## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A — IN_PROGRESS
+
+Owner requests per-passenger Insurance, City Tour and Guide allocation in Reservations corrections, plus adding a hotel to a contract without one, and develop merge. Reserve passenger-service-editor, amendment-extra-services helper/tests and empty-hotel amendment UI; preserve prices, other passengers, existing allocations and backend authorization/version/history rules. No schema/dependency/deployment or business-data writes. Prior date-selector scope merged and deployed; source lease releases after green develop merge.
+
 ## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
 
 Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
