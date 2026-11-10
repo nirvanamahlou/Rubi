@@ -600,16 +600,6 @@
   outline: 2px solid #185abd;
   outline-offset: -2px;
 }
-.requestTable .cancelledLabel {
-  display: block;
-  padding: 2px 4px;
-  border-radius: 3px;
-  background: #f87171;
-  color: #000000;
-  opacity: 1;
-  font-size: 11px;
-  font-weight: 700;
-}
 .requestTable td:nth-child(5) {
   max-width: 250px;
   overflow: hidden;
