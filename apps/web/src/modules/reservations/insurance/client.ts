@@ -35,6 +35,8 @@ export interface InsuranceReference {
   id: string;
   code: string;
   name: string;
+  englishName?: string;
+  attributes?: Readonly<Record<string, unknown>>;
 }
 
 export async function insuranceRequest<T>(

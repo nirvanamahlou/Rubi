@@ -1,5 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
+import {
+  insuranceCountryFields,
+  matchInsuranceCountry,
+} from './country-mapping';
 import { Plus, Save, Trash2, Globe2, ShieldCheck } from 'lucide-react';
 import type {
   InsuranceConfigurationV1,
@@ -24,6 +28,9 @@ import {
 } from './rate-band-template';
 
 export function InsuranceSettings({ branchId }: { branchId: string }) {
+  return <InsuranceSettingsForm key={branchId} branchId={branchId} />;
+}
+function InsuranceSettingsForm({ branchId }: { branchId: string }) {
   const [value, setValue] = useState<InsuranceSettingsResponse | null>(null);
   const [countries, setCountries] = useState<InsuranceReference[]>([]);
   const [plans, setPlans] = useState<InsuranceReference[]>([]);
@@ -56,6 +63,29 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
         setCurrencies(currencyRows);
         setSelected(settings.config.countries[0]?.countryId ?? '');
         setPlanIndex(0);
+        if (
+          settings.canManage &&
+          settings.providerStatus === 'SANDBOX_CONFIGURED'
+        ) {
+          setProviderBusy(true);
+          void insuranceRequest<InsuranceProviderCatalog>(
+            'provider/catalog?' + new URLSearchParams({ branchId }),
+          )
+            .then((catalog) => {
+              if (active) setProviderCatalog(catalog);
+            })
+            .catch((reason: unknown) => {
+              if (active)
+                setError(
+                  reason instanceof Error
+                    ? reason.message
+                    : 'اطلاعات بیمه دریافت نشد.',
+                );
+            })
+            .finally(() => {
+              if (active) setProviderBusy(false);
+            });
+        }
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -97,17 +127,17 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
     setProviderBusy(true);
     setError('');
     try {
-      setProviderCatalog(
-        await insuranceRequest<InsuranceProviderCatalog>(
-          'provider/catalog?' + new URLSearchParams({ branchId }),
-        ),
+      const catalog = await insuranceRequest<InsuranceProviderCatalog>(
+        'provider/catalog?' + new URLSearchParams({ branchId }),
       );
+      setProviderCatalog(catalog);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'اطلاعات بیمه دریافت نشد.');
     } finally {
       setProviderBusy(false);
     }
   }
+
   async function importFestival() {
     if (!value || busy || dirty) return;
     setBusy(true);
@@ -290,6 +320,11 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                     (c) => c.id === e.target.value,
                   );
                   if (!country) return;
+                  const provider = matchInsuranceCountry(
+                    country,
+                    providerCatalog?.countries ?? [],
+                  );
+
                   change((config) => ({
                     ...config,
                     countries: [
@@ -299,6 +334,9 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                         providerCountryCode: '',
                         providerCountryName: country.name,
                         englishName: '',
+                        ...(provider
+                          ? insuranceCountryFields(provider, country)
+                          : {}),
                         active: true,
                         plans: insuranceCountryPlanTemplates(config, selected),
                       },
@@ -373,40 +411,42 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                       فعال
                     </label>
                   </div>
-                  {providerCatalog && (
-                    <label>
-                      انتخاب کشور از بیمه‌گر
-                      <NativeSearchSelect
-                        value={mapping.providerCountryCode}
-                        disabled={!editable}
-                        onChange={(e) => {
-                          const country = providerCatalog.countries.find(
-                            (c) => String(c.id) === e.target.value,
+                  <label>
+                    انتخاب کشور از بیمه‌گر
+                    <NativeSearchSelect
+                      value={mapping.providerCountryCode}
+                      disabled={!editable || !providerCatalog || providerBusy}
+                      onChange={(e) => {
+                        const country = providerCatalog?.countries.find(
+                          (c) => String(c.id) === e.target.value,
+                        );
+                        if (country)
+                          updateMapping(
+                            insuranceCountryFields(
+                              country,
+                              countries.find(
+                                (item) => item.id === mapping.countryId,
+                              ),
+                            ),
                           );
-                          if (country)
-                            updateMapping({
-                              providerCountryCode: String(country.id),
-                              providerCountryName: country.title,
-                            });
-                        }}
-                      >
-                        <option value="">انتخاب کشور</option>
-                        {!providerCatalog.countries.some(
-                          (c) => String(c.id) === mapping.providerCountryCode,
-                        ) &&
-                          mapping.providerCountryCode && (
-                            <option value={mapping.providerCountryCode}>
-                              {mapping.providerCountryName}
-                            </option>
-                          )}
-                        {providerCatalog.countries.map((c) => (
-                          <option key={c.id} value={String(c.id)}>
-                            {c.title} ({c.standardCode || c.id})
+                      }}
+                    >
+                      <option value="">انتخاب کشور</option>
+                      {!providerCatalog?.countries.some(
+                        (c) => String(c.id) === mapping.providerCountryCode,
+                      ) &&
+                        mapping.providerCountryCode && (
+                          <option value={mapping.providerCountryCode}>
+                            {mapping.providerCountryName}
                           </option>
-                        ))}
-                      </NativeSearchSelect>
-                    </label>
-                  )}
+                        )}
+                      {providerCatalog?.countries.map((c) => (
+                        <option key={c.id} value={String(c.id)}>
+                          {c.title} ({c.standardCode || c.id})
+                        </option>
+                      ))}
+                    </NativeSearchSelect>
+                  </label>
                   <div className={styles.fields}>
                     <label>
                       کد کشور بیمه‌گر
@@ -414,9 +454,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                         dir="ltr"
                         value={mapping.providerCountryCode}
                         disabled={!editable}
-                        onChange={(e) =>
-                          updateMapping({ providerCountryCode: e.target.value })
-                        }
+                        readOnly
                       />
                     </label>
                     <label>
@@ -424,9 +462,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                       <Input
                         value={mapping.providerCountryName}
                         disabled={!editable}
-                        onChange={(e) =>
-                          updateMapping({ providerCountryName: e.target.value })
-                        }
+                        readOnly
                       />
                     </label>
                     <label>
@@ -435,9 +471,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                         dir="ltr"
                         value={mapping.englishName}
                         disabled={!editable}
-                        onChange={(e) =>
-                          updateMapping({ englishName: e.target.value })
-                        }
+                        readOnly
                       />
                     </label>
                   </div>
