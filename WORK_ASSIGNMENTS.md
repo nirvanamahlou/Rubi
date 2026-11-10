@@ -12166,3 +12166,7 @@ COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricin
 Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B — IN_PROGRESS
+
+Owner authorizes implementation of the GitHub architecture/code review. Base3370748ca; branch codex/pc-b-architecture-remediation-1110. Reserve review-related IAM attendance identity, safe common error diagnostics, Messaging/Notifications read aggregation and their tests first; subsequent scoped changes tracked in docs/tasks/ARCHITECTURE-REMEDIATION-1110.md. Preserve pending HR attendance-editor PR1511 and HR pay-document PR1590. No shared dependency versions, operational data or production rollout. Source responsibilities and validation are recorded per completed slice.

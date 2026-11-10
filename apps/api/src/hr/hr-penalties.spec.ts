@@ -9,9 +9,21 @@ const policy = {
 };
 function setup(extra: unknown[] = [], values = policy.values) {
   const source = [{ ...policy, values }, ...extra];
+  const findMany = vi.fn(
+    async (query: { where: { tab?: string; OR?: unknown[] } }) => {
+      switch (query.where.tab) {
+        case 'penaltySettings':
+          return source.slice(0, 1);
+        case 'checkins':
+          return [];
+        default:
+          return source;
+      }
+    },
+  );
   const service = new HrService(
     {
-      client: { hrRecord: { findMany: vi.fn().mockResolvedValue(source) } },
+      client: { hrRecord: { findMany } },
     } as never,
     {} as never,
     {} as never,
@@ -31,18 +43,35 @@ function setup(extra: unknown[] = [], values = policy.values) {
     ],
     selected: [{ parentId: 'correction' }],
   });
-  return () =>
-    internal.dailyPenalty({
-      section: 'time',
-      tab: 'attendance',
-      branchId: 'branch',
-      employeeId: 'person',
-      values: ['', '2026-11-08'],
-    });
+  const row = {
+    id: 'attendance',
+    section: 'time',
+    tab: 'attendance',
+    branchId: 'branch',
+    employeeId: 'person',
+    values: ['', '2026-11-08'],
+  } as Parameters<HrService['dailyPenalty']>[0];
+  return Object.assign(() => internal.dailyPenalty(row), {
+    service,
+    row,
+    findMany,
+  });
 }
 describe('daily attendance penalties', () => {
   it('uses separate Toman rates with exact arithmetic', async () =>
     expect(await setup()()).toBe('800000'));
+  it('reads shared policy and attendance inputs once per branch for multiple days', async () => {
+    const { service, row, findMany } = setup();
+    const next = { ...row, id: 'next', values: ['', '2026-11-09'] };
+    const result = await service.dailyPenalties([row, next]);
+
+    expect([...result]).toEqual([
+      ['attendance', '800000'],
+      ['next', '800000'],
+    ]);
+    expect(findMany).toHaveBeenCalledTimes(3);
+    expect(findMany.mock.calls[2]?.[0].where.OR).toHaveLength(2);
+  });
   it('does not apply a future policy', async () =>
     expect(
       await setup([], ['50000', '60000', '2026-12-01', 'بله', 'بله', 'بله'])(),

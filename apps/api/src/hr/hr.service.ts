@@ -566,100 +566,166 @@ export class HrService {
   }
 
   async dailyPenalty(row: RecordRow): Promise<string | null> {
-    if (inactiveAttendance(row)) return null;
-    if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
-      return null;
-    const date = (row.values as string[])[1];
-    if (!date) return null;
-    const policies = await this.database.client.hrRecord.findMany({
-      where: {
-        branchId: row.branchId,
-        section: 'time',
-        tab: 'penaltySettings',
-        status: 'فعال',
-        deletedAt: null,
-      },
-      take: 1001,
-    });
-    if (policies.length > 1000)
-      throw new ConflictException('تعداد تنظیمات جریمه بیش از حد مجاز است.');
-    const policy = policies
-      .filter(
-        (item) =>
-          item.tab === 'penaltySettings' &&
-          item.status === 'فعال' &&
-          (item.values as string[])[2]! <= date,
+    return (await this.dailyPenalties([row])).get(row.id) ?? null;
+  }
+
+  async dailyPenalties(
+    rows: readonly RecordRow[],
+  ): Promise<Map<string, string>> {
+    const byBranch = new Map<string, RecordRow[]>();
+    for (const row of rows) {
+      if (
+        row.section !== 'time' ||
+        row.tab !== 'attendance' ||
+        !row.employeeId ||
+        inactiveAttendance(row) ||
+        !(row.values as string[])[1]
       )
-      .sort(
+        continue;
+      const branchRows = byBranch.get(row.branchId) ?? [];
+      branchRows.push(row);
+      byBranch.set(row.branchId, branchRows);
+    }
+    const result = new Map<string, string>();
+    for (const [branchId, branchRows] of byBranch) {
+      const policies = await this.database.client.hrRecord.findMany({
+        where: {
+          branchId: branchId,
+          section: 'time',
+          tab: 'penaltySettings',
+          status: 'فعال',
+          deletedAt: null,
+        },
+        take: 1001,
+      });
+      if (policies.length > 1000)
+        throw new ConflictException('تعداد تنظیمات جریمه بیش از حد مجاز است.');
+      const applicablePolicies = policies.filter(
+        (item) =>
+          item.tab === 'penaltySettings' && (item.values as string[])[2],
+      );
+      applicablePolicies.sort(
         (a, b) =>
           (b.values as string[])[2]!.localeCompare(
             (a.values as string[])[2]!,
           ) ||
           b.updatedAt.getTime() - a.updatedAt.getTime() ||
           b.id.localeCompare(a.id),
-      )[0];
-    if (!policy) return null;
-    const source = await this.database.client.hrRecord.findMany({
-      where: {
-        branchId: row.branchId,
-        deletedAt: null,
-        OR: [
-          {
-            section: 'time',
-            tab: {
-              in: [
-                'penaltySettings',
-                'shift',
-                'workingHours',
-                'mission',
-                'leave',
-                'corrections',
-              ],
+      );
+      const scheduled = branchRows.flatMap((row) => {
+        const date = (row.values as string[])[1]!;
+        const policy = applicablePolicies.find(
+          (item) =>
+            item.tab === 'penaltySettings' &&
+            item.status === 'فعال' &&
+            (item.values as string[])[2]! <= date,
+        );
+        if (!policy) return [];
+        const start = new Date(Date.parse(date) - 2 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        const end = new Date(Date.parse(date) + 4 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        return [{ row, date, policy, start, end }];
+      });
+      if (!scheduled.length) continue;
+      const shared = await this.database.client.hrRecord.findMany({
+        where: {
+          branchId,
+          deletedAt: null,
+          OR: [
+            {
+              section: 'time',
+              tab: {
+                in: [
+                  'penaltySettings',
+                  'shift',
+                  'workingHours',
+                  'mission',
+                  'leave',
+                  'corrections',
+                ],
+              },
             },
-          },
-          {
-            section: 'requests',
-            tab: { in: ['radanLeave', 'radanMission', 'leave'] },
-          },
-          { section: 'expenses', tab: 'mission' },
-          {
+            {
+              section: 'requests',
+              tab: { in: ['radanLeave', 'radanMission', 'leave'] },
+            },
+            { section: 'expenses', tab: 'mission' },
+          ],
+        },
+        take: 10001,
+      });
+      if (shared.length > 10000)
+        throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+      const readPunches = (batch: typeof scheduled, take: number) =>
+        this.database.client.hrRecord.findMany({
+          where: {
+            branchId,
+            deletedAt: null,
             section: 'time',
             tab: 'checkins',
-            employeeId: row.employeeId,
-            AND: [
-              {
-                values: {
-                  path: ['1'],
-                  gte: new Date(Date.parse(date) - 2 * 86400000)
-                    .toISOString()
-                    .slice(0, 10),
-                },
-              },
-              {
-                values: {
-                  path: ['1'],
-                  lte: new Date(Date.parse(date) + 4 * 86400000)
-                    .toISOString()
-                    .slice(0, 10),
-                },
-              },
-            ],
+            OR: batch.map(({ row, start, end }) => ({
+              employeeId: row.employeeId,
+              AND: [
+                { values: { path: ['1'], gte: start } },
+                { values: { path: ['1'], lte: end } },
+              ],
+            })),
           },
-        ],
-      },
-      take: 10001,
-    });
-    if (source.length > 10000)
-      throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+          take,
+        });
+      for (let offset = 0; offset < scheduled.length; offset += 50) {
+        const batch = scheduled.slice(offset, offset + 50);
+        const punches = await readPunches(batch, 10001);
+        const byEmployee = new Map<string, RecordRow[]>();
+        for (const punch of punches) {
+          if (!punch.employeeId) continue;
+          const employeePunches = byEmployee.get(punch.employeeId) ?? [];
+          employeePunches.push(punch);
+          byEmployee.set(punch.employeeId, employeePunches);
+        }
+        for (const entry of batch) {
+          const { row, date, policy, start, end } = entry;
+          const dayPunches =
+            punches.length > 10000
+              ? await readPunches([entry], 10001)
+              : (byEmployee.get(row.employeeId!) ?? []).filter((punch) => {
+                  const day = (punch.values as string[])[1]!;
+                  return day >= start && day <= end;
+                });
+          if (shared.length + dayPunches.length > 10000)
+            throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+          result.set(
+            row.id,
+            this.calculateDailyPenalty(row, row.employeeId!, date, policy, [
+              ...shared,
+              ...dayPunches,
+            ]),
+          );
+        }
+      }
+    }
+    return result;
+  }
+
+  private calculateDailyPenalty(
+    row: RecordRow,
+    employeeId: string,
+    date: string,
+    policy: RecordRow,
+    source: RecordRow[],
+  ): string {
     const rates = policy.values as string[];
-    const view = this.attendanceView(source, row.employeeId, date);
+    const view = this.attendanceView(source, employeeId, date);
     if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
     if (
       rates[5] === 'بله' &&
       ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
         source.some(
           (item) =>
-            item.employeeId === row.employeeId &&
+            item.employeeId === employeeId &&
             item.tab === 'corrections' &&
             validate.APPROVED.has(item.status) &&
             view.selected.some((punch) => punch.parentId === item.id) &&
@@ -676,7 +742,7 @@ export class HrService {
     const intervals = source
       .filter(
         (item) =>
-          item.employeeId === row.employeeId &&
+          item.employeeId === employeeId &&
           validate.APPROVED.has(item.status) &&
           ((['mission', 'radanMission'].includes(item.tab) &&
             rates[3] === 'بله') ||
@@ -710,13 +776,19 @@ export class HrService {
   }
 
   private async recordDtos(rows: RecordRow[], actor: AuthenticatedActor) {
-    const labels = await this.assignmentLabels(rows, actor);
-    return Promise.all(rows.map((row) => this.recordDto(row, actor, labels)));
+    const [labels, penalties] = await Promise.all([
+      this.assignmentLabels(rows, actor),
+      this.dailyPenalties(rows),
+    ]);
+    return Promise.all(
+      rows.map((row) => this.recordDto(row, actor, labels, penalties)),
+    );
   }
   private async recordDto(
     row: RecordRow,
     actor: AuthenticatedActor,
     display?: AssignmentLabels,
+    penalties?: ReadonlyMap<string, string>,
   ): Promise<HrRecordDto> {
     const schema = validate.resource(row.section, row.tab);
     const ownSlip =
@@ -780,7 +852,11 @@ export class HrService {
         : {
             ...(publicHrData(row.data) as HrWorkflowData),
             ...(schema.key === 'time.attendance'
-              ? { dailyPenaltyToman: await this.dailyPenalty(row) }
+              ? {
+                  dailyPenaltyToman: penalties
+                    ? (penalties.get(row.id) ?? null)
+                    : await this.dailyPenalty(row),
+                }
               : {}),
           },
     };
@@ -4183,7 +4259,7 @@ export class HrService {
     const reason =
       input.reason === undefined
         ? undefined
-        : validate.text(input.reason, 'دلیل', 1000);
+        : validate.text(input.reason, 'دلیل', 1000, true);
     if (state === 'ENDED' && !isOptionalOperationReason(reason))
       throw new BadRequestException('دلیل پایان قرارداد الزامی است.');
     if (
@@ -5099,7 +5175,7 @@ export class HrService {
       'reason',
     ]);
     const type = validate.text(input.type, 'نوع مرخصی', 80),
-      reason = validate.text(input.reason, 'دلیل', 1000);
+      reason = validate.text(input.reason, 'دلیل', 1000, true);
     const days = validate.text(input.days, 'روز', 8);
     if (!/^\d{1,3}(\.\d{1,2})?$/.test(days) || Number(days) <= 0)
       throw new BadRequestException('روز سهمیه معتبر نیست.');

@@ -97,15 +97,6 @@ function AccessibleHrSection({
   const [range, setRange] = useState({ from: '', to: '' });
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<HrRecordDto[]>([]);
-  const [refreshTick, setRefreshTick] = useState(0);
-  useEffect(() => {
-    if (source.section !== 'time' || source.tab !== 'attendance') return;
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible')
-        setRefreshTick((tick) => tick + 1);
-    }, 60000);
-    return () => window.clearInterval(timer);
-  }, [source.section, source.tab]);
   const [loadedSource, setLoadedSource] = useState('');
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -186,7 +177,6 @@ function AccessibleHrSection({
   }, [
     queryKey,
     page,
-    refreshTick,
     store.revision,
     remember,
     sourceSection,
@@ -409,10 +399,7 @@ function AccessibleHrSection({
           <HrAttendanceActivationForm
             employees={store.data!.employees}
             onClose={() => setActivationOpen(false)}
-            onSaved={async () => {
-              await store.mutated();
-              setRefreshTick((value) => value + 1);
-            }}
+            onSaved={store.mutated}
           />
         )}
         <div className={ui.filters}>
@@ -733,10 +720,7 @@ function AccessibleHrSection({
               <HrAttendanceEditor
                 record={attendanceEdit}
                 onClose={() => setAttendanceEdit(null)}
-                onSaved={async () => {
-                  await store.mutated();
-                  setRefreshTick((value) => value + 1);
-                }}
+                onSaved={store.mutated}
               />
             )}
             {missionCosts && (

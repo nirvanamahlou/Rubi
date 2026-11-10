@@ -1,6 +1,19 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  open,
+  readFile,
+  rm,
+  writeFile,
+  type FileHandle,
+} from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -8,6 +21,33 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { validateStorageObjectKey } from './documents.validation';
+
+const headerSize = 36;
+const chunkSize = 64 * 1024;
+
+function integrityError() {
+  return new Error('Stored document failed integrity verification.');
+}
+
+async function readExactly(file: FileHandle, position: number, length: number) {
+  const bytes = Buffer.allocUnsafe(length);
+  let offset = 0;
+  while (offset < length) {
+    const { bytesRead } = await file.read(
+      bytes,
+      offset,
+      length - offset,
+      position + offset,
+    );
+    if (!bytesRead) throw integrityError();
+    offset += bytesRead;
+  }
+  return bytes;
+}
+
+function digest(bytes: Buffer) {
+  return createHash('sha256').update(bytes).digest();
+}
 
 @Injectable()
 export class LocalDocumentStorage {
@@ -72,9 +112,87 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
   ): Promise<Readable> {
+    if (!Number.isSafeInteger(expectedSizeBytes) || expectedSizeBytes < 0)
+      throw integrityError();
+    const target = this.pathFor(objectKey);
+    const file = await open(target, 'r');
+    const digests: Buffer[] = [];
+    let header: Buffer;
+    try {
+      const stat = await file.stat();
+      if (!stat.isFile() || stat.size - headerSize !== expectedSizeBytes)
+        throw integrityError();
+      header = await readExactly(file, 0, headerSize);
+      const decipher = this.decipher(objectKey, header);
+      for (let offset = 0; offset < expectedSizeBytes; offset += chunkSize) {
+        const bytes = await readExactly(
+          file,
+          headerSize + offset,
+          Math.min(chunkSize, expectedSizeBytes - offset),
+        );
+        digests.push(digest(bytes));
+        decipher.update(bytes);
+      }
+      decipher.final();
+    } finally {
+      await file.close();
+    }
+
+    // GCM authenticates the entire file at final(). Only start delivery after
+    // that succeeds. Compare each ciphertext chunk on the second pass so
+    // changes after verification cannot introduce unverified plaintext.
     return Readable.from(
-      await this.readQuarantined(objectKey, expectedSizeBytes),
+      this.streamVerified(
+        target,
+        objectKey,
+        header,
+        expectedSizeBytes,
+        digests,
+      ),
+      { objectMode: false },
     );
+  }
+
+  private async *streamVerified(
+    target: string,
+    objectKey: string,
+    header: Buffer,
+    size: number,
+    digests: readonly Buffer[],
+  ) {
+    const file = await open(target, 'r');
+    try {
+      const decipher = this.decipher(objectKey, header);
+      for (let offset = 0; offset < size; offset += chunkSize) {
+        const bytes = await readExactly(
+          file,
+          headerSize + offset,
+          Math.min(chunkSize, size - offset),
+        );
+        if (!digest(bytes).equals(digests[offset / chunkSize]!))
+          throw integrityError();
+        yield decipher.update(bytes);
+      }
+      decipher.final();
+    } finally {
+      await file.close();
+    }
+  }
+
+  private decipher(objectKey: string, header: Buffer) {
+    if (
+      header.length !== headerSize ||
+      header.subarray(0, 8).toString('ascii') !== 'RUBIDOC1'
+    )
+      throw integrityError();
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      this.encryptionKey,
+      header.subarray(8, 20),
+    );
+    decipher.setAAD(Buffer.from(objectKey, 'utf8'));
+    decipher.setAuthTag(header.subarray(20, headerSize));
+    return decipher;
   }
 
   async readQuarantined(
@@ -83,26 +201,12 @@ export class LocalDocumentStorage {
   ): Promise<Buffer> {
     const target = this.pathFor(objectKey);
     const stored = await readFile(target);
-    if (
-      stored.length < 36 ||
-      stored.subarray(0, 8).toString('ascii') !== 'RUBIDOC1'
-    ) {
-      throw new Error('Stored document failed integrity verification.');
-    }
-    const decipher = createDecipheriv(
-      'aes-256-gcm',
-      this.encryptionKey,
-      stored.subarray(8, 20),
-    );
-    decipher.setAAD(Buffer.from(objectKey, 'utf8'));
-    decipher.setAuthTag(stored.subarray(20, 36));
+    const decipher = this.decipher(objectKey, stored.subarray(0, headerSize));
     const contents = Buffer.concat([
-      decipher.update(stored.subarray(36)),
+      decipher.update(stored.subarray(headerSize)),
       decipher.final(),
     ]);
-    if (contents.length !== expectedSizeBytes) {
-      throw new Error('Stored document failed integrity verification.');
-    }
+    if (contents.length !== expectedSizeBytes) throw integrityError();
     return contents;
   }
 }
