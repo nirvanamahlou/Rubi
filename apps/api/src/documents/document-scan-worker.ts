@@ -53,8 +53,16 @@ async function main() {
     clearInterval(keepAlive);
     await app.close();
   };
-  process.once('SIGINT', () => void close());
-  process.once('SIGTERM', () => void close());
+  const closeAfterSignal = () => {
+    close().catch(() => {
+      process.stderr.write(
+        'Document antivirus worker could not shut down cleanly.\n',
+      );
+      process.exitCode = 1;
+    });
+  };
+  process.once('SIGINT', closeAfterSignal);
+  process.once('SIGTERM', closeAfterSignal);
   process.stdout.write('Document antivirus worker is running.\n');
 }
 

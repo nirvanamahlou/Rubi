@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## TYPE-AWARE-LINT-1110
+
+The existing API and Web lint jobs enforce type-aware Promise handling on the authentication guard, session refresh, shared authenticated fetch, document scanner entry point and report export files. Both package configs reject a bare Promise and a voided Promise while allowing an explicit rejection handler. The standalone document scanner reports shutdown failure without echoing private configuration. Thirty-three focused API and Web tests passed. Browser scenarios and broader type-aware coverage remain open.
+
 ## ARCHITECTURE-BOUNDARY-DOCS-1110
 
 The architecture and deployment baselines distinguish repository implementation from target design. The API repository boundary test covers nested static re-exports, type references and literal dynamic imports or require calls. Existing explicit composition exceptions remain scoped. Fifteen focused tests and scoped ESLint passed. No runtime, migration or dependency changes.
