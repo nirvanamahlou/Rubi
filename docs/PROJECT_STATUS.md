@@ -582,6 +582,10 @@ Replace free-text provider-country code/name/English controls with read-only dis
 
 Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
 
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9117,6 +9121,10 @@ CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, 
 
 CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.
 
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+The Workbench request empty state uses generic request wording in Persian and English. Existing request and follow-up routing is preserved. 25 focused Web tests passed.
+
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
@@ -9333,6 +9341,10 @@ The owner requires experts to see only their own verified calls, and current HR 
 ## CALL-CENTER-UNIT-FILTER-1109 — PC-C
 
 Add the requested Unit selector between source and connected-to using the existing branch-scoped teamId filter. Exact-call telephony responsibility replaces service-account attribution for unit matching; own/native manager access remains conjoined. No schema, permission or production changes. Final tests and hosted gates precede the authorized develop merge.
+
+## ISSABEL-RECORDING-ON-DEMAND-1110 — PC-C — IN_PROGRESS
+
+Owner explicitly requires no ERP-database audio storage and download from Issabel only on demand. COMPUTER_ID=PC-C; branch codex/pc-c-issabel-recording-on-demand-1110 from develop3370748ca. Reserve Integrations recording service/new Unix-socket remote client and tests, minimal CustomerAffairs authenticated media-context root projection, existing PBX source/host relay and bounded activation/test scripts, own notes. Immediately stop only the periodic recording importer under the production deploy lease to prevent growth; keep call ingress/Worker/VPN intact. Implement stateless on-demand RPC over a private API-only mounted Unix socket, existing pinned SSH credentials and CDR/CEL root/file proof; memory-only audio, no database chunks or durable host cache, no public port. Existing CEO-only download/branch/range/rate/audit controls remain. Default remote mode blocks uploads; legacy tests explicitly opt into database mode. Source/API and host relay contracts ship together; legacy cached reads require explicit DATABASE mode. Preserve existing stored recordings until separately authorized cleanup; no destructive migration, grants, dependencies or unrelated deployment. User authorizes this live storage behavior change; source push/develop green-gate merge and bounded API/relay rollout preserve peer changes.
 
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
@@ -9634,6 +9646,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 ## FLIGHT-PURCHASE-DATE-FILTER-1109 — PC-A — 2026-11-09
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
+
+## RESERVATION-REPORT-MODULE-1110 — PC-A
+
+Reservation Report has its own /reservations/reports route and sidebar/user-access module. The former issued tab is removed from flight management; the catalog and remaining screen names are preserved. The existing report screen ID is retained for stored grants, with the existing Reservations read prerequisite and an API screen guard that also protects XLSX/PDF via the shared report projection. Filters, branch scope and export behavior remain. No schema, grants rewrite, dependency or deployment changes; targeted and full hosted gates precede develop merge.
 
 ## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A
 

@@ -42,6 +42,10 @@ export const englishNavigation: Record<
     title: 'Reservations',
     description: 'Travel services',
   },
+  '/reservations/reports': {
+    title: 'Reservation report',
+    description: 'Passenger services report',
+  },
   '/reservations/hotel-rates': {
     title: 'Hotel purchase rates',
     description: 'Hotel purchase rates',
