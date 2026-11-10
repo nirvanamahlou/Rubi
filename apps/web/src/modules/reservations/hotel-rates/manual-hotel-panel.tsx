@@ -348,7 +348,9 @@ export function HotelCoefficients({
     }));
   const combinationName = (combination: Combination) =>
     combination.label ||
-    `${combination.adults} AD + ${combination.childAges.length} CHD`;
+    (combination.adults === 0 && combination.childAges.length === 1
+      ? 'کودک با تخت'
+      : `${combination.adults} AD + ${combination.childAges.length} CHD`);
   async function submitRoomType(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!onAddRoomType || addingRoomType || disabled) return;
@@ -606,7 +608,7 @@ export function HotelCoefficients({
                                         },
                                       )
                                     }
-                                    options={countOptions(20, 1)}
+                                    options={countOptions(20)}
                                   />
                                 </label>
                                 <label>
@@ -623,8 +625,8 @@ export function HotelCoefficients({
                                             { length: Number(n) },
                                             (_, i) =>
                                               combination.childAges[i] ?? {
-                                                min: 2,
-                                                maxExclusive: 15,
+                                                min: 6,
+                                                maxExclusive: 12,
                                               },
                                           ),
                                         },
@@ -638,31 +640,29 @@ export function HotelCoefficients({
                                   <div key={i} className={styles.childRange}>
                                     <span>کودک {i + 1}</span>
                                     <Choice
-                                      label="حداقل سن کودک"
-                                      value={String(age.min)}
-                                      options={countOptions(14)}
-                                      onChange={(n) =>
-                                        changeCombination(
-                                          room.roomTypeId,
-                                          index,
-                                          {
-                                            childAges:
-                                              combination.childAges.map(
-                                                (a, j) =>
-                                                  j === i
-                                                    ? { ...a, min: Number(n) }
-                                                    : a,
-                                              ),
-                                          },
+                                      label="رده سنی کودک"
+                                      value={`${age.min}-${age.maxExclusive}`}
+                                      options={[
+                                        { id: '2-6', name: '۲ تا ۶ سال' },
+                                        { id: '6-12', name: '۶ تا ۱۲ سال' },
+                                        ...(!(
+                                          (age.min === 2 &&
+                                            age.maxExclusive === 6) ||
+                                          (age.min === 6 &&
+                                            age.maxExclusive === 12)
                                         )
-                                      }
-                                    />
-                                    <span>تا کمتر از</span>
-                                    <Choice
-                                      label="حد بالای سن کودک"
-                                      value={String(age.maxExclusive)}
-                                      options={countOptions(15, 1)}
-                                      onChange={(n) =>
+                                          ? [
+                                              {
+                                                id: `${age.min}-${age.maxExclusive}`,
+                                                name: `${age.min} تا کمتر از ${age.maxExclusive} (ثبت‌شده)`,
+                                              },
+                                            ]
+                                          : []),
+                                      ]}
+                                      onChange={(value) => {
+                                        const [min, maxExclusive] = value
+                                          .split('-')
+                                          .map(Number);
                                         changeCombination(
                                           room.roomTypeId,
                                           index,
@@ -672,14 +672,15 @@ export function HotelCoefficients({
                                                 (a, j) =>
                                                   j === i
                                                     ? {
-                                                        ...a,
-                                                        maxExclusive: Number(n),
+                                                        min: min!,
+                                                        maxExclusive:
+                                                          maxExclusive!,
                                                       }
                                                     : a,
                                               ),
                                           },
-                                        )
-                                      }
+                                        );
+                                      }}
                                     />
                                   </div>
                                 ))}

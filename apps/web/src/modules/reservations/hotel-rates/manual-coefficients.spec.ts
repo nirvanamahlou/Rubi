@@ -19,9 +19,9 @@ describe('manual hotel combinations', () => {
     expect(defaultCombinations().map((c) => c.label)).toEqual([
       'دبل',
       'سینگل',
-      'دبل با کودک با تخت',
+      'کودک با تخت',
     ]);
-    expect(build()?.map((r) => r.amount)).toEqual(['200.00']);
+    expect(build()?.map((r) => r.amount)).toEqual(['200.00', '150.00']);
     expect(build()?.[0]?.manualPricing?.baseAmount).toBe('100');
   });
   it('restores metadata and exact children, ignoring invalid legacy coefficients', () => {
@@ -40,7 +40,7 @@ describe('manual hotel combinations', () => {
       combinations.map(combinationKey),
     );
     expect(combinationsFromRates([])).toEqual(defaultCombinations());
-    expect(rates[2]?.childAges).toEqual([{ min: 2, maxExclusive: 15 }]);
+    expect(rates[2]?.childAges).toEqual([{ min: 6, maxExclusive: 12 }]);
     expect(
       buildManualRates(
         combinations,

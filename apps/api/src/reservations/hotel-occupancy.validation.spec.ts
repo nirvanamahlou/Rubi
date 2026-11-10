@@ -67,6 +67,22 @@ describe('hotel occupancy API validation', () => {
     expect(rate.saleAmount).toBe('220.00');
     expect(rate.manualPricing?.coefficient).toBe('2');
   });
+  it('accepts a zero-cost standalone manual child tariff and rejects an empty-guest tariff', () => {
+    const p = manualPack();
+    const rate = p.rows[0]!.roomRates[0]!.occupancyRates[0]!;
+    Object.assign(rate, {
+      adults: 0,
+      childAges: [{ min: 6, maxExclusive: 12 }],
+      amount: '0.00',
+      saleAmount: '0.00',
+    });
+    rate.manualPricing.coefficient = '0';
+    expect(
+      validateRatePack(p).rows[0]!.roomRates[0]!.occupancyRates![0]!.amount,
+    ).toBe('0.00');
+    rate.childAges = [];
+    expect(() => validateRatePack(p)).toThrow();
+  });
   it.each(['amount', 'saleAmount'] as const)(
     'rejects forged derived %s',
     (field) => {

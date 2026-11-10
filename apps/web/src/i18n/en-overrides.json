@@ -5848,5 +5848,7 @@
   "این بخش موقتاً در دسترس نیست.": "This section is temporarily unavailable.",
   "مجوز مشاهده این بخش را ندارید.": "You do not have permission to view this section.",
   "سابقه‌ای ثبت نشده است.": "No records have been registered.",
-  "۵۰ سابقه اخیر نمایش داده می‌شود.": "Showing the 50 most recent records."
+  "۵۰ سابقه اخیر نمایش داده می‌شود.": "Showing the 50 most recent records.",
+  "(ثبت‌شده)": "(saved)",
+  "نرخ مستقل کودک باید برای یک کودک باشد.": "A standalone child rate must cover exactly one child."
 }

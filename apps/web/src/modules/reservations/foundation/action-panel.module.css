@@ -28,6 +28,13 @@
 .selection strong {
   font-size: 15px;
 }
+.selection .cancelledNotice {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fca5a5;
+  color: #000000;
+  font-weight: 700;
+}
 .groups {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.55fr);

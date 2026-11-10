@@ -136,7 +136,16 @@ it('selects only the first room by default even when lookup initializes all empt
   selectRoom('Land', false);
   expect(row.roomRates.map((room) => room.roomTypeId)).toEqual(['sea']);
   selectRoom('Land');
-  expect(prices()).toEqual([[['200.00', '200.00']], [['400.00', '400.00']]]);
+  expect(prices()).toEqual([
+    [
+      ['200.00', '200.00'],
+      ['150.00', '150.00'],
+    ],
+    [
+      ['400.00', '400.00'],
+      ['300.00', '300.00'],
+    ],
+  ]);
 });
 it('keeps saved room choices after reopening instead of reverting to the first room', () => {
   selectRoom('Sea');
@@ -210,8 +219,7 @@ it('marks duplicate composition or invalid child range unsavable instead of keep
   choose('تعداد بزرگسال ترکیب', '1', 1);
   input('ضریب ترکیب اتاق', '2.5', 2);
   expect(valid).toHaveBeenLastCalledWith(true);
-  choose('حداقل سن کودک', '14');
-  choose('حد بالای سن کودک', '14');
+  choose('رده سنی کودک', '6-6');
   expect(valid).toHaveBeenLastCalledWith(false);
   expect(row.roomRates).toHaveLength(0);
 });
@@ -239,26 +247,33 @@ it('edits each room coefficient and child composition independently', () => {
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   input('ضریب ترکیب اتاق', '2.5', 2);
-  choose('حداقل سن کودک', '4');
-  choose('حد بالای سن کودک', '15');
+  choose('رده سنی کودک', '2-6');
   expect(prices()).toEqual([
     [
       ['200.00', '200.00'],
+      ['150.00', '150.00'],
       ['250.00', '250.00'],
     ],
-    [['400.00', '400.00']],
+    [
+      ['400.00', '400.00'],
+      ['300.00', '300.00'],
+    ],
   ]);
-  expect(row.roomRates[0]!.occupancyRates![1]).toMatchObject({
-    adults: 2,
-    childAges: [{ min: 4, maxExclusive: 15 }],
+  expect(row.roomRates[0]!.occupancyRates![2]).toMatchObject({
+    adults: 0,
+    childAges: [{ min: 2, maxExclusive: 6 }],
   });
-  expect(row.roomRates[1]!.occupancyRates).toHaveLength(1);
+  expect(row.roomRates[1]!.occupancyRates).toHaveLength(2);
   input('ضریب ترکیب اتاق', '3', 3);
   expect(prices()[0]).toEqual([
     ['200.00', '200.00'],
+    ['150.00', '150.00'],
     ['250.00', '250.00'],
   ]);
-  expect(prices()[1]).toEqual([['600.00', '600.00']]);
+  expect(prices()[1]).toEqual([
+    ['600.00', '600.00'],
+    ['300.00', '300.00'],
+  ]);
 });
 
 it('has no sale controls and preserves historical sale metadata when editing purchase bases', () => {
@@ -270,7 +285,12 @@ it('has no sale controls and preserves historical sale metadata when editing pur
   hooks.effects = [];
   render();
   input('قیمت پایه Land', '150');
-  expect(prices()).toEqual([[['300.00', '235.20']]]);
+  expect(prices()).toEqual([
+    [
+      ['300.00', '235.20'],
+      ['225.00', '225.00'],
+    ],
+  ]);
   expect(
     nodes(render()).some((n) =>
       String(n.props['aria-label'] ?? '').includes('فروش'),
@@ -288,7 +308,16 @@ it('restores different coefficients per room and keeps both after save/reopen', 
   hooks.effects = [];
   render();
   input('قیمت پایه Land', '150');
-  expect(prices()).toEqual([[['300.00', '300.00']], [['600.00', '600.00']]]);
+  expect(prices()).toEqual([
+    [
+      ['300.00', '300.00'],
+      ['225.00', '225.00'],
+    ],
+    [
+      ['600.00', '600.00'],
+      ['300.00', '300.00'],
+    ],
+  ]);
   expect(row.roomRates[1]!.occupancyRates).toEqual(saved[1]!.occupancyRates);
   expect(row.roomRates[1]!.occupancyRates![0]!.manualPricing!.coefficient).toBe(
     '3',
@@ -314,8 +343,14 @@ it('adds and removes compositions only in the associated room, including newly l
     ),
   ).toHaveLength(7);
   click('land', 'حذف ردیف');
-  expect(prices()).toEqual([[['400.00', '400.00']]]);
-  expect(row.roomRates[0]!.roomTypeId).toBe('sea');
+  expect(prices()).toEqual([
+    [['150.00', '150.00']],
+    [
+      ['400.00', '400.00'],
+      ['300.00', '300.00'],
+    ],
+  ]);
+  expect(row.roomRates.map((r) => r.roomTypeId)).toEqual(['land', 'sea']);
   row = {
     ...row,
     hotel: {
