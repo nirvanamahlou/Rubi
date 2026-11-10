@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WindowsDefenderAntivirus } from './documents.antivirus';
 import type {
@@ -48,10 +48,48 @@ describe('DocumentsScanProcessor', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    repository.finishScanJob.mockResolvedValue(true);
     processor = new DocumentsScanProcessor(
       repository as unknown as DocumentsRepository,
       storage as unknown as LocalDocumentStorage,
       antivirus as unknown as WindowsDefenderAntivirus,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('leaves queue and inline processing to the standalone scanner in worker mode', async () => {
+    vi.stubEnv('DOCUMENTS_SCAN_EXECUTION', 'worker');
+    await processor.onModuleInit();
+    await expect(processor.processVersion(job.versionId)).resolves.toBe(false);
+    expect(repository.pendingScanJobs).not.toHaveBeenCalled();
+    expect(repository.scanJobForVersion).not.toHaveBeenCalled();
+
+    const worker = new DocumentsScanProcessor(
+      repository as unknown as DocumentsRepository,
+      storage as unknown as LocalDocumentStorage,
+      antivirus as unknown as WindowsDefenderAntivirus,
+      true,
+    );
+    repository.pendingScanJobs.mockResolvedValue([]);
+    await worker.processPending();
+    expect(repository.pendingScanJobs).toHaveBeenCalledOnce();
+  });
+
+  it('marks the final expired scan as failed without attempting another scan', async () => {
+    const expired = { ...job, status: 'RUNNING', attempts: 3 };
+    repository.pendingScanJobs.mockResolvedValue([expired]);
+    await processor.processPending();
+    expect(repository.claimScanJob).not.toHaveBeenCalled();
+    expect(antivirus.scan).not.toHaveBeenCalled();
+    expect(repository.finishScanJob).toHaveBeenCalledWith(
+      expired,
+      expect.objectContaining({
+        status: 'SCAN_FAILED',
+        threatCode: 'SCAN_LEASE_EXPIRED',
+      }),
     );
   });
 

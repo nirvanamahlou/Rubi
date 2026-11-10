@@ -2297,15 +2297,20 @@ export class DocumentsService {
           ? { skipAntivirusForMasterDataLogo: true }
           : {}),
       });
-      if (
-        scanPolicy !== masterDataLogoScanExemption &&
-        (await this.scanProcessor.processVersion(versionId))
-      ) {
-        const scanned = await this.repository.findDetail(
-          documentId,
-          actor.branchIds,
-        );
-        if (scanned) return { data: this.mapDetail(scanned, actor) };
+      if (scanPolicy !== masterDataLogoScanExemption) {
+        // Upload is already committed. A scanner/read failure must never
+        // remove the private file needed by the durable scan retry.
+        try {
+          if (await this.scanProcessor.processVersion(versionId)) {
+            const scanned = await this.repository.findDetail(
+              documentId,
+              actor.branchIds,
+            );
+            if (scanned) return { data: this.mapDetail(scanned, actor) };
+          }
+        } catch {
+          // Leave the stored file and its scan job for the next worker poll.
+        }
       }
       return { data: this.mapDetail(row, actor) };
     } catch (error) {

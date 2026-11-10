@@ -7,7 +7,10 @@ import { NotificationsRepository } from '../notifications/notifications.reposito
 import { NotificationsService } from '../notifications/notifications.service';
 import { WindowsDefenderAntivirus } from './documents.antivirus';
 import { DocumentsRepository } from './documents.repository';
-import { DocumentsScanProcessor } from './documents.scan-processor';
+import {
+  DocumentsScanProcessor,
+  STANDALONE_DOCUMENT_SCANNER,
+} from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
 
 /** A real local ClamAV/Defender scanner. No HTTP server or unrelated workers. */
@@ -21,6 +24,7 @@ import { LocalDocumentStorage } from './documents.storage';
     LocalDocumentStorage,
     WindowsDefenderAntivirus,
     DocumentsScanProcessor,
+    { provide: STANDALONE_DOCUMENT_SCANNER, useValue: true },
   ],
 })
 class DocumentScanWorkerModule {}
@@ -40,10 +44,12 @@ async function main() {
     await app.close();
     return;
   }
-  app.enableShutdownHooks();
   // Processor interval is intentionally unref-ed for the API; keep this standalone process alive.
   const keepAlive = setInterval(() => undefined, 60_000);
+  let closing = false;
   const close = async () => {
+    if (closing) return;
+    closing = true;
     clearInterval(keepAlive);
     await app.close();
   };
