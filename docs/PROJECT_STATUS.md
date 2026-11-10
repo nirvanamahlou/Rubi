@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## HOTEL-CURRENCY-FIELD-ACCESS-1110
+
+The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
+
 ## RESERVATION-FINANCE-PROJECTION-1110
 
 Reservations supplies Finance with a narrow scoped intake and purchase projection. PostgreSQL retrieves only the latest revision of each selected purchase in the same repeatable-read snapshot. Existing purchase grouping, historical intake visibility, branch/company scope and legacy paid balances remain. Thirty-one targeted tests, API typecheck and an isolated PostgreSQL 18 scenario passed. The producer still reads the scoped purchase collection up to its existing limit. End-to-end Finance inbox pagination remains open.
