@@ -9,10 +9,10 @@ const cities = ['آنتالیا', 'ازمیر', 'استانبول'].map((name, i
   id: `city-${i}`,
   name,
   attributes: { countryId: 'country' },
-})) as MasterDataRecord[];
+})) as unknown as MasterDataRecord[];
 const countries = [
   { id: 'country', name: 'ترکیه', attributes: {} },
-] as MasterDataRecord[];
+] as unknown as MasterDataRecord[];
 const grid = {
   version: 1,
   nights: 6,

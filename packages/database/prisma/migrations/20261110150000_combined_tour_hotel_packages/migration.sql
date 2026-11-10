@@ -4,7 +4,7 @@ CREATE TABLE "PackagePricingTourCombinationSource" (
  "id" UUID NOT NULL PRIMARY KEY,
  "draftId" UUID NOT NULL REFERENCES "PackagePricingTourDraft"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
  "publicationId" UUID REFERENCES "PackagePricingTourPublishedVersion"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
- "hotelRateId" UUID NOT NULL REFERENCES "ReservationHotelGroupRate"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+ "hotelRateId" UUID NOT NULL REFERENCES "reservation_hotel_group_rates"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
  "combinationKey" VARCHAR(80) NOT NULL,
  "ordinal" INTEGER NOT NULL CHECK ("ordinal">0)
 );
