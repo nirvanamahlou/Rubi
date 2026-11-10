@@ -23,6 +23,7 @@ type NewRequestDialogProps = {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   branchId?: string;
+  branches?: readonly { id: string; name: string }[];
   initialDate?: string;
   onCreated?: (request: { id: string; title: string }) => void;
 };
@@ -34,10 +35,13 @@ export function NewRequestDialog(props: NewRequestDialogProps) {
 function NewRequestForm({
   open,
   onOpenChange,
-  branchId,
+  branchId: initialBranchId,
+  branches,
   onCreated,
   initialDate,
 }: NewRequestDialogProps) {
+  const [selectedBranchId, setSelectedBranchId] = useState<string>();
+  const branchId = selectedBranchId ?? initialBranchId;
   const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -65,7 +69,7 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [title, body, unit, recipient, priority, leave]);
+  }, [branchId, title, body, unit, recipient, priority, leave]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -195,6 +199,35 @@ function NewRequestForm({
             />
           </label>
           <div className="sm:col-span-2 grid gap-5 sm:grid-cols-2">
+            {branches && branches.length > 1 ? (
+              <label className="space-y-2 text-sm font-semibold sm:col-span-2">
+                <span>شعبه</span>
+                <WorkbenchSelect
+                  label="شعبه"
+                  value={branchId ?? ''}
+                  disabled={pending || uploading}
+                  onValueChange={(id) => {
+                    setSelectedBranchId(id);
+                    setUnit('');
+                    setRecipient('');
+                    setLeave(
+                      (current) =>
+                        current && {
+                          ...current,
+                          substitute: undefined,
+                          substituteUserId: undefined,
+                          attachmentIds: undefined,
+                        },
+                    );
+                    setError('');
+                  }}
+                  options={branches.map((branch) => ({
+                    value: branch.id,
+                    label: branch.name,
+                  }))}
+                />
+              </label>
+            ) : null}
             <RequestRecipientFields
               units={units}
               unitId={unit}

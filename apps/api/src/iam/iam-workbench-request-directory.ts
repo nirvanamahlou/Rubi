@@ -4,9 +4,10 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import type {
-  AuthenticatedActor,
-  WorkbenchRequestOptionsV1,
+import {
+  hrBranchName,
+  type AuthenticatedActor,
+  type WorkbenchRequestOptionsV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
@@ -130,7 +131,7 @@ export class IamWorkbenchRequestDirectory {
       select: { id: true },
     });
     if (!operator) throw new ForbiddenException('شعبه در محدوده دسترسی نیست.');
-    const units = await this.units.list(branchId, tx);
+    const units = await this.units.list(branchId, tx, !callCenter);
     if (!units.length) return { units: [] };
     const members = callCenter ? [] : await this.units.members(branchId, tx);
     const users = await client.user.findMany({
@@ -140,7 +141,13 @@ export class IamWorkbenchRequestDirectory {
         OR: [
           {
             profile: {
-              organizationUnitId: { in: units.map((unit) => unit.id) },
+              organizationUnitId: {
+                in: [
+                  ...new Set(
+                    units.flatMap((unit) => [unit.id, ...(unit.aliases ?? [])]),
+                  ),
+                ],
+              },
             },
           },
           ...(members.length
@@ -167,14 +174,18 @@ export class IamWorkbenchRequestDirectory {
     });
     return {
       units: units.map((unit) => ({
-        ...unit,
+        id: unit.id,
+        name: unit.name,
         users: users
           .filter(
             (user) =>
               user.profile?.organizationUnitId === unit.id ||
+              (!!user.profile?.organizationUnitId &&
+                unit.aliases?.includes(user.profile.organizationUnitId)) ||
               members.some(
                 (member) =>
-                  member.userId === user.id && member.unit.trim() === unit.name,
+                  member.userId === user.id &&
+                  hrBranchName(member.unit) === hrBranchName(unit.name),
               ),
           )
           .map(({ id, displayName, username }) => ({
