@@ -9809,3 +9809,5 @@ HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for o
 WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
 
 HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the locked company scope. Accept a legacy unchanged organization branch reference on update while retaining validation for new references and authorization for the policy itself.
+
+HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance labels as audited overrides. Automatic mode restores the latest calculated status and bulk activation preserves the override. Source punches and existing authorization remain intact.

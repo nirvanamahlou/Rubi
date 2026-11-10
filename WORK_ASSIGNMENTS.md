@@ -12278,3 +12278,7 @@ Reserve the minimal Workbench request recipient directory, HR unit projection an
 ## HR-LEAVE-POLICY-EDIT — PC-B — IN_PROGRESS
 
 Reserve the leave policy edit command and form payload, plus a focused regression. Keep existing policy scope and authorization. No data migration or dependencies.
+
+## HR-ATTENDANCE-STATUS-EDITOR — PC-B — IN_PROGRESS
+
+Reserve single-day attendance status controls and scoped command, override preservation during recalculation, additive HR data contract and focused tests. Preserve bulk activation, original punches, authorization and closed-period checks.

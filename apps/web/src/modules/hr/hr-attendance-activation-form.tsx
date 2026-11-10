@@ -1,6 +1,10 @@
 'use client';
 import { useRef, useState } from 'react';
-import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
+import {
+  HR_ATTENDANCE_STATUSES,
+  type HrEmployeeDto,
+  type HrRecordDto,
+} from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton } from './hr-controls';
@@ -14,8 +18,10 @@ export function AttendanceStatusControl({
   record: HrRecordDto;
   onSaved: () => Promise<void>;
 }) {
-  const [active, setActive] = useState(
-    record.data.attendanceActive !== false && record.status !== 'غیرفعال',
+  const [status, setStatus] = useState<string>(
+    record.data.attendanceActive === false || record.status === 'غیرفعال'
+      ? 'inactive'
+      : (record.data.attendanceStatusOverride ?? 'auto'),
   );
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -25,12 +31,17 @@ export function AttendanceStatusControl({
       <label className={ui.field}>
         وضعیت
         <select
-          value={String(active)}
-          onChange={(e) => setActive(e.target.value === 'true')}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
           disabled={busy}
         >
-          <option value="true">فعال</option>
-          <option value="false">غیرفعال</option>
+          <option value="auto">وضعیت خودکار</option>
+          {HR_ATTENDANCE_STATUSES.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+          <option value="inactive">غیرفعال</option>
         </select>
       </label>
       <HrButton
@@ -43,7 +54,10 @@ export function AttendanceStatusControl({
               employeeIds: [record.employeeId],
               from: record.values[1],
               to: record.values[1],
-              active,
+              active: status !== 'inactive',
+              ...(status === 'inactive'
+                ? {}
+                : { status: status === 'auto' ? null : status }),
               recordId: record.id,
               version: record.version,
             });
