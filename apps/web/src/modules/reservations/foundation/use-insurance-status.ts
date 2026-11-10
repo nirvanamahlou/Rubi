@@ -46,7 +46,7 @@ export function useInsuranceStatus(id?: string, revision?: number) {
       window.removeEventListener('reservation-workflow-changed', refresh);
     };
   }, [id, revision]);
-  return result?.id === id && result?.revision === revision
+  return result && result.id === id && result.revision === revision
     ? result.summary
     : undefined;
 }

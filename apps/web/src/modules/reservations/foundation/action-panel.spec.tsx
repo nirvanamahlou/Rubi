@@ -1,10 +1,11 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
+import type * as InsuranceStatusModule from './use-insurance-status';
+import type { InsuranceActionSummary } from './use-insurance-status';
 const insurance = vi.hoisted(() => ({
-  summary: undefined as
-    import('./use-insurance-status').InsuranceActionSummary | undefined,
+  summary: undefined as InsuranceActionSummary | undefined,
 }));
 vi.mock('./use-insurance-status', async (original) => ({
-  ...(await original<typeof import('./use-insurance-status')>()),
+  ...(await original<typeof InsuranceStatusModule>()),
   useInsuranceStatus: () => insurance.summary,
 }));
 const registration = vi.hoisted(() => ({ registered: false }));
