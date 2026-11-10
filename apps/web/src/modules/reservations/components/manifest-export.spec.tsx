@@ -4,6 +4,8 @@ import {
   ManifestExport,
   ManifestRoute,
   manifestDateTime,
+  manifestTemplateInput,
+  manifestBuiltinOptions,
 } from './manifest-export';
 import { manifestReferenceQuery } from './manifest-reference-filter';
 
@@ -55,4 +57,20 @@ it('renders the physical origin to destination order in the RTL table', () => {
   expect(html).toContain(
     'تهران</span><span aria-hidden="true">→</span><span dir="auto">آنتالیا',
   );
+});
+
+it('defaults every ticket to the PNL layout and explicitly switches to Report or a registered template', () => {
+  expect(manifestBuiltinOptions).toEqual([
+    { value: 'DEFAULT_MANIFEST', label: 'دیفالت منیفست' },
+    { value: 'REPORT', label: 'گزارش‌گیری' },
+  ]);
+  expect(manifestTemplateInput()).toEqual({
+    builtinTemplate: 'DEFAULT_MANIFEST',
+  });
+  expect(manifestTemplateInput('REPORT')).toEqual({
+    builtinTemplate: 'REPORT',
+  });
+  expect(manifestTemplateInput('registered')).toEqual({
+    manifestTemplateId: 'registered',
+  });
 });

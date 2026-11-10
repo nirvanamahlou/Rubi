@@ -1,3 +1,4 @@
+import { inspectManifestTemplate } from '../common/manifest/workbook-template';
 import type { ExecutionContext } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request, { type Response as SupertestResponse } from 'supertest';
@@ -73,6 +74,7 @@ function fixture(
     contractId: 'contract',
     contractVersion: 1,
     branchId: 'branch',
+    salesOwnerUserId: 'seller',
     snapshot,
   };
   const workflow = {
@@ -144,6 +146,11 @@ function fixture(
     ]),
     manifestSelection: vi.fn().mockResolvedValue(selectedTemplate),
   };
+  const iam = {
+    reservationResponsibilityNames: vi
+      .fn()
+      .mockResolvedValue(new Map([['seller', 'Synthetic Seller']])),
+  };
   const service = new ReservationManifestService(
     workflow as never,
     customers as never,
@@ -152,9 +159,13 @@ function fixture(
     database as never,
     documents as never,
     tickets as never,
+    undefined,
+    undefined,
+    iam as never,
   );
   return {
     service,
+    iam,
     snapshot,
     workflow,
     customers,
@@ -167,55 +178,67 @@ function fixture(
 }
 
 describe('default ticket manifest', () => {
-  it('serves a downloadable binary workbook through the real HTTP ticket route', async () => {
-    const f = fixture();
-    const module = await Test.createTestingModule({
-      controllers: [ReservationManifestBatchController],
-      providers: [{ provide: ReservationManifestService, useValue: f.service }],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({
-        canActivate(context: ExecutionContext) {
-          context.switchToHttp().getRequest().actor = actor;
-          return true;
-        },
+  it.each([undefined, 'REPORT', 'DEFAULT_MANIFEST'] as const)(
+    'serves a downloadable binary workbook through the real HTTP ticket route (%s)',
+    async (builtinTemplate) => {
+      const f = fixture();
+      const module = await Test.createTestingModule({
+        controllers: [ReservationManifestBatchController],
+        providers: [
+          { provide: ReservationManifestService, useValue: f.service },
+        ],
       })
-      .compile();
-    const app = module.createNestApplication();
-    app.setGlobalPrefix('api/v1');
-    await app.init();
-    try {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/reservations/manifests/tickets/offer.xlsx')
-        .set('Idempotency-Key', 'synthetic-http-download')
-        .send(range)
-        .buffer(true)
-        .parse(
-          (
-            stream: SupertestResponse,
-            done: (error: Error | null, body?: Buffer) => void,
-          ) => {
-            const chunks: Buffer[] = [];
-            stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-            stream.on('end', () => done(null, Buffer.concat(chunks)));
-            stream.on('error', done);
+        .overrideGuard(AuthGuard)
+        .useValue({
+          canActivate(context: ExecutionContext) {
+            context.switchToHttp().getRequest().actor = actor;
+            return true;
           },
-        )
-        .expect(201);
-      expect(response.headers['content-type']).toContain(
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      expect(response.headers['content-disposition']).toMatch(
-        /^attachment; filename=".*\.xlsx"$/,
-      );
-      expect(response.headers['x-nora-manifest-contracts']).toBe('1');
-      expect(response.headers['x-nora-manifest-passengers']).toBe('1');
-      expect(Buffer.isBuffer(response.body)).toBe(true);
-      expect(sheet(response.body)).toContain('SC-SYNTHETIC');
-    } finally {
-      await app.close();
-    }
-  }, 30000);
+        })
+        .compile();
+      const app = module.createNestApplication();
+      app.setGlobalPrefix('api/v1');
+      await app.init();
+      try {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/reservations/manifests/tickets/offer.xlsx')
+          .set('Idempotency-Key', 'synthetic-http-download')
+          .send({ ...range, ...(builtinTemplate ? { builtinTemplate } : {}) })
+          .buffer(true)
+          .parse(
+            (
+              stream: SupertestResponse,
+              done: (error: Error | null, body?: Buffer) => void,
+            ) => {
+              const chunks: Buffer[] = [];
+              stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+              stream.on('end', () => done(null, Buffer.concat(chunks)));
+              stream.on('error', done);
+            },
+          )
+          .expect(201);
+        expect(response.headers['content-type']).toContain(
+          builtinTemplate === 'DEFAULT_MANIFEST'
+            ? 'application/vnd.ms-excel.sheet.macroEnabled.12'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        expect(response.headers['content-disposition']).toMatch(
+          builtinTemplate === 'DEFAULT_MANIFEST'
+            ? /^attachment; filename=".*\.xlsm"$/
+            : /^attachment; filename=".*\.xlsx"$/,
+        );
+        expect(response.headers['x-nora-manifest-contracts']).toBe('1');
+        expect(response.headers['x-nora-manifest-passengers']).toBe('1');
+        expect(Buffer.isBuffer(response.body)).toBe(true);
+        expect(sheet(response.body)).toContain(
+          builtinTemplate === 'DEFAULT_MANIFEST' ? 'SURENAME' : 'SC-SYNTHETIC',
+        );
+      } finally {
+        await app.close();
+      }
+    },
+    30000,
+  );
   it('exports domestic names and national ID without requiring passport details, and only assigned passengers', async () => {
     const f = fixture();
     const result = await f.service.exportTicket('offer', range, 'key', actor);
@@ -241,7 +264,7 @@ describe('default ticket manifest', () => {
       expect(xml).toContain(value);
     }
     expect(xml).not.toContain('شماره پاسپورت');
-    expect(xml).toContain('A1:M2');
+    expect(xml).toContain('A1:N2');
     expect(f.customers.detail).toHaveBeenCalledExactlyOnceWith(
       'p1',
       actor,
@@ -426,7 +449,7 @@ describe('default ticket manifest', () => {
       actor,
     );
     const xml = sheet(result.bytes);
-    expect(xml).toContain('A1:O2');
+    expect(xml).toContain('A1:P2');
     for (const value of [
       'شماره پاسپورت',
       'تاریخ انقضای پاسپورت',
@@ -603,7 +626,7 @@ describe('default ticket manifest', () => {
         false,
       ),
     );
-    expect(xml).toContain('A1:M101');
+    expect(xml).toContain('A1:N101');
     expect(xml).toContain('0012345678');
     expect(xml).toContain('SYNTHETIC DESTINATION');
     expect(xml).toContain('SYNTHETIC');
@@ -722,4 +745,69 @@ it('validates and renders an explicit published template without changing the ti
       actor,
     ),
   ).rejects.toThrow('inactive');
+});
+
+it('exports the requested PNL default as XLSM even when the offer has a custom template', async () => {
+  const f = fixture(true, 'chosen');
+  f.snapshot.passengerAssignments[0]!.ageCategory = 'CHD_6_12';
+  const output = await f.service.exportTicket(
+    'offer',
+    { ...range, builtinTemplate: 'DEFAULT_MANIFEST' },
+    'pnl',
+    actor,
+  );
+  expect(output.fileExtension).toBe('xlsm');
+  expect(f.documents.readManifestTemplateReference).not.toHaveBeenCalled();
+  expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
+  const layout = inspectManifestTemplate(output.bytes);
+  expect(layout.parsed[1]?.cells[3]?.value).toBe('CHILD');
+  expect(layout.parsed[1]?.cells[0]?.value).toBe('ALI');
+});
+it('appends the contract owner seller to Report, bypasses custom selection and separates idempotency by builtin format', async () => {
+  const f = fixture(true, 'chosen');
+  const result = await f.service.exportTicket(
+    'offer',
+    { ...range, builtinTemplate: 'REPORT' },
+    'same',
+    actor,
+  );
+  expect(result.fileExtension).toBe('xlsx');
+  expect(sheet(result.bytes)).toContain('SYNTHETIC SELLER');
+  expect(sheet(result.bytes)).toContain('فروشنده');
+  expect(f.iam.reservationResponsibilityNames).toHaveBeenCalledWith(
+    ['seller'],
+    'branch',
+    actor,
+  );
+  await f.service.exportTicket(
+    'offer',
+    { ...range, builtinTemplate: 'DEFAULT_MANIFEST' },
+    'same',
+    actor,
+  );
+  const keys =
+    f.database.client.reservationManifestExport.findUnique.mock.calls.map(
+      (args) => args[0]?.where.actorUserId_idempotencyKey.idempotencyKey,
+    );
+  expect(keys[0]).not.toBe(keys[1]);
+  await expect(
+    f.service.exportTicket(
+      'offer',
+      { ...range, builtinTemplate: 'WRONG' } as never,
+      'bad',
+      actor,
+    ),
+  ).rejects.toThrow();
+  await expect(
+    f.service.exportTicket(
+      'offer',
+      {
+        ...range,
+        builtinTemplate: 'REPORT',
+        manifestTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+      'bad',
+      actor,
+    ),
+  ).rejects.toThrow();
 });

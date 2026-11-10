@@ -434,10 +434,11 @@ export function normalizeManifestTemplate(bytes: Uint8Array) {
 export function buildTemplateManifest(
   bytes: Uint8Array,
   passengers: readonly TemplatePassenger[],
+  options: { maxPassengers?: number } = {},
 ) {
   if (!passengers.length)
     throw new BadRequestException('مسافری برای ساخت MANIFEST وجود ندارد.');
-  if (passengers.length > 61)
+  if (passengers.length > (options.maxPassengers ?? 61))
     throw new BadRequestException('این قالب حداکثر ۶۱ مسافر را می‌پذیرد.');
   const layout = inspectManifestTemplate(bytes);
   let sheet = layout.sheet;

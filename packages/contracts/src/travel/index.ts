@@ -321,6 +321,8 @@ export interface ReservationManifestTicketListV1 {
 }
 
 export interface ReservationManifestTicketExportInputV1 {
+  /** Explicit builtins bypass an offer's uploaded template; omission preserves legacy behavior. */
+  builtinTemplate?: 'DEFAULT_MANIFEST' | 'REPORT';
   manifestTemplateId?: string;
   fromDate: string;
   toDate: string;
