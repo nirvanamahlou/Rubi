@@ -12032,3 +12032,7 @@ release on publication; PR1556 full final-head checks gate authorized merge.
 ## INSURANCE-DRAFT-ERROR-1109 — PC-C — IN_PROGRESS
 
 Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
+
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
