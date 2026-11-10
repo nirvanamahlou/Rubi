@@ -23,8 +23,6 @@ describe('accounting inline form redesign', () => {
       'ledger-title',
       'ledger-title-en',
       'ledger-description',
-      'ledger-branch',
-      'ledger-currency',
       'ledger-notes',
     ]) {
       expect(ledger).toContain(`id="${id}"`);

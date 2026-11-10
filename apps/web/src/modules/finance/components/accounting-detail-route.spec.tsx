@@ -6,6 +6,11 @@ import type * as Operations from './accounting-operations';
 import { TooltipProvider } from '@/components/ui/overlays';
 import { AccountingWorkspace } from './accounting-workspace';
 
+vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
+  useLegalEntityContext: () => ({
+    context: { selection: 'NIYAYESH_SEIR_SAHAR' },
+  }),
+}));
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -36,23 +41,26 @@ function render({
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(['accounting', 'books'], {
+  client.setQueryData(['accounting', 'books', 'NIYAYESH_SEIR_SAHAR'], {
     books: hasBook ? [{ id: 'book', active: true, isMain: true }] : [],
     branches: [],
   });
   if (hasBook)
-    client.setQueryData(['accounting', 'snapshot', 'book'], {
-      book: { id: 'book', branchId: 'branch' },
-      periods: [],
-      accounts: [],
-      details: [],
-      configurations: [],
-      templates: [],
-    });
+    client.setQueryData(
+      ['accounting', 'snapshot', 'book', 'NIYAYESH_SEIR_SAHAR'],
+      {
+        book: { id: 'book', branchId: 'branch' },
+        periods: [],
+        accounts: [],
+        details: [],
+        configurations: [],
+        templates: [],
+      },
+    );
   if (failed)
     client
       .getQueryCache()
-      .find({ queryKey: ['accounting', 'books'] })!
+      .find({ queryKey: ['accounting', 'books', 'NIYAYESH_SEIR_SAHAR'] })!
       .setState({
         status: 'error',
         error: new Error('Denied'),

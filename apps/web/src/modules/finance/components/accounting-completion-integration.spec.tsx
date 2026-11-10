@@ -11,6 +11,11 @@ import { accountingCompletionRoute } from '../accounting-completion-routes';
 import { accountingParityDefinitions } from './accounting-parity-definitions';
 import { accountingNavigationGroups } from './accounting-navigation-workspace';
 
+vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
+  useLegalEntityContext: () => ({
+    context: { selection: 'NIYAYESH_SEIR_SAHAR' },
+  }),
+}));
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('bookId=book-b'),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -58,22 +63,27 @@ function render(route: string, failed = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(['accounting', 'books'], {
+  client.setQueryData(['accounting', 'books', 'NIYAYESH_SEIR_SAHAR'], {
     books: [{ id: 'book-a' }, { id: 'book-b' }],
     branches: [],
   });
-  client.setQueryData(['accounting', 'snapshot', 'book-b'], {
-    book: { id: 'book-b' },
-    periods: [],
-    accounts: [],
-    details: [],
-    configurations: [],
-    templates: [],
-  });
+  client.setQueryData(
+    ['accounting', 'snapshot', 'book-b', 'NIYAYESH_SEIR_SAHAR'],
+    {
+      book: { id: 'book-b' },
+      periods: [],
+      accounts: [],
+      details: [],
+      configurations: [],
+      templates: [],
+    },
+  );
   if (failed)
     client
       .getQueryCache()
-      .find({ queryKey: ['accounting', 'snapshot', 'book-b'] })!
+      .find({
+        queryKey: ['accounting', 'snapshot', 'book-b', 'NIYAYESH_SEIR_SAHAR'],
+      })!
       .setState({ status: 'error', error: new Error('Denied') });
   const html = renderToStaticMarkup(
     <QueryClientProvider client={client}>

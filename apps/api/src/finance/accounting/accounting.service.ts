@@ -60,6 +60,7 @@ import type {
   IamPermissionCode,
 } from '@nora/contracts';
 import { DatabaseService } from '../../database/database.service';
+import { AccountingCompanyScope } from './accounting-company-scope';
 import { ContractCompanyScope } from '../../sales/contract-company-scope.public';
 import { MasterDataService } from '../../master-data/master-data.service';
 import { accountingCurrencies } from './accounting.currency-directory';
@@ -260,6 +261,9 @@ export class AccountingService {
     @Optional()
     @Inject(ContractCompanyScope)
     private readonly companyScope?: ContractCompanyScope,
+    @Optional()
+    @Inject(AccountingCompanyScope)
+    private readonly ledgerCompanies?: AccountingCompanyScope,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -274,42 +278,76 @@ export class AccountingService {
         message: 'مجوز این عملیات حسابداری را ندارید.',
       });
   }
-  private async book(tx: Tx, id: string, actor: AuthenticatedActor) {
+  private async book(
+    tx: Tx,
+    id: string,
+    actor: AuthenticatedActor,
+    allowUnassigned = false,
+  ) {
     v.uuid(id);
     const row = await tx.accountingBook.findFirst({
       where: { id, branchId: { in: actor.branchIds } },
     });
     if (!row) throw new NotFoundException('دفتر حسابداری پیدا نشد.');
+    if (this.ledgerCompanies) {
+      const scope = await this.ledgerCompanies.current(actor);
+      if (
+        !scope.isAggregate &&
+        row.legalEntityId !== scope.company?.id &&
+        !(allowUnassigned && !row.legalEntityId)
+      )
+        throw new NotFoundException(
+          'دفتر حسابداری در شرکت فعال در دسترس نیست.',
+        );
+    }
     return row;
   }
   async books(actor: AuthenticatedActor) {
     this.require(actor);
+    const scope = await this.ledgerCompanies?.current(actor);
+    const allBooks = await this.database.client.accountingBook.findMany({
+      where: { branchId: { in: actor.branchIds } },
+      orderBy: { code: 'asc' },
+    });
     return {
-      books: await this.database.client.accountingBook.findMany({
-        where: { branchId: { in: actor.branchIds } },
-        orderBy: { code: 'asc' },
-      }),
+      books:
+        scope && !scope.isAggregate
+          ? allBooks.filter((book) => book.legalEntityId === scope.company?.id)
+          : allBooks,
+      unassignedBooks: scope
+        ? allBooks.filter((book) => !book.legalEntityId)
+        : [],
       branches: await this.identity.branches(actor.branchIds),
+      ...(scope ?? {}),
     };
   }
   async createBook(input: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'finance.account.manage');
     const p = v.object(input);
     const id = v.uuid(p.id)!;
-    const branchId = v.uuid(p.branchId)!;
+    const scope = await this.ledgerCompanies?.current(actor, true);
+    const company = scope?.company;
+    if (company && p.legalEntityId !== company.id)
+      throw new ConflictException(
+        'شرکت فعال تغییر کرده است؛ فرم را دوباره باز کنید.',
+      );
+    const branchId = v.uuid(p.branchId ?? actor.branchIds[0])!;
     if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
     const branch = await this.identity.branches([branchId]);
     if (!branch.length) throw new ForbiddenException();
     if (p.approvalPolicy !== 'DUAL_CONTROL')
       v.rule('قاعده تأیید مستقل دفتر را انتخاب کنید.');
     const code = v.text(p.code, 20, true),
-      title = v.text(p.title, 160, true),
-      baseCurrency = v.text(p.baseCurrency, 3, true);
+      title = company?.title ?? v.text(p.title, 160, true),
+      baseCurrency = company ? 'IRR' : v.text(p.baseCurrency, 3, true);
     if (!/^[A-Z]{3}$/.test(baseCurrency)) v.invalid('کد ارز معتبر نیست.');
     return this.database.client.$transaction(async (tx) => {
+      if (company)
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${company.id}, 0))`;
       const existing = await tx.accountingBook.findUnique({ where: { id } });
       if (existing) {
         if (
+          existing.legalEntityId !== (company?.id ?? null) ||
           existing.branchId !== branchId ||
           existing.code !== code ||
           existing.title !== title ||
@@ -326,10 +364,20 @@ export class AccountingService {
           );
         return existing;
       }
+      if (
+        company &&
+        (await tx.accountingBook.findUnique({
+          where: { legalEntityId: company.id },
+        }))
+      )
+        throw new ConflictException(
+          'برای این شرکت دفتر کل ثبت شده است؛ همان دفتر را ویرایش کنید.',
+        );
       const created = await tx.accountingBook.create({
         data: {
           id,
           branchId,
+          legalEntityId: company?.id ?? null,
           code,
           title,
           baseCurrency,
@@ -378,7 +426,7 @@ export class AccountingService {
     this.require(actor);
     return this.database.client.$transaction(
       async (tx) => {
-        const book = await this.book(tx, id, actor);
+        const book = await this.book(tx, id, actor, true);
         const [
           periods,
           accounts,
@@ -957,7 +1005,9 @@ export class AccountingService {
       .digest('hex');
     return this.database.client.$transaction(
       async (tx) => {
-        await this.book(tx, bookId, actor);
+        if (this.ledgerCompanies)
+          await this.ledgerCompanies.current(actor, true);
+        await this.book(tx, bookId, actor, action === 'save-book');
         // A per-book lock serializes configuration, period closure, serials and journal posting.
         await tx.$queryRaw`SELECT id FROM accounting_books WHERE id=${bookId}::uuid FOR UPDATE`;
         const previous = await tx.accountingCommand.findUnique({
@@ -968,7 +1018,7 @@ export class AccountingService {
             throw new ConflictException('کلید درخواست قبلاً استفاده شده است.');
           return previous.result;
         }
-        const book = await this.book(tx, bookId, actor);
+        const book = await this.book(tx, bookId, actor, action === 'save-book');
         const commandId = randomUUID();
         const stateEvents: BufferedStateEvent[] = [];
         const result = await this.execute(
@@ -3250,10 +3300,25 @@ export class AccountingService {
     }
     if (action === 'save-book') {
       this.version(book.version, expected);
+      const company = (await this.ledgerCompanies?.current(actor, true))
+        ?.company;
+      if (company && p.legalEntityId !== company.id)
+        throw new ConflictException(
+          'شرکت فعال تغییر کرده است؛ فرم را دوباره باز کنید.',
+        );
+      if (company) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${company.id}, 0))`;
+        const other = await tx.accountingBook.findUnique({
+          where: { legalEntityId: company.id },
+        });
+        if (other && other.id !== bookId)
+          throw new ConflictException('این شرکت دفتر کل دیگری دارد.');
+      }
       return tx.accountingBook.update({
         where: { id: bookId },
         data: {
-          title: v.text(p.title, 160, true),
+          title: company?.title ?? v.text(p.title, 160, true),
+          ...(company ? { legalEntityId: company.id } : {}),
           ...(p.code !== undefined ? { code: v.text(p.code, 20, true) } : {}),
           ...(p.titleEn !== undefined
             ? { titleEn: v.text(p.titleEn, 160) || null }
@@ -3470,8 +3535,29 @@ export class AccountingService {
         : tx.accountingConfiguration.create({ data: { id, ...data } });
     }
     if (action === 'save-period') {
-      const id = v.uuid(p.id, true) ?? randomUUID(),
-        fiscalYearId = v.uuid(p.fiscalYearId)!;
+      const id = v.uuid(p.id, true) ?? randomUUID();
+      let fiscalYearId = v.uuid(p.fiscalYearId || undefined, true);
+      if (!fiscalYearId) {
+        if (p.id) v.rule('سال مالی تخصیص قبلی را انتخاب کنید.');
+        const code = v.text(p.fiscalYearCode, 4, true);
+        const title = v.text(p.fiscalYearTitle, 160, true);
+        if (!/^[1-9][0-9]{0,3}$/.test(code))
+          v.invalid('سال باید عددی بین ۱ تا ۹۹۹۹ باشد.');
+        const existingYear = await tx.accountingConfiguration.findFirst({
+          where: { bookId, kind: 'fiscal-years', code },
+        });
+        if (
+          existingYear &&
+          (!existingYear.active || existingYear.title !== title)
+        )
+          v.rule('این سال با مشخصات دیگری ثبت شده است.');
+        const createdYear =
+          existingYear ??
+          (await tx.accountingConfiguration.create({
+            data: { bookId, kind: 'fiscal-years', code, title, attributes: {} },
+          }));
+        fiscalYearId = createdYear.id;
+      }
       const year = await tx.accountingConfiguration.findFirst({
         where: { id: fiscalYearId, bookId, kind: 'fiscal-years', active: true },
       });

@@ -1,3 +1,7 @@
+## COMPANY-LEDGER-1110 — PC-D — COMPLETE_LOCALLY
+
+Company-owned General Ledger follows the global header; Jahan Academia shares Jahan Bastan's book. Canonical title is read-only; branch/currency controls removed. Fiscal-year definition plus allocation is atomic, with existing overlap/replay/version/used-period guards. Nullable restrictive company FK preserves legacy books for explicit adoption. API/Web typecheck/build, scoped lint, 74 isolated PostgreSQL/mapping tests and 252 financial Web tests pass (one pre-existing skip). Browser acceptance and local restored Docker rollout pass; backup taken, original 317 table fingerprints unchanged and two audit/history tables only append. No production/PR/merge. See docs/tasks/COMPANY-LEDGER-1110.md.
+
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
 Report bars use Dashboard-style fixed labels, grouped independent currency tracks and exact combined values. Numeric sort choices now drive horizontal/column/pie measures, with unique contract/passenger counts; name sorting retains the selected metric. Operational chartMeasure metadata is preserved. 92 Web report tests and scoped lint pass. No schema/API/financial calculation or production change. See docs/tasks/REPORTING-CHART-METRICS-1110.md.

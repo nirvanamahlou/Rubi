@@ -1,4 +1,5 @@
 'use client';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 
 import { AccountingCodingStandard } from './accounting-coding-standard';
 import { accountingBookId } from '../accounting-book-context';
@@ -268,8 +269,10 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const permissions = useAccessPermissions();
   const can = (p: string) => !!permissions?.includes(p);
   const queryClient = useQueryClient();
+  const { context: companyContext } = useLegalEntityContext();
+  const companyKey = companyContext?.selection ?? 'pending';
   const booksQuery = useQuery({
-    queryKey: ['accounting', 'books'],
+    queryKey: ['accounting', 'books', companyKey],
     queryFn: accountingApi.books,
   });
   const books = booksQuery.data?.books ?? [],
@@ -279,9 +282,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const urlParams = useSearchParams(),
     router = useRouter();
   const requestedBookId = urlParams.get('bookId');
-  const bookId = accountingBookId(books, selectedBookId || requestedBookId);
+  const legacyBook = booksQuery.data?.unassignedBooks?.find(
+    (row) => row.id === requestedBookId,
+  );
+  const bookId =
+    legacyBook?.id ??
+    accountingBookId(books, selectedBookId || requestedBookId);
   const snapshotQuery = useQuery({
-    queryKey: ['accounting', 'snapshot', bookId],
+    queryKey: ['accounting', 'snapshot', bookId, companyKey],
     queryFn: () => accountingApi.snapshot(bookId),
     enabled: !!bookId,
   });
@@ -398,7 +406,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   let content: ReactNode = null;
   if (!home && !sections.some(([route]) => route === section))
     content = <AccountingUnknownRoute route={section} />;
-  else if (booksQuery.isPending)
+  else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
     content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
   else if (booksQuery.isError || snapshotQuery.isError)
     content = (
@@ -418,6 +426,17 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <AccountingChartEditor key="no-book" book={null} run={run} busy={busy} />
     );
+  else if (section === 'general-ledger/base-information/lists/ledgers')
+    content = (
+      <AccountingBaseList
+        kind="ledgers"
+        snapshot={snapshot}
+        books={books}
+        busy={busy || loading}
+        refresh={refresh}
+        run={run}
+      />
+    );
   else if (
     !books.length ||
     section === 'general-ledger/base-information/ledgers'
@@ -428,6 +447,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         startNew={urlParams.get('new') === '1'}
         snapshot={snapshot}
         branches={branches}
+        company={booksQuery.data?.company}
         busy={busy}
         run={run}
         refresh={refresh}

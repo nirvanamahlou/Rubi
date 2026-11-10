@@ -1094,3 +1094,8 @@ Supplier, ticket and procurement invoice payment revisions can reference one exc
 Structured Workbench leave retains its WORKBENCH_LEAVE timeline payload. A non-HR execution owner can record WORKBENCH_RECIPIENT_REVIEW; approval atomically reroutes executionUnit/owner to the branch HR directory and appends audit/notifications. It never creates native leave or consumes quota. HR final approval continues through the existing transactional HR public port. recipientReview is an optional server-derived view capability, never an authorization input.
 
 The calculationSettings form has no independent workflow status field. New saved configuration defaults active; explicit inactive configuration remains inactive. The forward repair migration activates valid legacy draft configuration only where no active branch setting exists and an editor audit can be retained. Repair increments version and appends CALCULATION_SETTINGS_REPAIR audit; existing attendance timestamps and shift rows are untouched.
+
+
+## Company-owned accounting ledger (2026-11-10)
+
+AccountingBook retains its branch, currency and immutable financial references and gains nullable unique legalEntityId with a restrictive LegalEntity FK. One root company owns one ledger; Accounting's public-service scope maps JAHAN_ACADEMIA to JAHAN_BASTAN without changing other modules' issuer context. Legacy null ownership requires explicit binding rather than inferred name matching. Ledger title comes from the selected root company's canonical Persian name. New fiscal-year configuration and period allocation can be persisted atomically; overlap, duplicate allocation, closed/used-period and command replay guards remain. See docs/tasks/COMPANY-LEDGER-1110.md.

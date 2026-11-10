@@ -141,13 +141,13 @@ export function listFields(kind: AccountingListKind): ListField[] {
 
 export function listRecords(
   kind: AccountingListKind,
-  snapshot: AccountingSnapshotV1,
+  snapshot: AccountingSnapshotV1 | null,
   books: AccountingBookV1[],
 ): ListRecord[] {
   const rows =
     kind === 'ledgers'
       ? books
-      : snapshot.configurations.filter((row) => row.kind === kind);
+      : (snapshot?.configurations ?? []).filter((row) => row.kind === kind);
   return rows.map((row) => ({
     id: row.id,
     nullFields: [
@@ -190,11 +190,11 @@ export function listRecords(
     },
     allocations:
       kind === 'fiscal-years'
-        ? snapshot.periods
+        ? (snapshot?.periods ?? [])
             .filter((period) => period.fiscalYearId === row.id)
             .map((period) => ({
-              title: snapshot.book.title,
-              code: snapshot.book.code,
+              title: snapshot?.book.title ?? '',
+              code: snapshot?.book.code ?? '',
               startDate: period.startDate,
               endDate: period.endDate,
             }))
