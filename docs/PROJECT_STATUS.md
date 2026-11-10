@@ -1,6 +1,6 @@
 ## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
 
-Reservations inbox headers now have pointer/keyboard column resize handles. Keep the initial natural layout until interaction, then freeze measured column widths and change only the target plus total table width; RTL/LTR direction, pointer capture/loss and safe width limits are covered. Widths live only in the mounted table and reset when leaving/reopening, with no storage/API/export changes.37 focused Web checks and scoped lint pass; full Web typecheck and exact-head hosted gates precede authorized develop merge. No dependency/schema/data/deployment changes.
+Reservations inbox headers now have pointer/keyboard column resize handles. Keep the initial natural layout until interaction, then freeze measured column widths and change only the target plus total table width; RTL/LTR direction, pointer capture/loss and safe width limits are covered. Widths live only in the mounted table and reset when leaving/reopening, with no storage/API/export changes.37 focused Web checks and scoped lint pass; isolated real Chrome drag verifies47 headers,80px RTL delta only on the target, unchanged36px rows, refresh retention and reset on reentry with no browser errors; full Web typecheck and exact-head hosted gates precede authorized develop merge. No dependency/schema/data/deployment changes.
 
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 

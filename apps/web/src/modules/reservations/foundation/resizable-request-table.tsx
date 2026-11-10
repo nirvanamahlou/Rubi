@@ -42,6 +42,26 @@ export function ResizableRequestTable({ children }: { children: ReactNode }) {
       className={styles.requestTable}
       data-resized={widths ? true : undefined}
       data-resizing={resizing !== null ? true : undefined}
+      onPointerMove={(event) => {
+        const active = drag.current;
+        if (!active || event.pointerId !== active.pointerId) return;
+        const next = [...active.widths];
+        next[active.index] = boundWidth(
+          active.widths[active.index]! +
+            (event.clientX - active.startX) * active.direction,
+        );
+        setWidths(next);
+      }}
+      onPointerUp={(event) => {
+        if (drag.current?.pointerId !== event.pointerId) return;
+        drag.current = null;
+        setResizing(null);
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onLostPointerCapture={() => {
+        drag.current = null;
+        setResizing(null);
+      }}
       style={
         widths
           ? {
@@ -95,27 +115,7 @@ export function ResizableRequestTable({ children }: { children: ReactNode }) {
                   };
                   setWidths(measured);
                   setResizing(index);
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                }}
-                onPointerMove={(event) => {
-                  const active = drag.current;
-                  if (!active || event.pointerId !== active.pointerId) return;
-                  const next = [...active.widths];
-                  next[active.index] = boundWidth(
-                    active.widths[active.index]! +
-                      (event.clientX - active.startX) * active.direction,
-                  );
-                  setWidths(next);
-                }}
-                onPointerUp={(event) => {
-                  if (drag.current?.pointerId !== event.pointerId) return;
-                  drag.current = null;
-                  setResizing(null);
-                  event.currentTarget.releasePointerCapture(event.pointerId);
-                }}
-                onLostPointerCapture={() => {
-                  drag.current = null;
-                  setResizing(null);
+                  table.current!.setPointerCapture(event.pointerId);
                 }}
                 onKeyDown={(event) => {
                   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')

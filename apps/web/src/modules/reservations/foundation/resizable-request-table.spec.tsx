@@ -30,7 +30,9 @@ vi.mock('react', async (original) => ({
 }));
 
 const naturalWidths = reservationColumns.map((_, index) => 90 + index * 3);
+const capture = { setPointerCapture: vi.fn(), releasePointerCapture: vi.fn() };
 const measuredTable = {
+  ...capture,
   querySelectorAll: () =>
     naturalWidths.map((width) => ({
       getBoundingClientRect: () => ({ width }),
@@ -65,7 +67,6 @@ function sizes(tree: ReturnType<typeof render>) {
   }>;
   return colgroup.props.children.map((col) => col.props.style!.width as number);
 }
-const capture = { setPointerCapture: vi.fn(), releasePointerCapture: vi.fn() };
 function pointer(clientX: number, pointerId = 7, button = 0) {
   return {
     clientX,
@@ -74,7 +75,8 @@ function pointer(clientX: number, pointerId = 7, button = 0) {
     currentTarget: capture,
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
-  } as unknown as React.PointerEvent<HTMLSpanElement>;
+  } as unknown as React.PointerEvent<HTMLSpanElement> &
+    React.PointerEvent<HTMLTableElement>;
 }
 beforeEach(() => {
   fixture.values = [];
@@ -104,11 +106,13 @@ it('freezes measured widths then enlarges only the dragged RTL column and table 
   const index = reservationColumns.indexOf('Hotel');
   const control = handles(render())[index]!;
   const down = pointer(600);
-  control.onPointerDown!(down);
+  control.onPointerDown!(
+    down as unknown as React.PointerEvent<HTMLSpanElement>,
+  );
   expect(down.preventDefault).toHaveBeenCalled();
   expect(capture.setPointerCapture).toHaveBeenCalledWith(7);
   expect(sizes(render())).toEqual(naturalWidths);
-  control.onPointerMove!(pointer(520));
+  render().props.onPointerMove!(pointer(520));
   const tree = render();
   const expected = [...naturalWidths];
   expected[index]! += 80;
@@ -118,8 +122,8 @@ it('freezes measured widths then enlarges only the dragged RTL column and table 
     minWidth: 0,
     width: expected.reduce((a, b) => a + b, 0),
   });
-  control.onPointerUp!(pointer(520));
-  control.onPointerMove!(pointer(100));
+  render().props.onPointerUp!(pointer(520));
+  render().props.onPointerMove!(pointer(100));
   expect(sizes(render())).toEqual(expected);
   expect(render().props['data-resizing']).toBeUndefined();
 });
@@ -129,14 +133,14 @@ it('bounds shrinking/expanding, ignores other pointers and stops after capture i
   control.onPointerDown!(pointer(500, 7, 2));
   expect(render().props.style).toBeUndefined();
   control.onPointerDown!(pointer(500));
-  control.onPointerMove!(pointer(6000, 8));
+  render().props.onPointerMove!(pointer(6000, 8));
   expect(sizes(render())[0]).toBe(naturalWidths[0]);
-  control.onPointerMove!(pointer(6000));
+  render().props.onPointerMove!(pointer(6000));
   expect(sizes(render())[0]).toBe(44);
-  control.onPointerMove!(pointer(-6000));
+  render().props.onPointerMove!(pointer(-6000));
   expect(sizes(render())[0]).toBe(1200);
-  control.onLostPointerCapture!(pointer(-6000));
-  control.onPointerMove!(pointer(500));
+  render().props.onLostPointerCapture!(pointer(-6000));
+  render().props.onPointerMove!(pointer(500));
   expect(sizes(render())[0]).toBe(1200);
 });
 
@@ -144,9 +148,9 @@ it('uses the actual table direction for LTR drag and keyboard resizing', () => {
   vi.stubGlobal('getComputedStyle', () => ({ direction: 'ltr' }));
   const control = handles(render())[1]!;
   control.onPointerDown!(pointer(500));
-  control.onPointerMove!(pointer(550));
+  render().props.onPointerMove!(pointer(550));
   expect(sizes(render())[1]).toBe(naturalWidths[1]! + 50);
-  control.onPointerUp!(pointer(550));
+  render().props.onPointerUp!(pointer(550));
   const event = {
     key: 'ArrowRight',
     preventDefault: vi.fn(),
@@ -162,8 +166,8 @@ it('uses the actual table direction for LTR drag and keyboard resizing', () => {
 it('keeps widths on a table refresh but resets to natural sizes on a new inbox visit', () => {
   const control = handles(render())[2]!;
   control.onPointerDown!(pointer(500));
-  control.onPointerMove!(pointer(420));
-  control.onPointerUp!(pointer(420));
+  render().props.onPointerMove!(pointer(420));
+  render().props.onPointerUp!(pointer(420));
   expect(sizes(render())[2]).toBe(naturalWidths[2]! + 80);
   expect(sizes(render())[2]).toBe(naturalWidths[2]! + 80);
   fixture.values = [];
