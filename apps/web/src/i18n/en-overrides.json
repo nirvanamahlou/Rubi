@@ -5855,5 +5855,9 @@
   "نرخ مستقل کودک باید برای یک کودک باشد.": "A standalone child rate must cover exactly one child.",
   "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart.",
   "دیفالت منیفست": "Default Manifest",
-  "گزارش‌گیری": "Reporting"
+  "گزارش‌گیری": "Reporting",
+  "دریافت تاریخچه انجام نشد. دوباره تلاش کنید.": "Could not load history. Try again.",
+  "در حال دریافت تاریخچه…": "Loading history…",
+  "فعالیتی برای نمایش وجود ندارد.": "No activity to display.",
+  "اقدام": "Action"
 }

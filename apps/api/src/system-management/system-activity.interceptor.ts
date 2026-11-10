@@ -40,7 +40,7 @@ export class SystemActivityInterceptor implements NestInterceptor {
       .map((part) => part.replace(/^\/+|\/+$/g, ''))
       .filter(Boolean)
       .join('/');
-    const section = path.split('/')[0];
+    const section = path.split('/')[0] ?? 'system-management';
 
     return next.handle().pipe(
       concatMap(async (result: unknown) => {
