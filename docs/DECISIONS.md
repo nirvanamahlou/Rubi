@@ -836,3 +836,5 @@ outbox contract rather than reading domain tables directly.
 ## COMPANY-LEDGER-1110 — 2026-11-10 / PC-D
 
 The owner's three-company ledger model uses LegalEntity ownership alongside the existing Branch permission boundary. Jahan Academia shares Jahan Bastan's accounting book only; Sales/branding issuer context is unchanged. The header is the sole company selector and supplies immutable canonical ledger title. Retain legacy IDs/currencies and bind unknown ownership only by explicit metadata save; never infer ownership or move historical financial records. Aggregate mode is read-only. Fiscal-year configuration plus assignment is one Accounting transaction. The additive DTO/FK migration is compatible with legacy readers. This resolves the older branch-only ledger model for the bounded Accounting scope; details and validation are in docs/tasks/COMPANY-LEDGER-1110.md.
+
+COMPANY-LEDGER-1110 publication authorization: the owner explicitly requests CI, a PR to develop and merge after all tests succeed. This concrete destination supersedes the generic PC-D-Integration destination for this work item only. No production deployment.

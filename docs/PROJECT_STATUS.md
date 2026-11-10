@@ -1,6 +1,6 @@
-## COMPANY-LEDGER-1110 — PC-D — COMPLETE_LOCALLY
+## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
-Company-owned General Ledger follows the global header; Jahan Academia shares Jahan Bastan's book. Canonical title is read-only; branch/currency controls removed. Fiscal-year definition plus allocation is atomic, with existing overlap/replay/version/used-period guards. Nullable restrictive company FK preserves legacy books for explicit adoption. API/Web typecheck/build, scoped lint, 74 isolated PostgreSQL/mapping tests and 252 financial Web tests pass (one pre-existing skip). Browser acceptance and local restored Docker rollout pass; backup taken, original 317 table fingerprints unchanged and two audit/history tables only append. No production/PR/merge. See docs/tasks/COMPANY-LEDGER-1110.md.
+Company-owned General Ledger follows the global header; Jahan Academia shares Jahan Bastan's book. Canonical title is read-only; branch/currency controls removed. Fiscal-year definition plus allocation is atomic, with existing overlap/replay/version/used-period guards. Nullable restrictive company FK preserves legacy books for explicit adoption. API/Web typecheck/build, scoped lint, 74 isolated PostgreSQL/mapping tests and 252 financial Web tests pass (one pre-existing skip). Browser acceptance and local restored Docker rollout pass; backup taken, original 317 table fingerprints unchanged and two audit/history tables only append. Owner explicitly authorizes CI, develop PR and merge after all checks pass; no production deployment. See docs/tasks/COMPANY-LEDGER-1110.md.
 
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
