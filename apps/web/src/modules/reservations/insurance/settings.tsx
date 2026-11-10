@@ -18,6 +18,10 @@ import {
 import styles from './workspace.module.css';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { InsuranceRateMatrix } from './rate-matrix';
+import {
+  insuranceCountryPlanTemplates,
+  insuranceRateBandTemplate,
+} from './rate-band-template';
 
 export function InsuranceSettings({ branchId }: { branchId: string }) {
   const [value, setValue] = useState<InsuranceSettingsResponse | null>(null);
@@ -296,7 +300,7 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                         providerCountryName: country.name,
                         englishName: '',
                         active: true,
-                        plans: [],
+                        plans: insuranceCountryPlanTemplates(config, selected),
                       },
                     ],
                   }));
@@ -525,6 +529,14 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                               updatePlan({
                                 masterPlanId: e.target.value,
                                 title: p?.name ?? '',
+                                ...(plan.rates.length
+                                  ? {}
+                                  : {
+                                      rates: insuranceRateBandTemplate(
+                                        value.config,
+                                        e.target.value,
+                                      ),
+                                    }),
                               });
                             }}
                           >
