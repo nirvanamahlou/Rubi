@@ -90,6 +90,40 @@ describe('marketing durable API client', () => {
     expect(notifyNotificationFeedChanged).not.toHaveBeenCalled();
   });
 
+  it('sends campaign filters, ordering and the requested page to the server', async () => {
+    const response = { data: [], page: 2, total: 8 };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(response)));
+    vi.stubGlobal('fetch', fetchMock);
+    const controller = new AbortController();
+    await expect(
+      marketingApi.campaignPage(
+        {
+          search: 'name%code',
+          status: 'RUNNING',
+          startsAfter: '2026-10-01',
+          sortBy: 'budgetAmount',
+          sortDirection: 'asc',
+          page: 2,
+          pageSize: 4,
+        },
+        controller.signal,
+      ),
+    ).resolves.toEqual(response);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(Object.fromEntries(new URL(url).searchParams)).toEqual({
+      search: 'name%code',
+      status: 'RUNNING',
+      startsAfter: '2026-10-01',
+      sortBy: 'budgetAmount',
+      sortDirection: 'asc',
+      page: '2',
+      pageSize: '4',
+    });
+    expect(init.signal).toBe(controller.signal);
+  });
+
   it('reloads campaign data from the server and sends caller idempotency keys', async () => {
     const row = campaign('campaign-server', 4, 'DRAFT');
     const published = campaign('campaign-server', 5, 'ACTIVE');

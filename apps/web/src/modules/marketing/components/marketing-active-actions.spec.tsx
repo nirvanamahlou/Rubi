@@ -205,7 +205,7 @@ describe('reachable Marketing actions and upload correction', () => {
   });
 
   it('renders and invokes the actual workspace detail close action', () => {
-    hooks.values[7] = {
+    hooks.values[5] = {
       id: 'asset',
       title: 'Asset details',
       status: 'Active',
@@ -220,7 +220,7 @@ describe('reachable Marketing actions and upload correction', () => {
       hooks.buttons.find((button) => button['aria-label'] === 'تأیید و بستن')!
         .onClick as () => void
     )();
-    expect(hooks.values[7]).toBeNull();
+    expect(hooks.values[5]).toBeNull();
   });
 
   it('gives remaining reference action labels an icon and preserves submit/disabled wiring', () => {

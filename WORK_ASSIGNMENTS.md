@@ -1534,6 +1534,10 @@ User explicitly authorizes PC-B to connect the prepared accounting components on
 
 COMPUTER_ID=PC-A for this IAM-owned task; isolated branch codex/pc-a-manual-user-access-v3-1012 from origin/develop@61167e61. User explicitly authorizes implementing the reviewed manual-access document, authoritative allow/revoke enforcement, and mapping existing live users to equivalent previous access; genuinely new permissions must remain ungranted and be reported for manual decision. Reserve IAM contracts/API/Web, additive scoped domain authorization consumers/tests, a transactional preview/apply migration command and bounded own task/status/decision documentation. Producer IAM manual access v3, consumers AuthGuard/domain APIs and Web access editor; legacy accounts remain compatible until an explicit verified conversion. Personal snapshots must preserve effective permissions, branch scope, inactive/shared memberships and unknown grants without mutating shared roles. All changed live grants require a preview, durable before snapshot, concurrency check and after-equivalence verification. No dependency/lockfile or schema migration reserved. Accounting and unrelated active owners remain untouched. Root is sole writer; no delegation. Original dirty checkout is untouched. Local target and identity will be verified before operational writes. This authorization includes requested IAM user mapping, not unrelated data changes or destructive migrations.
 
+## MARKETING-CAMPAIGN-PAGES-1110 — PC-B — IN_PROGRESS
+
+Continue the Marketing pagination scope from PR 1608. Reserve campaign list endpoint, filters, and web list and focused tests. No schema or dependency change.
+
 ## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
 
 COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;

@@ -23,6 +23,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { MarketingProcessService } from './marketing-process.service';
 import {
   MarketingAssetListQueryDto,
+  MarketingCampaignPageQueryDto,
   MarketingPromotionPageQueryDto,
   MarketingAssetDeleteDto,
   MarketingAssetMutationDto,
@@ -35,6 +36,7 @@ import { MarketingRecordsService } from './marketing-records.service';
 @ApiCookieAuth('nora_access')
 @ApiExtraModels(
   MarketingAssetListQueryDto,
+  MarketingCampaignPageQueryDto,
   MarketingPromotionPageQueryDto,
   MarketingAssetDeleteDto,
   MarketingAssetMutationDto,
@@ -64,6 +66,16 @@ export class MarketingController {
   @RequirePermissions('marketing.read')
   campaigns(@Req() req: AuthenticatedRequest) {
     return this.records.listCampaigns(req.actor);
+  }
+
+  @Get('campaigns/page')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  campaignPage(
+    @Query() query: MarketingCampaignPageQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.records.listCampaignPage(query, req.actor);
   }
 
   @Get('campaigns/:id')
