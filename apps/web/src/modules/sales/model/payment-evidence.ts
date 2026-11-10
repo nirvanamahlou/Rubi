@@ -1,4 +1,7 @@
-import { receiptFileSupported, attachmentMimeType } from '@nora/contracts';
+import {
+  receiptFileSupported,
+  attachmentMimeType,
+} from '@nora/contracts/upload-formats';
 import type {
   DocumentOptionsResponseV1,
   SalesContractDetail,

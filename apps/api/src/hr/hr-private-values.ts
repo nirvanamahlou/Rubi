@@ -9,13 +9,29 @@ import { HR_RADAN_PRIVATE_RESOURCES } from '@nora/contracts';
 
 export const privateHrResource = (key: string) =>
   (HR_RADAN_PRIVATE_RESOURCES as readonly string[]).includes(key);
-function key() {
-  const value = Buffer.from(
-    process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 ??
-      process.env.CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64 ??
-      '',
-    'base64',
-  );
+function key(id = process.env.HR_PRIVATE_ENCRYPTION_KEY_ID ?? 'legacy') {
+  let keys: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = JSON.parse(
+      process.env.HR_PRIVATE_ENCRYPTION_KEYS_JSON ?? '{}',
+    );
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      throw new Error();
+    keys = parsed as Record<string, unknown>;
+  } catch {
+    throw new ServiceUnavailableException('HR encryption key ring is invalid.');
+  }
+  const configured = keys[id];
+  const activeId = process.env.HR_PRIVATE_ENCRYPTION_KEY_ID ?? 'legacy';
+  const encoded =
+    typeof configured === 'string'
+      ? configured
+      : id === activeId
+        ? (process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 ??
+          process.env.CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64 ??
+          '')
+        : '';
+  const value = Buffer.from(encoded, 'base64');
   if (value.length !== 32)
     throw new ServiceUnavailableException(
       'کلید رمزنگاری پرونده منابع انسانی پیکربندی نشده است.',
@@ -32,6 +48,9 @@ export function protectHrValues(values: string[], context: string) {
   ]);
   return {
     privateVersion: 1,
+    ...(process.env.HR_PRIVATE_ENCRYPTION_KEY_ID
+      ? { privateKeyId: process.env.HR_PRIVATE_ENCRYPTION_KEY_ID }
+      : {}),
     privatePayload: [iv, cipher.getAuthTag(), ciphertext]
       .map((v) => v.toString('base64'))
       .join('.'),
@@ -39,13 +58,21 @@ export function protectHrValues(values: string[], context: string) {
 }
 export function revealHrValues(data: unknown, context: string): string[] {
   try {
-    const payload = data as { privateVersion: number; privatePayload: string };
+    const payload = data as {
+      privateVersion: number;
+      privatePayload: string;
+      privateKeyId?: string;
+    };
     if (payload.privateVersion !== 1) throw new Error();
     const [iv, tag, ciphertext] = payload.privatePayload
       .split('.')
       .map((v) => Buffer.from(v, 'base64'));
     if (!iv || !tag || !ciphertext) throw new Error();
-    const cipher = createDecipheriv('aes-256-gcm', key(), iv);
+    const cipher = createDecipheriv(
+      'aes-256-gcm',
+      key(payload.privateKeyId ?? 'legacy'),
+      iv,
+    );
     cipher.setAAD(Buffer.from(`hr-private:v1:${context}`));
     cipher.setAuthTag(tag);
     const result: unknown = JSON.parse(
@@ -65,13 +92,15 @@ export function revealHrValues(data: unknown, context: string): string[] {
 export function publicHrData(data: unknown) {
   return Object.fromEntries(
     Object.entries(data as Record<string, unknown>).filter(
-      ([key]) => !['privatePayload', 'privateVersion'].includes(key),
+      ([key]) =>
+        !['privatePayload', 'privateVersion', 'privateKeyId'].includes(key),
     ),
   );
 }
 
 export function privateCommandFingerprint(value: unknown, actorId: string) {
-  return createHmac('sha256', key())
+  // Replay fingerprints must remain stable when the active encryption key changes.
+  return createHmac('sha256', key('legacy'))
     .update(`hr-private-command:v1:${actorId}:`)
     .update(JSON.stringify(value))
     .digest('hex');

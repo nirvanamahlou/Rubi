@@ -65,6 +65,13 @@ export const USER_ACCESS_GROUPS = [
     prefixes: ['ticket_catalog'],
   },
   {
+    id: 'reservation-reports',
+    title: 'گزارش رزرواسیون',
+    route: '/reservations/reports',
+    // Report data retains Reservations authorization; screen grants stay stable.
+    prefixes: ['reservations'],
+  },
+  {
     id: 'sales',
     title: 'قراردادها و فروش',
     route: '/sales',
@@ -763,10 +770,9 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   },
   {
     id: 'ticket-catalog.tab.issued',
-    group: 'ticket-catalog',
-    title: 'issued',
-    route: '/ticket-management',
-    tab: 'issued',
+    group: 'reservation-reports',
+    title: 'گزارش رزرواسیون',
+    route: '/reservations/reports',
   },
   {
     id: 'ticket-catalog.tab.tours',

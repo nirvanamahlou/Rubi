@@ -6,6 +6,21 @@ export * from './connections';
 export * from './directory';
 import { HR_CONNECTION_PERMISSION_CODES } from './connections';
 
+export const HR_ATTENDANCE_STATUSES = [
+  'حاضر',
+  'حاضر با تأخیر',
+  'حاضر با خروج زودهنگام',
+  'حاضر با تأخیر و خروج زودهنگام',
+  'غایب',
+  'مرخصی',
+  'مرخصی ساعتی',
+  'مأموریت',
+  'عدم روزکاری',
+  'در انتظار تردد',
+  'نیازمند بررسی',
+] as const;
+export type HrAttendanceStatus = (typeof HR_ATTENDANCE_STATUSES)[number];
+
 export const HR_CONTRACT_VERSION = 1 as const;
 export const HR_PERMISSION_CODES = [
   ...HR_CONNECTION_PERMISSION_CODES,
@@ -119,9 +134,11 @@ export interface HrWorkflowData {
   workedMinutes?: number;
   attendanceDeviceError?: boolean;
   dailyPenaltyToman?: string | null;
+  overtimeAmountToman?: string | null;
   /** Excluded from every attendance calculation; raw device punches are retained. */
   attendanceActive?: boolean;
   attendancePreviousStatus?: string;
+  attendanceStatusOverride?: HrAttendanceStatus;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
   overtimeMinutes?: number | null;

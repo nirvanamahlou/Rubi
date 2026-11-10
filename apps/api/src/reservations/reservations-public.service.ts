@@ -64,21 +64,47 @@ const intakeInclude = {
   },
 } satisfies Prisma.ReservationIntakeInclude;
 
-function present(
-  row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
-): ReservationIntakeV1 & {
-  workflow: unknown;
-  salesOwnerUserId: string | null;
-} {
-  const arrangement = row.arrangements[0];
-  const latestServicePurchases = new Map<
-    string,
-    (typeof row.servicePurchases)[number]
-  >();
-  const totalPurchase = row.servicePurchases.find(
+type IntakePurchase = Prisma.ReservationIntakeGetPayload<{
+  include: typeof intakeInclude;
+}>['servicePurchases'][number];
+
+const financeIntakeSelect = {
+  id: true,
+  branchId: true,
+  snapshot: true,
+  servicePurchases: {
+    orderBy: { version: 'desc' },
+    select: {
+      id: true,
+      batchId: true,
+      serviceClientKey: true,
+      coveredServiceClientKeys: true,
+      serviceTitleSnapshot: true,
+      supplierNameSnapshot: true,
+      amount: true,
+      currencyCode: true,
+      passengerPrices: true,
+      actorUserId: true,
+      createdAt: true,
+    },
+  },
+} satisfies Prisma.ReservationIntakeSelect;
+
+function latestPurchases<
+  Purchase extends Pick<
+    IntakePurchase,
+    | 'id'
+    | 'batchId'
+    | 'currencyCode'
+    | 'serviceClientKey'
+    | 'coveredServiceClientKeys'
+  >,
+>(purchases: readonly Purchase[]): Purchase[] {
+  const latestServicePurchases = new Map<string, Purchase>();
+  const totalPurchase = purchases.find(
     (p) => p.serviceClientKey === 'contract-total-purchase',
   );
-  for (const purchase of row.servicePurchases) {
+  for (const purchase of purchases) {
     if (purchase.serviceClientKey === 'contract-total-purchase') {
       if (
         totalPurchase?.batchId
@@ -97,6 +123,43 @@ function present(
       if (!latestServicePurchases.has(key))
         latestServicePurchases.set(key, purchase);
   }
+  return [
+    ...new Map(
+      [...latestServicePurchases.values()].map((purchase) => [
+        purchase.id,
+        purchase,
+      ]),
+    ).values(),
+  ];
+}
+
+type LatestFinanceRevision = Pick<
+  IntakePurchase['financeRevisions'][number],
+  'purchaseId' | 'version' | 'status' | 'cumulativePaid' | 'remainingAmount'
+>;
+
+function purchaseBalance(
+  amount: Prisma.Decimal,
+  revision: LatestFinanceRevision | undefined,
+) {
+  const legacyPaid = revision?.status === 'PAID' && !revision.cumulativePaid;
+  return {
+    paidAmount: legacyPaid
+      ? amount.toString()
+      : (revision?.cumulativePaid?.toString() ?? '0'),
+    remainingAmount: legacyPaid
+      ? '0'
+      : (revision?.remainingAmount?.toString() ?? amount.toString()),
+  };
+}
+
+function present(
+  row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
+): ReservationIntakeV1 & {
+  workflow: unknown;
+  salesOwnerUserId: string | null;
+} {
+  const arrangement = row.arrangements[0];
   return {
     purchaseSnapshot: ((
       row.workflowRevisions?.[0]?.state as unknown as
@@ -111,16 +174,8 @@ function present(
       amount: cost.amount.toString(),
       createdAt: cost.createdAt.toISOString(),
     })),
-    servicePurchases: [
-      ...new Map(
-        [...latestServicePurchases.values()].map((purchase) => [
-          purchase.id,
-          purchase,
-        ]),
-      ).values(),
-    ].map((purchase) => {
+    servicePurchases: latestPurchases(row.servicePurchases).map((purchase) => {
       const finance = purchase.financeRevisions[0];
-      const legacyPaid = finance?.status === 'PAID' && !finance.cumulativePaid;
       return {
         id: purchase.id,
         batchId: purchase.batchId,
@@ -249,13 +304,7 @@ function present(
               accountTitle: finance.account?.title ?? null,
               paymentMethodId: finance.paymentMethodId,
               paymentMethodName: finance.paymentMethod?.name ?? null,
-              paidAmount: legacyPaid
-                ? purchase.amount.toString()
-                : (finance.cumulativePaid?.toString() ?? '0'),
-              remainingAmount: legacyPaid
-                ? '0'
-                : (finance.remainingAmount?.toString() ??
-                  purchase.amount.toString()),
+              ...purchaseBalance(purchase.amount, finance),
               exchangeRateToIrr: finance.exchangeRateToIrr?.toString() ?? null,
               rialEquivalent: finance.rialEquivalent?.toString() ?? null,
               transferAt: finance.transferAt?.toISOString() ?? null,
@@ -659,21 +708,84 @@ export class ReservationsPublicService {
     actor?: AuthenticatedActor,
   ) {
     const ids = actor ? await this.companyScope?.ids(actor) : undefined;
-    const rows = await this.database.client.reservationIntake.findMany({
-      where: {
-        branchId: { in: [...branchIds] },
-        servicePurchases: { some: {} },
-        ...(ids ? { contractId: { in: ids } } : {}),
-      },
-      include: intakeInclude,
-      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
-      take: 10001,
-    });
-    if (rows.length > 10000)
-      throw new ConflictException(
-        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+    const { intakes, revisionByPurchase } =
+      await this.database.client.$transaction(
+        async (tx) => {
+          const rows = await tx.reservationIntake.findMany({
+            where: {
+              branchId: { in: [...branchIds] },
+              servicePurchases: { some: {} },
+              ...(ids ? { contractId: { in: ids } } : {}),
+            },
+            select: financeIntakeSelect,
+            orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+            take: 10001,
+          });
+          if (rows.length > 10000)
+            throw new ConflictException(
+              'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+            );
+          const intakes = rows.map((row) => ({
+            ...row,
+            servicePurchases: latestPurchases(row.servicePurchases),
+          }));
+          const purchaseIds = intakes.flatMap(({ servicePurchases }) =>
+            servicePurchases.map(({ id }) => id),
+          );
+          const revisions = purchaseIds.length
+            ? await tx.$queryRaw<LatestFinanceRevision[]>`
+              SELECT revision."purchaseId", revision.version, revision.status,
+                     revision."cumulativePaid", revision."remainingAmount"
+              FROM unnest(${purchaseIds}::uuid[]) AS selected(id)
+              JOIN LATERAL (
+                SELECT "purchaseId", version, status, "cumulativePaid", "remainingAmount"
+                FROM "FinanceSupplierPaymentRevision"
+                WHERE "purchaseId" = selected.id
+                ORDER BY version DESC
+                LIMIT 1
+              ) AS revision ON true
+            `
+            : [];
+          return {
+            intakes,
+            revisionByPurchase: new Map(
+              revisions.map((revision) => [revision.purchaseId, revision]),
+            ),
+          };
+        },
+        { isolationLevel: 'RepeatableRead' },
       );
-    return rows.map(present);
+    return intakes.map((row) => ({
+      id: row.id,
+      branchId: row.branchId,
+      snapshot: {
+        contractNumber: (row.snapshot as unknown as SalesReservationRequestV1)
+          .contractNumber,
+      },
+      servicePurchases: row.servicePurchases.map((purchase) => {
+        const revision = revisionByPurchase.get(purchase.id);
+        const hotelSavings = hotelPurchaseSavingsEvidence(
+          purchase.passengerPrices,
+        );
+        return {
+          id: purchase.id,
+          batchId: purchase.batchId,
+          serviceClientKey: purchase.serviceClientKey,
+          serviceTitle: purchase.serviceTitleSnapshot,
+          supplierName: purchase.supplierNameSnapshot,
+          amount: purchase.amount.toString(),
+          currencyCode: purchase.currencyCode,
+          actorUserId: purchase.actorUserId,
+          createdAt: purchase.createdAt.toISOString(),
+          ...(hotelSavings ? { hotelSavings } : {}),
+          finance: {
+            status: revision?.status ?? ('PENDING' as const),
+            version: revision?.version ?? 0,
+            ...purchaseBalance(purchase.amount, revision),
+          },
+        };
+      }),
+    }));
   }
 
   async list(

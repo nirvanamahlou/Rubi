@@ -71,6 +71,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  HR_ATTENDANCE_STATUSES,
   HR_RESOURCE_KEYS,
   getHrResource,
   type AuthenticatedActor,
@@ -160,6 +161,15 @@ const jobResources = new Set([
 ]);
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+
+type AttendanceAmounts = {
+  dailyPenaltyToman: string | null;
+  overtimeAmountToman: string | null;
+};
+const emptyAttendanceAmounts: AttendanceAmounts = {
+  dailyPenaltyToman: null,
+  overtimeAmountToman: null,
+};
 
 @Injectable()
 export class HrService {
@@ -551,9 +561,17 @@ export class HrService {
           'مبلغ جریمه باید عدد صحیح غیرمنفی به تومان باشد.',
         );
     validate.isoDate(values[2]!);
-    for (const value of values.slice(3))
+    for (const value of values.slice(3, 6))
       if (!['بله', 'خیر'].includes(value))
         throw new BadRequestException('وضعیت معافیت معتبر نیست.');
+    for (let index = 6; index < 8; index++) {
+      const rate = validate.digits(values[index] ?? '');
+      if (rate && !/^\d{1,12}$/.test(rate))
+        throw new BadRequestException(
+          'مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.',
+        );
+      values[index] = rate;
+    }
   }
   private async canManuallyEditAttendance(actor: AuthenticatedActor) {
     if (!actor.permissions.includes('hr.manage')) return false;
@@ -566,107 +584,217 @@ export class HrService {
   }
 
   async dailyPenalty(row: RecordRow): Promise<string | null> {
-    if (inactiveAttendance(row)) return null;
-    if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
-      return null;
-    const date = (row.values as string[])[1];
-    if (!date) return null;
-    const policies = await this.database.client.hrRecord.findMany({
-      where: {
-        branchId: row.branchId,
-        section: 'time',
-        tab: 'penaltySettings',
-        status: 'فعال',
-        deletedAt: null,
-      },
-      take: 1001,
-    });
-    if (policies.length > 1000)
-      throw new ConflictException('تعداد تنظیمات جریمه بیش از حد مجاز است.');
-    const policy = policies
-      .filter(
-        (item) =>
-          item.tab === 'penaltySettings' &&
-          item.status === 'فعال' &&
-          (item.values as string[])[2]! <= date,
+    return (await this.dailyAttendanceAmounts(row)).dailyPenaltyToman;
+  }
+
+  async dailyPenalties(
+    rows: readonly RecordRow[],
+  ): Promise<Map<string, string>> {
+    const amounts = await this.dailyAttendanceAmountMap(rows, false);
+    const penalties = new Map<string, string>();
+    for (const [id, { dailyPenaltyToman }] of amounts) {
+      if (dailyPenaltyToman !== null) penalties.set(id, dailyPenaltyToman);
+    }
+    return penalties;
+  }
+
+  private async dailyAttendanceAmounts(
+    row: RecordRow,
+    includeOvertime = false,
+  ) {
+    return (
+      (await this.dailyAttendanceAmountMap([row], includeOvertime)).get(
+        row.id,
+      ) ?? emptyAttendanceAmounts
+    );
+  }
+
+  private async dailyAttendanceAmountMap(
+    rows: readonly RecordRow[],
+    includeOvertime: boolean,
+  ): Promise<Map<string, AttendanceAmounts>> {
+    const byBranch = new Map<string, RecordRow[]>();
+    for (const row of rows) {
+      if (
+        row.section !== 'time' ||
+        row.tab !== 'attendance' ||
+        !row.employeeId ||
+        inactiveAttendance(row) ||
+        !(row.values as string[])[1]
       )
-      .sort(
+        continue;
+      const branchRows = byBranch.get(row.branchId) ?? [];
+      branchRows.push(row);
+      byBranch.set(row.branchId, branchRows);
+    }
+    const result = new Map<string, AttendanceAmounts>();
+    for (const [branchId, branchRows] of byBranch) {
+      const policies = await this.database.client.hrRecord.findMany({
+        where: {
+          branchId: branchId,
+          section: 'time',
+          tab: 'penaltySettings',
+          status: 'فعال',
+          deletedAt: null,
+        },
+        take: 1001,
+      });
+      if (policies.length > 1000)
+        throw new ConflictException('تعداد تنظیمات جریمه بیش از حد مجاز است.');
+      const applicablePolicies = policies.filter(
+        (item) =>
+          item.tab === 'penaltySettings' && (item.values as string[])[2],
+      );
+      applicablePolicies.sort(
         (a, b) =>
           (b.values as string[])[2]!.localeCompare(
             (a.values as string[])[2]!,
           ) ||
           b.updatedAt.getTime() - a.updatedAt.getTime() ||
           b.id.localeCompare(a.id),
-      )[0];
-    if (!policy) return null;
-    const source = await this.database.client.hrRecord.findMany({
-      where: {
-        branchId: row.branchId,
-        deletedAt: null,
-        OR: [
-          {
-            section: 'time',
-            tab: {
-              in: [
-                'penaltySettings',
-                'shift',
-                'workingHours',
-                'mission',
-                'leave',
-                'corrections',
-              ],
+      );
+      const scheduled = branchRows.flatMap((row) => {
+        const date = (row.values as string[])[1]!;
+        const policy = applicablePolicies.find(
+          (item) =>
+            item.tab === 'penaltySettings' &&
+            item.status === 'فعال' &&
+            (item.values as string[])[2]! <= date,
+        );
+        if (!policy) return [];
+        const start = new Date(Date.parse(date) - 2 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        const end = new Date(Date.parse(date) + 4 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        return [{ row, date, policy, start, end }];
+      });
+      if (!scheduled.length) continue;
+      const shared = await this.database.client.hrRecord.findMany({
+        where: {
+          branchId,
+          deletedAt: null,
+          OR: [
+            {
+              section: 'time',
+              tab: {
+                in: [
+                  'penaltySettings',
+                  'shift',
+                  'workingHours',
+                  'mission',
+                  'leave',
+                  'corrections',
+                ],
+              },
             },
-          },
-          {
-            section: 'requests',
-            tab: { in: ['radanLeave', 'radanMission', 'leave'] },
-          },
-          { section: 'expenses', tab: 'mission' },
-          {
+            {
+              section: 'requests',
+              tab: { in: ['radanLeave', 'radanMission', 'leave'] },
+            },
+            { section: 'expenses', tab: 'mission' },
+          ],
+        },
+        take: 10001,
+      });
+      if (shared.length > 10000)
+        throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+      const readPunches = (batch: typeof scheduled, take: number) =>
+        this.database.client.hrRecord.findMany({
+          where: {
+            branchId,
+            deletedAt: null,
             section: 'time',
             tab: 'checkins',
-            employeeId: row.employeeId,
-            AND: [
-              {
-                values: {
-                  path: ['1'],
-                  gte: new Date(Date.parse(date) - 2 * 86400000)
-                    .toISOString()
-                    .slice(0, 10),
-                },
-              },
-              {
-                values: {
-                  path: ['1'],
-                  lte: new Date(Date.parse(date) + 4 * 86400000)
-                    .toISOString()
-                    .slice(0, 10),
-                },
-              },
-            ],
+            OR: batch.map(({ row, start, end }) => ({
+              employeeId: row.employeeId,
+              AND: [
+                { values: { path: ['1'], gte: start } },
+                { values: { path: ['1'], lte: end } },
+              ],
+            })),
           },
-        ],
-      },
-      take: 10001,
-    });
-    if (source.length > 10000)
-      throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+          take,
+        });
+      for (let offset = 0; offset < scheduled.length; offset += 50) {
+        const batch = scheduled.slice(offset, offset + 50);
+        const punches = await readPunches(batch, 10001);
+        const byEmployee = new Map<string, RecordRow[]>();
+        for (const punch of punches) {
+          if (!punch.employeeId) continue;
+          const employeePunches = byEmployee.get(punch.employeeId) ?? [];
+          employeePunches.push(punch);
+          byEmployee.set(punch.employeeId, employeePunches);
+        }
+        for (const entry of batch) {
+          const { row, date, policy, start, end } = entry;
+          const dayPunches =
+            punches.length > 10000
+              ? await readPunches([entry], 10001)
+              : (byEmployee.get(row.employeeId!) ?? []).filter((punch) => {
+                  const day = (punch.values as string[])[1]!;
+                  return day >= start && day <= end;
+                });
+          if (shared.length + dayPunches.length > 10000)
+            throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
+          result.set(
+            row.id,
+            this.calculateDailyAttendanceAmounts(
+              row,
+              row.employeeId!,
+              date,
+              policy,
+              [...shared, ...dayPunches],
+              includeOvertime,
+            ),
+          );
+        }
+      }
+    }
+    return result;
+  }
+
+  private calculateDailyAttendanceAmounts(
+    row: RecordRow,
+    employeeId: string,
+    date: string,
+    policy: RecordRow,
+    source: RecordRow[],
+    includeOvertime: boolean,
+  ): AttendanceAmounts {
     const rates = policy.values as string[];
-    const view = this.attendanceView(source, row.employeeId, date);
-    if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
+    const data = row.data as HrWorkflowData | null;
+    const amount = {
+      overtimeAmountToman:
+        includeOvertime && rates[6] && data?.overtimeMinutes != null
+          ? new Prisma.Decimal(rates[6]).mul(data.overtimeMinutes).toFixed(0)
+          : null,
+    };
+    const view = this.attendanceView(source, employeeId, date);
+    if (!view.shiftStart || !view.shiftEnd || !view.events.length)
+      return { ...amount, dailyPenaltyToman: '0' };
     if (
       rates[5] === 'بله' &&
       ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
         source.some(
           (item) =>
-            item.employeeId === row.employeeId &&
+            item.employeeId === employeeId &&
             item.tab === 'corrections' &&
             validate.APPROVED.has(item.status) &&
             view.selected.some((punch) => punch.parentId === item.id) &&
             (item.data as HrWorkflowData).attendanceDeviceError === true,
         ))
     )
-      return '0';
+      return { ...amount, dailyPenaltyToman: '0' };
+    if (rates[7] && data?.deficitMinutes != null)
+      return {
+        ...amount,
+        dailyPenaltyToman: new Prisma.Decimal(rates[7])
+          .mul(data.deficitMinutes)
+          .toFixed(0),
+      };
+    if (rates[7]) return { ...amount, dailyPenaltyToman: null };
     const metrics = attendanceScheduleMetrics(
       view.events,
       view.shiftStart,
@@ -676,7 +804,7 @@ export class HrService {
     const intervals = source
       .filter(
         (item) =>
-          item.employeeId === row.employeeId &&
+          item.employeeId === employeeId &&
           validate.APPROVED.has(item.status) &&
           ((['mission', 'radanMission'].includes(item.tab) &&
             rates[3] === 'بله') ||
@@ -699,7 +827,7 @@ export class HrService {
       view.shiftEnd,
       intervals,
     );
-    return new Prisma.Decimal(rates[0]!)
+    const dailyPenaltyToman = new Prisma.Decimal(rates[0]!)
       .mul(Math.max(0, (metrics.lateMinutes ?? 0) - coverage.lateCredit))
       .add(
         new Prisma.Decimal(rates[1]!).mul(
@@ -707,16 +835,23 @@ export class HrService {
         ),
       )
       .toFixed(0);
+    return { ...amount, dailyPenaltyToman };
   }
 
   private async recordDtos(rows: RecordRow[], actor: AuthenticatedActor) {
-    const labels = await this.assignmentLabels(rows, actor);
-    return Promise.all(rows.map((row) => this.recordDto(row, actor, labels)));
+    const [labels, amounts] = await Promise.all([
+      this.assignmentLabels(rows, actor),
+      this.dailyAttendanceAmountMap(rows, true),
+    ]);
+    return Promise.all(
+      rows.map((row) => this.recordDto(row, actor, labels, amounts)),
+    );
   }
   private async recordDto(
     row: RecordRow,
     actor: AuthenticatedActor,
     display?: AssignmentLabels,
+    amounts?: ReadonlyMap<string, AttendanceAmounts>,
   ): Promise<HrRecordDto> {
     const schema = validate.resource(row.section, row.tab);
     const ownSlip =
@@ -780,7 +915,9 @@ export class HrService {
         : {
             ...(publicHrData(row.data) as HrWorkflowData),
             ...(schema.key === 'time.attendance'
-              ? { dailyPenaltyToman: await this.dailyPenalty(row) }
+              ? amounts
+                ? (amounts.get(row.id) ?? emptyAttendanceAmounts)
+                : await this.dailyAttendanceAmounts(row, true)
               : {}),
           },
     };
@@ -1855,7 +1992,11 @@ export class HrService {
     const legacy =
       row.section === 'time'
         ? (
-            { workingHours: 8, leaveTransferRules: 9 } as Record<string, number>
+            {
+              workingHours: 8,
+              leaveTransferRules: 9,
+              penaltySettings: 6,
+            } as Record<string, number>
           )[row.tab]
         : undefined;
     if (
@@ -3681,7 +3822,11 @@ export class HrService {
             })
           : await this.employee(tx, row.employeeId, actor)
         : null;
-      if (providedData?.organizationBranchId)
+      const unchangedLeavePolicyScope =
+        schema.key === 'time.leavePolicies' &&
+        providedData?.organizationBranchId ===
+          (row.data as HrWorkflowData).organizationBranchId;
+      if (providedData?.organizationBranchId && !unchangedLeavePolicyScope)
         await this.organizationBranch(
           tx,
           providedData.organizationBranchId,
@@ -4185,7 +4330,7 @@ export class HrService {
     const reason =
       input.reason === undefined
         ? undefined
-        : validate.text(input.reason, 'دلیل', 1000);
+        : validate.text(input.reason, 'دلیل', 1000, true);
     if (state === 'ENDED' && !isOptionalOperationReason(reason))
       throw new BadRequestException('دلیل پایان قرارداد الزامی است.');
     if (
@@ -5101,7 +5246,7 @@ export class HrService {
       'reason',
     ]);
     const type = validate.text(input.type, 'نوع مرخصی', 80),
-      reason = validate.text(input.reason, 'دلیل', 1000);
+      reason = validate.text(input.reason, 'دلیل', 1000, true);
     const days = validate.text(input.days, 'روز', 8);
     if (!/^\d{1,3}(\.\d{1,2})?$/.test(days) || Number(days) <= 0)
       throw new BadRequestException('روز سهمیه معتبر نیست.');
@@ -5527,8 +5672,19 @@ export class HrService {
       'active',
       'recordId',
       'version',
+      'status',
     ]);
     if (typeof input.active !== 'boolean')
+      throw new BadRequestException('وضعیت معتبر نیست.');
+    const requestedStatus = HR_ATTENDANCE_STATUSES.find(
+      (status) => status === input.status,
+    );
+    if (
+      input.status !== undefined &&
+      (!input.recordId ||
+        !input.active ||
+        (input.status !== null && !requestedStatus))
+    )
       throw new BadRequestException('وضعیت معتبر نیست.');
     const from = validate.isoDate(input.from),
       to = validate.isoDate(input.to);
@@ -5578,6 +5734,9 @@ export class HrService {
             await this.assertOpenPeriod(tx, employee.branchId, date);
             const rows = await tx.hrRecord.findMany({
               where: {
+                ...(typeof input.recordId === 'string'
+                  ? { id: input.recordId }
+                  : {}),
                 branchId: employee.branchId,
                 employeeId: id,
                 section: 'time',
@@ -5588,15 +5747,32 @@ export class HrService {
             });
             for (const row of rows) {
               const data = (row.data ?? {}) as HrWorkflowData;
-              if (inactiveAttendance(row) === !input.active) continue;
+              const inactive = inactiveAttendance(row);
+              const override =
+                input.status === undefined
+                  ? data.attendanceStatusOverride
+                  : requestedStatus;
+              if (
+                inactive === !input.active &&
+                override === data.attendanceStatusOverride
+              )
+                continue;
+              const calculated =
+                inactive || data.attendanceStatusOverride
+                  ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                  : row.status;
               const status = input.active
-                ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+                ? override?.startsWith('حاضر')
+                  ? 'حاضر'
+                  : (override ?? calculated)
                 : 'غیرفعال';
               const next = {
                 ...data,
                 attendanceActive: input.active,
-                attendancePreviousStatus: input.active ? status : row.status,
+                attendancePreviousStatus: calculated,
               };
+              if (override) next.attendanceStatusOverride = override;
+              else delete next.attendanceStatusOverride;
               await tx.hrRecord.update({
                 where: { id: row.id },
                 data: { status, data: json(next), version: { increment: 1 } },
@@ -5606,7 +5782,11 @@ export class HrService {
                 actor,
                 { branchId: row.branchId, employeeId: id, recordId: row.id },
                 'attendance.activation',
-                { date, active: input.active },
+                {
+                  date,
+                  active: input.active,
+                  statusOverride: override ?? null,
+                },
                 row.version + 1,
                 row.status,
                 status,
@@ -6107,13 +6287,18 @@ export class HrService {
                     : 'غایب';
           const deviceError = (existing?.data as HrWorkflowData | undefined)
             ?.attendanceDeviceError;
+          const override = (existing?.data as HrWorkflowData | undefined)
+            ?.attendanceStatusOverride;
           const calculatedData = {
             ...(deviceError === undefined
               ? {}
               : { attendanceDeviceError: deviceError }),
-            ...((existing?.data as HrWorkflowData | undefined)
-              ?.attendanceActive === false
-              ? { attendanceActive: false, attendancePreviousStatus: status }
+            ...(existing && inactiveAttendance(existing)
+              ? { attendanceActive: false }
+              : {}),
+            ...(override ? { attendanceStatusOverride: override } : {}),
+            ...(override || (existing && inactiveAttendance(existing))
+              ? { attendancePreviousStatus: status }
               : {}),
             ...(settings
               ? {
@@ -6155,7 +6340,11 @@ export class HrService {
             exceptionCodes: reviewExceptions,
           };
           const effectiveStatus =
-            existing && inactiveAttendance(existing) ? 'غیرفعال' : status;
+            existing && inactiveAttendance(existing)
+              ? 'غیرفعال'
+              : override?.startsWith('حاضر')
+                ? 'حاضر'
+                : (override ?? status);
           if (
             existing &&
             existing.status === effectiveStatus &&

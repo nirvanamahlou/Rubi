@@ -1,7 +1,10 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useRouteAccess } from '@/modules/iam/access-context';
-import type { AuthenticatedActor } from '@nora/contracts';
+import type {
+  AuthenticatedActor,
+  MarketingCampaignPageV1,
+} from '@nora/contracts';
 
 import {
   BadgePercent,
@@ -28,7 +31,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -66,9 +69,7 @@ import {
   campaignChannelLabels,
   campaignStatusLabels,
   executionCompanyLabels,
-  filterAndSortCampaigns,
   normalizeMarketingCampaignQuery,
-  paginateCampaigns,
   type CampaignChannel,
   type CampaignPreview,
   type CampaignStatus,
@@ -434,20 +435,16 @@ export function CampaignCard({
 }
 
 function CampaignList({
-  campaignsSource,
-  error,
-  loading,
+  segments,
+  revision,
   onOpen,
   onNotice,
-  onRetry,
   onDetails,
 }: {
-  campaignsSource: readonly CampaignPreview[];
-  error: string;
-  loading: boolean;
+  segments: readonly SegmentOption[];
+  revision: number;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
-  onRetry: () => void;
   onDetails: (campaign: CampaignPreview) => void;
 }) {
   const [query, setQuery] = useState<MarketingCampaignQuery>(() =>
@@ -456,13 +453,48 @@ function CampaignList({
   const [disabledCampaigns, setDisabledCampaigns] = useState<Set<string>>(
     () => new Set(),
   );
-  const filtered = useMemo(
-    () => filterAndSortCampaigns(campaignsSource, query),
-    [campaignsSource, query],
+  const [result, setResult] = useState<MarketingCampaignPageV1>({
+    data: [],
+    page: 1,
+    total: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const onRetry = () => setReload((value) => value + 1);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      setError('');
+      void marketingApi
+        .campaignPage(query, controller.signal)
+        .then((response) => {
+          if (!controller.signal.aborted) setResult(response);
+        })
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted)
+            setError(
+              reason instanceof Error
+                ? reason.message
+                : 'دریافت کمپین‌ها انجام نشد.',
+            );
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, 180);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, revision, reload]);
+  const totalPages = Math.max(1, Math.ceil(result.total / query.pageSize));
+  const currentPage = result.page;
+  const campaigns = result.data.map((record) =>
+    campaignPreviewFromRecord(record, segments),
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
-  const currentPage = Math.min(query.page, totalPages);
-  const campaigns = paginateCampaigns(filtered, currentPage, query.pageSize);
   const patchQuery = (patch: Partial<MarketingCampaignQuery>) =>
     setQuery((current) =>
       normalizeMarketingCampaignQuery({
@@ -476,30 +508,57 @@ function CampaignList({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => {
-              downloadRowsAsExcel({
-                filename: 'کمپین‌های-مارکتینگ',
-                sheetName: 'کمپین‌ها',
-                columns: [
-                  'کد',
-                  'نام',
-                  'نوع',
-                  'شرکت مجری',
-                  'شروع',
-                  'پایان',
-                  'وضعیت',
-                ],
-                rows: filtered.map((item) => [
-                  item.internalCode,
-                  item.name,
-                  item.campaignType,
-                  executionCompanyLabels[item.executionCompany],
-                  formatDate(item.startsAt),
-                  formatDate(item.endsAt),
-                  campaignStatusLabels[item.status],
-                ]),
-              });
-              onNotice('خروجی اکسل کمپین‌های فیلترشده دانلود شد.');
+            disabled={exporting || loading || Boolean(error)}
+            onClick={async () => {
+              setExporting(true);
+              try {
+                const filtered: CampaignPreview[] = [];
+                for (let page = 1; ; page++) {
+                  const response = await marketingApi.campaignPage({
+                    ...query,
+                    page,
+                    pageSize: 20,
+                  });
+                  if (response.page !== page) break;
+                  filtered.push(
+                    ...response.data.map((row) =>
+                      campaignPreviewFromRecord(row, segments),
+                    ),
+                  );
+                  if (page * 20 >= response.total) break;
+                }
+                downloadRowsAsExcel({
+                  filename: 'کمپین‌های-مارکتینگ',
+                  sheetName: 'کمپین‌ها',
+                  columns: [
+                    'کد',
+                    'نام',
+                    'نوع',
+                    'شرکت مجری',
+                    'شروع',
+                    'پایان',
+                    'وضعیت',
+                  ],
+                  rows: filtered.map((item) => [
+                    item.internalCode,
+                    item.name,
+                    item.campaignType,
+                    executionCompanyLabels[item.executionCompany],
+                    formatDate(item.startsAt),
+                    formatDate(item.endsAt),
+                    campaignStatusLabels[item.status],
+                  ]),
+                });
+                onNotice('خروجی اکسل کمپین‌های فیلترشده دانلود شد.');
+              } catch (reason) {
+                onNotice(
+                  reason instanceof Error
+                    ? reason.message
+                    : 'دریافت کمپین‌ها انجام نشد.',
+                );
+              } finally {
+                setExporting(false);
+              }
             }}
             variant="outline"
           >
@@ -698,7 +757,7 @@ function CampaignList({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
         <PaginationShell
           currentPage={currentPage}
-          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین ثبت‌شده`}
+          totalLabel={`${result.total.toLocaleString('fa-IR')} کمپین ثبت‌شده`}
         />
         <div className="flex gap-2">
           <Button
@@ -786,23 +845,60 @@ function BudgetPanel({ campaigns }: { campaigns: readonly CampaignPreview[] }) {
 }
 
 function CampaignsPanel({
-  campaigns,
-  error,
-  loading,
+  segments,
+  revision,
   onOpen,
   onNotice,
-  onRetry,
   onDetails,
 }: {
-  campaigns: readonly CampaignPreview[];
-  error: string;
-  loading: boolean;
+  segments: readonly SegmentOption[];
+  revision: number;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
-  onRetry: () => void;
   onDetails: (campaign: CampaignPreview) => void;
 }) {
   const [tab, setTab] = useState('list');
+  const [auxiliary, setAuxiliary] = useState<MarketingCampaignPageV1['data']>(
+    [],
+  );
+  const [auxiliaryError, setAuxiliaryError] = useState('');
+  const [auxiliaryLoading, setAuxiliaryLoading] = useState(false);
+  useEffect(() => {
+    if (tab === 'list') return;
+    let current = true;
+    const timer = window.setTimeout(() => {
+      setAuxiliaryLoading(true);
+      setAuxiliaryError('');
+      void marketingApi
+        .campaigns()
+        .then((response) => {
+          if (current) setAuxiliary(response.data);
+        })
+        .catch((reason: unknown) => {
+          if (current)
+            setAuxiliaryError(
+              reason instanceof Error
+                ? reason.message
+                : 'دریافت کمپین‌ها انجام نشد.',
+            );
+        })
+        .finally(() => {
+          if (current) setAuxiliaryLoading(false);
+        });
+    }, 0);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  }, [tab, revision]);
+  const campaigns = auxiliary.map((record) =>
+    campaignPreviewFromRecord(record, segments),
+  );
+  const auxiliaryNotice = auxiliaryLoading ? (
+    <p role="status">در حال دریافت کمپین‌ها…</p>
+  ) : auxiliaryError ? (
+    <p role="alert">{auxiliaryError}</p>
+  ) : null;
   return (
     <Tabs
       className="grid gap-0 text-right"
@@ -822,23 +918,23 @@ function CampaignsPanel({
       </TabsList>
       <TabsContent className="mt-5" value="list">
         <CampaignList
-          campaignsSource={campaigns}
-          error={error}
-          loading={loading}
+          segments={segments}
+          revision={revision}
           onNotice={onNotice}
           onOpen={onOpen}
-          onRetry={onRetry}
           onDetails={onDetails}
         />
       </TabsContent>
       <TabsContent className="mt-5" value="calendar">
-        <CampaignCalendar
-          campaigns={campaigns}
-          onOpen={(campaign) => onOpen('view', campaign)}
-        />
+        {auxiliaryNotice ?? (
+          <CampaignCalendar
+            campaigns={campaigns}
+            onOpen={(campaign) => onOpen('view', campaign)}
+          />
+        )}
       </TabsContent>
       <TabsContent className="mt-5" value="budget">
-        <BudgetPanel campaigns={campaigns} />
+        {auxiliaryNotice ?? <BudgetPanel campaigns={campaigns} />}
       </TabsContent>
     </Tabs>
   );
@@ -864,11 +960,9 @@ export function MarketingWorkspace({
 }) {
   const router = useRouter();
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
-  const [campaigns, setCampaigns] = useState<CampaignPreview[]>([]);
+  const [campaignRevision, setCampaignRevision] = useState(0);
   const [segments, setSegments] = useState<SegmentOption[]>([]);
   const publicationAttempt = useRef<CampaignPublicationAttempt | null>(null);
-  const [campaignsLoading, setCampaignsLoading] = useState(true);
-  const [campaignsError, setCampaignsError] = useState('');
   const [section, setSection] = useState<MarketingSectionKey | null>(() =>
     resolveMarketingSection(initialSection),
   );
@@ -883,38 +977,27 @@ export function MarketingWorkspace({
   }>({ open: false, mode: 'create' });
   const [declarationsCampaign, setDeclarationsCampaign] =
     useState<CampaignPreview | null>(null);
-  const loadCampaigns = useCallback(async () => {
-    setCampaignsLoading(true);
-    setCampaignsError('');
-    try {
-      const [access, response, segmentResponse] = await Promise.all([
-        marketingApi.access(),
-        marketingApi.campaigns(),
-        marketingApi.assets('SEGMENT'),
-      ]);
-      setActor(access);
-      const nextSegments = segmentResponse.data.map(({ id, name }) => ({
-        id,
-        name,
-      }));
-      setSegments(nextSegments);
-      setCampaigns(
-        response.data.map((record) =>
-          campaignPreviewFromRecord(record, nextSegments),
-        ),
-      );
-    } catch (error) {
-      setCampaignsError(
-        error instanceof Error ? error.message : 'دریافت کمپین‌ها انجام نشد.',
-      );
-    } finally {
-      setCampaignsLoading(false);
-    }
-  }, []);
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadCampaigns(), 0);
-    return () => window.clearTimeout(timer);
-  }, [loadCampaigns]);
+    if (section !== 'campaigns') return;
+    let current = true;
+    void Promise.all([marketingApi.access(), marketingApi.assets('SEGMENT')])
+      .then(([access, response]) => {
+        if (!current) return;
+        setActor(access);
+        setSegments(response.data.map(({ id, name }) => ({ id, name })));
+      })
+      .catch((reason: unknown) => {
+        if (current)
+          setNotice(
+            reason instanceof Error
+              ? reason.message
+              : 'دریافت کمپین‌ها انجام نشد.',
+          );
+      });
+    return () => {
+      current = false;
+    };
+  }, [section]);
   const syncSectionFromHistory = useCallback(() => {
     const requestedSection = new URL(window.location.href).searchParams.get(
       'section',
@@ -987,12 +1070,10 @@ export function MarketingWorkspace({
             />
           ) : section === 'campaigns' ? (
             <CampaignsPanel
-              campaigns={campaigns}
-              error={campaignsError}
-              loading={campaignsLoading}
+              segments={segments}
+              revision={campaignRevision}
               onNotice={setNotice}
               onOpen={openCampaign}
-              onRetry={() => void loadCampaigns()}
               onDetails={setDeclarationsCampaign}
             />
           ) : genericSection ? (
@@ -1033,18 +1114,12 @@ export function MarketingWorkspace({
               key={declarationsCampaign.id}
               campaign={declarationsCampaign}
               onSave={async (input, key) => {
-                const result = await marketingApi.updateCampaign(
+                await marketingApi.updateCampaign(
                   declarationsCampaign.id,
                   input,
                   key,
                 );
-                setCampaigns((current) =>
-                  current.map((item) =>
-                    item.id === result.data.id
-                      ? campaignPreviewFromRecord(result.data, segments)
-                      : item,
-                  ),
-                );
+                setCampaignRevision((value) => value + 1);
                 setDeclarationsCampaign(null);
                 setNotice('پیشرفت، هزینه‌ها و لینک‌های کمپین ذخیره شدند.');
               }}
@@ -1082,7 +1157,7 @@ export function MarketingWorkspace({
                     campaign.id,
                     campaign.version,
                   );
-                  await loadCampaigns();
+                  setCampaignRevision((value) => value + 1);
                   setCampaignDialog((current) => ({ ...current, open: false }));
                   setNotice('پیش‌نویس ذخیره‌شده منتشر شد.');
                 } catch (error) {
@@ -1130,7 +1205,7 @@ export function MarketingWorkspace({
                   );
                   setNotice('تغییرات کمپین با ثبت نسخه و سابقه ذخیره شد.');
                 }
-                await loadCampaigns();
+                setCampaignRevision((value) => value + 1);
                 setCampaignDialog((current) => ({ ...current, open: false }));
               }}
             />

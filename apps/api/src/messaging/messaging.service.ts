@@ -374,15 +374,18 @@ export class MessagingService {
       replyTo?: { id: string; body: string; senderUserId: string } | null;
       reactions?: Array<{ emoji: string; userId: string }>;
     }>,
+    suppliedNames?: Map<string, ParticipantDescription>,
   ): Promise<MessagingMessageV1[]> {
-    const names = await this.descriptions(
-      rows.flatMap((row) => [
-        row.senderUserId,
-        ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
-        ...(row.replyTo ? [row.replyTo.senderUserId] : []),
-        ...(row.reactions ?? []).map((reaction) => reaction.userId),
-      ]),
-    );
+    const names =
+      suppliedNames ??
+      (await this.descriptions(
+        rows.flatMap((row) => [
+          row.senderUserId,
+          ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
+          ...(row.replyTo ? [row.replyTo.senderUserId] : []),
+          ...(row.reactions ?? []).map((reaction) => reaction.userId),
+        ]),
+      ));
     return rows.map((row) => {
       const sender =
         names.get(row.senderUserId) ?? this.fallback(row.senderUserId);
@@ -462,15 +465,47 @@ export class MessagingService {
     }>,
     actorUserId: string,
   ): Promise<MessagingConversationV1[]> {
+    if (!rows.length) return [];
+    const ids = rows.flatMap((row) => [
+      ...row.members.map((member) => member.userId),
+      ...(row.type === 'DIRECT' && row.directPairKey
+        ? row.directPairKey.split(':').slice(-2)
+        : []),
+      ...row.messages.flatMap((message) => [
+        message.senderUserId,
+        ...(message.forwardedFrom ? [message.forwardedFrom.senderUserId] : []),
+        ...(message.replyTo ? [message.replyTo.senderUserId] : []),
+        ...(message.reactions ?? []).map((reaction) => reaction.userId),
+      ]),
+    ]);
+    const [names, counts] = await Promise.all([
+      this.descriptions([...new Set(ids)]),
+      this.repository.unreadCounts(
+        rows.map((row) => ({
+          conversationId: row.id,
+          lastReadAt:
+            row.members.find((member) => member.userId === actorUserId)
+              ?.lastReadAt ?? null,
+        })),
+        actorUserId,
+      ),
+    ]);
     return Promise.all(
-      rows.map((row) => this.mapConversation(row, actorUserId)),
+      rows.map((row) =>
+        this.mapConversation(row, actorUserId, { names, counts }),
+      ),
     );
   }
 
   private async mapConversation(
     row: Parameters<MessagingService['mapConversations']>[0][number],
     actorUserId: string,
+    batch?: {
+      names: Map<string, ParticipantDescription>;
+      counts: Map<string, number>;
+    },
   ): Promise<MessagingConversationV1> {
+    if (!batch) return (await this.mapConversations([row], actorUserId))[0]!;
     const members = [...row.members];
     if (row.type === 'DIRECT' && row.directPairKey) {
       for (const userId of row.directPairKey.split(':').slice(-2)) {
@@ -478,9 +513,7 @@ export class MessagingService {
           members.push({ userId, role: 'MEMBER', lastReadAt: null });
       }
     }
-    const names = await this.descriptions(
-      members.map((member) => member.userId),
-    );
+    const names = batch.names;
     const participants: MessagingParticipantV1[] = members.map((member) => ({
       ...(names.get(member.userId) ?? this.fallback(member.userId)),
       role: member.role,
@@ -488,14 +521,7 @@ export class MessagingService {
     const other = participants.find(
       (participant) => participant.id !== actorUserId,
     );
-    const membership = row.members.find(
-      (member) => member.userId === actorUserId,
-    );
-    const unreadCount = await this.repository.unreadCount(
-      row.id,
-      actorUserId,
-      membership?.lastReadAt ?? null,
-    );
+    const unreadCount = batch.counts.get(row.id) ?? 0;
     return {
       id: row.id,
       type: row.type,
@@ -505,7 +531,7 @@ export class MessagingService {
           : (other?.displayName ?? 'گفت‌وگوی مستقیم'),
       branchId: row.branchId,
       participants,
-      lastMessage: (await this.mapMessages(row.messages))[0] ?? null,
+      lastMessage: (await this.mapMessages(row.messages, names))[0] ?? null,
       unreadCount,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

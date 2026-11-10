@@ -20,7 +20,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -73,38 +73,49 @@ import {
 
 type Notice = (message: string) => void;
 
-function useMarketingData(kinds: MarketingAssetKind[] = []) {
+function useMarketingData(
+  kinds: MarketingAssetKind[],
+  includeCampaigns = true,
+) {
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [campaigns, setCampaigns] = useState<MarketingCampaignViewV1[]>([]);
   const [assets, setAssets] = useState<MarketingAssetViewV1[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const key = kinds.join(',');
+  const revision = useRef({ id: 0 });
   const load = useCallback(async () => {
+    const request = ++revision.current.id;
     setLoading(true);
     setError('');
     try {
       const [access, campaignResponse, ...assetResponses] = await Promise.all([
         marketingApi.access(),
-        marketingApi.campaigns(),
+        includeCampaigns ? marketingApi.campaigns() : null,
         ...(key ? key.split(',') : []).map((kind) =>
           marketingApi.assets(kind as MarketingAssetKind),
         ),
       ]);
+      if (request !== revision.current.id) return;
       setActor(access);
-      setCampaigns(campaignResponse.data);
+      setCampaigns(campaignResponse?.data ?? []);
       setAssets(assetResponses.flatMap((response) => response.data));
     } catch (reason) {
+      if (request !== revision.current.id) return;
       setError(
         reason instanceof Error ? reason.message : 'دریافت داده انجام نشد.',
       );
     } finally {
-      setLoading(false);
+      if (request === revision.current.id) setLoading(false);
     }
-  }, [key]);
+  }, [key, includeCampaigns]);
   useEffect(() => {
+    const requestState = revision.current;
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestState.id++;
+    };
   }, [load]);
   return { actor, campaigns, assets, loading, error, load };
 }
@@ -187,7 +198,7 @@ function AssetActions({
 }
 
 export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
-  const data = useMarketingData(['SEGMENT']);
+  const data = useMarketingData(['SEGMENT'], false);
   const [name, setName] = useState('');
   const [rule, setRule] = useState('');
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
@@ -2512,7 +2523,7 @@ export function AutomationGraphCanvas({
 }
 
 export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
-  const data = useMarketingData(['AUTOMATION']);
+  const data = useMarketingData(['AUTOMATION'], false);
   const emptyAutomation = (): AutomationDraft => ({
     name: 'اتوماسیون جدید',
     nodes: [{ id: crypto.randomUUID(), title: 'شروع' }],

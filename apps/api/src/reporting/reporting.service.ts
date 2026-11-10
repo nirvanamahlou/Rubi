@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ServiceUnavailableException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -1526,6 +1527,8 @@ export class ReportingService {
     };
   }
 
+  private activeExports = 0;
+
   async createExport(
     code: string,
     input: {
@@ -1536,6 +1539,27 @@ export class ReportingService {
     actor: ReportingActor,
   ) {
     this.require(actor, 'reporting.export');
+    if (this.activeExports >= 2)
+      throw new ServiceUnavailableException(
+        'ظرفیت ساخت خروجی پر است. دوباره تلاش کنید.',
+      );
+    this.activeExports++;
+    try {
+      return await this.generateExport(code, input, actor);
+    } finally {
+      this.activeExports--;
+    }
+  }
+
+  private async generateExport(
+    code: string,
+    input: {
+      format: 'CSV' | 'XLSX' | 'PDF';
+      query: ReportQueryV1;
+      simulateFailure?: boolean;
+    },
+    actor: ReportingActor,
+  ) {
     const started = Date.now();
     if (!this.repository || !this.exportFiles)
       throw new ConflictException('سرویس خروجی گزارش در دسترس نیست.');
@@ -1636,7 +1660,11 @@ export class ReportingService {
       };
     }
     try {
-      const file = this.exportFiles.build(input.format, result, report.title);
+      const file = await this.exportFiles.buildInWorker(
+        input.format,
+        result,
+        report.title,
+      );
       const objectKey = await this.exportFiles.store(
         String(artifact.id),
         file.extension,
@@ -1692,10 +1720,11 @@ export class ReportingService {
     )
       throw new ConflictException('مهلت دانلود این خروجی پایان یافته است.');
     return {
-      buffer: await this.exportFiles.read(
+      stream: await this.exportFiles.open(
         String(artifact.objectKey),
         Number(artifact.sizeBytes),
       ),
+      sizeBytes: Number(artifact.sizeBytes),
       fileName: String(artifact.fileName),
       contentType: String(artifact.contentType),
     };

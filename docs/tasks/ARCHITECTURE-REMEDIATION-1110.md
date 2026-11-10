@@ -1,0 +1,75 @@
+# Architecture remediation — 2026-11-10
+
+COMPUTER_ID=PC-B. Base: develop 3370748caf88df76aeccc4eb3ec2e837b37eb4ce.
+The product owner requests implementation of the GitHub architecture/code review.
+Work proceeds without orchestration or delegated writers. Preserve all existing
+product behavior, authorization, financial atomicity and persisted data.
+
+## Tracking
+
+| Scope | Implemented in develop | Remaining |
+| --- | --- | --- |
+| IAM and diagnostics | Dedicated attendance integration identity and safe unexpected-error context in PR #1600 | Validate runtime ownership when changing attendance sync |
+| Messaging and notifications | Batched identities and unread lookups, compact paged metadata and exact authorization counts in PR #1600; verbatim chat text in PR #1603 | Exact notification counts still visit unread metadata |
+| Attendance and HR | Batched penalty evaluation, explicit optional reasons and key ring in PR #1600 | Named field adapters for legacy positional records; distributed Radan execution |
+| Web transport and locale | Shared HTTP retry on migrated clients and one HR refresh in PR #1600; lazy fallback index in PR #1604 | Migrate other clients and defer catalog transfer; split translation responsibilities |
+| Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611 | Durable reporting jobs, bounded row projection and buffered scan/upload paths |
+| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614 | Other Marketing collections and producer-side bounds for the full Finance inbox |
+| Module boundaries | Recursive repository import guard in PR #1600 | Explicit public ports, transaction abstractions and ownership for direct database reads |
+
+The architecture and deployment baselines now distinguish checked-in behavior
+from target design. The API repository guard also covers static re-exports,
+type references and literal dynamic imports or require calls.
+
+## Coordination and validation
+
+Reserve only review-related implementation and tests, with no lockfile or dependency
+version changes. Additional shared contract or schema changes must be documented
+here before implementation. Open PR1511 overlaps hr.service.ts attendance editing;
+do not overwrite that patch. Open HR profile/pay-document work is out of scope.
+No production deployment, operational data changes or key rotation is performed.
+Record exact tests, remaining work and delivery state; never equate a static
+architecture check with end-to-end behavior or claim the entire report resolved
+when only selected paths are addressed.
+
+## Implementation evidence
+
+- Daily penalties load policies and shared inputs once per branch and group
+  punch reads for up to 50 attendance rows. Dense batches fall back to bounded
+  per-day reads so the existing per-day data limit remains intact.
+- The bell scans compact notification metadata in pages of 200 in a consistent
+  database snapshot. It counts authorized unread rows, preserves assignment
+  priority and fetches details for the selected rows only. Exact counting still
+  visits unread metadata because route permissions are evaluated in contracts.
+- The shared authenticated transport passed six focused Web tests. The final
+  PR #1600 revision also passed the hosted quality, build, test and migration checks.
+
+- Reporting now renders CSV, XLSX and PDF in a worker thread. The export entry
+  point limits concurrent work to two jobs per API process. Rendering has a
+  90-second deadline. The existing request still waits for the stored export.
+  A durable queue and streaming row projection remain open.
+- Ten reporting tests passed, including reading an XLSX produced by the worker
+  and checking that the export flow stores the artifact with its configured retention.
+- HR text validation uses explicit optional flags for reason fields. Renaming
+  a translated field label can no longer change whether it is required.
+
+- Document, profile attachment and report downloads authenticate the encrypted
+  file in 64 KiB chunks. Delivery rereads and checks each ciphertext chunk
+  against the verified digest before sending it. Downloads trade a second disk
+  pass for bounded memory and preserve the existing encrypted file format.
+  Malware scanning and upload still use the existing buffer-based interfaces.
+- Ninety-nine focused Documents and Reporting tests passed. The tests cover
+  multiple chunks and mutation after successful verification.
+- Removed the attendance forms' extra list refresh after saving. The HR store
+  revision is the single signal for that list to reload.
+
+## HR encryption configuration
+
+Existing ciphertext without a key identifier is read with the key named
+legacy. To introduce a new key, configure HR_PRIVATE_ENCRYPTION_KEYS_JSON with
+the existing key under legacy and the new key under a distinct identifier.
+Distribute the same ring to every reader before setting
+HR_PRIVATE_ENCRYPTION_KEY_ID to the new identifier on writers. Keep the legacy
+key available for older ciphertext and command fingerprints. These settings
+are secrets and belong in the runtime secret store. Existing deployments can
+continue using the single key configuration.

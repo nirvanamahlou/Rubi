@@ -87,9 +87,10 @@ export function useHrStore() {
     });
   }, []);
   const mutated = useCallback(async () => {
-    setRevision((value) => value + 1);
     window.dispatchEvent(new Event('nora:hr-server-change'));
-    await refresh().catch(() => undefined);
+    // Successful refresh already advances the revision. On failure still
+    // invalidate dependent lists so a committed mutation is visible.
+    await refresh().catch(() => setRevision((value) => value + 1));
   }, [refresh]);
   const create = useCallback(
     async (input: HrRecordCreate, key: string) => {

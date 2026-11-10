@@ -23,7 +23,7 @@ const conversation = {
   title: null,
   branchId: actor.branchIds[0]!,
   creatorUserId: actor.userId,
-  directPairKey: 'pair',
+  directPairKey: `${actor.branchIds[0]}:${actor.userId}:${recipientId}`,
   createRequestId: 'direct:request-0001',
   createdAt: now,
   updatedAt: now,
@@ -56,6 +56,7 @@ describe('MessagingService', () => {
       sourceMessage: vi.fn(),
       attachmentReference: vi.fn(),
       unreadCount: vi.fn().mockResolvedValue(0),
+      unreadCounts: vi.fn().mockResolvedValue(new Map()),
       markRead: vi.fn(),
     };
     iam = {
@@ -219,8 +220,27 @@ describe('MessagingService', () => {
     await service.conversations(actor);
 
     expect(iam.describeMessagingParticipants).toHaveBeenCalledWith([
+      actor.userId,
       recipientId,
     ]);
+  });
+
+  it('maps a full conversation page with one identity read and one unread aggregate', async () => {
+    repository.listConversations!.mockResolvedValue(
+      Array.from({ length: 100 }, (_, i) => ({
+        ...conversation,
+        id: `conversation-${i}`,
+      })),
+    );
+    repository.unreadCounts!.mockResolvedValue(
+      new Map([['conversation-99', 7]]),
+    );
+    const result = await service.conversations(actor);
+    expect(result.data).toHaveLength(100);
+    expect(result.data[99]?.unreadCount).toBe(7);
+    expect(iam.describeMessagingParticipants).toHaveBeenCalledTimes(1);
+    expect(repository.unreadCounts).toHaveBeenCalledTimes(1);
+    expect(repository.unreadCount).not.toHaveBeenCalled();
   });
 
   it('rejects message delivery when the actor is not a destination member', async () => {

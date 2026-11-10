@@ -1,5 +1,6 @@
 'use client';
 
+import { VerbatimText } from '@/i18n/verbatim-text';
 import {
   messagingReactionEmojisV1,
   type MessagingMessageV1,
@@ -110,25 +111,31 @@ export function MessageReactionMenu({
           {message.reactions?.some((reaction) => reaction.userIds.length) ? (
             <ul className="space-y-2">
               {message.reactions.flatMap((reaction) =>
-                reaction.userIds.map((id) => (
-                  <li
-                    key={`${reaction.emoji}-${id}`}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <span aria-label={reactionNames[reaction.emoji]}>
-                      {reaction.emoji}
-                    </span>
-                    <span>
-                      {id === currentUserId
-                        ? 'شما'
-                        : (reaction.users?.find((person) => person.id === id)
-                            ?.displayName ??
-                          people.find((person) => person.id === id)
-                            ?.displayName ??
-                          'عضو پیشین گفتگو')}
-                    </span>
-                  </li>
-                )),
+                reaction.userIds.map((id) => {
+                  const name =
+                    reaction.users?.find((person) => person.id === id)
+                      ?.displayName ??
+                    people.find((person) => person.id === id)?.displayName;
+                  return (
+                    <li
+                      key={`${reaction.emoji}-${id}`}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <span aria-label={reactionNames[reaction.emoji]}>
+                        {reaction.emoji}
+                      </span>
+                      <span>
+                        {id === currentUserId ? (
+                          'شما'
+                        ) : name == null ? (
+                          'عضو پیشین گفتگو'
+                        ) : (
+                          <VerbatimText value={name} />
+                        )}
+                      </span>
+                    </li>
+                  );
+                }),
               )}
             </ul>
           ) : (

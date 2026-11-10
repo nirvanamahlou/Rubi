@@ -9,6 +9,10 @@ import {
   type MarketingAssetViewV1,
   type MarketingCampaignInputV1,
   type MarketingCampaignViewV1,
+  type MarketingCampaignPageV1,
+  type MarketingCampaignPageQueryV1,
+  type MarketingPromotionPageQueryV1,
+  type MarketingPromotionPageV1,
   type MarketingSourceCountsResponseV1,
 } from '@nora/contracts';
 
@@ -235,6 +239,16 @@ export const marketingApi = {
   access: () => request<AuthenticatedActor>('/iam/auth/access'),
   campaigns: () =>
     request<{ data: MarketingCampaignViewV1[] }>('/marketing/campaigns'),
+  campaignPage: (query: MarketingCampaignPageQueryV1, signal?: AbortSignal) =>
+    request<MarketingCampaignPageV1>(
+      '/marketing/campaigns/page?' +
+        new URLSearchParams(
+          Object.entries(query).flatMap(([key, value]) =>
+            value == null || value === '' ? [] : [[key, String(value)]],
+          ),
+        ),
+      signal ? { signal } : undefined,
+    ),
   createCampaign: (
     input: MarketingCampaignInputV1,
     branchId?: string,
@@ -292,6 +306,15 @@ export const marketingApi = {
   assets: (kind?: MarketingAssetKind) =>
     request<{ data: MarketingAssetViewV1[] }>(
       `/marketing/assets${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`,
+    ),
+  promotionPage: (query: MarketingPromotionPageQueryV1) =>
+    request<MarketingPromotionPageV1>(
+      '/marketing/assets/promotions?' +
+        new URLSearchParams(
+          Object.entries(query).flatMap(([key, value]) =>
+            value == null ? [] : [[key, String(value)]],
+          ),
+        ),
     ),
   saveAsset: (
     input: MarketingAssetInputV1,

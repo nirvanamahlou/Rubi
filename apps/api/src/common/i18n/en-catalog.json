@@ -1,4 +1,5 @@
 {
+  "گزارش رزرواسیون": "Reservation report",
   "کد تفصیلی حسابداری": "Accounting detail code",
   "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",
@@ -4127,6 +4128,7 @@
   "تا ابتدای تاریخ": "Until the start of date",
   "تماس‌ها، درخواست‌ها و یادداشت‌های مخاطب": "Contact calls, requests and notes",
   "تیم انتخاب‌شده": "Selected team",
+  "ظرفیت ساخت خروجی پر است. دوباره تلاش کنید.": "Report export capacity is full. Please try again.",
   "جست‌وجو و فیلترها": "Search and filters",
   "سابقه تماس‌ها": "Call history",
   "شماره تلفن به‌تنهایی تأیید هویت نیست.": "A phone number alone does not verify identity.",
@@ -8256,5 +8258,6 @@
   "هتل، تاریخ و ترکیب اتاق اقامت‌ها با پکیج منتشرشده مطابقت ندارد.": "Stay hotels, dates and rooms do not match the published package.",
   "هر باکس یک پکیج کامل است؛ یک هتل از هر مقصد با قیمت مشترک.": "Each box is one complete package: one hotel from each destination with one shared price.",
   "ترکیب معتبر نیست.": "The combination is not valid.",
-  "بازه همگام‌سازی معتبر نیست.": "The synchronization date range is invalid."
+  "بازه همگام‌سازی معتبر نیست.": "The synchronization date range is invalid.",
+  "مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty and incentive rate must be a non-negative whole amount in Toman."
 }

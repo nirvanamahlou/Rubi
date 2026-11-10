@@ -4,6 +4,28 @@ import { MANUAL_ACCESS_VERSION } from '@nora/contracts';
 import type { DatabaseService } from '../database/database.service';
 import { NotificationsRepository } from './notifications.repository';
 
+function mockFindMany(
+  rows: { id: string; href: string | null; readAt: Date | null }[],
+) {
+  return vi.fn(
+    async (query: {
+      where: { id?: { in: string[] }; readAt?: null | { not: null } };
+      cursor?: { id: string };
+      take?: number;
+    }) => {
+      const ids = query.where.id?.in;
+      if (ids) return rows.filter((row) => ids.includes(row.id));
+      const matching = rows.filter(
+        (row) => (row.readAt === null) === (query.where.readAt === null),
+      );
+      const start = query.cursor
+        ? matching.findIndex((row) => row.id === query.cursor?.id) + 1
+        : 0;
+      return matching.slice(start, start + (query.take ?? matching.length));
+    },
+  );
+}
+
 describe('NotificationsRepository recipient scoping', () => {
   it('keeps an older unread Call Center assignment visible beyond the feed limit, then stops prioritizing it after reading', async () => {
     const assignment = {
@@ -13,19 +35,17 @@ describe('NotificationsRepository recipient scoping', () => {
       sourceModule: 'customer-affairs',
       eventType: 'call-center.assigned',
     };
-    const ordinary = Array.from({ length: 25 }, (_, id) => ({
+    const ordinary = Array.from({ length: 225 }, (_, id) => ({
       id: String(id),
       href: null,
       readAt: null,
     }));
-    const findMany = vi
-      .fn()
-      .mockImplementation(async () => [...ordinary, assignment]);
+    const findMany = mockFindMany([...ordinary, assignment]);
     const repository = new NotificationsRepository({
       client: {
         notification: { findMany, count: vi.fn().mockResolvedValue(26) },
-        $transaction: async (operations: Promise<unknown>[]) =>
-          Promise.all(operations),
+        $transaction: async (read: (client: unknown) => unknown) =>
+          read({ notification: { findMany } }),
       },
     } as unknown as DatabaseService);
     const permissions = [
@@ -117,7 +137,7 @@ describe('NotificationsRepository recipient scoping', () => {
 });
 
 it('filters unauthorized destinations before pagination and unread counting', async () => {
-  const findMany = vi.fn().mockResolvedValue([
+  const findMany = mockFindMany([
     { id: 'finance', href: '/finance', readAt: null },
     { id: 'private', href: null, readAt: null },
     { id: 'read', href: null, readAt: new Date() },
@@ -125,7 +145,8 @@ it('filters unauthorized destinations before pagination and unread counting', as
   const repository = new NotificationsRepository({
     client: {
       notification: { findMany, count: vi.fn().mockResolvedValue(99) },
-      $transaction: async (items: Promise<unknown>[]) => Promise.all(items),
+      $transaction: async (read: (client: unknown) => unknown) =>
+        read({ notification: { findMany } }),
     },
   } as unknown as DatabaseService);
   const result = await repository.listForRecipient('limited-user', 1, []);
@@ -133,6 +154,7 @@ it('filters unauthorized destinations before pagination and unread counting', as
   expect(result.unreadCount).toBe(1);
   expect(findMany.mock.calls[0]![0].where).toEqual({
     recipientUserId: 'limited-user',
+    readAt: null,
   });
-  expect(findMany.mock.calls[0]![0]).not.toHaveProperty('take');
+  expect(findMany.mock.calls[0]![0]).toHaveProperty('take', 200);
 });

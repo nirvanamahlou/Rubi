@@ -53,6 +53,7 @@ describe('employee attendance table', () => {
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'مبلغ اضافه‌کاری',
       'جریمه روز',
       'وضعیت',
     ]);
@@ -61,6 +62,7 @@ describe('employee attendance table', () => {
       '16:50',
       '5',
       '10',
+      '—',
       '—',
       '—',
       '—',
@@ -100,6 +102,7 @@ it('uses calculated server times for device punches and includes attendance stat
     'خروج زودهنگام',
     'کسری کار',
     'اضافه‌کاری',
+    'مبلغ اضافه‌کاری',
     'جریمه روز',
     'وضعیت',
   ]);
@@ -110,6 +113,7 @@ it('uses calculated server times for device punches and includes attendance stat
     '0',
     '—',
     '30',
+    '—',
     '—',
     'حاضر با تأخیر',
   ]);
@@ -166,7 +170,13 @@ it('keeps server list order and employee/overtime/export identities aligned', ()
     ],
   );
   expect(data.recordIds).toEqual([first.id, second.id]);
-  expect(data.rows.map((row) => [row[0], row[1], row.at(-3)])).toEqual([
+  expect(
+    data.rows.map((row) => [
+      row[0],
+      row[1],
+      row[data.columns.indexOf('اضافه‌کاری')],
+    ]),
+  ).toEqual([
     ['001', 'first', '12'],
     ['002', 'second', '34'],
   ]);
@@ -198,6 +208,7 @@ it('hides former employees from the current list without removing profile histor
 it('shows the authoritative Toman daily penalty in both attendance views', () => {
   const day = record('attendance', ['worker', '2026-11-08', '', '', '10', '5']);
   day.data.dailyPenaltyToman = '750000';
+  day.data.overtimeAmountToman = '225000';
   const employee = employeeAttendanceDataset([day]);
   const recent = recentAttendanceDataset(
     [day],
@@ -206,6 +217,10 @@ it('shows the authoritative Toman daily penalty in both attendance views', () =>
   expect(employee.rows[0]![employee.columns.indexOf('جریمه روز')]).toContain(
     '۷۵۰٬۰۰۰',
   );
+  for (const dataset of [employee, recent])
+    expect(
+      dataset.rows[0]![dataset.columns.indexOf('مبلغ اضافه‌کاری')],
+    ).toContain('۲۲۵٬۰۰۰');
   expect(recent.rows[0]![recent.columns.indexOf('جریمه روز')]).toBe(
     employee.rows[0]![employee.columns.indexOf('جریمه روز')],
   );

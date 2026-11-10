@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { SystemActivityInterceptor } from './system-activity.interceptor';
 import {
   InternalCorrespondenceController,
   InternalCorrespondenceService,
@@ -22,6 +24,7 @@ import {
     InternalCorrespondenceController,
   ],
   providers: [
+    { provide: APP_INTERCEPTOR, useClass: SystemActivityInterceptor },
     SystemManagementService,
     CorrespondenceNumberingService,
     InternalCorrespondenceService,

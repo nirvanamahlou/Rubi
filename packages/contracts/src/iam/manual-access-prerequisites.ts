@@ -7,6 +7,8 @@ export function completeManualAccessPrerequisites(
 ): ManualAccessSelection {
   const screens = new Set(selection.screenIds);
   const permissions = new Set(selection.permissionCodes);
+  if (screens.has('ticket-catalog.tab.issued'))
+    permissions.add('reservations.read');
   if (screens.has('customer-affairs.call-center')) {
     permissions.add('customer_affairs.call_center.read');
     // Newly selecting the panel gives a usable own-data view, never team access.

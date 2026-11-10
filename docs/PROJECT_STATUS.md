@@ -582,6 +582,10 @@ Replace free-text provider-country code/name/English controls with read-only dis
 
 Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
 
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -1072,9 +1076,41 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## RESERVATION-FINANCE-PROJECTION-1110
+
+Reservations supplies Finance with a narrow scoped intake and purchase projection. PostgreSQL retrieves only the latest revision of each selected purchase in the same repeatable-read snapshot. Existing purchase grouping, historical intake visibility, branch/company scope and legacy paid balances remain. Thirty-one targeted tests, API typecheck and an isolated PostgreSQL 18 scenario passed. The producer still reads the scoped purchase collection up to its existing limit. End-to-end Finance inbox pagination remains open.
+
+## WORKBENCH-SHARED-TRANSPORT-1110
+
+Workbench messaging, personal endpoints and feedback use the shared cookie-authenticated transport. JSON requests use the existing 30-second deadline. Attachments and multipart requests allow 120 seconds. Caller cancellation remains linked and 401 can trigger one retry with the same request body. Existing domain error handling remains. All 102 Workbench and transport tests passed. Other Web adapters retain their existing transport.
+
+## IAM-SESSION-RESPONSE-V1-1110
+
+Login and refresh decode the same versioned wire shape before updating browser identity. LoginResponse is inferred from the decoder and still exported at the Contracts root. Roles remain optional for older API responses; permission code strings remain forward-compatible and server authorization is authoritative. Malformed successful responses do not publish a recovered-session event. The Contracts build, 66 Web tests and 20 API tests passed, including real login and rotation against disposable PostgreSQL 18. The wire payload is unchanged. This decoder covers login and refresh; other HTTP schemas remain separate.
+
+## HR-CALCULATION-FIELDS-1110
+
+HR attendance calculation settings map their ten legacy slots to explicit V1 field IDs for API validation and attendance calculations. Masking rules attach to seven existing resource fields and remain in force after display label changes. Verified identical masking coverage across 135 resources and 74 focused API tests against an isolated PostgreSQL 18 instance. Legacy arrays and fieldN persistence remain compatible. Other HR layouts and presentation consumers still require migration.
+
+## TYPE-AWARE-LINT-1110
+
+The existing API and Web lint jobs enforce type-aware Promise handling on the authentication guard, session refresh, shared authenticated fetch, document scanner entry point and report export files. Both package configs reject a bare Promise and a voided Promise while allowing an explicit rejection handler. The standalone document scanner reports shutdown failure without echoing private configuration. Thirty-three focused API and Web tests passed. Browser scenarios and broader type-aware coverage remain open.
+
+## ARCHITECTURE-BOUNDARY-DOCS-1110
+
+The architecture and deployment baselines distinguish repository implementation from target design. The API repository boundary test covers nested static re-exports, type references and literal dynamic imports or require calls. Existing explicit composition exceptions remain scoped. Fifteen focused tests and scoped ESLint passed. No runtime, migration or dependency changes.
+
+## FINANCE-HR-REFERRAL-READ-1110
+
+Finance reads branch-scoped HR referrals through one bounded projection and writes one read audit event. Response eligibility and source failure handling are preserved. No schema or API contract changes.
+
 ## SALES-REFERENCE-ACCESS-1018 — PC-B
 
 Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.
+
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B
+
+A claimed antivirus job has a five-minute deadline. An expired claim can be picked up again, and the old result cannot override a newer attempt. Exhausted claims remain quarantined and record a scan failure. API polling and inline scanning can be delegated by setting DOCUMENTS_SCAN_EXECUTION=worker and running the standalone document scanner with access to the same database and encrypted storage. The default remains api. 132 API unit tests and one disposable PostgreSQL claim/recovery test passed.
 
 ## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
 
@@ -1319,6 +1355,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-room-party-limits-1015. User authorizes cumu
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
+
+## MARKETING-CAMPAIGN-PAGES-1110 — PC-B
+
+Campaign list queries apply branch scope, search, dates, status, channel and company in PostgreSQL before pagination. Count and selected records use the same snapshot. Excel reads filtered pages only on demand. Calendar and budget load the legacy collection only when their tabs open. 119 Web tests and 32 API/PostgreSQL tests passed. Follow-up depends on promotion pagination PR 1608.
 
 ## SERVICE-PARTY-HOTEL-ROOMS-1014 — PC-A — READY_FOR_CI
 
@@ -1591,6 +1631,10 @@ Selected flight loads now expose View, Edit Load and Delete Load together. Edit 
 ## 2026-10-10 — TICKET-FORM-UX-1010 — PC-B — READY_FOR_REVIEW
 
 Ticket Catalog flight search now exposes all weekdays including Wednesday. Application dialogs no longer close from an outside click, while explicit close/Escape remain available. Ticket forms save with Ctrl+S, and generated dates appear in chronological columns for row, outbound/return day and date. Ticket Catalog UUID creation is compatible with HTTP LAN origins where `crypto.randomUUID` is absent. Focused tests, localization coverage, Web TypeScript and scoped lint pass; the updated local port 3000 runtime returns HTTP 200. No API/schema/migration/dependency or operational-data change.
+
+## MARKETING-PROMOTION-PAGES-1110 — PC-B
+
+Discounts and offers request 50 rows per page after server-side branch, kind, status, name/code and date filters. Excel retrieves all matching pages on demand. The Marketing hub no longer preloads campaign records outside the Campaigns section. Sixteen focused Web tests and 31 API/PostgreSQL tests passed in a disposable database. Other marketing lists still use their existing API.
 
 ## 2026-10-09 — SALES-RESERVATIONS-FINANCE-QA-1009 — PC-A
 
@@ -1923,6 +1967,10 @@ Hotel meal/service, room-type and facility selectors now expose a clear Add acti
 ## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
+
+## I18N-STARTUP-1110 — PC-B
+
+Build the English phrase index only on the first unmatched English translation that needs Persian phrase lookup. Persian and exact English lookup avoid index initialization. Reuse the source inventory in coverage tests. Thirteen focused tests passed. The median of 20 local module initialization and first Persian lookup samples fell from 55.3 ms to 16.8 ms with JSON cached. Bundle download size is outside this measurement.
 
 ## 2026-10-01 — RESERVATION-PASSENGER-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
@@ -2845,6 +2893,10 @@ lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات 
 ## MASTER-008 — یکپارچه‌سازی فیلدهای نوع هواپیما
 
 در فرم، جدول، پروفایل و خروجی Excel «انواع هواپیما»، عنوان فارسی حذف و سازنده/مدل به یک فیلد «سازنده و مدل» تبدیل شد. API مقدار ترکیبی را اعتبارسنجی و در ستون‌های فعلی تفکیک می‌کند و برای سازگاری مصرف‌کنندگان قبلی یک نام داخلی غیرنمایشی می‌سازد؛ بنابراین Schema، Migration و قرارداد مرکزی تغییر نکرده‌اند. Fixtureهای آزمایشی ساده و واقع‌نما نیز با `Airbus / A320-200` و `Boeing / 777-300ER` هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در [MASTER-008-AIRCRAFT-FIELDS](tasks/MASTER-008-AIRCRAFT-FIELDS.md).
+
+## WORKBENCH-VERBATIM-1110 — PC-B
+
+Messaging renders stored text, sender and member names, group titles, quoted and forwarded text, reaction names, and attachment titles without applying the UI dictionary. Interface copy still follows the selected language. Eleven focused rendering and reaction tests passed. This is the Workbench slice of architecture finding A11.
 
 ## WORKBENCH-041 — رفع خطای پیام‌رسان
 
@@ -5245,6 +5297,10 @@ Hotel table checkboxes open existing request/voucher workflow. Sent requests lig
 ## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
 Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B
+
+First implementation slice covers attendance connector identity and penalty reads, messaging and notification query load, safe error diagnostics, authenticated Web requests, HR encryption key compatibility, report rendering isolation and authenticated downloads. See docs/tasks/ARCHITECTURE-REMEDIATION-1110.md for test evidence and remaining audit work.
 
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
@@ -9117,6 +9173,10 @@ CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, 
 
 CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.
 
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+The Workbench request empty state uses generic request wording in Persian and English. Existing request and follow-up routing is preserved. 25 focused Web tests passed.
+
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
@@ -9333,6 +9393,10 @@ The owner requires experts to see only their own verified calls, and current HR 
 ## CALL-CENTER-UNIT-FILTER-1109 — PC-C
 
 Add the requested Unit selector between source and connected-to using the existing branch-scoped teamId filter. Exact-call telephony responsibility replaces service-account attribution for unit matching; own/native manager access remains conjoined. No schema, permission or production changes. Final tests and hosted gates precede the authorized develop merge.
+
+## ISSABEL-RECORDING-ON-DEMAND-1110 — PC-C — IN_PROGRESS
+
+Owner explicitly requires no ERP-database audio storage and download from Issabel only on demand. COMPUTER_ID=PC-C; branch codex/pc-c-issabel-recording-on-demand-1110 from develop3370748ca. Reserve Integrations recording service/new Unix-socket remote client and tests, minimal CustomerAffairs authenticated media-context root projection, existing PBX source/host relay and bounded activation/test scripts, own notes. Immediately stop only the periodic recording importer under the production deploy lease to prevent growth; keep call ingress/Worker/VPN intact. Implement stateless on-demand RPC over a private API-only mounted Unix socket, existing pinned SSH credentials and CDR/CEL root/file proof; memory-only audio, no database chunks or durable host cache, no public port. Existing CEO-only download/branch/range/rate/audit controls remain. Default remote mode blocks uploads; legacy tests explicitly opt into database mode. Source/API and host relay contracts ship together; legacy cached reads require explicit DATABASE mode. Preserve existing stored recordings until separately authorized cleanup; no destructive migration, grants, dependencies or unrelated deployment. User authorizes this live storage behavior change; source push/develop green-gate merge and bounded API/relay rollout preserve peer changes.
 
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
@@ -9635,6 +9699,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## RESERVATION-REPORT-MODULE-1110 — PC-A
+
+Reservation Report has its own /reservations/reports route and sidebar/user-access module. The former issued tab is removed from flight management; the catalog and remaining screen names are preserved. The existing report screen ID is retained for stored grants, with the existing Reservations read prerequisite and an API screen guard that also protects XLSX/PDF via the shared report projection. Filters, branch scope and export behavior remain. No schema, grants rewrite, dependency or deployment changes; targeted and full hosted gates precede develop merge.
+
 ## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A
 
 Reservations passenger corrections expose Insurance, City Tour and Guide even if the original contract omitted them. Selecting one creates the standard Sales service once and allocates it only to the selected passenger; existing service references are retained. Empty hotel amendments initialize a hotel selection and guest links so the existing hotel, room, date and additional-stay editors become usable. Existing prices are retained. Focused Web and API amendment regressions plus full hosted gates precede develop merge; no schema/dependency/deployment changes.
@@ -9717,4 +9785,37 @@ Minute polls use a recent two-day window, with a 31-day daily recovery pass and
 an optional manual date range. The connector caches personnel, scopes routine
 work calculations to affected employees, and exposes per-source success totals.
 Existing attendance records and period locks remain authoritative. Verification:
-40 focused tests passed; deployment pending.
+40 focused tests passed before integration with the latest develop.
+
+## I18N-LAZY-CATALOG-1110
+
+Persian provider startup no longer merges English catalogs or computes English NextIntl messages. The first English render computes and caches them synchronously, preserving SSR and locale switching. A provider regression verifies Persian does not enumerate the English catalog and two English renders reuse the same merge. All 46 i18n tests passed. Catalog modules still ship with the initial JavaScript, so locale-specific asset delivery remains open.
+
+## REPORTING-XLSX-MEMORY-1110
+
+XLSX rendering calculates capped column widths in a prepass and compresses row chunks without retaining the complete cell grid or worksheet XML. The worker transfers exactly the resulting bytes; pooled and sliced buffers are copied into a dedicated allocation before transfer. All eight inflated workbook entries were identical to develop for synthetic zero-row and 650-row reports. A synthetic 10,000 by 24 render reduced peak RSS from 358,752 to 208,484 KiB, while the resulting ZIP grew from 869,916 to 889,377 bytes. All 170 Reporting tests passed. The report query and compressed output still materialize in memory, and durable export scheduling remains open.
+
+## MARKETING-SCOPED-PANEL-LOAD-1110
+
+Audience segments and automation load their authorized assets without fetching the complete campaign collection. Durable panel loads ignore superseded responses, including failed requests after a newer refresh starts. All 120 Marketing Web tests and scoped ESLint passed. Other asset lists and dependent campaign pickers still use their existing collections.
+
+## CONTRACT-DOMAIN-ENTRYPOINTS-1110
+
+The Contracts package exposes dedicated Sales pricing and upload-format entry points. Selected Web and API consumers use the leaves and the root retains its existing exports. A fresh Node process loaded two Contracts files for the two leaves compared with 107 after importing the root. Both CommonJS and ESM resolve the leaves, which share the same implementations as the root. The Contracts build and 47 focused API/Web tests passed. Other domains and their DTO/display separation remain open.
+
+## HR-RETIRE-PHASE-A-PROTOTYPE-1110
+
+Retired unused Phase A HR types, policies, command proposals and prototype-only tests after verifying that no runtime consumer imports them. The historical design remains accessible through Git. The authenticated PostgreSQL test now activates the contract through HTTP, replays the same idempotency key, and checks persisted version, state, document linkage and audit count. All 52 targeted tests passed against an isolated PostgreSQL 18 database.
+
+## HR-PAY-DOCS-1110 — PC-B
+Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
+
+SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
+
+HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
+
+WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
+
+HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the locked company scope. Accept a legacy unchanged organization branch reference on update while retaining validation for new references and authorization for the policy itself.
+
+HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance labels as audited overrides. Automatic mode restores the latest calculated status and bulk activation preserves the override. Source punches and existing authorization remain intact.

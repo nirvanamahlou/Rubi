@@ -1,4 +1,4 @@
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type {
   CreateDirectConversationInputV1,
   CreateGroupConversationInputV1,
@@ -12,28 +12,15 @@ import type {
   SetMessagingReactionInputV1,
 } from '@nora/contracts';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-  retried = false,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(`${base}/messaging${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
+  const response = await authenticatedFetch(`${base}/messaging${path}`, base, {
     ...init,
     headers: { accept: 'application/json', ...init?.headers },
   });
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return request<T>(path, init, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       message?: string | string[];
@@ -52,20 +39,14 @@ async function request<T>(
 async function downloadAttachment(
   conversationId: string,
   documentId: string,
-  retried = false,
 ): Promise<Blob> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(
+  const response = await authenticatedFetch(
     `${base}/messaging/conversations/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(documentId)}`,
-    { credentials: 'include', cache: 'no-store' },
+    base,
+    { timeoutMs: 120_000 },
   );
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return downloadAttachment(conversationId, documentId, true);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       message?: string | string[];

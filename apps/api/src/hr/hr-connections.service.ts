@@ -24,6 +24,26 @@ type Tx = Prisma.TransactionClient;
 type Row = Prisma.HrRecordGetPayload<{
   include: { employee: true; auditEvents: true };
 }>;
+type FinanceReferral = Pick<
+  HrConnectionDto,
+  | 'id'
+  | 'code'
+  | 'branchId'
+  | 'title'
+  | 'message'
+  | 'employeeLabel'
+  | 'status'
+  | 'version'
+  | 'dueAt'
+  | 'createdAt'
+  | 'response'
+  | 'canRespond'
+>;
+type ResponseCandidate = Pick<Row, 'data' | 'tab'> & {
+  employee: Pick<NonNullable<Row['employee']>, 'userId'> | null;
+};
+const financeReferralLimit = 25_000;
+
 interface SharedContent {
   title: string;
   message: string;
@@ -89,7 +109,7 @@ export class HrConnectionsService {
     if (!row) throw new NotFoundException('درخواست در محدوده دسترسی پیدا نشد.');
     return row;
   }
-  private mayRespond(row: Row, actor: AuthenticatedActor) {
+  private mayRespond(row: ResponseCandidate, actor: AuthenticatedActor) {
     const data = row.data as unknown as SharedContent;
     return (
       hrReceivingTargets(actor).includes(row.tab as HrConnectionTarget) &&
@@ -131,6 +151,59 @@ export class HrConnectionsService {
       })),
     };
   }
+  /** Finance needs shared referral fields and response eligibility, not the full HR history. */
+  async readFinanceInbox(
+    actor: AuthenticatedActor,
+  ): Promise<FinanceReferral[]> {
+    const scope = this.scope(actor);
+    if (!actor.branchIds.length) return [];
+    const rows = await this.database.client.hrRecord.findMany({
+      where: { AND: [scope, { tab: 'finance' }] },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: financeReferralLimit + 1,
+      select: {
+        id: true,
+        code: true,
+        branchId: true,
+        tab: true,
+        status: true,
+        version: true,
+        createdAt: true,
+        data: true,
+        employee: { select: { userId: true } },
+      },
+    });
+    if (rows.length > financeReferralLimit)
+      throw new ConflictException(
+        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
+      );
+    await this.database.client.hrAuditEvent.create({
+      data: {
+        branchId: actor.branchIds[0]!,
+        actorId: actor.userId,
+        action: 'connection.list.read',
+        changes: { target: 'finance', count: rows.length, page: 1 },
+      },
+    });
+    return rows.map((row) => {
+      const data = row.data as unknown as SharedContent;
+      return {
+        id: row.id,
+        code: row.code,
+        branchId: row.branchId,
+        title: data.title,
+        message: data.message,
+        employeeLabel: data.employeeLabel,
+        status: row.status as HrConnectionStatus,
+        version: row.version,
+        dueAt: data.dueAt,
+        createdAt: row.createdAt.toISOString(),
+        response: data.response,
+        canRespond: pending.includes(row.status) && this.mayRespond(row, actor),
+      };
+    });
+  }
+
   async list(
     input: Record<string, unknown>,
     actor: AuthenticatedActor,

@@ -1673,106 +1673,114 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.openQuarantined).toHaveBeenCalledOnce();
   });
 
-  it('stores a valid upload under an opaque key and records it as quarantined', async () => {
-    repository.uploadReferences.mockResolvedValue({
-      documentType: {
-        id: '55555555-5555-4555-8555-555555555555',
-        domain: 'SALES',
-        defaultConfidentiality: 'INTERNAL',
-        allowedMimeTypes: ['application/pdf'],
-        maxFileSizeBytes: 25 * 1024 * 1024,
-        requiresExpiry: false,
-      },
-      category: { id: '66666666-6666-4666-8666-666666666666' },
-      owner: { id: actor.userId },
-      branch: { id: branchId },
-    });
-    repository.createUploaded.mockResolvedValue(
-      row({ confidentiality: 'INTERNAL' }),
-    );
-    repository.findCaseReference.mockResolvedValue({
-      sourceModule: 'sales',
-      sourceEntityType: 'contract',
-      sourceEntityId: 'SALES-42',
-      displayLabel: 'قرارداد فروش ۴۲',
-    });
-    const dto = {
-      title: 'قرارداد واقعی',
-      senderName: '  Sender  ',
-      isIncomingLetter: true,
-      documentTypeId: '55555555-5555-4555-8555-555555555555',
-      categoryId: '66666666-6666-4666-8666-666666666666',
-      branchId,
-      ownerUserId: actor.userId,
-      sourceRelationId: '99999999-9999-4999-8999-999999999999',
-      confidentiality: 'CONFIDENTIAL',
-      confidentialAccessCode: '573921',
-    } satisfies DocumentUploadDto;
-    const buffer = Buffer.from('%PDF-1.7\nreal synthetic test bytes');
-    const settings = {
-      json: vi.fn().mockImplementation((namespace: string, key: string) =>
-        Promise.resolve({
-          value:
-            namespace === 'documents' && key === 'upload'
-              ? { size: 8, types: 'PDF' }
-              : { classification: 'محرمانه' },
-        }),
-      ),
-    };
-    const configured = new DocumentsService(
-      repository as unknown as DocumentsRepository,
-      storage as unknown as LocalDocumentStorage,
-      scanProcessor as unknown as DocumentsScanProcessor,
-      iamStepUp as unknown as IamStepUpPort,
-      hrDirectory as unknown as HrDirectoryService,
-      settings as never,
-    );
-
-    const result = await configured.upload(
-      dto,
-      {
-        buffer,
-        mimetype: 'application/pdf',
-        originalname: 'contract.pdf',
-        size: buffer.length,
-      },
-      actor,
-      { ipAddress: '192.0.2.44', userAgent: 'vitest' },
-    );
-
-    expect(storage.putQuarantined).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^documents\/[0-9a-f-]{36}\/v1\/[0-9a-f-]{36}\.bin$/,
-      ),
-      buffer,
-    );
-    expect(repository.createUploaded).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'قرارداد واقعی',
-        senderName: 'Sender',
-        isIncomingLetter: true,
-        detectedMimeType: 'application/pdf',
-        confidentiality: 'CONFIDENTIAL',
-        ipSummary: '192.0.2.x',
+  it.each([false, true])(
+    'keeps a committed upload in quarantine (scanner throws=%s)',
+    async (scannerThrows) => {
+      if (scannerThrows)
+        scanProcessor.processVersion.mockRejectedValueOnce(
+          new Error('scan temporarily unavailable'),
+        );
+      repository.uploadReferences.mockResolvedValue({
+        documentType: {
+          id: '55555555-5555-4555-8555-555555555555',
+          domain: 'SALES',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['application/pdf'],
+          maxFileSizeBytes: 25 * 1024 * 1024,
+          requiresExpiry: false,
+        },
+        category: { id: '66666666-6666-4666-8666-666666666666' },
+        owner: { id: actor.userId },
+        branch: { id: branchId },
+      });
+      repository.createUploaded.mockResolvedValue(
+        row({ confidentiality: 'INTERNAL' }),
+      );
+      repository.findCaseReference.mockResolvedValue({
         sourceModule: 'sales',
         sourceEntityType: 'contract',
         sourceEntityId: 'SALES-42',
-        sourceDisplayLabel: 'قرارداد فروش ۴۲',
-        confidentialAccessCodeHash: expect.stringMatching(/^[a-f0-9]{128}$/u),
-        confidentialAccessCodeSalt: expect.stringMatching(/^[a-f0-9]{48}$/u),
-      }),
-    );
-    expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
-      'confidentialAccessCode',
-    );
-    expect(result.data.currentVersion.scanStatus).toBe(
-      'AWAITING_ANTIVIRUS_ADAPTER',
-    );
-    expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
-      'skipAntivirusForMasterDataLogo',
-    );
-    expect(scanProcessor.processVersion).toHaveBeenCalledOnce();
-  });
+        displayLabel: 'قرارداد فروش ۴۲',
+      });
+      const dto = {
+        title: 'قرارداد واقعی',
+        senderName: '  Sender  ',
+        isIncomingLetter: true,
+        documentTypeId: '55555555-5555-4555-8555-555555555555',
+        categoryId: '66666666-6666-4666-8666-666666666666',
+        branchId,
+        ownerUserId: actor.userId,
+        sourceRelationId: '99999999-9999-4999-8999-999999999999',
+        confidentiality: 'CONFIDENTIAL',
+        confidentialAccessCode: '573921',
+      } satisfies DocumentUploadDto;
+      const buffer = Buffer.from('%PDF-1.7\nreal synthetic test bytes');
+      const settings = {
+        json: vi.fn().mockImplementation((namespace: string, key: string) =>
+          Promise.resolve({
+            value:
+              namespace === 'documents' && key === 'upload'
+                ? { size: 8, types: 'PDF' }
+                : { classification: 'محرمانه' },
+          }),
+        ),
+      };
+      const configured = new DocumentsService(
+        repository as unknown as DocumentsRepository,
+        storage as unknown as LocalDocumentStorage,
+        scanProcessor as unknown as DocumentsScanProcessor,
+        iamStepUp as unknown as IamStepUpPort,
+        hrDirectory as unknown as HrDirectoryService,
+        settings as never,
+      );
+
+      const result = await configured.upload(
+        dto,
+        {
+          buffer,
+          mimetype: 'application/pdf',
+          originalname: 'contract.pdf',
+          size: buffer.length,
+        },
+        actor,
+        { ipAddress: '192.0.2.44', userAgent: 'vitest' },
+      );
+
+      expect(storage.putQuarantined).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^documents\/[0-9a-f-]{36}\/v1\/[0-9a-f-]{36}\.bin$/,
+        ),
+        buffer,
+      );
+      expect(repository.createUploaded).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'قرارداد واقعی',
+          senderName: 'Sender',
+          isIncomingLetter: true,
+          detectedMimeType: 'application/pdf',
+          confidentiality: 'CONFIDENTIAL',
+          ipSummary: '192.0.2.x',
+          sourceModule: 'sales',
+          sourceEntityType: 'contract',
+          sourceEntityId: 'SALES-42',
+          sourceDisplayLabel: 'قرارداد فروش ۴۲',
+          confidentialAccessCodeHash: expect.stringMatching(/^[a-f0-9]{128}$/u),
+          confidentialAccessCodeSalt: expect.stringMatching(/^[a-f0-9]{48}$/u),
+        }),
+      );
+      expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
+        'confidentialAccessCode',
+      );
+      expect(result.data.currentVersion.scanStatus).toBe(
+        'AWAITING_ANTIVIRUS_ADAPTER',
+      );
+      expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
+        'skipAntivirusForMasterDataLogo',
+      );
+      expect(scanProcessor.processVersion).toHaveBeenCalledOnce();
+      expect(storage.removeQuarantined).not.toHaveBeenCalled();
+    },
+  );
 
   it('stores an unlinked workbench document for its signed-in owner only', async () => {
     const dto: DocumentUploadDto = {

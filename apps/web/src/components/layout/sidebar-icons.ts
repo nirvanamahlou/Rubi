@@ -40,6 +40,7 @@ export const sidebarIcons: Record<
   '/organizations': Building2,
   '/marketing': Megaphone,
   '/reservations': Send,
+  '/reservations/reports': ChartColumn,
   '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/purchases': Package,

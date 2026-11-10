@@ -508,10 +508,9 @@ export class IamService implements IamStepUpPort {
     };
   }
 
-  /** Server-configured attendance connector only; never an HTTP authentication route.
-   * Select a live session of the bound account rather than pinning a browser
-   * refresh family forever. Native authentication still rejects revoked/expired
-   * sessions and re-evaluates account status and current access on every tick. */
+  /** Server-configured service principal, never an HTTP authentication route.
+   * Browser logout must not stop device ingestion. Disabling the connector,
+   * account, role or branch revokes its access on the next poll. */
   async authenticateAttendanceConnectorV1(
     userId: string,
   ): Promise<AuthenticatedActor> {
@@ -521,30 +520,31 @@ export class IamService implements IamStepUpPort {
       !/^[0-9a-f-]{36}$/i.test(userId)
     )
       throw new UnauthorizedException('دسترسی معتبر نیست.');
-    const session = await this.database.client.session.findFirst({
-      where: {
-        userId,
-        status: SessionStatus.ACTIVE,
-        expiresAt: { gt: new Date() },
-        user: { status: UserStatus.ACTIVE },
-      },
-      select: { id: true },
-      orderBy: [{ expiresAt: 'desc' }, { id: 'asc' }],
+    const user = await this.database.client.user.findFirst({
+      where: { id: userId, status: UserStatus.ACTIVE },
+      include: this.userAccessInclude(),
     });
-    if (!session) throw new UnauthorizedException('دسترسی معتبر نیست.');
-    const actor = await this.authenticateSessionReferenceV1(userId, session.id);
-    if (!actor.permissions.includes('hr.manage'))
+    if (!user) throw new UnauthorizedException('دسترسی معتبر نیست.');
+    if (!this.permissionCodes(user).includes('hr.manage'))
       throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
     const configuredBranches = [
       process.env.HR_RADAN_BRANCH_ID,
       process.env.HR_RADAN_SECONDARY_BRANCH_ID,
     ];
-    const branchIds = actor.branchIds.filter((id) =>
-      configuredBranches.includes(id),
-    );
+    const branchIds = user.branches
+      .filter(
+        ({ branchId, branch }) =>
+          branch.isActive && configuredBranches.includes(branchId),
+      )
+      .map(({ branchId }) => branchId);
     if (!branchIds.length)
       throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
-    return { ...actor, branchIds };
+    return {
+      userId,
+      sessionId: `service:attendance:${userId}`,
+      permissions: ['hr.manage'],
+      branchIds,
+    };
   }
 
   assertPermissions(
@@ -1542,6 +1542,14 @@ export class IamService implements IamStepUpPort {
       metadata,
     );
     return role;
+  }
+
+  async activityActorNames(ids: string[]) {
+    const users = await this.database.client.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, displayName: true },
+    });
+    return new Map(users.map((user) => [user.id, user.displayName]));
   }
 
   listAuditEvents() {

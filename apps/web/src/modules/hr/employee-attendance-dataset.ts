@@ -36,6 +36,7 @@ export function employeeAttendanceDataset(
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'مبلغ اضافه‌کاری',
       'جریمه روز',
       'وضعیت',
     ],
@@ -79,18 +80,25 @@ export function employeeAttendanceDataset(
         record.data.overtimeMinutes == null
           ? '—'
           : String(record.data.overtimeMinutes),
+        record.data.overtimeAmountToman == null
+          ? '—'
+          : `${BigInt(record.data.overtimeAmountToman).toLocaleString('fa-IR')} تومان`,
         record.data.dailyPenaltyToman == null
           ? '—'
           : `${Number(record.data.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`,
-        record.status === 'حاضر'
-          ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
-            ? 'حاضر با تأخیر و خروج زودهنگام'
-            : Number(record.values[4]) > 0
-              ? 'حاضر با تأخیر'
-              : Number(record.values[5]) > 0
-                ? 'حاضر با خروج زودهنگام'
-                : 'حاضر'
-          : record.status,
+        record.status !== 'غیرفعال' &&
+        record.data.attendanceActive !== false &&
+        record.data.attendanceStatusOverride
+          ? record.data.attendanceStatusOverride
+          : record.status === 'حاضر'
+            ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
+              ? 'حاضر با تأخیر و خروج زودهنگام'
+              : Number(record.values[4]) > 0
+                ? 'حاضر با تأخیر'
+                : Number(record.values[5]) > 0
+                  ? 'حاضر با خروج زودهنگام'
+                  : 'حاضر'
+            : record.status,
       ];
     }),
   };

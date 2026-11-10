@@ -3,6 +3,7 @@ import { createElement, createRef } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { jsx } from './jsx-runtime';
+import { VerbatimText } from './verbatim-text';
 import { DisplayLocaleContext } from './locale-context';
 import { translateUiText, latinDigits } from './translate';
 import { searchOptions } from '@/components/ui/search-combobox';
@@ -55,6 +56,23 @@ describe('application English rendering', () => {
     expect(props.ref).toBe(ref);
     expect(props.onClick).toBe(onClick);
     expect(props.children).toBe('تأیید');
+  });
+
+  it('translates the interface while preserving identical user-authored words and digits', () => {
+    const value = 'ذخیره ۱۲۳ <x>';
+    const tree = (
+      <section>
+        <button>ذخیره</button>
+        <p dir="auto">
+          <VerbatimText value={value} />
+        </p>
+      </section>
+    );
+    expect(render('en', tree)).toContain('<button>Save</button>');
+    for (const language of ['fa', 'en'] as const)
+      expect(render(language, tree)).toContain(
+        value.replace('<x>', '&lt;x&gt;'),
+      );
   });
 
   it('leaves editable text and scripts untouched', () => {

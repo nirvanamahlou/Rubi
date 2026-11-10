@@ -190,6 +190,121 @@ describe.skipIf(!enabled)(
       await client.$disconnect();
     });
 
+    it('filters campaigns before paging and orders exact numeric budgets', async () => {
+      const prefix = 'PAGED-' + suffix;
+      const entries = [];
+      for (const [index, budgetAmount] of ['10', '2', '100'].entries()) {
+        const result = await service.createCampaign(
+          { ...input(prefix + '-' + index), budgetAmount },
+          actor,
+          branchId,
+          randomUUID(),
+        );
+        entries.push(result.data);
+      }
+      const query = {
+        search: prefix.toLowerCase(),
+        status: 'DRAFT',
+        channel: 'SMS',
+        company: 'NIAYESH_SEIR_SAHAR',
+        startsAfter: '2099-02-01',
+        endsBefore: '2099-01-01',
+        sortBy: 'budgetAmount' as const,
+        sortDirection: 'asc' as const,
+        pageSize: 2,
+      };
+      const first = await service.listCampaignPage(query, promotionActor);
+      const last = await service.listCampaignPage(
+        { ...query, page: 99 },
+        promotionActor,
+      );
+      expect(first).toMatchObject({ page: 1, total: 3 });
+      expect(first.data.map(({ id }) => id)).toEqual([
+        entries[1]?.id,
+        entries[0]?.id,
+      ]);
+      expect(last).toMatchObject({ page: 2, total: 3 });
+      expect(last.data.map(({ id }) => id)).toEqual([entries[2]?.id]);
+      expect(
+        (
+          await service.listCampaignPage(query, {
+            ...promotionActor,
+            branchIds: [randomUUID()],
+          })
+        ).total,
+      ).toBe(0);
+    });
+
+    it('pages filtered promotions without exposing another branch or deleted rows', async () => {
+      const prefix = 'Pagination-' + suffix;
+      const timestamp = new Date('2099-01-15T00:00:00Z');
+      const records = Array.from({ length: 51 }, (_, index) => ({
+        id: randomUUID(),
+        branchId,
+        kind: 'COUPON',
+        name: prefix + '-' + index,
+        status: 'ACTIVE',
+        scheduledAt: new Date('2099-01-01T00:00:00Z'),
+        expiresAt: new Date('2099-02-01T00:00:00Z'),
+        promotionValue: '100',
+        minimumPurchase: '0',
+        promotionCurrencyCode: 'IRR',
+        payload: { code: 'P%AGE-' + index, discountType: 'AMOUNT' },
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        updatedAt: timestamp,
+      }));
+      await client.marketingAsset.createMany({
+        data: [
+          ...records,
+          {
+            ...records[0]!,
+            id: randomUUID(),
+            name: prefix + '-deleted',
+            status: 'DELETED',
+          },
+        ],
+      });
+      try {
+        const query = {
+          kind: 'COUPON' as const,
+          status: 'ACTIVE',
+          search: 'p%age',
+          from: '2099-01-20',
+          to: '2099-01-01',
+        };
+        const first = await service.listPromotions(query, promotionActor);
+        const second = await service.listPromotions(
+          { ...query, page: 2 },
+          promotionActor,
+        );
+        expect(first).toMatchObject({ page: 1, hasNext: true });
+        expect(second).toMatchObject({ page: 2, hasNext: false });
+        expect(first.data).toHaveLength(50);
+        expect(second.data).toHaveLength(1);
+        expect([...first.data, ...second.data].map(({ id }) => id)).toEqual(
+          records
+            .map(({ id }) => id)
+            .sort()
+            .reverse(),
+        );
+        const otherBranch = await service.listPromotions(query, {
+          ...promotionActor,
+          branchIds: [randomUUID()],
+        });
+        expect(otherBranch).toEqual({ data: [], page: 1, hasNext: false });
+        const past = await service.listPromotions(
+          { ...query, to: '2098-12-31' },
+          promotionActor,
+        );
+        expect(past.data).toEqual([]);
+      } finally {
+        await client.marketingAsset.deleteMany({
+          where: { branchId, name: { startsWith: prefix } },
+        });
+      }
+    });
+
     it('persists entry sources and named leads, deletes campaign audiences and campaigns with scoped replay/CAS', async () => {
       const permitted: AuthenticatedActor = {
         ...actor,

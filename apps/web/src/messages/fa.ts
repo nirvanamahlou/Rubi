@@ -112,6 +112,11 @@ export const navigationMessages = [
     description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
   },
   {
+    title: 'گزارش رزرواسیون',
+    href: '/reservations/reports',
+    description: 'گزارش خدمات مسافران',
+  },
+  {
     title: 'تعریف و ظرفیت پرواز',
     href: '/ticket-management',
     description: 'تعریف محصول بلیط، برنامه حرکت، نرخ و ظرفیت',

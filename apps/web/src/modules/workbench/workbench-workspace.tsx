@@ -652,6 +652,7 @@ export function WorkbenchWorkspace() {
         <NewRequestDialog
           open={requestOpen}
           onOpenChange={setRequestOpen}
+          branches={home.user.branches}
           {...(home.user.branches[0]?.id
             ? { branchId: home.user.branches[0].id }
             : {})}

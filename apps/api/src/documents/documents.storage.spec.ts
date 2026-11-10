@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, open, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -31,7 +31,8 @@ describe('LocalDocumentStorage encryption boundary', () => {
   });
 
   it('stores ciphertext at rest and returns authenticated plaintext', async () => {
-    const contents = Buffer.from('%PDF-1.7\nprivate document bytes');
+    const contents = Buffer.alloc(160 * 1024, 11);
+    contents.write('%PDF-1.7\nprivate document bytes');
     await storage.putQuarantined(objectKey, contents);
 
     const stored = await readFile(
@@ -43,7 +44,36 @@ describe('LocalDocumentStorage encryption boundary', () => {
     const stream = await storage.openQuarantined(objectKey, contents.length);
     const chunks: Buffer[] = [];
     for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    expect(chunks.length).toBeGreaterThan(1);
     expect(Buffer.concat(chunks)).toEqual(contents);
+  });
+
+  it('rejects corrupted ciphertext before delivering it, including changes after opening', async () => {
+    const contents = Buffer.alloc(160 * 1024, 11);
+    await storage.putQuarantined(objectKey, contents);
+    const stream = await storage.openQuarantined(objectKey, contents.length);
+    const file = await open(
+      join(root, 'quarantine', ...objectKey.split('/')),
+      'r+',
+    );
+    try {
+      const offset = 36;
+      const byte = Buffer.alloc(1);
+      await file.read(byte, 0, 1, offset);
+      byte[0] = byte[0]! ^ 1;
+      await file.write(byte, 0, 1, offset);
+    } finally {
+      await file.close();
+    }
+    await expect(
+      storage.openQuarantined(objectKey, contents.length),
+    ).rejects.toThrow();
+    const chunks: Buffer[] = [];
+    const consume = async () => {
+      for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    };
+    await expect(consume()).rejects.toThrow(/integrity verification/);
+    expect(chunks).toHaveLength(0);
   });
 
   it('rejects non-opaque and path-traversal object keys', async () => {

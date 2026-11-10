@@ -1,5 +1,5 @@
 import { browserDisplayLanguage, type DisplayLanguage } from './language';
-import { englishUiCatalog, normalizeUiText } from './translate';
+import { getEnglishUiCatalog, normalizeUiText } from './translate';
 
 /** Prefer the record's official English name for display; never change its ID or fields. */
 export function referenceDisplayName(
@@ -15,6 +15,6 @@ export function referenceDisplayName(
     if (typeof name === 'string' && name.trim()) return name.trim();
   }
   return language === 'en'
-    ? (englishUiCatalog[normalizeUiText(record.name)] ?? record.name)
+    ? (getEnglishUiCatalog()[normalizeUiText(record.name)] ?? record.name)
     : record.name;
 }

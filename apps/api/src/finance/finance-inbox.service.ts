@@ -113,46 +113,6 @@ export class FinanceInboxService {
     };
   }
 
-  private async completeHrInbox(actor: AuthenticatedActor) {
-    const first = await this.hr.list({ target: 'finance', page: 1 }, actor);
-    const items = [...first.items];
-    if (first.total === undefined) return first;
-    const seen = new Set(items.map((item) => item.id));
-    const pages = Math.ceil(first.total / first.pageSize);
-    if (
-      !Number.isSafeInteger(first.total) ||
-      first.total < 0 ||
-      !Number.isSafeInteger(first.pageSize) ||
-      first.pageSize < 1 ||
-      pages > 1000 ||
-      seen.size !== items.length
-    )
-      throw new ConflictException(
-        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
-      );
-    for (let page = 2; page <= pages; page++) {
-      const next = await this.hr.list({ target: 'finance', page }, actor);
-      if (
-        next.total !== first.total ||
-        next.page !== page ||
-        next.pageSize !== first.pageSize ||
-        !next.items.length ||
-        new Set(next.items.map((item) => item.id)).size !== next.items.length ||
-        next.items.some((item) => seen.has(item.id))
-      )
-        throw new ConflictException(
-          'فهرست ارجاع‌ها هم‌زمان تغییر کرده است؛ دوباره به‌روز کنید.',
-        );
-      next.items.forEach((item) => seen.add(item.id));
-      items.push(...next.items);
-    }
-    if (items.length !== first.total)
-      throw new ConflictException(
-        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
-      );
-    return { ...first, items };
-  }
-
   private async completeReservationInbox(actor: AuthenticatedActor) {
     if (typeof this.reservations.listForFinance === 'function')
       return this.reservations.listForFinance(actor.branchIds, actor);
@@ -202,7 +162,7 @@ export class FinanceInboxService {
       correctionResult,
     ] = await Promise.allSettled([
       this.sales.financeInbox(actor, includeCompleted),
-      this.completeHrInbox(actor),
+      this.hr.readFinanceInbox(actor),
       this.completeReservationInbox(actor),
       this.procurement
         .listFinanceTicketPurchases(actor.branchIds)
@@ -232,7 +192,7 @@ export class FinanceInboxService {
     ]);
     const salesItems =
       salesResult.status === 'fulfilled' ? salesResult.value : [];
-    const hrItems = hrResult.status === 'fulfilled' ? hrResult.value.items : [];
+    const hrItems = hrResult.status === 'fulfilled' ? hrResult.value : [];
     const reservationItems =
       reservationsResult.status === 'fulfilled'
         ? reservationsResult.value.flatMap((intake) => {
@@ -242,7 +202,9 @@ export class FinanceInboxService {
             >();
             for (const purchase of intake.servicePurchases ?? []) {
               const groupId = purchase.batchId ?? purchase.id;
-              groups.set(groupId, [...(groups.get(groupId) ?? []), purchase]);
+              const group = groups.get(groupId);
+              if (group) group.push(purchase);
+              else groups.set(groupId, [purchase]);
             }
             return [...groups]
               .filter(([, purchases]) =>
