@@ -1,5 +1,9 @@
 ## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
 
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Base3370748ca. Owner authorizes fixing floating-flight MANIFEST exports and green develop merge. Reserve ReservationManifestService passengerRows journey lookup and existing floating regression fixture/tests; own bounded status notes. Reuse the authoritative manifestJourneys resolver already used by list, assignment filtering and Report so PNL/custom output can find contract-only flights. Preserve exact ticket identity, own leg assignments, branch/cancellation/new-only rules and legacy charter output. Prior PNL/default scope merged in PR1586; no active writer. No schema/dependency/data/deployment changes.
+
 Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
 
 26 focused interaction/date/offer API/i18n checks, scoped ESLint and full Web TypeScript pass. Production Web build and exact-head hosted gates complete validation before authorized develop merge. Source lease releases on verified merge.
