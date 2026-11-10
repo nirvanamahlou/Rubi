@@ -45,6 +45,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/customers': UsersRound,
   '/customer-affairs': Headphones,
   '/reservations': CalendarCheck2,
+  '/reservations/reports': BarChart3,
   '/reservations/hotel-rates': Building2,
   '/ticket-management': Ticket,
   '/sales': Handshake,
@@ -94,7 +95,12 @@ export const navigationGroups = [
     id: 'operations',
     dotClass: 'bg-[#34d399]',
     title: 'رزرواسیون',
-    hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
+    hrefs: [
+      '/reservations',
+      '/reservations/reports',
+      '/reservations/hotel-rates',
+      '/ticket-management',
+    ],
   },
   {
     id: 'ticket-purchases',

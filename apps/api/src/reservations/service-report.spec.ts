@@ -213,6 +213,17 @@ describe('allocated services report', () => {
       service.serviceReport(query, { ...actor, permissions: [] }),
     ).rejects.toThrow();
     expect(findMany).not.toHaveBeenCalled();
+    await expect(
+      service.serviceReport(query, {
+        ...actor,
+        permissions: [
+          'ui.manual.v3',
+          'reservations.read',
+          'ui.screen.reservations.home',
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(findMany).not.toHaveBeenCalled();
     const result = await service.serviceReport(query, actor);
     expect(result.data).toHaveLength(3);
     expect(result.options.hotels).toEqual([

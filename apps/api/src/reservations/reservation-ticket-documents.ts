@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   isFloatingSalesContract,
+  canViewScreen,
   salesContractFlights,
   type AuthenticatedActor,
 } from '@nora/contracts';
@@ -120,7 +121,10 @@ export class ReservationTicketDocumentsService {
     query: Record<string, unknown>,
     actor: AuthenticatedActor,
   ) {
-    if (!actor.permissions.includes('reservations.read'))
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !canViewScreen(actor.permissions, 'ticket-catalog.tab.issued')
+    )
       throw new ForbiddenException();
     const range = reportRange(query);
     if (

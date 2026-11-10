@@ -176,9 +176,7 @@ describe('system management reference implementation', () => {
     expect(workspace).not.toContain('styles.categoryChild');
     expect(navigation).toContain("hrefs: ['/workbench', '/dashboard']");
     expect(navigation).toContain("hrefs: ['/human-resources', '/purchases']");
-    expect(navigation).toContain(
-      "hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management']",
-    );
+    expect(navigation).toContain("'/reservations/reports'");
     expect(navigation).toContain("'/ticket-management'");
     expect(navigation).toContain("'/purchases'");
     expect(workspace).toContain(

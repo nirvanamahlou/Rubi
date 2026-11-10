@@ -3,8 +3,9 @@ import { loadWeekdayOffers } from '../model/load-weekday-edit';
 import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useScreenAccess } from '@/modules/iam/access-context';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import { Power, Plus, Ticket, TicketCheck } from 'lucide-react';
+import { Power, Plus } from 'lucide-react';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import {
   Alert,
@@ -21,10 +22,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@/components/ui';
 import {
   createProduct,
@@ -58,7 +55,6 @@ import { FlightScheduleForm } from './flight-schedule-form';
 import { FlightLoadGrid } from './flight-load-grid';
 import formStyles from './ticket-form.module.css';
 import { TicketDatePicker } from './ticket-date-picker';
-import { ConnectedIssuedTicketsWorkspace } from './issued-tickets-workspace';
 import { toursApi } from '../api/tours';
 import { getActiveCityReference } from '../api/references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -204,50 +200,16 @@ export function requireFutureTicketDates(
 }
 
 export function TicketWorkspace() {
+  const allowed = useScreenAccess();
+  if (!allowed('ticket-catalog.tab.catalog')) return null;
   return (
-    <>
-      <Tabs defaultValue="catalog" dir="rtl" className="space-y-5">
-        <TabsList
-          aria-label="انتخاب بخش تعریف و ظرفیت پرواز"
-          className="grid h-auto w-full grid-cols-1 gap-2 rounded-2xl border border-primary/15 bg-primary/[0.04] p-2 sm:grid-cols-2 lg:w-fit"
-        >
-          <TabsTrigger
-            className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
-            value="catalog"
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
-              <Ticket className="size-5" aria-hidden />
-            </span>
-            <span>
-              <span className="block font-bold">تعریف بلیط قابل فروش</span>
-              <span className="mt-1 block text-xs opacity-75">
-                مسیر، برنامه حرکت و ظرفیت
-              </span>
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            className="group min-h-20 justify-start gap-3 border border-transparent px-4 py-3 text-start transition hover:border-primary/20 hover:bg-surface/80 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
-            value="issued"
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary group-data-[state=active]:bg-primary-foreground/15 group-data-[state=active]:text-primary-foreground">
-              <TicketCheck className="size-5" aria-hidden />
-            </span>
-            <span>
-              <span className="block font-bold">بلیط‌های صادرشده مسافران</span>
-              <span className="mt-1 block text-xs opacity-75">
-                گزارش صدور، PNR و قرارداد
-              </span>
-            </span>
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="catalog">
-          <TicketCatalogWorkspace />
-        </TabsContent>
-        <TabsContent value="issued">
-          <ConnectedIssuedTicketsWorkspace />
-        </TabsContent>
-      </Tabs>
-    </>
+    <section dir="rtl">
+      <h2 className="text-lg font-bold">تعریف بلیط قابل فروش</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        مسیر، برنامه حرکت و ظرفیت
+      </p>
+      <TicketCatalogWorkspace />
+    </section>
   );
 }
 
