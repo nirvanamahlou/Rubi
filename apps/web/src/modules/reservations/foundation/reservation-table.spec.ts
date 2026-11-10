@@ -39,11 +39,11 @@ describe('reservation table and workbook', () => {
       correctedAt: '2026-11-02T10:00:00Z',
       salesCorrectionPending: false,
     };
-    expect(reservationCells(amended).slice(12, 14)).toEqual([
+    expect(reservationCells(amended).slice(14, 16)).toEqual([
       '✓',
       '06/11/2026',
     ]);
-    expect(reservationExportRows([amended])[1]!.slice(12, 14)).toEqual([
+    expect(reservationExportRows([amended])[1]!.slice(14, 16)).toEqual([
       '✓',
       '06/11/2026',
     ]);
@@ -60,14 +60,14 @@ describe('reservation table and workbook', () => {
         correctedAt: null,
       } as RequestView['tableSummary'],
     };
-    expect(reservationCells(summary).slice(12, 14)).toEqual([
+    expect(reservationCells(summary).slice(14, 16)).toEqual([
       '✓',
       '08/11/2026',
     ]);
     expect(
       reservationCells({ ...row('UNCHANGED'), amendedAt: 'invalid' }).slice(
-        12,
         14,
+        16,
       ),
     ).toEqual(['—', '—']);
   });
@@ -111,7 +111,7 @@ describe('reservation table and workbook', () => {
       hotelRequested: true,
       hotelConfirmed: false,
     });
-    expect(cells.slice(3, 12)).toEqual([
+    expect(cells.slice(5, 14)).toEqual([
       '09/09/2026',
       '—',
       '0',
@@ -151,19 +151,19 @@ it('includes additional contract columns in the filtered workbook and keeps unkn
       hotelNotes: 'TWIN BED',
     },
   ]);
-  expect(exported[0]!.slice(14, 18)).toEqual([
+  expect(exported[0]!.slice(16, 20)).toEqual([
     'خدمات',
     'فروشنده',
     'طرف قرارداد',
     'سرویس هتل',
   ]);
-  expect(exported[1]!.slice(14, 18)).toEqual([
+  expect(exported[1]!.slice(16, 20)).toEqual([
     'Flight، Hotel',
     'Seller',
     'Agency',
     'UALL',
   ]);
-  expect(reservationCells(row('EMPTY')).slice(15, 19)).toEqual([
+  expect(reservationCells(row('EMPTY')).slice(17, 21)).toEqual([
     '—',
     '—',
     '—',
@@ -174,14 +174,14 @@ it('includes additional contract columns in the filtered workbook and keeps unkn
 it('matches the exact column order, keeps ages/zero counts and independent currencies in export', () => {
   const fields = reservationColumns;
   expect(fields).toHaveLength(47);
-  expect(fields.slice(9, 14)).toEqual([
+  expect(fields.slice(11, 16)).toEqual([
     'تعداد اتاق',
     'اقدام هتل',
     'تأیید هتل',
     'اصلاح',
     'تاریخ اصلاح',
   ]);
-  expect(fields.slice(29, 33)).toEqual([
+  expect(fields.slice(31, 35)).toEqual([
     'اقدام ویزا',
     'تأیید ویزا',
     'اقدام پرواز',
@@ -227,10 +227,10 @@ it('matches the exact column order, keeps ages/zero counts and independent curre
       },
     },
   });
-  expect(cells.slice(20, 23)).toEqual(['6', '5', '4']);
-  expect(cells.slice(25, 29)).toEqual(['1', '1', '1', '1']);
-  expect(cells[29]).toBe('✓');
-  expect(cells[33]).toBe('01/09/2026');
+  expect(cells.slice(22, 25)).toEqual(['6', '5', '4']);
+  expect(cells.slice(27, 31)).toEqual(['1', '1', '1', '1']);
+  expect(cells[31]).toBe('✓');
+  expect(cells[35]).toBe('01/09/2026');
   expect(cells.slice(37, 45)).toEqual([
     '900',
     '200 USD / 100 EUR',
@@ -244,7 +244,7 @@ it('matches the exact column order, keeps ages/zero counts and independent curre
 });
 
 it('keeps FAM/TPL alongside equally scoped room counters and shifts workflow flags correctly', () => {
-  expect(reservationColumns.slice(5, 9)).toEqual([
+  expect(reservationColumns.slice(7, 11)).toEqual([
     'SGL',
     'DBL',
     'EXT',
@@ -257,7 +257,7 @@ it('keeps FAM/TPL alongside equally scoped room counters and shifts workflow fla
     extraBeds: 1,
     familyTripleRooms: 3,
   });
-  expect(cells.slice(5, 9)).toEqual(['1', '2', '1', '3']);
+  expect(cells.slice(7, 11)).toEqual(['1', '2', '1', '3']);
   expect(
     Object.entries(tableFlagColumns).map(([index, flag]) => [
       reservationColumns[Number(index)],
@@ -269,4 +269,38 @@ it('keeps FAM/TPL alongside equally scoped room counters and shifts workflow fla
     ['اقدام پرواز', 'flightRequested'],
     ['تأیید پرواز', 'flightConfirmed'],
   ]);
+});
+
+it('places Gregorian flight dates third and fourth before the hotel in both table and export', () => {
+  const source = {
+    ...row('120541'),
+    destination: 'ANTALYA',
+    hotelName: 'Synthetic Hotel',
+    travelDate: '2027-01-01',
+    tableSummary: {
+      departureDate: '2026-11-06',
+      returnDate: '2026-11-13',
+    } as RequestView['tableSummary'],
+  };
+  expect(reservationColumns.slice(0, 5)).toEqual([
+    'شماره قرارداد',
+    'مقصد',
+    'تاریخ رفت',
+    'تاریخ برگشت',
+    'Hotel',
+  ]);
+  expect(reservationCells(source).slice(0, 5)).toEqual([
+    '120541',
+    'ANTALYA',
+    '06/11/2026',
+    '13/11/2026',
+    'Synthetic Hotel',
+  ]);
+  expect(reservationExportRows([source])[1]).toEqual(reservationCells(source));
+  expect(
+    reservationCells({ ...row('LEGACY'), travelDate: '2026-11-06' }).slice(
+      2,
+      4,
+    ),
+  ).toEqual(['06/11/2026', '—']);
 });
