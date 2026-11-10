@@ -6,10 +6,43 @@ import {
   MASTER_DATA_RESOURCES,
   MASTER_DATA_EDITABLE_FIELDS,
   USER_ACCESS_FIELD_CONTROLS,
+  MANUAL_ACCESS_VERSION,
+  allowAccessControl,
+  changedDeniedFields,
   masterDataEndpoints,
 } from '../src';
 
 describe('master data public contract', () => {
+  it('exposes hotel currency for explicit manual grants and keeps it restricted otherwise', () => {
+    const control = 'field.master-data.hotels.currencyId';
+    expect(MASTER_DATA_EDITABLE_FIELDS.hotels).toContain('currencyId');
+    expect(USER_ACCESS_FIELD_CONTROLS.some(({ id }) => id === control)).toBe(
+      true,
+    );
+    const values = { currencyId: '' };
+    const current = { currencyId: null };
+    expect(
+      changedDeniedFields(
+        [MANUAL_ACCESS_VERSION, 'master_data.update'],
+        'field.master-data.hotels',
+        values,
+        current,
+      ),
+    ).toEqual(['currencyId']);
+    expect(
+      changedDeniedFields(
+        [
+          MANUAL_ACCESS_VERSION,
+          'master_data.update',
+          allowAccessControl(control),
+        ],
+        'field.master-data.hotels',
+        values,
+        current,
+      ),
+    ).toEqual([]);
+  });
+
   it('exposes partner contact controls without granting editable protocol markers', () => {
     for (const resource of ['suppliers', 'brokers'] as const) {
       expect(MASTER_DATA_EDITABLE_FIELDS[resource]).toContain('dossierMobile');
