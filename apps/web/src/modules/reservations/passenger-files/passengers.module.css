@@ -37,7 +37,7 @@
   border-bottom: 0;
 }
 
-.table input {
+.table input:not([type='checkbox']):not([type='radio']) {
   min-width: 130px;
 }
 
@@ -72,7 +72,7 @@
   max-width: 150px;
 }
 
-.compact .table input {
+.compact .table input:not([type='checkbox']):not([type='radio']) {
   min-width: 95px;
   height: 32px;
   padding-inline: 7px;
@@ -96,4 +96,25 @@
 .compact .table tbody tr:focus-within {
   outline: 2px solid var(--primary);
   outline-offset: -2px;
+}
+
+.table[data-passenger-editor] {
+  table-layout: auto;
+  min-inline-size: 2600px;
+}
+
+.table[data-passenger-editor] td {
+  min-inline-size: 150px;
+}
+
+.table[data-passenger-editor] td:last-child {
+  min-inline-size: 280px;
+}
+
+.table input[type='checkbox'],
+.table input[type='radio'] {
+  min-width: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }

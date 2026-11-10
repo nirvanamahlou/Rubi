@@ -524,6 +524,10 @@ Bound passenger amendment dialog to available viewport with border-box sizing an
 ## INSURANCE-PROVIDER-ERRORS-1108
 Read-only official Travis Swagger PolicyCreateInput/Person review confirms current automation payload field names and required numeric/string/date-time types; no fabricated extra fields. Transport now emits only locally generated stage/status and allowlisted validation field labels. Upstream messages, values, headers, keys and URLs remain undisclosed. Automation preserves these safe diagnostics in policy lastError; ambiguous Create/Confirm reconciliation and no-blind-replay remain unchanged. No live issuance or deployment. Focused regressions and final-head hosted gates precede authorized develop merge.
 
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
@@ -9604,6 +9608,8 @@ No migration, dependency or operational-data changes. Full hosted checks gate me
 INSURANCE-DRAFT-ERROR-1109: owner-coordinated repair translates national/passport identity uniqueness conflicts in insurance correction into safe409 instead of generic500. Existing uniqueness and transaction rollback remain; no provider issuance or business-data mutation. Read-only real case confirmed identity belongs to a different customer. Tests/CI tracked on dedicated branch; see docs/tasks/INSURANCE-DRAFT-ERROR-1109.md.
 
 
-## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
 
-COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
+PASSENGER-EDITOR-LAYOUT-1110: correcting compact passenger table width/checkbox overflow and booked child-band hydration. No schema/dependency or operational data changes; focused and hosted checks gate authorized develop merge.
+
+PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.

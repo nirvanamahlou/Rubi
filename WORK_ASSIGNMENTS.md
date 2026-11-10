@@ -579,6 +579,10 @@ Owner authorizes responsive redesign of Reservations passenger/room amendment an
 
 Owner requests official input/output contract verification and actionable insurance errors, then develop merge. Reserve Travis transport diagnostics, automation safe error propagation and focused tests. Official live Swagger PolicyCreateInput/Person inspected read-only. Never expose upstream free text, identity, credentials or URLs. No provider issuance, schema, dependency or deployment.
 
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
@@ -12033,6 +12037,9 @@ release on publication; PR1556 full final-head checks gate authorized merge.
 
 Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
 
-## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
 
-COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+## PASSENGER-EDITOR-LAYOUT-1110 — PC-A — VALIDATED
+
+Reserve passenger-files table CSS/markup, amendment draft age hydration and focused regressions. Preserve existing insurance worktree edits; independent branch from develop fdf5cd950. Fix table min-width override and checkbox sizing; retain booked child bands and infer only missing child bands from known DOB at travel date. No schema/dependency/production data changes. User authorizes develop merge after checks.
+
+PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.

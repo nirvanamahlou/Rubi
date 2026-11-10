@@ -299,7 +299,7 @@
   max-inline-size: 100%;
   inline-size: 100%;
 }
-.passengerWorkspace table {
+.passengerWorkspace table:not([data-passenger-editor]) {
   table-layout: fixed;
   inline-size: 100%;
   min-inline-size: 0;
