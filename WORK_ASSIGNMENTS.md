@@ -1291,6 +1291,10 @@ COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after
 
 Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatting, i18n, Web/API types and builds pass. Docker Web3100/API4192 are healthy on rubi-integrations-local:1017-site-onboarding-v2 with unchanged schema, no migration/seed and retained volumes. Browser verified direct entry, inline brand, Back retention, loopback rejection, actual existing-system save/audit, light/dark and mobile. No sample site or URL saved; four systems remain. Ready for local review; publication awaits a new explicit instruction.
 
+## RESERVATION-FINANCE-PROJECTION-1110 — PC-B — READY_FOR_CI
+
+Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
+
 ## WORKBENCH-SHARED-TRANSPORT-1110 — PC-B — READY_FOR_CI
 
 Reserve Workbench messaging, personal and feedback HTTP clients, the shared authenticated fetch timeout option and focused tests. Preserve domain errors, cookie handling, payloads and one retry after authentication rejection. No API, dependency or deployment changes.
