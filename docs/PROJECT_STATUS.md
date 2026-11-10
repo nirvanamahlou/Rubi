@@ -67,9 +67,11 @@ Owner authorizes full new-applicant insurance issuance without a Sales contract,
 
 The remaining correction HTTP500 is reproduced as Prisma P2010 decoding PostgreSQL void from the advisory-lock query. A shared text-cast lock helper preserves serialization for correction and confirmation. Real Prisma/PostgreSQL regression checks extend the existing mandatory insurance gate. No passenger data mutation, policy issuance, provider-mode change, migration or dependency change. Owner's existing bounded repair/merge/deploy authorization applies. See docs/tasks/INSURANCE-ADVISORY-LOCK-1109.md.
 
-## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — DEPLOYED
 
 Automatic insurance corrections trigger the existing leased automation immediately after durable save. Nested API errors and invalid field labels now reach the correction dialog; pending automatic drafts refresh for the provider result.41 API and16 Web focused tests pass. Owner authorizes final-green develop merge and bounded production release, preserving live peers and sandbox configuration. No migration/dependency/real-policy test. See docs/tasks/INSURANCE-CORRECT-SUBMIT-1109.md.
+
+PR1546 merged after all8 final-head CI checks passed; bounded Avina release is verified. Actual candidates pass41 API and19 Web/translation tests and Web canary. Live source hashes, unchanged environment/mounts, HTTPS health/assets, unauthorized insurance access, Worker authentication, AMI, recording timer and zero restarts pass. Fresh encrypted backup verified offserver; only the two specifically approved old backups retired after newer backup validation. No migration or provider-mode change. Receipt: /opt/rubi/insurance-correct-submit-1109/verified.json.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 

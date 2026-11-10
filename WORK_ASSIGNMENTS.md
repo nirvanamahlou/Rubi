@@ -80,11 +80,13 @@ COMPUTER_ID=PC-A; branch codex/pc-a-insurance-standalone-1109 from origin/develo
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-advisory-lock-1109 from origin/develop68b538c9f. Follow-up to owner-authorized insurance repair/merge/bounded release: reproduce and fix the remaining correction HTTP500, without issuing a passenger policy. Reserve insurance.service.ts and a real Prisma/PostgreSQL regression test, own task/status docs, and only the existing insurance PostgreSQL gate command in .github/workflows/ci.yml. No other active insurance/CI command writer found; prior source work is merged. No migration/dependency/schema/API/provider-mode changes. Preserve transactional serialization, CAS, audit, provider idempotency and peer production overlays. Bounded API-only deployment and real PostgreSQL lock proof required; no destructive cleanup authorized by this unit.
 
-## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — COMPLETE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correct-submit-1109 from current develop. Owner requests correct-and-immediate insurance submission, precise failure handling, develop merge and only this bounded production repair. Reserve Reservations insurance client/form/controller/automation input handling and focused tests; own task/status and bounded deployment tooling. Prior overlapping insurance amendment is merged; preserve issued-policy guards, provider fingerprints/leases, sandbox-only provider, customer CAS/audit and branch permissions. No schema/dependency/grant or live policy test. Production rollout must preserve peer overlays and shared deployment lease, verified backup, rollback and health/Worker checks; no full-develop publication authorized by this task.
 
 Bounded catalogue lease: mirror existing form-field labels newly used by API validation into generated offline API English catalogue only; preserve all peer keys and translation runtime.
+
+Completed: PR1546 merged as cc34a653bdad830354d0ce8a39cf3839902aaf65 after all8 final-head hosted checks passed. Bounded Avina API/Web release verified, including41 API and19 Web/translation candidate tests, canary, source hashes, unchanged environment/mounts, health/assets/auth and Worker/AMI/recording checks. No migration or provider-mode change. The two explicitly authorized older backups were retired only after healthy newer backup validation; a fresh encrypted checkpoint is verified on server and offserver. All task leases released. PC-A reserves only these completion paragraphs and the task completion section for documentation handoff on codex/pc-a-insurance-release-handoff-1109; no runtime/dependency/migration changes.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
