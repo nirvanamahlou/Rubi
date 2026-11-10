@@ -72,19 +72,8 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
         values: ['Work', '', '09:15', '17:00', 'همان روز', '6', '6'],
       },
       {
-        tab: 'calculationSettings',
-        values: [
-          'Calculation',
-          '[]',
-          'خیر',
-          '285',
-          'خیر',
-          'خیر',
-          'بله',
-          'خیر',
-          'خیر',
-          'روزانه',
-        ],
+        tab: 'leavePolicies',
+        values: ['استحقاقی', '0', '0', '0', '0', 'خیر', '0', '285'],
       },
     ];
     for (const record of records)
@@ -271,7 +260,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
       }),
     ).toBe(1);
   });
-  it('rolls back approval and native leave on insufficient balance; approved replay consumes once and replaces absence', async () => {
+  it('rolls back approval when the policy quota is insufficient; approved replay consumes once and replaces absence', async () => {
     const id = await request();
     await expect(
       service.reviewHrWorkbenchRequest(
@@ -279,30 +268,15 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
         { version: 1, status: 'APPROVED' },
         actor,
       ),
-    ).rejects.toThrow('مانده');
+    ).rejects.toThrow('سهمیه ماهانه');
     expect(
       (await db.customerAffairsTicket.findUniqueOrThrow({ where: { id } }))
         .status,
     ).toBe('NEW');
     expect(await db.hrRecord.count({ where: { code: `WB-${id}` } })).toBe(0);
-    await db.hrRecord.create({
-      data: {
-        branchId: branch,
-        employeeId: employee,
-        code: randomUUID(),
-        section: 'time',
-        tab: 'minuteLedger',
-        values: [
-          'Synthetic Employee',
-          '1405',
-          '8',
-          'استحقاقی',
-          'افزایش',
-          '1000',
-          '',
-        ],
-        status: 'تأییدشده',
-      },
+    await db.hrRecord.updateMany({
+      where: { branchId: branch, section: 'time', tab: 'leavePolicies' },
+      data: { values: ['استحقاقی', '1', '0', '0', '0', 'خیر', '0', '285'] },
     });
     await service.reviewHrWorkbenchRequest(
       id,
@@ -318,6 +292,7 @@ describe.skipIf(!enabled)('transactional Workbench HR leave approval', () => {
       where: { code: `WB-${id}` },
     });
     expect(record.status).toBe('تأییدشده');
+    expect(record.data).toMatchObject({ minutes: 285 });
     expect(
       await db.hrRecord.count({
         where: { parentId: record.id, tab: 'minuteLedger' },

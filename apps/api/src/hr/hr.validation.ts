@@ -1,6 +1,9 @@
 import { privateHrResource } from './hr-private-values';
 import { validateCompletionValues } from './hr-radan-completion.domain';
-import { HR_RADAN_LEGACY_LENGTHS } from '@nora/contracts';
+import {
+  HR_DEFAULT_LEAVE_DAY_MINUTES,
+  HR_RADAN_LEGACY_LENGTHS,
+} from '@nora/contracts';
 import { validateRadanFields } from './hr-radan.validation';
 import { BadRequestException } from '@nestjs/common';
 import {
@@ -211,6 +214,8 @@ export function recordValues(
     ...value,
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
+  if (schema.key === 'time.leavePolicies' && value.length === 7)
+    padded[7] = String(HR_DEFAULT_LEAVE_DAY_MINUTES);
   if (
     schema.key === 'time.leavePolicies' &&
     typeof padded[4] === 'string' &&

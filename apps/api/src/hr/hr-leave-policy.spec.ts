@@ -45,7 +45,7 @@ describe('monthly leave policy', () => {
     ).toBeNull();
     expect(
       leavePolicyValues(['old', 'استحقاقی', '30', 'خیر', '0', '1405']),
-    ).toEqual(['استحقاقی', '', '', '1', '0', 'خیر', '0']);
+    ).toEqual(['استحقاقی', '', '', '1', '0', 'خیر', '0', '465']);
   });
   it('uses integer days for both notice fields and retains legacy cutoff compatibility', () => {
     const numeric = parseMonthlyLeavePolicy([

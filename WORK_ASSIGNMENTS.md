@@ -6034,6 +6034,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 Reserve the HR requests table title column. Keep the request type filter and review actions.
 
+## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
+
+Owner requests leave approvals to use the leave policy, and removes calculation settings and the penalty shortcut from the attendance settings view. Reserve HR leave policy, form, and approval tests. No schema migration.
+
 ## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — ACTIVE
 
 - درخواست مالک در 2026-09-19: متن Credential و اتصال Provider از توضیحات بخش ایرلاین حذف شود.
