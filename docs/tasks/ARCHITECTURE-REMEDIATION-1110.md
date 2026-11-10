@@ -7,19 +7,19 @@ product behavior, authorization, financial atomicity and persisted data.
 
 ## Tracking
 
-- [ ] Attendance service identity independent of browser sessions, current scope/revocation enforced.
-- [ ] Safe diagnostic context for unexpected errors.
-- [ ] Grouped messaging identity and unread-count reads.
-- [ ] Bounded notification queries with exact authorized counts and assignment priority.
-- [ ] Grouped attendance penalty calculations; preserve pending attendance-editor PR1511.
-- [ ] Shared Web HTTP transport and coherent HR refresh.
-- [ ] Versioned HR field adapters independent of translated labels; retain legacy records.
-- [ ] HR encryption key rotation compatibility.
-- [ ] Runtime domain integration, recursive architecture checks and focused behavioral tests.
-- [ ] Reporting/marketing query and export bounds; memory-safe downloads.
-- [ ] Explicit background processing ownership and lifecycle.
-- [ ] Translation loading and UI responsibility separation.
-- [ ] Actual architecture documentation and review completion evidence.
+| Scope | Implemented in develop | Remaining |
+| --- | --- | --- |
+| IAM and diagnostics | Dedicated attendance integration identity and safe unexpected-error context in PR #1600 | Validate runtime ownership when changing attendance sync |
+| Messaging and notifications | Batched identities and unread lookups, compact paged metadata and exact authorization counts in PR #1600; verbatim chat text in PR #1603 | Exact notification counts still visit unread metadata |
+| Attendance and HR | Batched penalty evaluation, explicit optional reasons and key ring in PR #1600 | Named field adapters for legacy positional records; distributed Radan execution |
+| Web transport and locale | Shared HTTP retry on migrated clients and one HR refresh in PR #1600; lazy fallback index in PR #1604 | Migrate other clients and defer catalog transfer; split translation responsibilities |
+| Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611 | Durable reporting jobs, bounded row projection and buffered scan/upload paths |
+| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614 | Other Marketing collections and producer-side bounds for the full Finance inbox |
+| Module boundaries | Recursive repository import guard in PR #1600 | Explicit public ports, transaction abstractions and ownership for direct database reads |
+
+The architecture and deployment baselines now distinguish checked-in behavior
+from target design. The API repository guard also covers static re-exports,
+type references and literal dynamic imports or require calls.
 
 ## Coordination and validation
 
@@ -41,9 +41,8 @@ when only selected paths are addressed.
   database snapshot. It counts authorized unread rows, preserves assignment
   priority and fetches details for the selected rows only. Exact counting still
   visits unread metadata because route permissions are evaluated in contracts.
-- The shared authenticated transport passed its six focused Web tests. The
-  broader run reported failures in several UI suites before it was stopped.
-  Baseline comparison and the current API/type checks are pending.
+- The shared authenticated transport passed six focused Web tests. The final
+  PR #1600 revision also passed the hosted quality, build, test and migration checks.
 
 - Reporting now renders CSV, XLSX and PDF in a worker thread. The export entry
   point limits concurrent work to two jobs per API process. Rendering has a
@@ -63,8 +62,6 @@ when only selected paths are addressed.
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store
   revision is the single signal for that list to reload.
-- The API compiler reached the local Node heap limit. A larger-heap check is
-  required before delivery.
 
 ## HR encryption configuration
 
