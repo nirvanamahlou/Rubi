@@ -9090,6 +9090,10 @@ CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, 
 
 CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.
 
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+The Workbench request empty state uses generic request wording in Persian and English. Existing request and follow-up routing is preserved. 25 focused Web tests passed.
+
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.

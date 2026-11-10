@@ -1,4 +1,6 @@
 {
+  "درخواستی به شما تخصیص داده نشده است": "No requests have been assigned to you",
+  "درخواست‌هایی که به شما سپرده شوند، اینجا نمایش داده می‌شوند.": "Requests assigned to you will appear here.",
   "خدمات قرارداد با خدمات تور مطابقت ندارد.": "Contract services do not match the tour services.",
   "صدور خودکار بیمه": "Issue insurance automatically",
   "با فعال‌کردن این گزینه، هنگام ورود قرارداد به رزرواسیون درخواست صدور بیمهٔ مسافران ارسال می‌شود؛ نتیجه و علت خطا در بیمه‌نامه قابل مشاهده است.": "When enabled, passenger insurance issuance is queued when the contract reaches Reservations. Results and errors appear under Insurance policies.",
