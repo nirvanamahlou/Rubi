@@ -38,20 +38,20 @@ describe('rendered access controls', () => {
       ],
       createElement(
         Tabs,
-        { defaultValue: 'issued' },
+        { defaultValue: 'intro' },
         createElement(
           TabsList,
           {},
           createElement(TabsTrigger, { value: 'catalog' }, 'CATALOG'),
-          createElement(TabsTrigger, { value: 'issued' }, 'ISSUED'),
+          createElement(TabsTrigger, { value: 'intro' }, 'INTRO'),
         ),
         createElement(TabsContent, { value: 'catalog' }, 'ALLOWED BODY'),
-        createElement(TabsContent, { value: 'issued' }, 'DENIED BODY'),
+        createElement(TabsContent, { value: 'intro' }, 'DENIED BODY'),
       ),
     );
     expect(body).toContain('CATALOG');
     expect(body).toContain('ALLOWED BODY');
-    expect(body).not.toContain('ISSUED');
+    expect(body).not.toContain('INTRO');
     expect(body).not.toContain('DENIED BODY');
   });
   it('hides route links including object href queries for forbidden sections', () => {
@@ -125,10 +125,10 @@ it('shows ordinary form tabs while keeping catalogued denied screens hidden', ()
         TabsList,
         {},
         createElement(TabsTrigger, { value: 'local-form' }, 'LOCAL FORM TAB'),
-        createElement(TabsTrigger, { value: 'issued' }, 'DENIED SCREEN TAB'),
+        createElement(TabsTrigger, { value: 'intro' }, 'DENIED SCREEN TAB'),
       ),
       createElement(TabsContent, { value: 'local-form' }, 'LOCAL FORM CONTENT'),
-      createElement(TabsContent, { value: 'issued' }, 'DENIED SCREEN CONTENT'),
+      createElement(TabsContent, { value: 'intro' }, 'DENIED SCREEN CONTENT'),
     ),
   );
   expect(markup).toContain('LOCAL FORM TAB');
