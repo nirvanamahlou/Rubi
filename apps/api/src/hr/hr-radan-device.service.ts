@@ -85,7 +85,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
     } catch {
       this.latest = { state: 'error', at: new Date().toISOString() };
       this.logger.warn(
-        'Attendance synchronization failed; check provider, scope and session configuration.',
+        'Attendance synchronization failed; check provider, connector identity and branch scope.',
       );
     }
   }

@@ -26,7 +26,7 @@ function fixture() {
     hrAuditEvent: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const hr = {
-    dailyPenalty: vi.fn().mockResolvedValue(null),
+    dailyPenalties: vi.fn().mockResolvedValue(new Map()),
     leaveBalances: vi.fn().mockResolvedValue({
       year: 2026,
       items: [{ type: 'annual', granted: '26', used: '2', balance: '24' }],
@@ -469,9 +469,9 @@ it('uses authoritative HR penalties only for scoped active attendance days', asy
   f.client.hrRecord.findMany.mockImplementation(async (q) =>
     q.where.tab === 'attendance' ? [active, inactive] : [],
   );
-  f.hr.dailyPenalty.mockResolvedValue('800000');
+  f.hr.dailyPenalties.mockResolvedValue(new Map([[active.id, '800000']]));
   const result = await f.service.get(actor, 30);
   expect(result.attendanceHistory).toHaveLength(1);
   expect(result.attendanceHistory?.[0]?.dailyPenaltyToman).toBe('800000');
-  expect(f.hr.dailyPenalty).toHaveBeenCalledExactlyOnceWith(active);
+  expect(f.hr.dailyPenalties).toHaveBeenCalledExactlyOnceWith([active]);
 });

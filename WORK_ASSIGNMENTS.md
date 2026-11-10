@@ -1281,6 +1281,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-aircraft-save-access-1017 from origin/develo
 
 User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
 
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A07. Reserve Documents scanner ownership, recovery of expired job claims, fencing and targeted tests. Preserve quarantine and audited release. Reuse the existing job deadline column without a migration.
+
 ## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after accepting the visual dashboard. Branch codex/pc-d-integrations-site-onboarding-1017 starts from origin/PC-D-Integration@b0181dc5. This target does not yet contain the already reviewed Integrations foundation/dashboard from PR889; reuse only its scoped module/route/contracts/i18n source, not unrelated develop changes. Reserve Integrations Web/API/contracts, route and bounded catalogue registrations, root Dockerfile build coverage for Web/API, CI workflow target and matching policy regression, and this task's status/docs and tests. Existing integrations.registry.v1 producer/consumer gain optional nonsecret site setup metadata together; legacy records without it remain valid. Public SystemManagement storage/IAM scope and CAS/audit remain unchanged. No schema/migration/dependency/lockfile ownership or other-module edits. Local Compose uses existing Rubi services and project image; no external requests, credentials or success claims. User authorizes push, hosted CI and PR to PC-D-Integration; merge only after all checks and required review pass.
@@ -6336,6 +6340,10 @@ Owner requests leave approvals to use the leave policy, and removes calculation 
 - درخواست مالک: «مخاطبان» پیام‌رسان میزکار فقط از حساب‌های واقعی و فعال CRM ساخته شود؛ انتخاب «پیام جدید» نباید واحدهای نمایشی را به‌جای مخاطب نشان دهد.
 - محدوده رزرو: رابط Workbench/Messaging، تست‌های متمرکز همان مسیر و ثبت وضعیت. فهرست حساب‌ها فقط از قرارداد موجود `GET /messaging/contacts` مصرف می‌شود که IAM آن را با `User`های فعال داخلی و شعبهٔ مشترک پروجکت می‌کند؛ بدون تغییر IAM، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: modal قبلی «واحد مخاطب» حذف شد و دکمهٔ «پیام جدید» مستقیم پیام‌رسان را با تب «مخاطبان» باز می‌کند. در این تب فقط خروجی API کاربران واقعی CRM نمایش داده می‌شود؛ نام نمایشی، نام کاربری و شعبهٔ مجاز هر حساب قابل مشاهده است. واحدها فقط برای انتخاب قالب آماده باقی می‌مانند و گیرنده محسوب نمی‌شوند. typecheck و ESLint Web، ۲ آزمون API قرارداد فهرست/اعتبارسنجی مخاطب و آزمون Web client پیام‌رسان موفق‌اند.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B — IN_PROGRESS
+
+Owner authorizes implementation of the GitHub architecture/code review. Base3370748ca; branch codex/pc-b-architecture-remediation-1110. Reserve review-related IAM attendance identity, safe common error diagnostics, Messaging/Notifications read aggregation and their tests first; subsequent scoped changes tracked in docs/tasks/ARCHITECTURE-REMEDIATION-1110.md. Preserve pending HR attendance-editor PR1511 and HR pay-document PR1590. No shared dependency versions, operational data or production rollout. Source responsibilities and validation are recorded per completed slice.
 
 ## 2026-09-27 — WORKBENCH-MESSAGE-TEMPLATE-OVERFLOW-0927 — PC-B — READY_FOR_REVIEW
 

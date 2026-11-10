@@ -1076,13 +1076,17 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## FINANCE-HR-REFERRAL-READ-1110
+
+Finance reads branch-scoped HR referrals through one bounded projection and writes one read audit event. Response eligibility and source failure handling are preserved. No schema or API contract changes.
+
 ## SALES-REFERENCE-ACCESS-1018 — PC-B
 
 Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.
 
-## FINANCE-HR-REFERRAL-READ-1110
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B
 
-Finance reads branch-scoped HR referrals through one bounded projection and writes one read audit event. Response eligibility and source failure handling are preserved. No schema or API contract changes.
+A claimed antivirus job has a five-minute deadline. An expired claim can be picked up again, and the old result cannot override a newer attempt. Exhausted claims remain quarantined and record a scan failure. API polling and inline scanning can be delegated by setting DOCUMENTS_SCAN_EXECUTION=worker and running the standalone document scanner with access to the same database and encrypted storage. The default remains api. 132 API unit tests and one disposable PostgreSQL claim/recovery test passed.
 
 ## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
 
@@ -5265,6 +5269,10 @@ Hotel table checkboxes open existing request/voucher workflow. Sent requests lig
 ## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
 Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B
+
+First implementation slice covers attendance connector identity and penalty reads, messaging and notification query load, safe error diagnostics, authenticated Web requests, HR encryption key compatibility, report rendering isolation and authenticated downloads. See docs/tasks/ARCHITECTURE-REMEDIATION-1110.md for test evidence and remaining audit work.
 
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 

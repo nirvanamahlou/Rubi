@@ -7,7 +7,7 @@ import { ReportingExportService } from './reporting-export.service';
 import type { TravelReportResultV1 } from './reporting.contracts';
 
 describe('ReportingExportService storage boundary', () => {
-  it('keeps each mixed-direction amount attached to its currency in Excel', () => {
+  it('keeps each mixed-direction amount attached to its currency in Excel', async () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);
     const amount = '104704000000 ریال + 16976 € + -54200.25 $';
     const result = {
@@ -30,9 +30,9 @@ describe('ReportingExportService storage boundary', () => {
       ],
       filterSnapshot: { branchIds: [], filters: {} },
     } as unknown as TravelReportResultV1;
-    const workbook = unzipSync(
-      new Uint8Array(service.build('XLSX', result, 'گزارش آزمایشی').buffer),
-    );
+    const file = await service.buildInWorker('XLSX', result, 'گزارش آزمایشی');
+    expect(Buffer.isBuffer(file.buffer)).toBe(true);
+    const workbook = unzipSync(file.buffer);
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
     const styles = strFromU8(workbook['xl/styles.xml']!);
     const expected =
@@ -55,7 +55,7 @@ describe('ReportingExportService storage boundary', () => {
       .buffer.toString('utf8');
     expect(csv).toContain('104,704,000,000 ریال + 16,976 € + -54,200.25 $');
     expect(csv).not.toMatch(/[\u200e\u00a0]/);
-  });
+  }, 30000);
 
   it('uses the compact report, timestamp, filters and banded dataset Excel table', () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);

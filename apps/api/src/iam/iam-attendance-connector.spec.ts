@@ -5,7 +5,7 @@ const userId = '11111111-1111-4111-8111-111111111111';
 const currentSession = '22222222-2222-4222-8222-222222222222';
 function subject({
   exists = true,
-  revalidate = true,
+  activeBranch = true,
   permissions = ['hr.manage'],
   branches = ['configured', 'other'],
 } = {}) {
@@ -14,64 +14,61 @@ function subject({
   vi.stubEnv('HR_RADAN_BRANCH_ID', 'configured');
   vi.stubEnv('HR_RADAN_SECONDARY_BRANCH_ID', 'second');
   vi.stubEnv('CALL_CENTER_HR_ROUTING_ENABLED', 'false');
-  const findFirst = vi
-    .fn()
-    .mockResolvedValueOnce(exists ? { id: currentSession } : null)
-    .mockResolvedValueOnce(
-      revalidate
-        ? {
-            id: currentSession,
-            userId,
-            status: 'ACTIVE',
-            user: {
-              status: 'ACTIVE',
-              branches: branches.map((branchId) => ({ branchId })),
-            },
-          }
-        : null,
-    );
+  const findFirst = vi.fn().mockResolvedValue(
+    exists
+      ? {
+          id: userId,
+          status: 'ACTIVE',
+          branches: branches.map((branchId) => ({
+            branchId,
+            branch: { isActive: activeBranch },
+          })),
+        }
+      : null,
+  );
+  const sessionLookup = vi.fn(() => {
+    throw new Error('Browser sessions must not be consulted');
+  });
   const service = Object.assign(Object.create(IamService.prototype), {
-    database: { client: { session: { findFirst } } },
+    database: {
+      client: { user: { findFirst }, session: { findFirst: sessionLookup } },
+    },
     userAccessInclude: () => ({}),
     permissionCodes: () => permissions,
   }) as IamService;
-  return { service, findFirst };
+  return { service, findFirst, sessionLookup };
 }
 afterEach(() => vi.unstubAllEnvs());
 describe('trusted attendance connector actor', () => {
-  it('uses a current live native session, revalidates access and narrows configured branches', async () => {
-    const { service, findFirst } = subject();
+  it('runs without any browser session and grants only configured HR scope', async () => {
+    const { service, findFirst, sessionLookup } = subject({
+      permissions: ['hr.manage', 'finance.read'],
+    });
     const actor = await service.authenticateAttendanceConnectorV1(userId);
-    expect(actor).toMatchObject({
+    expect(actor).toEqual({
       userId,
-      sessionId: currentSession,
+      sessionId: `service:attendance:${userId}`,
       branchIds: ['configured'],
       permissions: ['hr.manage'],
     });
-    expect(findFirst.mock.calls[0]![0]).toMatchObject({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        expiresAt: { gt: expect.any(Date) },
-        user: { status: 'ACTIVE' },
-      },
-    });
-    expect(findFirst.mock.calls[1]![0]).toMatchObject({
-      where: {
-        id: currentSession,
-        userId,
-        status: 'ACTIVE',
-        expiresAt: { gt: expect.any(Date) },
-      },
-    });
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: userId, status: 'ACTIVE' },
+      }),
+    );
+    expect(sessionLookup).not.toHaveBeenCalled();
+    findFirst.mockResolvedValueOnce(null);
+    await expect(
+      service.authenticateAttendanceConnectorV1(userId),
+    ).rejects.toThrow();
   });
   it.each([
     { exists: false },
-    { revalidate: false },
+    { activeBranch: false },
     { permissions: ['hr.read'] },
     { branches: ['other'] },
   ])(
-    'denies missing/revoked session or withdrawn access (%j)',
+    'denies inactive account/branch or withdrawn access (%j)',
     async (options) => {
       const { service } = subject(options);
       await expect(
@@ -79,7 +76,7 @@ describe('trusted attendance connector actor', () => {
       ).rejects.toThrow();
     },
   );
-  it('rejects disabled connector or a different account before querying sessions', async () => {
+  it('rejects disabled connector or a different account before querying identity', async () => {
     const { service, findFirst } = subject();
     await expect(
       service.authenticateAttendanceConnectorV1(currentSession),

@@ -29,7 +29,6 @@ export function text(
   max = 160,
   optional = false,
 ): string {
-  optional ||= label === 'دلیل' || label === 'علت';
   if (
     optional &&
     (value == null || (typeof value === 'string' && !value.trim()))
@@ -199,7 +198,7 @@ export function workflowData(value: unknown): HrWorkflowData {
       throw new BadRequestException('حداکثر ۵ مدرک مجاز است.');
     data.leaveAttachmentIds.forEach((id) => uuid(id, 'مدرک مرخصی'));
   }
-  if (data.reason !== undefined) text(data.reason, 'دلیل', 1000);
+  if (data.reason !== undefined) text(data.reason, 'دلیل', 1000, true);
   return data as HrWorkflowData;
 }
 export function recordValues(

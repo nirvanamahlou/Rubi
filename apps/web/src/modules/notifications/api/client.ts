@@ -1,10 +1,9 @@
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type {
   NotificationListResponseV1,
   NotificationReadResponseV1,
 } from '@nora/contracts';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export const NOTIFICATIONS_CHANGED_EVENT = 'nora:notifications:changed';
@@ -15,26 +14,19 @@ export function notifyNotificationFeedChanged(): void {
   }
 }
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-  retriedAfterRefresh = false,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(`${baseUrl}/notifications${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: { accept: 'application/json', ...init?.headers },
-  });
-  if (
-    response.status === 401 &&
-    !retriedAfterRefresh &&
-    (await refreshAuthenticatedSession(baseUrl))
-  ) {
-    return request<T>(path, init, true);
-  }
+  const response = await authenticatedFetch(
+    `${baseUrl}/notifications${path}`,
+    baseUrl,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+      headers: { accept: 'application/json', ...init?.headers },
+    },
+  );
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       message?: string;
