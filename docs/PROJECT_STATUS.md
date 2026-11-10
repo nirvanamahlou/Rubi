@@ -1,3 +1,7 @@
+## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
+
+Company-owned General Ledger follows the global header; Jahan Academia shares Jahan Bastan's book. Canonical title is read-only; branch/currency controls removed. Fiscal-year definition plus allocation is atomic, with existing overlap/replay/version/used-period guards. Nullable restrictive company FK preserves legacy books for explicit adoption. API/Web typecheck/build, scoped lint, 74 isolated PostgreSQL/mapping tests and 252 financial Web tests pass (one pre-existing skip). Browser acceptance and local restored Docker rollout pass; backup taken, original 317 table fingerprints unchanged and two audit/history tables only append. Owner explicitly authorizes CI, develop PR and merge after all checks pass; no production deployment. See docs/tasks/COMPANY-LEDGER-1110.md.
+
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
 BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.

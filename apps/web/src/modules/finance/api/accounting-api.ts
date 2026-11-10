@@ -1,6 +1,7 @@
 'use client';
 import type {
   AccountingBookV1,
+  AccountingBooksV1,
   AccountingCommandV1,
   AccountingJournalV1,
   AccountingSnapshotV1,
@@ -10,11 +11,7 @@ import { apiRequest } from './finance-inbox-api';
 
 const base = '/finance/accounting/books';
 export const accountingApi = {
-  books: () =>
-    apiRequest<{
-      books: AccountingBookV1[];
-      branches: { id: string; name: string }[];
-    }>(base),
+  books: () => apiRequest<AccountingBooksV1>(base),
   createBook: (payload: Record<string, unknown>) =>
     apiRequest<AccountingBookV1>(base, {
       method: 'POST',

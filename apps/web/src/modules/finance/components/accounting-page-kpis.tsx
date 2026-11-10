@@ -1,4 +1,5 @@
 'use client';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { BarChart3, CheckCircle2, Clock3, Layers3 } from 'lucide-react';
@@ -20,8 +21,10 @@ const number = new Intl.NumberFormat('fa-IR');
 export function AccountingPageKpis({ pathname }: { pathname: string }) {
   const requestedBook = useSearchParams().get('bookId');
   const route = pathname.replace(/^\/finance\/accounting\/?/, '');
+  const { context } = useLegalEntityContext();
+  const companyKey = context?.selection ?? 'pending';
   const books = useQuery({
-    queryKey: ['accounting', 'books'],
+    queryKey: ['accounting', 'books', companyKey],
     queryFn: accountingApi.books,
   });
   const bookId =
@@ -29,7 +32,7 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
     books.data?.books[0]?.id ||
     '';
   const snapshot = useQuery({
-    queryKey: ['accounting', 'snapshot', bookId],
+    queryKey: ['accounting', 'snapshot', bookId, companyKey],
     queryFn: () => accountingApi.snapshot(bookId),
     enabled: !!bookId,
   });

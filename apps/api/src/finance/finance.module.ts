@@ -14,6 +14,7 @@ import { AccountingController } from './accounting/accounting.controller';
 import { AccountingTaxController } from './accounting/accounting-tax.controller';
 import { AccountingTaxService } from './accounting/accounting-tax.service';
 import { AccountingService } from './accounting/accounting.service';
+import { AccountingCompanyScope } from './accounting/accounting-company-scope';
 import { AccountingCompletionModule } from './accounting/accounting-completion.module';
 import { Module } from '@nestjs/common';
 
@@ -70,6 +71,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinancialEventDispatcher,
     AccountingTaxService,
     AccountingService,
+    AccountingCompanyScope,
     AuthGuard,
     PermissionGuard,
     FinanceInboxService,

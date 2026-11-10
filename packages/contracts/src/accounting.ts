@@ -72,6 +72,7 @@ export interface AccountingRecord {
 export interface AccountingBookV1 {
   id: string;
   branchId: string;
+  legalEntityId?: string | null;
   code: string;
   title: string;
   titleEn?: string | null;
@@ -82,6 +83,19 @@ export interface AccountingBookV1 {
   allowsPosting: boolean;
   active: boolean;
   version: number;
+}
+export interface AccountingLedgerCompanyV1 {
+  id: string;
+  code: string;
+  title: string;
+}
+export interface AccountingBooksV1 {
+  books: AccountingBookV1[];
+  branches: { id: string; name: string }[];
+  company?: AccountingLedgerCompanyV1 | null;
+  companies?: AccountingLedgerCompanyV1[];
+  isAggregate?: boolean;
+  unassignedBooks?: AccountingBookV1[];
 }
 export interface AccountingPeriodV1 {
   id: string;

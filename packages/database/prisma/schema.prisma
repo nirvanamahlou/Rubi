@@ -3226,6 +3226,7 @@ enum LegalEntityDocumentIssueStatus {
 }
 
 model LegalEntity {
+  accountingBooks                           AccountingBook[]
   salesContracts                            SalesContract[]
   procurementInvoiceIssuerlegalentityidRows ProcurementInvoice[]         @relation("ProcurementInvoiceIssuerlegalentityid")
   id                                        String                       @id @default(uuid()) @db.Uuid
@@ -7209,6 +7210,8 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
+  legalEntityId      String?                          @unique @db.Uuid
+  legalEntity        LegalEntity?                     @relation(fields: [legalEntityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   financialWorkflows AccountingWorkflow[]
   fxSnapshots        AccountingFxSnapshot[]
   id                 String                           @id @default(uuid()) @db.Uuid

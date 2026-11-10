@@ -539,7 +539,7 @@ export function AccountingBaseList({
   run,
 }: {
   kind: AccountingListKind;
-  snapshot: AccountingSnapshotV1;
+  snapshot: AccountingSnapshotV1 | null;
   books: AccountingBookV1[];
   busy: boolean;
   refresh: () => Promise<void>;
@@ -570,7 +570,7 @@ export function AccountingBaseList({
   const [message, setMessage] = useState('');
   const [savedFilterId, setSavedFilterId] = useState('');
   const [filterName, setFilterName] = useState('');
-  const savedFilters = snapshot.configurations.filter(
+  const savedFilters = (snapshot?.configurations ?? []).filter(
     (item) =>
       item.kind === 'accounting-list-filters' &&
       item.attributes.listKind === kind,
@@ -672,7 +672,7 @@ export function AccountingBaseList({
   );
   const deleteTarget =
     kind !== 'ledgers' && selectedIds.length === 1
-      ? snapshot.configurations.find((item) => item.id === selectedIds[0])
+      ? snapshot?.configurations.find((item) => item.id === selectedIds[0])
       : undefined;
   const allPageSelected =
     visible.length > 0 && visible.every((row) => selectedIds.includes(row.id));
@@ -802,7 +802,7 @@ export function AccountingBaseList({
     }
   };
   const openDefinition = () =>
-    router.push(`${definitionRoute(kind)}?bookId=${snapshot.book.id}`);
+    router.push(`${definitionRoute(kind)}?bookId=${snapshot?.book.id ?? ''}`);
   const addRule = () => {
     setShowFilters(true);
     if (nodeCount(draft) < 32)
@@ -954,7 +954,9 @@ export function AccountingBaseList({
         <DropdownMenuContent align="end">
           {accountingLists.map((list) => (
             <DropdownMenuItem key={list.kind} asChild>
-              <Link href={`${listRoute(list.kind)}?bookId=${snapshot.book.id}`}>
+              <Link
+                href={`${listRoute(list.kind)}?bookId=${snapshot?.book.id ?? ''}`}
+              >
                 {list.kind === kind && <Check className="size-4" />}
                 {list.title}
               </Link>
@@ -1003,7 +1005,9 @@ export function AccountingBaseList({
         permission="finance.account.manage"
         disabled={busy}
         onClick={() =>
-          router.push(`${definitionRoute(kind)}?bookId=${snapshot.book.id}`)
+          router.push(
+            `${definitionRoute(kind)}?bookId=${snapshot?.book.id ?? ''}`,
+          )
         }
       >
         جدید
@@ -1030,11 +1034,11 @@ export function AccountingBaseList({
               setSelected([]);
               if (after === 'new')
                 router.push(
-                  `${definitionRoute(kind)}?bookId=${snapshot.book.id}`,
+                  `${definitionRoute(kind)}?bookId=${snapshot?.book.id ?? ''}`,
                 );
               if (after === 'close')
                 router.push(
-                  `/finance/accounting/general-ledger/base-information?bookId=${snapshot.book.id}`,
+                  `/finance/accounting/general-ledger/base-information?bookId=${snapshot?.book.id ?? ''}`,
                 );
             });
           }}
@@ -1053,7 +1057,7 @@ export function AccountingBaseList({
           >
             {compactList
               ? 'دفترهای قابل دسترس شما'
-              : `دفتر جاری: ${snapshot.book.title}`}
+              : `دفتر جاری: ${snapshot?.book.title ?? ''}`}
           </p>
         </div>
         {renderListToolbar()}
@@ -1472,12 +1476,17 @@ export function AccountingBaseList({
                   if (!selectionMode) setSelected([record.id]);
                 }}
                 onDoubleClick={
-                  kind === 'fiscal-years' || kind === 'coding-standards'
+                  kind === 'ledgers'
                     ? () =>
                         router.push(
-                          `${definitionRoute(kind)}?bookId=${snapshot.book.id}&recordId=${record.id}`,
+                          `${definitionRoute(kind)}?bookId=${record.id}`,
                         )
-                    : undefined
+                    : kind === 'fiscal-years' || kind === 'coding-standards'
+                      ? () =>
+                          router.push(
+                            `${definitionRoute(kind)}?bookId=${snapshot?.book.id ?? ''}&recordId=${record.id}`,
+                          )
+                      : undefined
                 }
                 aria-selected={selectedIds.includes(record.id)}
                 className={`border-b transition-colors hover:bg-muted/25 ${kind === 'voucher-types' ? 'even:bg-muted/15' : ''} ${selectedIds.includes(record.id) ? 'bg-primary/5' : ''}`}

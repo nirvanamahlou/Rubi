@@ -6,6 +6,7 @@ import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import { Plus, X, Pencil, Save } from 'lucide-react';
 import type {
   AccountingBookV1,
+  AccountingLedgerCompanyV1,
   AccountingPeriodV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
@@ -23,6 +24,7 @@ type Run = <T = unknown>(
 type Props = {
   snapshot: AccountingSnapshotV1 | null;
   branches: { id: string; name: string }[];
+  company?: AccountingLedgerCompanyV1 | null | undefined;
   busy: boolean;
   run: Run;
   refresh: () => Promise<void>;
@@ -36,15 +38,15 @@ type Props = {
 export function AccountingLedgerEditor({
   snapshot,
   branches,
+  company,
   busy,
   run,
   refresh,
   onCreated,
-  startNew = false,
 }: Props) {
   const router = useRouter();
   const book = snapshot?.book;
-  const initialBook = startNew ? undefined : book;
+  const initialBook = book;
   const formRef = useRef<HTMLFormElement>(null);
   const [creating, setCreating] = useState(!initialBook);
   const [version, setVersion] = useState(initialBook?.version);
@@ -54,7 +56,7 @@ export function AccountingLedgerEditor({
   const [createId, setCreateId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
     code: initialBook?.code ?? '',
-    title: initialBook?.title ?? '',
+    title: company?.title ?? initialBook?.title ?? '',
     titleEn: initialBook?.titleEn ?? '',
     description: initialBook?.description ?? '',
     notes: initialBook?.notes ?? '',
@@ -68,10 +70,12 @@ export function AccountingLedgerEditor({
     id?: string;
     version?: number;
     fiscalYearId: string;
+    fiscalYearCode?: string | undefined;
+    fiscalYearTitle?: string | undefined;
     startDate: string;
     endDate: string;
   } | null>(null);
-  const locked = busy || saving;
+  const locked = busy || saving || !company;
   const set = (key: keyof typeof draft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [key]: value }));
   const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
@@ -84,6 +88,7 @@ export function AccountingLedgerEditor({
         setCreateId(id);
         const created = await accountingApi.createBook({
           ...draft,
+          legalEntityId: company?.id,
           id,
           approvalPolicy: 'DUAL_CONTROL',
         });
@@ -91,7 +96,11 @@ export function AccountingLedgerEditor({
         setVersion(created.version);
         await onCreated(created, after);
       } else {
-        const saved = await run<AccountingBookV1>('save-book', draft, version);
+        const saved = await run<AccountingBookV1>(
+          'save-book',
+          { ...draft, legalEntityId: company?.id },
+          version,
+        );
         if (!saved) return false;
         setVersion(saved.version);
         if (after === 'new') newBook();
@@ -109,6 +118,10 @@ export function AccountingLedgerEditor({
     }
   };
   const newBook = () => {
+    if (book) {
+      reloadExisting();
+      return;
+    }
     setCreating(true);
     setVersion(undefined);
     setCreateId(null);
@@ -117,7 +130,7 @@ export function AccountingLedgerEditor({
     setTab('main');
     setDraft({
       code: '',
-      title: '',
+      title: company?.title ?? '',
       titleEn: '',
       description: '',
       notes: '',
@@ -129,11 +142,12 @@ export function AccountingLedgerEditor({
     });
   };
   const openPeriod = (row: AccountingPeriodV1) => setPeriod({ ...row });
-  const reload = () => {
-    if (book && !creating) {
+  const reloadExisting = () => {
+    if (book) {
+      setCreating(false);
       setDraft({
         code: book.code,
-        title: book.title,
+        title: company?.title ?? book.title,
         titleEn: book.titleEn ?? '',
         description: book.description ?? '',
         notes: book.notes ?? '',
@@ -146,7 +160,11 @@ export function AccountingLedgerEditor({
       setVersion(book.version);
       setPeriod(null);
       setError('');
-    } else newBook();
+    }
+  };
+  const reload = () => {
+    if (book) reloadExisting();
+    else newBook();
     void refresh();
   };
   const years =
@@ -199,6 +217,17 @@ export function AccountingLedgerEditor({
           یادداشت
         </button>
       </div>
+      {!company && (
+        <p role="status" className="p-3 text-muted-foreground">
+          برای تعریف دفتر کل، یک شرکت را از نوار بالای صفحه انتخاب کنید.
+        </p>
+      )}
+      {book && !book.legalEntityId && company && (
+        <p role="status" className="p-3 text-sm text-muted-foreground">
+          این دفتر قدیمی هنوز به شرکتی متصل نشده است. با ذخیره، همین دفتر و
+          سوابقش به «{company.title}» متصل می‌شوند.
+        </p>
+      )}
       {error && (
         <p role="alert" className="p-3 text-destructive">
           {error}
@@ -235,11 +264,13 @@ export function AccountingLedgerEditor({
               <FormField label="عنوان *" id="ledger-title">
                 <Input
                   id="ledger-title"
-                  value={draft.title}
+                  value={company?.title ?? draft.title}
+                  readOnly
+                  aria-readonly="true"
+                  className="bg-muted text-muted-foreground"
                   required
                   maxLength={160}
                   disabled={locked}
-                  onChange={(e) => set('title', e.target.value)}
                 />
               </FormField>
               <label className="flex items-center gap-2 text-sm">
@@ -292,35 +323,6 @@ export function AccountingLedgerEditor({
             </div>
           </div>
         </div>
-        {creating && (
-          <div hidden={tab !== 'main'}>
-            <div className="m-2 grid gap-3 p-4 md:grid-cols-2">
-              <FormField label="شعبه" id="ledger-branch">
-                <SearchCombobox
-                  id="ledger-branch"
-                  value={draft.branchId}
-                  onValueChange={(id) => set('branchId', id)}
-                  options={branches.map((row) => ({
-                    value: row.id,
-                    label: row.name,
-                  }))}
-                />
-              </FormField>
-              <FormField label="ارز پایه" id="ledger-currency">
-                <Input
-                  id="ledger-currency"
-                  value={draft.baseCurrency}
-                  maxLength={3}
-                  pattern="[A-Z]{3}"
-                  required
-                  onChange={(e) =>
-                    set('baseCurrency', e.target.value.toUpperCase())
-                  }
-                />
-              </FormField>
-            </div>
-          </div>
-        )}
         <div
           id="ledger-notes-panel"
           role="tabpanel"
@@ -400,7 +402,13 @@ export function AccountingLedgerEditor({
             disabled={locked || creating}
             permission="finance.account.manage"
             onClick={() =>
-              setPeriod({ fiscalYearId: '', startDate: '', endDate: '' })
+              setPeriod({
+                fiscalYearId: '',
+                fiscalYearCode: '',
+                fiscalYearTitle: '',
+                startDate: '',
+                endDate: '',
+              })
             }
           >
             <Plus className="size-4 text-green-600" />
@@ -411,6 +419,14 @@ export function AccountingLedgerEditor({
             className="space-y-3 border p-3"
             onSubmit={(event) => {
               event.preventDefault();
+              if (
+                !period.startDate ||
+                !period.endDate ||
+                (!period.fiscalYearId && period.fiscalYearTitle === undefined)
+              ) {
+                setError('سال مالی، تاریخ شروع و پایان را کامل کنید.');
+                return;
+              }
               if (!locked)
                 void run('save-period', period, period.version).then(
                   (result) => {
@@ -420,19 +436,68 @@ export function AccountingLedgerEditor({
             }}
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <FormField label="سال مالی" id="ledger-year">
-                <SearchCombobox
-                  id="ledger-year"
-                  value={period.fiscalYearId}
-                  onValueChange={(id) =>
-                    setPeriod({ ...period, fiscalYearId: id })
-                  }
-                  options={years
-                    .filter((row) => row.active)
-                    .map((row) => ({ value: row.id, label: row.title }))}
-                />
-              </FormField>
-              <FormField label="تاریخ شروع" id="ledger-start">
+              {!period.id && (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={period.fiscalYearTitle !== undefined}
+                    onChange={(e) =>
+                      setPeriod({
+                        ...period,
+                        fiscalYearId: '',
+                        fiscalYearTitle: e.target.checked ? '' : undefined,
+                        fiscalYearCode: e.target.checked ? '' : undefined,
+                      })
+                    }
+                  />
+                  تعریف سال مالی جدید
+                </label>
+              )}
+              {period.fiscalYearTitle !== undefined ? (
+                <>
+                  <FormField label="عنوان سال مالی *" id="ledger-year-title">
+                    <Input
+                      id="ledger-year-title"
+                      required
+                      maxLength={160}
+                      value={period.fiscalYearTitle}
+                      onChange={(e) =>
+                        setPeriod({
+                          ...period,
+                          fiscalYearTitle: e.target.value,
+                        })
+                      }
+                    />
+                  </FormField>
+                  <FormField label="سال *" id="ledger-year-code">
+                    <Input
+                      id="ledger-year-code"
+                      required
+                      inputMode="numeric"
+                      pattern="[1-9][0-9]{0,3}"
+                      maxLength={4}
+                      value={period.fiscalYearCode}
+                      onChange={(e) =>
+                        setPeriod({ ...period, fiscalYearCode: e.target.value })
+                      }
+                    />
+                  </FormField>
+                </>
+              ) : (
+                <FormField label="سال مالی *" id="ledger-year">
+                  <SearchCombobox
+                    id="ledger-year"
+                    value={period.fiscalYearId}
+                    onValueChange={(id) =>
+                      setPeriod({ ...period, fiscalYearId: id })
+                    }
+                    options={years
+                      .filter((row) => row.active)
+                      .map((row) => ({ value: row.id, label: row.title }))}
+                  />
+                </FormField>
+              )}
+              <FormField label="تاریخ شروع *" id="ledger-start">
                 <DatePicker
                   id="ledger-start"
                   value={period.startDate}
@@ -441,7 +506,7 @@ export function AccountingLedgerEditor({
                   }
                 />
               </FormField>
-              <FormField label="تاریخ پایان" id="ledger-end">
+              <FormField label="تاریخ پایان *" id="ledger-end">
                 <DatePicker
                   id="ledger-end"
                   value={period.endDate}

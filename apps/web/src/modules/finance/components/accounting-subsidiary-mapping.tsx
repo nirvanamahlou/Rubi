@@ -1,4 +1,5 @@
 'use client';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useState } from 'react';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import type {
@@ -33,8 +34,10 @@ export function AccountingSubsidiaryMapping({
   run: PersistedEditorRun;
   busy: boolean;
 }) {
+  const { context } = useLegalEntityContext();
+  const companyKey = context?.selection ?? 'pending';
   const books = useQuery({
-    queryKey: ['accounting', 'books'],
+    queryKey: ['accounting', 'books', companyKey],
     queryFn: accountingApi.books,
   });
   const others = useQueries({
