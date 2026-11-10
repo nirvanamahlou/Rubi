@@ -280,6 +280,20 @@ export class DocumentsRepository {
     ) {
       return { rows: [] as DocumentListRow[], total: 0 };
     }
+    const requestedDomains = query.domain
+      ? [query.domain]
+      : query.domains?.split(',');
+    const selectedDomains = requestedDomains?.filter((domain) =>
+      domains.includes(domain as DocumentDomainCode),
+    );
+    const sourceModules: Record<string, string[]> = {
+      SALES: ['sales'],
+      TRAVEL: ['reservations'],
+      FINANCE: ['finance'],
+      HUMAN_RESOURCES: ['HUMAN_RESOURCES'],
+    };
+    const selectedSources =
+      selectedDomains?.flatMap((domain) => sourceModules[domain] ?? []) ?? [];
     const now = new Date();
     const inThirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const validity: Prisma.DateTimeNullableFilter | undefined =
@@ -302,7 +316,7 @@ export class DocumentsRepository {
         ownerUserId: { not: actorUserId },
       },
       documentType: {
-        domain: { in: query.domain ? [query.domain] : [...domains] },
+        domain: { in: [...domains] },
         ...(query.typeCode ? { code: query.typeCode } : {}),
       },
       ...(query.archiveStatus
@@ -313,6 +327,9 @@ export class DocumentsRepository {
         ? { isIncomplete: query.completion === 'INCOMPLETE' }
         : {}),
       ...(query.personalView === 'OWNED' ? { ownerUserId: actorUserId } : {}),
+      ...(query.personalView === 'FAVORITES'
+        ? { favorites: { some: { userId: actorUserId } } }
+        : {}),
       ...(query.personalView === 'UPLOADED'
         ? { createdByUserId: actorUserId }
         : {}),
@@ -402,6 +419,35 @@ export class DocumentsRepository {
           }
         : {}),
     };
+    if (selectedDomains) {
+      const existing = where.AND
+        ? Array.isArray(where.AND)
+          ? where.AND
+          : [where.AND]
+        : [];
+      where.AND = [
+        ...existing,
+        {
+          OR: [
+            {
+              documentType: {
+                domain: { in: selectedDomains as DocumentDomainCode[] },
+              },
+            },
+            ...(selectedSources.length
+              ? [
+                  { sourceModule: { in: selectedSources } },
+                  {
+                    relations: {
+                      some: { sourceModule: { in: selectedSources } },
+                    },
+                  },
+                ]
+              : []),
+          ],
+        },
+      ];
+    }
     if (!includeSensitive) {
       const existingConditions = where.AND
         ? Array.isArray(where.AND)
