@@ -32,11 +32,6 @@ import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 import { FinanceInboxService } from './finance-inbox.service';
 import type { Response } from 'express';
-import {
-  isClosedFinanceItem,
-  filterFinanceInbox,
-  validateInboxQuery,
-} from './finance-inbox-query';
 import { financeExportSnapshot } from './finance-export';
 import { buildFinanceXlsx, FINANCE_XLSX_MIME } from './finance-xlsx';
 
@@ -109,42 +104,11 @@ export class FinanceInboxController {
   @Get('inbox/page')
   @RequirePermissions('finance.read')
   @Header('Cache-Control', 'private, no-store')
-  async page(
+  page(
     @Query() query: FinanceInboxQueryV1,
     @Req() request: AuthenticatedRequest,
   ) {
-    const { page, pageSize } = validateInboxQuery(query, request.actor);
-    const result = await this.inbox.list(request.actor, !!query.approvalGroup);
-    const items = filterFinanceInbox(result.items, query);
-    const open = items.filter((item) => !isClosedFinanceItem(item));
-    return {
-      ...result,
-      items: items.slice((page - 1) * pageSize, page * pageSize),
-      total: items.length,
-      page,
-      pageSize,
-      summary: {
-        openCount: open.length,
-        overdueCount: open.filter(
-          (item) => item.dueAt && item.dueAt < result.generatedAt,
-        ).length,
-        receiptCount: open.filter(
-          (item) => item.source === 'SALES' || item.direction === 'RECEIPT',
-        ).length,
-        paymentCount: open.filter(
-          (item) =>
-            [
-              'PAYMENT_REQUEST',
-              'PAYROLL_REQUEST',
-              'OPERATIONAL_REQUEST',
-            ].includes(item.kind) &&
-            item.amount &&
-            item.direction !== 'RECEIPT' &&
-            item.direction !== 'NON_CASH' &&
-            ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status),
-        ).length,
-      },
-    };
+    return this.inbox.page(query, request.actor);
   }
 
   @Get('export-data')

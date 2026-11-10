@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## FINANCE-FX-PAGE-1110
+
+Finance inbox pages load purchase FX evidence after applying filters, ordering and the page boundary. Out-of-range pages skip those reads, while summary counts still cover all filtered results and the legacy list retains FX evidence. All 73 focused tests passed. Source reads and totals still use the assembled queue, so end-to-end pagination remains open.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.

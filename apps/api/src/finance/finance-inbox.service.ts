@@ -30,6 +30,8 @@ import type {
   FinanceProcurementCorrectionDecisionCommandV1,
   FinanceInboxSourceStateV1,
   FinanceInboxV1,
+  FinanceInboxQueryV1,
+  FinanceInboxPageV1,
   FinanceRequestStatus,
   FinanceReceiptDecisionCommandV1,
   FinanceSettlementAccountCreateV1,
@@ -53,6 +55,12 @@ import { readFinanceHistory } from './finance-history';
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+
+import {
+  isClosedFinanceItem,
+  filterFinanceInbox,
+  validateInboxQuery,
+} from './finance-inbox-query';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
   SUBMITTED: 'NEW',
@@ -147,6 +155,67 @@ export class FinanceInboxService {
     actor: AuthenticatedActor,
     includeCompleted = false,
   ): Promise<FinanceInboxV1> {
+    const result = await this.readQueue(actor, includeCompleted);
+    return {
+      ...result,
+      items: await this.enrichFx(result.items, actor),
+    };
+  }
+
+  async page(
+    query: FinanceInboxQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<FinanceInboxPageV1> {
+    const { page, pageSize } = validateInboxQuery(query, actor);
+    const result = await this.readQueue(actor, !!query.approvalGroup);
+    const items = filterFinanceInbox(result.items, query);
+    const open = items.filter((item) => !isClosedFinanceItem(item));
+    return {
+      ...result,
+      items: await this.enrichFx(
+        items.slice((page - 1) * pageSize, page * pageSize),
+        actor,
+      ),
+      total: items.length,
+      page,
+      pageSize,
+      summary: {
+        openCount: open.length,
+        overdueCount: open.filter(
+          (item) => item.dueAt && item.dueAt < result.generatedAt,
+        ).length,
+        receiptCount: open.filter(
+          (item) => item.source === 'SALES' || item.direction === 'RECEIPT',
+        ).length,
+        paymentCount: open.filter(
+          (item) =>
+            [
+              'PAYMENT_REQUEST',
+              'PAYROLL_REQUEST',
+              'OPERATIONAL_REQUEST',
+            ].includes(item.kind) &&
+            item.amount &&
+            item.direction !== 'RECEIPT' &&
+            item.direction !== 'NON_CASH' &&
+            ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status),
+        ).length,
+      },
+    };
+  }
+
+  private async enrichFx(
+    items: FinanceInboxItemV1[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.purchaseFx && items.length
+      ? this.purchaseFx.enrich(items, actor)
+      : items;
+  }
+
+  private async readQueue(
+    actor: AuthenticatedActor,
+    includeCompleted: boolean,
+  ) {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
         code: 'FINANCE_INBOX_FORBIDDEN',
@@ -623,9 +692,7 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items: this.purchaseFx
-        ? await this.purchaseFx.enrich(items, actor)
-        : items,
+      items,
       sources: [
         ...sources,
         {
@@ -638,7 +705,7 @@ export class FinanceInboxService {
             'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },
       ],
-    };
+    } satisfies FinanceInboxV1;
   }
 
   purchaseFxQuote(currency: string, actor: AuthenticatedActor) {
