@@ -20,8 +20,13 @@ it('defaults both per-minute rates to 50000 Toman with explicit date and exempti
   );
   expect((html.match(/value="50000"/g) ?? []).length).toBe(2);
   for (const column of definition.columns) expect(html).toContain(column);
-  expect(definition.fields.every((field) => field.required)).toBe(true);
-  expect(definition.fields.some((field) => field.type === 'money')).toBe(false);
+  expect(definition.fields.slice(0, 6).every((field) => field.required)).toBe(
+    true,
+  );
+  expect(definition.fields.slice(6).map((field) => field.type)).toEqual([
+    'money',
+    'money',
+  ]);
 });
 it('shows saved rates and exemptions in edit mode instead of create defaults', () => {
   const definition = getHrResource('time', 'penaltySettings')!;

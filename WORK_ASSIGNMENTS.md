@@ -12198,3 +12198,7 @@ Reserve System Management landing, authenticated write activity capture and read
 ## MANIFEST-REMOVE-CODE-BOX-1110 — PC-A — READY_FOR_CI
 
 Remove only the System Acceptable Code button and its VML/control references from the bundled default PNL workbook. Preserve all eleven headers, passenger mapping, Help sheets, VBA project, XLSM format and registered templates. No schema/dependency/deployment. User authorizes develop merge after green checks.
+
+## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
+
+Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.

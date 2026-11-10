@@ -5871,5 +5871,10 @@
   "اقدام": "Action",
   "پیام‌رسان": "Messenger",
   "قیمت‌گذاری پکیج": "Package pricing",
-  "کارها": "Tasks"
+  "کارها": "Tasks",
+  "تنظیمات جریمه و تشویق": "Penalty and incentive settings",
+  "مبلغ تشویق هر دقیقه اضافه‌کاری (تومان)": "Overtime incentive per minute (Toman)",
+  "مبلغ جریمه هر دقیقه کسری کار (تومان)": "Work deficit penalty per minute (Toman)",
+  "مبلغ اضافه‌کاری": "Overtime amount",
+  "مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty and incentive rate must be a non-negative whole amount in Toman."
 }
