@@ -579,6 +579,10 @@ Owner authorizes responsive redesign of Reservations passenger/room amendment an
 
 Owner requests official input/output contract verification and actionable insurance errors, then develop merge. Reserve Travis transport diagnostics, automation safe error propagation and focused tests. Official live Swagger PolicyCreateInput/Person inspected read-only. Never expose upstream free text, identity, credentials or URLs. No provider issuance, schema, dependency or deployment.
 
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
