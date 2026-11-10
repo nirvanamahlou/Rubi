@@ -44,9 +44,7 @@ export function validateCompletionValues(
 ) {
   if (key === 'time.calculationSettings') {
     const settings = readHrAttendanceCalculationV1(values);
-    if (settings.basis && !['حکم', 'تردد'].includes(settings.basis))
-      throw new BadRequestException('مبنای محاسبات معتبر نیست.');
-    if (!settings.basis)
+    if (!['حکم', 'تردد'].includes(settings.basis))
       throw new BadRequestException('مبنای محاسبات را انتخاب کنید.');
     selection(settings.components, HR_RADAN_CALCULATION_COMPONENTS);
     for (const { id, kind, label } of HR_ATTENDANCE_CALCULATION_FIELDS_V1)
