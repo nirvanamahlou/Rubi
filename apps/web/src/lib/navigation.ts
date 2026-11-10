@@ -157,6 +157,10 @@ export const salesSubsections = [
 export const salesPricingSubsection = salesSubsections[1];
 
 export const navigationAliases = {
+  '/reservations/insurance': {
+    parentHref: '/reservations',
+    title: 'بیمه مسافرتی',
+  },
   '/correspondence/incoming': {
     parentHref: '/correspondence',
     title: 'نامه‌های ورودی',

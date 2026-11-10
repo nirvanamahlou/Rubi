@@ -13,12 +13,18 @@ export type Combination = {
 };
 export const defaultCombinations = (): Combination[] => [
   { id: 'double', label: 'دبل', adults: 2, childAges: [], coefficient: '2' },
-  { id: 'single', label: 'سینگل', adults: 1, childAges: [], coefficient: '' },
+  {
+    id: 'single',
+    label: 'سینگل',
+    adults: 1,
+    childAges: [],
+    coefficient: '1.5',
+  },
   {
     id: 'child-bed',
-    label: 'دبل با کودک با تخت',
-    adults: 2,
-    childAges: [{ min: 2, maxExclusive: 15 }],
+    label: 'کودک با تخت',
+    adults: 0,
+    childAges: [{ min: 6, maxExclusive: 12 }],
     coefficient: '',
   },
 ];
@@ -36,10 +42,7 @@ export function combinationsFromRates(rates: readonly HotelOccupancyRateV1[]) {
   if (!manual.length) return defaultCombinations();
   const restored = manual.map((rate, index) => ({
     id: `saved-${index}`,
-    label:
-      rate.composition === 'کودک با تخت'
-        ? 'دبل با کودک با تخت'
-        : rate.composition,
+    label: rate.composition,
     adults: rate.adults,
     childAges: rate.childAges.map((a) => ({ ...a })),
     coefficient: rate.manualPricing!.coefficient,
@@ -79,7 +82,8 @@ export function buildManualRates(
   for (const combination of selected) {
     if (
       !Number.isInteger(combination.adults) ||
-      combination.adults < 1 ||
+      combination.adults < 0 ||
+      (combination.adults === 0 && combination.childAges.length !== 1) ||
       combination.adults > 20 ||
       combination.childAges.length > 10 ||
       combination.childAges.some(
@@ -108,7 +112,9 @@ export function buildManualRates(
       childAges: combination.childAges.map((a) => ({ ...a })),
       composition:
         combination.label ||
-        `${combination.adults} AD + ${combination.childAges.length} CHD`,
+        (combination.adults === 0 && combination.childAges.length === 1
+          ? 'کودک با تخت'
+          : `${combination.adults} AD + ${combination.childAges.length} CHD`),
       board: '',
       startsOn,
       endsOnExclusive,

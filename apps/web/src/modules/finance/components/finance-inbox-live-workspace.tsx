@@ -1,3 +1,5 @@
+import { ReceiptVoidDialog } from './receipt-void-dialog';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { FinanceReservationDetails } from './finance-reservation-details';
 import {
   RECEIPT_FILE_ACCEPT,
@@ -93,6 +95,7 @@ const sourceLabels: Record<FinanceInboxSource, string> = {
   FINANCE: 'درخواست مستقیم مالی',
 };
 const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
+  RECEIPT_VOIDED: 'باطل‌شده',
   CLOSED: 'بسته‌شده',
   NEW: 'جدید',
   UNDER_REVIEW: 'در حال بررسی',
@@ -110,6 +113,7 @@ const closed = new Set<FinanceRequestStatus>([
   'APPROVED',
   'PAID',
   'RECEIPT_CONFIRMED',
+  'RECEIPT_VOIDED',
   'REJECTED',
   'CANCELLED',
 ]);
@@ -148,6 +152,8 @@ function sourceTone(source: FinanceInboxSource) {
 }
 
 export function FinanceInboxLiveWorkspace() {
+  const permissions = useAccessPermissions();
+  const [voidItem, setVoidItem] = useState<FinanceInboxItemV1 | null>(null);
   const ticketCommand = useRef<FinanceTicketPaymentCommandV1 | null>(null);
   const [paymentUncertain, setPaymentUncertain] = useState(false);
   const submitting = useRef(false);
@@ -808,16 +814,29 @@ export function FinanceInboxLiveWorkspace() {
           className="max-h-[90dvh] max-w-5xl overflow-y-auto"
         >
           <DialogTitle>مشخصات کلی</DialogTitle>
-          {generalItem && (
-            <FinanceReservationDetails
-              key={generalItem.id}
-              source={generalItem.source === 'SALES' ? 'SALES' : 'RESERVATIONS'}
-              id={generalItem.sourceContextReference}
-              contractNumber={generalItem.contractReference!}
-            />
+          {generalItem?.source === 'SALES' ? (
+            <ContractFinancialSummary id={generalItem.sourceContextReference} />
+          ) : (
+            generalItem && (
+              <FinanceReservationDetails
+                key={generalItem.id}
+                id={generalItem.sourceContextReference}
+                contractNumber={generalItem.contractReference!}
+              />
+            )
           )}
         </DialogContent>
       </Dialog>
+      {voidItem && (
+        <ReceiptVoidDialog
+          item={voidItem}
+          onClose={() => setVoidItem(null)}
+          onVoided={() => {
+            setVoidItem(null);
+            setRevision((value) => value + 1);
+          }}
+        />
+      )}
       {receiptRetries.map((retry) => (
         <Card key={retry.id} className="space-y-3 p-4">
           <p>
@@ -1390,6 +1409,18 @@ export function FinanceInboxLiveWorkspace() {
                     <ChevronLeft aria-hidden="true" className="size-4" />
                   </button>
                 </div>
+                {item.source === 'SALES' &&
+                  item.status === 'RECEIPT_CONFIRMED' &&
+                  permissions?.includes('finance.receipt.approve') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="relative z-10 mt-2"
+                      onClick={() => setVoidItem(item)}
+                    >
+                      ابطال دریافت
+                    </Button>
+                  )}
               </div>
             );
           })}
@@ -1704,7 +1735,7 @@ export function FinanceInboxLiveWorkspace() {
                     />
                   ) : null}
                   {selected.kind === 'RECEIPT_VERIFICATION' &&
-                  selected.status !== 'RECEIPT_CONFIRMED' ? (
+                  selected.status === 'NEW' ? (
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       <Button
                         onClick={() => openReceiptAction(selected, 'APPROVE')}

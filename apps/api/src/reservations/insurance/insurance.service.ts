@@ -27,7 +27,7 @@ type ReservationInsurancePolicy = Prisma.ReservationInsurancePolicyGetPayload<
 const shortCode = Joi.string()
   .pattern(/^[a-zA-Z0-9._-]{1,40}$/)
   .required();
-const draftSchema = Joi.object({
+export const draftSchema = Joi.object({
   intakeId: Joi.string().uuid().required(),
   customerId: Joi.string().uuid().required(),
   destinationCode: shortCode,
@@ -108,6 +108,13 @@ export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
     );
   }
   const draft = result.value as InsuranceDraftInputV1;
+  validateInsuranceDates(draft);
+  return draft;
+}
+
+export function validateInsuranceDates(
+  draft: Pick<InsuranceDraftInputV1, 'departureDate' | 'passenger'>,
+) {
   const date = new Date(draft.departureDate + 'T00:00:00.000Z');
   if (
     !Number.isFinite(date.getTime()) ||
@@ -123,7 +130,17 @@ export function parseInsuranceDraft(raw: unknown): InsuranceDraftInputV1 {
     )
       throw new BadRequestException('تاریخ تولد معتبر نیست.');
   }
-  return draft;
+}
+
+/** Preserve the transaction lock while returning a type Prisma can deserialize. */
+export async function lockInsurancePolicy(
+  tx: Prisma.TransactionClient,
+  contractId: string,
+  customerId: string,
+) {
+  await tx.$queryRaw(
+    Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + contractId + ':' + customerId}, 0))::text AS locked`,
+  );
 }
 
 @Injectable()
@@ -164,10 +181,12 @@ export class ReservationInsuranceService {
       },
       select: { customerId: true, policyNumber: true },
     });
-    return new Map(
-      rows
-        .filter((r) => r.policyNumber)
-        .map((r) => [r.customerId, r.policyNumber!]),
+    return new Map<string, string>(
+      rows.flatMap((row) =>
+        row.customerId && row.policyNumber
+          ? [[row.customerId, row.policyNumber]]
+          : [],
+      ),
     );
   }
 
@@ -269,7 +288,14 @@ export class ReservationInsuranceService {
     if (range.gte && range.lt && range.gte >= range.lt)
       throw new BadRequestException('بازه تاریخ معتبر نیست.');
     const where: Prisma.ReservationInsurancePolicyWhereInput = {
-      intake: { branchId: { in: [...actor.branchIds] } },
+      AND: [
+        {
+          OR: [
+            { intake: { branchId: { in: [...actor.branchIds] } } },
+            { applicant: { branchId: { in: [...actor.branchIds] } } },
+          ],
+        },
+      ],
       ...(q.status !== 'ALL' ? { status: q.status } : {}),
       ...(q.destinationCode ? { destinationCode: q.destinationCode } : {}),
       ...(q.search
@@ -302,7 +328,10 @@ export class ReservationInsuranceService {
         this.db.client.reservationInsurancePolicy.count({ where }),
         this.db.client.reservationInsurancePolicy.findMany({
           where,
-          include: { intake: { select: { snapshot: true, branchId: true } } },
+          include: {
+            intake: { select: { snapshot: true, branchId: true } },
+            applicant: { select: { displayName: true, branchId: true } },
+          },
           orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
           take: 50,
           skip: (q.page - 1) * 50,
@@ -318,20 +347,25 @@ export class ReservationInsuranceService {
     );
     const data: InsurancePolicyRowV1[] = [];
     for (const row of rows) {
-      const { data: customer } = await this.customers.detail(
-        row.customerId,
-        actor,
-      );
+      const customer = row.customerId
+        ? (await this.customers.detail(row.customerId, actor)).data
+        : null;
+      const branchId = row.intake?.branchId ?? row.applicant?.branchId;
+      if (!branchId) throw new NotFoundException();
       data.push({
         ...this.present(row),
-        branchId: row.intake.branchId,
-        contractNumber: (
-          row.intake.snapshot as unknown as SalesReservationRequestV1
-        ).contractNumber,
+        branchId,
+        contractNumber: row.intake
+          ? (row.intake.snapshot as unknown as SalesReservationRequestV1)
+              .contractNumber
+          : '',
         passengerName:
-          [customer.passportFirstName, customer.passportLastName]
+          row.applicant?.displayName ||
+          [customer?.passportFirstName, customer?.passportLastName]
             .filter(Boolean)
-            .join(' ') || customer.displayName,
+            .join(' ') ||
+          customer?.displayName ||
+          '',
       });
     }
     return {
@@ -371,6 +405,7 @@ export class ReservationInsuranceService {
       notes: row.notes,
       version: row.version,
       automatic: row.automatic,
+      standalone: Boolean(row.applicantId),
       sandbox: row.sandbox,
       lastError: row.lastError,
     };
@@ -381,7 +416,7 @@ export class ReservationInsuranceService {
     const row = await this.db.client.reservationInsurancePolicy.findFirst({
       where: { id, intake: { branchId: { in: [...actor.branchIds] } } },
     });
-    if (!row) throw new NotFoundException();
+    if (!row?.intakeId || !row.customerId) throw new NotFoundException();
     await this.workflow.detail(row.intakeId, actor.branchIds, true);
     if (!['DRAFT', 'INPUT_ERROR', 'PROVIDER_ERROR'].includes(row.status))
       throw new ConflictException(
@@ -410,6 +445,15 @@ export class ReservationInsuranceService {
       );
     await this.customers.detail(input.customerId, actor);
     const settings = await this.settings.read(intake.branchId, actor);
+    const catalog = await this.settings.issuanceCatalog(intake.branchId, actor);
+    if (
+      !catalog.durations.some(
+        (duration) => duration.days === input.durationDays,
+      )
+    )
+      throw new BadRequestException(
+        'مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.',
+      );
     const country = settings.config.countries.find(
       (c) => c.active && c.providerCountryCode === input.destinationCode,
     );
@@ -418,9 +462,7 @@ export class ReservationInsuranceService {
         'کشور و طرح فعال بیمه را در تنظیمات انتخاب کنید.',
       );
     return this.db.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + intake.contractId + ':' + input.customerId}, 0))`,
-      );
+      await lockInsurancePolicy(tx, intake.contractId, input.customerId);
       await tx.$queryRaw(
         Prisma.sql`SELECT id FROM reservation_insurance_policies WHERE "contractId" = ${intake.contractId}::uuid AND "customerId" = ${input.customerId}::uuid FOR UPDATE`,
       );
@@ -506,7 +548,10 @@ export class ReservationInsuranceService {
           action: 'DRAFT_SAVED',
           actorUserId: actor.userId,
           snapshot: JSON.parse(
-            JSON.stringify(this.present(saved)),
+            JSON.stringify({
+              ...this.present(saved),
+              previousError: current?.lastError ?? null,
+            }),
           ) as Prisma.InputJsonValue,
         },
       });
@@ -517,10 +562,16 @@ export class ReservationInsuranceService {
   async history(id: string, actor: AuthenticatedActor) {
     this.authorize(actor);
     const row = await this.db.client.reservationInsurancePolicy.findFirst({
-      where: { id, intake: { branchId: { in: [...actor.branchIds] } } },
+      where: {
+        id,
+        OR: [
+          { intake: { branchId: { in: [...actor.branchIds] } } },
+          { applicant: { branchId: { in: [...actor.branchIds] } } },
+        ],
+      },
     });
     if (!row) throw new NotFoundException();
-    await this.customers.detail(row.customerId, actor);
+    if (row.customerId) await this.customers.detail(row.customerId, actor);
     return {
       data: await this.db.client.reservationInsuranceRevision.findMany({
         where: { policyId: id },
@@ -574,12 +625,12 @@ export class ReservationInsuranceService {
     const row = await this.db.client.reservationInsurancePolicy.findFirst({
       where: { id, intake: { branchId: { in: [...actor.branchIds] } } },
     });
-    if (!row) throw new NotFoundException();
+    if (!row?.contractId || !row.customerId) throw new NotFoundException();
     await this.customers.detail(row.customerId, actor);
+    const contractId = row.contractId,
+      customerId = row.customerId;
     return this.db.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${'insurance:' + row.contractId + ':' + row.customerId}, 0))`,
-      );
+      await lockInsurancePolicy(tx, contractId, customerId);
       const current = await tx.reservationInsurancePolicy.findUniqueOrThrow({
         where: { id },
       });

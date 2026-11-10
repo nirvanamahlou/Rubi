@@ -210,6 +210,16 @@ describe('CRM navigation', () => {
     );
   });
 
+  it('provides an insurance breadcrumb with a reservations back link', () => {
+    expect(getNavigationBreadcrumbs('/reservations/insurance')).toEqual([
+      { href: '/reservations', title: 'رزرواسیون' },
+      { href: '/reservations/insurance', title: 'بیمه مسافرتی' },
+    ]);
+    expect(
+      isNavigationItemActive('/reservations', '/reservations/insurance'),
+    ).toBe(true);
+  });
+
   it('keeps package pricing beneath sales instead of adding a main item', () => {
     expect(
       navigationItems.some(

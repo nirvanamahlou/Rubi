@@ -1,3 +1,4 @@
+import type { TravisDiagnosticError } from './travis-sandbox.service';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { InsuranceSettingsService } from './insurance-settings';
@@ -298,3 +299,106 @@ it.each([401, 403, 429, 503])(
     );
   },
 );
+
+it.each([
+  ['2024-03-20', '1403/01/01'],
+  ['2025-03-20', '1403/12/30'],
+])(
+  'sends the derived Jalali birth date for Gregorian %s without altering the saved input',
+  async (date, expected) => {
+    const input = {
+      person: {
+        isIranian: true,
+        birthDate: date + 'T00:00:00.000Z',
+        nationalCode: '1234567890',
+      },
+    };
+    const before = structuredClone(input);
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(Response.json({ code: 200, data: { policyId: 17 } }));
+    vi.stubGlobal('fetch', fetcher);
+    expect(await new TravisSandboxService().createPolicy(input)).toBe(17);
+    const sent = JSON.parse(fetcher.mock.calls[0]?.[1].body);
+    expect(sent.person.jalaliBirthDate).toBe(expected);
+    expect(sent.person.birthDate).toBe(input.person.birthDate);
+    expect(input).toEqual(before);
+  },
+);
+it('retains the exact provider validation message and HTTP/business codes while redacting request secrets', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json({
+        code: 400,
+        messages: [
+          'تاریخ تولد شمسی اجباری است',
+          'Passport ABC1234567 private@example.test ' + key,
+        ],
+        data: null,
+        errors: null,
+      }),
+    ),
+  );
+  try {
+    await new TravisSandboxService().createPolicy({
+      person: {
+        passportNo: 'ABC1234567',
+        email: 'private@example.test',
+        birthDate: '1990-01-01',
+      },
+    });
+    expect.fail('must reject');
+  } catch (error) {
+    expect(String(error)).toContain('تاریخ تولد شمسی اجباری است');
+    expect(String(error)).not.toMatch(
+      /ABC1234567|private@example|synthetic-sandbox-test-key/,
+    );
+    expect((error as TravisDiagnosticError).providerDiagnostic).toMatchObject({
+      httpStatus: 200,
+      code: 400,
+      messages: expect.arrayContaining(['تاریخ تولد شمسی اجباری است']),
+    });
+  }
+});
+
+it('accepts omitted sandbox correlation only with a trusted creation receipt and matching nested plan and identity', async () => {
+  const row = {
+    policyId: 17,
+    contractNo: null,
+    planId: 0,
+    plan: { id: 76 },
+    passportNo: 'SYNTHETIC',
+    person: { nationalCode: 'SYNTHETIC' },
+    lastStatus: 'Pending',
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(() => Promise.resolve(response([row]))),
+  );
+  const expected = {
+    contractNo: 'contract',
+    planId: 76,
+    passportNo: 'SYNTHETIC',
+    nationalCode: 'SYNTHETIC',
+  };
+  const provider = new TravisSandboxService();
+  await expect(provider.policy(17, expected)).rejects.toThrow();
+  await expect(
+    provider.policy(17, { ...expected, trustedCreation: true }),
+  ).resolves.toMatchObject({ providerId: '17', active: false });
+  for (const change of [
+    { contractNo: 'other' },
+    { plan: { id: 77 } },
+    { passportNo: 'OTHER' },
+    { person: { nationalCode: 'OTHER' } },
+  ]) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(response([{ ...row, ...change }])),
+    );
+    await expect(
+      provider.policy(17, { ...expected, trustedCreation: true }),
+    ).rejects.toThrow();
+  }
+});

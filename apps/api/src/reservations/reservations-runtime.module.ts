@@ -15,6 +15,9 @@ import { InsuranceSettingsService } from '../integrations/insurance/insurance-se
 import { ReservationInsuranceController } from './insurance/insurance.controller';
 import { ReservationInsuranceService } from './insurance/insurance.service';
 import { InsuranceAutomation } from './insurance/insurance-automation';
+import { InsuranceApplicantCrypto } from './insurance/insurance-applicant.crypto';
+import { StandaloneInsuranceService } from './insurance/standalone-insurance.service';
+import { StandaloneInsuranceController } from './insurance/standalone-insurance.controller';
 import { InsuranceDocumentsController } from './insurance/insurance-documents.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { reservationOutputPassengers } from './reservation-passenger-output';
@@ -970,6 +973,7 @@ export class ReservationRequestsController {
   ],
   controllers: [
     ReservationInsuranceController,
+    StandaloneInsuranceController,
     InsuranceDocumentsController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
@@ -984,6 +988,8 @@ export class ReservationRequestsController {
     InsuranceSettingsService,
     ReservationInsuranceService,
     InsuranceAutomation,
+    InsuranceApplicantCrypto,
+    StandaloneInsuranceService,
     BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,

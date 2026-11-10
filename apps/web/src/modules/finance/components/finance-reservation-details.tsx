@@ -9,11 +9,9 @@ import { travelRequest } from '@/modules/reservations/components/travel-workflow
 export function FinanceReservationDetails({
   id,
   contractNumber,
-  source,
 }: {
   id: string;
   contractNumber: string;
-  source: 'RESERVATIONS' | 'SALES';
 }) {
   const [request, setRequest] = useState<RequestView | null>(null),
     [error, setError] = useState('');
@@ -27,8 +25,8 @@ export function FinanceReservationDetails({
       const raw = await travelRequest<unknown>(
         `reservations/requests?contractNumber=${encodeURIComponent(contractNumber)}`,
       );
-      const row = decodeIntake(raw, session, 'finance').find((r) =>
-        source === 'SALES' ? r.contractId === id : r.id === id,
+      const row = decodeIntake(raw, session, 'finance').find(
+        (r) => r.id === id,
       );
       if (!row) throw new Error('درخواست یافت نشد.');
       if (active) setRequest(row);
@@ -39,7 +37,7 @@ export function FinanceReservationDetails({
     return () => {
       active = false;
     };
-  }, [id, contractNumber, source]);
+  }, [id, contractNumber]);
   if (error) return <p role="alert">{error}</p>;
   return request ? (
     <ReservationGeneralDetails request={request} finance />

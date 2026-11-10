@@ -1,6 +1,7 @@
 import {
   contractFlightMetadata,
   salesContractOnlyFlights,
+  hotelAgeOn,
 } from '@nora/contracts';
 import type { ContractFlightDraft } from '@/modules/sales/model/sales-form';
 import { salesFlightToday } from '@/modules/sales/model/sales-flight-range';
@@ -14,6 +15,22 @@ import type {
 export function amendmentFromContract(
   c: SalesContractDetail,
 ): SalesContractAmendmentV1 {
+  const passengers = c.passengersDetail.map((p) => {
+    const childAgeBand = p.childAgeBand;
+    if (childAgeBand === 'AGE_2_6' || childAgeBand === 'AGE_6_12')
+      return { ...p, ageCategory: 'CHD' as const };
+    if (p.ageCategory !== 'CHD' || !p.birthDate) return p;
+    const age = hotelAgeOn(
+      p.birthDate.slice(0, 10),
+      c.departureDate.slice(0, 10),
+    );
+    return age !== null && age >= 2 && age < 12
+      ? {
+          ...p,
+          childAgeBand: age < 6 ? ('AGE_2_6' as const) : ('AGE_6_12' as const),
+        }
+      : p;
+  });
   return {
     version: c.version,
     reason: '',
@@ -26,7 +43,7 @@ export function amendmentFromContract(
     departureDate: c.departureDate.slice(0, 10),
     returnNotBefore: c.returnNotBefore?.slice(0, 10) ?? null,
     services: c.servicesDetail,
-    passengers: c.passengersDetail,
+    passengers,
     ticketSelections: c.ticketSelections,
     hotelSelection: c.hotelSelection,
     priceComponents: c.priceComponents,
@@ -34,7 +51,7 @@ export function amendmentFromContract(
     pricingNotes: c.pricingNotes,
     paymentTerms: c.paymentTerms ?? null,
     passengerCategories: Object.fromEntries(
-      c.passengersDetail.map((p) => [p.customerId, p.ageCategory]),
+      passengers.map((p) => [p.customerId, p.ageCategory]),
     ),
   };
 }

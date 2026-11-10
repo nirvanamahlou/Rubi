@@ -982,6 +982,37 @@ export class DocumentsService {
     );
   }
 
+  /** The messaging caller has already authorized the shared conversation. */
+  async previewMessagingProfilePhoto(
+    documentId: string,
+    ownerUserId: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<DocumentFileDelivery> {
+    const row = await this.repository.findProfilePhoto(documentId, ownerUserId);
+    if (
+      !row ||
+      row.documentType.domain !== 'BRAND' ||
+      row.confidentiality !== 'INTERNAL' ||
+      row.requiresStepUpVerification ||
+      !row.relations.some(
+        (relation) =>
+          relation.relationType === 'PRIMARY_CASE' &&
+          relation.sourceModule === 'WORKBENCH' &&
+          relation.sourceEntityType === 'IamProfile' &&
+          relation.sourceEntityId === ownerUserId,
+      )
+    )
+      throw new NotFoundException('عکس پروفایل ثبت نشده است.');
+    return this.previewFile(
+      documentId,
+      profilePhotoActor(actor, 'documents.file.read'),
+      metadata,
+      row,
+      'MESSAGING_PROFILE_PHOTO',
+    );
+  }
+
   async favorites(actor: AuthenticatedActor) {
     const rows = await this.repository.favoriteDocuments(
       actor.userId,
@@ -2755,6 +2786,7 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
     authorizedLogo?: DocumentDetailRow,
+    referenceReason = 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT',
   ): Promise<DocumentFileDelivery> {
     const row = authorizedLogo ?? (await this.findVisibleDetail(id, actor));
     if (!row || !row.currentVersion)
@@ -2809,7 +2841,7 @@ export class DocumentsService {
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
       reason: allowed
         ? authorizedLogo
-          ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+          ? referenceReason
           : metadata.sensitiveReason?.trim() || null
         : denialReason,
       ipSummary: summarizeIp(metadata.ipAddress),

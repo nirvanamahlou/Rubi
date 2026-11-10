@@ -1,5 +1,9 @@
 'use client';
-import { RECEIPT_FILE_ACCEPT, receiptFileSupported } from '@nora/contracts';
+import {
+  messagingMentionAtCaret,
+  RECEIPT_FILE_ACCEPT,
+  receiptFileSupported,
+} from '@nora/contracts';
 
 import type {
   MessagingContactV1,
@@ -21,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  useId,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -46,6 +51,7 @@ import {
   messageEmojis,
   MESSAGE_DRAFT_LIMIT,
 } from './emoji';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 import { MessageUnitIcon } from './message-unit-icon';
 import { canAddGroupMember } from './group-members';
 import { messagingApi, messagingRequestId } from './messaging-api';
@@ -67,6 +73,32 @@ const messageTime = (value: string) =>
     month: 'short',
     day: 'numeric',
   }).format(new Date(value));
+
+function MessageAvatar({ message }: { message: MessagingMessageV1 }) {
+  const [failed, setFailed] = useState(false);
+  const base = getPublicApiBaseUrl();
+  const { sender, conversationId } = message;
+  return (
+    <span
+      className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-muted-foreground"
+      title={sender.displayName}
+    >
+      {base && sender.hasProfilePhoto && !failed ? (
+        // The authenticated avatar route uses the current viewer's session.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          loading="lazy"
+          className="size-full object-cover"
+          src={`${base}/messaging/conversations/${encodeURIComponent(conversationId)}/avatars/${encodeURIComponent(sender.id)}`}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        initials(sender.displayName)
+      )}
+    </span>
+  );
+}
 
 export function MessageComposer({
   currentUserId,
@@ -94,6 +126,33 @@ export function MessageComposer({
   );
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = conversations.find((item) => item.id === activeId) ?? null;
+  const mentionsId = useId();
+  const [mentionCaret, setMentionCaret] = useState<number | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mention =
+    active?.type === 'GROUP' && mentionCaret !== null
+      ? messagingMentionAtCaret(text, mentionCaret)
+      : null;
+  const mentionChoices =
+    mention && active
+      ? active.participants
+          .filter(
+            ({ id, username, displayName }) =>
+              id !== currentUserId &&
+              (username.toLowerCase().startsWith(mention.query) ||
+                displayName.toLowerCase().includes(mention.query)),
+          )
+          .sort(
+            (left, right) =>
+              Number(right.username.toLowerCase() === mention.query) -
+              Number(left.username.toLowerCase() === mention.query),
+          )
+          .slice(0, 8)
+      : [];
+  const selectedMentionIndex = Math.min(
+    mentionIndex,
+    Math.max(0, mentionChoices.length - 1),
+  );
   const [messages, setMessages] = useState<MessagingMessageV1[]>([]);
   const [messageSearch, setMessageSearch] = useState('');
   const [searchResults, setSearchResults] = useState<MessagingMessageV1[]>([]);
@@ -295,6 +354,8 @@ export function MessageComposer({
     clearTouchTimer();
     messageSubmissionId.current = '';
     selection.current = { start: 0, end: 0 };
+    setMentionCaret(null);
+    setMentionIndex(0);
   }, [activeId]);
 
   useLayoutEffect(() => {
@@ -479,6 +540,23 @@ export function MessageComposer({
         end: input.current.selectionEnd,
       };
   }
+  function chooseMention(username: string) {
+    if (!mention) return;
+    const suffix = text.slice(mention.end);
+    const rest = suffix.replace(/^[\p{L}\p{N}_.-]*/u, '');
+    const prefix = `${text.slice(0, mention.start)}@${username} `;
+    const next = prefix + rest.replace(/^ /, '');
+    if (next.length > MESSAGE_DRAFT_LIMIT) return;
+    setText(next);
+    setMentionCaret(null);
+    setMentionIndex(0);
+    selection.current = { start: prefix.length, end: prefix.length };
+    requestAnimationFrame(() => {
+      input.current?.focus();
+      input.current?.setSelectionRange(prefix.length, prefix.length);
+    });
+  }
+
   function addEmoji(emoji: string) {
     const result = insertMessageEmoji(
       text,
@@ -1052,141 +1130,149 @@ export function MessageComposer({
                 {visibleMessages.map((message) => {
                   const mine = message.sender.id === currentUserId;
                   return (
-                    <article
+                    <div
                       key={message.id}
-                      id={`chat-message-${message.id}`}
-                      tabIndex={0}
-                      onContextMenu={(event) => {
-                        event.preventDefault();
-                        clearTouchTimer();
-                        setMessageMenu({
-                          message,
-                          position: { x: event.clientX, y: event.clientY },
-                        });
-                      }}
-                      onKeyDown={(event) => {
-                        if (
-                          event.key === 'ContextMenu' ||
-                          (event.shiftKey && event.key === 'F10')
-                        ) {
+                      className={`flex w-fit min-w-0 max-w-[85%] shrink-0 items-end gap-2 sm:max-w-[75%] ${mine ? 'self-start' : 'self-end'}`}
+                    >
+                      {!mine && <MessageAvatar message={message} />}
+                      <article
+                        id={`chat-message-${message.id}`}
+                        tabIndex={0}
+                        onContextMenu={(event) => {
                           event.preventDefault();
-                          const box =
-                            event.currentTarget.getBoundingClientRect();
+                          clearTouchTimer();
                           setMessageMenu({
                             message,
-                            position: { x: box.right - 12, y: box.top + 12 },
+                            position: { x: event.clientX, y: event.clientY },
                           });
-                        }
-                      }}
-                      onPointerDown={(event) => {
-                        if (
-                          event.pointerType !== 'touch' ||
-                          (event.target as HTMLElement).closest('button,a')
-                        )
-                          return;
-                        clearTouchTimer();
-                        const position = { x: event.clientX, y: event.clientY };
-                        touchTimer.current = setTimeout(
-                          () => setMessageMenu({ message, position }),
-                          500,
-                        );
-                      }}
-                      onPointerUp={clearTouchTimer}
-                      onPointerCancel={clearTouchTimer}
-                      onPointerMove={clearTouchTimer}
-                      className={`relative box-border w-fit min-w-0 max-w-[85%] shrink-0 overflow-hidden rounded-xl px-3 py-2 text-sm shadow-sm sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
-                    >
-                      {message.replyTo && (
-                        <blockquote className="mb-1.5 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-2 py-1.5 text-xs dark:bg-white/5">
-                          <strong className="block truncate">
-                            {message.replyTo.sender.displayName}
+                        }}
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === 'ContextMenu' ||
+                            (event.shiftKey && event.key === 'F10')
+                          ) {
+                            event.preventDefault();
+                            const box =
+                              event.currentTarget.getBoundingClientRect();
+                            setMessageMenu({
+                              message,
+                              position: { x: box.right - 12, y: box.top + 12 },
+                            });
+                          }
+                        }}
+                        onPointerDown={(event) => {
+                          if (
+                            event.pointerType !== 'touch' ||
+                            (event.target as HTMLElement).closest('button,a')
+                          )
+                            return;
+                          clearTouchTimer();
+                          const position = {
+                            x: event.clientX,
+                            y: event.clientY,
+                          };
+                          touchTimer.current = setTimeout(
+                            () => setMessageMenu({ message, position }),
+                            500,
+                          );
+                        }}
+                        onPointerUp={clearTouchTimer}
+                        onPointerCancel={clearTouchTimer}
+                        onPointerMove={clearTouchTimer}
+                        className={`relative box-border w-fit min-w-0 max-w-full overflow-hidden rounded-xl px-3 py-2 text-sm shadow-sm ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
+                      >
+                        {message.replyTo && (
+                          <blockquote className="mb-1.5 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-2 py-1.5 text-xs dark:bg-white/5">
+                            <strong className="block truncate">
+                              {message.replyTo.sender.displayName}
+                            </strong>
+                            <p className="mt-1 line-clamp-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                              {message.replyTo.body}
+                            </p>
+                          </blockquote>
+                        )}
+                        <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] opacity-80">
+                          <strong className="truncate">
+                            {message.sender.displayName}
                           </strong>
-                          <p className="mt-1 line-clamp-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
-                            {message.replyTo.body}
+                          <time className="shrink-0">
+                            {messageTime(message.createdAt)}
+                          </time>
+                        </div>
+                        {message.forwardedFrom && (
+                          <p className="mt-1 border-s-2 border-current/30 ps-2 text-xs opacity-80">
+                            فوروارد از {message.forwardedFrom.senderDisplayName}
                           </p>
-                        </blockquote>
-                      )}
-                      <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] opacity-80">
-                        <strong className="truncate">
-                          {message.sender.displayName}
-                        </strong>
-                        <time className="shrink-0">
-                          {messageTime(message.createdAt)}
-                        </time>
-                      </div>
-                      {message.forwardedFrom && (
-                        <p className="mt-1 border-s-2 border-current/30 ps-2 text-xs opacity-80">
-                          فوروارد از {message.forwardedFrom.senderDisplayName}
+                        )}
+                        <p className="mt-1 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-6">
+                          {message.body}
                         </p>
-                      )}
-                      <p className="mt-1 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-6">
-                        {message.body}
-                      </p>
-                      {message.attachments.length ? (
-                        <ul className="mt-2 min-w-0 max-w-full space-y-1">
-                          {message.attachments.map((attachment) => (
-                            <li key={attachment.documentId}>
-                              <button
-                                type="button"
-                                className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
-                                onClick={() =>
-                                  void downloadMessageAttachment(
-                                    message.conversationId,
-                                    attachment.documentId,
-                                    attachment.title,
-                                  )
-                                }
-                              >
-                                <Paperclip
-                                  className="size-3"
-                                  aria-hidden="true"
-                                />
-                                <span className="min-w-0 truncate">
-                                  {attachment.title}
-                                </span>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8 min-h-8 text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/15"
-                          aria-label="فوروارد پیام"
-                          title="فوروارد پیام"
-                          onClick={() => setForwarding(message)}
-                        >
-                          <Forward className="size-4" aria-hidden="true" />
-                        </Button>
-                        {(message.reactions ?? []).map((reaction) => (
-                          <button
-                            type="button"
-                            key={reaction.emoji}
-                            disabled={reactionPending}
-                            aria-label={reactionNames[reaction.emoji]}
-                            aria-pressed={reaction.userIds.includes(
-                              currentUserId,
-                            )}
-                            className="inline-flex min-h-8 items-center gap-1 rounded-full border border-current/20 bg-black/5 px-2 text-xs aria-pressed:ring-2 aria-pressed:ring-current disabled:opacity-50 dark:bg-white/10"
-                            onClick={() =>
-                              void reactTo(
-                                message,
-                                reaction.userIds.includes(currentUserId)
-                                  ? null
-                                  : reaction.emoji,
-                              )
-                            }
+                        {message.attachments.length ? (
+                          <ul className="mt-2 min-w-0 max-w-full space-y-1">
+                            {message.attachments.map((attachment) => (
+                              <li key={attachment.documentId}>
+                                <button
+                                  type="button"
+                                  className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/15 px-2 py-1 text-xs hover:underline"
+                                  onClick={() =>
+                                    void downloadMessageAttachment(
+                                      message.conversationId,
+                                      attachment.documentId,
+                                      attachment.title,
+                                    )
+                                  }
+                                >
+                                  <Paperclip
+                                    className="size-3"
+                                    aria-hidden="true"
+                                  />
+                                  <span className="min-w-0 truncate">
+                                    {attachment.title}
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 min-h-8 text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/15"
+                            aria-label="فوروارد پیام"
+                            title="فوروارد پیام"
+                            onClick={() => setForwarding(message)}
                           >
-                            <span>{reaction.emoji}</span>
-                            <span>
-                              {reaction.count.toLocaleString('fa-IR')}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </article>
+                            <Forward className="size-4" aria-hidden="true" />
+                          </Button>
+                          {(message.reactions ?? []).map((reaction) => (
+                            <button
+                              type="button"
+                              key={reaction.emoji}
+                              disabled={reactionPending}
+                              aria-label={reactionNames[reaction.emoji]}
+                              aria-pressed={reaction.userIds.includes(
+                                currentUserId,
+                              )}
+                              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-current/20 bg-black/5 px-2 text-xs aria-pressed:ring-2 aria-pressed:ring-current disabled:opacity-50 dark:bg-white/10"
+                              onClick={() =>
+                                void reactTo(
+                                  message,
+                                  reaction.userIds.includes(currentUserId)
+                                    ? null
+                                    : reaction.emoji,
+                                )
+                              }
+                            >
+                              <span>{reaction.emoji}</span>
+                              <span>
+                                {reaction.count.toLocaleString('fa-IR')}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </article>
+                    </div>
                   );
                 })}
                 {!searching && !messages.length && (
@@ -1267,13 +1353,58 @@ export function MessageComposer({
                   rows={4}
                   maxLength={MESSAGE_DRAFT_LIMIT}
                   value={text}
+                  aria-autocomplete="list"
+                  aria-controls={mentionChoices.length ? mentionsId : undefined}
+                  aria-activedescendant={
+                    mentionChoices.length
+                      ? `${mentionsId}-${selectedMentionIndex}`
+                      : undefined
+                  }
                   placeholder="پیام خود را بنویسید…"
                   onChange={(event) => {
                     setText(event.target.value);
+                    setMentionCaret(event.target.selectionStart);
+                    setMentionIndex(0);
                     setError('');
                     rememberSelection();
                   }}
                   onKeyDown={(event) => {
+                    if (
+                      mentionChoices.length &&
+                      !event.nativeEvent.isComposing &&
+                      event.nativeEvent.keyCode !== 229
+                    ) {
+                      if (
+                        event.key === 'ArrowDown' ||
+                        event.key === 'ArrowUp'
+                      ) {
+                        event.preventDefault();
+                        const direction = event.key === 'ArrowDown' ? 1 : -1;
+                        setMentionIndex(
+                          (selectedMentionIndex +
+                            direction +
+                            mentionChoices.length) %
+                            mentionChoices.length,
+                        );
+                        return;
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setMentionCaret(null);
+                        return;
+                      }
+                      if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.repeat
+                      ) {
+                        event.preventDefault();
+                        chooseMention(
+                          mentionChoices[selectedMentionIndex]!.username,
+                        );
+                        return;
+                      }
+                    }
                     if (
                       shouldSendOnEnter({
                         key: event.key,
@@ -1287,10 +1418,44 @@ export function MessageComposer({
                       void sendMessage();
                     }
                   }}
-                  onSelect={rememberSelection}
+                  onSelect={(event) => {
+                    rememberSelection();
+                    setMentionCaret(
+                      event.currentTarget.selectionStart ===
+                        event.currentTarget.selectionEnd
+                        ? event.currentTarget.selectionStart
+                        : null,
+                    );
+                  }}
                   onBlur={rememberSelection}
                   className="leading-8"
                 />
+                {mentionChoices.length > 0 && (
+                  <div
+                    id={mentionsId}
+                    role="listbox"
+                    aria-label="اعضای گروه"
+                    className="max-h-52 overflow-y-auto rounded-xl border border-border bg-surface p-1"
+                  >
+                    {mentionChoices.map((person, index) => (
+                      <button
+                        key={person.id}
+                        id={`${mentionsId}-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={index === selectedMentionIndex}
+                        className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted aria-selected:bg-muted"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => chooseMention(person.username)}
+                      >
+                        <span>{person.displayName}</span>
+                        <bdi className="text-muted-foreground">
+                          @{person.username}
+                        </bdi>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {text.length.toLocaleString('fa-IR')} از ۴٬۰۰۰ · Enter ارسال،
                   Shift+Enter خط بعد

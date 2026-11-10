@@ -69,6 +69,12 @@ beforeEach(() => {
         birthDate: '2000-01-01',
       },
     },
+    {
+      durations: [
+        { days: 2, title: '2 روزه' },
+        { days: 7, title: '7 روزه' },
+      ],
+    },
   ];
 });
 it('waits for durable correction acknowledgement and preserves identifier zeros while trimming surrounding name spaces', async () => {
@@ -99,4 +105,12 @@ it('keeps an invalid correction open with the specific server reason', async () 
   await vi.waitFor(() => expect(h.states[1]).toBe('ایمیل بیمه‌شده'));
   expect(saved).not.toHaveBeenCalled();
   expect(h.states[2]).toBe(false);
+});
+it('does not submit a legacy unsupported duration or silently replace it', () => {
+  (h.states[4] as { durationDays: number }).durationDays = 1;
+  InsuranceDraft({ target, saved }).props.onSubmit({ preventDefault: vi.fn() });
+  expect(h.request).not.toHaveBeenCalled();
+  expect(saved).not.toHaveBeenCalled();
+  expect(h.states[1]).toBe('مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.');
+  expect((h.states[4] as { durationDays: number }).durationDays).toBe(1);
 });

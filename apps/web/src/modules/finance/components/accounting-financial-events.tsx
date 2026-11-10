@@ -68,6 +68,7 @@ export function AccountingFinancialEvents({
     refetchInterval: 30_000,
   });
   const states: Record<string, string> = {
+    VOIDED: 'باطل‌شده',
     UNLINKED: 'بدون سند',
     DRAFT: 'پیش‌نویس',
     SUBMITTED: 'در انتظار تأیید',

@@ -1,3 +1,7 @@
+import {
+  reportSourceQuery,
+  filterReportOutput,
+} from './reporting-output-filters';
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma, type DatabaseClient } from '@nora/database';
 
@@ -99,18 +103,19 @@ export class ReportingRepository {
       async (tx) => {
         await tx.$executeRawUnsafe('SET TRANSACTION READ ONLY');
         const client = tx as unknown as DatabaseClient;
-        if (Object.hasOwn(OPERATIONAL_REPORTS, code))
-          return nativeOperationalReport(
-            client,
-            code,
-            query,
-            actor,
-            includeAllRows,
-          );
-        if (code === 'payments_refunds')
-          return nativePaymentReport(client, query, actor, includeAllRows);
-        if (!NATIVE_SALES_REPORTS.has(code)) return undefined;
-        return nativeSalesReport(client, code, query, actor, includeAllRows);
+        const sourceQuery = reportSourceQuery(query);
+        const result = Object.hasOwn(OPERATIONAL_REPORTS, code)
+          ? await nativeOperationalReport(
+              client,
+              code,
+              sourceQuery,
+              actor,
+              true,
+            )
+          : code === 'payments_refunds'
+            ? await nativePaymentReport(client, sourceQuery, actor, true)
+            : await nativeSalesReport(client, code, sourceQuery, actor, true);
+        return filterReportOutput(result, query, includeAllRows);
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,

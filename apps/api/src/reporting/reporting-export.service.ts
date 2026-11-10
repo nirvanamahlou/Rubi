@@ -156,12 +156,34 @@ function exportFilterEntries(result: TravelReportResultV1): [string, string][] {
     entries.push(['محدوده شعب', snapshot.branchIds.join('، ')]);
   for (const [key, value] of Object.entries(snapshot.filters)) {
     const text = Array.isArray(value) ? value.join('، ') : String(value);
-    if (text) entries.push([exportFilterLabels[key] ?? key, text]);
+    if (text)
+      entries.push([
+        result.columnFilters?.find((filter) => filter.key === key)?.label ??
+          (key === 'search' ? 'جست‌وجو' : (exportFilterLabels[key] ?? key)),
+        text,
+      ]);
   }
   return entries.length ? entries : [['فیلترها', 'بدون فیلتر انتخابی']];
 }
 
 type ExcelCell = { value: string; style?: number; numeric?: boolean };
+
+function excelMoneyText(text: string): ExcelCell {
+  const formatted = formatReportMoney(text);
+  const parts = formatted.split(' + ');
+  // Excel's contextual bidi algorithm otherwise lets the RTL rial label pull
+  // adjacent amounts and neutral currency symbols into the wrong visual order.
+  // LRM bounds each complete amount/currency pair; NBSP keeps its label attached
+  // when a long cell wraps. These controls are presentation-only in XLSX.
+  if (!parts.every((part) => /^-?[\d,]+(?:\.\d+)?\s+\S+$/.test(part)))
+    return { value: formatted };
+  return {
+    value: parts
+      .map((part) => `\u200e${part.replace(/\s+(\S+)$/, '\u00a0$1')}\u200e`)
+      .join(' + '),
+    style: 6,
+  };
+}
 
 function datasetCell(
   column: TravelReportResultV1['columns'][number],
@@ -169,13 +191,9 @@ function datasetCell(
 ): ExcelCell {
   const text = String(value ?? '');
   if (column.kind === 'TEXT' || /(?:id|code)$/i.test(column.key))
-    return {
-      value: isReportMoneyColumn(column) ? formatReportMoney(text) : text,
-    };
+    return isReportMoneyColumn(column) ? excelMoneyText(text) : { value: text };
   if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text))
-    return {
-      value: isReportMoneyColumn(column) ? formatReportMoney(text) : text,
-    };
+    return isReportMoneyColumn(column) ? excelMoneyText(text) : { value: text };
   const significantDigits = text
     .replace(/[^\d]/g, '')
     .replace(/^0+/, '').length;
@@ -228,13 +246,18 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     ),
   ];
   const columnCount = Math.max(2, filters.length, result.columns.length);
-  const columnWidths = Array.from({ length: columnCount }, (_, index) => {
+  const widths = Array.from({ length: columnCount }, (_, index) => {
     const longest = Math.max(
       ...rows.map((row) => row[index]?.value.length ?? 0),
     );
-    const width = Math.min(42, Math.max(18, Math.ceil(longest * 0.9) + 3));
-    return `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`;
-  }).join('');
+    return Math.min(42, Math.max(18, Math.ceil(longest * 0.9) + 3));
+  });
+  const columnWidths = widths
+    .map(
+      (width, index) =>
+        `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`,
+    )
+    .join('');
   const filterRowHeight = Math.min(
     120,
     Math.max(
@@ -244,18 +267,27 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     ),
   );
   const sheetRows = rows
-    .map(
-      (row, rowIndex) =>
-        `<row r="${rowIndex + 1}"${rowIndex === 5 ? ` ht="${filterRowHeight}" customHeight="1"` : ''}>${row
-          .map((cell, columnIndex) => {
-            const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
-            const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
-            return cell.numeric
-              ? `<c r="${address}"${style}><v>${cell.value}</v></c>`
-              : `<c r="${address}"${style} t="inlineStr"><is><t>${escapeXml(cell.value)}</t></is></c>`;
-          })
-          .join('')}</row>`,
-    )
+    .map((row, rowIndex) => {
+      const moneyHeight = Math.max(
+        0,
+        ...row.map((cell, index) =>
+          cell.style === 6
+            ? Math.ceil(cell.value.length / Math.max(1, widths[index]! - 4)) *
+              22
+            : 0,
+        ),
+      );
+      const height = rowIndex === 5 ? filterRowHeight : moneyHeight;
+      return `<row r="${rowIndex + 1}"${height ? ` ht="${height}" customHeight="1"` : ''}>${row
+        .map((cell, columnIndex) => {
+          const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
+          const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
+          return cell.numeric
+            ? `<c r="${address}"${style}><v>${cell.value}</v></c>`
+            : `<c r="${address}"${style} t="inlineStr"><is><t${cell.style === 6 ? ' xml:space="preserve"' : ''}>${escapeXml(cell.value)}</t></is></c>`;
+        })
+        .join('')}</row>`;
+    })
     .join('');
   const files = {
     '[Content_Types].xml': strToU8(
@@ -283,7 +315,11 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
           '</cellXfs>',
           '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>',
         )
-        .replace('<cellXfs count="5">', '<cellXfs count="6">')
+        .replace(
+          '</cellXfs>',
+          '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="1" wrapText="1"/></xf></cellXfs>',
+        )
+        .replace('<cellXfs count="5">', '<cellXfs count="7">')
         .replaceAll('<name val="Arial"/>', '<name val="B Nazanin"/>'),
     ),
     'xl/worksheets/sheet1.xml': strToU8(

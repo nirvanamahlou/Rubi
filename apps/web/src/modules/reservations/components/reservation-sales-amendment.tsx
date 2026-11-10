@@ -312,9 +312,7 @@ export function ReservationSalesAmendment({
                 تاریخ پرواز
                 <SalesDatePicker
                   value={day}
-                  defaultCalendarSystem={
-                    international ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem="gregorian"
                   onChange={(nextDay) => {
                     setDay(nextDay);
                     if (manualFlights[direction]) {

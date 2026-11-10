@@ -1,3 +1,4 @@
+import { isOutputFilterKey } from './output-filters';
 export const reportingViewIds = [
   'catalog',
   'saved',
@@ -185,7 +186,9 @@ export function reportingConfigurationState(
     for (const [key, value] of Object.entries(snapshotFilters)) {
       if (key === 'fromUtc' || key === 'toUtc' || key === 'currencyCode')
         continue;
-      const label = reportingFilterLabelsByApiKey[key];
+      const label =
+        reportingFilterLabelsByApiKey[key] ??
+        (isOutputFilterKey(key) ? key : undefined);
       const normalized = Array.isArray(value)
         ? storedString(value[0])
         : storedString(value);
@@ -264,7 +267,7 @@ export function parseReportingFilterState(
     ].includes(legalEntity)
       ? legalEntity
       : 'ALL',
-    currency: ['IRR', 'USD', 'EUR'].includes(currency) ? currency : 'ALL',
+    currency: /^[A-Z]{3}$/.test(currency) ? currency : 'ALL',
     filterValues,
   };
 }
@@ -281,6 +284,7 @@ export function reportingFilterStateHref(
     'company',
     'currency',
     ...Object.values(reportingFilterParamKeys),
+    ...Array.from(url.searchParams.keys()).filter(isOutputFilterKey),
   ];
   managedKeys.forEach((key) => url.searchParams.delete(key));
 

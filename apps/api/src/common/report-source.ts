@@ -30,6 +30,7 @@ export interface ReportSourceRow {
   values: Readonly<Record<string, string | number>>;
 }
 export interface ReportSource {
+  filterOptions?: Readonly<Record<string, readonly string[]>>;
   projection: `${string}.reporting.${string}.v1`;
   columns: readonly ReportSourceColumn[];
   chartMeasure: string;

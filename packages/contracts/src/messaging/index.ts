@@ -26,6 +26,7 @@ export interface MessagingContactV1 {
   displayName: string;
   username: string;
   branches: BranchReference[];
+  hasProfilePhoto?: boolean;
 }
 
 export interface MessagingContactsResponseV1 {
@@ -43,7 +44,10 @@ export interface MessagingParticipantV1 {
 export interface MessagingMessageV1 {
   id: string;
   conversationId: string;
-  sender: Pick<MessagingContactV1, 'id' | 'displayName' | 'username'>;
+  sender: Pick<
+    MessagingContactV1,
+    'id' | 'displayName' | 'username' | 'hasProfilePhoto'
+  >;
   body: string;
   forwardedFrom: {
     id: string;
@@ -109,4 +113,30 @@ export interface SendMessagingMessageInputV1 {
 export interface ForwardMessagingMessageInputV1 {
   sourceMessageId: string;
   clientRequestId: string;
+}
+
+const mentionPattern =
+  /(?:^|[^\p{L}\p{N}_.@-])@([\p{L}\p{N}_.-]+)(?![\p{L}\p{N}_.@-])/gu;
+
+export function messagingMentionUsernames(text: string): string[] {
+  return [
+    ...new Set(
+      Array.from(text.matchAll(mentionPattern), (match) =>
+        match[1]!.toLowerCase(),
+      ),
+    ),
+  ];
+}
+
+export function messagingMentionAtCaret(text: string, caret: number) {
+  const match = /(?:^|[^\p{L}\p{N}_.@-])@([\p{L}\p{N}_.-]*)$/u.exec(
+    text.slice(0, caret),
+  );
+  return match
+    ? {
+        query: match[1]!.toLowerCase(),
+        start: caret - match[1]!.length - 1,
+        end: caret,
+      }
+    : null;
 }

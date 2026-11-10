@@ -196,7 +196,9 @@ describe('native Sales report source and shared preview/export path', () => {
     const sheet = strFromU8(
       unzipSync(new Uint8Array(file.buffer))['xl/worksheets/sheet1.xml']!,
     );
-    expect(sheet).toContain('900 ریال + 20 $');
+    expect(sheet.replaceAll('\u200e', '').replaceAll('\u00a0', ' ')).toContain(
+      '900 ریال + 20 $',
+    );
   });
   it('rejects sorting by an unavailable financial metric before reading the source', async () => {
     const { client, findMany } = fixture();
@@ -389,7 +391,9 @@ describe('native Sales report source and shared preview/export path', () => {
       ),
     );
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
-    expect(sheet).toContain('900 ریال + 9,007,199,254,740,993.1234 € + 20 $');
+    expect(sheet.replaceAll('\u200e', '').replaceAll('\u00a0', ' ')).toContain(
+      '900 ریال + 9,007,199,254,740,993.1234 € + 20 $',
+    );
     expect(r.columns.map((c) => c.key)).toEqual([
       'primaryDimension',
       'secondaryDimension',
@@ -489,5 +493,45 @@ describe('native Sales report source and shared preview/export path', () => {
     );
     expect(new Set(result.map((r) => r.id))).toEqual(new Set(['one']));
     expect(result.every((r) => r.status === 'CANCELLED')).toBe(true);
+  });
+  it('applies output filters inside the authorized snapshot before paging or exporting', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockResolvedValue([
+      one,
+      { ...one, id: 'two', destinationId: 'destination-two' },
+    ]);
+    vi.mocked(client.masterCity.findMany).mockResolvedValue([
+      { id: 'origin', name: 'تهران' },
+      { id: 'destination', name: 'مشهد' },
+      { id: 'destination-two', name: 'تبریز' },
+    ] as never);
+    const repository = new ReportingRepository({
+      client: {
+        $transaction: async (fn: (tx: unknown) => unknown) =>
+          fn({ ...client, $executeRawUnsafe: vi.fn() }),
+      },
+    } as unknown as DatabaseService);
+    const input = { ...query, filters: { columnPrimaryDimension: 'تبریز' } };
+    const result = await repository.nativeResult(
+      'route_passengers',
+      input,
+      actor,
+    );
+    const exported = await repository.nativeResult(
+      'route_passengers',
+      input,
+      actor,
+      true,
+    );
+    expect(result?.rows).toEqual(exported?.rows);
+    expect(result?.total).toBe(1);
+    expect(result?.rows[0]?.primaryDimension).toBe('تبریز');
+    expect(result?.rows[0]?.orderCount).toBe(1);
+    expect(result?.filterSnapshot.filters.columnPrimaryDimension).toBe('تبریز');
+    expect(
+      result?.totalsByCurrency.find((t) => t.currencyCode === 'IRR')
+        ?.salesAmount,
+    ).toBe('900');
   });
 });

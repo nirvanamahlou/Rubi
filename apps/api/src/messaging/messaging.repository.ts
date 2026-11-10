@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { messagingMentionUsernames } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -385,8 +386,40 @@ export class MessagingRepository {
         where: { id: input.conversationId },
         data: { updatedAt: message.createdAt },
       });
+      const names =
+        locked.type === 'GROUP' && !input.forwardedFromMessageId
+          ? messagingMentionUsernames(input.body)
+          : [];
+      const mentioned = names.length
+        ? await transaction.user.findMany({
+            where: {
+              id: { in: recipients },
+              status: 'ACTIVE',
+              username: {
+                in: [
+                  ...new Set(
+                    names.flatMap((name) => [name, name.replace(/\.+$/, '')]),
+                  ),
+                ],
+              },
+            },
+            select: { id: true, username: true },
+          })
+        : [];
+      const membersByUsername = new Map(
+        mentioned.map(({ id, username }) => [username, id]),
+      );
+      const mentionedIds = new Set(
+        names.flatMap((name) => {
+          const id =
+            membersByUsername.get(name) ??
+            membersByUsername.get(name.replace(/\.+$/, ''));
+          return id ? [id] : [];
+        }),
+      );
+      const href = `/workbench?tab=messages&conversation=${encodeURIComponent(input.conversationId)}`;
       await this.notifications.createWithinTransaction(transaction, {
-        recipientUserIds: recipients,
+        recipientUserIds: recipients.filter((id) => !mentionedIds.has(id)),
         actorUserId: input.senderUserId,
         sourceModule: 'messaging',
         eventType: 'message.received',
@@ -394,8 +427,20 @@ export class MessagingRepository {
         message: input.body || 'یک فایل برای شما ارسال شد.',
         entityType: 'messaging-conversation',
         entityId: input.conversationId,
-        href: `/workbench?tab=messages&conversation=${encodeURIComponent(input.conversationId)}`,
+        href,
       });
+      if (mentionedIds.size)
+        await this.notifications.createWithinTransaction(transaction, {
+          recipientUserIds: [...mentionedIds],
+          actorUserId: input.senderUserId,
+          sourceModule: 'messaging',
+          eventType: 'message.mentioned',
+          title: 'در گروه به شما اشاره شد',
+          message: `${locked.title ?? ''} · ${input.body}`,
+          entityType: 'messaging-conversation',
+          entityId: input.conversationId,
+          href,
+        });
       return transaction.messagingMessage.findUniqueOrThrow({
         where: { id: message.id },
         select: messageSelection,

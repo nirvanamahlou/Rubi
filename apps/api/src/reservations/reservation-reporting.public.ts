@@ -150,6 +150,11 @@ export async function readReservationReporting(
     }
     return {
       projection: 'reservations.reporting.registered-purchases.v1',
+      filterOptions: {
+        status: [
+          ...new Set([...latest.values()].map((intake) => intake.status)),
+        ],
+      },
       chartMeasure: 'registeredAmount',
       columns: [
         reportColumn('primaryDimension', 'تأمین‌کننده'),

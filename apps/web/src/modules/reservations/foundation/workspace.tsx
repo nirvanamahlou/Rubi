@@ -776,7 +776,9 @@ export function ReservationOperationsWorkspace({
                             <td
                               key={reservationColumns[index]}
                               data-room-category={
-                                (index >= 5 && index <= 8) || undefined
+                                ['SGL', 'DBL', 'EXT', 'FAM/TPL'].includes(
+                                  reservationColumns[index]!,
+                                ) || undefined
                               }
                               data-has-note={index === 1 && !!row.hasNotes}
                               title={
@@ -797,11 +799,6 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
-                                  {row.status === 'CANCELLED' && (
-                                    <small className={styles.cancelledLabel}>
-                                      این قرارداد باطل شده است
-                                    </small>
-                                  )}
                                   {row.amendedAt ||
                                   (row.correctedAt &&
                                     row.salesCorrectionPending !== false) ? (
@@ -812,10 +809,13 @@ export function ReservationOperationsWorkspace({
                                 </button>
                               ) : reservationColumns[index] === 'خدمات' ? (
                                 <ReservationServices row={row} />
-                              ) : index === 10 || index === 11 ? (
+                              ) : reservationColumns[index] === 'اقدام هتل' ||
+                                reservationColumns[index] === 'تأیید هتل' ? (
                                 <HotelTableAction
                                   row={row}
-                                  confirmation={index === 11}
+                                  confirmation={
+                                    reservationColumns[index] === 'تأیید هتل'
+                                  }
                                   canManage={access.permissions.includes(
                                     'reservations.documents.manage',
                                   )}
@@ -830,10 +830,11 @@ export function ReservationOperationsWorkspace({
                                     'reservations.documents.manage',
                                   )}
                                 />
-                              ) : index === 12 || index === 45 ? (
+                              ) : reservationColumns[index] === 'اصلاح' ||
+                                reservationColumns[index] === 'ابطال' ? (
                                 <ContractTableAction
                                   row={row}
-                                  cancel={index === 45}
+                                  cancel={reservationColumns[index] === 'ابطال'}
                                   access={access}
                                 />
                               ) : (
