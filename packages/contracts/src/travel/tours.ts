@@ -12,6 +12,8 @@ export interface TourPackageInputV1 {
   transferOutbound: boolean;
   transferReturn: boolean;
   visa: boolean;
+  cityTour?: boolean;
+  tourGuide?: boolean;
   /** Optional, backwards-compatible descriptive definition; never a seat ledger. */
   details?: {
     version: 1;

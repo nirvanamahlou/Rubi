@@ -61,3 +61,21 @@ describe('complete tour definition form', () => {
     expect(html).not.toContain('aria-label="هزینه جداگانه پرواز"');
   });
 });
+
+it('uses a themed searchable transport control and preserves an existing itinerary transport label', () => {
+  const html = renderToStaticMarkup(
+    <TourDetailsForm
+      value={{ version: 1, itinerary: [{ transport: 'Legacy coach' }] }}
+      onChange={() => {}}
+      currencies={[]}
+      airlines={[]}
+      airports={[]}
+      branches={[]}
+      branchId=""
+    />,
+  );
+  expect(html).toContain('tour-step-transport-0');
+  expect(html).toContain('role="combobox"');
+  expect(html).toContain('Legacy coach');
+  expect(html).not.toContain('aria-label="وسیله جابه‌جایی مرحله');
+});

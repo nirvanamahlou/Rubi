@@ -87,6 +87,8 @@ const packageSchema = Joi.object({
   transferOutbound: Joi.boolean().default(false),
   transferReturn: Joi.boolean().default(false),
   visa: Joi.boolean().default(false),
+  cityTour: Joi.boolean(),
+  tourGuide: Joi.boolean(),
   details: detailsSchema,
 });
 const departureSchema = Joi.object({

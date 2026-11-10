@@ -148,3 +148,21 @@ describe('tour inputs', () => {
     expect(() => validateTourDeparture({ ...departure, ...patch })).toThrow();
   });
 });
+
+it('round-trips optional package services and the selected insurance without changing old definitions', () => {
+  const result = validateTourPackage({
+    ...pack,
+    cityTour: true,
+    tourGuide: true,
+    insuranceId: id,
+  });
+  expect(result).toMatchObject({
+    cityTour: true,
+    tourGuide: true,
+    insuranceId: id,
+  });
+  expect(validateTourPackage(pack).cityTour).toBeUndefined();
+  expect(() =>
+    validateTourPackage({ ...pack, tourGuide: 'invalid' }),
+  ).toThrow();
+});
