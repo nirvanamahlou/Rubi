@@ -6333,6 +6333,10 @@ Owner requests leave approvals to use the leave policy, and removes calculation 
 - محدوده رزرو: رابط Workbench/Messaging، تست‌های متمرکز همان مسیر و ثبت وضعیت. فهرست حساب‌ها فقط از قرارداد موجود `GET /messaging/contacts` مصرف می‌شود که IAM آن را با `User`های فعال داخلی و شعبهٔ مشترک پروجکت می‌کند؛ بدون تغییر IAM، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: modal قبلی «واحد مخاطب» حذف شد و دکمهٔ «پیام جدید» مستقیم پیام‌رسان را با تب «مخاطبان» باز می‌کند. در این تب فقط خروجی API کاربران واقعی CRM نمایش داده می‌شود؛ نام نمایشی، نام کاربری و شعبهٔ مجاز هر حساب قابل مشاهده است. واحدها فقط برای انتخاب قالب آماده باقی می‌مانند و گیرنده محسوب نمی‌شوند. typecheck و ESLint Web، ۲ آزمون API قرارداد فهرست/اعتبارسنجی مخاطب و آزمون Web client پیام‌رسان موفق‌اند.
 
+## ARCHITECTURE-REMEDIATION-1110 — PC-B — IN_PROGRESS
+
+Owner authorizes implementation of the GitHub architecture/code review. Base3370748ca; branch codex/pc-b-architecture-remediation-1110. Reserve review-related IAM attendance identity, safe common error diagnostics, Messaging/Notifications read aggregation and their tests first; subsequent scoped changes tracked in docs/tasks/ARCHITECTURE-REMEDIATION-1110.md. Preserve pending HR attendance-editor PR1511 and HR pay-document PR1590. No shared dependency versions, operational data or production rollout. Source responsibilities and validation are recorded per completed slice.
+
 ## 2026-09-27 — WORKBENCH-MESSAGE-TEMPLATE-OVERFLOW-0927 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: متن قالب‌های پیام پس از ارسال باید کامل، چندخطی و درون حباب گفت‌وگو نمایش داده شود؛ هیچ متن بلند یا واژهٔ بدون فاصله نباید از کارت پیام بیرون بزند.

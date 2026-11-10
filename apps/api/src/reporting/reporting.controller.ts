@@ -9,7 +9,7 @@ import {
   Post,
   Query,
   Req,
-  Res,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -29,7 +29,6 @@ import {
   ShareSavedReportDto,
 } from './reporting.dto';
 import { ReportingService } from './reporting.service';
-import type { Response } from 'express';
 
 @ApiTags('Reporting')
 @ApiCookieAuth('rubi_access')
@@ -136,16 +135,14 @@ export class ReportingController {
   async download(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
-    @Res() response: Response,
   ) {
     const file = await this.service.downloadExport(id, request.actor);
-    response.setHeader('Content-Type', file.contentType);
-    response.setHeader(
-      'Content-Disposition',
-      `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
-    );
-    response.setHeader('Content-Length', String(file.buffer.length));
-    response.send(file.buffer);
+    return new StreamableFile(file.stream, {
+      type: file.contentType,
+      disposition:
+        "attachment; filename*=UTF-8''" + encodeURIComponent(file.fileName),
+      length: file.sizeBytes,
+    });
   }
 
   @Get(':code/metadata')

@@ -293,9 +293,9 @@ export class HrSelfPerformanceService {
           .map((row) => [(row.values as string[])[1]!, row]),
       ).entries(),
     ].sort(([a], [b]) => b.localeCompare(a));
-    const penalties = new Map<string, string | null>();
-    for (const [date, row] of history)
-      penalties.set(date, await this.hr.dailyPenalty(row));
+    const penalties = await this.hr.dailyPenalties(
+      history.map(([, row]) => row),
+    );
     return {
       monthlyAttendance: {
         period:
@@ -336,7 +336,7 @@ export class HrSelfPerformanceService {
           lateMinutes: minutes('lateMinutes'),
           overtimeMinutes: minutes('overtimeMinutes'),
           deficitMinutes: minutes('deficitMinutes'),
-          dailyPenaltyToman: penalties.get(date) ?? null,
+          dailyPenaltyToman: penalties.get(row.id) ?? null,
         };
       }),
       todayAttendance: {
