@@ -83,7 +83,7 @@ it('counts identities across directions/services and keeps equal passenger names
   cell('V16', '4');
   expect(xml).toContain('تاریخ چک این هتل');
   expect(xml).toContain('تاریخ چک اوت هتل');
-  expect(xml).toContain('topLeftCell="A14"');
+  expect(xml).not.toContain('<pane');
   expect(xml).toContain('autoFilter ref="A13:V17"');
   expect(xml).not.toContain('T21:00:00Z');
   expect(rows[0]?.departureAt).toBe('2026-11-09T21:00:00Z');

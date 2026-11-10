@@ -38,6 +38,7 @@ export const MANUAL_ACCESS_SECTIONS = [
   ['packages', 'مدیریت پکیج و پک جنریتور'],
   ['tours', 'تعریف تور و خدمات'],
   ['reservations', 'رزرواسیون و جزئیات مسافر'],
+  ['reservation-reports', 'گزارش رزرواسیون'],
   ['hotel-rates', 'قیمت خرید هتل'],
   ['ticket-catalog', 'تعریف و ظرفیت پرواز'],
   ['ticket-purchases', 'خرید و تأمین خدمات سفر'],

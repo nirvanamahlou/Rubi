@@ -1,3 +1,7 @@
+## RESERVATION-REPORT-MODULE-1110 — PC-A — IN_PROGRESS
+
+Owner requests extracting the issued passenger-services report into an independent Reservation Report module under Reservations, removing its flight-management tab and moving the user-management selection while preserving other names and behavior; develop merge authorized. Reserve new route/report wrapper, navigation/messages, stable IAM report-screen relocation and read prerequisite, report API screen guard and focused tests. Retain the existing screen ID and domain read permission, branch/data/export constraints and all other ticket screens. No migration, permission/data rewrite, dependencies or deployment. Prior services/hotel scope merged in PR1591.
+
 ## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A — IN_PROGRESS
 
 Owner requests per-passenger Insurance, City Tour and Guide allocation in Reservations corrections, plus adding a hotel to a contract without one, and develop merge. Reserve passenger-service-editor, amendment-extra-services helper/tests and empty-hotel amendment UI; preserve prices, other passengers, existing allocations and backend authorization/version/history rules. No schema/dependency/deployment or business-data writes. Prior date-selector scope merged and deployed; source lease releases after green develop merge.
@@ -309,6 +313,12 @@ COMPUTER_ID=PC-C; branch codex/pc-c-expert-call-isolation-1108 from develop80cbd
 ## CALL-CENTER-UNIT-FILTER-1109 — PC-C — READY_FOR_CI
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-unit-filter-1109 from develop19b96c5d7. Owner explicitly authorizes an independent Unit selector between source and connected-to, push/develop PR and merge after every CI gate. Reserve Call Center workspace/read client/CSS, CustomerAffairs read service and bounded tests plus own notes. Reuse existing optional teamId query and branch IAM unit directory; telephony filtering must use exact-call answer/origin/ringing evidence instead of the ingestion service account. Current native HR own/team visibility stays authoritative, including shared extensions. Producer CustomerAffairs and consumer Call Center ship together; existing clients with empty teamId unchanged, legacy manual calls retain creator-team semantics. No HR writer, schema, migration, dependency, grants or server publication. Prior Today Filter source is merged/released; queue filters and unrelated modules untouched. 46 API tests including real PostgreSQL unit/origin/transfer/shared-extension/manager-scope regressions and10 Web transport tests pass. Full API/Web types and scoped lint pass; API production build passes; Web production build and final hosted CI gate merge. PR1563; standalone unit-filter/report regression passes with its own explicit origin mapping fixture. Source freezes on publication and releases on verified merge.
+
+## ISSABEL-RECORDING-ON-DEMAND-1110 — PC-C — IN_PROGRESS
+
+CI remediation also reserves only the stale Documents contract enum assertion; no active overlapping test owner found. FAVORITES is an existing merged runtime value. Preserve strict equality and add that supported value; no product contract or Documents implementation changes.
+
+Owner explicitly requires no ERP-database audio storage and download from Issabel only on demand. COMPUTER_ID=PC-C; branch codex/pc-c-issabel-recording-on-demand-1110 from develop3370748ca. Reserve Integrations recording service/new Unix-socket remote client and tests, minimal CustomerAffairs authenticated media-context root projection, existing PBX source/host relay and bounded activation/test scripts, own notes. Immediately stop only the periodic recording importer under the production deploy lease to prevent growth; keep call ingress/Worker/VPN intact. Implement stateless on-demand RPC over a private API-only mounted Unix socket, existing pinned SSH credentials and CDR/CEL root/file proof; memory-only audio, no database chunks or durable host cache, no public port. Existing CEO-only download/branch/range/rate/audit controls remain. Default remote mode blocks uploads; legacy tests explicitly opt into database mode. Source/API and host relay contracts ship together; legacy cached reads require explicit DATABASE mode. Preserve existing stored recordings until separately authorized cleanup; no destructive migration, grants, dependencies or unrelated deployment. User authorizes this live storage behavior change; source push/develop green-gate merge and bounded API/relay rollout preserve peer changes.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -642,6 +652,10 @@ Replace free-text provider-country code/name/English controls with read-only dis
 ## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
 
 Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
+
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -11465,6 +11479,10 @@ PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves only its newly introduced English ove
 Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.
 
 CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outcome; CI identified missing translation. User authorizes CI repair and develop merge after every check passes. Preserve all other catalogue entries.
+
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+Update only the Workbench requests empty-state copy and its English translations.
 
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
