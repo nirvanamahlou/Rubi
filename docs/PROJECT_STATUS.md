@@ -9626,6 +9626,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## RESERVATION-REPORT-MODULE-1110 — PC-A
+
+Reservation Report has its own /reservations/reports route and sidebar/user-access module. The former issued tab is removed from flight management; the catalog and remaining screen names are preserved. The existing report screen ID is retained for stored grants, with the existing Reservations read prerequisite and an API screen guard that also protects XLSX/PDF via the shared report projection. Filters, branch scope and export behavior remain. No schema, grants rewrite, dependency or deployment changes; targeted and full hosted gates precede develop merge.
+
 ## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A
 
 Reservations passenger corrections expose Insurance, City Tour and Guide even if the original contract omitted them. Selecting one creates the standard Sales service once and allocates it only to the selected passenger; existing service references are retained. Empty hotel amendments initialize a hotel selection and guest links so the existing hotel, room, date and additional-stay editors become usable. Existing prices are retained. Focused Web and API amendment regressions plus full hosted gates precede develop merge; no schema/dependency/deployment changes.

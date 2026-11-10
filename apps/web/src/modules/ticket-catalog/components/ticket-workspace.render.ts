@@ -54,8 +54,8 @@ describe('Rendered ticket UI', () => {
     expect(html).not.toContain('هواپیما • قطار • اتوبوس');
     expect(html).toContain('تعریف بلیط قابل فروش');
     expect(html).toContain('مسیر، برنامه حرکت و ظرفیت');
-    expect(html).toContain('بلیط‌های صادرشده مسافران');
-    expect(html).toContain('گزارش صدور، PNR و قرارداد');
+    expect(html).not.toContain('بلیط‌های صادرشده مسافران');
+    expect(html).not.toContain('گزارش صدور، PNR و قرارداد');
     expect(html).not.toContain('شروع پیش‌نمایش');
     expect(html).not.toContain('حالت شبیه‌سازی');
   });

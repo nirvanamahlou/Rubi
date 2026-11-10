@@ -1,3 +1,7 @@
+## RESERVATION-REPORT-MODULE-1110 — PC-A — IN_PROGRESS
+
+Owner requests extracting the issued passenger-services report into an independent Reservation Report module under Reservations, removing its flight-management tab and moving the user-management selection while preserving other names and behavior; develop merge authorized. Reserve new route/report wrapper, navigation/messages, stable IAM report-screen relocation and read prerequisite, report API screen guard and focused tests. Retain the existing screen ID and domain read permission, branch/data/export constraints and all other ticket screens. No migration, permission/data rewrite, dependencies or deployment. Prior services/hotel scope merged in PR1591.
+
 ## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A — IN_PROGRESS
 
 Owner requests per-passenger Insurance, City Tour and Guide allocation in Reservations corrections, plus adding a hotel to a contract without one, and develop merge. Reserve passenger-service-editor, amendment-extra-services helper/tests and empty-hotel amendment UI; preserve prices, other passengers, existing allocations and backend authorization/version/history rules. No schema/dependency/deployment or business-data writes. Prior date-selector scope merged and deployed; source lease releases after green develop merge.
