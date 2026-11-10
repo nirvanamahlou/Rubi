@@ -163,6 +163,75 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     };
     return { service, request, command, actor };
   }
+  it('projects only the latest cost and its payment history for each requested purchase', async () => {
+    const f = await fixture();
+    const unpaid = await fixture('EUR');
+    await f.service.recordPayment(f.request.id, f.command, f.actor);
+    await f.service.recordPayment(
+      f.request.id,
+      {
+        ...f.command,
+        operationId: randomUUID(),
+        expectedPaymentVersion: 1,
+        paidAmount: '15.125',
+      },
+      f.actor,
+    );
+
+    const missing = randomUUID();
+    const ids = [f.request.id, unpaid.request.id, missing, f.request.id];
+    const states = await f.service.queueStates(ids);
+    expect(states.size).toBe(2);
+    expect(states.has(missing)).toBe(false);
+    expect(states.get(f.request.id)).toMatchObject({
+      costVersion: 1,
+      costRevisionId: f.command.costRevisionId,
+      paymentCount: 2,
+      paidAmount: '55.125',
+      remainingAmount: '44.875',
+      status: 'PAYING',
+    });
+    expect(states.get(unpaid.request.id)).toMatchObject({
+      currencyCode: 'EUR',
+      paymentCount: 0,
+      paidAmount: '0',
+      remainingAmount: '100',
+      status: 'READY_FOR_PAYMENT',
+    });
+
+    const groupId = randomUUID();
+    const newer = await client.financeTicketPurchaseCostRevision.create({
+      data: {
+        requestId: f.request.id,
+        branchId: f.request.branchId,
+        actorUserId: f.actor.userId,
+        version: 2,
+        adultUnitCost: '48.0625',
+        childUnitCost: '48.0625',
+        seatCount: 2,
+        unitCost: '48.0625',
+        invoiceAmount: '96.125',
+        currencyCode: 'IRR',
+        reason: ['purchase-group', groupId, '1'.repeat(64), 2, '96.125'].join(
+          ':',
+        ),
+      },
+    });
+
+    const newerStates = await f.service.queueStates(ids);
+    expect(newerStates.get(f.request.id)).toMatchObject({
+      costVersion: 2,
+      costRevisionId: newer.id,
+      createdAt: newer.createdAt.toISOString(),
+      purchaseGroup: { id: groupId, seatCount: 2, totalCost: '96.125' },
+      unitCost: '48.0625',
+      paymentCount: 0,
+      paidAmount: '0',
+      remainingAmount: '96.125',
+      status: 'READY_FOR_PAYMENT',
+    });
+    expect(await f.service.queueStates([])).toEqual(new Map());
+  });
   it('serializes concurrent retries into one persistent payment revision', async () => {
     const f = await fixture();
     const results = await Promise.all([

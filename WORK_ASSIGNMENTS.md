@@ -1299,6 +1299,10 @@ Reserve Finance inbox page assembly, FX display enrichment timing and focused te
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
 
+## FINANCE-SOURCE-PROJECTIONS-1110 (PC-B)
+
+Reserve Sales receipt projection, Finance ticket purchase queue read and their focused regressions. Preserve scope, ordering, status, Decimal amounts and public responses. No schema, dependencies or deployment.
+
 ## RESERVATION-FINANCE-PROJECTION-1110 — PC-B — READY_FOR_CI
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.

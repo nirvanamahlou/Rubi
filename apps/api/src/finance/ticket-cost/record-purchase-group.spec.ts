@@ -100,6 +100,17 @@ function fixture() {
   const database = {
     client: {
       ...tx,
+      $queryRaw: vi.fn(
+        async (_query: TemplateStringsArray, requestIds: string[]) =>
+          rows
+            .filter((row) => requestIds.includes(row.requestId))
+            .map((row) => ({
+              ...row,
+              paymentCount: row.payments.length,
+              cumulativePaid: null,
+              remainingAmount: null,
+            })),
+      ),
       $transaction: async (fn: (value: typeof tx) => Promise<unknown>) => {
         const saved = [...rows];
         try {

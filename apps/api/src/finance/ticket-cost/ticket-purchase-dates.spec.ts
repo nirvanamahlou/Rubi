@@ -2,26 +2,21 @@ import { expect, it, vi } from 'vitest';
 import { Prisma } from '@nora/database';
 import { FinanceTicketCostService } from './finance-ticket-cost.service';
 it('exposes latest purchase recording date independently of request entry and payment date', async () => {
-  const rows = [2, 1].map((version) => ({
-    id: `cost-${version}`,
-    requestId: 'request',
-    version,
-    createdAt: new Date(
-      version === 2 ? '2026-10-09T23:59:59Z' : '2026-10-01T00:00:00Z',
-    ),
-    invoiceAmount: new Prisma.Decimal('100'),
-    currencyCode: 'USD',
-    seatCount: 1,
-    unitCost: new Prisma.Decimal('100'),
-    payments: [
-      {
-        createdAt: new Date('2026-10-20'),
-        cumulativePaid: new Prisma.Decimal('100'),
-        remainingAmount: new Prisma.Decimal('0'),
-      },
-    ],
-    _count: { payments: 1 },
-  }));
+  const rows = [
+    {
+      id: 'cost-2',
+      requestId: 'request',
+      version: 2,
+      createdAt: new Date('2026-10-09T23:59:59Z'),
+      invoiceAmount: new Prisma.Decimal('100'),
+      currencyCode: 'USD',
+      seatCount: 1,
+      unitCost: new Prisma.Decimal('100'),
+      cumulativePaid: new Prisma.Decimal('100'),
+      remainingAmount: new Prisma.Decimal('0'),
+      paymentCount: 1,
+    },
+  ];
   const procurement = {
     listTicketPurchaseInbox: vi
       .fn()
@@ -32,9 +27,7 @@ it('exposes latest purchase recording date independently of request entry and pa
   const service = new FinanceTicketCostService(
     {
       client: {
-        financeTicketPurchaseCostRevision: {
-          findMany: vi.fn().mockResolvedValue(rows),
-        },
+        $queryRaw: vi.fn().mockResolvedValue(rows),
       },
     } as never,
     procurement as never,
