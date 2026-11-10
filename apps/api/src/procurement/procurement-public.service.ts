@@ -21,6 +21,7 @@ import type {
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
+import { collectCursorPages } from '../database/collect-cursor-pages';
 import { DatabaseService } from '../database/database.service';
 
 const purchaseSchema = Joi.object({
@@ -42,6 +43,8 @@ const purchaseSchema = Joi.object({
     .optional(),
   seatCount: Joi.number().integer().min(1).max(100000).allow(null).optional(),
 });
+
+const financeSourcePageSize = 500;
 
 @Injectable()
 export class ProcurementPublicService {
@@ -331,23 +334,36 @@ export class ProcurementPublicService {
     readonly (ProcurementFinanceSourceV1 & { handoffCreatedAt: string })[]
   > {
     if (!branchIds.length) return [];
-    const rows = await this.database.client.procurementFinanceHandoff.findMany({
-      where: {
-        status: {
-          in: ['NOT_CONNECTED', 'PENDING', 'ACCEPTED', 'PARTIALLY_PAID'],
-        },
-        procurementFinanceHandoffRequestid: {
-          branchId: { in: [...branchIds] },
-        },
-      },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      take: 500,
-      select: { payload: true, createdAt: true },
-    });
-    return rows.map((row) => ({
-      ...(row.payload as unknown as ProcurementFinanceSourceV1),
-      handoffCreatedAt: row.createdAt.toISOString(),
-    }));
+    return this.database.client.$transaction(
+      (tx) =>
+        collectCursorPages(
+          financeSourcePageSize,
+          (page) =>
+            tx.procurementFinanceHandoff.findMany({
+              where: {
+                status: {
+                  in: [
+                    'NOT_CONNECTED',
+                    'PENDING',
+                    'ACCEPTED',
+                    'PARTIALLY_PAID',
+                  ],
+                },
+                procurementFinanceHandoffRequestid: {
+                  branchId: { in: [...branchIds] },
+                },
+              },
+              orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+              select: { id: true, payload: true, createdAt: true },
+              ...page,
+            }),
+          (row) => ({
+            ...(row.payload as unknown as ProcurementFinanceSourceV1),
+            handoffCreatedAt: row.createdAt.toISOString(),
+          }),
+        ),
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async financeInvoiceSource(sourceId: string, branchIds: readonly string[]) {
@@ -376,18 +392,27 @@ export class ProcurementPublicService {
     branchIds: readonly string[],
   ): Promise<readonly ProcurementFinanceCorrectionSourceV1[]> {
     if (!branchIds.length) return [];
-    const rows = await this.database.client.procurementOutbox.findMany({
-      where: {
-        eventType: 'procurement.finance-correction.v1',
-        status: { in: ['PENDING', 'RETRY'] },
-        procurementOutboxRequestid: { branchId: { in: [...branchIds] } },
-      },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      take: 500,
-      select: { payload: true },
-    });
-    return rows.map(
-      (row) => row.payload as unknown as ProcurementFinanceCorrectionSourceV1,
+    return this.database.client.$transaction(
+      (tx) =>
+        collectCursorPages(
+          financeSourcePageSize,
+          (page) =>
+            tx.procurementOutbox.findMany({
+              where: {
+                eventType: 'procurement.finance-correction.v1',
+                status: { in: ['PENDING', 'RETRY'] },
+                procurementOutboxRequestid: {
+                  branchId: { in: [...branchIds] },
+                },
+              },
+              orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+              select: { id: true, payload: true },
+              ...page,
+            }),
+          (row) =>
+            row.payload as unknown as ProcurementFinanceCorrectionSourceV1,
+        ),
+      { isolationLevel: 'RepeatableRead' },
     );
   }
 

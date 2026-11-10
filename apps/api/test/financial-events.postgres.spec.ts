@@ -595,6 +595,34 @@ describe.skipIf(!url)(
           where: { sourceKey: `SALES:${future.id}` },
         }),
       ).toBe(0);
+
+      const dueAt = new Date('2001-01-01T00:00:00Z');
+      const ids = Array.from({ length: 201 }, () => randomUUID()).sort();
+      try {
+        await db.salesContractPaymentEntry.createMany({
+          data: ids.map((id) => ({
+            id,
+            contractId: contract.id,
+            amount: '1',
+            currencyCode: 'IRR',
+            dueAt,
+            createdAt: dueAt,
+            method: 'BANK_TRANSFER',
+            status: 'SCHEDULED',
+            idempotencyKey: id,
+            requestFingerprint: 'a'.repeat(64),
+            createdByUserId: makerId,
+          })),
+        });
+        const receipts = await sales.pendingFinancePayments([branchId], false, {
+          id: contract.id,
+        });
+        expect(receipts.map((receipt) => receipt.id)).toEqual(ids);
+      } finally {
+        await db.salesContractPaymentEntry.deleteMany({
+          where: { id: { in: ids } },
+        });
+      }
     }, 30000);
     it.each(['COMMISSION', 'ADJUSTMENT', 'CHECK'])(
       'requires independent approval and preserves the existing %s form workflow',

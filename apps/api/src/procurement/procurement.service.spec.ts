@@ -2229,6 +2229,87 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'RETURN_EXCEEDS_ACCEPTANCE',
       );
     });
+    it('reads invoice and correction sources past 500 rows with tied timestamps', async () => {
+      const context = await orderedRequest();
+      const received = await command(
+        context.row,
+        'RECEIVE',
+        receiptInput(context.order.id, context.item.id),
+      );
+      const invoiced = await command(
+        received,
+        'INVOICE',
+        invoiceInput(context.order.id, context.item.id),
+      );
+      const invoice = await invoiceFor(invoiced);
+      const createdAt = new Date(instant);
+      const invoices = Array.from({ length: 501 }, (_, index) => {
+        const id = randomUUID();
+        return {
+          id,
+          requestId: context.row.id,
+          invoiceId: invoice.id,
+          invoiceVersion: index + 1,
+          sourceKey: id,
+          status: 'PENDING',
+          createdAt,
+          payload: { sourceId: invoice.id, sourceVersion: index + 1 },
+        };
+      });
+      const corrections = invoices.map(() => {
+        const id = randomUUID();
+        return {
+          id,
+          eventId: id,
+          eventType: 'procurement.finance-correction.v1',
+          requestId: context.row.id,
+          createdAt,
+          payload: { eventId: id, requestId: context.row.id },
+        };
+      });
+      const publicSources = new ProcurementPublicService(database);
+      try {
+        await database.client.procurementFinanceHandoff.createMany({
+          data: invoices,
+        });
+        await database.client.procurementOutbox.createMany({
+          data: corrections,
+        });
+        const invoicesRead = await publicSources.listFinanceInvoiceSources([
+          branch,
+        ]);
+        expect(
+          invoicesRead
+            .filter((row) => row.sourceId === invoice.id)
+            .map((row) => row.sourceVersion),
+        ).toEqual(
+          invoices
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((row) => row.invoiceVersion),
+        );
+        const correctionsRead = await publicSources.listFinanceCorrections([
+          branch,
+        ]);
+        expect(
+          correctionsRead
+            .filter((row) => row.requestId === context.row.id)
+            .map((row) => row.eventId),
+        ).toEqual(corrections.map((row) => row.id).sort());
+        expect(
+          await publicSources.listFinanceInvoiceSources([otherBranch]),
+        ).toEqual([]);
+        expect(
+          await publicSources.listFinanceCorrections([otherBranch]),
+        ).toEqual([]);
+      } finally {
+        await database.client.procurementOutbox.deleteMany({
+          where: { id: { in: corrections.map((row) => row.id) } },
+        });
+        await database.client.procurementFinanceHandoff.deleteMany({
+          where: { id: { in: invoices.map((row) => row.id) } },
+        });
+      }
+    });
     it('appends idempotent receipt corrections, preserves original evidence and protects invoiced acceptance', async () => {
       const context = await orderedRequest();
       let row = await command(context.row, 'RECEIVE', {

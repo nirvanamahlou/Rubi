@@ -25,6 +25,7 @@ import type {
   SalesContractListQuery,
   SalesPaymentCreateRequest,
 } from '@nora/contracts';
+import { collectCursorPages } from '../database/collect-cursor-pages';
 import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -212,47 +213,59 @@ export class SalesRepository {
     scope: Prisma.SalesContractWhereInput = {},
   ) {
     if (!branchIds.length) return Promise.resolve([]);
-    return this.database.client.salesContractPaymentEntry.findMany({
-      where: {
-        OR: [
-          ...(includeConfirmed
-            ? [
-                { status: 'FINANCE_CONFIRMED' as const },
-                { status: 'FINANCE_VOIDED' as const },
-              ]
-            : []),
-          { status: 'PENDING_FINANCE_CONFIRMATION' },
-          { status: 'SCHEDULED', dueAt: { lte: new Date() } },
-        ],
-        contract: { AND: [{ branchId: { in: [...branchIds] } }, scope] },
-      },
-      select: {
-        id: true,
-        status: true,
-        amount: true,
-        currencyCode: true,
-        method: true,
-        description: true,
-        paymentReference: true,
-        destinationAccountId: true,
-        destinationAccountTitle: true,
-        dueAt: true,
-        createdAt: true,
-        createdByUserId: true,
-        contract: {
-          select: {
-            id: true,
-            contractNumber: true,
-            customerId: true,
-            customerNameSnapshot: true,
-            branchId: true,
-            version: true,
-          },
-        },
-      },
-      orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
-      ...(includeConfirmed ? {} : { take: 200 }),
-    });
+    const now = new Date();
+    return this.database.client.$transaction(
+      (tx) =>
+        collectCursorPages(
+          200,
+          (page) =>
+            tx.salesContractPaymentEntry.findMany({
+              where: {
+                OR: [
+                  ...(includeConfirmed
+                    ? [
+                        { status: 'FINANCE_CONFIRMED' as const },
+                        { status: 'FINANCE_VOIDED' as const },
+                      ]
+                    : []),
+                  { status: 'PENDING_FINANCE_CONFIRMATION' },
+                  { status: 'SCHEDULED', dueAt: { lte: now } },
+                ],
+                contract: {
+                  AND: [{ branchId: { in: [...branchIds] } }, scope],
+                },
+              },
+              select: {
+                id: true,
+                status: true,
+                amount: true,
+                currencyCode: true,
+                method: true,
+                description: true,
+                paymentReference: true,
+                destinationAccountId: true,
+                destinationAccountTitle: true,
+                dueAt: true,
+                createdAt: true,
+                createdByUserId: true,
+                contract: {
+                  select: {
+                    id: true,
+                    contractNumber: true,
+                    customerId: true,
+                    customerNameSnapshot: true,
+                    branchId: true,
+                    version: true,
+                  },
+                },
+              },
+              orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+              ...page,
+            }),
+          (row) => row,
+        ),
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   customerDocumentDeliveryCandidates(
