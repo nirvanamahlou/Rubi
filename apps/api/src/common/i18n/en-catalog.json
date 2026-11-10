@@ -8264,5 +8264,6 @@
   "تولید خروجی پس از چند تلاش کامل نشد.": "Export generation did not finish after several attempts.",
   "دسترسی گزارش تغییر کرده است. خروجی را دوباره درخواست کنید.": "Your report access changed. Request the export again.",
   "تعریف گزارش تغییر کرده است. خروجی را دوباره درخواست کنید.": "The report definition changed. Request the export again.",
-  "مجوز ساخت خروجی گزارش وجود ندارد.": "You do not have permission to export this report."
+  "مجوز ساخت خروجی گزارش وجود ندارد.": "You do not have permission to export this report.",
+  "سناریوی کنترل‌شده خطای تولید خروجی برای دمو.": "Simulated export generation failure for the demo."
 }
