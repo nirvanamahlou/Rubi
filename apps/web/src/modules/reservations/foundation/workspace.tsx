@@ -799,6 +799,17 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
+                                  {row.status === 'CANCELLED' &&
+                                    selected?.id === row.id && (
+                                      <small
+                                        style={{
+                                          display: 'block',
+                                          color: '#000000',
+                                        }}
+                                      >
+                                        این قرارداد باطل شده است
+                                      </small>
+                                    )}
                                   {row.amendedAt ||
                                   (row.correctedAt &&
                                     row.salesCorrectionPending !== false) ? (
