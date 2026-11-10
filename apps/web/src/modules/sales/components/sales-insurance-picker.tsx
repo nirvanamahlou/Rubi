@@ -21,11 +21,15 @@ export function SalesInsurancePicker({
   refreshRevision = 0,
   onChange,
   onReady,
+  automaticIssue = false,
+  onAutomaticIssueChange,
 }: {
   refreshRevision?: number;
   value?: SalesInsuranceSelection | undefined;
   onChange: (selection: SalesInsuranceSelection) => void;
   onReady: (ready: boolean) => void;
+  automaticIssue?: boolean;
+  onAutomaticIssueChange?: (checked: boolean) => void;
 }) {
   const [plans, setPlans] = useState<MasterDataRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,9 +110,18 @@ export function SalesInsurancePicker({
           طرح قبلی در فهرست فعال نیست؛ دوباره انتخاب کنید.
         </p>
       ) : null}
+      <label className="flex items-center gap-2 rounded-lg border border-border p-3">
+        <input
+          type="checkbox"
+          checked={automaticIssue}
+          onChange={(event) => onAutomaticIssueChange?.(event.target.checked)}
+        />
+        صدور خودکار بیمه
+      </label>
       <p className="text-xs text-muted-foreground">
-        این انتخاب همراه اطلاعات مسافران به رزرواسیون ارسال می‌شود؛ صدور
-        بیمه‌نامه پس از اتصال شرکت بیمه در رزرواسیون انجام خواهد شد.
+        با فعال‌کردن این گزینه، هنگام ورود قرارداد به رزرواسیون درخواست صدور
+        بیمهٔ مسافران ارسال می‌شود؛ نتیجه و علت خطا در بیمه‌نامه قابل مشاهده
+        است.
       </p>
     </section>
   );

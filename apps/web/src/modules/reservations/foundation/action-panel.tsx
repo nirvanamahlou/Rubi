@@ -1,6 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { usePurchaseRegistration } from './use-purchase-completion';
+import {
+  useInsuranceStatus,
+  insuranceActionState,
+} from './use-insurance-status';
 import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
@@ -174,6 +178,8 @@ export function ContractActionPanel({
 }) {
   const [openedRequest, setOpenedRequest] = useState<RequestView>();
   const dialogRequest = openedRequest ?? request;
+  const insurance = useInsuranceStatus(request?.id, request?.workflowVersion);
+  const insuranceState = insuranceActionState(insurance);
   const purchaseRegistered = usePurchaseRegistration(
     request?.id,
     request?.workflowVersion,
@@ -244,6 +250,14 @@ export function ContractActionPanel({
                         }
                         className={[
                           styles.action,
+                          action === 'بیمه‌نامه' &&
+                          request?.status !== 'CANCELLED'
+                            ? insuranceState === 'ready'
+                              ? styles.insuranceReady
+                              : insuranceState === 'incomplete'
+                                ? styles.insuranceIncomplete
+                                : ''
+                            : '',
                           action === 'توضیحات' && request?.hasNotes
                             ? styles.hasNotes
                             : '',
@@ -253,6 +267,16 @@ export function ContractActionPanel({
                             ? styles.purchaseRegistered
                             : '',
                         ].join(' ')}
+                        data-insurance-status={
+                          action === 'بیمه‌نامه' ? insuranceState : undefined
+                        }
+                        title={
+                          action === 'بیمه‌نامه' && insurance
+                            ? insurance.sandbox
+                              ? 'بیمه آزمایشی؛ برای مشاهدهٔ وضعیت مسافران کلیک کنید.'
+                              : 'برای مشاهدهٔ وضعیت مسافران کلیک کنید.'
+                            : undefined
+                        }
                         data-purchase-registered={
                           action === 'خرید'
                             ? purchaseRegistered &&

@@ -321,6 +321,7 @@ export interface ReservationManifestTicketListV1 {
 }
 
 export interface ReservationManifestTicketExportInputV1 {
+  manifestTemplateId?: string;
   fromDate: string;
   toDate: string;
   includePreviouslyExported?: boolean;

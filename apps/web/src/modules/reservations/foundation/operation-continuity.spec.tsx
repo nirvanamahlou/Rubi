@@ -22,6 +22,10 @@ vi.mock('./queue-names', () => ({
 vi.mock('./use-purchase-completion', () => ({
   usePurchaseRegistration: () => false,
 }));
+vi.mock('./use-insurance-status', () => ({
+  useInsuranceStatus: () => undefined,
+  insuranceActionState: () => 'none',
+}));
 import { ContractActionPanel, ContractActionContent } from './action-panel';
 import { ReservationOperationsWorkspace } from './workspace';
 import { Dialog } from '@/components/ui/overlays';

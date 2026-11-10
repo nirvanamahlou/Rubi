@@ -52,3 +52,21 @@ describe('manifest template field', () => {
     );
   });
 });
+
+it('loads registered templates beyond the first page and does not hide an incomplete list', async () => {
+  const { loadAllManifestTemplates } =
+    await import('./manifest-template-picker');
+  const calls: number[] = [];
+  const result = await loadAllManifestTemplates(async (_search, page) => {
+    calls.push(page);
+    return {
+      data: [{ id: String(page), name: 'Template ' + page }],
+      hasMore: page === 1,
+    };
+  }, '');
+  expect(calls).toEqual([1, 2]);
+  expect(result.data.map((row) => row.id)).toEqual(['1', '2']);
+  await expect(
+    loadAllManifestTemplates(async () => ({ data: [], hasMore: true }), ''),
+  ).rejects.toThrow();
+});

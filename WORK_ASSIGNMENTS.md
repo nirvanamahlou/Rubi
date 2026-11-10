@@ -1,5 +1,9 @@
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.
+
+User requires unchanged row dimensions: hint is absolutely positioned in the existing cell padding,9px text/10px line height, with no layout height contribution.18 focused date/render checks pass before final CI.
+
 Base origin/develop1bb9a4625; codex/pc-c-report-chart-metrics-1110. Reserve Reports Web chart rendering, numeric metric selection, existing API-result adapter metadata and focused regressions; own task/status and bounded new English catalogue labels. Dashboard source is read-only design reference. Preserve independent currency scales, unique report grain, source values and export/table behavior. No API/schema/dependency/data/deployment change. Prior Reporting scopes merged/frozen.
 
 ## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
@@ -600,6 +604,10 @@ Owner requests official input/output contract verification and actionable insura
 ## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
+## INSURANCE-AUTO-ISSUE-1110 — PC-A — READY_FOR_CI
+
+Owner follow-up also reserves reservation-insurance-documents.tsx and its opt-in interaction test: ticking inside Reservations immediately queues and kicks the protected issuance command, including unsent manual drafts, with status/lease/provider-receipt guards and existing authorization. Explicit Sales opt-in is stored in versioned service metadata and consumed only by the trusted Reservations intake. Unchecked/new and legacy selections do not create automatic queue rows; existing queued policies remain intact. Authorized manual preparation bypasses opt-in only after existing branch/customer/documents guards. Existing unique policy key, leases, fingerprints, reconciliation and protected PDF paths remain unchanged. Selected contract insurance action polls read-only status: green only for every assigned passenger with issued PDF, red for selected/incomplete results; clicking opens existing per-passenger reasons/correction/download UI. Sandbox output remains explicitly labelled.32 Web and18 automation regressions pass; no live issuance, schema/dependency or deployment changes. Exact-head full hosted gates required before owner-authorized develop merge. Source reservations release after verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -12108,3 +12116,7 @@ COMPUTER_ID=PC-D; branch codex/pc-d-company-ledger-1110 starts at PC-D-Integrati
 COMPANY-LEDGER-1110 closeout: source, additive DTO/FK, fiscal allocation and scoped caches complete. API/Web checks and local browser/runtime verification passed; preserve legacy ownership until explicit adoption. Schema/migration and scoped files released after commit; no production or merge. Details: docs/tasks/COMPANY-LEDGER-1110.md.
 
 COMPANY-LEDGER-1110 CI follow-up: reserve bounded English translations in Web en-accounting-documents.json and API en-catalog.json for the new ledger fields/errors. Owner authorizes develop PR/merge after successful gates. No dependency, schema or production changes in this follow-up.
+
+## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — IN_PROGRESS
+
+Owner requests per-export Manifest template selection with ticket-defined default and newly registered Master Data templates visible in ticket editing. Reserve Manifest export UI/download/API input and validation, existing picker pagination/labels, Master Data public projection diagnostics only, contracts/tests and own notes. Preserve active publication/file/date checks, document access, branch scope and idempotent export identity. No schema/dependency/deployment or business-data writes. Source reservation releases after verified develop merge.

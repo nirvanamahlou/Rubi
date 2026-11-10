@@ -3,13 +3,39 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { toursApi } from '../api/tours';
+
+export async function loadAllManifestTemplates(
+  loadOptions: (
+    search: string,
+    page: number,
+  ) => Promise<{ data: { id: string; name: string }[]; hasMore: boolean }>,
+  search: string,
+) {
+  const rows: { id: string; name: string }[] = [];
+  for (let page = 1; ; page++) {
+    const response = await loadOptions(search, page);
+    rows.push(...response.data);
+    if (!response.hasMore) break;
+    if (!response.data.length || page >= 10000)
+      throw new Error('دریافت قالب‌ها ناموفق بود.');
+  }
+  return { data: rows };
+}
+
 export function ManifestTemplatePicker({
   value,
+  id = 'ticket-manifest-template',
+  loadOptions = toursApi.manifestTemplates,
   name,
   readOnly = false,
   onChange,
 }: {
   value: string | null;
+  id?: string;
+  loadOptions?: (
+    search: string,
+    page: number,
+  ) => Promise<{ data: { id: string; name: string }[]; hasMore: boolean }>;
   name?: string | undefined;
   readOnly?: boolean;
   onChange: (id: string | null, name: string) => void;
@@ -27,8 +53,7 @@ export function ManifestTemplatePicker({
     if (!open || readOnly) return;
     let active = true;
     const timer = setTimeout(() => {
-      void toursApi
-        .manifestTemplates(search, 1)
+      void loadAllManifestTemplates(loadOptions, search)
         .then((data) => {
           if (active) setResult({ key, data: data.data });
         })
@@ -48,15 +73,15 @@ export function ManifestTemplatePicker({
       active = false;
       clearTimeout(timer);
     };
-  }, [open, readOnly, search, key]);
+  }, [open, readOnly, search, key, loadOptions]);
   const current = result?.key === key ? result : undefined;
   return (
     <div className="grid gap-2">
-      <label htmlFor="ticket-manifest-template" className="text-sm font-medium">
+      <label htmlFor={id} className="text-sm font-medium">
         انتخاب قالب منیفست
       </label>
       <SearchCombobox
-        id="ticket-manifest-template"
+        id={id}
         label="قالب‌های منیفست"
         value={value ?? ''}
         selectedLabel={value ? name || 'قالب انتخاب‌شده' : 'پیش‌فرض'}

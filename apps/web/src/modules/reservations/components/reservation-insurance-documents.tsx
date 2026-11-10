@@ -28,6 +28,7 @@ type Summary = {
     ready: boolean;
     policyNumber: string | null;
     status: string;
+    automatic?: boolean;
     error: string | null;
     sandbox: boolean;
   }[];
@@ -158,10 +159,25 @@ export function ReservationInsuranceDocuments({
         </p>
       ) : (
         <>
-          {!sales && data.canPrepare && data.policies.some((p) => !p.id) && (
-            <Button disabled={busy} onClick={() => void prepare()}>
-              آماده‌سازی بیمه‌نامه‌های انتخاب‌شده
-            </Button>
+          {!sales && data.canPrepare && (
+            <label className="flex items-center gap-2 rounded-lg border border-border p-3">
+              <input
+                type="checkbox"
+                checked={
+                  data.policies.length > 0 &&
+                  data.policies.every((p) => p.ready || p.automatic)
+                }
+                disabled={
+                  busy ||
+                  data.ready ||
+                  data.policies.every((p) => p.ready || p.automatic)
+                }
+                onChange={(event) => {
+                  if (event.target.checked) void prepare();
+                }}
+              />
+              صدور خودکار بیمه
+            </label>
           )}
           <p>
             {data.policies.filter((p) => p.status === 'ISSUED').length} /{' '}

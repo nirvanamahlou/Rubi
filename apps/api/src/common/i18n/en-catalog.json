@@ -8211,5 +8211,10 @@
   "شرکت فعال برای دفتر کل در دسترس نیست.": "The active company is unavailable for general ledger setup.",
   "شرکت فعال تغییر کرده است؛ فرم را دوباره باز کنید.": "The active company has changed. Reopen the form.",
   "عنوان سال مالی *": "Fiscal year title *",
-  "سال باید عددی بین ۱ تا ۹۹۹۹ باشد.": "The year must be a number between 1 and 9999."
+  "سال باید عددی بین ۱ تا ۹۹۹۹ باشد.": "The year must be a number between 1 and 9999.",
+  "صدور خودکار بیمه": "Issue insurance automatically",
+  "با فعال‌کردن این گزینه، هنگام ورود قرارداد به رزرواسیون درخواست صدور بیمهٔ مسافران ارسال می‌شود؛ نتیجه و علت خطا در بیمه‌نامه قابل مشاهده است.": "When enabled, passenger insurance issuance is queued when the contract reaches Reservations. Results and errors appear under Insurance policies.",
+  "بیمه آزمایشی؛ برای مشاهدهٔ وضعیت مسافران کلیک کنید.": "Sandbox insurance; click to view passenger status.",
+  "برای مشاهدهٔ وضعیت مسافران کلیک کنید.": "Click to view passenger status.",
+  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart."
 }

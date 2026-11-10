@@ -4,6 +4,11 @@ Company-owned General Ledger follows the global header; Jahan Academia shares Ja
 
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.
+
+User requires unchanged row dimensions: hint is absolutely positioned in the existing cell padding,9px text/10px line height, with no layout height contribution.18 focused date/render checks pass before final CI.
+
+
 Report bars use Dashboard-style fixed labels, grouped independent currency tracks and exact combined values. Numeric sort choices now drive horizontal/column/pie measures, with unique contract/passenger counts; name sorting retains the selected metric. Operational chartMeasure metadata is preserved. 92 Web report tests and scoped lint pass. No schema/API/financial calculation or production change. See docs/tasks/REPORTING-CHART-METRICS-1110.md.
 
 ## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
@@ -545,6 +550,10 @@ Read-only official Travis Swagger PolicyCreateInput/Person review confirms curre
 ## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
+
+## INSURANCE-AUTO-ISSUE-1110 — PC-A — READY_FOR_CI
+
+Owner follow-up also reserves reservation-insurance-documents.tsx and its opt-in interaction test: ticking inside Reservations immediately queues and kicks the protected issuance command, including unsent manual drafts, with status/lease/provider-receipt guards and existing authorization. Explicit Sales opt-in is stored in versioned service metadata and consumed only by the trusted Reservations intake. Unchecked/new and legacy selections do not create automatic queue rows; existing queued policies remain intact. Authorized manual preparation bypasses opt-in only after existing branch/customer/documents guards. Existing unique policy key, leases, fingerprints, reconciliation and protected PDF paths remain unchanged. Selected contract insurance action polls read-only status: green only for every assigned passenger with issued PDF, red for selected/incomplete results; clicking opens existing per-passenger reasons/correction/download UI. Sandbox output remains explicitly labelled.32 Web and18 automation regressions pass; no live issuance, schema/dependency or deployment changes. Exact-head full hosted gates required before owner-authorized develop merge. Source reservations release after verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -9656,3 +9665,7 @@ FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on
 ## HR-RADAN-PRODUCTION-1101 — DEPLOYED
 
 Merged Radan attendance integration is active on Avina with Tehran quarter-hour peak/full-hour off-peak slots. Initial72 real punches yield43 daily summaries; automatic17:00 run verifies idempotence and next17:15 slot. Public HTTPS health/authenticated status/HR200, preserved Call Center code and unchanged Worker image/data services verified after encrypted/offsite backups. Exact native codes and existing working hours retained; one unmatched source punch remains unresolved. Company workstation bridge must stay running. No migration, grants or Radan writes. See tasks/HR-RADAN-PRODUCTION-1101.md.
+
+## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — READY_FOR_CI
+
+Per-ticket export template override uses the same published Master Data projection through an existing Reservations permission boundary; omitted override preserves the ticket-defined default. Every chosen template is validated server-side for active publication, XLSX file and travel date and read only through Documents. Request-key scope includes explicit template identity, preserving legacy default keys. The shared ticket/export picker now reads all pages rather than silently truncating after25 choices. Existing registered ticket selection remains unchanged by one-off export. No schema, dependencies, business data or deployment changes; exact-head full hosted gates precede owner-authorized develop merge. Source lease releases on verified merge.
