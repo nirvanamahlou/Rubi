@@ -93,6 +93,12 @@ export class DocumentListQueryDto {
   domain?: DocumentDomainCode;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  @Matches(/^[A-Z_]+(?:,[A-Z_]+)*$/)
+  domains?: string;
+
+  @IsOptional()
   @IsEnum(DOCUMENT_ARCHIVE_STATUS_CODES)
   archiveStatus?: DocumentArchiveStatusCode;
 
