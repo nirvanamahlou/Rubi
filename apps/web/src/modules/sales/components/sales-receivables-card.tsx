@@ -194,6 +194,7 @@ export function SalesReceivablesCard({
         </FormField>
         <FormField label="از تاریخ">
           <DatePicker
+            gregorianMonthEnglish
             aria-label="از تاریخ مانده قابل دریافت"
             value={draft.from ?? ''}
             onChange={(from) =>
@@ -203,6 +204,7 @@ export function SalesReceivablesCard({
         </FormField>
         <FormField label="تا تاریخ">
           <DatePicker
+            gregorianMonthEnglish
             aria-label="تا تاریخ مانده قابل دریافت"
             value={draft.to ?? ''}
             onChange={(to) =>
