@@ -1,3 +1,7 @@
+## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
+
+Base origin/develop4620591c2; codex/pc-c-report-excel-bidi-1110. Reserve Reporting XLSX monetary-cell presentation and focused export regressions, own task/status notes. Fix mixed RTL/LTR currency amount labels without changing values, aggregation, CSV/API or authorization. Prior Reporting source is merged/frozen. No schema/dependency/data/deployment. Owner authorizes PR and develop merge only after all exact-head CI gates pass.
+
 ## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
 
 Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
@@ -578,6 +582,10 @@ Owner authorizes responsive redesign of Reservations passenger/room amendment an
 ## INSURANCE-PROVIDER-ERRORS-1108 — PC-A
 
 Owner requests official input/output contract verification and actionable insurance errors, then develop merge. Reserve Travis transport diagnostics, automation safe error propagation and focused tests. Official live Swagger PolicyCreateInput/Person inspected read-only. Never expose upstream free text, identity, credentials or URLs. No provider issuance, schema, dependency or deployment.
+
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -12042,3 +12050,9 @@ PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint p
 HOTEL-FACTOR-DEFAULTS-1110 — PC-A: reserve manual hotel combination defaults/UI, shared exact pricing and occupancy composition, API validation and focused tests. User confirms standalone one-child tariff; double2, single1.5, child6–12; zero coefficient allowed. Existing saved rates retained. No migration/dependency or live data edits. Develop merge authorized after gates.
 
 HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ESLint and Contracts build passed. Final hosted gates required; no deployment requested.
+
+## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.
+
+RESERVATION-CANCELLED-SELECTION-1110 validation:56 focused queue/table/action-panel tests and scoped ESLint pass. Cancellation notice is attached only to the selected cancelled contract identity; no queue cell contains the repeated text, while cancelled rows retain their red state. Source reservation releases on frozen publication; exact-head hosted gates precede authorized develop merge. No deployment requested.

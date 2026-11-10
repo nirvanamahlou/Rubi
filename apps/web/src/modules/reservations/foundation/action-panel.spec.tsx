@@ -32,15 +32,18 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
-  it('leaves the cancellation label on the contract row instead of the action panel', () => {
+  it('shows the cancellation notice only for the currently selected cancelled contract', () => {
     expect(
       renderToStaticMarkup(
         <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
       ),
-    ).not.toContain('این قرارداد باطل شده است');
+    ).toContain('این قرارداد باطل شده است');
     expect(
       renderToStaticMarkup(<ContractActionPanel request={request} />),
     ).not.toContain('این قرارداد باطل شده است');
+    expect(renderToStaticMarkup(<ContractActionPanel />)).not.toContain(
+      'این قرارداد باطل شده است',
+    );
   });
   it('keeps only receipt history under contract operations', () => {
     const operations = contractActionGroups.find(

@@ -1,3 +1,7 @@
+## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
+
+Shared Reporting XLSX monetary text now uses explicit LTR cell direction, bounded amount/currency pairs and wrapping height. Preserve RTL sheet, B Nazanin, exact decimals and unchanged source/CSV. 167 targeted Reporting tests pass. Synthetic output generated; desktop modal automation was unreliable, so visual acceptance is not claimed. Owner authorizes develop PR/merge after all exact-head hosted gates; no deployment. See docs/tasks/REPORTING-EXCEL-BIDI-1110.md.
+
 ## RESERVATION-FLIGHT-GREGORIAN-1109 — PC-C — READY_FOR_CI
 
 Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx to always use Gregorian, independent of system calendar, and authorizes develop merge after all exact-head gates. Reserve only that picker, existing amendment component regression and own task/status notes; previous amendment source scopes are merged/frozen. Preserve canonical date values, other hotel/passenger calendars, flight selection/capacity and permissions. No API/schema/dependency/data or deployment changes.
@@ -523,6 +527,10 @@ Bound passenger amendment dialog to available viewport with border-box sizing an
 
 ## INSURANCE-PROVIDER-ERRORS-1108
 Read-only official Travis Swagger PolicyCreateInput/Person review confirms current automation payload field names and required numeric/string/date-time types; no fabricated extra fields. Transport now emits only locally generated stage/status and allowlisted validation field labels. Upstream messages, values, headers, keys and URLs remain undisclosed. Automation preserves these safe diagnostics in policy lastError; ambiguous Create/Confirm reconciliation and no-blind-replay remain unchanged. No live issuance or deployment. Focused regressions and final-head hosted gates precede authorized develop merge.
+
+## INSURANCE-BREADCRUMB-1110 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-breadcrumb-1110 from develop9ad210d7. Owner requests fixing unavailable top insurance breadcrumb and develop merge. Reserve only navigation.ts insurance alias, navigation.spec.ts regression, bounded English title and own status notes. Parent Reservations becomes the top back link; no access policies, sidebar destinations, API, schema, dependency, operational data or deployment changes. No overlapping active alias writer found.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -9605,6 +9613,7 @@ INSURANCE-DRAFT-ERROR-1109: owner-coordinated repair translates national/passpor
 
 
 
+
 PASSENGER-EDITOR-LAYOUT-1110: correcting compact passenger table width/checkbox overflow and booked child-band hydration. No schema/dependency or operational data changes; focused and hosted checks gate authorized develop merge.
 
 PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
@@ -9613,3 +9622,7 @@ PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint p
 HOTEL-FACTOR-DEFAULTS-1110 — PC-A: reserve manual hotel combination defaults/UI, shared exact pricing and occupancy composition, API validation and focused tests. User confirms standalone one-child tariff; double2, single1.5, child6–12; zero coefficient allowed. Existing saved rates retained. No migration/dependency or live data edits. Develop merge authorized after gates.
 
 HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ESLint and Contracts build passed. Final hosted gates required; no deployment requested.
+
+## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — READY_FOR_CI
+
+Removed the permanent cancellation sentence from every cancelled Reservations queue row. The sentence appears beside the selected cancelled contract number in the existing live selection panel, and disappears for an active or empty selection. Red cancellation row styling and existing action/access rules are retained.56 focused table/workspace/action-panel tests and scoped ESLint pass. No API/schema/dependency or operational data change. All exact-head hosted gates are required before the owner-authorized develop merge; no deployment requested.
