@@ -15,6 +15,7 @@ import type { InsuranceApplicantCrypto } from './insurance-applicant.crypto';
 
 it('uses current insurance allocations and shows a reason for every missing policy without issuing on a read', async () => {
   const f = fixture();
+  vi.spyOn(f.service, 'requestImmediate').mockImplementation(() => undefined);
   const current = structuredClone(f.intake.snapshot);
   f.intake.snapshot.serviceSelections = [];
   f.sales.currentExecution.mockResolvedValue(current);
@@ -290,6 +291,9 @@ it('queues only selected insured passengers and does not contact the provider be
 
 it('requires explicit automatic opt-in but preserves authorized manual preparation', async () => {
   const f = fixture();
+  const kick = vi
+    .spyOn(f.service, 'requestImmediate')
+    .mockImplementation(() => undefined);
   f.intake.snapshot.serviceSelections[0]!.metadata.insuranceAutomaticIssue = false;
   await f.service.enqueue('intake');
   expect(f.policies.upsert).not.toHaveBeenCalled();
@@ -298,6 +302,23 @@ it('requires explicit automatic opt-in but preserves authorized manual preparati
     permissions: [...f.actor.permissions, 'reservations.documents.manage'],
   });
   expect(f.policies.upsert).toHaveBeenCalledTimes(1);
+  expect(f.policies.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        contractId: 'contract',
+        customerId: { in: ['passenger'] },
+        automatic: false,
+        status: 'DRAFT',
+        providerId: null,
+        processingUntil: null,
+      }),
+      data: expect.objectContaining({
+        automatic: true,
+        automation: { phase: 'QUEUED', useDraft: true },
+      }),
+    }),
+  );
+  expect(kick).toHaveBeenCalledWith('policy');
   expect(f.provider.createPolicy).not.toHaveBeenCalled();
 });
 

@@ -654,6 +654,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
             )?.displayNameSnapshot ?? '',
           policyNumber: p?.status === 'ISSUED' ? p.policyNumber : null,
           status: p?.status ?? 'PENDING',
+          automatic: p?.automatic === true,
           error:
             intake.status === 'CANCELLED' ||
             intake.contract.status === 'CANCELLED'
@@ -719,10 +720,33 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
   ) {
     if (!actor.permissions.includes('reservations.documents.manage'))
       throw new ForbiddenException();
-    const { intake } = await this.scoped(intakeId, actor, salesContractId);
+    const { intake, ids } = await this.scoped(intakeId, actor, salesContractId);
     if (intake.status === 'CANCELLED' || intake.contract.status === 'CANCELLED')
       throw new ForbiddenException();
     await this.enqueue(intakeId, true);
-    return this.summary(intakeId, actor, salesContractId);
+    // Explicit Reservations opt-in also activates manually prepared, unsent drafts.
+    // Never reset an issued/cancelled policy, in-flight lease or provider receipt.
+    await this.db.client.reservationInsurancePolicy.updateMany({
+      where: {
+        contractId: intake.contractId,
+        customerId: { in: ids },
+        automatic: false,
+        status: 'DRAFT',
+        providerId: null,
+        processingUntil: null,
+      },
+      data: {
+        automatic: true,
+        sandbox: true,
+        automation: { phase: 'QUEUED', useDraft: true },
+        nextAttemptAt: new Date(),
+      },
+    });
+    const summary = await this.summary(intakeId, actor, salesContractId);
+    for (const policy of summary.policies) {
+      if (policy.id && policy.automatic && !policy.ready)
+        this.requestImmediate(policy.id);
+    }
+    return summary;
   }
 }
