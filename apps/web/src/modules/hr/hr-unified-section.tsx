@@ -49,6 +49,18 @@ import { HrAttendanceEditor } from './hr-attendance-editor';
 import { HrLeaveBalance } from './hr-leave-balance';
 import { parseSavedHrFilter } from './hr-filters';
 
+type DeviceSyncStatus = {
+  state: string;
+  error?: string;
+  sources?: DeviceSyncStatus[];
+  lastSuccessfulSources?: {
+    branchId: string;
+    at: string;
+    created: number;
+    updated: number;
+  }[];
+};
+
 export { sourceForRecord } from './hr-record-source';
 
 function AccessibleHrSection({
@@ -109,6 +121,30 @@ function AccessibleHrSection({
       first.sources.some((source) => source.tab === 'shift'),
   );
   const [busy, setBusy] = useState(false);
+  const [deviceStatus, setDeviceStatus] = useState<DeviceSyncStatus>();
+  const canSyncDevice =
+    section === 'time' && group.id === 'work' && store.data?.capabilities.write;
+  useEffect(() => {
+    if (!canSyncDevice) return;
+    let active = true;
+    const refresh = () => {
+      void hrRequest<DeviceSyncStatus>('/attendance/device/status').then(
+        (result) => {
+          if (active) setDeviceStatus(result);
+        },
+        () => {
+          if (active) setDeviceStatus({ state: 'error', error: 'status' });
+        },
+      );
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [canSyncDevice]);
+
   const [expiry, setExpiry] = useState('');
   const [calendarItems, setCalendarItems] = useState<HrRecordDto[]>([]);
   const { remember } = store;
@@ -792,6 +828,29 @@ function AccessibleHrSection({
             <summary className={ui.detailsSummary}>
               محاسبه و بستن کارکرد
             </summary>
+            <div aria-live="polite">
+              {deviceStatus?.lastSuccessfulSources?.map((item, index) => (
+                <p key={`${item.branchId}-${index}`}>
+                  آخرین همگام‌سازی موفق:{' '}
+                  {new Date(item.at).toLocaleString('fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                  })}
+                  {' · '}جدید: {item.created.toLocaleString('fa-IR')}
+                  {' · '}اصلاح‌شده: {item.updated.toLocaleString('fa-IR')}
+                </p>
+              ))}
+              {(
+                deviceStatus?.sources ?? (deviceStatus ? [deviceStatus] : [])
+              ).some((item) => item.state === 'error') && (
+                <p>
+                  {(deviceStatus?.sources ?? [deviceStatus]).some(
+                    (item) => item?.error === 'provider',
+                  )
+                    ? 'ارتباط با رادن یا دریافت ترددها ناموفق بود.'
+                    : 'همگام‌سازی انجام نشد. وضعیت اتصال و پردازش کارکرد را بررسی کنید.'}
+                </p>
+              )}
+            </div>
             <div className={ui.actions}>
               <HrButton
                 disabled={busy}
@@ -799,9 +858,27 @@ function AccessibleHrSection({
                   setBusy(true);
                   setError('');
                   try {
-                    await hrRequest('/attendance/device/sync', {
-                      method: 'POST',
-                    });
+                    const result = await hrRequest<DeviceSyncStatus>(
+                      '/attendance/device/sync',
+                      {
+                        method: 'POST',
+                        ...(range.from && range.to
+                          ? {
+                              headers: { 'content-type': 'application/json' },
+                              body: JSON.stringify(range),
+                            }
+                          : {}),
+                      },
+                    );
+                    setDeviceStatus(
+                      await hrRequest<DeviceSyncStatus>(
+                        '/attendance/device/status',
+                      ),
+                    );
+                    if (result.state !== 'ready')
+                      throw new Error(
+                        'همگام‌سازی یک یا چند منبع رادن انجام نشد.',
+                      );
                     await store.mutated();
                     setNotice('ترددهای دستگاه دریافت شد.');
                   } catch (e) {
@@ -813,7 +890,9 @@ function AccessibleHrSection({
                   }
                 }}
               >
-                دریافت تردد دستگاه
+                {range.from && range.to
+                  ? 'همگام‌سازی بازهٔ انتخاب‌شده'
+                  : 'دریافت تردد دستگاه'}
               </HrButton>
               <HrButton
                 disabled={busy}

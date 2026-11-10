@@ -1375,6 +1375,7 @@ export class HrService {
     keyInput: unknown,
     body: unknown,
     work: (tx: Tx) => Promise<T>,
+    shouldStore?: (result: T) => boolean,
   ): Promise<T> {
     const key = validate.text(keyInput, 'کلید یکتای درخواست', 120);
     if (!/^[A-Za-z0-9._:-]{8,120}$/.test(key))
@@ -1395,9 +1396,10 @@ export class HrService {
         return existing.result as T;
       }
       const result = await work(tx);
-      await tx.hrCommand.create({
-        data: { actorId: actor.userId, key, hash, result: json(result) },
-      });
+      if (!shouldStore || shouldStore(result))
+        await tx.hrCommand.create({
+          data: { actorId: actor.userId, key, hash, result: json(result) },
+        });
       return result;
     });
   }
@@ -5989,6 +5991,8 @@ export class HrService {
     actor: AuthenticatedActor,
     deviceOnly = false,
     reconcileEmptyEmployeeIds: string[] = [],
+    employeeIds?: string[],
+    scheduled = false,
   ) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, ['branchId', 'date']);
@@ -6004,6 +6008,7 @@ export class HrService {
         input,
         deviceOnly,
         reconcileEmptyEmployeeIds,
+        employeeIds,
       },
       async (tx) => {
         try {
@@ -6019,6 +6024,7 @@ export class HrService {
             deletedAt: null,
             startedAt: { lte: validate.isoDate(date) },
             status: 'فعال',
+            ...(employeeIds ? { id: { in: employeeIds } } : {}),
           },
           take: 2000,
         });
@@ -6085,6 +6091,7 @@ export class HrService {
           (r) => r.tab === 'calculationSettings' && r.status === 'فعال',
         );
         let exceptions = 0;
+        let changed = 0;
         for (const employee of employees) {
           const {
             shift,
@@ -6372,6 +6379,7 @@ export class HrService {
                   data: calculatedData,
                 },
               });
+          changed++;
           await this.audit(
             tx,
             actor,
@@ -6384,8 +6392,9 @@ export class HrService {
             row.version,
           );
         }
-        return { processed: employees.length, exceptions, date };
+        return { processed: employees.length, exceptions, date, changed };
       },
+      (result) => !scheduled || Boolean(result.changed),
     );
   }
   /** Internal HR adapter boundary. Scope is resolved by the trusted connector, never a browser URL. */
@@ -6405,6 +6414,8 @@ export class HrService {
     },
     key: string,
     actor: AuthenticatedActor,
+    scheduled = false,
+    reconcileUnchanged = false,
   ) {
     this.require(actor, 'hr.manage');
     const branchId = this.branch(actor, input.branchId);
@@ -6428,7 +6439,9 @@ export class HrService {
           throw new ConflictException('مرجع مرتبط معتبر نیست.');
         const dates = new Set<string>();
         const reconcile: { date: string; employeeId: string }[] = [];
-        let imported = 0,
+        let created = 0,
+          updated = 0,
+          imported = 0,
           unchanged = 0,
           unmatched = 0,
           closed = 0;
@@ -6502,6 +6515,18 @@ export class HrService {
               });
               dates.add(punch.date);
               imported++;
+              updated++;
+              if (scheduled)
+                reconcile.push({ date: punch.date, employeeId: employee.id });
+            }
+            if (
+              reconcileUnchanged &&
+              existing &&
+              priorData.attendanceProviderRejected === true
+            ) {
+              const date = oldDate ?? punch.date;
+              dates.add(date);
+              reconcile.push({ date, employeeId: employee.id });
             }
             continue;
           }
@@ -6538,6 +6563,30 @@ export class HrService {
               : [],
           );
           if (oldDate && oldDate !== punch.date) previousDates.add(oldDate);
+          const data = {
+            ...priorData,
+            attendanceProviderRejected: false,
+            ...(previousDates.size
+              ? { attendancePreviousDates: [...previousDates].sort() }
+              : {}),
+            attendanceSource: input.source,
+            sourceRecordId: punch.id,
+            sourceEntryType: punch.kind,
+            startsAt: at,
+          };
+          const same =
+            existing &&
+            !existing.deletedAt &&
+            JSON.stringify(existing.values) === JSON.stringify(values) &&
+            priorData.startsAt === at &&
+            priorData.sourceEntryType === punch.kind;
+          if (same) {
+            unchanged++;
+            if (!scheduled || reconcileUnchanged) dates.add(punch.date);
+            if (scheduled && !reconcileUnchanged) continue;
+            if (reconcileUnchanged)
+              reconcile.push({ date: punch.date, employeeId: employee.id });
+          }
           for (const previous of previousDates) {
             if (
               previous === punch.date ||
@@ -6555,28 +6604,7 @@ export class HrService {
             dates.add(previous);
             reconcile.push({ date: previous, employeeId: employee.id });
           }
-          const data = {
-            ...priorData,
-            attendanceProviderRejected: false,
-            ...(previousDates.size
-              ? { attendancePreviousDates: [...previousDates].sort() }
-              : {}),
-            attendanceSource: input.source,
-            sourceRecordId: punch.id,
-            sourceEntryType: punch.kind,
-            startsAt: at,
-          };
-          if (
-            existing &&
-            !existing.deletedAt &&
-            JSON.stringify(existing.values) === JSON.stringify(values) &&
-            priorData.startsAt === at &&
-            priorData.sourceEntryType === punch.kind
-          ) {
-            unchanged++;
-            dates.add(punch.date);
-            continue;
-          }
+          if (same) continue;
           const write = {
             deletedAt: null,
             values,
@@ -6603,23 +6631,28 @@ export class HrService {
               },
             });
           imported++;
+          if (existing) updated++;
+          else created++;
           dates.add(punch.date);
+          if (scheduled)
+            reconcile.push({ date: punch.date, employeeId: employee.id });
         }
         // One bounded audit per batch, without provider credentials or raw personnel profiles.
-        await tx.hrAuditEvent.create({
-          data: {
-            branchId,
-            actorId: actor.userId,
-            action: 'attendance.device.import',
-            changes: json({
-              source: input.source,
-              imported,
-              unchanged,
-              unmatched,
-              closed,
-            }),
-          },
-        });
+        if (!scheduled || imported > 0)
+          await tx.hrAuditEvent.create({
+            data: {
+              branchId,
+              actorId: actor.userId,
+              action: 'attendance.device.import',
+              changes: json({
+                source: input.source,
+                imported,
+                unchanged,
+                unmatched,
+                closed,
+              }),
+            },
+          });
         return {
           imported,
           unchanged,
@@ -6627,8 +6660,11 @@ export class HrService {
           closed,
           dates: [...dates].sort(),
           reconcile,
+          created,
+          updated,
         };
       },
+      (result) => !scheduled || result.imported > 0,
     );
   }
   async closeAttendance(

@@ -1,6 +1,7 @@
 import { nextRadanSyncAt } from './hr-radan-sync-schedule';
 import { attendanceFrom } from './hr-attendance-range';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -43,7 +44,14 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   private stopped = true;
   private nextSyncAt: string | null = null;
   private running = false;
-  private readonly fullSyncAt = new Map<string, number>();
+  private readonly reconciledOn = new Map<string, string>();
+  private readonly pending = new Map<string, Map<string, Set<string>>>();
+  private readonly absencesOn = new Map<string, string>();
+  private readonly lastSuccess = new Map<string, Record<string, unknown>>();
+  private readonly userCache = new Map<
+    string,
+    { expires: number; users: RadanUser[] }
+  >();
   private readonly logger = new Logger(HrRadanDeviceService.name);
   private latest: Record<string, unknown> = { state: 'idle' };
   constructor(
@@ -77,13 +85,13 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       const actor = await this.iam.authenticateAttendanceConnectorV1(
         process.env.HR_RADAN_ACTOR_ID ?? '',
       );
-      const startedAt = Date.now();
-      const result = await this.sync(actor, true);
-      this.logger.log(
-        `Attendance poll completed: ${String(result.state)} (${Date.now() - startedAt}ms)`,
-      );
+      await this.sync(actor, true);
     } catch {
-      this.latest = { state: 'error', at: new Date().toISOString() };
+      this.latest = {
+        state: 'error',
+        at: new Date().toISOString(),
+        error: 'connector',
+      };
       this.logger.warn(
         'Attendance synchronization failed; check provider, connector identity and branch scope.',
       );
@@ -99,7 +107,12 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       latest = {
         ...latest,
         sources,
-        state: sources.every((s) => s.state === 'ready') ? 'ready' : 'partial',
+        state:
+          sources.length === 0
+            ? 'idle'
+            : sources.every((s) => s.state === 'ready')
+              ? 'ready'
+              : 'partial',
       };
     } else if (
       latest.branchId &&
@@ -109,6 +122,9 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
     }
     return {
       ...latest,
+      lastSuccessfulSources: [...this.lastSuccess.values()].filter((s) =>
+        actor.branchIds.includes(String(s.branchId)),
+      ),
       nextSyncAt: this.nextSyncAt,
       timeZone: 'Asia/Tehran',
     };
@@ -128,8 +144,21 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       throw new ForbiddenException('مجوز منابع انسانی وجود ندارد.');
     return branchId;
   }
-  async sync(actor: AuthenticatedActor, scheduled = false) {
+  async sync(actor: AuthenticatedActor, scheduled = false, body?: unknown) {
     this.authorize(actor);
+    let range: { from: string; to: string } | undefined;
+    if (body && typeof body === 'object' && Object.keys(body).length) {
+      const input = body as Record<string, unknown>;
+      const from = isoDate(input.from).toISOString().slice(0, 10);
+      const to = isoDate(input.to).toISOString().slice(0, 10);
+      if (
+        from > to ||
+        to > localClockParts(new Date()).date ||
+        attendanceFrom(from) !== from
+      )
+        throw new BadRequestException('بازه همگام‌سازی معتبر نیست.');
+      range = { from, to };
+    }
     if (this.running)
       throw new ConflictException(
         'Attendance synchronization is already running',
@@ -188,19 +217,32 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       )) {
         try {
           results.push({
-            ...(await this.syncSource(source, actor, scheduled)),
+            ...(await this.syncSource(source, actor, scheduled, range)),
             branchId: source.branchId,
           });
         } catch (error) {
-          if (sources.length === 1) throw error;
           results.push({
             state: 'error',
+            error:
+              error instanceof ServiceUnavailableException ||
+              error instanceof TypeError
+                ? 'provider'
+                : 'processing',
             branchId: source.branchId,
             at: new Date().toISOString(),
           });
           this.logger.warn(
             'An attendance source failed; other sources continue independently.',
           );
+        }
+        if (scheduled) {
+          try {
+            await this.processAbsences(source, actor);
+          } catch {
+            this.logger.warn(
+              'Attendance absence calculation failed; it will be retried.',
+            );
+          }
         }
       }
       this.latest =
@@ -218,42 +260,76 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       this.running = false;
     }
   }
+  private async processAbsences(
+    config: DeviceSource,
+    actor: AuthenticatedActor,
+  ) {
+    const { date, time } = localClockParts(new Date());
+    const source = config.source ?? `radan:${config.branchId}`;
+    if (time < '04:00' || this.absencesOn.get(source) === date) return;
+    const yesterday = new Date(isoDate(date).getTime() - 86400000)
+      .toISOString()
+      .slice(0, 10);
+    if (yesterday < attendanceFrom(yesterday)) return;
+    await this.hr.processAttendance(
+      { branchId: config.branchId, date: yesterday },
+      randomUUID(),
+      actor,
+      true,
+      [],
+      undefined,
+      true,
+    );
+    this.absencesOn.set(source, date);
+  }
+
   private async syncSource(
     config: DeviceSource,
     actor: AuthenticatedActor,
     scheduled: boolean,
+    range?: { from: string; to: string },
   ) {
     const { base, username, password, branchId, dateOffsetDays } = config;
     if (config.dateCorrectedFrom) isoDate(config.dateCorrectedFrom);
     const provider = new RadanDeviceClient(base, username, password);
     await provider.login();
-    const users = await provider.list<RadanUser>('/V1/Users', 'users');
-    const today = localClockParts(new Date()).date;
+    const now = new Date();
+    const today = localClockParts(now).date;
     const source = config.source ?? `radan:${branchId}`;
-    const full =
-      !scheduled || Date.now() - (this.fullSyncAt.get(source) ?? 0) >= 3600000;
-    const from = full
-      ? attendanceFrom(
-          new Date(isoDate(today).getTime() - 31 * 86400000)
-            .toISOString()
-            .slice(0, 10),
-        )
-      : attendanceFrom(
-          new Date(isoDate(today).getTime() - 86400000)
-            .toISOString()
-            .slice(0, 10),
-        );
-    const rawFrom = new Date(
-      isoDate(from).getTime() - dateOffsetDays * 86400000,
-    )
-      .toISOString()
-      .slice(0, 10);
+    const nightly =
+      scheduled &&
+      this.reconciledOn.get(source) !== today &&
+      (localClockParts(now).time >= '02:00' || !this.reconciledOn.has(source));
+    const shiftDay = (date: string, days: number) =>
+      new Date(isoDate(date).getTime() + days * 86400000)
+        .toISOString()
+        .slice(0, 10);
+    const from =
+      range?.from ??
+      attendanceFrom(shiftDay(today, nightly || !scheduled ? -30 : -1));
+    const to = range?.to ?? today;
+    const rawFrom = shiftDay(from, -Math.max(dateOffsetDays, 0));
     const clockings = await provider.list<RadanPunch>(
       '/V1/Ta/Clockings',
       'clockings',
-      full ? undefined : rawFrom,
+      rawFrom,
     );
-    const byId = new Map(users.map((u) => [String(u.id), u]));
+    let cached = this.userCache.get(source);
+    const byId = new Map(cached?.users.map((user) => [String(user.id), user]));
+    if (
+      !cached ||
+      cached.expires <= Date.now() ||
+      clockings.some(
+        (punch) => !byId.get(String(punch.user_id))?.profile?.personnel_id,
+      )
+    ) {
+      const users = await provider.list<RadanUser>('/V1/Users', 'users');
+      cached = { users, expires: Date.now() + 15 * 60000 };
+      this.userCache.set(source, cached);
+      byId.clear();
+      for (const user of users) byId.set(String(user.id), user);
+    }
+    const { users } = cached;
     const codes = users
       .map((u) => digits(String(u.profile?.personnel_id ?? '')).trim())
       .filter(Boolean);
@@ -298,7 +374,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         invalid++;
         return [];
       }
-      if (date < from || date > today) return [];
+      if (date < from || date > to) return [];
       let occurredAt: string;
       try {
         const stamp = new Date(
@@ -335,18 +411,25 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         },
       ];
     });
-    let imported = 0,
+    let created = 0,
+      updated = 0,
+      imported = 0,
       unchanged = 0,
       unmatched = 0,
       closed = 0;
     const dates = new Set<string>();
-    const moved = new Map<string, Set<string>>();
+    const moved = this.pending.get(source) ?? new Map<string, Set<string>>();
+    this.pending.set(source, moved);
     for (let i = 0; i < punches.length; i += 500) {
       const result = await this.hr.importDevicePunches(
         { branchId, source, punches: punches.slice(i, i + 500) },
         randomUUID(),
         actor,
+        scheduled,
+        nightly,
       );
+      created += result.created ?? 0;
+      updated += result.updated ?? 0;
       imported += result.imported;
       unchanged += result.unchanged;
       unmatched += result.unmatched;
@@ -358,24 +441,29 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
         moved.set(item.date, ids);
       }
     }
-    // Also process days without punches so weekly absences and rest days are visible.
-    for (let day = Date.parse(from); day <= Date.parse(today); day += 86400000)
-      dates.add(new Date(day).toISOString().slice(0, 10));
-    for (const date of [...dates].sort())
+    for (const date of moved.keys()) dates.add(date);
+    for (const date of [...dates].sort()) {
       await this.hr.processAttendance(
         { branchId, date },
         randomUUID(),
         actor,
         true,
         [...(moved.get(date) ?? [])],
+        scheduled ? [...(moved.get(date) ?? [])] : undefined,
+        scheduled,
       );
-    if (full) this.fullSyncAt.set(source, Date.now());
-    return {
-      mode: full ? 'full' : 'recent',
+      moved.delete(date);
+    }
+    if (nightly) this.reconciledOn.set(source, today);
+    const result = {
+      branchId,
+      mode: scheduled && !nightly ? 'recent' : 'full',
       state: 'ready',
       at: new Date().toISOString(),
       from,
-      to: today,
+      to,
+      created,
+      updated,
       imported,
       unchanged,
       unmatched,
@@ -386,5 +474,7 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
       sourceUsers: users.length,
       sourceClockings: clockings.length,
     };
+    this.lastSuccess.set(source, result);
+    return result;
   }
 }

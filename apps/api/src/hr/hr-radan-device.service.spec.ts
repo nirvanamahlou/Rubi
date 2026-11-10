@@ -253,6 +253,8 @@ it('normalizes the raw provider date once and reconciles both affected days', as
     actor,
     true,
     ['e'],
+    undefined,
+    false,
   );
 });
 
@@ -281,26 +283,59 @@ it('recovers attendance synchronization on a later valid login without restartin
   service.onModuleDestroy();
 });
 
-it('uses a bounded recent window between successful hourly reconciliations', async () => {
+it('reconciles 31 days once per Tehran day and reuses cached staff between polls', async () => {
   const { service, hr } = dualSource();
+  const list = vi.mocked(RadanDeviceClient.prototype.list);
+  const lastClockings = () =>
+    list.mock.calls.filter(([path]) => path === '/V1/Ta/Clockings').at(-1);
   await service.sync(actor, true);
-  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
-    ['/V1/Ta/Clockings', 'clockings', undefined],
-  );
+  expect(lastClockings()).toEqual([
+    '/V1/Ta/Clockings',
+    'clockings',
+    '2026-10-04',
+  ]);
   hr.processAttendance.mockClear();
   await service.sync(actor, true);
-  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
-    ['/V1/Ta/Clockings', 'clockings', '2026-11-02'],
-  );
-  expect(hr.processAttendance.mock.calls.map(([input]) => input.date)).toEqual([
-    '2026-11-03',
-    '2026-11-04',
+  expect(lastClockings()).toEqual([
+    '/V1/Ta/Clockings',
+    'clockings',
+    '2026-11-02',
   ]);
+  expect(list.mock.calls.filter(([path]) => path === '/V1/Users')).toHaveLength(
+    1,
+  );
+  expect(hr.processAttendance).not.toHaveBeenCalled();
   vi.setSystemTime(new Date('2026-11-04T13:00:00Z'));
   await service.sync(actor, true);
-  expect(vi.mocked(RadanDeviceClient.prototype.list).mock.calls.at(-1)).toEqual(
-    ['/V1/Ta/Clockings', 'clockings', undefined],
+  expect(lastClockings()).toEqual([
+    '/V1/Ta/Clockings',
+    'clockings',
+    '2026-11-02',
+  ]);
+  vi.setSystemTime(new Date('2026-11-05T00:00:00Z'));
+  await service.sync(actor, true);
+  expect(lastClockings()).toEqual([
+    '/V1/Ta/Clockings',
+    'clockings',
+    '2026-10-05',
+  ]);
+});
+
+it('honors a manual range and retains the last successful result after a provider error', async () => {
+  const { service } = dualSource();
+  await service.sync(actor, false, { from: '2026-10-01', to: '2026-10-20' });
+  expect(service.status(actor)).toMatchObject({
+    lastSuccessfulSources: [{ from: '2026-10-01', to: '2026-10-20' }],
+  });
+  vi.mocked(RadanDeviceClient.prototype.login).mockRejectedValueOnce(
+    new TypeError('offline'),
   );
+  await service.sync(actor, true);
+  expect(service.status(actor)).toMatchObject({
+    state: 'error',
+    error: 'provider',
+    lastSuccessfulSources: [{ from: '2026-10-01', to: '2026-10-20' }],
+  });
 });
 it('never overlaps a long-running scheduled pull and stops after destruction', async () => {
   vi.useFakeTimers();

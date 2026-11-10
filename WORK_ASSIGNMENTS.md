@@ -12257,6 +12257,15 @@ Reserve Documents list API/repository, additive domains and FAVORITES query cont
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
 
+## HR-RADAN-SYNC-1110 - PC-B - IN_PROGRESS
+
+Owner requests lower Radan synchronization load and manual historical reconciliation.
+Branch codex/pc-b-radan-sync-1110, based on origin/develop c6c28098d.
+Scope is the HR connector, attendance import/projection, and the HR work panel.
+The existing sync endpoint accepts an optional date range and status adds per-source
+success summaries. Preserve branch checks, provider mappings and closed periods.
+No schema or dependency changes.
+
 ## HR-PAY-DOCS-1110 — PC-B — IN_PROGRESS
 
 Scope: HR inbox category grouping, employee pay document form using existing employee.docs and Documents APIs, employee requests tab label. No migration/dependency changes. Base origin/develop 0d6317420. Files: hr-inbox, hr-navigation, hr-employee-profile and new scoped helpers/components/tests.

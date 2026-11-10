@@ -9779,6 +9779,15 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## HR Radan synchronization
+
+Minute polls use a recent two-day window, with a 31-day daily recovery pass and
+an optional manual date range. The connector caches personnel, scopes routine
+work calculations to affected employees, and exposes per-source success totals.
+Existing attendance records and period locks remain authoritative. After integrating
+the latest develop, 23 focused Radan and attendance editor tests and all three
+Documents contract tests passed. No deployment or live Radan calls were made.
+
 ## I18N-LAZY-CATALOG-1110
 
 Persian provider startup no longer merges English catalogs or computes English NextIntl messages. The first English render computes and caches them synchronously, preserving SSR and locale switching. A provider regression verifies Persian does not enumerate the English catalog and two English renders reuse the same merge. All 46 i18n tests passed. Catalog modules still ship with the initial JavaScript, so locale-specific asset delivery remains open.
