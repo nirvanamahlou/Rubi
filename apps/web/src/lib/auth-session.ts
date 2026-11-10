@@ -1,4 +1,7 @@
-import type { LoginResponse } from '@nora/contracts';
+import {
+  readIamSessionV1,
+  type LoginResponse,
+} from '@nora/contracts/iam/session';
 
 const REFRESH_LOCK_NAME = 'nora-auth-refresh';
 const CONFLICT_RETRY_DELAY_MS = 150;
@@ -25,10 +28,8 @@ async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
       throw new SessionRefreshUnavailableError();
     });
     if (response?.ok) {
-      const session = (await response
-        .json()
-        .catch(() => null)) as LoginResponse | null;
-      if (!session?.user?.id) throw new SessionRefreshUnavailableError();
+      const session = readIamSessionV1(await response.json().catch(() => null));
+      if (!session) throw new SessionRefreshUnavailableError();
       if (typeof window !== 'undefined')
         window.dispatchEvent(
           new CustomEvent<LoginResponse>(AUTH_SESSION_RECOVERED_EVENT, {

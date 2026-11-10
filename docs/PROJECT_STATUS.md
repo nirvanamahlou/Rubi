@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## IAM-SESSION-RESPONSE-V1-1110
+
+Login and refresh decode the same versioned wire shape before updating browser identity. LoginResponse is inferred from the decoder and still exported at the Contracts root. Roles remain optional for older API responses; permission code strings remain forward-compatible and server authorization is authoritative. Malformed successful responses do not publish a recovered-session event. The Contracts build, 66 Web tests and 20 API tests passed, including real login and rotation against disposable PostgreSQL 18. The wire payload is unchanged. This decoder covers login and refresh; other HTTP schemas remain separate.
+
 ## HR-CALCULATION-FIELDS-1110
 
 HR attendance calculation settings map their ten legacy slots to explicit V1 field IDs for API validation and attendance calculations. Masking rules attach to seven existing resource fields and remain in force after display label changes. Verified identical masking coverage across 135 resources and 74 focused API tests against an isolated PostgreSQL 18 instance. Legacy arrays and fieldN persistence remain compatible. Other HR layouts and presentation consumers still require migration.

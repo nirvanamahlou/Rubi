@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { JwtService } from '@nestjs/jwt';
+import { readIamSessionV1 } from '@nora/contracts/iam/session';
 import {
   createDatabaseClient,
   SessionStatus,
@@ -139,6 +140,22 @@ describe.skipIf(!enabled)(
       if (created && /^nora_password_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     });
+    it('produces browser-compatible V1 sessions for login and rotation', async () => {
+      const { user, auth, login } = await fixture();
+      const rotated = await auth.refresh(login.refreshToken, {});
+      const expected = {
+        user: {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+        },
+      };
+      for (const body of [login.body, rotated.body]) {
+        const wire: unknown = JSON.parse(JSON.stringify(body));
+        expect(readIamSessionV1(wire)).toMatchObject(expected);
+      }
+    });
+
     async function administratorFixture() {
       const f = await fixture();
       const role = await client.role.upsert({
