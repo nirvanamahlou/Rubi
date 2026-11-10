@@ -210,7 +210,7 @@ export const systemManagementApi = {
   activity: (cursor?: string, signal?: AbortSignal) =>
     request<SystemActivityPage>(
       cursor ? `/activity?cursor=${encodeURIComponent(cursor)}` : '/activity',
-      { signal },
+      signal ? { signal } : undefined,
     ),
   audit: () => request<SystemAuditRecord[]>('/audit'),
 };
