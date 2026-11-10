@@ -51,8 +51,8 @@ export function WorkbenchProcurementFollowUps() {
     return (
       <EmptyState
         icon={ClipboardCheck}
-        title="پیگیری خریدی به شما تخصیص داده نشده است"
-        description="درخواست‌های خریدی که برای پیگیری به شما سپرده شوند، اینجا نمایش داده می‌شوند."
+        title="درخواستی به شما تخصیص داده نشده است"
+        description="درخواست‌هایی که به شما سپرده شوند، اینجا نمایش داده می‌شوند."
       />
     );
 
