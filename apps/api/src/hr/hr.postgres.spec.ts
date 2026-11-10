@@ -1863,13 +1863,26 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         .set('Idempotency-Key', key())
         .send({ version: signed.version, state: 'ACTIVE' })
         .expect(403);
-      const active = await service.contractState(
-        contract.id,
-        { version: signed.version, state: 'ACTIVE' },
-        key(),
-        admin,
-      );
+      const activeKey = key();
+      const activate = () =>
+        request(app.getHttpServer())
+          .post(`/api/v1/hr/records/${contract.id}/contract-state`)
+          .set('Cookie', adminCookie)
+          .set('Idempotency-Key', activeKey)
+          .send({ version: signed.version, state: 'ACTIVE' });
+      const activeResponse = await activate().expect(201);
+      const active = activeResponse.body as HrRecordDto;
       expect(active.data.contractState).toBe('ACTIVE');
+      expect(active.version).toBe(signed.version + 1);
+      expect((await activate().expect(201)).body).toEqual(active);
+      const persisted = await client.hrRecord.findUniqueOrThrow({
+        where: { id: contract.id },
+      });
+      expect(persisted).toMatchObject({
+        documentId: document.id,
+        version: active.version,
+        data: { contractState: 'ACTIVE' },
+      });
       await expect(
         service.contractState(
           contract.id,
