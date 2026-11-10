@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 
@@ -55,6 +56,43 @@ describe('ReportingExportService storage boundary', () => {
       .buffer.toString('utf8');
     expect(csv).toContain('104,704,000,000 ریال + 16,976 € + -54,200.25 $');
     expect(csv).not.toMatch(/[\u200e\u00a0]/);
+  }, 30000);
+
+  it('keeps the complete worksheet and checksum across multiple compressed chunks', async () => {
+    const service = new ReportingExportService({} as LocalDocumentStorage);
+    const rows = Array.from({ length: 480 }, (_, i) => ({
+      primaryDimension: 'Synthetic <row> & ' + i,
+      sourceValues: {
+        note: createHash('sha256').update(String(i)).digest('hex'),
+      },
+    }));
+    const result = {
+      reportCode: 'sample',
+      generatedAtUtc: '2026-11-10T06:00:00.000Z',
+      columns: [
+        { key: 'primaryDimension', label: 'Label', kind: 'TEXT' },
+        { key: 'note', label: 'Note', kind: 'TEXT' },
+      ],
+      rows,
+      filterSnapshot: { branchIds: [], filters: {} },
+    } as unknown as TravelReportResultV1;
+
+    const file = await service.buildInWorker(
+      'XLSX',
+      result,
+      'Synthetic report',
+    );
+    expect(file.checksum).toBe(
+      createHash('sha256').update(file.buffer).digest('hex'),
+    );
+    const workbook = unzipSync(file.buffer);
+    const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
+    const table = strFromU8(workbook['xl/tables/table1.xml']!);
+    expect(sheet.match(/<row r="/g)).toHaveLength(487);
+    expect(sheet).toContain('Synthetic &lt;row&gt; &amp; 0');
+    expect(sheet).toContain('Synthetic &lt;row&gt; &amp; 479');
+    expect(sheet).toContain('min="2" max="2" width="42"');
+    expect(table).toContain('ref="A7:B487"');
   }, 30000);
 
   it('uses the compact report, timestamp, filters and banded dataset Excel table', () => {

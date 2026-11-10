@@ -1307,6 +1307,10 @@ Reserve architecture and deployment baselines, remediation evidence and the exis
 
 Reserve HR-owned Finance referral projection, Finance inbox consumer and targeted tests. Preserve existing referral scope, response eligibility and source failure handling. No schema or API contract changes.
 
+## REPORTING-XLSX-MEMORY-1110 — PC-B — READY_FOR_CI
+
+Reserve Reporting XLSX renderer and worker output handoff, focused export tests and status evidence. Preserve report rows, layout, authorization and storage contract. No ReportService, repository, dependency, migration or deployment changes.
+
 ## MARKETING-SCOPED-PANEL-LOAD-1110 — PC-B — READY_FOR_CI
 
 Reserve Marketing durable panel loading, its existing UI tests and project notes. Skip campaign reads for panels without a campaign dependency and prevent superseded loads from replacing current records. No API, dependency or schema changes.

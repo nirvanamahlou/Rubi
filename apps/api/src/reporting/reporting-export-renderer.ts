@@ -3,7 +3,7 @@ import {
   isReportMoneyColumn,
 } from './reporting-money-format';
 import { createHash } from 'node:crypto';
-import { strToU8, zipSync } from 'fflate';
+import { strToU8, Zip, ZipDeflate } from 'fflate';
 
 import type { TravelReportResultV1 } from './reporting.contracts';
 
@@ -13,9 +13,8 @@ function reportCellValue(
 ) {
   if (row.sourceValues && Object.hasOwn(row.sourceValues, key))
     return row.sourceValues[key];
-  const value: unknown = Object.entries(row).find(
-    ([name]) => name === key,
-  )?.[1];
+  if (!Object.prototype.propertyIsEnumerable.call(row, key)) return '';
+  const value = row[key as keyof typeof row];
   return typeof value === 'string' || typeof value === 'number' ? value : '';
 }
 
@@ -223,7 +222,7 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
   const filters = exportFilterEntries(result);
   const generatedAt = reportGeneratedAtTehran(result.generatedAtUtc);
   const tableColumnNames = excelTableColumnNames(result.columns);
-  const rows: ExcelCell[][] = [
+  const headerRows: ExcelCell[][] = [
     [{ value: reportName, style: 5 }],
     [{ value: 'زمان تولید گزارش', style: 1 }],
     [
@@ -237,19 +236,26 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
     filters.map(([label]) => ({ value: label, style: 2 })),
     filters.map(([, value]) => ({ value, style: 3 })),
     tableColumnNames.map((label) => ({ value: label, style: 2 })),
-    ...result.rows.map((row) =>
-      result.columns.map((column) =>
-        datasetCell(column, reportCellValue(row, column.key)),
-      ),
-    ),
   ];
   const columnCount = Math.max(2, filters.length, result.columns.length);
-  const widths = Array.from({ length: columnCount }, (_, index) => {
-    const longest = Math.max(
-      ...rows.map((row) => row[index]?.value.length ?? 0),
+  // Excel writes column widths before the rows. Keep only each capped maximum.
+  const widths = Array<number>(columnCount).fill(18);
+  const updateWidth = (index: number, cell: ExcelCell) => {
+    widths[index] = Math.min(
+      42,
+      Math.max(widths[index]!, Math.ceil(cell.value.length * 0.9) + 3),
     );
-    return Math.min(42, Math.max(18, Math.ceil(longest * 0.9) + 3));
-  });
+  };
+  for (const row of headerRows) row.forEach((cell, i) => updateWidth(i, cell));
+  for (const row of result.rows) {
+    result.columns.forEach((column, index) => {
+      if (widths[index]! < 42)
+        updateWidth(
+          index,
+          datasetCell(column, reportCellValue(row, column.key)),
+        );
+    });
+  }
   const columnWidths = widths
     .map(
       (width, index) =>
@@ -264,29 +270,27 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
         17,
     ),
   );
-  const sheetRows = rows
-    .map((row, rowIndex) => {
-      const moneyHeight = Math.max(
-        0,
-        ...row.map((cell, index) =>
-          cell.style === 6
-            ? Math.ceil(cell.value.length / Math.max(1, widths[index]! - 4)) *
-              22
-            : 0,
-        ),
-      );
-      const height = rowIndex === 5 ? filterRowHeight : moneyHeight;
-      return `<row r="${rowIndex + 1}"${height ? ` ht="${height}" customHeight="1"` : ''}>${row
-        .map((cell, columnIndex) => {
-          const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
-          const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
-          return cell.numeric
-            ? `<c r="${address}"${style}><v>${cell.value}</v></c>`
-            : `<c r="${address}"${style} t="inlineStr"><is><t${cell.style === 6 ? ' xml:space="preserve"' : ''}>${escapeXml(cell.value)}</t></is></c>`;
-        })
-        .join('')}</row>`;
-    })
-    .join('');
+  const sheetRow = (row: ExcelCell[], rowIndex: number) => {
+    const moneyHeight = Math.max(
+      0,
+      ...row.map((cell, index) =>
+        cell.style === 6
+          ? Math.ceil(cell.value.length / Math.max(1, widths[index]! - 4)) * 22
+          : 0,
+      ),
+    );
+    const height = rowIndex === 5 ? filterRowHeight : moneyHeight;
+    return `<row r="${rowIndex + 1}"${height ? ` ht="${height}" customHeight="1"` : ''}>${row
+      .map((cell, columnIndex) => {
+        const address = `${excelColumn(columnIndex)}${rowIndex + 1}`;
+        const style = cell.style === undefined ? '' : ` s="${cell.style}"`;
+        return cell.numeric
+          ? `<c r="${address}"${style}><v>${cell.value}</v></c>`
+          : `<c r="${address}"${style} t="inlineStr"><is><t${cell.style === 6 ? ' xml:space="preserve"' : ''}>${escapeXml(cell.value)}</t></is></c>`;
+      })
+      .join('')}</row>`;
+  };
+  const rowCount = headerRows.length + result.rows.length;
   const files = {
     '[Content_Types].xml': strToU8(
       '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/tables/table1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"/></Types>',
@@ -320,17 +324,52 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
         .replace('<cellXfs count="5">', '<cellXfs count="7">')
         .replaceAll('<name val="Arial"/>', '<name val="B Nazanin"/>'),
     ),
-    'xl/worksheets/sheet1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><mergeCells count="2"><mergeCell ref="A1:${excelColumn(columnCount - 1)}1"/><mergeCell ref="A2:B2"/></mergeCells><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
-    ),
     'xl/worksheets/_rels/sheet1.xml.rels': strToU8(
       '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/table" Target="../tables/table1.xml"/></Relationships>',
     ),
     'xl/tables/table1.xml': strToU8(
-      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A7:${excelColumn(result.columns.length - 1)}${rows.length}" totalsRowShown="0"><autoFilter ref="A7:${excelColumn(result.columns.length - 1)}${rows.length}"/><tableColumns count="${result.columns.length}">${tableColumnNames.map((name, index) => `<tableColumn id="${index + 1}" name="${escapeXml(name)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
+      `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A7:${excelColumn(result.columns.length - 1)}${rowCount}" totalsRowShown="0"><autoFilter ref="A7:${excelColumn(result.columns.length - 1)}${rowCount}"/><tableColumns count="${result.columns.length}">${tableColumnNames.map((name, index) => `<tableColumn id="${index + 1}" name="${escapeXml(name)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
     ),
   };
-  return Buffer.from(zipSync(files, { level: 6 }));
+  const chunks: Uint8Array[] = [];
+  const zip = new Zip((error, bytes) => {
+    if (error) throw error;
+    chunks.push(bytes);
+  });
+  for (const [name, bytes] of Object.entries(files)) {
+    const entry = new ZipDeflate(name, { level: 6 });
+    zip.add(entry);
+    entry.push(bytes, true);
+  }
+  const sheet = new ZipDeflate('xl/worksheets/sheet1.xml', { level: 6 });
+  zip.add(sheet);
+  let pending = `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>`;
+  // Flush whole rows so UTF-8 encoding never splits a cell or code point.
+  const appendRow = (row: ExcelCell[], index: number) => {
+    pending += sheetRow(row, index);
+    if (pending.length >= 32_768) {
+      sheet.push(strToU8(pending));
+      pending = '';
+    }
+  };
+  headerRows.forEach(appendRow);
+  result.rows.forEach((row, index) =>
+    appendRow(
+      result.columns.map((column) =>
+        datasetCell(column, reportCellValue(row, column.key)),
+      ),
+      headerRows.length + index,
+    ),
+  );
+  sheet.push(
+    strToU8(
+      pending +
+        `</sheetData><mergeCells count="2"><mergeCell ref="A1:${excelColumn(columnCount - 1)}1"/><mergeCell ref="A2:B2"/></mergeCells><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
+    ),
+    true,
+  );
+  zip.end();
+  return Buffer.concat(chunks);
 }
 
 function pdf(result: TravelReportResultV1, reportName: string) {

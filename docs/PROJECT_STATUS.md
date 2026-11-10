@@ -9767,6 +9767,10 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## REPORTING-XLSX-MEMORY-1110
+
+XLSX rendering calculates capped column widths in a prepass and compresses row chunks without retaining the complete cell grid or worksheet XML. The worker transfers exactly the resulting bytes; pooled and sliced buffers are copied into a dedicated allocation before transfer. All eight inflated workbook entries were identical to develop for synthetic zero-row and 650-row reports. A synthetic 10,000 by 24 render reduced peak RSS from 358,752 to 208,484 KiB, while the resulting ZIP grew from 869,916 to 889,377 bytes. All 170 Reporting tests passed. The report query and compressed output still materialize in memory, and durable export scheduling remains open.
+
 ## MARKETING-SCOPED-PANEL-LOAD-1110
 
 Audience segments and automation load their authorized assets without fetching the complete campaign collection. Durable panel loads ignore superseded responses, including failed requests after a newer refresh starts. All 120 Marketing Web tests and scoped ESLint passed. Other asset lists and dependent campaign pickers still use their existing collections.
