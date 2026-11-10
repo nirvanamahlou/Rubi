@@ -823,6 +823,24 @@ export class ReservationManifestService {
       bytes = buildIranAirtourManifest(templateBytes, rows);
       passengerCount = rows.length;
     } else if (input.builtinTemplate === 'DEFAULT_MANIFEST') {
+      const countries = await Promise.all(
+        [ticket.originId, ticket.destinationId].map((id) =>
+          id
+            ? this.directory.cityReference(id)
+            : Promise.resolve({ countryId: null }),
+        ),
+      );
+      if (
+        ticket.transportType === 'FLIGHT' &&
+        countries.some((city) => !city.countryId)
+      )
+        throw new BadRequestException(
+          'کشور مبدأ و مقصد برای تهیه منیفست مشخص نیست.',
+        );
+      const domestic = Boolean(
+        countries[0]?.countryId &&
+        countries[0].countryId === countries[1]?.countryId,
+      );
       const rows: IranAirtourManifestRow[] = [];
       for (const row of selected) {
         const intake = await this.workflow.detail(row.id, actor.branchIds);
@@ -835,6 +853,7 @@ export class ReservationManifestService {
           join(__dirname, 'templates', 'default-pnl-manifest.xlsm'),
         ),
         rows,
+        { domestic },
       );
       passengerCount = rows.length;
     } else {

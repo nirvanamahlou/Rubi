@@ -15,7 +15,7 @@ The default is the owner-supplied Iran Airtour PNL **XLSM**, confirmed for direc
 | GENDER | MR / MS |
 | PAX type | ADULT / CHILD / INFANT; operational override first, then assignment, then birth date at travel |
 | BIRTHDAY | Gregorian yyyy/mm/dd |
-| NATIONAL_ID | Text, preserving leading zeros |
+| NATIONAL_ID | Iranian passengers on domestic flights only; text preserves leading zeros |
 | Nationality | ISO alpha-3 |
 | Passport No | Uppercase passport number |
 | The Country of passport issuing | ISO alpha-3 issuing country |

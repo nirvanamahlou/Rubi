@@ -33,6 +33,7 @@ const date = (value: string | undefined) => {
 export function buildPnlManifest(
   template: Uint8Array,
   passengers: readonly TemplatePassenger[],
+  options: { domestic: boolean } = { domestic: true },
 ) {
   const rows = passengers.map((p) => ({
     ...p,
@@ -47,6 +48,10 @@ export function buildPnlManifest(
           ? 'MS'
           : '',
     nationality: country(p.nationality),
+    nationalId:
+      options.domestic && country(p.nationality) === 'IRN'
+        ? (p.nationalId?.trim() ?? '')
+        : '',
     passportIssuingCountry: country(p.passportIssuingCountry),
     birthCountry: country(p.birthCountry),
     passportNumber: p.passportNumber?.trim().toUpperCase() ?? '',

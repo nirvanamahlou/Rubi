@@ -109,3 +109,17 @@ it('keeps missing or malformed dates/countries blank rather than inventing perso
   expect(result.parsed[1]?.cells[4]?.value).toBe('');
   expect(result.parsed[1]?.cells[6]?.value).toBe('');
 });
+
+it('only fills national ID for Iranian passengers on domestic flights as required by the airline header', async () => {
+  const source = await template();
+  const international = inspectManifestTemplate(
+    buildPnlManifest(source, [passenger], { domestic: false }),
+  );
+  expect(international.parsed[1]?.cells[5]?.value).toBe('');
+  const foreign = inspectManifestTemplate(
+    buildPnlManifest(source, [{ ...passenger, nationality: 'TUR' }], {
+      domestic: true,
+    }),
+  );
+  expect(foreign.parsed[1]?.cells[5]?.value).toBe('');
+});
