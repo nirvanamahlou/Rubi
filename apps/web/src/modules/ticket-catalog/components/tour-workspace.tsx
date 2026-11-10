@@ -345,6 +345,8 @@ export function TourWorkspace({
             transferOutbound: item.transferOutbound,
             transferReturn: item.transferReturn,
             visa: item.visa,
+            cityTour: item.cityTour ?? false,
+            tourGuide: item.tourGuide ?? false,
             ...(item.insuranceId ? { insuranceId: item.insuranceId } : {}),
             ...(item.details ? { details: structuredClone(item.details) } : {}),
           }
@@ -576,22 +578,33 @@ export function TourWorkspace({
                   setDraft({ ...draft, destinationId, hotelIds: [], details });
                 }}
               />
-              <Choice
-                label="بیمه همراه تور"
-                value={draft.insuranceId ?? 'none'}
-                options={[
-                  { id: 'none', name: 'بدون بیمه' },
-                  ...references.insurance,
-                ]}
-                onChange={(insuranceId) =>
-                  setDraft((current) => {
-                    const next = { ...current };
-                    if (insuranceId === 'none') delete next.insuranceId;
-                    else next.insuranceId = insuranceId;
-                    return next;
-                  })
-                }
-              />
+              <div className="grid gap-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={draft.insuranceId !== undefined}
+                    onChange={(event) =>
+                      setDraft((current) => {
+                        const next = { ...current };
+                        if (event.target.checked) next.insuranceId = '';
+                        else delete next.insuranceId;
+                        return next;
+                      })
+                    }
+                  />
+                  بیمه
+                </label>
+                {draft.insuranceId !== undefined && (
+                  <Choice
+                    label="بیمه همراه تور"
+                    value={draft.insuranceId}
+                    options={references.insurance}
+                    onChange={(insuranceId) =>
+                      setDraft((current) => ({ ...current, insuranceId }))
+                    }
+                  />
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-3 text-xs sm:col-span-2 lg:col-span-3">
                 <label className="flex gap-2">
                   <input
@@ -614,12 +627,14 @@ export function TourWorkspace({
                     ['transferOutbound', 'ترانسفر رفت'],
                     ['transferReturn', 'ترانسفر برگشت'],
                     ['visa', 'ویزا'],
+                    ['cityTour', 'گشت شهری'],
+                    ['tourGuide', 'راهنما'],
                   ] as const
                 ).map(([key, label]) => (
                   <label key={key} className="flex gap-2">
                     <input
                       type="checkbox"
-                      checked={draft[key]}
+                      checked={draft[key] ?? false}
                       onChange={(event) =>
                         setDraft({ ...draft, [key]: event.target.checked })
                       }
@@ -650,7 +665,9 @@ export function TourWorkspace({
               <Button
                 className="col-span-full justify-self-end"
                 size="sm"
-                disabled={!definitionBranches.length}
+                disabled={
+                  !definitionBranches.length || draft.insuranceId === ''
+                }
                 onClick={() =>
                   void run(async () => {
                     if (

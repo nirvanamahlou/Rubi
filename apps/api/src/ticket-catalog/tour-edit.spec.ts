@@ -162,3 +162,33 @@ describe('tour package editing', () => {
     },
   );
 });
+
+it.each(['cityTour', 'tourGuide'] as const)(
+  'preserves booked departure service boundaries for %s',
+  async (field) => {
+    const booked = setup({ departures: 1 });
+    await expect(
+      booked.service.updatePackage(
+        id,
+        { ...input, [field]: true, expectedVersion: 1 },
+        actor,
+        id,
+      ),
+    ).rejects.toThrow('نوبت ثبت‌شده');
+    expect(booked.update).not.toHaveBeenCalled();
+    const unbooked = setup();
+    await unbooked.service.updatePackage(
+      id,
+      { ...input, [field]: true, expectedVersion: 1 },
+      actor,
+      id,
+    );
+    expect(unbooked.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          definition: expect.objectContaining({ [field]: true }),
+        }),
+      }),
+    );
+  },
+);

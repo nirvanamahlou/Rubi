@@ -233,6 +233,22 @@ export class TourPublicService {
       )
     )
       throw new BadRequestException('بیمه قرارداد با بیمه تور مطابقت ندارد.');
+    for (const [required, role] of [
+      [tour.package.cityTour, 'CITY_TOUR'],
+      [tour.package.tourGuide, 'TOUR_GUIDE'],
+    ] as const) {
+      if (
+        required &&
+        !input.services.some(
+          (service) =>
+            service.kind === 'OTHER' &&
+            service.metadata?.additionalServiceRole === role,
+        )
+      )
+        throw new BadRequestException(
+          'خدمات قرارداد با خدمات تور مطابقت ندارد.',
+        );
+    }
     if (
       tour.package.visa &&
       !input.services.some((service) => service.kind === 'VISA')
@@ -377,6 +393,8 @@ export class TourPublicService {
           value.transferOutbound,
           value.transferReturn,
           value.visa,
+          Boolean(value.cityTour),
+          Boolean(value.tourGuide),
         ]);
       if (
         core(previous) !== core(input) &&

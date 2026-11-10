@@ -113,6 +113,10 @@ export function SalesTourPicker({
               ? ['TRANSFER' as const]
               : []),
           ],
+          additionalServices: [
+            ...(tour.package.cityTour ? ['CITY_TOUR' as const] : []),
+            ...(tour.package.tourGuide ? ['TOUR_GUIDE' as const] : []),
+          ],
           serviceDirections: {
             FLIGHT: tour.returning ? ['OUTBOUND', 'RETURN'] : ['OUTBOUND'],
             TRANSFER: [
