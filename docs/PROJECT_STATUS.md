@@ -9599,3 +9599,8 @@ No migration, dependency or operational-data changes. Full hosted checks gate me
 
 INSURANCE-DRAFT-ERROR-1109: owner-coordinated repair translates national/passport identity uniqueness conflicts in insurance correction into safe409 instead of generic500. Existing uniqueness and transaction rollback remain; no provider issuance or business-data mutation. Read-only real case confirmed identity belongs to a different customer. Tests/CI tracked on dedicated branch; see docs/tasks/INSURANCE-DRAFT-ERROR-1109.md.
 
+
+
+PASSENGER-EDITOR-LAYOUT-1110: correcting compact passenger table width/checkbox overflow and booked child-band hydration. No schema/dependency or operational data changes; focused and hosted checks gate authorized develop merge.
+
+PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
