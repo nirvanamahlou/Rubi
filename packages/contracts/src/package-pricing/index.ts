@@ -329,6 +329,7 @@ export interface PackageTourHotelPurchaseRowV1 {
 }
 
 export interface PackageTourHotelPurchaseBatchV1 {
+  cityId?: string | undefined;
   sharedPeriod?: boolean;
   tourDepartureId?: string | null;
   id: string;
@@ -343,6 +344,13 @@ export interface PackageTourHotelPurchaseBatchV1 {
 }
 
 export interface PackageTourCostGridV1 {
+  destinationStays?: {
+    cityId: string;
+    name: string;
+    nights: number;
+    checkIn: string;
+    checkOut: string;
+  }[];
   destinationName?: string;
   version: 1;
   tour: TourDepartureV1;
@@ -362,6 +370,7 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  hotelCombinations?: readonly import('./combined-hotels').CombinedHotelPackageV1[];
   convertToRial?: boolean;
   selectedRoomKeys?: readonly string[];
   roomSaleOverrides?: readonly PackageRoomSaleOverrideV1[];
@@ -413,6 +422,7 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  hotelCombinations?: readonly import('./combined-hotels').CombinedHotelQuoteV1[];
   rialConversion?: Record<string, string> | null;
   selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
@@ -512,6 +522,7 @@ export {
 export type { PackageRoomIdentity } from './room-compositions';
 
 export interface PackagePublishedSaleV1 {
+  stays?: readonly import('./combined-hotels').CombinedHotelStayV1[];
   publicationId: string;
   hotelId: string;
   hotelName: string;
@@ -535,3 +546,5 @@ export {
   packageFieldsToRial,
 } from './rial-conversion';
 export type { PackageRialRates } from './rial-conversion';
+
+export * from './combined-hotels';

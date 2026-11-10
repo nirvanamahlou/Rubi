@@ -1,3 +1,4 @@
+import { tourStayPeriods } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { eligibleTicketReturn } from '@nora/contracts';
@@ -388,6 +389,7 @@ export class TourPublicService {
         JSON.stringify([
           value.originId,
           value.destinationId,
+          value.details?.destinations ?? null,
           [...value.hotelIds].sort(),
           value.insuranceId ?? null,
           value.transferOutbound,
@@ -608,6 +610,14 @@ export class TourPublicService {
         if (!definition.originId || !definition.destinationId)
           throw new BadRequestException(
             'پیش از ثبت نوبت، شهر مبدأ و مقصد تور را تکمیل کنید.',
+          );
+        if (
+          definition.details?.destinations?.length &&
+          tourStayPeriods(definition, input.startsOn, input.endsOn).at(-1)
+            ?.checkOut !== input.endsOn
+        )
+          throw new BadRequestException(
+            'تعداد شب اقامت مقصدها باید با بازه تور برابر باشد.',
           );
         const outbound = await tx.ticketPublishedOffer.findFirst({
           where: { id: input.outboundOfferId, branchId, status: 'ACTIVE' },

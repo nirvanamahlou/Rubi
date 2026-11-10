@@ -470,11 +470,20 @@ export class MasterTravelDirectory {
     destinationId: string;
     hotelIds: readonly string[];
     insuranceId?: string;
-    details?: { originAirportCode?: string; destinationAirportCode?: string };
+    details?: {
+      originAirportCode?: string;
+      destinationAirportCode?: string;
+      isCombined?: boolean;
+      destinations?: { cityId: string; nights: number }[] | undefined;
+    };
   }) {
-    for (const cityId of [input.originId, input.destinationId].filter(
-      Boolean,
-    )) {
+    const destinations = [
+      input.destinationId,
+      ...(input.details?.isCombined
+        ? (input.details.destinations?.map((s) => s.cityId) ?? [])
+        : []),
+    ];
+    for (const cityId of [input.originId, ...destinations].filter(Boolean)) {
       const { data } = await this.master.detail('cities', cityId);
       if (data.status !== 'active')
         throw new BadRequestException('شهر تور غیرفعال است.');
@@ -483,7 +492,7 @@ export class MasterTravelDirectory {
       const { data } = await this.master.detail('hotels', hotelId);
       if (
         data.status !== 'active' ||
-        data.attributes.cityId !== input.destinationId
+        !destinations.includes(String(data.attributes.cityId))
       )
         throw new BadRequestException(
           'هتل باید فعال و متعلق به شهر مقصد تور باشد.',

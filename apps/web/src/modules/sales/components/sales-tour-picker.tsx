@@ -1,4 +1,5 @@
 'use client';
+import { tourDestinationIds } from '@nora/contracts';
 import { useEffect, useState } from 'react';
 import type { MasterDataRecord, TourDepartureV1 } from '@nora/contracts';
 import {
@@ -58,6 +59,7 @@ export function SalesTourPicker({
   const options = salesTourOptions(
     rows,
     state.passengerComposition.adults + state.passengerComposition.children,
+    { originId: state.originId, destinationId: state.destinationId },
   );
   const select = async (tour: TourDepartureV1) => {
     setBusy(true);
@@ -198,10 +200,16 @@ export function SalesTourPicker({
 export function salesTourOptions(
   rows: readonly TourDepartureV1[],
   passengers: number,
+  route?: { originId?: string; destinationId?: string },
 ): SearchOption[] {
   return rows
     .filter(
       (row) =>
+        (!route?.originId || row.package.originId === route.originId) &&
+        (!route?.destinationId ||
+          tourDestinationIds(row.package).includes(route.destinationId)) &&
+        row.isActive !== false &&
+        row.isDeleted !== true &&
         row.outbound.status === 'ACTIVE' &&
         (!row.returning || row.returning.status === 'ACTIVE'),
     )

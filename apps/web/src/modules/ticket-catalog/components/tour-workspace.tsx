@@ -1,4 +1,5 @@
 'use client';
+import { TourDestinations } from './tour-destinations';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -132,11 +133,13 @@ export function TourWorkspace({
   const [branch, setBranch] = useState('');
   const [definitionBranches, setDefinitionBranches] = useState<string[]>([]);
   const [references, setReferences] = useState<{
+    countries: MasterDataRecord[];
     cities: MasterDataRecord[];
     insurance: MasterDataRecord[];
     airlines: MasterDataRecord[];
     airports: MasterDataRecord[];
   }>({
+    countries: [],
     cities: [],
     insurance: [],
     airlines: [],
@@ -205,18 +208,21 @@ export function TourWorkspace({
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const session = await refreshAuthenticatedSession(base);
       if (!session) throw new Error('برای مدیریت تور وارد حساب شوید.');
-      const [p, d, cities, insurance, airlines, airports] = await Promise.all([
-        toursApi.packages(),
-        toursApi.departures(canManagePeriods),
-        loadRefs('cities'),
-        loadRefs('insurance-plans'),
-        loadRefs('airlines'),
-        loadRefs('airports'),
-      ]);
+      const [p, d, cities, insurance, airlines, airports, countries] =
+        await Promise.all([
+          toursApi.packages(),
+          toursApi.departures(canManagePeriods),
+          loadRefs('cities'),
+          loadRefs('insurance-plans'),
+          loadRefs('airlines'),
+          loadRefs('airports'),
+          loadRefs('countries'),
+        ]);
       if (cancelled) return;
       setPackages(p.data);
       setDepartures(d.data);
       setReferences({
+        countries,
         cities,
         insurance,
         airlines,
@@ -575,6 +581,10 @@ export function TourWorkspace({
                   );
                   if (code) details.destinationAirportCode = code;
                   else delete details.destinationAirportCode;
+                  if (details.destinations?.length)
+                    details.destinations = details.destinations.map((s, i) =>
+                      i === 0 ? { ...s, cityId: destinationId } : s,
+                    );
                   setDraft({ ...draft, destinationId, hotelIds: [], details });
                 }}
               />
@@ -616,6 +626,14 @@ export function TourWorkspace({
                         details: {
                           ...(draft.details ?? { version: 1 }),
                           isCombined: event.target.checked,
+                          ...(event.target.checked
+                            ? {
+                                destinations: draft.details?.destinations ?? [
+                                  { cityId: draft.destinationId, nights: 1 },
+                                  { cityId: '', nights: 1 },
+                                ],
+                              }
+                            : { destinations: undefined }),
                         },
                       })
                     }
@@ -643,6 +661,12 @@ export function TourWorkspace({
                   </label>
                 ))}
               </div>
+              <TourDestinations
+                value={draft}
+                countries={references.countries}
+                cities={references.cities}
+                onChange={setDraft}
+              />
               <TourDetailsForm
                 value={draft.details ?? { version: 1 }}
                 onChange={(details) => setDraft({ ...draft, details })}

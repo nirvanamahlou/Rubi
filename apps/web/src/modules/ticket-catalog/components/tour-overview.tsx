@@ -1,3 +1,5 @@
+'use client';
+import { tourDestinationIds } from '@nora/contracts';
 import type { TourDepartureV1, TourPackageV1 } from '@nora/contracts';
 import {
   CalendarDays,
@@ -182,7 +184,8 @@ export function TourOverview({
                     <div>
                       <h4 className="font-bold">{pack.name}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {city(pack.originId)} ← {city(pack.destinationId)}
+                        {city(pack.originId)} ←{' '}
+                        {tourDestinationIds(pack).map(city).join(' ← ')}
                       </p>
                     </div>
                     <Button

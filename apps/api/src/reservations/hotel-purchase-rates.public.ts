@@ -189,6 +189,7 @@ export class HotelPurchaseRatesPublicService {
       .map((batch) => ({
         id: batch.id,
         sharedPeriod: !!batch.pack?.sourcePeriods?.length,
+        cityId: batch.cityId ?? undefined,
         version: 1,
         branchId: batch.branchId,
         tourDepartureId: batch.tourDepartureId,

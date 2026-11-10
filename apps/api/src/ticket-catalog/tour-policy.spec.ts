@@ -20,6 +20,48 @@ const departure = {
   returnOfferId: second,
 };
 describe('tour inputs', () => {
+  it('validates ordered combined destinations and derives total trip length without changing the caller', () => {
+    const input = {
+      ...pack,
+      details: {
+        version: 1,
+        isCombined: true,
+        destinations: [
+          { cityId: second, nights: 4 },
+          { cityId: '00000000-0000-4000-8000-000000000003', nights: 3 },
+        ],
+      },
+    };
+    const before = JSON.stringify(input);
+    expect(validateTourPackage(input).details?.durationDays).toBe(8);
+    expect(JSON.stringify(input)).toBe(before);
+    for (const destinations of [
+      [
+        { cityId: id, nights: 4 },
+        { cityId: second, nights: 3 },
+      ],
+      [
+        { cityId: second, nights: 4 },
+        { cityId: second, nights: 3 },
+      ],
+      [
+        { cityId: second, nights: 0 },
+        { cityId: id, nights: 3 },
+      ],
+    ])
+      expect(() =>
+        validateTourPackage({
+          ...input,
+          details: { ...input.details, destinations },
+        }),
+      ).toThrow();
+    expect(() =>
+      validateTourPackage({
+        ...input,
+        details: { ...input.details, isCombined: false },
+      }),
+    ).toThrow();
+  });
   it('accepts a title-only definition with canonical optional defaults', () => {
     expect(validateTourPackage({ name: '  تور  ' })).toEqual({
       name: 'تور',
