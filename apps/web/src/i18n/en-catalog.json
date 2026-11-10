@@ -1,4 +1,7 @@
 {
+  "تاریخ پرواز رفت": "Outbound flight date",
+  "تاریخ پرواز برگشت": "Return flight date",
+  "روزهای دارای بلیت فعال با نقطهٔ قرمز مشخص‌اند. برای افزودن بلیت شناور ابتدا تاریخ را انتخاب کنید.": "Days with active tickets have a red dot. Select a date before adding a floating ticket.",
   "ابتدا شهر فرودگاه را انتخاب کنید.": "Select the airport city first.",
   "فرودگاه باید فعال و متعلق به کشور شهر انتخاب‌شده باشد.": "The airport must be active and in the selected city's country.",
   "تعریف شعبه‌های ثبت‌شده حفظ شد؛ در صورت خطا، دوباره ذخیره کنید تا شعبه‌های باقی‌مانده ثبت شوند.": "Completed branches are saved. If an error occurs, save again to submit the remaining branches.",

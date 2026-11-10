@@ -1,3 +1,9 @@
+## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
+
+Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
+
+26 focused interaction/date/offer API/i18n checks, scoped ESLint and full Web TypeScript pass. Production Web build and exact-head hosted gates complete validation before authorized develop merge. Source lease releases on verified merge.
+
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
 ## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
