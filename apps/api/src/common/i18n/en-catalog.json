@@ -8256,5 +8256,6 @@
   "نرخ اتاق باید برای مقصد و تمام شب‌های همان اقامت موجود باشد.": "The room rate must cover its destination and every stay night.",
   "هتل، تاریخ و ترکیب اتاق اقامت‌ها با پکیج منتشرشده مطابقت ندارد.": "Stay hotels, dates and rooms do not match the published package.",
   "هر باکس یک پکیج کامل است؛ یک هتل از هر مقصد با قیمت مشترک.": "Each box is one complete package: one hotel from each destination with one shared price.",
-  "ترکیب معتبر نیست.": "The combination is not valid."
+  "ترکیب معتبر نیست.": "The combination is not valid.",
+  "مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty and incentive rate must be a non-negative whole amount in Toman."
 }

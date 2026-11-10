@@ -12194,3 +12194,7 @@ HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web 
 ## SYSTEM-ACTIVITY-1110 — PC-A — IN_PROGRESS
 
 Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.
+
+## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
+
+Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.
