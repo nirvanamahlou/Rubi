@@ -1,4 +1,12 @@
+## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A — IN_PROGRESS
+
+Owner requests per-passenger Insurance, City Tour and Guide allocation in Reservations corrections, plus adding a hotel to a contract without one, and develop merge. Reserve passenger-service-editor, amendment-extra-services helper/tests and empty-hotel amendment UI; preserve prices, other passengers, existing allocations and backend authorization/version/history rules. No schema/dependency/deployment or business-data writes. Prior date-selector scope merged and deployed; source lease releases after green develop merge.
+
 ## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
+
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Base3370748ca. Owner authorizes fixing floating-flight MANIFEST exports and green develop merge. Reserve ReservationManifestService passengerRows journey lookup and existing floating regression fixture/tests; own bounded status notes. Reuse the authoritative manifestJourneys resolver already used by list, assignment filtering and Report so PNL/custom output can find contract-only flights. Preserve exact ticket identity, own leg assignments, branch/cancellation/new-only rules and legacy charter output. Prior PNL/default scope merged in PR1586; no active writer. No schema/dependency/data/deployment changes.
 
 Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
 
@@ -630,6 +638,10 @@ Owner requests city-tour/guide/insurance toggles, required active-plan choice fo
 ## INSURANCE-COUNTRY-SELECT-1110 — PC-A — READY_FOR_CI
 
 Replace free-text provider-country code/name/English controls with read-only displays and an always-visible themed searchable provider country selector. Load the existing protected catalog automatically for managers, retain manual retry, keep legacy saved options visible and never rewrite existing mappings on catalog reads. Adding a Master Data country can prefill only a unique exact ISO match; English names come from the matching canonical reference or an ISO display name, never another country. Key the settings form by branch to isolate late responses. Six focused client/mapping/selection tests pass, including rate/plan preservation; full exact-head quality/tests/build/PostgreSQL gates precede authorized develop merge. No schema, dependency, live issuance, data writes or deployment changes; source reservations release after verified merge.
+
+## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
+
+Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
