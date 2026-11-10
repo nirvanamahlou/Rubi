@@ -740,7 +740,7 @@ it.each([undefined, 'sales/contracts/contract/purchases'])(
     );
     const copy = JSON.stringify(tree.map((n) => n.props.children));
     expect(copy).toContain('کارگزار ترانسفر جدا از هتل');
-    expect(draft.hotelTransferSeparate).not.toBe(true);
+    expect(draft.hotelTransferSeparate).toBe(false);
     expect(tree.some((n) => n.type === ReservationPurchaseBrokerLookup)).toBe(
       false,
     );

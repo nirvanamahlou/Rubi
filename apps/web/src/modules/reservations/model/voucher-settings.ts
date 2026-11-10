@@ -68,6 +68,8 @@ export function defaultVoucherSettings(
     }
   const transferCounts = reservationTransferCounts(intake, d.passengers);
   const defaults: VoucherSettingsV1 = {
+    hotelTransferSeparate: false,
+    hotelTransferSplit: false,
     hotelTransferCounts: {
       outbound: transferCounts.outbound ?? 0,
       returning: transferCounts.returning ?? 0,
@@ -126,15 +128,12 @@ export function defaultVoucherSettings(
     ...(saved.sharedHotelBroker !== undefined
       ? { sharedHotelBroker: saved.sharedHotelBroker }
       : {}),
-    ...(saved.hotelTransferSeparate !== undefined
-      ? { hotelTransferSeparate: saved.hotelTransferSeparate }
-      : {}),
+    hotelTransferSeparate: saved.hotelTransferSeparate === true,
     ...(saved.hotelTransferRoundTrip !== undefined
       ? { hotelTransferRoundTrip: saved.hotelTransferRoundTrip }
       : {}),
-    ...(saved.hotelTransferSplit !== undefined
-      ? { hotelTransferSplit: saved.hotelTransferSplit }
-      : {}),
+    hotelTransferSplit:
+      saved.hotelTransferSeparate === true && saved.hotelTransferSplit === true,
     ...(saved.hotelTransferReturn
       ? { hotelTransferReturn: { ...saved.hotelTransferReturn } }
       : {}),
