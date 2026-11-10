@@ -9617,6 +9617,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## TOUR-TICKET-DATE-SELECTION-1110 — PC-A
+
+Package pricing departure controls now expose separate Gregorian outbound/return calendars. Red day markers reflect active route/branch tickets and each selector filters to its chosen Tehran civil day. Outbound selection/publication preserves the requested return date, date edits clear stale selections, and floating drafts use and follow the chosen date with both airport cities available. No API/schema/dependency or live data/deployment changes. Focused interaction/date/API regressions and full hosted gates precede develop merge.
+
 ## TOUR-FORM-1109 — PC-A — READY_FOR_CI
 
 Owner-requested tour definition controls: left header action, independent multi-branch creation with retained successes/retry, automatic city airport defaults and same-country airport overrides for both ends, removed manual IATA input, persisted optional combined-tour checkbox. Backward-compatible V1 details fields; Master Data public reference validation preserves boundaries. 8 focused Web and49 API tests pass. Full final-head gates required before authorized develop merge. No schema/migration/dependency, operational data or deployment changes. See tasks/TOUR-FORM-1109.md.

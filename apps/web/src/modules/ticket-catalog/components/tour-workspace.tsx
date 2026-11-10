@@ -30,12 +30,21 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
 import { ContractFlightEditor } from '@/modules/sales/components/contract-flight-editor';
+import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
+import { floatingFlightTimes } from '@/modules/sales/model/floating-flight-times';
 import { TourDetailsForm } from './tour-details-form';
 import { defaultTourAirport, tourAirports } from './tour-airports';
 import { createTourBranches } from './tour-branches';
 import { TourOverview } from './tour-overview';
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { activeTourTickets, tourTicketDates } from './tour-departure-tickets';
+import {
+  activeTourTickets,
+  changeTourTicketDate,
+  tourDatesAfterOutbound,
+  tourTicketDay,
+  tourTicketDays,
+  tourTicketsForDate,
+} from './tour-departure-tickets';
 
 const emptyPackage: TourPackageInputV1 = {
   name: '',
@@ -285,14 +294,37 @@ export function TourWorkspace({
     setReturning('');
     setOffers({ out: [], back: [] });
     setFlight(undefined);
+    setDates({ start: '', end: '' });
+    setRepeatSource(undefined);
+  };
+  const changeDate = (direction: 'out' | 'back', day: string) => {
+    const next = changeTourTicketDate(
+      { dates, outbound, returning },
+      direction,
+      day,
+      roundtrip,
+    );
+    setDates(next.dates);
+    setOutbound(next.outbound);
+    setReturning(next.returning);
+    setFlight((current) =>
+      current?.direction === 'back' && !next.dates.end
+        ? undefined
+        : current?.direction === direction
+          ? {
+              ...current,
+              draft: {
+                ...current.draft,
+                ...floatingFlightTimes(day, current.draft, {}),
+              },
+            }
+          : current,
+    );
   };
   const newFlight = (direction: 'out' | 'back') => {
     if (!pack) return;
-    const day =
-      (direction === 'out' ? dates.start : dates.end) ||
-      new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tehran' }).format(
-        new Date(),
-      );
+    const day = direction === 'out' ? dates.start : dates.end;
+    if (!day) return;
     const source =
       repeatSource?.packageId === pack.id
         ? direction === 'out'
@@ -858,12 +890,39 @@ export function TourWorkspace({
                         key={direction}
                         className="space-y-3 rounded-xl border p-4"
                       >
+                        <FormField
+                          label={
+                            direction === 'out'
+                              ? 'تاریخ پرواز رفت'
+                              : 'تاریخ پرواز برگشت'
+                          }
+                        >
+                          <SalesDatePicker
+                            aria-label={
+                              direction === 'out'
+                                ? 'تاریخ پرواز رفت'
+                                : 'تاریخ پرواز برگشت'
+                            }
+                            calendarSystem="gregorian"
+                            value={
+                              direction === 'out' ? dates.start : dates.end
+                            }
+                            markedDates={tourTicketDays(offers[direction])}
+                            {...(direction === 'back' && dates.start
+                              ? { minimumDate: dates.start }
+                              : {})}
+                            onChange={(day) => changeDate(direction, day)}
+                          />
+                        </FormField>
                         <Choice
                           label={
                             direction === 'out' ? 'بلیط رفت' : 'بلیط برگشت'
                           }
                           value={direction === 'out' ? outbound : returning}
-                          options={offers[direction]
+                          options={tourTicketsForDate(
+                            offers[direction],
+                            direction === 'out' ? dates.start : dates.end,
+                          )
                             .filter(
                               (offer) =>
                                 direction === 'out' ||
@@ -877,7 +936,7 @@ export function TourWorkspace({
                             .map((offer) => ({
                               id: offer.id,
                               name:
-                                new Intl.DateTimeFormat('fa-IR', {
+                                new Intl.DateTimeFormat('en-GB', {
                                   timeZone: 'Asia/Tehran',
                                   dateStyle: 'medium',
                                 }).format(new Date(offer.departureAt)) +
@@ -894,7 +953,13 @@ export function TourWorkspace({
                                     (o) => o.id === id,
                                   );
                                   if (selected) {
-                                    setDates(tourTicketDates(selected));
+                                    setDates(
+                                      tourDatesAfterOutbound(
+                                        selected,
+                                        dates.end,
+                                        roundtrip,
+                                      ),
+                                    );
                                   }
                                 }
                               : (id) => {
@@ -905,20 +970,26 @@ export function TourWorkspace({
                                   if (selected)
                                     setDates((current) => ({
                                       ...current,
-                                      end: new Intl.DateTimeFormat('sv-SE', {
-                                        timeZone: 'Asia/Tehran',
-                                      }).format(new Date(selected.departureAt)),
+                                      end: tourTicketDay(selected.departureAt),
                                     }));
                                 }
                           }
                         />
                         <Button
                           variant="outline"
-                          disabled={!pack?.originId || !pack.destinationId}
+                          disabled={
+                            !pack?.originId ||
+                            !pack.destinationId ||
+                            !(direction === 'out' ? dates.start : dates.end)
+                          }
                           onClick={() => newFlight(direction)}
                         >
                           افزودن بلیط شناور
                         </Button>
+                        <p className="text-xs text-muted-foreground">
+                          روزهای دارای بلیت فعال با نقطهٔ قرمز مشخص‌اند. برای
+                          افزودن بلیت شناور ابتدا تاریخ را انتخاب کنید.
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           ظرفیت بلیت شناور مستقل از ظرفیت چارتر است.
                         </p>
@@ -928,8 +999,12 @@ export function TourWorkspace({
                   {flight && (
                     <div className="space-y-3 rounded-xl bg-primary/5 p-4">
                       <ContractFlightEditor
+                        flightDate={
+                          flight.direction === 'out' ? dates.start : dates.end
+                        }
                         workflow="sales"
                         airlines={references.airlines}
+                        originCityId={flight.draft.originId}
                         destinationCityId={flight.draft.destinationId}
                         value={flight.draft}
                         onChange={(value) => {
@@ -951,7 +1026,13 @@ export function TourWorkspace({
                         />
                       </FormField>
                       <Button
-                        disabled={busy || flight.draft.totalCapacity < 1}
+                        disabled={
+                          busy ||
+                          flight.draft.totalCapacity < 1 ||
+                          !(flight.direction === 'out'
+                            ? dates.start
+                            : dates.end)
+                        }
                         onClick={() =>
                           void run(async () => {
                             const utc = (value: string) =>
@@ -977,10 +1058,16 @@ export function TourWorkspace({
                             if (flight.direction === 'out') {
                               setOutbound(result.data.id);
                               setReturning('');
-                              setDates({
-                                start: localDay(utc(flight.draft.departureAt)),
-                                end: localDay(utc(flight.draft.arrivalAt)),
-                              });
+                              setDates(
+                                tourDatesAfterOutbound(
+                                  {
+                                    departureAt: utc(flight.draft.departureAt),
+                                    arrivalAt: utc(flight.draft.arrivalAt),
+                                  },
+                                  dates.end,
+                                  roundtrip,
+                                ),
+                              );
                             } else {
                               setReturning(result.data.id);
                               setDates((current) => ({
