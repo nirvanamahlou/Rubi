@@ -5025,6 +5025,53 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       expect(updatedRule.values[9]).toBe('08:00');
     });
 
+    it('edits a leave policy with a legacy missing organization branch reference', async () => {
+      const organizationBranchId = randomUUID();
+      const policy = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          section: 'time',
+          tab: 'leavePolicies',
+          code: key(),
+          status: 'فعال',
+          searchText: 'استحقاقی',
+          values: ['استحقاقی', '2.5', '20', '1', '9', 'بله', '2', '465'],
+          data: { organizationBranchId },
+        },
+      });
+      const values = ['استحقاقی', '3', '20', '1', '9', 'بله', '2', '465'];
+      await expect(
+        service.updateRecord(
+          policy.id,
+          {
+            version: policy.version,
+            values,
+            data: { organizationBranchId: randomUUID() },
+          },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const edited = await service.updateRecord(
+        policy.id,
+        { version: policy.version, values, data: { organizationBranchId } },
+        admin,
+      );
+      expect(edited.values).toEqual(values);
+      expect(edited.branchId).toBe(branchA);
+      expect(edited.data.organizationBranchId).toBe(organizationBranchId);
+      await expect(
+        service.updateRecord(
+          policy.id,
+          { version: edited.version, values },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      await client.hrRecord.update({
+        where: { id: policy.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+
     it('materializes and synchronizes shared branch definitions with real source FKs and rejects partial-scope writes', async () => {
       const probe = await service.createEmployee(
         employeeInput('Shared privacy probe'),

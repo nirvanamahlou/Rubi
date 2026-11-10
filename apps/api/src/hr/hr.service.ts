@@ -3716,7 +3716,11 @@ export class HrService {
             })
           : await this.employee(tx, row.employeeId, actor)
         : null;
-      if (providedData?.organizationBranchId)
+      const unchangedLeavePolicyScope =
+        schema.key === 'time.leavePolicies' &&
+        providedData?.organizationBranchId ===
+          (row.data as HrWorkflowData).organizationBranchId;
+      if (providedData?.organizationBranchId && !unchangedLeavePolicyScope)
         await this.organizationBranch(
           tx,
           providedData.organizationBranchId,
