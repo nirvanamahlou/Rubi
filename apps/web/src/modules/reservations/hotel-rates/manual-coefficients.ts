@@ -112,7 +112,9 @@ export function buildManualRates(
       childAges: combination.childAges.map((a) => ({ ...a })),
       composition:
         combination.label ||
-        `${combination.adults} AD + ${combination.childAges.length} CHD`,
+        (combination.adults === 0 && combination.childAges.length === 1
+          ? 'کودک با تخت'
+          : `${combination.adults} AD + ${combination.childAges.length} CHD`),
       board: '',
       startsOn,
       endsOnExclusive,

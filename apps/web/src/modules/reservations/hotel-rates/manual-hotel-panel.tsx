@@ -348,7 +348,9 @@ export function HotelCoefficients({
     }));
   const combinationName = (combination: Combination) =>
     combination.label ||
-    `${combination.adults} AD + ${combination.childAges.length} CHD`;
+    (combination.adults === 0 && combination.childAges.length === 1
+      ? 'کودک با تخت'
+      : `${combination.adults} AD + ${combination.childAges.length} CHD`);
   async function submitRoomType(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!onAddRoomType || addingRoomType || disabled) return;
