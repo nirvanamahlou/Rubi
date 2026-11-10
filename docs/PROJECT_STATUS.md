@@ -9755,6 +9755,10 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## HR-RETIRE-PHASE-A-PROTOTYPE-1110
+
+Retired unused Phase A HR types, policies, command proposals and prototype-only tests after verifying that no runtime consumer imports them. The historical design remains accessible through Git. The authenticated PostgreSQL test now activates the contract through HTTP, replays the same idempotency key, and checks persisted version, state, document linkage and audit count. All 52 targeted tests passed against an isolated PostgreSQL 18 database.
+
 ## HR-PAY-DOCS-1110 — PC-B
 Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
 

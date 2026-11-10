@@ -1295,6 +1295,10 @@ Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatti
 
 Reserve HR-owned Finance referral projection, Finance inbox consumer and targeted tests. Preserve existing referral scope, response eligibility and source failure handling. No schema or API contract changes.
 
+## HR-RETIRE-PHASE-A-PROTOTYPE-1110 — PC-B — READY_FOR_CI
+
+Reserve the unused Phase A HR prototype files and their dedicated tests, HR contract HTTP/PostgreSQL regression, and historical HR task documentation. Preserve the active HrService, controller, contracts and persisted behavior. No migration or dependency changes.
+
 ## PARTNER-360-IMPORT-1017 — PC-B — IN_PROGRESS
 
 2026-10-17 continuation: human explicitly authorizes merge of PR912 and connection coordination. Reserve the stale SSR partner-form expectation leaf test: supplier geography/contact controls must now be present, as requested. Preserve all gates; synchronize latest develop and merge only after final-head CI succeeds. PC-A is not an accessible local Codex thread; request the Finance public producer handoff on the repository PR instead of editing another owner's active source without coordination.
