@@ -50,6 +50,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ISSABEL_AMI_SECRET: 'not-a-real-pbx',
       ISSABEL_ALLOWED_PREFIXES: '09',
       ISSABEL_RECORDING_RETENTION_DAYS: '7',
+      ISSABEL_RECORDING_STORAGE_MODE: 'DATABASE',
       CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Buffer.alloc(32, 7).toString(
         'base64',
       ),

@@ -669,6 +669,16 @@ export class CallCenterTelephonyService {
       connectionId: session.connectionId,
       rootFingerprint: session.rootFingerprint,
       references: technical.recordings,
+      rootCallId:
+        session.state === 'ENDED' &&
+        /^[A-Za-z0-9_.:-]{1,128}$/.test(
+          technical.first.rootCallId ?? technical.first.externalCallId,
+        ) &&
+        this.crypto.fingerprint(
+          `telephony:root:${session.connectionId}:${technical.first.rootCallId ?? technical.first.externalCallId}`,
+        ) === session.rootFingerprint
+          ? (technical.first.rootCallId ?? technical.first.externalCallId)
+          : undefined,
     };
   }
   async authorizeRecording(

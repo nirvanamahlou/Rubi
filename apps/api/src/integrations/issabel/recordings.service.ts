@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { recordingRange } from './recording-range';
+import { IssabelRecordingRemote } from './recording-remote';
 import { DatabaseService } from '../../database/database.service';
 import { CallCenterTelephonyService } from '../../customer-affairs/call-center-telephony.service';
 import { TelephonyIntegrationService } from '../telephony.service';
@@ -32,6 +33,7 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(IssabelRecordingsService.name);
   private timer?: ReturnType<typeof setInterval>;
   private maintaining = false;
+  private readonly remote: IssabelRecordingRemote;
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -39,8 +41,16 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     private readonly domain: CallCenterTelephonyService,
     @Inject(TelephonyIntegrationService)
     private readonly events: TelephonyIntegrationService,
-  ) {}
+  ) {
+    this.remote = new IssabelRecordingRemote(config);
+  }
+  private remoteMode() {
+    return (
+      this.config.get<string>('ISSABEL_RECORDING_STORAGE_MODE') !== 'DATABASE'
+    );
+  }
   onModuleInit() {
+    if (this.remoteMode()) return;
     this.timer = setInterval(() => {
       void this.maintain().catch(() => {
         this.logger.warn('Issabel recording expiry could not complete.');
@@ -49,6 +59,7 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     this.timer.unref();
   }
   async maintain() {
+    if (this.remoteMode()) return;
     if (this.maintaining) return;
     this.maintaining = true;
     try {
@@ -82,6 +93,8 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     clearInterval(this.timer);
   }
   private async policy() {
+    if (this.remoteMode())
+      throw new ForbiddenException('Database recording storage is disabled.');
     const connectionId = this.config.get<string>('ISSABEL_CONNECTION_ID');
     const days = Number(
       this.config.get<string>('ISSABEL_RECORDING_RETENTION_DAYS'),
@@ -342,6 +355,16 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     await this.domain.authorizeRecordingDownload(actor);
     const context = await this.domain.callRecordingContext(actor, callId);
     if (!context) return { data: [] };
+    if (this.remoteMode()) {
+      if (!context.rootCallId) return { data: [] };
+      await this.remoteAccess(
+        actor,
+        context.connectionId,
+        callId,
+        'RECORDING_REMOTE_LIST',
+      );
+      return { data: await this.remote.inspect(context.rootCallId) };
+    }
     const ids = context.references.flatMap((reference) => {
       const match = /^issabel-recording:([0-9a-f-]{36})$/i.exec(reference);
       return match ? [match[1]!] : [];
@@ -367,6 +390,24 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     callId?: string,
   ) {
     await this.domain.authorizeRecordingDownload(actor);
+    if (this.remoteMode()) {
+      if (!callId) throw new NotFoundException();
+      const context = await this.domain.callRecordingContext(actor, callId);
+      if (!context?.rootCallId) throw new NotFoundException();
+      await this.remoteAccess(
+        actor,
+        context.connectionId,
+        id,
+        'RECORDING_REMOTE_READ',
+      );
+      const audio = await this.remote.audio(context.rootCallId, id);
+      const bytes = recordingRange(range, audio.length);
+      return {
+        ...bytes,
+        size: audio.length,
+        audio: audio.subarray(bytes.start, bytes.end + 1),
+      };
+    }
     if (!callId) this.domain.authorize(actor);
     if (
       !actor.permissions.includes(
@@ -467,6 +508,44 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
       // Concurrent expiry/missing chunks fails closed rather than serving old data.
       { isolationLevel: 'ReadCommitted', timeout: 15000 },
     );
+  }
+  private async remoteAccess(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    id: string,
+    action: string,
+  ) {
+    if (
+      this.config.get<string>('ISSABEL_ENABLED') !== 'true' ||
+      connectionId !== this.config.get<string>('ISSABEL_CONNECTION_ID')
+    )
+      throw new NotFoundException();
+    await this.db.client.$transaction(async (tx) => {
+      const connection = await tx.integrationTelephonyConnection.findUnique({
+        where: { id: connectionId },
+      });
+      if (!connection?.active || connection.synthetic)
+        throw new NotFoundException();
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'telephony:media-read:' + actor.userId},0))`;
+      const recent = await tx.integrationTelephonyAudit.count({
+        where: {
+          actorUserId: actor.userId,
+          action: { in: ['RECORDING_REMOTE_LIST', 'RECORDING_REMOTE_READ'] },
+          createdAt: { gte: new Date(Date.now() - 60000) },
+        },
+      });
+      if (recent >= 60)
+        throw new HttpException('Recording read rate exceeded.', 429);
+      await tx.integrationTelephonyAudit.create({
+        data: {
+          connectionId,
+          actorUserId: actor.userId,
+          entityId: id,
+          action,
+          metadata: { storage: 'REMOTE', stage: 'REQUESTED' },
+        },
+      });
+    });
   }
   async prune() {
     const rows = await this.db.client.integrationTelephonyRecording.findMany({
