@@ -5853,5 +5853,12 @@
   "۵۰ سابقه اخیر نمایش داده می‌شود.": "Showing the 50 most recent records.",
   "(ثبت‌شده)": "(saved)",
   "نرخ مستقل کودک باید برای یک کودک باشد.": "A standalone child rate must cover exactly one child.",
-  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart."
+  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart.",
+  "افزودن مدرک ·": "Add document ·",
+  "ثبت مدرک": "Save document",
+  "حقوق و پرداخت /": "Pay and payments /",
+  "درخواست‌ها و مأموریت‌ها": "Requests and assignments",
+  "ذخیره مدرک انجام نشد.": "Could not save the document.",
+  "فایل این مدرک در دسترس نیست.": "The file for this document is unavailable.",
+  "مشاهده مدرک حقوق و پرداخت کارمند": "View employee pay document"
 }
