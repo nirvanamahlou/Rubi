@@ -21,6 +21,25 @@ const validEnvironment = {
 };
 
 describe('API environment validation', () => {
+  it('validates which process owns document scan polling', () => {
+    expect(
+      environmentValidationSchema.validate(validEnvironment).value
+        .DOCUMENTS_SCAN_EXECUTION,
+    ).toBe('api');
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        DOCUMENTS_SCAN_EXECUTION: 'worker',
+      }).error,
+    ).toBeUndefined();
+    expect(
+      environmentValidationSchema.validate({
+        ...validEnvironment,
+        DOCUMENTS_SCAN_EXECUTION: 'workers',
+      }).error,
+    ).toBeDefined();
+  });
+
   it('requires a dedicated TOTP encryption key in production', () => {
     expect(
       environmentValidationSchema.validate({

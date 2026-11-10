@@ -1281,6 +1281,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-aircraft-save-access-1017 from origin/develo
 
 User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
 
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A07. Reserve Documents scanner ownership, recovery of expired job claims, fencing and targeted tests. Preserve quarantine and audited release. Reuse the existing job deadline column without a migration.
+
 ## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after accepting the visual dashboard. Branch codex/pc-d-integrations-site-onboarding-1017 starts from origin/PC-D-Integration@b0181dc5. This target does not yet contain the already reviewed Integrations foundation/dashboard from PR889; reuse only its scoped module/route/contracts/i18n source, not unrelated develop changes. Reserve Integrations Web/API/contracts, route and bounded catalogue registrations, root Dockerfile build coverage for Web/API, CI workflow target and matching policy regression, and this task's status/docs and tests. Existing integrations.registry.v1 producer/consumer gain optional nonsecret site setup metadata together; legacy records without it remain valid. Public SystemManagement storage/IAM scope and CAS/audit remain unchanged. No schema/migration/dependency/lockfile ownership or other-module edits. Local Compose uses existing Rubi services and project image; no external requests, credentials or success claims. User authorizes push, hosted CI and PR to PC-D-Integration; merge only after all checks and required review pass.
