@@ -63,7 +63,7 @@ describe('FinanceInboxService', () => {
     ]);
     const result = await new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       database as never,
@@ -94,7 +94,7 @@ describe('FinanceInboxService', () => {
       }),
     );
   });
-  it('loads every HR page, including referrals older than the first 25', async () => {
+  it('loads more than 25 HR referrals through one scoped projection', async () => {
     const records = Array.from({ length: 26 }, (_, index) => ({
       id: `hr-${index}`,
       code: `HR-${index}`,
@@ -107,15 +107,10 @@ describe('FinanceInboxService', () => {
       createdAt: '2026-10-04T10:00:00.000Z',
       version: 1,
     }));
-    const list = vi.fn(async ({ page }) => ({
-      items: records.slice((page - 1) * 25, page * 25),
-      page,
-      total: 26,
-      pageSize: 25,
-    }));
+    const readFinanceInbox = vi.fn().mockResolvedValue(records);
     const service = new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list } as never,
+      { readFinanceInbox } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       emptyOperationalDatabase() as never,
@@ -124,58 +119,17 @@ describe('FinanceInboxService', () => {
     );
     const result = await service.list(actor);
     expect(result.items).toHaveLength(26);
-    expect(list).toHaveBeenCalledWith({ target: 'finance', page: 2 }, actor);
+    expect(readFinanceInbox).toHaveBeenCalledExactlyOnceWith(actor);
     expect(
       result.sources.find((source) => source.source === 'HR'),
     ).toMatchObject({ connection: 'CONNECTED', itemCount: 26 });
   });
-  it('never reports a changing or incomplete HR pagination as a complete queue', async () => {
-    const list = vi
-      .fn()
-      .mockResolvedValueOnce({
-        items: [{ id: 'hr-1' }],
-        total: 2,
-        pageSize: 1,
-        page: 1,
-      })
-      .mockResolvedValueOnce({
-        items: [{ id: 'hr-1' }],
-        total: 2,
-        pageSize: 1,
-        page: 2,
-      });
+  it('keeps the HR source unavailable if its complete projection cannot be read', async () => {
     const result = await new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list } as never,
-      { list: vi.fn().mockResolvedValue([]) } as never,
-      {} as never,
-      emptyOperationalDatabase() as never,
-      emptyTicketPurchases() as never,
-      emptyTicketCosts() as never,
-    ).list(actor);
-    expect(result.items).toEqual([]);
-    expect(
-      result.sources.find((source) => source.source === 'HR'),
-    ).toMatchObject({ connection: 'UNAVAILABLE' });
-  });
-  it('rejects duplicate referrals within a later HR page', async () => {
-    const list = vi
-      .fn()
-      .mockResolvedValueOnce({
-        items: [{ id: 'hr-1' }, { id: 'hr-2' }],
-        total: 4,
-        pageSize: 2,
-        page: 1,
-      })
-      .mockResolvedValueOnce({
-        items: [{ id: 'hr-3' }, { id: 'hr-3' }],
-        total: 4,
-        pageSize: 2,
-        page: 2,
-      });
-    const result = await new FinanceInboxService(
-      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list } as never,
+      {
+        readFinanceInbox: vi.fn().mockRejectedValue(new Error('unavailable')),
+      } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       emptyOperationalDatabase() as never,
@@ -190,7 +144,7 @@ describe('FinanceInboxService', () => {
   it('isolates Finance cost lookup failures instead of breaking every source', async () => {
     const result = await new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       emptyOperationalDatabase() as never,
@@ -222,7 +176,7 @@ describe('FinanceInboxService', () => {
     });
     const result = await new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       {
         list: vi.fn().mockResolvedValue([
           {
@@ -267,7 +221,7 @@ describe('FinanceInboxService', () => {
     ]);
     const service = new FinanceInboxService(
       { financeInbox } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       {
         listForFinance: vi.fn().mockResolvedValue([
           {
@@ -338,22 +292,20 @@ describe('FinanceInboxService', () => {
       ]),
     } as unknown as SalesService;
     const hr = {
-      list: vi.fn().mockResolvedValue({
-        items: [
-          {
-            id: 'hr-1',
-            code: 'HR-CON-1',
-            branchId: 'branch-a',
-            title: 'درخواست پرداخت مساعده',
-            message: 'بررسی مبلغ مساعده کارمند',
-            employeeLabel: 'کارمند نمونه',
-            status: 'SUBMITTED',
-            dueAt: '2026-09-14T08:00:00.000Z',
-            createdAt: '2026-09-12T09:00:00.000Z',
-            version: 2,
-          },
-        ],
-      }),
+      readFinanceInbox: vi.fn().mockResolvedValue([
+        {
+          id: 'hr-1',
+          code: 'HR-CON-1',
+          branchId: 'branch-a',
+          title: 'درخواست پرداخت مساعده',
+          message: 'بررسی مبلغ مساعده کارمند',
+          employeeLabel: 'کارمند نمونه',
+          status: 'SUBMITTED',
+          dueAt: '2026-09-14T08:00:00.000Z',
+          createdAt: '2026-09-12T09:00:00.000Z',
+          version: 2,
+        },
+      ]),
     } as unknown as HrConnectionsService;
     const reservations = {
       list: vi.fn().mockResolvedValue([
@@ -477,7 +429,7 @@ describe('FinanceInboxService', () => {
     expect(
       result.items.some((item) => item.sourceReference === 'ticket-purchase-1'),
     ).toBe(false);
-    expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
+    expect(hr.readFinanceInbox).toHaveBeenCalledExactlyOnceWith(actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a'], { actor });
     expect(procurement.listFinanceTicketPurchases).toHaveBeenCalledWith([
       'branch-a',
@@ -514,7 +466,7 @@ describe('FinanceInboxService', () => {
       {
         financeInbox: vi.fn().mockRejectedValue(new Error('offline')),
       } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       emptyOperationalDatabase() as never,
@@ -837,7 +789,7 @@ describe('FinanceInboxService', () => {
     };
     const service = new FinanceInboxService(
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
       emptyOperationalDatabase() as never,

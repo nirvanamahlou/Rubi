@@ -1080,6 +1080,10 @@ Reproduced false broker-create field denial from internal dossierVersion under m
 
 Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.
 
+## FINANCE-HR-REFERRAL-READ-1110
+
+Finance reads branch-scoped HR referrals through one bounded projection and writes one read audit event. Response eligibility and source failure handling are preserved. No schema or API contract changes.
+
 ## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
 
 Local read-only status aggregates reveal historical REQUESTED forms with positive sentSupplierFormVersion and no sentSupplierFormSettings. The view checked only the new snapshot or voucher flag, reopening settings despite recorded issuance. Recognize positive safe-integer sent version for the compact Download/Edit view only; unissued drafts and strict voucher readiness remain unchanged. Preserve sent snapshot preference and legacy download behavior without inventing or migrating historical snapshots. Focused regressions include legacy issued forms and zero/negative/fractional/absent draft versions. No API/schema/dependency/business-data mutation. Validation and final-head checks recorded in PR.
