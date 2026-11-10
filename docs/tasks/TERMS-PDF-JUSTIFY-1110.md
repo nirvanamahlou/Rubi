@@ -19,3 +19,4 @@ Path('original-terms.pdf').write_bytes(subprocess.check_output(['git', 'cat-file
 Then run `python scripts/justify-contract-terms.py --source original-terms.pdf`. The script refuses any source whose hash differs, and verifies content/font/page/metadata preservation before writing. No Python package is added to the application runtime or lockfile.
 
 The existing file URL, Finance authorization for the Sales document dialog and selected-contract gate in Reservations stay as before. No legal wording, API, IAM, database, migration or deployment changes. Full exact-head hosted checks gate the authorized develop merge.
+`nCI compatibility: updated the inherited Documents allowlist assertion to include the existing FAVORITES value; no contract or runtime behavior changed.
