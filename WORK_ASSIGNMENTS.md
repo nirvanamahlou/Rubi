@@ -12165,3 +12165,12 @@ COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricin
 Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
+
+## HR-RADAN-SYNC-1110 - PC-B - IN_PROGRESS
+
+Owner requests lower Radan synchronization load and manual historical reconciliation.
+Branch codex/pc-b-radan-sync-1110, based on origin/develop c6c28098d.
+Scope is the HR connector, attendance import/projection, and the HR work panel.
+The existing sync endpoint accepts an optional date range and status adds per-source
+success summaries. Preserve branch checks, provider mappings and closed periods.
+No schema or dependency changes.
