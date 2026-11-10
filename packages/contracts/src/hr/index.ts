@@ -83,6 +83,7 @@ export interface HrWorkflowData {
   /** Shared reference applicability; membership is captured and enforced by the server. */
   allBranches?: boolean;
   /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
+  chartVisible?: boolean;
   chartX?: number;
   chartY?: number;
   /** Server-managed contract lifecycle. Generic record commands reject these fields. */

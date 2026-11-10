@@ -97,6 +97,7 @@ export function workflowData(value: unknown): HrWorkflowData {
     'substituteUserId',
     'leaveAttachmentIds',
     'allBranches',
+    'chartVisible',
     'chartX',
     'chartY',
     'managerId',
@@ -177,6 +178,8 @@ export function workflowData(value: unknown): HrWorkflowData {
     !/^\d{1,3}(\.\d{1,2})?$/.test(String(data.allowanceDays))
   )
     throw new BadRequestException('سهمیه معتبر نیست.');
+  if (data.chartVisible !== undefined && typeof data.chartVisible !== 'boolean')
+    throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const coordinate of ['chartX', 'chartY']) {
     if (
       data[coordinate] !== undefined &&

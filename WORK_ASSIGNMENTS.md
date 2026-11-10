@@ -50,6 +50,10 @@ Owner authorizes reversible archive before 1405/08/01, one-time historical compa
 
 Remove the inline General Details button from Reservations table rows. Preserve the action panel and its permissions. Owner authorizes develop merge.
 
+## HR-EMPTY-CHART-1109 — PC-A — IN_PROGRESS
+
+Owner requests a blank organizational chart for manual rebuilding while retaining HR catalog records. Reserve chart projection, chart form placement metadata, and focused regression. No schema or production data migration.
+
 ## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
 
 Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.

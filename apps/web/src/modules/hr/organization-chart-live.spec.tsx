@@ -5,6 +5,7 @@ import { OrganizationChart } from './organization-chart';
 import {
   buildLiveOrganizationNodes,
   chartNodeFormTarget,
+  manuallyPlacedOrganizationNodes,
 } from './hr-organization';
 import { sourceForRecord } from './hr-record-source';
 import { hrCompanies } from './hr-live-data';
@@ -55,6 +56,15 @@ const build = (records = [unit, member]) =>
   buildLiveOrganizationNodes(records, [{ id: 'b', name: 'شرکت' }], [employee]);
 const noop = () => undefined;
 describe('live organization chart nodes', () => {
+  it('starts empty and displays only manually placed nodes without implicit company roots', () => {
+    expect(manuallyPlacedOrganizationNodes(build(), [unit, member])).toEqual(
+      [],
+    );
+    const placed = { ...member, data: { chartVisible: true } };
+    expect(
+      manuallyPlacedOrganizationNodes(build(), [unit, placed]),
+    ).toMatchObject([{ id: member.id, parentId: null }]);
+  });
   it('projects real employee links, department hierarchy and saved positions after reload', () => {
     const nodes = build();
     expect(nodes.find((n) => n.id === 'member')).toMatchObject({

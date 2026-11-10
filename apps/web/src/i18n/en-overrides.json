@@ -5847,5 +5847,6 @@
   "سابقه‌ای ثبت نشده است.": "No records have been registered.",
   "۵۰ سابقه اخیر نمایش داده می‌شود.": "Showing the 50 most recent records.",
   "(ثبت‌شده)": "(saved)",
-  "نرخ مستقل کودک باید برای یک کودک باشد.": "A standalone child rate must cover exactly one child."
+  "نرخ مستقل کودک باید برای یک کودک باشد.": "A standalone child rate must cover exactly one child.",
+  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart."
 }
