@@ -9763,6 +9763,10 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
+## CONTRACT-DOMAIN-ENTRYPOINTS-1110
+
+The Contracts package exposes dedicated Sales pricing and upload-format entry points. Selected Web and API consumers use the leaves and the root retains its existing exports. A fresh Node process loaded two Contracts files for the two leaves compared with 107 after importing the root. Both CommonJS and ESM resolve the leaves, which share the same implementations as the root. The Contracts build and 47 focused API/Web tests passed. Other domains and their DTO/display separation remain open.
+
 ## HR-RETIRE-PHASE-A-PROTOTYPE-1110
 
 Retired unused Phase A HR types, policies, command proposals and prototype-only tests after verifying that no runtime consumer imports them. The historical design remains accessible through Git. The authenticated PostgreSQL test now activates the contract through HTTP, replays the same idempotency key, and checks persisted version, state, document linkage and audit count. All 52 targeted tests passed against an isolated PostgreSQL 18 database.

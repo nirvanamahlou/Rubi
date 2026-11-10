@@ -1,4 +1,5 @@
-import { moneyDecimal, moneyUnits, type SalesMoney } from '@nora/contracts';
+import type { SalesMoney } from '@nora/contracts';
+import { moneyDecimal, moneyUnits } from '@nora/contracts/sales/pricing';
 import {
   salesHotelGuestIds,
   salesPassengerFlightDirections,

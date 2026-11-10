@@ -1,4 +1,4 @@
-import { attachmentMimeType } from '@nora/contracts';
+import { attachmentMimeType } from '@nora/contracts/upload-formats';
 import { documentsApi } from '@/modules/documents/api/client';
 
 function mimeType(file: File): string {

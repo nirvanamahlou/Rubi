@@ -2,7 +2,7 @@ import {
   moneyDecimal,
   moneyUnits,
   type SalesServicePricingV1,
-} from '@nora/contracts';
+} from '@nora/contracts/sales/pricing';
 export const roundTripPriceKey = 'flight-round-trip';
 type Prices = Record<string, SalesServicePricingV1[]>;
 export function combinedFlightPrices(values: Prices): SalesServicePricingV1[] {
