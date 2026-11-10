@@ -12037,7 +12037,6 @@ release on publication; PR1556 full final-head checks gate authorized merge.
 
 Owner explicitly coordinates overlap with PC-A and authorizes independent diagnosis/fix of contract insurance draft500, tests and green develop merge. Preserve all PC-A changes. Reserve bounded Reservations saveDraft and Customers identity conflict translation/tests only after proving failure. No schema/dependency/grant/provider request or live insurance issuance.
 
-
 ## PASSENGER-EDITOR-LAYOUT-1110 — PC-A — VALIDATED
 
 Reserve passenger-files table CSS/markup, amendment draft age hydration and focused regressions. Preserve existing insurance worktree edits; independent branch from develop fdf5cd950. Fix table min-width override and checkbox sizing; retain booked child bands and infer only missing child bands from known DOB at travel date. No schema/dependency/production data changes. User authorizes develop merge after checks.
