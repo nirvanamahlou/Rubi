@@ -114,6 +114,17 @@ function report(
         : (definition.availability ?? 'PENDING_CONNECTION'),
     dateBasis: definition.dateBasis ?? 'زمان مؤثر رویداد در UTC',
     outputs: definition.outputs ?? allOutputs,
+    ...([
+      'sales_by_organization',
+      'sales_by_service_route',
+      'route_passengers',
+      'sales_contract_pipeline',
+    ].includes(definition.code)
+      ? { filters: ['بازه تاریخ', 'شعبه', 'کارشناس', 'ارز', 'وضعیت'] }
+      : {}),
+    ...(definition.code === 'payments_refunds'
+      ? { filters: ['بازه تاریخ', 'شعبه', 'ارز'] }
+      : {}),
     ...(native
       ? {
           approvedView: native.projection,

@@ -24,6 +24,7 @@ export function useReportLiveRefresh(
   enabled: boolean,
   revision: string,
   refresh: (changed?: boolean) => void,
+  delayMs = 0,
 ) {
   const latest = useRef(refresh);
   useEffect(() => {
@@ -32,11 +33,17 @@ export function useReportLiveRefresh(
   useEffect(() => {
     if (!enabled) return;
     // A changed filter/sort/report replaces the previous result, not just its label.
-    const frame = window.requestAnimationFrame(() => latest.current(true));
+    let frame: number | undefined;
+    const schedule = () => {
+      frame = window.requestAnimationFrame(() => latest.current(true));
+    };
+    const timer = delayMs ? window.setTimeout(schedule, delayMs) : undefined;
+    if (!delayMs) schedule();
     const unsubscribe = subscribeReportRefresh(() => latest.current());
     return () => {
-      window.cancelAnimationFrame(frame);
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      if (timer !== undefined) window.clearTimeout(timer);
       unsubscribe();
     };
-  }, [enabled, revision]);
+  }, [enabled, revision, delayMs]);
 }

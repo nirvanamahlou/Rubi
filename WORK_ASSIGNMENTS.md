@@ -4,6 +4,10 @@ Owner assigns the bounded flight-date picker in reservation-sales-amendment.tsx 
 
 # RECEIPT-VOID-1109 — PC-B — READY_FOR_CI
 
+## REPORT-FILTERS-1109 — PC-C — READY_FOR_CI
+
+Base origin/develop; codex/pc-c-report-filters-1109. Reserve Reporting native result/filter projection, optional additive filter-definition metadata with Web consumer, filter form/state/export labels and focused tests. Existing owning-domain projections retain all authorization and query bounds; no owner-table access, schema, dependency or migration changes. User requests comprehensive real-output filters for limited executable reports. Prior PC-C reporting scopes are merged/frozen. Bounded additive common ReportSource.filterOptions metadata and Reservations-owned status options are reserved for this task; existing status predicates and module authority remain unchanged. 166 scoped API tests and 81 Web report tests pass; scoped lint passes. Read-only production filter/XLSX verification passes for all 18 reports permitted to the verification account; calendar permission is preserved. Full local bootstrap lacks nodemailer in shared dependencies; clean CI is required. No deployment or automatic merge.
+
 Base 68b538c9f. Reserve Sales receipt void status, additive migration, Finance receipt command and accounting source guard, inbox action and regressions. Additive contracts preserve existing clients. Local API and Web builds and targeted regressions passed. Existing journal reversal workflow is required for posted receipts. No production deployment or data change.
 
 # RESERVATION-SERVICE-LABELS-1109 — PC-A — READY_FOR_CI

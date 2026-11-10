@@ -24,10 +24,18 @@ export class ReportSortDto {
 }
 
 export class ReportQueryDto {
-  @ApiProperty({ type: Object }) @IsObject() filters!: Record<
-    string,
-    string | string[]
-  >;
+  @ApiProperty({
+    type: Object,
+    description:
+      'Source-specific date/branch/currency/status predicates plus search and exact column filters (for example columnPrimaryDimension). Available column filters and authorized options are returned as columnFilters in preview. Output predicates apply before pagination and exports; source authorization is unchanged.',
+    example: {
+      fromUtc: '2026-11-01T00:00:00.000Z',
+      columnPrimaryDimension: 'Column value',
+      search: 'Search text',
+    },
+  })
+  @IsObject()
+  filters!: Record<string, string | string[]>;
   @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) page!: number;
   @ApiProperty({ minimum: 1, maximum: 100 })
   @IsInt()
