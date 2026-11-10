@@ -1,9 +1,16 @@
 import type { SalesReservationRequestV1 } from './sales';
 
-export function insurancePassengerIds(snapshot: SalesReservationRequestV1) {
+export function insurancePassengerIds(
+  snapshot: SalesReservationRequestV1,
+  automaticOnly = false,
+) {
   const keys = new Set(
     snapshot.serviceSelections
-      .filter((s) => s.kind === 'INSURANCE')
+      .filter(
+        (s) =>
+          s.kind === 'INSURANCE' &&
+          (!automaticOnly || s.metadata?.insuranceAutomaticIssue === true),
+      )
       .map((s) => s.clientKey),
   );
   return [

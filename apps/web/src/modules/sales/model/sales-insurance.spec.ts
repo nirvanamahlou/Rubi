@@ -91,6 +91,7 @@ describe('registered insurance selection', () => {
         status: 'NEEDS_RESERVATION_CONFIRMATION',
         metadata: {
           insuranceSelectionVersion: 1,
+          insuranceAutomaticIssue: false,
           insurancePlanName: plan.name,
           insurancePlanCode: plan.code,
           insurancePlanRecordVersion: 3,
@@ -109,4 +110,21 @@ describe('registered insurance selection', () => {
       ),
     ).toBe(false);
   });
+});
+
+it('persists explicit automatic issuance independently of the selected plan', () => {
+  const selection = {
+    id: 'plan',
+    name: 'Plan',
+    code: 'P',
+    recordVersion: 1,
+    insurerId: 'i',
+    insurerName: 'Insurer',
+  };
+  expect(
+    salesInsuranceService(selection).metadata?.insuranceAutomaticIssue,
+  ).toBe(false);
+  expect(
+    salesInsuranceService(selection, true).metadata?.insuranceAutomaticIssue,
+  ).toBe(true);
 });

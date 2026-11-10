@@ -57,6 +57,7 @@ export async function loadSalesInsurancePlans(list = salesApi.listReferences) {
 // Selection only: a saved plan reference is not an issued policy or provider approval.
 export function salesInsuranceService(
   plan?: SalesInsuranceSelection,
+  automaticIssue = false,
 ): SalesServiceInput {
   if (!plan?.id || !plan.name.trim())
     throw new Error('طرح بیمه را از فهرست بیمه‌های فعال انتخاب کنید.');
@@ -68,6 +69,7 @@ export function salesInsuranceService(
     status: 'NEEDS_RESERVATION_CONFIRMATION',
     metadata: {
       insuranceSelectionVersion: 1,
+      insuranceAutomaticIssue: automaticIssue,
       insurancePlanName: plan.name,
       insurancePlanCode: plan.code,
       insurancePlanRecordVersion: plan.recordVersion,

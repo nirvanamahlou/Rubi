@@ -2026,6 +2026,12 @@ export function SalesContractForm() {
                             <SalesInsurancePicker
                               refreshRevision={referenceRefresh.revision}
                               value={state.insurancePlan}
+                              automaticIssue={
+                                state.insuranceAutomaticIssue === true
+                              }
+                              onAutomaticIssueChange={(
+                                insuranceAutomaticIssue,
+                              ) => patchState({ insuranceAutomaticIssue })}
                               onChange={(insurancePlan) =>
                                 patchState({ insurancePlan })
                               }

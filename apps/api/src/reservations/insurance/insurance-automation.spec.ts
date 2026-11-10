@@ -65,7 +65,12 @@ function fixture() {
       { customerId: 'passenger', serviceClientKeys: ['insurance'] },
     ],
     serviceSelections: [
-      { kind: 'INSURANCE', clientKey: 'insurance', referenceId: 'plan' },
+      {
+        kind: 'INSURANCE',
+        clientKey: 'insurance',
+        referenceId: 'plan',
+        metadata: { insuranceAutomaticIssue: true },
+      },
     ],
     ticketSelections: [],
   };
@@ -281,6 +286,19 @@ it('queues only selected insured passengers and does not contact the provider be
   f.policies.upsert.mockClear();
   await f.service.enqueue('intake');
   expect(f.policies.upsert).not.toHaveBeenCalled();
+});
+
+it('requires explicit automatic opt-in but preserves authorized manual preparation', async () => {
+  const f = fixture();
+  f.intake.snapshot.serviceSelections[0]!.metadata.insuranceAutomaticIssue = false;
+  await f.service.enqueue('intake');
+  expect(f.policies.upsert).not.toHaveBeenCalled();
+  await f.service.prepare('intake', {
+    ...f.actor,
+    permissions: [...f.actor.permissions, 'reservations.documents.manage'],
+  });
+  expect(f.policies.upsert).toHaveBeenCalledTimes(1);
+  expect(f.provider.createPolicy).not.toHaveBeenCalled();
 });
 
 it('starts a committed correction without waiting for the periodic timer and safely defers a failed kick', async () => {

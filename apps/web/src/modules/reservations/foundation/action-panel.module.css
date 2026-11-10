@@ -257,3 +257,19 @@
 .action.purchaseRegistered:hover {
   background: #bbf7d0;
 }
+.action.insuranceReady {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+.action.insuranceReady:hover {
+  background: #bbf7d0;
+}
+.action.insuranceIncomplete {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+.action.insuranceIncomplete:hover {
+  background: #fecaca;
+}

@@ -176,6 +176,7 @@ export interface SalesFormState {
     | undefined;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
+  insuranceAutomaticIssue?: boolean;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
   catalogSalePricing?: Record<string, SalesServicePricingV1[]>;
@@ -1731,7 +1732,12 @@ export function salesPayload(
             },
           }))
         : kind === 'INSURANCE'
-          ? [salesInsuranceService(state.insurancePlan)]
+          ? [
+              salesInsuranceService(
+                state.insurancePlan,
+                state.insuranceAutomaticIssue,
+              ),
+            ]
           : [
               {
                 clientKey: kind.toLowerCase(),

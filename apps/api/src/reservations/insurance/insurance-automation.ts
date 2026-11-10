@@ -82,7 +82,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Called only by the trusted Sales->Reservations inbox, before acknowledging its durable outbox. */
-  async enqueue(intakeId: string) {
+  async enqueue(intakeId: string, manual = false) {
     const source = await this.db.client.reservationIntake.findUnique({
       where: { id: intakeId },
     });
@@ -107,7 +107,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       intake.snapshot as unknown as SalesReservationRequestV1,
       [intake.branchId],
     );
-    for (const customerId of insurancePassengerIds(snapshot)) {
+    for (const customerId of insurancePassengerIds(snapshot, !manual)) {
       await this.db.client.reservationInsurancePolicy.upsert({
         where: {
           contractId_customerId_provider: {
@@ -722,7 +722,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
     const { intake } = await this.scoped(intakeId, actor, salesContractId);
     if (intake.status === 'CANCELLED' || intake.contract.status === 'CANCELLED')
       throw new ForbiddenException();
-    await this.enqueue(intakeId);
+    await this.enqueue(intakeId, true);
     return this.summary(intakeId, actor, salesContractId);
   }
 }
