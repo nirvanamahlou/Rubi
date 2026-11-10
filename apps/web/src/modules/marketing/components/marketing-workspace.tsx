@@ -912,9 +912,10 @@ export function MarketingWorkspace({
     }
   }, []);
   useEffect(() => {
+    if (section !== 'campaigns') return;
     const timer = window.setTimeout(() => void loadCampaigns(), 0);
     return () => window.clearTimeout(timer);
-  }, [loadCampaigns]);
+  }, [loadCampaigns, section]);
   const syncSectionFromHistory = useCallback(() => {
     const requestedSection = new URL(window.location.href).searchParams.get(
       'section',

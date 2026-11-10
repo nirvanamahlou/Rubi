@@ -16,6 +16,8 @@ import type {
   MarketingAssetViewV1,
   MarketingCampaignInputV1,
   MarketingCampaignViewV1,
+  MarketingPromotionPageQueryV1,
+  MarketingPromotionPageV1,
 } from '@nora/contracts';
 import { MARKETING_RECORDS_CONTRACT_VERSION } from '@nora/contracts';
 import { Prisma } from '@nora/database';
@@ -675,6 +677,47 @@ export class MarketingRecordsService {
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     return { data: rows.map(presentAsset) };
+  }
+
+  async listPromotions(
+    query: MarketingPromotionPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingPromotionPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    const page = query.page ?? 1;
+    const pageSize = 50;
+    if (!actor.branchIds.length) return { data: [], page, hasNext: false };
+    const search = query.search?.trim() ?? '';
+    // Match the name and code as one label, including literal wildcard characters.
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND kind = ${query.kind}
+      AND status <> 'DELETED'
+      ${query.status ? Prisma.sql`AND status = ${query.status}` : Prisma.empty}
+      ${query.from ? Prisma.sql`AND expires_at >= ${new Date(query.from)}` : Prisma.empty}
+      ${query.to ? Prisma.sql`AND scheduled_at < ${new Date(Date.parse(query.to) + 86400000)}` : Prisma.empty}
+      ${search ? Prisma.sql`AND strpos(lower(name || ' ' || coalesce(payload->>'code', '')), lower(${search})) > 0` : Prisma.empty}
+    `;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM marketing_assets
+        WHERE ${where}
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ${pageSize + 1} OFFSET ${(page - 1) * pageSize}
+      `;
+        const rows = await tx.marketingAsset.findMany({
+          where: { id: { in: ids.slice(0, pageSize).map(({ id }) => id) } },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        });
+        return {
+          data: rows.map(presentAsset),
+          page,
+          hasNext: ids.length > pageSize,
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async saveAsset(

@@ -103,6 +103,23 @@ export class MarketingAssetListQueryDto {
   @IsOptional() @IsIn(ASSET_KINDS) kind?: (typeof ASSET_KINDS)[number];
 }
 
+export class MarketingPromotionPageQueryDto {
+  @IsIn(['COUPON', 'OFFER']) kind!: 'COUPON' | 'OFFER';
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @IsOptional()
+  @IsIn(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'])
+  status?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  from?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  to?: string;
+}
+
 export class MarketingAssetDeleteDto {
   @IsInt() @Min(1) expectedVersion!: number;
 }
