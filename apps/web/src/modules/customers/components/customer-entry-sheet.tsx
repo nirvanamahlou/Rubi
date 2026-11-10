@@ -1,4 +1,5 @@
 'use client';
+import { PersianBirthDateHint } from './persian-birth-date-hint';
 import { tehranToday, passportExpiryWarning } from '@/lib/passport-dates';
 
 import { useEffect, useRef, type ReactNode } from 'react';
@@ -402,7 +403,7 @@ export function CustomerEntrySheet({
                         </div>
                       ) : field === 'birthDate' ||
                         field === 'passportExpiryDate' ? (
-                        <>
+                        <div className="relative">
                           <CustomerDateField
                             allowTyping={salesDatePolicy}
                             minDate={
@@ -424,6 +425,13 @@ export function CustomerEntrySheet({
                             )}
                           />
                           {salesDatePolicy &&
+                            field === 'birthDate' &&
+                            calendarMode === 'gregorian' && (
+                              <PersianBirthDateHint
+                                value={row.values[field] ?? ''}
+                              />
+                            )}
+                          {salesDatePolicy &&
                           field === 'passportExpiryDate' &&
                           passportExpiryWarning(row.values[field] ?? '') ? (
                             <p
@@ -433,7 +441,7 @@ export function CustomerEntrySheet({
                               اعتبار پاسپورت کمتر از ۶ ماه است.
                             </p>
                           ) : null}
-                        </>
+                        </div>
                       ) : (
                         <Input
                           aria-label={`${label.replace(' *', '')} ${row.label}`}

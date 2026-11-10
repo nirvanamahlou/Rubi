@@ -1,5 +1,10 @@
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.
+
+User requires unchanged row dimensions: hint is absolutely positioned in the existing cell padding,9px text/10px line height, with no layout height contribution.18 focused date/render checks pass before final CI.
+
+
 Report bars use Dashboard-style fixed labels, grouped independent currency tracks and exact combined values. Numeric sort choices now drive horizontal/column/pie measures, with unique contract/passenger counts; name sorting retains the selected metric. Operational chartMeasure metadata is preserved. 92 Web report tests and scoped lint pass. No schema/API/financial calculation or production change. See docs/tasks/REPORTING-CHART-METRICS-1110.md.
 
 ## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
