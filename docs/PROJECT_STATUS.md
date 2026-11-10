@@ -1084,6 +1084,10 @@ Finance inbox pages load purchase FX evidence after applying filters, ordering a
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## PROCUREMENT-FINANCE-SOURCE-PAGES-1110
+
+Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.
+
 ## FINANCE-SOURCE-PROJECTIONS-1110
 
 The Sales inbox reads only receipt fields used by Finance. Ticket queue state reads the latest cost per requested purchase and the latest payment and exact count for that cost, using the existing compound indexes. Earlier cost revisions and their payments stay outside the result. The scoped suite passed 39 tests and the isolated PostgreSQL 18 suite passed all six. Cross-source pagination and the existing Sales and Procurement source limits remain open.
