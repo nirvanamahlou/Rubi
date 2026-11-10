@@ -2335,6 +2335,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 - قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
 - نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
 
+## I18N-STARTUP-1110 — PC-B — IN_PROGRESS
+
+Reserve translation phrase-index initialization and reuse of the source inventory in translation coverage tests. Defer fallback index construction until English actually needs it. Preserve exact translations, form values, and locale behavior. No shared dictionary, dependency, API, or database change.
+
 ## TICKET-CAPACITY-HOLD-0920 — PC-A — DONE / MERGED
 
 - درخواست مالک در 2026-09-20: از فهرست مدیریت بلیت، کاربر بتواند برای تعداد مشخصی نفر «رزرو موقت ظرفیت» با تاریخ/ساعت انقضا ثبت کند. `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-ticket-capacity-hold-0920` از `origin/develop@7e52d309`.

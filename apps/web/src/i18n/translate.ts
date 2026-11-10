@@ -34,23 +34,30 @@ export function normalizeUiText(value: string): string {
 
 // Prefixes/suffixes also cover labels composed with counts, IDs and other data.
 // They never change the submitted value of a form or a persisted domain enum.
-const phrases = new Map<string, Array<[string, string]>>();
-for (const [source, target] of Object.entries(englishUiCatalog)) {
-  if (!source || !target || !persianScript.test(source)) continue;
-  const firstWord = source.match(/^[^\s:،؛؟«»,.()[\]]+/)?.[0] ?? source;
-  const entries = phrases.get(firstWord) ?? [];
-  entries.push([source, target]);
-  phrases.set(firstWord, entries);
+type PhraseIndex = Map<string, Array<[string, string]>>;
+let phraseIndex: PhraseIndex | undefined;
+
+function getPhraseIndex(): PhraseIndex {
+  if (phraseIndex) return phraseIndex;
+  const phrases = new Map<string, Array<[string, string]>>();
+  for (const [source, target] of Object.entries(englishUiCatalog)) {
+    if (!source || !target || !persianScript.test(source)) continue;
+    const firstWord = source.match(/^[^\s:،؛؟«»,.()[\]]+/)?.[0] ?? source;
+    const entries = phrases.get(firstWord) ?? [];
+    entries.push([source, target]);
+    phrases.set(firstWord, entries);
+  }
+  for (const entries of phrases.values())
+    entries.sort((a, b) => b[0].length - a[0].length);
+  phraseIndex = phrases;
+  return phrases;
 }
-for (const entries of phrases.values())
-  entries.sort((a, b) => b[0].length - a[0].length);
 
 export function translateUiText(
   value: string,
   language: DisplayLanguage,
 ): string {
-  if (isCurrencySymbol(value.trim())) return value;
-  if (language === 'fa') return value;
+  if (language === 'fa' || isCurrencySymbol(value.trim())) return value;
   const normalized = normalizeUiText(value);
   const exact = englishUiCatalog[normalized];
   if (exact) {
@@ -59,6 +66,7 @@ export function translateUiText(
     return `${leading}${latinDigits(exact)}${trailing}`;
   }
   if (!persianScript.test(value)) return latinDigits(value);
+  const phrases = getPhraseIndex();
   let result = '';
   let changed = false;
   let cursor = 0;
