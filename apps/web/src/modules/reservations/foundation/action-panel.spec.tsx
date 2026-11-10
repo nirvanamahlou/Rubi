@@ -47,7 +47,7 @@ describe('selected contract actions', () => {
       renderToStaticMarkup(
         <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
       ),
-    ).toContain('این قرارداد باطل شده است');
+    ).not.toContain('این قرارداد باطل شده است');
     expect(
       renderToStaticMarkup(<ContractActionPanel request={request} />),
     ).not.toContain('این قرارداد باطل شده است');

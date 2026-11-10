@@ -40,6 +40,7 @@ export interface DatePickerProps {
   defaultCalendarSystem?: CalendarSystem;
   withinDialog?: boolean;
   gregorianEnglish?: boolean;
+  gregorianMonthEnglish?: boolean;
   id?: string;
   name?: string;
   value?: string;
@@ -68,6 +69,7 @@ export function DatePicker({
   withinDialog = false,
   className,
   gregorianEnglish = false,
+  gregorianMonthEnglish = false,
   defaultCalendarSystem,
   defaultValue = '',
   disabled,
@@ -137,10 +139,20 @@ export function DatePicker({
         );
         return {
           month,
-          label: calendarMonthName(date, calendarSystem, calendarEnglish),
+          label: calendarMonthName(
+            date,
+            calendarSystem,
+            calendarEnglish || gregorianMonthEnglish,
+          ),
         };
       }),
-    [anchor, anchorParts.year, calendarSystem, calendarEnglish],
+    [
+      anchor,
+      anchorParts.year,
+      calendarSystem,
+      calendarEnglish,
+      gregorianMonthEnglish,
+    ],
   );
 
   React.useEffect(() => {
@@ -448,7 +460,7 @@ export function DatePicker({
                         {calendarMonthName(
                           anchor,
                           calendarSystem,
-                          calendarEnglish,
+                          calendarEnglish || gregorianMonthEnglish,
                         )}
                       </button>
                       <button

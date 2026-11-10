@@ -429,7 +429,7 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
     expect(html).toContain(label);
   const table = html.match(/<table\b[\s\S]*?<\/table>/)?.[0];
   expect(table).toContain('data-cancelled="true"');
-  expect(table).not.toContain('این قرارداد باطل شده است');
+  expect(table).toContain('این قرارداد باطل شده است');
   expect(html.match(/این قرارداد باطل شده است/g)).toHaveLength(1);
   expect(html).toContain('aria-live="polite"');
   expect(html).toContain('درخواست جدید به');

@@ -1,6 +1,9 @@
 import { privateHrResource } from './hr-private-values';
 import { validateCompletionValues } from './hr-radan-completion.domain';
-import { HR_RADAN_LEGACY_LENGTHS } from '@nora/contracts';
+import {
+  HR_DEFAULT_LEAVE_DAY_MINUTES,
+  HR_RADAN_LEGACY_LENGTHS,
+} from '@nora/contracts';
 import { validateRadanFields } from './hr-radan.validation';
 import { BadRequestException } from '@nestjs/common';
 import {
@@ -94,6 +97,7 @@ export function workflowData(value: unknown): HrWorkflowData {
     'substituteUserId',
     'leaveAttachmentIds',
     'allBranches',
+    'chartVisible',
     'chartX',
     'chartY',
     'managerId',
@@ -174,6 +178,8 @@ export function workflowData(value: unknown): HrWorkflowData {
     !/^\d{1,3}(\.\d{1,2})?$/.test(String(data.allowanceDays))
   )
     throw new BadRequestException('سهمیه معتبر نیست.');
+  if (data.chartVisible !== undefined && typeof data.chartVisible !== 'boolean')
+    throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const coordinate of ['chartX', 'chartY']) {
     if (
       data[coordinate] !== undefined &&
@@ -211,6 +217,8 @@ export function recordValues(
     ...value,
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
+  if (schema.key === 'time.leavePolicies' && value.length === 7)
+    padded[7] = String(HR_DEFAULT_LEAVE_DAY_MINUTES);
   if (
     schema.key === 'time.leavePolicies' &&
     typeof padded[4] === 'string' &&

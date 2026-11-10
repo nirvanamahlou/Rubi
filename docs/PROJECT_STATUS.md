@@ -57,17 +57,23 @@ PC-A: removed OTHER SERVICES from voucher columns and output cells. Each hotel v
 
 PC-A removed the duplicate required airline selector and carrier filter from the reservation contract flight-amendment form. The selected catalogue ticket or floating-flight editor supplies the actual airline; the amendment API already has no independent airline selector field. Canonical flight identity validation remains intact. 26 focused amendment tests, scoped lint, full Web TypeScript and67-route production build passed. Integrated to develop under the owner's authorization. No API/schema/migration/dependency changes or server deployment.
 
-## INSURANCE-STANDALONE-1109 — PC-A — VALIDATING
+## INSURANCE-STANDALONE-1109 — PC-A — DEPLOYED
+
+PR1559 merged with all eight final-head gates green (source dc25af58a, develop merge294e6b0b2). Published only the bounded insurance API/Web overlay and additive migration20261109100000; preserved current provider Sandbox mode and peer runtime overlays. Release-image89 API checks,23 Web checks, five actual PostgreSQL proofs, production builds, Web canary and live runtime crypto/schema permissions passed. Live health/auth, old/new assets, unchanged env/mounts/unrelated services, authenticated Worker, AMI and recording timer passed. Browser confirmed the fresh no-contract form and duration options beginning at2 days; no customer policy was submitted. Complete encrypted checkpoint was copied off-server with matching hashes. Unit ownership is released. See docs/tasks/INSURANCE-STANDALONE-1109.md for receipts and additive-schema rollback.
 
 Owner authorizes full new-applicant insurance issuance without a Sales contract, catalogue-only duration selection, preserving initial provider failures, develop merge and bounded release. Added an encrypted branch/creator-linked applicant value object, audited private reads, database-enforced contract-or-applicant linkage, replay/CAS guards and the existing leased/fingerprinted worker for both paths. Primary Request insurance opens the complete new form; contractual preparation remains available. Existing contract FKs and Finance release behavior remain intact. No fabricated Customer/contract, new dependencies or provider-mode change. Local89 API/integration/Customer checks,23 Web/translation checks and API/Web types pass; fresh actual PostgreSQL standalone transaction/constraint/rollback proof is required in the mandatory gate before merge. Migration20261109100000 is additive/data-preserving and must precede API/Web. See docs/tasks/INSURANCE-STANDALONE-1109.md.
 
-## INSURANCE-ADVISORY-LOCK-1109 — PC-A — VALIDATING
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — DEPLOYED
 
 The remaining correction HTTP500 is reproduced as Prisma P2010 decoding PostgreSQL void from the advisory-lock query. A shared text-cast lock helper preserves serialization for correction and confirmation. Real Prisma/PostgreSQL regression checks extend the existing mandatory insurance gate. No passenger data mutation, policy issuance, provider-mode change, migration or dependency change. Owner's existing bounded repair/merge/deploy authorization applies. See docs/tasks/INSURANCE-ADVISORY-LOCK-1109.md.
 
-## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — VALIDATING
+PR1552 merged after all8 exact-head checks succeeded; bounded API release verified.41 insurance tests and3 real adapter/lock concurrency tests pass in the candidate image. The actual compiled helper succeeds on the live database in a read-only rolled-back transaction. Web remains unchanged, Worker image/environment remains unchanged and is recreated for API namespace; health/static assets/401 boundaries/Worker/AMI/recording and zero restarts pass. Fresh encrypted backup verified offserver. No additional cleanup or passenger issuance performed. Receipt: /opt/rubi/insurance-advisory-lock-1109/verified.json.
+
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — DEPLOYED
 
 Automatic insurance corrections trigger the existing leased automation immediately after durable save. Nested API errors and invalid field labels now reach the correction dialog; pending automatic drafts refresh for the provider result.41 API and16 Web focused tests pass. Owner authorizes final-green develop merge and bounded production release, preserving live peers and sandbox configuration. No migration/dependency/real-policy test. See docs/tasks/INSURANCE-CORRECT-SUBMIT-1109.md.
+
+PR1546 merged after all8 final-head CI checks passed; bounded Avina release is verified. Actual candidates pass41 API and19 Web/translation tests and Web canary. Live source hashes, unchanged environment/mounts, HTTPS health/assets, unauthorized insurance access, Worker authentication, AMI, recording timer and zero restarts pass. Fresh encrypted backup verified offserver; only the two specifically approved old backups retired after newer backup validation. No migration or provider-mode change. Receipt: /opt/rubi/insurance-correct-submit-1109/verified.json.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
@@ -4904,6 +4910,8 @@ Individual agreed package totals per passenger/currency are persisted with exact
   `CUSTOMER-001` را آغاز می‌کند.
 - Handoff با PR شماره ۱۲ و Merge Commit `0af31c2` وارد `develop` شد.
 
+HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
+
 ## برنامه اجرایی Sprint دوم
 
 ### `SPRINT2-PLANNING-001` — PC-A — `DONE`
@@ -7163,6 +7171,10 @@ final checks, CI and runtime publication/handoff evidence follow in the PR.
 ## PC-B acceptance follow-up — 2026-10-12
 
 PR803 merged at04acd08a and passed all merged-tree CI checks; rubi Web3100/API4192 now run that tree against the existing database. Authenticated threshold form works. The seller screen exposed empty-body serialization when no profile exists; ACCOUNTING-EMPTY-SELLER-1012 restores the existing nullable JSON contract without creating a record or changing permissions. Regression reproduced before correction; both missing and populated responses are covered. Full statutory return logic and official taxpayer dispatch remain incomplete.
+
+## 2026-10-12 — PACKAGE-TEMPLATE-GALLERY-1012 — PC-B
+
+Added six supplied, distinct editable posters under the Package Generator package tab: Iran (Kish, Qeshm, Mashhad), Vietnam (standard and luxury), China. Original image bytes remain intact; direct-click text/price editing and photo replacement stay inside bounded template regions, with per-design in-memory edits, reset and font controls. Real PNG/PDF exports preserve original portrait/landscape dimensions. Printed sample values are presentation content, not published Rubi package prices. No Excel parser, permissions, API, schema, shared contract, dependency, persistence or Documents changes. Browser acceptance covered all six designs, mobile layout, image replacement, literal malicious text, switching back to the existing editor and all twelve PNG/PDF exports. Web pricing tests52, lint and typecheck passed; production build evidence in task/PR.
 
 ### 2026-10-12 — CORRESPONDENCE-WORKFLOWS-1012
 
@@ -9591,9 +9603,6 @@ Owner-requested tour definition controls: left header action, independent multi-
 
 Dashboard and operational receivable rows now exclude effective Reservations cancellations through the same existing public lifecycle reader as Sales list pagination/count/export. Sales CANCELLED remains excluded and the latest REOPEN remains visible.16 targeted API regressions pass. No data/schema/dependency or permission change. User authorizes develop merge after all exact-head checks and bounded API deployment with backup/rollback/health verification. See tasks/SALES-EXCLUDE-CANCELLED-1109.md.
 
-
-
-
 ## RESERVATION-LATEST-PDF-1109 — PC-A — READY_FOR_CI
 
 Reservation PDF GET now uses the latest saved settings/NOTICE instead of replacing them with the last sent snapshot. The QR share matches the current saved output; existing public snapshots and sent revisions remain immutable. Per-hotel scoping, voucher/release/access guards, form appearance and disabled SMTP are preserved.79 focused Web and30 API regressions pass. No schema/dependency/runtime/settings/data or deployment change. See tasks/RESERVATION-LATEST-PDF-1109.md. Exact-head full hosted gates precede the authorized develop merge; final evidence stays in the PR.
@@ -9630,3 +9639,16 @@ HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ES
 ## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — READY_FOR_CI
 
 Removed the permanent cancellation sentence from every cancelled Reservations queue row. The sentence appears beside the selected cancelled contract number in the existing live selection panel, and disappears for an active or empty selection. Red cancellation row styling and existing action/access rules are retained.56 focused table/workspace/action-panel tests and scoped ESLint pass. No API/schema/dependency or operational data change. All exact-head hosted gates are required before the owner-authorized develop merge; no deployment requested.
+
+# Sales Gregorian list dates — 2026-11-09
+
+Contract registration, travel and update dates use Gregorian display in the Sales
+list regardless of stored calendar choice. Travel date-only values retain UTC;
+registration/update timestamps retain Tehran timezone. Regression tests20/20 and
+scoped ESLint passed. No stored data or migration changes.
+
+FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on Finance inbox cards. Sales cards retain the current contract financial summary and authorized receipt reversal action. 18 focused presentation and detail tests passed.
+
+## HR-RADAN-PRODUCTION-1101 — DEPLOYED
+
+Merged Radan attendance integration is active on Avina with Tehran quarter-hour peak/full-hour off-peak slots. Initial72 real punches yield43 daily summaries; automatic17:00 run verifies idempotence and next17:15 slot. Public HTTPS health/authenticated status/HR200, preserved Call Center code and unchanged Worker image/data services verified after encrypted/offsite backups. Exact native codes and existing working hours retained; one unmatched source punch remains unresolved. Company workstation bridge must stay running. No migration, grants or Radan writes. See tasks/HR-RADAN-PRODUCTION-1101.md.

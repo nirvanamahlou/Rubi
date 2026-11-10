@@ -17,7 +17,7 @@ import {
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
-  it('shows the booked travel dates in separate cells with their recorded calendars', () => {
+  it('shows booked travel dates in Gregorian regardless of their recorded calendars', () => {
     const contract = {
       travelDates: {
         outbound: { date: '2026-10-25', calendar: 'gregorian' },
@@ -36,7 +36,7 @@ describe('sales dashboard loading', () => {
     expect(html.match(/<td\b/g)).toHaveLength(2);
     expect(html).toContain('25/10/2026');
     expect(html).toContain(
-      new Date('2026-11-01T00:00:00Z').toLocaleDateString('fa-IR', {
+      new Date('2026-11-01T00:00:00Z').toLocaleDateString('en-GB', {
         timeZone: 'UTC',
       }),
     );
@@ -140,7 +140,7 @@ describe('sales dashboard loading', () => {
     expect(html).toContain('<bdi dir="rtl">تهران ← آنتالیا</bdi>');
     expect(html.match(/آنتالیا/g)).toHaveLength(1);
     expect(html).toContain(
-      new Date(createdAt).toLocaleDateString('fa-IR', {
+      new Date(createdAt).toLocaleDateString('en-GB', {
         timeZone: 'Asia/Tehran',
       }),
     );

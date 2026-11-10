@@ -192,11 +192,6 @@ export function ContractActionPanel({
           <strong>
             {request ? request.contractNumber : 'قراردادی انتخاب نشده'}
           </strong>
-          {request?.status === 'CANCELLED' && (
-            <span className={styles.cancelledNotice}>
-              این قرارداد باطل شده است
-            </span>
-          )}
           <span>
             {request
               ? request.customerName !== '—'

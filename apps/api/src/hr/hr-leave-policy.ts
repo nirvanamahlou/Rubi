@@ -1,5 +1,8 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
+import {
+  HR_DEFAULT_LEAVE_DAY_MINUTES,
+  type WorkbenchLeaveInputV1,
+} from '@nora/contracts';
 import { digits, localClockParts } from './hr.validation';
 import type { HrWorkflowData } from '@nora/contracts';
 
@@ -22,16 +25,32 @@ export function recordLeave(
 
 export function leavePolicyValues(values: readonly string[]): string[] {
   // Old annual policies remain legacy until explicitly saved in the new form.
-  return values.length === 6
-    ? [values[1] ?? '', '', '', '1', '0', values[3] ?? 'خیر', values[4] ?? '0']
-    : values.map((v, i) =>
-        i === 4 && /^([01]\d|2[0-3]):[0-5]\d$/.test(digits(v)) ? '0' : v,
-      );
+  const fields =
+    values.length === 6
+      ? [
+          values[1] ?? '',
+          '',
+          '',
+          '1',
+          '0',
+          values[3] ?? 'خیر',
+          values[4] ?? '0',
+        ]
+      : values.map((v, i) =>
+          i === 4 && /^([01]\d|2[0-3]):[0-5]\d$/.test(digits(v)) ? '0' : v,
+        );
+  return fields.length === 7
+    ? [...fields, String(HR_DEFAULT_LEAVE_DAY_MINUTES)]
+    : fields;
 }
 export function parseMonthlyLeavePolicy(values: readonly string[]) {
-  if (values.length !== 7) return null;
+  if (![7, 8].includes(values.length)) return null;
   const v = values.map(digits);
+  const dayMinutes = v[7]?.trim() || String(HR_DEFAULT_LEAVE_DAY_MINUTES);
   if (
+    !/^\d{1,4}$/.test(dayMinutes) ||
+    Number(dayMinutes) < 1 ||
+    Number(dayMinutes) > 1440 ||
     !['استحقاقی', 'استعلاجی'].includes(v[0]!) ||
     !/^\d{1,2}(\.\d{1,2})?$/.test(v[1]!) ||
     Number(v[1]) > 31 ||
@@ -50,6 +69,7 @@ export function parseMonthlyLeavePolicy(values: readonly string[]) {
   return {
     type: v[0]!,
     daily: Number(v[1]),
+    dayMinutes: Number(dayMinutes),
     hourly: Number(v[2]),
     noticeDays: Number(v[3]),
     hourlyNoticeDays: v[4]!.includes(':') ? 0 : Number(v[4]),

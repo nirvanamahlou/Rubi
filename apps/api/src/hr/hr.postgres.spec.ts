@@ -622,7 +622,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           branchId,
           section: 'time',
           tab: 'leavePolicies',
-          values: ['استحقاقی', '2.5', '3', '1', '14:00', 'خیر', '0'],
+          values: ['استحقاقی', '2.5', '3', '1', '14:00', 'خیر', '0', '450'],
           status: 'فعال',
         },
         key(),
@@ -635,28 +635,6 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         '1',
         '0',
       ]);
-      await service.createRecord(
-        {
-          branchId,
-          section: 'time',
-          tab: 'calculationSettings',
-          values: [
-            'Synthetic calculation',
-            '[]',
-            'خیر',
-            '465',
-            'خیر',
-            'خیر',
-            'بله',
-            'خیر',
-            'خیر',
-            'تردد',
-          ],
-          status: 'فعال',
-        },
-        key(),
-        manager,
-      );
       const leaveDate = new Date(Date.now() + 5 * 86400000);
       while ([4, 5].includes(leaveDate.getUTCDay()))
         leaveDate.setUTCDate(leaveDate.getUTCDate() + 1);
@@ -828,6 +806,43 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         deficitMinutes: 0,
         lateMinutes: 0,
       });
+      const monthOf = (day: Date) =>
+        new Intl.DateTimeFormat('en-u-ca-persian', {
+          month: 'numeric',
+          timeZone: 'UTC',
+        }).format(day);
+      const nextDate = new Date(leaveDate.getTime() + 86400000);
+      const dailyDate = (
+        monthOf(nextDate) === monthOf(leaveDate)
+          ? nextDate
+          : new Date(leaveDate.getTime() - 86400000)
+      )
+        .toISOString()
+        .slice(0, 10);
+      const daily = await service.createRecord(
+        {
+          ...input,
+          values: [
+            person.name,
+            'استحقاقی',
+            dailyDate,
+            dailyDate,
+            'روزانه',
+            '',
+            '',
+            'خیر',
+          ],
+          data: { reason: 'Synthetic daily leave' },
+        },
+        key(),
+        owner,
+      );
+      const approvedDaily = await service.updateRecord(
+        daily.id,
+        { version: daily.version, status: 'تأییدشده' },
+        manager,
+      );
+      expect(approvedDaily.data.minutes).toBe(450);
       const ledger = await client.hrRecord.findMany({
         where: { employeeId: person.id, tab: 'minuteLedger' },
       });

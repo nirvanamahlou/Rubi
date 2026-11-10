@@ -2,7 +2,10 @@
 import { HrMissionForm } from './hr-mission-form';
 import { HrLeaveForm } from './hr-leave-form';
 import { WeeklyShiftForm } from './weekly-shift-form';
-import { isHrSharedResource } from '@nora/contracts';
+import {
+  HR_DEFAULT_LEAVE_DAY_MINUTES,
+  isHrSharedResource,
+} from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -50,6 +53,7 @@ export interface HrFormTarget {
   parent?: HrRecordDto;
   employeeId?: string;
   organizationNode?: boolean;
+  chartPlacement?: boolean;
   preferredCompanyId?: string;
 }
 const valueOf = (record: HrRecordDto | undefined, label: string) =>
@@ -314,7 +318,8 @@ function HrRecordFormFields({
             r.section === 'organization' &&
             r.tab === 'chartEmployees' &&
             r.employeeId === item.id &&
-            !r.deletedAt,
+            !r.deletedAt &&
+            (!target.chartPlacement || r.data.chartVisible === true),
         )),
   );
   const parents = missionExpense
@@ -877,7 +882,18 @@ function HrRecordFormFields({
                       ...(showStatus ? [target.record.status] : []),
                     ],
                   }
-                : {}),
+                : definition.key === 'time.leavePolicies'
+                  ? {
+                      initialValues: [
+                        '',
+                        ...definition.columns.map((label) =>
+                          label === 'طول مرخصی روزانه به دقیقه'
+                            ? String(HR_DEFAULT_LEAVE_DAY_MINUTES)
+                            : '',
+                        ),
+                      ],
+                    }
+                  : {}),
               holidayOptions: data.records
                 .filter(
                   (item) =>
@@ -954,7 +970,23 @@ function HrRecordFormFields({
                   )
                     ? companyId
                     : company?.organizationBranchId));
+              const existingPlacement =
+                target.record ??
+                (target.chartPlacement && isChartEmployee
+                  ? data.records.find(
+                      (r) =>
+                        r.section === 'organization' &&
+                        r.tab === 'chartEmployees' &&
+                        r.employeeId === employeeId &&
+                        !r.deletedAt &&
+                        r.data.chartVisible !== true,
+                    )
+                  : undefined);
               const extra: HrWorkflowData = {
+                ...(target.chartPlacement ? { chartVisible: true } : {}),
+                ...(existingPlacement && !target.record
+                  ? { chartX: 0, chartY: 0 }
+                  : {}),
                 ...(isHrSharedResource(target.source.section, target.source.tab)
                   ? { allBranches: Boolean(company?.isHeadquarters) }
                   : {}),
@@ -1098,8 +1130,8 @@ function HrRecordFormFields({
                 },
                 data,
               );
-              const record = target.record
-                ? await store.update(target.record, {
+              const record = existingPlacement
+                ? await store.update(existingPlacement, {
                     values: input.values,
                     ...(input.privateData
                       ? { privateData: input.privateData }

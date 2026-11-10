@@ -50,6 +50,10 @@ Owner authorizes reversible archive before 1405/08/01, one-time historical compa
 
 Remove the inline General Details button from Reservations table rows. Preserve the action panel and its permissions. Owner authorizes develop merge.
 
+## HR-EMPTY-CHART-1109 — PC-A — IN_PROGRESS
+
+Owner requests a blank organizational chart for manual rebuilding while retaining HR catalog records. Reserve chart projection, chart form placement metadata, and focused regression. No schema or production data migration.
+
 ## HR-SHARED-UNIT-LIST-1109 — PC-A — IN_PROGRESS
 
 Follow-up to PR 1522. Reserve HR unit list pagination and its existing PostgreSQL regression. Collapse visible shared-unit copies in the list while retaining their company links. No schema or operational data changes.
@@ -64,21 +68,27 @@ Bounded translation lease: fourteen company-scope labels/errors in Web en-overri
 
 Owner authorizes broker price label, hotel-default transfer currency with manual override, inverted separate-direction checkbox preserving combined round-trip default, and develop merge. Scope: Reservations quotation editor and focused tests only; no schema, dependency, operational data or deployment. Branch codex/pc-a-transfer-price-controls-1108.
 
-## INSURANCE-STANDALONE-1109 — PC-A — ACTIVE
+## INSURANCE-STANDALONE-1109 — PC-A — DEPLOYED / RELEASED
+
+PR1559 merged to develop as294e6b0b27375f749255fa09b48a09d44e0fc0e3 after all eight exact-head checks passed for dc25af58a10e9e9701924d883a528d8563cee668. Bounded API/Web images insurance-standalone-1109 activated with only additive migration20261109100000. Live environment/mount hashes, peer source overlays, unrelated services, old/new assets, authentication, Worker/AMI/recording and runtime schema privileges verified. Real disposable PostgreSQL proofs passed on the release image; browser confirmed fresh standalone form and permitted-duration dropdown without submitting a policy. Fresh encrypted checkpoint is verified off-server. Schema/migration, central CI/runtime-module, DTO/catalogue and Customer validation-port leases for this unit are released. Documentation handoff only remains; see the task note for rollback and receipts.
 
 Bounded Customers port lease: CustomerInsuranceIdentity exposes only its existing Iranian national-ID validation for standalone request input; no Customer row is created/read/changed by that port. Customers remains producer of identity validation, Reservations consumes it. No Customer module/registry change.
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-standalone-1109 from origin/develop cda23c1ea. Owner explicitly authorizes allowed-duration selection, retaining original provider failures, full new-applicant insurance requests without Sales contracts, green develop merge and bounded Avina release. Reserve Reservations insurance API/Web/automation/tests, scoped Integrations issuance catalogue, insurance Contracts producer/consumer DTOs and additive English/offline catalogues. Sole Migration/Schema Owner PC-A for an additive encrypted standalone applicant/access-audit model and optional existing policy contract/intake/customer links with a strict contract-or-standalone constraint. Previous email migration source is confirmed merged (its branch is an ancestor of develop); no other active schema writer found. Reserve schema.prisma, the existing mandatory insurance PostgreSQL test/gate, bounded runtime-module registration, and own PRODUCT_REQUIREMENTS/DECISIONS/DATA_MODEL/status/task notes. No dependencies, fake Sales contract/Customer identities, changed Finance release rules, production-insurer switch or real customer test issuance. Provider leases/fingerprints and branch permissions remain mandatory. New applicant data is a Reservations-owned encrypted value object; existing Customer ownership remains intact. Shared DTO producer Reservations and consumer insurance Web ship together; existing contract shapes remain supported.
 
-## INSURANCE-ADVISORY-LOCK-1109 — PC-A — ACTIVE
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — COMPLETE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-advisory-lock-1109 from origin/develop68b538c9f. Follow-up to owner-authorized insurance repair/merge/bounded release: reproduce and fix the remaining correction HTTP500, without issuing a passenger policy. Reserve insurance.service.ts and a real Prisma/PostgreSQL regression test, own task/status docs, and only the existing insurance PostgreSQL gate command in .github/workflows/ci.yml. No other active insurance/CI command writer found; prior source work is merged. No migration/dependency/schema/API/provider-mode changes. Preserve transactional serialization, CAS, audit, provider idempotency and peer production overlays. Bounded API-only deployment and real PostgreSQL lock proof required; no destructive cleanup authorized by this unit.
 
-## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — ACTIVE
+PR1552 merged as cda23c1ea2611e112f477e441e09ea2627c27777 after all8 final-head hosted checks passed.41 candidate insurance tests and3 separate real Prisma/PostgreSQL tests pass;5 local CI-policy tests pass. Bounded API-only release completed with unchanged Web/Worker images, environment/mounts and migrations. Worker recreated only for API namespace; health/assets/auth/AMI/recording checks pass. The compiled live lock helper also succeeds inside a read-only rolled-back transaction. Fresh encrypted checkpoint verified offserver; no policy issued or passenger record changed for testing. Source/CI leases released. Completion-only handoff branch codex/pc-a-insurance-lock-handoff-1109 updates these3 documentation files. Receipt: /opt/rubi/insurance-advisory-lock-1109/verified.json.
+
+## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — COMPLETE
 
 COMPUTER_ID=PC-A; branch codex/pc-a-insurance-correct-submit-1109 from current develop. Owner requests correct-and-immediate insurance submission, precise failure handling, develop merge and only this bounded production repair. Reserve Reservations insurance client/form/controller/automation input handling and focused tests; own task/status and bounded deployment tooling. Prior overlapping insurance amendment is merged; preserve issued-policy guards, provider fingerprints/leases, sandbox-only provider, customer CAS/audit and branch permissions. No schema/dependency/grant or live policy test. Production rollout must preserve peer overlays and shared deployment lease, verified backup, rollback and health/Worker checks; no full-develop publication authorized by this task.
 
 Bounded catalogue lease: mirror existing form-field labels newly used by API validation into generated offline API English catalogue only; preserve all peer keys and translation runtime.
+
+Completed: PR1546 merged as cc34a653bdad830354d0ce8a39cf3839902aaf65 after all8 final-head hosted checks passed. Bounded Avina API/Web release verified, including41 API and19 Web/translation candidate tests, canary, source hashes, unchanged environment/mounts, health/assets/auth and Worker/AMI/recording checks. No migration or provider-mode change. The two explicitly authorized older backups were retired only after healthy newer backup validation; a fresh encrypted checkpoint is verified on server and offserver. All task leases released. PC-A reserves only these completion paragraphs and the task completion section for documentation handoff on codex/pc-a-insurance-release-handoff-1109; no runtime/dependency/migration changes.
 
 ## CANCEL-REOPEN-CAPACITY-1109 — PC-A — READY_FOR_CI
 
@@ -6032,6 +6042,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-A`؛ شاخه `codex/pc-a-sales-ticket-catalog-sync-0919` از `origin/develop@5d588cbd`. محدوده: API عمومی موجود Ticket Catalog برای فهرست مدیریت‌شده، ثبت تعریف پرواز در همان منبع `TicketPublishedOffer`، نمایش منبع ثبت‌شده در مدیریت بلیط، انتخاب Sales و تست‌های هدفمند؛ بدون Schema/Migration/Dependency/Lockfile یا داده عملیاتی.
 - نتیجه: تعریف تازهٔ پرواز، از همان فرم مدیریت بلیط، پیش از ذخیرهٔ نمای محلی در `TicketPublishedOffer` منتشر می‌شود و همان لحظه در فهرست «ثبت‌شده برای فروش و قرارداد» و انتخاب قرارداد جدید قابل‌دریافت است. رفت/برگشت و تکرار نیز هر پرواز مستقل را منتشر می‌کنند. فهرست مدیریت‌شده فقط ردیف‌های شعبه‌های مجاز و ظرفیت مانده را می‌خواند. تست Web ۱/۱، تست API ۳/۳، lint، Prettier و typecheck API/Web موفق‌اند؛ بدون Migration، Dependency/Lockfile یا داده عملیاتی.
 
+## HR-INBOX-REQUEST-TITLE-1109 — PC-A
+
+Reserve the HR requests table title column. Keep the request type filter and review actions.
+
+## HR-LEAVE-POLICY-ONLY-1109 — PC-A — IN_PROGRESS
+
+Owner requests leave approvals to use the leave policy, and removes calculation settings and the penalty shortcut from the attendance settings view. Reserve HR leave policy, form, and approval tests. No schema migration.
+
 ## MASTER-013-AIRLINE-DESCRIPTION-0919 — PC-B — ACTIVE
 
 - درخواست مالک در 2026-09-19: متن Credential و اتصال Provider از توضیحات بخش ایرلاین حذف شود.
@@ -8669,6 +8687,10 @@ approved producer contracts exist. No Finance/CRM owner tables read. Existing
 SELF access and snapshot preserved. Acceptance: pure source-backed projection,
 permission/empty/cap/window/cancel/duplicate tests, strict source validation,
 API/Web/service checks and exact-head CI before authorized develop merge.
+
+## PACKAGE-TEMPLATE-GALLERY-1012 — PC-B — READY_FOR_REVIEW
+
+Branch codex/pc-b-package-template-gallery-1012 from origin/develop@2de87ce4. Reserve only standalone Package Generator template assets/catalogue/editor and bounded app/index integration, focused Web tests, own task/status entries. Six supplied distinct templates: Vietnam, luxury Vietnam, China, Kish, Qeshm and Mashhad; duplicate Mashhad deduplicated. Existing Package Pricing field task source locks explicitly released; no overlapping static editor writer found. No shared contract, API, schema, migration, dependency, lockfile, IAM or operational-data changes.
 
 ## CORRESPONDENCE-WORKFLOWS-1012 — PC-A — READY_FOR_REVIEW
 
@@ -12060,3 +12082,21 @@ HOTEL-FACTOR-DEFAULTS-1110 validation:58 focused Web/shared/API tests, scoped ES
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.
 
 RESERVATION-CANCELLED-SELECTION-1110 validation:56 focused queue/table/action-panel tests and scoped ESLint pass. Cancellation notice is attached only to the selected cancelled contract identity; no queue cell contains the repeated text, while cancelled rows retain their red state. Source reservation releases on frozen publication; exact-head hosted gates precede authorized develop merge. No deployment requested.
+
+# SALES-GREGORIAN-1109 — PC-A — VALIDATED
+
+User authorizes Gregorian-only Sales list dates and develop merge. Reserve
+sales-workspace.tsx, sales-workspace.spec.tsx and own documentation entries.
+Branch codex/pc-a-sales-gregorian-1109 from origin/develop@083cedb62.
+No API, schema, dependency or operational data changes. Sales list tests20/20
+and scoped ESLint passed. Source reservation releases with the review candidate.
+
+## FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 — PC-A
+
+Place General Details beside the Finance inbox amount and keep request selection a separate action. Reuse the authorized reservation detail flow and match Sales requests by contract ID. Frontend only.
+
+## HR-RADAN-PRODUCTION-1101 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B. Owner explicitly authorizes production activation of merged HR Radan integration with the existing Tehran quarter-hour peak/full-hour off-peak schedule. Reserve bounded deployment preparation, source-compatible HR/API/Web overlays, private branch/session/provider configuration and native scoped acceptance plus own task/status notes. Preserve current live Call Center and other peer overlays, unchanged Worker/data services, existing shared deployment lock, encrypted backup and rollback. No migration/destructive operation, grants or source-system writes. Initial pull is an owner-authorized activation check; recurring pulls follow the requested slots.
+
+HR-RADAN-PRODUCTION-1101 — DEPLOYED / VERIFIED. API73fa43f66e7e and Web6af6ea7d78e3 activate the merged HR adapter while preserving current Call Center hashes, unchanged Worker image and data-service containers. Encrypted database/doc/config backups and offsite/DPAPI recovery checkpoint verified before locked cutover. Native initial72-punch /43-summary import passes; the actual17:00 Tehran scheduled run reports0 imported /72 unchanged and advances to17:15. Public HTTPS health/status/HR200, unauthenticated401, correct Worker namespace and no restart verified. One unmatched code remains unresolved; no employee identity, missing exit, grant or source write invented. Task note records ownership, cadence, rollback and workstation bridge dependency.
