@@ -83,13 +83,11 @@ describe('shared authentication refresh', () => {
       vi.stubGlobal('window', { dispatchEvent });
       vi.stubGlobal(
         'fetch',
-        vi
-          .fn()
-          .mockResolvedValue({
-            ok: true,
-            status: 200,
-            json: async () => payload,
-          }),
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => payload,
+        }),
       );
       const { refreshAuthenticatedSession, SessionRefreshUnavailableError } =
         await import('./auth-session');
