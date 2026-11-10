@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   HR_CONNECTION_TARGETS,
   type AuthenticatedActor,
@@ -70,5 +70,96 @@ describe('HR referral authorization and lifecycle', () => {
     ]) {
       expect(() => assertHrConnectionTransition(before!, after!)).toThrow();
     }
+  });
+});
+
+describe('Finance referral projection', () => {
+  const recipient = actor(['hr.connections.finance.receive']);
+  const referral = {
+    id: 'referral',
+    code: 'HR-1',
+    branchId: 'b',
+    tab: 'finance',
+    status: 'IN_REVIEW',
+    version: 1,
+    createdAt: new Date('2026-11-10T00:00:00Z'),
+    employee: { userId: 'employee' },
+    data: {
+      title: 'Shared title',
+      message: 'Shared message',
+      employeeLabel: 'Employee',
+      requesterUserId: 'sender',
+      dueAt: '2026-11-11T00:00:00Z',
+      response: null,
+    },
+  };
+
+  function fixture(rows: unknown[]) {
+    const findMany = vi.fn().mockResolvedValue(rows);
+    const create = vi.fn().mockResolvedValue({});
+    const service = new HrConnectionsService({
+      client: { hrRecord: { findMany }, hrAuditEvent: { create } },
+    } as unknown as DatabaseService);
+    return { service, findMany, create };
+  }
+
+  it('loads only the scoped finance projection and preserves response eligibility', async () => {
+    const { service, findMany, create } = fixture([
+      referral,
+      { ...referral, data: { ...referral.data, requesterUserId: 'u' } },
+      { ...referral, employee: { userId: 'u' } },
+      { ...referral, status: 'ANSWERED' },
+    ]);
+    const items = await service.readFinanceInbox(recipient);
+
+    expect(items.map((item) => item.canRespond)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+    expect(items[0]).toMatchObject({ id: 'referral', title: 'Shared title' });
+    expect(items[0]).not.toHaveProperty('history');
+    expect(findMany).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            {
+              section: 'connections',
+              branchId: { in: ['b'] },
+              deletedAt: null,
+              tab: { in: ['finance'] },
+            },
+            { tab: 'finance' },
+          ],
+        },
+        select: expect.objectContaining({
+          employee: { select: { userId: true } },
+        }),
+      }),
+    );
+    expect(findMany.mock.calls[0]?.[0].select).not.toHaveProperty(
+      'auditEvents',
+    );
+    expect(create).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        branchId: 'b',
+        actorId: 'u',
+        action: 'connection.list.read',
+        changes: { target: 'finance', count: 4, page: 1 },
+      },
+    });
+  });
+
+  it('rejects unauthorized or incomplete reads before writing the audit event', async () => {
+    const { service, findMany, create } = fixture(Array(25_001).fill(referral));
+    await expect(service.readFinanceInbox(actor([]))).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(findMany).not.toHaveBeenCalled();
+    await expect(service.readFinanceInbox(recipient)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(create).not.toHaveBeenCalled();
   });
 });

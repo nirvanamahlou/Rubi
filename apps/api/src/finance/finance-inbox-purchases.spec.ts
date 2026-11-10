@@ -36,7 +36,7 @@ function setup(reservations: unknown, fx?: unknown) {
     );
   const service = new FinanceInboxService(
     { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-    { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+    { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
     reservations as never,
     {} as never,
     {
