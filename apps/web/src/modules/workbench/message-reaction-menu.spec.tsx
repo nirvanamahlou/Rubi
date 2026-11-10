@@ -1,3 +1,4 @@
+import { DisplayLocaleContext } from '@/i18n/locale-context';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MessagingMessageV1 } from '@nora/contracts';
@@ -86,29 +87,31 @@ describe('message context actions', () => {
     state.change!(false);
     expect(props.onClose).toHaveBeenCalledOnce();
   });
-  it('shows server-resolved reaction names even when users are not in the current directory', () => {
+  it('keeps server-resolved names verbatim in English for people outside the current directory', () => {
     const markup = renderToStaticMarkup(
-      <MessageReactionMenu
-        message={{
-          ...message,
-          reactions: [
-            {
-              emoji: '❤️',
-              count: 1,
-              userIds: ['former'],
-              users: [{ id: 'former', displayName: 'همکار پیشین' }],
-            },
-          ],
-        }}
-        position={{ x: 0, y: 0 }}
-        currentUserId="self"
-        disabled={false}
-        onClose={() => {}}
-        onReply={() => {}}
-        onReact={() => {}}
-      />,
+      <DisplayLocaleContext.Provider value="en">
+        <MessageReactionMenu
+          message={{
+            ...message,
+            reactions: [
+              {
+                emoji: '❤️',
+                count: 1,
+                userIds: ['former'],
+                users: [{ id: 'former', displayName: 'ذخیره' }],
+              },
+            ],
+          }}
+          position={{ x: 0, y: 0 }}
+          currentUserId="self"
+          disabled={false}
+          onClose={() => {}}
+          onReply={() => {}}
+          onReact={() => {}}
+        />
+      </DisplayLocaleContext.Provider>,
     );
-    expect(markup).toContain('همکار پیشین');
+    expect(markup).toContain('ذخیره');
     expect(markup).toContain('❤️');
   });
   it('disables mutations while a request is pending', () => {

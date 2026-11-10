@@ -2854,6 +2854,10 @@ lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات 
 
 در فرم، جدول، پروفایل و خروجی Excel «انواع هواپیما»، عنوان فارسی حذف و سازنده/مدل به یک فیلد «سازنده و مدل» تبدیل شد. API مقدار ترکیبی را اعتبارسنجی و در ستون‌های فعلی تفکیک می‌کند و برای سازگاری مصرف‌کنندگان قبلی یک نام داخلی غیرنمایشی می‌سازد؛ بنابراین Schema، Migration و قرارداد مرکزی تغییر نکرده‌اند. Fixtureهای آزمایشی ساده و واقع‌نما نیز با `Airbus / A320-200` و `Boeing / 777-300ER` هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در [MASTER-008-AIRCRAFT-FIELDS](tasks/MASTER-008-AIRCRAFT-FIELDS.md).
 
+## WORKBENCH-VERBATIM-1110 — PC-B
+
+Messaging renders stored text, sender and member names, group titles, quoted and forwarded text, reaction names, and attachment titles without applying the UI dictionary. Interface copy still follows the selected language. Eleven focused rendering and reaction tests passed. This is the Workbench slice of architecture finding A11.
+
 ## WORKBENCH-041 — رفع خطای پیام‌رسان
 
 در نگاشت پیام‌های عادی، شناسهٔ خالیِ فرستندهٔ فورواردشده دیگر به کوئری UUID کاربران ارسال نمی‌شود؛ این مشکل باعث خطای ۵۰۰ در فهرست گفتگوها و ایجاد گفت‌وگوی مستقیم بود. تست رگرسیون پیام‌رسان، lint و rebuild API موفق شدند و API جدید روی ۴۱۹۱ فعال است.

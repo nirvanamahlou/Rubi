@@ -3574,6 +3574,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
 
+## WORKBENCH-VERBATIM-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A11. Reserve the Workbench message composer, one explicit text display helper and focused localization coverage. Preserve user-authored messages, names and attachment titles in both display languages. Keep translation for interface actions and labels. No API, database or dependency change.
+
 ## WORKBENCH-026 — PC-B — UI_VERIFIED
 
 - Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
