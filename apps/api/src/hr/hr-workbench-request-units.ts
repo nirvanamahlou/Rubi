@@ -24,7 +24,11 @@ export class HrWorkbenchRequestUnits {
     return rows.map((row) => row.branchId);
   }
 
-  async list(branchId: string, tx?: Prisma.TransactionClient) {
+  async list(
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+    includeSharedAliases = false,
+  ) {
     const rows = await (tx ?? this.database.client).hrRecord.findMany({
       where: {
         branchId,
@@ -33,13 +37,43 @@ export class HrWorkbenchRequestUnits {
         status: 'فعال',
         deletedAt: null,
       },
-      select: { id: true, values: true },
+      select: { id: true, values: true, sharedSourceId: true },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
+    const roots = [...new Set(rows.map((row) => row.sharedSourceId ?? row.id))];
+    const aliases =
+      includeSharedAliases && roots.length
+        ? await (tx ?? this.database.client).hrRecord.findMany({
+            where: {
+              section: 'organization',
+              tab: 'units',
+              status: 'فعال',
+              deletedAt: null,
+              OR: [{ id: { in: roots } }, { sharedSourceId: { in: roots } }],
+            },
+            select: { id: true, sharedSourceId: true },
+          })
+        : [];
     return rows.flatMap((row) => {
       const name = Array.isArray(row.values) ? row.values[0] : null;
       return typeof name === 'string' && name.trim()
-        ? [{ id: row.id, name: name.trim() }]
+        ? [
+            {
+              id: row.id,
+              name: name.trim(),
+              ...(includeSharedAliases
+                ? {
+                    aliases: aliases
+                      .filter(
+                        (alias) =>
+                          (alias.sharedSourceId ?? alias.id) ===
+                          (row.sharedSourceId ?? row.id),
+                      )
+                      .map((alias) => alias.id),
+                  }
+                : {}),
+            },
+          ]
         : [];
     });
   }

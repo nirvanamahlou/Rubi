@@ -12198,3 +12198,7 @@ Reserve System Management landing, authenticated write activity capture and read
 ## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
 
 Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.
+
+## WORKBENCH-RECIPIENT-SCOPE — PC-A — IN_PROGRESS
+
+Reserve the minimal Workbench request recipient directory, HR unit projection and Workbench form branch selection. Preserve active internal accounts, membership, branch access and Call Center behavior. No role grants, migrations or dependency changes.

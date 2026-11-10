@@ -105,6 +105,57 @@ describe('IAM public Workbench request directory', () => {
       branches: { some: { branchId: actor.branchIds[0] } },
     });
   });
+  it('resolves same-branch recipients assigned to a shared copy of the unit', async () => {
+    const { db, directory, units } = setup();
+    const sharedId = '55555555-5555-4555-8555-555555555555';
+    units.list.mockResolvedValue([
+      { id: unitId, name: 'رزرواسیون', aliases: [sharedId] },
+    ]);
+    db.user.findMany.mockResolvedValue([
+      { ...member, profile: { organizationUnitId: sharedId } },
+    ]);
+    const branchId = actor.branchIds[0]!;
+    await expect(directory.options(actor, branchId)).resolves.toEqual({
+      units: [
+        {
+          id: unitId,
+          name: 'رزرواسیون',
+          users: [
+            {
+              id: recipientId,
+              displayName: member.displayName,
+              username: member.username,
+            },
+          ],
+        },
+      ],
+    });
+    expect(db.user.findMany.mock.calls[0]![0].where).toMatchObject({
+      branches: { some: { branchId } },
+      OR: [{ profile: { organizationUnitId: { in: [unitId, sharedId] } } }],
+    });
+    await expect(
+      directory.resolve(db as never, actor, branchId, unitId, recipientId),
+    ).resolves.toMatchObject({ recipient: { id: recipientId } });
+  });
+
+  it('matches normalized HR unit names without granting unrelated unit membership', async () => {
+    const { db, directory, units } = setup();
+    units.list.mockResolvedValue([{ id: unitId, name: 'بازاریابی و فروش' }]);
+    db.user.findMany.mockResolvedValue([{ ...member, profile: null }]);
+    units.members.mockResolvedValue([
+      { userId: recipientId, unit: 'بازاريابي‌ و  فروش' },
+    ]);
+    const branchId = actor.branchIds[0]!;
+    expect(
+      (await directory.options(actor, branchId)).units[0]!.users,
+    ).toHaveLength(1);
+    units.members.mockResolvedValue([{ userId: recipientId, unit: 'مالی' }]);
+    expect((await directory.options(actor, branchId)).units[0]!.users).toEqual(
+      [],
+    );
+  });
+
   it('rejects another branch before querying and rejects an inactive or removed operator', async () => {
     const { directory, db } = setup();
     await expect(directory.options(actor, 'outside')).rejects.toBeInstanceOf(
