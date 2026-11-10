@@ -420,3 +420,57 @@ it('includes every currency of a total passenger purchase without adding company
     result.totals.find((p) => p.currencyCode === 'USD')?.purchaseAmount,
   ).toBe('25');
 });
+
+it('does not require included city tour or guide costs while retaining actual purchases', () => {
+  const extras = [
+    { clientKey: 'city-tour', kind: 'OTHER', titleSnapshot: 'گشت شهری' },
+    { clientKey: 'tour-guide', kind: 'OTHER', titleSnapshot: 'راهنما' },
+    {
+      clientKey: 'imported-guide',
+      kind: 'OTHER',
+      titleSnapshot: 'Guide',
+      metadata: { additionalServiceRole: 'TOUR_GUIDE' },
+    },
+  ];
+  const withExtras = {
+    ...contract,
+    servicesDetail: [...contract.servicesDetail, ...extras],
+  } as SalesContractDetail;
+  const baseline = contractProfit(contract, intake, [ticket]);
+  expect(baseline.complete).toBe(true);
+  expect(contractProfit(withExtras, intake, [ticket])).toEqual(baseline);
+  const missing = contractProfit(withExtras, null, []);
+  expect(missing.missingServiceKeys).toContain('flight');
+  expect(missing.missingServiceKeys).toContain('insurance');
+  expect(missing.missingServiceKeys).not.toContain('city-tour');
+  expect(missing.missingServiceKeys).not.toContain('tour-guide');
+  const other = {
+    ...withExtras,
+    servicesDetail: [
+      ...withExtras.servicesDetail,
+      { clientKey: 'other', kind: 'OTHER', titleSnapshot: 'Other service' },
+    ],
+  } as SalesContractDetail;
+  expect(contractProfit(other, intake, [ticket]).missingServiceKeys).toEqual([
+    'other',
+  ]);
+  const paid = {
+    ...intake,
+    servicePurchases: [
+      ...intake.servicePurchases!,
+      {
+        ...intake.servicePurchases![0]!,
+        id: 'guide-cost',
+        serviceClientKey: 'tour-guide',
+        coveredServiceClientKeys: ['tour-guide'],
+        amount: '10',
+        currencyCode: 'USD',
+      },
+    ],
+  };
+  expect(
+    contractProfit(withExtras, paid, [ticket]).costs.some(
+      (cost) => cost.referenceId === 'guide-cost',
+    ),
+  ).toBe(true);
+});

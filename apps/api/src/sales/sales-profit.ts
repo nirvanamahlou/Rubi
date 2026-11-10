@@ -210,7 +210,16 @@ export function contractProfit(
   }
   for (const [key, complete] of flightCoverage) if (complete) covered.add(key);
   const missingServiceKeys = services
-    .filter((s) => !covered.has(s.clientKey))
+    .filter((s) => {
+      const includedAdditionalService =
+        s.kind === 'OTHER' &&
+        (['CITY_TOUR', 'TOUR_GUIDE'].includes(
+          String(s.metadata?.additionalServiceRole ?? ''),
+        ) ||
+          ['city-tour', 'tour-guide'].includes(s.clientKey) ||
+          ['گشت شهری', 'راهنما'].includes((s.titleSnapshot ?? '').trim()));
+      return !includedAdditionalService && !covered.has(s.clientKey);
+    })
     .map((s) => s.clientKey);
   const sums = new Map<string, { sales: bigint; purchase: bigint }>();
   const row = (code: string) => {
