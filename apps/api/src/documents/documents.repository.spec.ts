@@ -593,3 +593,59 @@ describe('DocumentsRepository source scoping', () => {
     );
   });
 });
+
+describe('archive section filtering', () => {
+  it.each(['PROCUREMENT,FINANCE', 'HUMAN_RESOURCES,ORGANIZATION', 'SALES'])(
+    'combines %s with filters and preserves access restrictions',
+    async (domains) => {
+      const count = vi.fn().mockResolvedValue(0);
+      const findMany = vi.fn().mockResolvedValue([]);
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            document: { count, findMany },
+            $transaction: (operations: Promise<unknown>[]) =>
+              Promise.all(operations),
+          },
+        } as unknown as DatabaseService,
+        {} as NotificationsService,
+      );
+      await repository.list(
+        {
+          domains,
+          search: 'receipt',
+          categoryId: 'category',
+          personalView: 'FAVORITES',
+          page: 2,
+          pageSize: 10,
+          sortBy: 'updatedAt',
+          sortDirection: 'desc',
+        },
+        ['branch'],
+        ['GENERAL', 'SALES', 'FINANCE', 'HUMAN_RESOURCES'],
+        'reader',
+        false,
+      );
+      const where = count.mock.calls[0]![0].where;
+      expect(where.branchId).toEqual({ in: ['branch'] });
+      expect(where.documentType.domain.in).not.toContain('ORGANIZATION');
+      expect(where.categoryId).toBe('category');
+      expect(where.favorites).toEqual({ some: { userId: 'reader' } });
+      expect(where.AND).toContainEqual({
+        confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+      });
+      expect(
+        where.AND.some((item: { OR?: unknown[] }) =>
+          item.OR?.some((entry: unknown) =>
+            JSON.stringify(entry).includes('receipt'),
+          ),
+        ),
+      ).toBe(true);
+      expect(findMany.mock.calls[0]![0]).toMatchObject({
+        skip: 10,
+        take: 10,
+        where,
+      });
+    },
+  );
+});

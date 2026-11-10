@@ -445,8 +445,10 @@ export class ReservationManifestService {
     traceId?: string,
     offerId?: string,
   ) {
-    const flight = intake.snapshot.ticketSelections?.find((ticket) =>
-      offerId ? ticket.offerId === offerId : ticket.direction === 'OUTBOUND',
+    const flight = manifestJourneys(intake.snapshot).find((ticket) =>
+      offerId
+        ? ticket.offerId === offerId
+        : ticket.transportType === 'FLIGHT' && ticket.direction === 'OUTBOUND',
     );
     if (!flight)
       throw new BadRequestException('پرواز رفت قرارداد ثبت نشده است.');

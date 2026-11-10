@@ -4,6 +4,10 @@ import {
   type SalesContractAmendmentV1,
 } from '@nora/contracts';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
+import {
+  amendmentExtras,
+  assignAmendmentExtra,
+} from './amendment-extra-services';
 
 export function PassengerServiceEditor({
   draft,
@@ -63,7 +67,7 @@ export function PassengerServiceEditor({
   return (
     <div className="grid min-w-64 gap-2">
       {draft.services
-        .filter((s) => ['FLIGHT', 'TRANSFER', 'INSURANCE'].includes(s.kind))
+        .filter((s) => ['FLIGHT', 'TRANSFER'].includes(s.kind))
         .map((service) => {
           const direction =
             service.metadata?.direction ??
@@ -131,6 +135,37 @@ export function PassengerServiceEditor({
             </label>
           );
         })}
+      {amendmentExtras.map((extra) => {
+        const service = draft.services.find((s) =>
+          extra.kind === 'INSURANCE'
+            ? s.kind === 'INSURANCE'
+            : s.metadata?.additionalServiceRole === extra.role ||
+              s.clientKey === extra.key,
+        );
+        return (
+          <label key={extra.key} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              disabled={disabled}
+              checked={Boolean(
+                service &&
+                passenger.serviceClientKeys.includes(service.clientKey),
+              )}
+              onChange={(event) =>
+                onChange(
+                  assignAmendmentExtra(
+                    draft,
+                    customerId,
+                    extra.key,
+                    event.target.checked,
+                  ),
+                )
+              }
+            />
+            {extra.title}
+          </label>
+        );
+      })}
       {stay && (
         <>
           <label className="flex items-center gap-2">
