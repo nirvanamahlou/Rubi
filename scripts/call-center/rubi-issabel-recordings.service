@@ -8,6 +8,7 @@ Type=simple
 ExecStart=/usr/bin/python3 -I /opt/rubi/private/call-recordings-1031/recording-bridge.py
 RuntimeDirectory=rubi-issabel-recordings
 RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
 UMask=0077
 Restart=on-failure
 RestartSec=5
