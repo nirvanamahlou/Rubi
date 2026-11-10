@@ -70,6 +70,13 @@ export interface DashboardFilterOptions {
 
 type RecordRow = Record<string, unknown>;
 
+const exportArtifactColumns = Prisma.sql`
+  e.id, e."runId", e."creatorUserId", e."reportCode", e."reportName",
+  e.format, e.status, e."fileName", e."contentType", e."objectKey",
+  e."sizeBytes", e."checksumSha256", e."filterSnapshot", e."errorMessage",
+  e."expiresAt", e."createdAt", e."updatedAt"
+`;
+
 interface ReportingSavedReportActionRun {
   reportCode: string;
   filterSnapshot: unknown;
@@ -463,7 +470,7 @@ export class ReportingRepository {
 
   listExports(actorUserId: string) {
     return this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      SELECT e.*, u."displayName" AS "creatorName" FROM "reporting_export_artifacts" e
+      SELECT ${exportArtifactColumns}, u."displayName" AS "creatorName" FROM "reporting_export_artifacts" e
       JOIN "iam_users" u ON u.id=e."creatorUserId" WHERE e."creatorUserId"=${actorUserId}::uuid
       ORDER BY e."createdAt" DESC LIMIT 30
     `);
@@ -480,8 +487,8 @@ export class ReportingRepository {
     filterSnapshot: unknown;
   }) {
     const rows = await this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      INSERT INTO "reporting_export_artifacts" ("runId", "creatorUserId", "reportCode", "reportName", format, status, "fileName", "contentType", "filterSnapshot", "updatedAt")
-      VALUES (${input.runId}::uuid, ${input.creatorUserId}::uuid, ${input.reportCode}, ${input.reportName}, ${input.format}::"ReportingExportFormat", 'GENERATING', ${input.fileName}, ${input.contentType}, ${json(input.filterSnapshot)}, NOW()) RETURNING *
+      INSERT INTO "reporting_export_artifacts" AS e ("runId", "creatorUserId", "reportCode", "reportName", format, status, "fileName", "contentType", "filterSnapshot", "updatedAt")
+      VALUES (${input.runId}::uuid, ${input.creatorUserId}::uuid, ${input.reportCode}, ${input.reportName}, ${input.format}::"ReportingExportFormat", 'GENERATING', ${input.fileName}, ${input.contentType}, ${json(input.filterSnapshot)}, NOW()) RETURNING ${exportArtifactColumns}
     `);
     return rows[0]!;
   }
@@ -506,7 +513,7 @@ export class ReportingRepository {
 
   async exportById(id: string, actorUserId: string) {
     const rows = await this.database.client.$queryRaw<RecordRow[]>(
-      Prisma.sql`SELECT * FROM "reporting_export_artifacts" WHERE id=${id}::uuid AND "creatorUserId"=${actorUserId}::uuid LIMIT 1`,
+      Prisma.sql`SELECT ${exportArtifactColumns} FROM "reporting_export_artifacts" e WHERE id=${id}::uuid AND "creatorUserId"=${actorUserId}::uuid LIMIT 1`,
     );
     return rows[0];
   }

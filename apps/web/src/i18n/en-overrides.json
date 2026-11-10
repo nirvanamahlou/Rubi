@@ -5888,5 +5888,8 @@
   "مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty and incentive rate must be a non-negative whole amount in Toman.",
   "وضعیت خودکار": "Automatic status",
   "در انتظار تردد": "Awaiting clock-in",
-  "عدم روزکاری": "Non-working day"
+  "عدم روزکاری": "Non-working day",
+  "ساخت فایل ادامه دارد. وضعیت را در بخش دانلودها ببینید.": "The file is still being generated. Check its status in Downloads.",
+  "درخواست تولید مجدد در صف ثبت شد.": "The retry was queued.",
+  "تلاش مجدد ناموفق بود.": "The retry failed."
 }

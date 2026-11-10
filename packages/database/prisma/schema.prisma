@@ -518,28 +518,33 @@ model ReportingSchedule {
 }
 
 model ReportingExportArtifact {
-  id             String                @id @default(uuid()) @db.Uuid
-  runId          String                @db.Uuid
-  creatorUserId  String                @db.Uuid
-  reportCode     String                @db.VarChar(100)
-  reportName     String                @db.VarChar(200)
-  format         ReportingExportFormat
-  status         ReportingExportStatus @default(QUEUED)
-  fileName       String                @db.VarChar(260)
-  contentType    String                @db.VarChar(120)
-  objectKey      String?               @db.VarChar(500)
-  sizeBytes      Int?
-  checksumSha256 String?               @db.Char(64)
-  filterSnapshot Json
-  errorMessage   String?               @db.VarChar(500)
-  expiresAt      DateTime?             @db.Timestamptz(3)
-  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime              @updatedAt @db.Timestamptz(3)
-  run            ReportingRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
-  creator        User                  @relation("ReportingExportCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
+  id              String                @id @default(uuid()) @db.Uuid
+  runId           String                @db.Uuid
+  creatorUserId   String                @db.Uuid
+  reportCode      String                @db.VarChar(100)
+  reportName      String                @db.VarChar(200)
+  format          ReportingExportFormat
+  status          ReportingExportStatus @default(QUEUED)
+  fileName        String                @db.VarChar(260)
+  contentType     String                @db.VarChar(120)
+  objectKey       String?               @db.VarChar(500)
+  sizeBytes       Int?
+  checksumSha256  String?               @db.Char(64)
+  filterSnapshot  Json
+  errorMessage    String?               @db.VarChar(500)
+  expiresAt       DateTime?             @db.Timestamptz(3)
+  queuePayload    Json?
+  queueToken      String?               @db.Uuid
+  queueLeaseUntil DateTime?             @db.Timestamptz(3)
+  queueAttempts   Int                   @default(0)
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt @db.Timestamptz(3)
+  run             ReportingRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  creator         User                  @relation("ReportingExportCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
 
   @@index([creatorUserId, createdAt])
   @@index([status, expiresAt])
+  @@index([status, queueLeaseUntil, createdAt], map: "reporting_export_queue_idx")
   @@map("reporting_export_artifacts")
 }
 

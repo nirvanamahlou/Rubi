@@ -77,6 +77,10 @@ export class ReportingExportService {
     return objectKey;
   }
 
+  discard(objectKey: string) {
+    return this.storage.removeQuarantined(objectKey);
+  }
+
   open(objectKey: string, expectedSizeBytes: number) {
     return this.storage.openQuarantined(objectKey, expectedSizeBytes);
   }

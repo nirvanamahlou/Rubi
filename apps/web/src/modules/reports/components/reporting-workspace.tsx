@@ -625,8 +625,12 @@ type CreateReportExport = (
   },
 ) => Promise<Record<string, unknown>>;
 
+class ReportExportPending extends Error {}
+
 export async function createAndDownloadReportExport({
   createExport = reportingApi.createExport,
+  readStatus = reportingApi.exportStatus,
+  wait = () => new Promise<void>((resolve) => setTimeout(resolve, 2_000)),
   format,
   query,
   reportCode,
@@ -640,6 +644,8 @@ export async function createAndDownloadReportExport({
   },
 }: {
   createExport?: CreateReportExport;
+  readStatus?: typeof reportingApi.exportStatus;
+  wait?: () => Promise<void>;
   format: ExportFormat;
   query: Record<string, unknown>;
   reportCode: string;
@@ -649,6 +655,26 @@ export async function createAndDownloadReportExport({
   const artifactId =
     typeof created.id === 'string' && created.id.trim() ? created.id : '';
   if (!artifactId) throw new Error('شناسه فایل خروجی از سرور دریافت نشد.');
+  let state = created;
+  for (
+    let attempt = 0;
+    attempt < 45 &&
+    (state.status === 'QUEUED' || state.status === 'GENERATING');
+    attempt++
+  ) {
+    await wait();
+    state = await readStatus(artifactId);
+  }
+  if (state.status === 'QUEUED' || state.status === 'GENERATING')
+    throw new ReportExportPending(
+      'ساخت فایل ادامه دارد. وضعیت را در بخش دانلودها ببینید.',
+    );
+  if (state.status && state.status !== 'READY')
+    throw new Error(
+      typeof state.errorMessage === 'string'
+        ? state.errorMessage
+        : 'تولید خروجی ناموفق بود.',
+    );
   startDownload(reportingApi.exportDownloadUrl(artifactId));
   return artifactId;
 }
@@ -1795,7 +1821,7 @@ export function ReportingWorkspace({
     !configurationOnly && Boolean(initialFilterState?.reportCode),
   );
   const [exportState, setExportState] = useState<
-    'idle' | 'generating' | 'ready' | 'error'
+    'idle' | 'generating' | 'queued' | 'ready' | 'error'
   >('idle');
   const [exportFeedback, setExportFeedback] = useState('');
   const [resultPreviewVisible, setResultPreviewVisible] = useState(false);
@@ -2247,7 +2273,7 @@ export function ReportingWorkspace({
       setExportState('ready');
       setExportFeedback('فایل آماده شد و دانلود آن آغاز شد.');
     } catch (error) {
-      setExportState('error');
+      setExportState(error instanceof ReportExportPending ? 'queued' : 'error');
       setExportFeedback(
         error instanceof Error ? error.message : 'تولید خروجی ناموفق بود.',
       );

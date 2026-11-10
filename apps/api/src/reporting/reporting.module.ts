@@ -8,6 +8,8 @@ import { SettingsModule } from '../settings/settings.module';
 import { ReportingController } from './reporting.controller';
 import { ReportingService } from './reporting.service';
 import { ReportingRepository } from './reporting.repository';
+import { ReportingExportQueue } from './reporting-export-queue.service';
+import { ReportingExportQueueRepository } from './reporting-export-queue.repository';
 import { ReportingExportService } from './reporting-export.service';
 import { SalesDashboardPublicModule } from '../sales/sales-dashboard.public';
 import { CustomerDashboardPublicModule } from '../customers/customer-dashboard.public';
@@ -35,6 +37,8 @@ import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customer
     DashboardOperationalSources,
     ReportingRepository,
     ReportingExportService,
+    ReportingExportQueue,
+    ReportingExportQueueRepository,
     AuthGuard,
     PermissionGuard,
   ],
