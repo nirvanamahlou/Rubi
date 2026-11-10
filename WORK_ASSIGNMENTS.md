@@ -1,5 +1,9 @@
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
+
+Base0d6317420. Owner authorizes per-ticket export template dropdowns defaulting to the supplied PNL layout, renaming the existing builtin workbook Report with seller appended, exact column/code/date mapping and header filters, tests and green develop merge. Reserve Reservations manifest exporter/default and focused API tests, manifest dropdown/download Web consumers and tests; additive optional builtinTemplate shared input coordinates API producer and Web consumer while preserving legacy omission behavior. Prior manifest defaults/template scopes are already merged and frozen. No schema/dependency/operational data/deployment changes. Only sanitized headers/format from the supplied file may enter Git; no real passenger rows.
+
 ## TOUR-ROOM-EDITOR-1110 — PC-A — READY_FOR_CI
 
 Reserve SalesContractForm tour hotel presentation, SalesTourPicker room initialization and focused Sales room/published-price regressions. Base ff37f5bfc; owner authorizes modern per-room tour hotel UI matching flight-plus-hotel, package-owned flight selection, occupancy-based published pricing and green develop merge. Prior tour-service definition scope merged in PR1581; preserve it. No schema/dependency/data/deployment changes.

@@ -295,12 +295,7 @@ export function ManifestExport() {
   };
 
   async function download(ticket: ReservationManifestTicketCardV1) {
-    if (
-      (!ticket.template && !templateOverrides[ticket.offerId]?.id) ||
-      busy ||
-      downloading.current
-    )
-      return;
+    if (busy || downloading.current) return;
     setErrorOfferId(ticket.offerId);
     const base = getPublicApiBaseUrl();
     if (!base) {
@@ -313,19 +308,23 @@ export function ManifestExport() {
     setError('');
     setResult('');
     try {
-      const { file, contracts, passengers, retriedWithAll, warnings } =
-        await requestManifestDownload(
-          {
-            offerId: ticket.offerId,
-            ...(templateOverrides[ticket.offerId]?.id
-              ? { manifestTemplateId: templateOverrides[ticket.offerId]!.id! }
-              : {}),
-            ...searchedDates,
-            includePreviouslyExported,
-          },
-          (path, init) => authenticatedFetch(base, path, init),
-          downloadKeys.current,
-        );
+      const {
+        file,
+        fileExtension,
+        contracts,
+        passengers,
+        retriedWithAll,
+        warnings,
+      } = await requestManifestDownload(
+        {
+          offerId: ticket.offerId,
+          ...manifestTemplateInput(templateOverrides[ticket.offerId]?.id),
+          ...searchedDates,
+          includePreviouslyExported,
+        },
+        (path, init) => authenticatedFetch(base, path, init),
+        downloadKeys.current,
+      );
       const fileName =
         'manifest-' +
         (ticket.serviceNumber || ticket.transportType || 'FLIGHT').replace(
@@ -334,7 +333,8 @@ export function ManifestExport() {
         ) +
         '-' +
         searchedDates.fromDate +
-        '.xlsx';
+        '.' +
+        fileExtension;
       const url = URL.createObjectURL(file);
       setDownloadLink({ offerId: ticket.offerId, url, fileName });
       const anchor = document.createElement('a');
@@ -348,9 +348,7 @@ export function ManifestExport() {
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
-          (templateOverrides[ticket.offerId]?.id
-            ? templateOverrides[ticket.offerId]!.name
-            : ticket.template?.name || '') +
+          (templateOverrides[ticket.offerId]?.name || 'دیفالت منیفست') +
           '» آماده شد' +
           (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
           (warnings !== '0'
@@ -581,8 +579,10 @@ export function ManifestExport() {
                         <td>
                           <ManifestTemplatePicker
                             id={'manifest-template-' + ticket.offerId}
+                            builtinOptions={manifestBuiltinOptions}
                             value={
-                              templateOverrides[ticket.offerId]?.id ?? null
+                              templateOverrides[ticket.offerId]?.id ??
+                              'DEFAULT_MANIFEST'
                             }
                             name={templateOverrides[ticket.offerId]?.name}
                             readOnly={Boolean(busy)}
@@ -594,22 +594,11 @@ export function ManifestExport() {
                               }))
                             }
                           />
-                          <span className="text-xs text-muted-foreground">
-                            {ticket.template
-                              ? ticket.template.name +
-                                ' · نسخه ' +
-                                ticket.template.versionNumber
-                              : ticket.unavailableReason}
-                          </span>
                         </td>
                         <td>
                           <Button
                             type="button"
-                            disabled={
-                              (!ticket.template &&
-                                !templateOverrides[ticket.offerId]?.id) ||
-                              Boolean(busy)
-                            }
+                            disabled={Boolean(busy)}
                             onClick={() => void download(ticket)}
                           >
                             {busy === ticket.offerId
@@ -662,4 +651,19 @@ export function ManifestExport() {
       )}
     </div>
   );
+}
+
+export const manifestBuiltinOptions = [
+  { value: 'DEFAULT_MANIFEST', label: 'دیفالت منیفست' },
+  { value: 'REPORT', label: 'گزارش‌گیری' },
+];
+export function manifestTemplateInput(value?: string | null): {
+  builtinTemplate?: 'DEFAULT_MANIFEST' | 'REPORT';
+  manifestTemplateId?: string;
+} {
+  return !value || value === 'DEFAULT_MANIFEST'
+    ? { builtinTemplate: 'DEFAULT_MANIFEST' }
+    : value === 'REPORT'
+      ? { builtinTemplate: 'REPORT' }
+      : { manifestTemplateId: value };
 }

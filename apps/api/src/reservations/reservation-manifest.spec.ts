@@ -199,13 +199,13 @@ describe('MANIFEST ticket cards', () => {
       destinationCountryId: 'tr',
       destinationCountryName: 'ترکیه',
       passengerCount: 2,
-      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+      template: { id: 'default', name: 'گزارش‌گیری', versionNumber: 1 },
       unavailableReason: null,
     });
     expect(cards[1]).toMatchObject({
       offerId: 'return-offer',
       direction: 'RETURN',
-      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+      template: { id: 'default', name: 'گزارش‌گیری', versionNumber: 1 },
     });
     expect(cards[1]?.unavailableReason).toBeNull();
     const routes = await service.listRoutes({
