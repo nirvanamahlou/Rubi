@@ -1,6 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  HR_ATTENDANCE_CALCULATION_FIELDS_V1,
   HR_RADAN_CALCULATION_COMPONENTS,
+  readHrAttendanceCalculationV1,
   HR_RADAN_COMPLETION_OPTIONS,
   HR_RADAN_PROVINCES,
   HR_RADAN_REQUEST_TYPES,
@@ -40,6 +42,24 @@ export function validateCompletionValues(
   columns: readonly string[],
   values: string[],
 ) {
+  if (key === 'time.calculationSettings') {
+    const settings = readHrAttendanceCalculationV1(values);
+    if (settings.basis && !['حکم', 'تردد'].includes(settings.basis))
+      throw new BadRequestException('مبنای محاسبات معتبر نیست.');
+    if (!settings.basis)
+      throw new BadRequestException('مبنای محاسبات را انتخاب کنید.');
+    selection(settings.components, HR_RADAN_CALCULATION_COMPONENTS);
+    for (const { id, kind, label } of HR_ATTENDANCE_CALCULATION_FIELDS_V1)
+      if (kind === 'flag' && !['بله', 'خیر'].includes(settings[id]))
+        throw new BadRequestException(`${label} را انتخاب کنید.`);
+    if (
+      !/^\d{1,4}$/.test(settings.dailyLeaveMinutes) ||
+      Number(settings.dailyLeaveMinutes) < 1 ||
+      Number(settings.dailyLeaveMinutes) > 1440
+    )
+      throw new BadRequestException('طول مرخصی روزانه معتبر نیست.');
+    return values;
+  }
   const read = (label: string) => values[columns.indexOf(label)] ?? '';
   for (const [label, options] of Object.entries(HR_RADAN_COMPLETION_OPTIONS))
     if (read(label) && !options.includes(read(label)))
@@ -64,23 +84,6 @@ export function validateCompletionValues(
     !/^[+\d ()-]{3,30}$/.test(v.digits(read('شماره تماس')))
   )
     throw new BadRequestException('شماره تماس معتبر نیست.');
-  if (key === 'time.calculationSettings') {
-    if (!['حکم', 'تردد'].includes(read('مبنای محاسبات')))
-      throw new BadRequestException('مبنای محاسبات را انتخاب کنید.');
-    selection(read('اجزای کارکرد'), HR_RADAN_CALCULATION_COMPONENTS);
-    for (const label of columns.slice(2, 9))
-      if (
-        label !== 'طول مرخصی روزانه به دقیقه' &&
-        !['بله', 'خیر'].includes(read(label))
-      )
-        throw new BadRequestException(`${label} را انتخاب کنید.`);
-    if (
-      !/^\d{1,4}$/.test(read('طول مرخصی روزانه به دقیقه')) ||
-      Number(read('طول مرخصی روزانه به دقیقه')) < 1 ||
-      Number(read('طول مرخصی روزانه به دقیقه')) > 1440
-    )
-      throw new BadRequestException('طول مرخصی روزانه معتبر نیست.');
-  }
   if (key === 'requests.procedures') {
     if (!selection(read('درخواست‌ها'), HR_RADAN_REQUEST_TYPES).length)
       throw new BadRequestException('حداقل یک نوع درخواست انتخاب کنید.');

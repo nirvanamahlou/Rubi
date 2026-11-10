@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## HR-CALCULATION-FIELDS-1110
+
+HR attendance calculation settings map their ten legacy slots to explicit V1 field IDs for API validation and attendance calculations. Masking rules attach to seven existing resource fields and remain in force after display label changes. Verified identical masking coverage across 135 resources and 74 focused API tests against an isolated PostgreSQL 18 instance. Legacy arrays and fieldN persistence remain compatible. Other HR layouts and presentation consumers still require migration.
+
 ## TYPE-AWARE-LINT-1110
 
 The existing API and Web lint jobs enforce type-aware Promise handling on the authentication guard, session refresh, shared authenticated fetch, document scanner entry point and report export files. Both package configs reject a bare Promise and a voided Promise while allowing an explicit rejection handler. The standalone document scanner reports shutdown failure without echoing private configuration. Thirty-three focused API and Web tests passed. Browser scenarios and broader type-aware coverage remain open.

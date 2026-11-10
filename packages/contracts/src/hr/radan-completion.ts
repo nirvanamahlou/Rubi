@@ -1,3 +1,7 @@
+import { HR_ATTENDANCE_CALCULATION_FIELDS_V1 } from './attendance-calculation-fields';
+
+export * from './attendance-calculation-fields';
+
 export const HR_DEFAULT_LEAVE_DAY_MINUTES = 465;
 
 /** Only controls directly observed in the authorized Radan audit. */
@@ -21,18 +25,9 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'کد پستی',
   ],
   'employee.phones': ['نوع شماره تماس', 'شماره تماس'],
-  'time.calculationSettings': [
-    'عنوان تنظیمات',
-    'اجزای کارکرد',
-    'مرخصی بر اساس طول شیفت',
-    'طول مرخصی روزانه به دقیقه',
-    'مأموریت خارج ساعت کاری اضافه‌کار',
-    'کسر کسرکار از اضافه‌کار',
-    'اضافه‌کار پنجشنبه',
-    'اضافه‌کار جمعه',
-    'افزودن اضافه‌کار تعطیل',
-    'مبنای محاسبات',
-  ],
+  'time.calculationSettings': HR_ATTENDANCE_CALCULATION_FIELDS_V1.map(
+    ({ label }) => label,
+  ),
   'time.templateDays': [
     'روز تقویم',
     'ساعت شروع',

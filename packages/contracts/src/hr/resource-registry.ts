@@ -1,3 +1,4 @@
+import { HR_ATTENDANCE_CALCULATION_FIELDS_V1 } from './attendance-calculation-fields';
 import { HR_RESOURCE_COLUMNS } from './resource-columns';
 
 export type HrResourceKey = keyof typeof HR_RESOURCE_COLUMNS;
@@ -9,6 +10,7 @@ export interface HrResourceField {
   type: HrFieldType;
   required: boolean;
   maxLength: number;
+  maskedOnly?: true;
 }
 export interface HrResourceDefinition {
   key: HrResourceKey;
@@ -24,6 +26,16 @@ export interface HrResourceDefinition {
   parentResources: readonly string[];
   parentOptional: boolean;
 }
+
+// These legacy slots require a masked value regardless of the translated label.
+const maskedFields: Partial<Record<HrResourceKey, readonly string[]>> = {
+  'employee.contact': ['field1'],
+  'employee.financial': ['field4'],
+  'fleet.vehicles': ['field2'],
+  'requests.profile': ['field2', 'field3'],
+  'finance.bank': ['field2'],
+  'assets.vehicles': ['field2'],
+};
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
@@ -125,6 +137,16 @@ const approval = new Set([
   'payroll.paymentRequests',
 ]);
 
+const calculationFields = HR_ATTENDANCE_CALCULATION_FIELDS_V1.map(
+  ({ index, label, kind }): HrResourceField => ({
+    key: 'field' + index,
+    label,
+    type: 'text',
+    required: kind === 'text',
+    maxLength: kind === 'components' ? 8000 : 500,
+  }),
+);
+
 export function getHrResource(
   section: string,
   tab: string,
@@ -133,66 +155,72 @@ export function getHrResource(
   if (!Object.prototype.hasOwnProperty.call(HR_RESOURCE_COLUMNS, key))
     return undefined;
   const columns = HR_RESOURCE_COLUMNS[key];
-  const fields = columns.map((label, index): HrResourceField => ({
-    key: `field${index}`,
-    label,
-    type:
-      key === 'time.penaltySettings' && index < 2
-        ? 'decimal'
-        : label === 'کارمند'
-          ? 'employee'
-          : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
-            ? 'date'
-            : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label)
-              ? 'time'
-              : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
-                  !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
-                ? 'money'
-                : ['تعداد روز', 'ظرفیت'].includes(label) ||
-                    label.startsWith('مهلت ثبت ')
-                  ? 'decimal'
-                  : 'text',
-    required:
-      (key === 'time.penaltySettings' && index < 6) ||
-      (key === 'time.leavePolicies' && index < 5) ||
-      (index === 0 && key !== 'organization.positions') ||
-      (key === 'organization.positions' && label === 'عنوان شغلی') ||
-      label === 'کارمند' ||
-      (key === 'employee.identity' && label === 'نام خانوادگی') ||
-      (key === 'employee.phones' && label === 'شماره تماس') ||
-      (key === 'requests.approvalStages' && label === 'اولویت') ||
-      (key === 'requests.procedures' && label === 'درخواست‌ها') ||
-      (['requests.radanLeave', 'requests.radanMission'].includes(key) &&
-        [
-          'نوع مرخصی',
-          'نوع مأموریت',
-          'از تاریخ',
-          'تا تاریخ',
-          'نوع مدت',
-          'با جایگزینی',
-        ].includes(label)) ||
-      key === 'recruitment.assessment' ||
-      (key === 'time.workingHours' &&
-        [
-          'ساعت شروع',
-          'ساعت پایان',
-          'روز پایان',
-          'ساعت قبل از شروع',
-          'ساعت بعد از پایان',
-        ].includes(label)) ||
-      (key === 'time.remote' &&
-        ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
-      (key === 'time.biometric' &&
-        ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
-    maxLength:
-      key === 'organization.positions' && label === 'عنوان شغلی'
-        ? 160
-        : ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
-          ? 8000
-          : /شرح|تعهدات|بازخورد|توضیح/.test(label)
-            ? 4000
-            : 500,
-  }));
+  const fields =
+    (key === 'time.calculationSettings' &&
+      calculationFields.map((field) => ({ ...field }))) ||
+    columns.map((label, index): HrResourceField => ({
+      key: 'field' + index,
+      label,
+      ...(maskedFields[key]?.includes('field' + index)
+        ? { maskedOnly: true }
+        : {}),
+      type:
+        key === 'time.penaltySettings' && index < 2
+          ? 'decimal'
+          : label === 'کارمند'
+            ? 'employee'
+            : /تاریخ|^از تاریخ$|^تا تاریخ$/.test(label)
+              ? 'date'
+              : /^ساعت شروع$|^ساعت پایان$|^ساعت تردد$/.test(label)
+                ? 'time'
+                : /مبلغ|هزینه|مطالبات|کسورات|وام|پاداش/.test(label) &&
+                    !/نوع|وضعیت|شرح|دلیل|مرکز|مدرک/.test(label)
+                  ? 'money'
+                  : ['تعداد روز', 'ظرفیت'].includes(label) ||
+                      label.startsWith('مهلت ثبت ')
+                    ? 'decimal'
+                    : 'text',
+      required:
+        (key === 'time.penaltySettings' && index < 6) ||
+        (key === 'time.leavePolicies' && index < 5) ||
+        (index === 0 && key !== 'organization.positions') ||
+        (key === 'organization.positions' && label === 'عنوان شغلی') ||
+        label === 'کارمند' ||
+        (key === 'employee.identity' && label === 'نام خانوادگی') ||
+        (key === 'employee.phones' && label === 'شماره تماس') ||
+        (key === 'requests.approvalStages' && label === 'اولویت') ||
+        (key === 'requests.procedures' && label === 'درخواست‌ها') ||
+        (['requests.radanLeave', 'requests.radanMission'].includes(key) &&
+          [
+            'نوع مرخصی',
+            'نوع مأموریت',
+            'از تاریخ',
+            'تا تاریخ',
+            'نوع مدت',
+            'با جایگزینی',
+          ].includes(label)) ||
+        key === 'recruitment.assessment' ||
+        (key === 'time.workingHours' &&
+          [
+            'ساعت شروع',
+            'ساعت پایان',
+            'روز پایان',
+            'ساعت قبل از شروع',
+            'ساعت بعد از پایان',
+          ].includes(label)) ||
+        (key === 'time.remote' &&
+          ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
+        (key === 'time.biometric' &&
+          ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
+      maxLength:
+        key === 'organization.positions' && label === 'عنوان شغلی'
+          ? 160
+          : ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
+            ? 8000
+            : /شرح|تعهدات|بازخورد|توضیح/.test(label)
+              ? 4000
+              : 500,
+    }));
   return {
     key,
     section,
