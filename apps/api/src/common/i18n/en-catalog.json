@@ -8216,5 +8216,6 @@
   "با فعال‌کردن این گزینه، هنگام ورود قرارداد به رزرواسیون درخواست صدور بیمهٔ مسافران ارسال می‌شود؛ نتیجه و علت خطا در بیمه‌نامه قابل مشاهده است.": "When enabled, passenger insurance issuance is queued when the contract reaches Reservations. Results and errors appear under Insurance policies.",
   "بیمه آزمایشی؛ برای مشاهدهٔ وضعیت مسافران کلیک کنید.": "Sandbox insurance; click to view passenger status.",
   "برای مشاهدهٔ وضعیت مسافران کلیک کنید.": "Click to view passenger status.",
-  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart."
+  "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart.",
+  "خدمات قرارداد با خدمات تور مطابقت ندارد.": "Contract services do not match the tour services."
 }

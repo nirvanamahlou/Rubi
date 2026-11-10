@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import type {
   BranchReference,
   DocumentOptionsResponseV1,
@@ -334,7 +335,7 @@ export function TourDetailsForm({
                   ['title', 'عنوان مرحله'],
                   ['location', 'شهر یا محل رویداد'],
                   ['startTime', 'ساعت شروع (14:30)'],
-                  ['transport', 'وسیله جابه‌جایی'],
+
                   ['cabinClass', 'کلاس سفر'],
                 ] as const
               ).map(([key, label]) => (
@@ -348,6 +349,25 @@ export function TourDetailsForm({
                   />
                 </FormField>
               ))}
+              <SearchCombobox
+                id={'tour-step-transport-' + index}
+                label="وسیله جابه‌جایی"
+                value={step.transport ?? ''}
+                selectedLabel={step.transport}
+                options={[
+                  { value: '', label: 'انتخاب کنید' },
+                  ...[
+                    'اتوبوس',
+                    'قطار',
+                    'هواپیما',
+                    ...(step.transport &&
+                    !['اتوبوس', 'قطار', 'هواپیما'].includes(step.transport)
+                      ? [step.transport]
+                      : []),
+                  ].map((value) => ({ value, label: value })),
+                ]}
+                onValueChange={(value) => stepPatch(index, 'transport', value)}
+              />
               {(
                 [
                   ['stayDays', 'مدت اقامت (روز)', 366],
