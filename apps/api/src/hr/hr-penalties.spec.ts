@@ -20,6 +20,10 @@ function setup(extra: unknown[] = [], values = policy.values) {
   const internal = service as unknown as {
     dailyPenalty: (row: unknown) => Promise<string | null>;
     attendanceView: () => unknown;
+    dailyAttendanceAmounts: (
+      row: unknown,
+      includeOvertime: boolean,
+    ) => Promise<unknown>;
   };
   internal.attendanceView = () => ({
     shiftStart: new Date('2026-11-08T05:30:00Z'),
@@ -31,18 +35,28 @@ function setup(extra: unknown[] = [], values = policy.values) {
     ],
     selected: [{ parentId: 'correction' }],
   });
-  return () =>
-    internal.dailyPenalty({
-      section: 'time',
-      tab: 'attendance',
-      branchId: 'branch',
-      employeeId: 'person',
-      values: ['', '2026-11-08'],
-    });
+  const row = {
+    section: 'time',
+    tab: 'attendance',
+    branchId: 'branch',
+    employeeId: 'person',
+    values: ['', '2026-11-08'],
+    data: { overtimeMinutes: 30, deficitMinutes: 15 },
+  };
+  return Object.assign(() => internal.dailyPenalty(row), {
+    amounts: () => internal.dailyAttendanceAmounts(row, true),
+  });
 }
 describe('daily attendance penalties', () => {
   it('uses separate Toman rates with exact arithmetic', async () =>
     expect(await setup()()).toBe('800000'));
+  it('uses the configured rates for the recorded overtime and deficit minutes', async () => {
+    const values = [...policy.values, '7500', '2000'];
+    expect(await setup([], values).amounts()).toEqual({
+      overtimeAmountToman: '225000',
+      dailyPenaltyToman: '30000',
+    });
+  });
   it('does not apply a future policy', async () =>
     expect(
       await setup([], ['50000', '60000', '2026-12-01', 'بله', 'بله', 'بله'])(),

@@ -119,6 +119,7 @@ export interface HrWorkflowData {
   workedMinutes?: number;
   attendanceDeviceError?: boolean;
   dailyPenaltyToman?: string | null;
+  overtimeAmountToman?: string | null;
   /** Excluded from every attendance calculation; raw device punches are retained. */
   attendanceActive?: boolean;
   attendancePreviousStatus?: string;

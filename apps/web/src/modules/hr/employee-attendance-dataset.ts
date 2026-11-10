@@ -36,6 +36,7 @@ export function employeeAttendanceDataset(
       'خروج زودهنگام',
       'کسری کار',
       'اضافه‌کاری',
+      'مبلغ اضافه‌کاری',
       'جریمه روز',
       'وضعیت',
     ],
@@ -79,6 +80,9 @@ export function employeeAttendanceDataset(
         record.data.overtimeMinutes == null
           ? '—'
           : String(record.data.overtimeMinutes),
+        record.data.overtimeAmountToman == null
+          ? '—'
+          : `${BigInt(record.data.overtimeAmountToman).toLocaleString('fa-IR')} تومان`,
         record.data.dailyPenaltyToman == null
           ? '—'
           : `${Number(record.data.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`,

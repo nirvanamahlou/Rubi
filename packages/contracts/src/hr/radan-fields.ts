@@ -46,6 +46,7 @@ export const HR_RADAN_LEGACY_LENGTHS: Readonly<Record<string, number>> = {
   'time.leaveTransferRules': 9,
   'time.workingHours': 8,
   'time.leavePolicies': 7,
+  'time.penaltySettings': 6,
   'time.biometric': 6,
 };
 export const HR_RADAN_REQUEST_RESOURCES = [

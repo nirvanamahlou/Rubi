@@ -551,9 +551,17 @@ export class HrService {
           'مبلغ جریمه باید عدد صحیح غیرمنفی به تومان باشد.',
         );
     validate.isoDate(values[2]!);
-    for (const value of values.slice(3))
+    for (const value of values.slice(3, 6))
       if (!['بله', 'خیر'].includes(value))
         throw new BadRequestException('وضعیت معافیت معتبر نیست.');
+    for (let index = 6; index < 8; index++) {
+      const rate = validate.digits(values[index] ?? '');
+      if (rate && !/^\d{1,12}$/.test(rate))
+        throw new BadRequestException(
+          'مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.',
+        );
+      values[index] = rate;
+    }
   }
   private async canManuallyEditAttendance(actor: AuthenticatedActor) {
     if (!actor.permissions.includes('hr.manage')) return false;
@@ -566,11 +574,19 @@ export class HrService {
   }
 
   async dailyPenalty(row: RecordRow): Promise<string | null> {
-    if (inactiveAttendance(row)) return null;
+    return (await this.dailyAttendanceAmounts(row)).dailyPenaltyToman;
+  }
+
+  private async dailyAttendanceAmounts(
+    row: RecordRow,
+    includeOvertime = false,
+  ) {
+    const empty = { dailyPenaltyToman: null, overtimeAmountToman: null };
+    if (inactiveAttendance(row)) return empty;
     if (row.section !== 'time' || row.tab !== 'attendance' || !row.employeeId)
-      return null;
+      return empty;
     const date = (row.values as string[])[1];
-    if (!date) return null;
+    if (!date) return empty;
     const policies = await this.database.client.hrRecord.findMany({
       where: {
         branchId: row.branchId,
@@ -598,7 +614,15 @@ export class HrService {
           b.updatedAt.getTime() - a.updatedAt.getTime() ||
           b.id.localeCompare(a.id),
       )[0];
-    if (!policy) return null;
+    if (!policy) return empty;
+    const rates = policy.values as string[];
+    const data = row.data as HrWorkflowData | null;
+    const amount = {
+      overtimeAmountToman:
+        includeOvertime && rates[6] && data?.overtimeMinutes != null
+          ? new Prisma.Decimal(rates[6]).mul(data.overtimeMinutes).toFixed(0)
+          : null,
+    };
     const source = await this.database.client.hrRecord.findMany({
       where: {
         branchId: row.branchId,
@@ -651,9 +675,9 @@ export class HrService {
     });
     if (source.length > 10000)
       throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
-    const rates = policy.values as string[];
     const view = this.attendanceView(source, row.employeeId, date);
-    if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
+    if (!view.shiftStart || !view.shiftEnd || !view.events.length)
+      return { ...amount, dailyPenaltyToman: '0' };
     if (
       rates[5] === 'بله' &&
       ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
@@ -666,7 +690,15 @@ export class HrService {
             (item.data as HrWorkflowData).attendanceDeviceError === true,
         ))
     )
-      return '0';
+      return { ...amount, dailyPenaltyToman: '0' };
+    if (rates[7] && data?.deficitMinutes != null)
+      return {
+        ...amount,
+        dailyPenaltyToman: new Prisma.Decimal(rates[7])
+          .mul(data.deficitMinutes)
+          .toFixed(0),
+      };
+    if (rates[7]) return { ...amount, dailyPenaltyToman: null };
     const metrics = attendanceScheduleMetrics(
       view.events,
       view.shiftStart,
@@ -699,7 +731,7 @@ export class HrService {
       view.shiftEnd,
       intervals,
     );
-    return new Prisma.Decimal(rates[0]!)
+    const dailyPenaltyToman = new Prisma.Decimal(rates[0]!)
       .mul(Math.max(0, (metrics.lateMinutes ?? 0) - coverage.lateCredit))
       .add(
         new Prisma.Decimal(rates[1]!).mul(
@@ -707,6 +739,7 @@ export class HrService {
         ),
       )
       .toFixed(0);
+    return { ...amount, dailyPenaltyToman };
   }
 
   private async recordDtos(rows: RecordRow[], actor: AuthenticatedActor) {
@@ -780,7 +813,7 @@ export class HrService {
         : {
             ...(publicHrData(row.data) as HrWorkflowData),
             ...(schema.key === 'time.attendance'
-              ? { dailyPenaltyToman: await this.dailyPenalty(row) }
+              ? await this.dailyAttendanceAmounts(row, true)
               : {}),
           },
     };
@@ -1853,7 +1886,11 @@ export class HrService {
     const legacy =
       row.section === 'time'
         ? (
-            { workingHours: 8, leaveTransferRules: 9 } as Record<string, number>
+            {
+              workingHours: 8,
+              leaveTransferRules: 9,
+              penaltySettings: 6,
+            } as Record<string, number>
           )[row.tab]
         : undefined;
     if (

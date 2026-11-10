@@ -153,7 +153,7 @@ export function getHrResource(
                   ? 'decimal'
                   : 'text',
     required:
-      key === 'time.penaltySettings' ||
+      (key === 'time.penaltySettings' && index < 6) ||
       (key === 'time.leavePolicies' && index < 5) ||
       (index === 0 && key !== 'organization.positions') ||
       (key === 'organization.positions' && label === 'عنوان شغلی') ||
