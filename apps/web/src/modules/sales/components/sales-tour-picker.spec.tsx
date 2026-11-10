@@ -14,6 +14,50 @@ const tour = (id: string, status = 'ACTIVE', remainingCapacity = 5) =>
     remainingCapacity,
   }) as unknown as TourDepartureV1;
 describe('contract tour suggestions', () => {
+  it('filters by actual route destinations, including secondary combined cities but never unrelated tours', () => {
+    const single = {
+      ...tour('single'),
+      package: {
+        name: 'Antalya',
+        originId: 'tehran',
+        destinationId: 'antalya',
+      },
+    } as TourDepartureV1;
+    const combined = {
+      ...tour('combined'),
+      package: {
+        ...single.package,
+        details: {
+          version: 1,
+          isCombined: true,
+          destinations: [
+            { cityId: 'antalya', nights: 4 },
+            { cityId: 'izmir', nights: 3 },
+          ],
+        },
+      },
+    } as TourDepartureV1;
+    expect(
+      salesTourOptions([single, combined], 2, {
+        originId: 'tehran',
+        destinationId: 'izmir',
+      }).map((o) => o.value),
+    ).toEqual(['combined']);
+    expect(
+      salesTourOptions([single, combined], 2, { destinationId: 'other' }),
+    ).toEqual([]);
+    expect(
+      salesTourOptions([single, combined], 2, {
+        originId: 'other',
+        destinationId: 'antalya',
+      }),
+    ).toEqual([]);
+    expect(
+      salesTourOptions([single, { ...combined, isActive: false }], 2, {
+        destinationId: 'izmir',
+      }),
+    ).toEqual([]);
+  });
   it('offers five active suggestions and finds middle text beyond initial suggestions', () => {
     const options = salesTourOptions(
       Array.from({ length: 12 }, (_, i) => tour(String(i))),

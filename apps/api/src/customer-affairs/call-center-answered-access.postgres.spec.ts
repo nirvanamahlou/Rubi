@@ -1094,6 +1094,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           ISSABEL_ENABLED: 'true',
           ISSABEL_CONNECTION_ID: connectionId,
           ISSABEL_RECORDING_RETENTION_DAYS: '90',
+          ISSABEL_RECORDING_STORAGE_MODE: 'DATABASE',
         }),
         domain,
         events,

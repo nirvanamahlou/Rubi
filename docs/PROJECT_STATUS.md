@@ -1,5 +1,15 @@
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
+
+
+## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
+
+Per-ticket dropdown defaults to the exact eleven-column airline PNL layout, with owner-confirmed XLSM output. Report retains previous XLSX columns and appends authoritative contract seller; active uploaded templates remain selectable independently. Preserve assignment/cancellation/branch/date/new-only rules and separate idempotency per selected format. Sanitized bundled template contains no source passengers; project is copied without execution. Registered templates retain macro stripping. API/Web TypeScript, scoped lint and shared-contract build pass; focused checks cover real HTTP downloads and isolated selections. Synthetic output independently reloads with exact source headers, codes, dates, leading zeros, header filter and matching original VBA SHA256. See docs/tasks/MANIFEST-PNL-DEFAULT-1110.md. No schema/dependency/data/deployment changes; green exact-head gates precede authorized develop merge.
+
+
 Company-owned General Ledger follows the global header; Jahan Academia shares Jahan Bastan's book. Canonical title is read-only; branch/currency controls removed. Fiscal-year definition plus allocation is atomic, with existing overlap/replay/version/used-period guards. Nullable restrictive company FK preserves legacy books for explicit adoption. API/Web typecheck/build, scoped lint, 74 isolated PostgreSQL/mapping tests and 252 financial Web tests pass (one pre-existing skip). Browser acceptance and local restored Docker rollout pass; backup taken, original 317 table fingerprints unchanged and two audit/history tables only append. Owner explicitly authorizes CI, develop PR and merge after all checks pass; no production deployment. See docs/tasks/COMPANY-LEDGER-1110.md.
 
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
@@ -563,6 +573,18 @@ Owner follow-up also reserves reservation-insurance-documents.tsx and its opt-in
 ## TOUR-PACKAGE-SERVICES-1110 — PC-A — READY_FOR_CI
 
 Owner requests city-tour/guide/insurance toggles, required active-plan choice for enabled insurance, and searchable Bus/Train/Airplane itinerary transport. Optional JSON definition flags survive create/edit and transfer into Sales additional services; API validates required roles and protects departure/core-service invariants. Existing insurance IDs and legacy itinerary text remain intact.64 API and16 Web/translation regressions pass before added core-lock regressions; scoped lint/types and full final-head hosted quality/tests/build/PostgreSQL gates required before authorized develop merge. No schema/dependency/runtime/data/deployment changes; source reservations release on verified merge.
+
+## INSURANCE-COUNTRY-SELECT-1110 — PC-A — READY_FOR_CI
+
+Replace free-text provider-country code/name/English controls with read-only displays and an always-visible themed searchable provider country selector. Load the existing protected catalog automatically for managers, retain manual retry, keep legacy saved options visible and never rewrite existing mappings on catalog reads. Adding a Master Data country can prefill only a unique exact ISO match; English names come from the matching canonical reference or an ISO display name, never another country. Key the settings form by branch to isolate late responses. Six focused client/mapping/selection tests pass, including rate/plan preservation; full exact-head quality/tests/build/PostgreSQL gates precede authorized develop merge. No schema, dependency, live issuance, data writes or deployment changes; source reservations release after verified merge.
+
+## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
+
+Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
+
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -9099,6 +9121,10 @@ CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, 
 
 CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.
 
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+The Workbench request empty state uses generic request wording in Persian and English. Existing request and follow-up routing is preserved. 25 focused Web tests passed.
+
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
@@ -9315,6 +9341,10 @@ The owner requires experts to see only their own verified calls, and current HR 
 ## CALL-CENTER-UNIT-FILTER-1109 — PC-C
 
 Add the requested Unit selector between source and connected-to using the existing branch-scoped teamId filter. Exact-call telephony responsibility replaces service-account attribution for unit matching; own/native manager access remains conjoined. No schema, permission or production changes. Final tests and hosted gates precede the authorized develop merge.
+
+## ISSABEL-RECORDING-ON-DEMAND-1110 — PC-C — IN_PROGRESS
+
+Owner explicitly requires no ERP-database audio storage and download from Issabel only on demand. COMPUTER_ID=PC-C; branch codex/pc-c-issabel-recording-on-demand-1110 from develop3370748ca. Reserve Integrations recording service/new Unix-socket remote client and tests, minimal CustomerAffairs authenticated media-context root projection, existing PBX source/host relay and bounded activation/test scripts, own notes. Immediately stop only the periodic recording importer under the production deploy lease to prevent growth; keep call ingress/Worker/VPN intact. Implement stateless on-demand RPC over a private API-only mounted Unix socket, existing pinned SSH credentials and CDR/CEL root/file proof; memory-only audio, no database chunks or durable host cache, no public port. Existing CEO-only download/branch/range/rate/audit controls remain. Default remote mode blocks uploads; legacy tests explicitly opt into database mode. Source/API and host relay contracts ship together; legacy cached reads require explicit DATABASE mode. Preserve existing stored recordings until separately authorized cleanup; no destructive migration, grants, dependencies or unrelated deployment. User authorizes this live storage behavior change; source push/develop green-gate merge and bounded API/relay rollout preserve peer changes.
 
 ## SALES-REQUEST-ASSIGNEES-1107 — PC-C — DONE
 
@@ -9617,6 +9647,14 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A
+
+Reservations passenger corrections expose Insurance, City Tour and Guide even if the original contract omitted them. Selecting one creates the standard Sales service once and allocates it only to the selected passenger; existing service references are retained. Empty hotel amendments initialize a hotel selection and guest links so the existing hotel, room, date and additional-stay editors become usable. Existing prices are retained. Focused Web and API amendment regressions plus full hosted gates precede develop merge; no schema/dependency/deployment changes.
+
+## TOUR-TICKET-DATE-SELECTION-1110 — PC-A
+
+Package pricing departure controls now expose separate Gregorian outbound/return calendars. Red day markers reflect active route/branch tickets and each selector filters to its chosen Tehran civil day. Outbound selection/publication preserves the requested return date, date edits clear stale selections, and floating drafts use and follow the chosen date with both airport cities available. No API/schema/dependency or live data/deployment changes. Focused interaction/date/API regressions and full hosted gates precede develop merge.
+
 ## TOUR-FORM-1109 — PC-A — READY_FOR_CI
 
 Owner-requested tour definition controls: left header action, independent multi-branch creation with retained successes/retry, automatic city airport defaults and same-country airport overrides for both ends, removed manual IATA input, persisted optional combined-tour checkbox. Backward-compatible V1 details fields; Master Data public reference validation preserves boundaries. 8 focused Web and49 API tests pass. Full final-head gates required before authorized develop merge. No schema/migration/dependency, operational data or deployment changes. See tasks/TOUR-FORM-1109.md.
@@ -9678,6 +9716,12 @@ Merged Radan attendance integration is active on Avina with Tehran quarter-hour 
 ## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — READY_FOR_CI
 
 Per-ticket export template override uses the same published Master Data projection through an existing Reservations permission boundary; omitted override preserves the ticket-defined default. Every chosen template is validated server-side for active publication, XLSX file and travel date and read only through Documents. Request-key scope includes explicit template identity, preserving legacy default keys. The shared ticket/export picker now reads all pages rather than silently truncating after25 choices. Existing registered ticket selection remains unchanged by one-off export. No schema, dependencies, business data or deployment changes; exact-head full hosted gates precede owner-authorized develop merge. Source lease releases on verified merge.
+
+## COMBINED-TOUR-DESTINATIONS-1110 — PC-A — READY_FOR_CI
+
+Ordered city destinations and per-destination nights are stored in versioned Tour definitions. Combined stays are consecutive from the departure date and must end on the tour end date. Sales suggestions match only the origin and any actual tour destination; unrelated single-city tours are excluded. Pricing reads each city's rates for its own stay, permits multiple complete hotel/room combinations, sums exact purchase amounts by currency and stores one editable sale per combination. Publications freeze the combinations and all rate sources have restrictive FK links; legacy independent hotel publications are unchanged. Published Sales selection applies every stay and server quote validation rejects missing/changed hotels, dates or room compositions. The banner bridge transfers sale amounts only. Additive nullable JSON columns and a restrictive source-link table; no dependency or production-data/deployment changes. Focused shared/API/Web tests and exact-head full hosted gates precede user-authorized develop merge.
+
+DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
 ## HR-PAY-DOCS-1110 — PC-B
 Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.

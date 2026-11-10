@@ -4,6 +4,7 @@ import { BadRequestException } from '@nestjs/common';
 
 export interface DefaultManifestRow {
   contractName: string;
+  sellerName?: string;
   destination: string;
   firstName: string;
   lastName: string;
@@ -29,7 +30,7 @@ export function defaultManifestAge(
   if (age === 'INF' || age === 'INFANT') return 'INFANT';
   if (age === 'CHD' || age === 'CHILD' || age?.startsWith('CHD_'))
     return 'CHILD';
-  if (age === 'ADT' || age === 'ADULT') return 'ADULT';
+  if (age === 'ADT' || age === 'ADL' || age === 'ADULT') return 'ADULT';
   if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return '';
   const birth = new Date(birthDate + 'T00:00:00Z');
   if (
@@ -105,6 +106,7 @@ export function buildDefaultManifest(
           ['passportExpiryDate', 'تاریخ انقضای پاسپورت'],
         ] as [keyof DefaultManifestRow, string][])
       : []),
+    ['sellerName', 'فروشنده'],
   ];
   const outputRows = rows.map((row) => ({
     ...row,
@@ -122,7 +124,7 @@ export function buildDefaultManifest(
   const lastColumn = String.fromCharCode(64 + columns.length);
   const sheetRows = [
     columns.map(([, label]) => label),
-    ...outputRows.map((row) => columns.map(([key]) => row[key])),
+    ...outputRows.map((row) => columns.map(([key]) => row[key] ?? '')),
   ]
     .map(
       (values, i) =>
@@ -153,6 +155,6 @@ export function buildDefaultManifest(
       { level: 6 },
     ),
     columns.map(([, label]) => label),
-    outputRows.map((row) => columns.map(([key]) => row[key])),
+    outputRows.map((row) => columns.map(([key]) => row[key] ?? '')),
   );
 }

@@ -104,7 +104,7 @@ it('persists complete per-guest stay metadata without changing shared hotel date
       }),
     ),
   ).filter((n) => n.type === 'input');
-  (inputs[2]!.props.onChange as (e: unknown) => void)({
+  (inputs.at(-1)!.props.onChange as (e: unknown) => void)({
     target: { checked: true },
   });
   const next = onChange.mock.calls[0]![0];

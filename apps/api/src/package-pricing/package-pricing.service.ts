@@ -1,3 +1,4 @@
+import { tourStayPeriods } from '@nora/contracts';
 import { Optional } from '@nestjs/common';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -223,17 +224,42 @@ export class PackagePricingService {
       (id): id is string => !!id,
     );
     const [purchaseBatches, flightPurchaseCosts] = await Promise.all([
-      this.hotelPurchases.forTour(
-        tour.branchId,
-        tour.package.hotelIds,
-        tour.startsOn,
-        tour.endsOn,
-        tour.id,
-        tour.package.destinationId,
-        true,
-      ),
+      tour.package.details?.destinations?.length
+        ? Promise.all(
+            tourStayPeriods(tour.package, tour.startsOn, tour.endsOn).map(
+              (stay) =>
+                this.hotelPurchases
+                  .forTour(
+                    tour.branchId,
+                    [],
+                    stay.checkIn,
+                    stay.checkOut,
+                    undefined,
+                    stay.cityId,
+                    true,
+                  )
+                  .then((batches) =>
+                    batches.map((b) => ({ ...b, cityId: stay.cityId })),
+                  ),
+            ),
+          ).then((groups) => groups.flat())
+        : this.hotelPurchases.forTour(
+            tour.branchId,
+            tour.package.hotelIds,
+            tour.startsOn,
+            tour.endsOn,
+            tour.id,
+            tour.package.destinationId,
+            true,
+          ),
       this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
     ]);
+    const stays = tourStayPeriods(tour.package, tour.startsOn, tour.endsOn);
+    const cityNames = this.directory
+      ? await this.directory.hotelRatePeriodCityNames(
+          stays.map((s) => s.cityId),
+        )
+      : [];
     const nights =
       (Date.parse(`${tour.endsOn}T00:00:00.000Z`) -
         Date.parse(`${tour.startsOn}T00:00:00.000Z`)) /
@@ -243,14 +269,21 @@ export class PackagePricingService {
       tour,
       nights,
       purchaseBatches,
+      ...(stays.length > 1
+        ? {
+            destinationStays: stays.map((s) => ({
+              ...s,
+              name:
+                cityNames.find((c) => c.id === s.cityId)?.name ??
+                tour.package.name,
+            })),
+          }
+        : {}),
       ...(this.directory
         ? {
             destinationName:
-              (
-                await this.directory.hotelRatePeriodCityNames([
-                  tour.package.destinationId,
-                ])
-              )[0]?.name ?? tour.package.name,
+              cityNames.find((c) => c.id === tour.package.destinationId)
+                ?.name ?? tour.package.name,
           }
         : {}),
       flightPurchaseCosts,

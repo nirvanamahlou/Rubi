@@ -1,3 +1,5 @@
+import { inspectManifestTemplate } from '../common/manifest/workbook-template';
+import { Readable } from 'node:stream';
 import { contractFlightMetadata } from '@nora/contracts';
 import { manifestJourneys } from './manifest-journeys';
 import { readFile } from 'node:fs/promises';
@@ -199,13 +201,13 @@ describe('MANIFEST ticket cards', () => {
       destinationCountryId: 'tr',
       destinationCountryName: 'ترکیه',
       passengerCount: 2,
-      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+      template: { id: 'default', name: 'گزارش‌گیری', versionNumber: 1 },
       unavailableReason: null,
     });
     expect(cards[1]).toMatchObject({
       offerId: 'return-offer',
       direction: 'RETURN',
-      template: { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+      template: { id: 'default', name: 'گزارش‌گیری', versionNumber: 1 },
     });
     expect(cards[1]?.unavailableReason).toBeNull();
     const routes = await service.listRoutes({
@@ -498,7 +500,14 @@ describe('floating flight manifest', () => {
         },
       })),
     };
+    const documents = { readManifestTemplateReference: vi.fn() };
     const directory = {
+      manifestTemplateById: vi.fn(async () => ({
+        id: '10000000-0000-4000-8000-000000000099',
+        name: 'Custom',
+        versionNumber: 1,
+        fileReferenceId: 'custom-file',
+      })),
       cityReference: vi.fn(async (id: string) => ({
         name: id,
         englishName: id === originId ? 'TEHRAN' : 'ANTALYA',
@@ -522,7 +531,7 @@ describe('floating flight manifest', () => {
       directory as never,
       {} as never,
       { client } as never,
-      undefined,
+      documents as never,
       tickets as never,
     );
     const actor = {
@@ -535,7 +544,17 @@ describe('floating flight manifest', () => {
         'customers.sensitive.read',
       ],
     };
-    return { service, snapshot, row, client, tickets, actor, customers };
+    return {
+      service,
+      snapshot,
+      row,
+      client,
+      tickets,
+      actor,
+      customers,
+      directory,
+      documents,
+    };
   }
   const range = { fromDate: '2026-11-08', toDate: '2026-11-08' };
   it('defaults to charter and lists only floating flights when selected, without catalog/template lookups for floating identities', async () => {
@@ -592,6 +611,75 @@ describe('floating flight manifest', () => {
     expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
     expect(f.client.reservationManifestExport.create).toHaveBeenCalled();
   });
+  it.each(['OUTBOUND', 'RETURN'] as const)(
+    'exports the selected floating %s leg in PNL, Report and an uploaded template without requiring a catalog offer',
+    async (direction) => {
+      for (const format of ['DEFAULT_MANIFEST', 'REPORT', 'CUSTOM'] as const) {
+        const f = setup();
+        f.snapshot.ticketSelections = [];
+        f.snapshot.serviceSelections[0]!.metadata = contractFlightMetadata({
+          version: 1,
+          direction,
+          originId: direction === 'OUTBOUND' ? originId : destinationId,
+          destinationId: direction === 'OUTBOUND' ? destinationId : originId,
+          departureAt: '2026-11-08T08:00:00.000Z',
+          arrivalAt: '2026-11-08T10:00:00.000Z',
+          carrierNameSnapshot: 'FLOATING AIR',
+          serviceNumberSnapshot: direction === 'OUTBOUND' ? 'FLT100' : 'FLT101',
+          cabinClassCode: 'BUSINESS',
+        });
+        const template = await readFile(
+          join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
+        );
+        f.documents.readManifestTemplateReference.mockResolvedValue({
+          stream: Readable.from([template]),
+        });
+        const [card] = await f.service.listTickets(
+          { ...range, flightSupplyType: 'FLOATING' },
+          f.actor as never,
+        );
+        expect(card?.direction).toBe(direction);
+        const result = await f.service.exportTicket(
+          card!.offerId,
+          {
+            ...range,
+            includePreviouslyExported: true,
+            ...(format === 'CUSTOM'
+              ? { manifestTemplateId: '10000000-0000-4000-8000-000000000099' }
+              : { builtinTemplate: format }),
+          },
+          'synthetic-' + format,
+          f.actor as never,
+        );
+        expect(result.passengerCount).toBe(1);
+        expect(result.contractCount).toBe(1);
+        expect(result.fileExtension).toBe(
+          format === 'DEFAULT_MANIFEST' ? 'xlsm' : 'xlsx',
+        );
+        const layout = inspectManifestTemplate(result.bytes);
+        const first = layout.parsed.find(
+          (row) => row.number === layout.headerRow + 1,
+        );
+        expect(first?.cells.some((cell) => cell.value === 'SAMPLE')).toBe(true);
+        expect(f.customers.detail).toHaveBeenCalledOnce();
+        expect(f.customers.detail).toHaveBeenCalledWith(
+          'p1',
+          f.actor,
+          undefined,
+          'customer-verification',
+        );
+        expect(f.tickets.manifestSelection).not.toHaveBeenCalled();
+        if (format === 'CUSTOM')
+          expect(
+            f.documents.readManifestTemplateReference,
+          ).toHaveBeenCalledWith('custom-file', f.actor);
+        else
+          expect(
+            f.documents.readManifestTemplateReference,
+          ).not.toHaveBeenCalled();
+      }
+    },
+  );
   it('shares a stable identity across contracts but separates different routes or departure times', () => {
     const f = setup();
     const first = manifestJourneys(f.snapshot as never).find(

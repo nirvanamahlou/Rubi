@@ -125,3 +125,40 @@ it('sends an explicit template override and isolates its retry key from default 
   expect(values[0]).not.toBe(values[1]);
   expect(values[3]).not.toBe(values[1]);
 });
+
+it('sends independent builtin selections, stable format-specific keys, and keeps the XLSM extension', async () => {
+  const request = vi.fn(
+    async () =>
+      new Response(new Uint8Array([80, 75, 3, 4]), {
+        headers: {
+          'Content-Type': 'application/vnd.ms-excel.sheet.macroEnabled.12',
+        },
+      }),
+  );
+  const keys = new Map<string, string>();
+  const output = await requestManifestDownload(
+    { ...input, builtinTemplate: 'DEFAULT_MANIFEST' },
+    request,
+    keys,
+  );
+  await requestManifestDownload(
+    { ...input, builtinTemplate: 'REPORT' },
+    request,
+    keys,
+  );
+  await requestManifestDownload(
+    { ...input, builtinTemplate: 'DEFAULT_MANIFEST' },
+    request,
+    keys,
+  );
+  expect(output.fileExtension).toBe('xlsm');
+  const calls = request.mock.calls as unknown as [string, RequestInit][];
+  expect(JSON.parse(String(calls[0]![1].body)).builtinTemplate).toBe(
+    'DEFAULT_MANIFEST',
+  );
+  expect(JSON.parse(String(calls[1]![1].body)).builtinTemplate).toBe('REPORT');
+  const key = (i: number) =>
+    (calls[i]![1].headers as Record<string, string>)['Idempotency-Key'];
+  expect(key(0)).not.toBe(key(1));
+  expect(key(0)).toBe(key(2));
+});

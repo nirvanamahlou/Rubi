@@ -1,3 +1,5 @@
+import { buildPnlManifest } from './pnl-manifest';
+import { IamService } from '../iam/iam.service';
 import {
   buildTemplateManifest,
   templateManifestWarnings,
@@ -53,6 +55,9 @@ import {
 
 export const MANIFEST_XLSX_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+export const MANIFEST_XLSM_MIME =
+  'application/vnd.ms-excel.sheet.macroEnabled.12';
 
 export interface IranAirtourManifestRow {
   firstName: string;
@@ -155,6 +160,9 @@ export class ReservationManifestService {
     @Optional()
     @Inject(PassengerCorrectionService)
     private readonly corrections?: PassengerCorrectionService,
+    @Optional()
+    @Inject(IamService)
+    private readonly iam?: IamService,
   ) {}
 
   private geographyResolver() {
@@ -413,7 +421,7 @@ export class ReservationManifestService {
                 name: template.name,
                 versionNumber: template.versionNumber,
               }
-            : { id: 'default', name: 'پیش‌فرض', versionNumber: 1 },
+            : { id: 'default', name: 'گزارش‌گیری', versionNumber: 1 },
         unavailableReason,
       });
     }
@@ -437,8 +445,10 @@ export class ReservationManifestService {
     traceId?: string,
     offerId?: string,
   ) {
-    const flight = intake.snapshot.ticketSelections?.find((ticket) =>
-      offerId ? ticket.offerId === offerId : ticket.direction === 'OUTBOUND',
+    const flight = manifestJourneys(intake.snapshot).find((ticket) =>
+      offerId
+        ? ticket.offerId === offerId
+        : ticket.transportType === 'FLIGHT' && ticket.direction === 'OUTBOUND',
     );
     if (!flight)
       throw new BadRequestException('پرواز رفت قرارداد ثبت نشده است.');
@@ -531,14 +541,11 @@ export class ReservationManifestService {
         ),
         gender:
           customer.gender === 'M' ? 'MR' : customer.gender === 'F' ? 'MS' : '',
-        passengerType:
-          age === 'INF' || age === 'INFANT'
-            ? 'INFANT'
-            : age === 'CHD' || age === 'CHILD'
-              ? 'CHILD'
-              : age === 'ADT' || age === 'ADULT'
-                ? 'ADULT'
-                : '',
+        passengerType: defaultManifestAge(
+          age,
+          customer.birthDate,
+          tehranDay(flight.departureAt),
+        ) as IranAirtourManifestRow['passengerType'],
         birthDate: required(customer, 'birthDate', 'تاریخ تولد'),
         nationalId: customer.nationalId?.trim() ?? '',
         nationality: required(customer, 'nationalityCode', 'ملیت ISO3'),
@@ -583,6 +590,16 @@ export class ReservationManifestService {
         ...intake.snapshot.passengerIds,
       ]),
     ].filter((id) => allowed.has(id));
+    const sellerName =
+      intake.salesOwnerUserId && this.iam
+        ? ((
+            await this.iam.reservationResponsibilityNames(
+              [intake.salesOwnerUserId],
+              intake.branchId,
+              actor,
+            )
+          ).get(intake.salesOwnerUserId) ?? '')
+        : '';
     const rows: DefaultManifestRow[] = [];
     const corrections = await this.corrections?.effective(
       intake.snapshot.contractId,
@@ -611,6 +628,7 @@ export class ReservationManifestService {
         intake.workflow.ageOverrides[customerId] ?? assignment?.ageCategory;
       rows.push({
         contractName: intake.snapshot.contractNumber,
+        sellerName,
         destination: destinationName,
         firstName: international
           ? required(customer, 'passportFirstName', 'نام لاتین پاسپورت')
@@ -691,19 +709,29 @@ export class ReservationManifestService {
       throw new BadRequestException(
         'قالب منیفست انتخاب‌شده فعال یا معتبر نیست.',
       );
-    const template = input.manifestTemplateId
-      ? await this.directory.manifestTemplateById(
-          input.manifestTemplateId,
-          tehranDay(ticket.departureAt),
-        )
-      : ticket.transportType === 'FLIGHT' &&
-          ticket.flightSupplyType !== 'FLOATING'
-        ? await this.selectedTemplate(
-            offerId,
-            actor,
+    if (
+      input.builtinTemplate !== undefined &&
+      (!['DEFAULT_MANIFEST', 'REPORT'].includes(input.builtinTemplate) ||
+        input.manifestTemplateId !== undefined)
+    )
+      throw new BadRequestException(
+        'قالب منیفست انتخاب‌شده فعال یا معتبر نیست.',
+      );
+    const template = input.builtinTemplate
+      ? null
+      : input.manifestTemplateId
+        ? await this.directory.manifestTemplateById(
+            input.manifestTemplateId,
             tehranDay(ticket.departureAt),
           )
-        : null;
+        : ticket.transportType === 'FLIGHT' &&
+            ticket.flightSupplyType !== 'FLOATING'
+          ? await this.selectedTemplate(
+              offerId,
+              actor,
+              tehranDay(ticket.departureAt),
+            )
+          : null;
     if (template && !this.documents)
       throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
 
@@ -712,7 +740,8 @@ export class ReservationManifestService {
       offerId +
       ':' +
       idempotencyKey.trim() +
-      (input.manifestTemplateId ? ':' + input.manifestTemplateId : '');
+      (input.manifestTemplateId ? ':' + input.manifestTemplateId : '') +
+      (input.builtinTemplate ? ':builtin:' + input.builtinTemplate : '');
     const existing =
       await this.database.client.reservationManifestExport.findUnique({
         where: {
@@ -795,6 +824,40 @@ export class ReservationManifestService {
       }
       bytes = buildIranAirtourManifest(templateBytes, rows);
       passengerCount = rows.length;
+    } else if (input.builtinTemplate === 'DEFAULT_MANIFEST') {
+      const countries = await Promise.all(
+        [ticket.originId, ticket.destinationId].map((id) =>
+          id
+            ? this.directory.cityReference(id)
+            : Promise.resolve({ countryId: null }),
+        ),
+      );
+      if (
+        ticket.transportType === 'FLIGHT' &&
+        countries.some((city) => !city.countryId)
+      )
+        throw new BadRequestException(
+          'کشور مبدأ و مقصد برای تهیه منیفست مشخص نیست.',
+        );
+      const domestic = Boolean(
+        countries[0]?.countryId &&
+        countries[0].countryId === countries[1]?.countryId,
+      );
+      const rows: IranAirtourManifestRow[] = [];
+      for (const row of selected) {
+        const intake = await this.workflow.detail(row.id, actor.branchIds);
+        rows.push(
+          ...(await this.passengerRows(intake, actor, traceId, offerId)),
+        );
+      }
+      bytes = buildPnlManifest(
+        await readFile(
+          join(__dirname, 'templates', 'default-pnl-manifest.xlsm'),
+        ),
+        rows,
+        { domestic },
+      );
+      passengerCount = rows.length;
     } else {
       const [origin, destination] = await Promise.all([
         ticket.originId
@@ -871,6 +934,10 @@ export class ReservationManifestService {
       contractCount: selected.length,
       passengerCount,
       skippedFinanceCount,
+      fileExtension:
+        input.builtinTemplate === 'DEFAULT_MANIFEST'
+          ? ('xlsm' as const)
+          : ('xlsx' as const),
       fileName: (
         ticket.carrierNameSnapshot +
         '-' +
@@ -1276,8 +1343,11 @@ export class ReservationManifestBatchController {
       result.skippedFinanceCount,
     );
     return new StreamableFile(result.bytes, {
-      type: MANIFEST_XLSX_MIME,
-      disposition: 'attachment; filename="' + result.fileName + '.xlsx"',
+      type:
+        result.fileExtension === 'xlsm'
+          ? MANIFEST_XLSM_MIME
+          : MANIFEST_XLSX_MIME,
+      disposition: `attachment; filename="${result.fileName}.${result.fileExtension}"`,
     });
   }
 

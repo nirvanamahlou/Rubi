@@ -1,4 +1,8 @@
 'use client';
+import {
+  CombinedPublishedPicker,
+  combinedSaleMatchesState,
+} from './combined-published-picker';
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   matchingPublishedRooms,
@@ -83,13 +87,18 @@ export function PublishedPackageSale({
   const matches = rooms.map((room) =>
     room.childAges.some((a) => a === null)
       ? []
-      : matchingPublishedRooms(loadedTourId === tourId ? catalog : [], {
-          ...room,
-          childAges: room.childAges as number[],
-          hotelId: state.hotel.hotelId,
-          checkIn: state.hotel.checkIn,
-          checkOut: state.hotel.checkOut,
-        }),
+      : matchingPublishedRooms(
+          loadedTourId === tourId
+            ? catalog.filter((p) => combinedSaleMatchesState(p, state))
+            : [],
+          {
+            ...room,
+            childAges: room.childAges as number[],
+            hotelId: state.hotel.hotelId,
+            checkIn: state.hotel.checkIn,
+            checkOut: state.hotel.checkOut,
+          },
+        ),
   );
   const selected = matches.map((rows, index) =>
     rows.length === 1
@@ -153,6 +162,11 @@ export function PublishedPackageSale({
   return (
     <section className="grid gap-2 rounded-xl border p-3">
       <h3 className="font-bold">قیمت منتشرشده پکیج</h3>
+      <CombinedPublishedPicker
+        catalog={loadedTourId === tourId ? catalog : []}
+        state={state}
+        onChange={onChange}
+      />
       {error && <p role="alert">{error}</p>}
       {matches.map((rows, index) =>
         rows.length > 1 ? (

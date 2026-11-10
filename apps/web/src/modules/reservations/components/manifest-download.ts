@@ -43,6 +43,7 @@ export async function requestManifestDownload(
   input: {
     offerId: string;
     manifestTemplateId?: string;
+    builtinTemplate?: 'DEFAULT_MANIFEST' | 'REPORT';
     fromDate: string;
     toDate: string;
     includePreviouslyExported: boolean;
@@ -53,6 +54,7 @@ export async function requestManifestDownload(
   const exportFile = (includeAll: boolean) => {
     const scope = [
       input.offerId,
+      ...(input.builtinTemplate ? [input.builtinTemplate] : []),
       ...(input.manifestTemplateId ? [input.manifestTemplateId] : []),
       input.fromDate,
       input.toDate,
@@ -71,6 +73,9 @@ export async function requestManifestDownload(
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
         body: JSON.stringify({
+          ...(input.builtinTemplate
+            ? { builtinTemplate: input.builtinTemplate }
+            : {}),
           ...(input.manifestTemplateId
             ? { manifestTemplateId: input.manifestTemplateId }
             : {}),
@@ -91,6 +96,11 @@ export async function requestManifestDownload(
   if (!file.size) throw new Error('فایل MANIFEST خالی است؛ دوباره تلاش کنید.');
   return {
     file,
+    fileExtension: response.headers
+      .get('Content-Type')
+      ?.includes('macroEnabled')
+      ? 'xlsm'
+      : 'xlsx',
     warnings: response.headers.get('X-Nora-Manifest-Warnings') ?? '0',
     retriedWithAll,
     contracts: response.headers.get('X-Nora-Manifest-Contracts') ?? '—',

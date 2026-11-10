@@ -28,8 +28,10 @@ export function ManifestTemplatePicker({
   loadOptions = toursApi.manifestTemplates,
   name,
   readOnly = false,
+  builtinOptions,
   onChange,
 }: {
+  builtinOptions?: readonly { value: string; label: string }[];
   value: string | null;
   id?: string;
   loadOptions?: (
@@ -84,7 +86,10 @@ export function ManifestTemplatePicker({
         id={id}
         label="قالب‌های منیفست"
         value={value ?? ''}
-        selectedLabel={value ? name || 'قالب انتخاب‌شده' : 'پیش‌فرض'}
+        selectedLabel={
+          builtinOptions?.find((option) => option.value === value)?.label ??
+          (value ? name || 'قالب انتخاب‌شده' : 'پیش‌فرض')
+        }
         disabled={readOnly}
         remote
         loading={!current}
@@ -92,7 +97,7 @@ export function ManifestTemplatePicker({
         onSearchChange={setSearch}
         onOpenChange={setOpen}
         options={[
-          { value: '', label: 'پیش‌فرض' },
+          ...(builtinOptions ?? [{ value: '', label: 'پیش‌فرض' }]),
           ...(current?.data ?? []).map((row) => ({
             value: row.id,
             label: row.name,
@@ -101,7 +106,9 @@ export function ManifestTemplatePicker({
         onValueChange={(id) =>
           onChange(
             id || null,
-            current?.data.find((row) => row.id === id)?.name ?? 'پیش‌فرض',
+            builtinOptions?.find((option) => option.value === id)?.label ??
+              current?.data.find((row) => row.id === id)?.name ??
+              'پیش‌فرض',
           )
         }
         footer={

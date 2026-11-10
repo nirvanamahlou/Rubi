@@ -26,6 +26,8 @@ export interface TourPackageInputV1 {
     originAirportCode?: string;
     destinationAirportCode?: string;
     isCombined?: boolean;
+    /** Ordered destinations, including the primary destination, with consecutive hotel nights. */
+    destinations?: { cityId: string; nights: number }[] | undefined;
     durationDays?: number;
     rating?: number;
     transport?: 'FLIGHT' | 'TRAIN';
@@ -47,6 +49,45 @@ export interface TourPackageInputV1 {
       description?: string;
     }[];
   };
+}
+
+export function tourDestinationIds(tour: TourPackageInputV1): string[] {
+  return [
+    ...new Set(
+      [
+        tour.destinationId,
+        ...(tour.details?.isCombined
+          ? (tour.details.destinations?.map((s) => s.cityId) ?? [])
+          : []),
+      ].filter(Boolean),
+    ),
+  ];
+}
+
+export function tourStayPeriods(
+  tour: TourPackageInputV1,
+  startsOn: string,
+  endsOn: string,
+) {
+  const definitions =
+    tour.details?.isCombined && tour.details.destinations?.length
+      ? tour.details.destinations
+      : [
+          {
+            cityId: tour.destinationId,
+            nights: (Date.parse(endsOn) - Date.parse(startsOn)) / 86400000,
+          },
+        ];
+  let cursor = startsOn;
+  return definitions.map((stay) => {
+    const checkIn = cursor;
+    cursor = new Date(
+      Date.parse(cursor + 'T00:00:00Z') + stay.nights * 86400000,
+    )
+      .toISOString()
+      .slice(0, 10);
+    return { ...stay, checkIn, checkOut: cursor };
+  });
 }
 
 export interface TourPackageV1 extends TourPackageInputV1 {

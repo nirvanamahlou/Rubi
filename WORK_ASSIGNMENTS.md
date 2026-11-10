@@ -1,4 +1,22 @@
+## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A — IN_PROGRESS
+
+Owner requests per-passenger Insurance, City Tour and Guide allocation in Reservations corrections, plus adding a hotel to a contract without one, and develop merge. Reserve passenger-service-editor, amendment-extra-services helper/tests and empty-hotel amendment UI; preserve prices, other passengers, existing allocations and backend authorization/version/history rules. No schema/dependency/deployment or business-data writes. Prior date-selector scope merged and deployed; source lease releases after green develop merge.
+
+## TOUR-TICKET-DATE-SELECTION-1110 — PC-A — READY_FOR_CI
+
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Base3370748ca. Owner authorizes fixing floating-flight MANIFEST exports and green develop merge. Reserve ReservationManifestService passengerRows journey lookup and existing floating regression fixture/tests; own bounded status notes. Reuse the authoritative manifestJourneys resolver already used by list, assignment filtering and Report so PNL/custom output can find contract-only flights. Preserve exact ticket identity, own leg assignments, branch/cancellation/new-only rules and legacy charter output. Prior PNL/default scope merged in PR1586; no active writer. No schema/dependency/data/deployment changes.
+
+Reserve TourWorkspace departure date/ticket controls, local date-selection helpers and focused regressions. User requests selectable flight dates and active tickets in package pricing. Restore independent Gregorian departure/return calendars, active-ticket red markers and day filtering, preserve the requested return date and rebase floating drafts on date changes. No shared contract, API, schema, dependency, operational data or deployment changes. Prior tour definition scope merged in PR1585; this scope does not change it.
+
+26 focused interaction/date/offer API/i18n checks, scoped ESLint and full Web TypeScript pass. Production Web build and exact-head hosted gates complete validation before authorized develop merge. Source lease releases on verified merge.
+
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
+
+## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
+
+Base0d6317420. Owner authorizes per-ticket export template dropdowns defaulting to the supplied PNL layout, renaming the existing builtin workbook Report with seller appended, exact column/code/date mapping and header filters, tests and green develop merge. Reserve Reservations manifest exporter/default and focused API tests, manifest dropdown/download Web consumers and tests; additive optional builtinTemplate shared input coordinates API producer and Web consumer while preserving legacy omission behavior. Prior manifest defaults/template scopes are already merged and frozen. No schema/dependency/operational data/deployment changes. Only sanitized headers/format from the supplied file may enter Git; no real passenger rows.
 
 ## TOUR-ROOM-EDITOR-1110 — PC-A — READY_FOR_CI
 
@@ -291,6 +309,12 @@ COMPUTER_ID=PC-C; branch codex/pc-c-expert-call-isolation-1108 from develop80cbd
 ## CALL-CENTER-UNIT-FILTER-1109 — PC-C — READY_FOR_CI
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-unit-filter-1109 from develop19b96c5d7. Owner explicitly authorizes an independent Unit selector between source and connected-to, push/develop PR and merge after every CI gate. Reserve Call Center workspace/read client/CSS, CustomerAffairs read service and bounded tests plus own notes. Reuse existing optional teamId query and branch IAM unit directory; telephony filtering must use exact-call answer/origin/ringing evidence instead of the ingestion service account. Current native HR own/team visibility stays authoritative, including shared extensions. Producer CustomerAffairs and consumer Call Center ship together; existing clients with empty teamId unchanged, legacy manual calls retain creator-team semantics. No HR writer, schema, migration, dependency, grants or server publication. Prior Today Filter source is merged/released; queue filters and unrelated modules untouched. 46 API tests including real PostgreSQL unit/origin/transfer/shared-extension/manager-scope regressions and10 Web transport tests pass. Full API/Web types and scoped lint pass; API production build passes; Web production build and final hosted CI gate merge. PR1563; standalone unit-filter/report regression passes with its own explicit origin mapping fixture. Source freezes on publication and releases on verified merge.
+
+## ISSABEL-RECORDING-ON-DEMAND-1110 — PC-C — IN_PROGRESS
+
+CI remediation also reserves only the stale Documents contract enum assertion; no active overlapping test owner found. FAVORITES is an existing merged runtime value. Preserve strict equality and add that supported value; no product contract or Documents implementation changes.
+
+Owner explicitly requires no ERP-database audio storage and download from Issabel only on demand. COMPUTER_ID=PC-C; branch codex/pc-c-issabel-recording-on-demand-1110 from develop3370748ca. Reserve Integrations recording service/new Unix-socket remote client and tests, minimal CustomerAffairs authenticated media-context root projection, existing PBX source/host relay and bounded activation/test scripts, own notes. Immediately stop only the periodic recording importer under the production deploy lease to prevent growth; keep call ingress/Worker/VPN intact. Implement stateless on-demand RPC over a private API-only mounted Unix socket, existing pinned SSH credentials and CDR/CEL root/file proof; memory-only audio, no database chunks or durable host cache, no public port. Existing CEO-only download/branch/range/rate/audit controls remain. Default remote mode blocks uploads; legacy tests explicitly opt into database mode. Source/API and host relay contracts ship together; legacy cached reads require explicit DATABASE mode. Preserve existing stored recordings until separately authorized cleanup; no destructive migration, grants, dependencies or unrelated deployment. User authorizes this live storage behavior change; source push/develop green-gate merge and bounded API/relay rollout preserve peer changes.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -616,6 +640,18 @@ Owner follow-up also reserves reservation-insurance-documents.tsx and its opt-in
 ## TOUR-PACKAGE-SERVICES-1110 — PC-A — READY_FOR_CI
 
 Owner requests city-tour/guide/insurance toggles, required active-plan choice for enabled insurance, and searchable Bus/Train/Airplane itinerary transport. Optional JSON definition flags survive create/edit and transfer into Sales additional services; API validates required roles and protects departure/core-service invariants. Existing insurance IDs and legacy itinerary text remain intact.64 API and16 Web/translation regressions pass before added core-lock regressions; scoped lint/types and full final-head hosted quality/tests/build/PostgreSQL gates required before authorized develop merge. No schema/dependency/runtime/data/deployment changes; source reservations release on verified merge.
+
+## INSURANCE-COUNTRY-SELECT-1110 — PC-A — READY_FOR_CI
+
+Replace free-text provider-country code/name/English controls with read-only displays and an always-visible themed searchable provider country selector. Load the existing protected catalog automatically for managers, retain manual retry, keep legacy saved options visible and never rewrite existing mappings on catalog reads. Adding a Master Data country can prefill only a unique exact ISO match; English names come from the matching canonical reference or an ISO display name, never another country. Key the settings form by branch to isolate late responses. Six focused client/mapping/selection tests pass, including rate/plan preservation; full exact-head quality/tests/build/PostgreSQL gates precede authorized develop merge. No schema, dependency, live issuance, data writes or deployment changes; source reservations release after verified merge.
+
+## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
+
+Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
+
+## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
+
+The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
@@ -11440,6 +11476,10 @@ Reserve Call Center outcome label consumers, save/search DTO allowlists and focu
 
 CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outcome; CI identified missing translation. User authorizes CI repair and develop merge after every check passes. Preserve all other catalogue entries.
 
+## WORKBENCH-REQUEST-EMPTY-COPY-1110 — PC-A
+
+Update only the Workbench requests empty-state copy and its English translations.
+
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
@@ -12128,6 +12168,18 @@ COMPANY-LEDGER-1110 CI follow-up: reserve bounded English translations in Web en
 ## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — IN_PROGRESS
 
 Owner requests per-export Manifest template selection with ticket-defined default and newly registered Master Data templates visible in ticket editing. Reserve Manifest export UI/download/API input and validation, existing picker pagination/labels, Master Data public projection diagnostics only, contracts/tests and own notes. Preserve active publication/file/date checks, document access, branch scope and idempotent export identity. No schema/dependency/deployment or business-data writes. Source reservation releases after verified develop merge.
+
+## COMBINED-TOUR-DESTINATIONS-1110 — PC-A — IN_PROGRESS
+
+User authorizes complete multi-destination tour definition, exact destination filtering, sequential nights, per-destination rates and selectable hotel combinations with a shared package sale, tests and develop merge. Reserve Ticket Catalog definitions/policy/public reader, Master Travel reference validation, Package Pricing shared contracts/calculator/UI/persistence and Sales picker/published quote validation. Additive nullable draft/publication JSON fields reserved as sole bounded migration; no dependency changes or production deployment. Preserve source rate FKs, immutable publications, branch/permissions and legacy single destinations. User confirms consecutive stays and summed purchase cost. Producer and consumer contracts evolve together, with old tours and publications unchanged.
+
+COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricingTourCombinationSource link for every draft/publication hotel rate, alongside nullable immutable combination snapshots. Source and sole migration reservations release on frozen PR publication; no operational database or deployment changed. Tests cover consecutive 2/3-city pricing, route filtering, sale publication, airfare-once, forged stay rejection and three-city UI rendering.
+
+## DOCUMENTS-SECTIONS-1110 — PC-B — IN_PROGRESS
+
+Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
+
+DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
 
 ## HR-PAY-DOCS-1110 — PC-B — IN_PROGRESS
 
