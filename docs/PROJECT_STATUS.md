@@ -1,5 +1,10 @@
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
+## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
+
+Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
+
+
 ## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
 
 Per-ticket dropdown defaults to the exact eleven-column airline PNL layout, with owner-confirmed XLSM output. Report retains previous XLSX columns and appends authoritative contract seller; active uploaded templates remain selectable independently. Preserve assignment/cancellation/branch/date/new-only rules and separate idempotency per selected format. Sanitized bundled template contains no source passengers; project is copied without execution. Registered templates retain macro stripping. API/Web TypeScript, scoped lint and shared-contract build pass; focused checks cover real HTTP downloads and isolated selections. Synthetic output independently reloads with exact source headers, codes, dates, leading zeros, header filter and matching original VBA SHA256. See docs/tasks/MANIFEST-PNL-DEFAULT-1110.md. No schema/dependency/data/deployment changes; green exact-head gates precede authorized develop merge.
