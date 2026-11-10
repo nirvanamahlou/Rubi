@@ -197,6 +197,23 @@ export function buildLiveOrganizationNodes(
       : node,
   );
 }
+export function manuallyPlacedOrganizationNodes(
+  nodes: readonly OrganizationNode[],
+  records: readonly HrRecordDto[],
+): OrganizationNode[] {
+  const visibleIds = new Set(
+    records
+      .filter((record) => record.data.chartVisible === true)
+      .map((record) => record.id),
+  );
+  return nodes
+    .filter((node) => visibleIds.has(node.id))
+    .map((node) => ({
+      ...node,
+      parentId:
+        node.parentId && visibleIds.has(node.parentId) ? node.parentId : null,
+    }));
+}
 export function chartNodeFormTarget(
   kind: 'UNIT' | 'EMPLOYEE',
   node: OrganizationNode | undefined,
@@ -229,6 +246,7 @@ export function chartNodeFormTarget(
         };
   return {
     source,
+    chartPlacement: true,
     ...(record && node?.kind !== 'MANAGEMENT' ? { parent: record } : {}),
     ...(companyId ? { preferredCompanyId: companyId } : {}),
   };
@@ -254,13 +272,17 @@ export function HrOrganization({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const saveLock = useRef(false);
-  const nodes = useMemo(
+  const catalogNodes = useMemo(
     () =>
       buildLiveOrganizationNodes(data.records, data.branches, data.employees),
     [data],
   );
+  const nodes = useMemo(
+    () => manuallyPlacedOrganizationNodes(catalogNodes, data.records),
+    [catalogNodes, data.records],
+  );
   const addNode = (kind: 'UNIT' | 'EMPLOYEE', node?: OrganizationNode) =>
-    onForm(chartNodeFormTarget(kind, node, data.records, nodes));
+    onForm(chartNodeFormTarget(kind, node, data.records, catalogNodes));
   return (
     <div className={ui.spaced}>
       <header className={ui.heading}>
@@ -404,7 +426,10 @@ export function HrOrganization({
         <HrConfirmDelete
           title={removing.values[0] ?? removing.code}
           onClose={() => setRemoving(null)}
-          onConfirm={() => store.remove(removing)}
+          chartOnly
+          onConfirm={async () => {
+            await store.update(removing, { data: { chartVisible: false } });
+          }}
         />
       ) : null}
     </div>

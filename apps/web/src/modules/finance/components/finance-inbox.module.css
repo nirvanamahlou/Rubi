@@ -110,7 +110,7 @@
   background: color-mix(in srgb, var(--surface) 90%, #bce5ff);
   box-shadow: 0 8px 20px #18457616;
 }
-.requestRow[aria-pressed='true'] {
+.requestRow[data-active='true'] {
   background: color-mix(in srgb, var(--surface) 78%, #a9dcff);
   border-color: #64b6ef;
   box-shadow: 0 8px 22px #2877b51f;
