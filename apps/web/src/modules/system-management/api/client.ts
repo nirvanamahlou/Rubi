@@ -83,6 +83,17 @@ export interface BackupRequestWrite {
   retentionUntil?: string | null;
 }
 
+export interface SystemActivityPage {
+  items: Array<{
+    id: string;
+    user: string;
+    section: string;
+    action: string;
+    createdAt: string;
+  }>;
+  nextCursor: string | null;
+}
+
 export interface SystemAuditRecord {
   id: string;
   actorUserId: string;
@@ -196,5 +207,10 @@ export const systemManagementApi = {
     input: SystemReportingExportRetryInputV1,
   ) => request(`/jobs/reporting-exports/${id}/retry`, json(input)),
   health: () => request<SystemOverview['health']>('/health'),
+  activity: (cursor?: string, signal?: AbortSignal) =>
+    request<SystemActivityPage>(
+      cursor ? `/activity?cursor=${encodeURIComponent(cursor)}` : '/activity',
+      { signal },
+    ),
   audit: () => request<SystemAuditRecord[]>('/audit'),
 };

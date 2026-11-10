@@ -1544,6 +1544,14 @@ export class IamService implements IamStepUpPort {
     return role;
   }
 
+  async activityActorNames(ids: string[]) {
+    const users = await this.database.client.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, displayName: true },
+    });
+    return new Map(users.map((user) => [user.id, user.displayName]));
+  }
+
   listAuditEvents() {
     return this.database.client.auditEvent.findMany({
       take: 200,

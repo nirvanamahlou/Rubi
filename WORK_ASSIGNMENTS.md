@@ -12166,3 +12166,7 @@ COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricin
 Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
+
+## SYSTEM-ACTIVITY-1110 — PC-A — IN_PROGRESS
+
+Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.
