@@ -46,6 +46,29 @@ export function TourDestinations({
         اقامت‌ها از شروع تور، به ترتیب و پشت‌سرهم هستند. نرخ هر مقصد برای شب‌های
         همان اقامت خوانده می‌شود.
       </p>
+      <div className="grid items-end gap-3 rounded-xl border bg-surface p-3 md:grid-cols-[auto_1fr_1fr]">
+        <strong>مبدأ</strong>
+        <SearchableReference
+          label="کشور مبدأ"
+          value={String(
+            cities.find((city) => city.id === value.originId)?.attributes
+              .countryId ?? '',
+          )}
+          options={countries}
+          onChange={(countryId) => {
+            const city = cities.find(
+              (city) => city.attributes.countryId === countryId,
+            );
+            onChange({ ...value, originId: city?.id ?? '' });
+          }}
+        />
+        <SearchableReference
+          label="شهر مبدأ"
+          value={value.originId}
+          options={cities}
+          onChange={(originId) => onChange({ ...value, originId })}
+        />
+      </div>
       {stays.map((stay, index) => (
         <div
           key={index}
