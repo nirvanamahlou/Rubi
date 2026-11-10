@@ -1,6 +1,6 @@
 # معماری Nora Airline CRM
 
-وضعیت: Baseline پیشنهادی مرحله Bootstrap
+وضعیت: معماری ثبت‌شده در مخزن، با بخش‌های هدف جداگانه
 
 سبک: Modular Monolith + Monorepo، API-first، event-assisted
 
@@ -13,7 +13,15 @@
 - گزارش دقیق با grain کنترل‌شده و traceability کامل
 - حداقل ۳۰ کارمند با قابلیت رشد، نه معماری توزیع‌شده بدون نیاز واقعی
 
-## نمای Context
+## اجزای پیاده‌شده
+
+- رابط کارکنان در `apps/web` با Next.js اجرا می‌شود و به API در `apps/api` با NestJS متصل است.
+- PostgreSQL منبع دادهٔ عملیاتی است. Prisma schema و migrationهای نسخه‌دار در `packages/database/prisma` قرار دارند.
+- `packages/contracts` علاوه بر DTOها، تعریف منابع و بعضی محاسبات مشترک Web و API را دارد. تفکیک این مسئولیت‌ها بخشی از کار معماری باقی‌مانده است.
+- `apps/worker` فرایند مستقل تلفنی دارد. اسکن Documents می‌تواند در API یا فرایند اسکن جدا اجرا شود. رندر خروجی Reporting در thread جداست و درخواست HTTP منتظر نتیجه می‌ماند.
+- مسیر معمول فایل‌های Documents از ذخیره‌سازی رمزگذاری‌شده روی فایل‌سیستم تنظیم‌شده استفاده می‌کند. Compose توسعه Redis و MinIO را فراهم می‌کند. وجود آن‌ها در Compose به معنای استفادهٔ همهٔ ماژول‌ها از صف یا Object Storage نیست.
+
+## نمای Context هدف
 
 ```mermaid
 flowchart LR
@@ -50,24 +58,23 @@ infrastructure local compose, nginx and deployment assets
 tests         cross-application contract, E2E and smoke suites
 ```
 
-در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI در Work Item مستقل
-و مطابق مالکیت ماژول انجام می‌شود. Nginx نیز تا تعیین topology و domainها عمداً اضافه
-نشده است. Prisma schema در
-`packages/database/prisma` قرار دارد و تا Work Item تاییدشده دامنه، model یا Migration ندارد.
-
 ## معماری داخلی Backend
 
-هر دامنه ساختاری معادل `domain / application / infrastructure / presentation` دارد.
+پیاده‌سازی فعلی برای همهٔ دامنه‌ها شکل یکسانی ندارد. ماژول‌های NestJS معمولاً controller،
+service و در برخی دامنه‌ها repository و توابع مستقل دامنه دارند. منطق چند دامنه هنوز
+در serviceهای بزرگ متمرکز است. تفکیک زیر جهت بازآرایی تدریجی است.
 
-- Domain: entity، value object، invariant و domain event؛ بدون Nest/Prisma dependency
-- Application: use case، transaction boundary، port و authorization intent
-- Infrastructure: Prisma repository، Provider client، queue/storage adapter
-- Presentation: controller، DTO validation، auth guard و OpenAPI
+- Domain: قواعد و داده‌های دامنه، مستقل از Nest و Prisma
+- Application: use case، مرز تراکنش و سیاست دسترسی
+- Infrastructure: پیاده‌سازی repository، Provider، صف و ذخیره‌سازی
+- Presentation: controller، اعتبارسنجی ورودی، guard و OpenAPI
 
-دسترسی بین ماژول‌ها فقط از public application contract یا domain event versioned است.
-Import از repository داخلی یا query مستقیم table ماژول دیگر ممنوع است. درون یک
-PostgreSQL، transaction هماهنگ‌کننده می‌تواند چند public command را اتمیک کند، ولی
-مالک invariant همیشه ماژول صاحب داده است.
+مالکیت داده طبق `MODULE_BOUNDARIES.md` است. ماژول مصرف‌کننده باید از قرارداد عمومی
+ماژول مالک استفاده کند. یک transaction هماهنگ‌کننده می‌تواند فرمان‌های عمومی چند
+ماژول را اتمیک کند و قواعد هر داده در ماژول مالک باقی می‌ماند. آزمون
+`apps/api/test/module-boundaries.spec.ts` وابستگی مستقیم به repository خصوصی را در
+زیرپوشه‌های API کنترل می‌کند و استثناهای ترکیب ماژول‌ها را صریح ثبت می‌کند. تشخیص
+query مستقیم روی جدول ماژول دیگر و import با مسیر محاسبه‌شده در پوشش این آزمون نیست.
 
 ## ماژول‌ها
 
@@ -95,7 +102,7 @@ PC-A و PC-B هر دو Full-Stack هستند و همه لایه‌های ماژ�
 نیازمند رزرو و هماهنگی قبلی هستند. نگاشت نهایی و قواعد قفل در
 [MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md) ثبت شده است.
 
-## مدل اجرا و consistency
+## قواعد consistency و الگوی اجرای هدف
 
 - عملیات حیاتی در یک request و transaction پایگاه داده، strong consistency دارند.
 - side effect بیرونی با Outbox ثبت و Worker تحویل می‌دهد؛ inbox/idempotency جلوی تکرار
@@ -132,7 +139,7 @@ sequenceDiagram
 صدور عملیاتی، release مالی و delivery سه state مستقل هستند. رزرواسیون قرارداد یا
 تخصیص مسافر را ویرایش نمی‌کند؛ نقص ورودی با correction request به فروش برمی‌گردد.
 
-### جریان رزرو آنلاین
+### جریان هدف رزرو آنلاین
 
 ```mermaid
 sequenceDiagram
@@ -172,7 +179,7 @@ version و الزام سربرگ را از منبع trusted resolve می‌کن�
 Documents fail-closed است. Issue/Reissue به Branding Version append-only با FK مرکب متصل و
 همراه policy provenance و Audit در transaction ثبت می‌شوند؛ `ALL` هیچ سند ترکیبی تولید نمی‌کند.
 
-## داده و ذخیره‌سازی
+## قواعد داده و ذخیره‌سازی هدف
 
 - PostgreSQL: همه داده پایدار، audit metadata، status history و reporting views
 - Redis: cache کوتاه search، distributed lock، rate limit و BullMQ state
@@ -200,9 +207,12 @@ URL کوتاه و audit append-only منطقی. اطلاعات کارت/CVV هر
 
 Operational tables برای UI تراکنشی و approved views برای KPI/گزارش. Viewها grain صریح
 دارند و measureهای contract/payment پیش از join با passenger/segment aggregate می‌شوند.
-Export بزرگ queue-based و snapshot فیلتر/permission دارد. `REPORTING.md` مرجع است.
+در مسیر فعلی، API دادهٔ مجاز را می‌خواند و thread جدا خروجی CSV، XLSX یا PDF را
+می‌سازد. درخواست تا ذخیرهٔ خروجی باز می‌ماند. سقف هم‌زمانی و مهلت رندر در هر فرایند
+اعمال می‌شوند. صف پایدار خروجی و خواندن تدریجی ردیف‌ها در برنامهٔ آینده‌اند.
+`REPORTING.md` مرجع دامنه است.
 
-## Observability و قابلیت عملیات
+## اهداف Observability و قابلیت عملیات
 
 - structured JSON log با `traceId`, `requestId`, `userId/clientId`, `module`, `operation`
   و redaction؛ PII/secret در log ممنوع
@@ -213,10 +223,8 @@ Export بزرگ queue-based و snapshot فیلتر/permission دارد. `REPORTI
 
 ## استقرار
 
-Local/Test/Staging/Production کاملاً جدا. Nginx/TLS جلوی web/api، چند process API و Worker
-قابل scale، PostgreSQL managed یا backup-tested، Redis durable متناسب با queue و S3
-versioned. migration به‌صورت job کنترل‌شده قبل از rollout و rollback فقط backward-safe.
-جزئیات در `DEPLOYMENT.md`.
+Compose توسعه و دروازه‌های GitHub در [DEPLOYMENT.md](DEPLOYMENT.md) مستند شده‌اند.
+توپولوژی هدف و قواعد انتشار همان‌جا جدا از تنظیمات فعلی مخزن آمده‌اند.
 
 ## الزامات کیفی اولیه
 
