@@ -6,7 +6,7 @@ import {
   attachmentMimeType,
   receiptFileSupported,
   documentMimeTypes,
-} from '@nora/contracts';
+} from '@nora/contracts/upload-formats';
 import { spreadsheetFileType } from './spreadsheet-file-type';
 import { validateUploadFile } from './documents.validation';
 const xlsx = (extra: Record<string, Uint8Array> = {}) =>

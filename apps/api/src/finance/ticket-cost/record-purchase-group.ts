@@ -8,7 +8,7 @@ import type {
   AuthenticatedActor,
   TicketPurchaseGroupCommandV1,
 } from '@nora/contracts';
-import { moneyDecimal, moneyUnits } from '@nora/contracts';
+import { moneyDecimal, moneyUnits } from '@nora/contracts/sales/pricing';
 import { Prisma } from '@nora/database';
 import type { DatabaseService } from '../../database/database.service';
 import type { ProcurementPublicService } from '../../procurement/procurement-public.service';
