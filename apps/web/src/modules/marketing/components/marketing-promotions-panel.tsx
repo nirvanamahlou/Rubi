@@ -1,5 +1,9 @@
 'use client';
-import type { AuthenticatedActor, MarketingAssetViewV1 } from '@nora/contracts';
+import type {
+  AuthenticatedActor,
+  MarketingAssetViewV1,
+  MarketingPromotionPageQueryV1,
+} from '@nora/contracts';
 import {
   Download,
   Eye,
@@ -96,7 +100,8 @@ export function MarketingPromotionsPanel({
   onClose: () => void;
   onNotice: (message: string) => void;
 }) {
-  const kind = tab === 'specials' ? 'OFFER' : 'COUPON';
+  const kind: MarketingPromotionPageQueryV1['kind'] =
+    tab === 'specials' ? 'OFFER' : 'COUPON';
   const title = kind === 'OFFER' ? 'پیشنهادهای ویژه' : 'کدهای تخفیف';
   const [rows, setRows] = useState<MarketingAssetViewV1[]>([]);
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
@@ -118,6 +123,22 @@ export function MarketingPromotionsPanel({
   const [saving, setSaving] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [deleting, setDeleting] = useState<MarketingAssetViewV1 | null>(null);
+  const [navigation, setNavigation] = useState({ kind, page: 1 });
+  const [hasNext, setHasNext] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const page = navigation.kind === kind ? navigation.page : 1;
+  const goTo = (next: number) => setNavigation({ kind, page: next });
+  const filters = useCallback(
+    (): MarketingPromotionPageQueryV1 => ({
+      kind,
+      ...(status !== 'all' ? { status } : {}),
+      ...(search.trim() ? { search: search.trim() } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+    }),
+    [kind, status, search, from, to],
+  );
   const busy = useRef(false);
   const generation = useRef(0);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
@@ -132,12 +153,17 @@ export function MarketingPromotionsPanel({
     try {
       const [access, records] = await Promise.all([
         marketingApi.access(),
-        marketingApi.assets(kind),
+        marketingApi.promotionPage({ ...filters(), page }),
       ]);
       if (request !== generation.current) return;
       setActor(access);
       setRows(records.data);
-      setBranchId(access.branchIds[0] ?? '');
+      setHasNext(records.hasNext);
+      setBranchId((current) =>
+        access.branchIds.includes(current)
+          ? current
+          : (access.branchIds[0] ?? ''),
+      );
     } catch (caught) {
       if (request === generation.current)
         setError(
@@ -148,14 +174,14 @@ export function MarketingPromotionsPanel({
     } finally {
       if (request === generation.current) setLoading(false);
     }
-  }, [kind]);
+  }, [filters, page]);
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => void load(), 180);
     return () => {
       window.clearTimeout(timer);
       invalidate();
     };
-  }, [load, invalidate]);
+  }, [load, invalidate, revision]);
   const managed =
     actor?.permissions.includes('marketing.offer.manage') ?? false;
   const openRow = (row: MarketingAssetViewV1, view: boolean) => {
@@ -236,6 +262,7 @@ export function MarketingPromotionsPanel({
         row,
         ...current.filter((item) => item.id !== row.id),
       ]);
+      setRevision((value) => value + 1);
       setUncertain(false);
       setEditor(null);
       onClose();
@@ -280,6 +307,8 @@ export function MarketingPromotionsPanel({
       setLoading(false);
       setError('');
       setRows((current) => current.filter((item) => item.id !== deleting.id));
+      if (rows.length === 1 && page > 1) goTo(page - 1);
+      setRevision((value) => value + 1);
       setDeleting(null);
       deleteAttempt.current = null;
       onNotice('حذف شد.');
@@ -292,15 +321,42 @@ export function MarketingPromotionsPanel({
       setSaving(false);
     }
   };
-  const filtered = rows.filter(
-    (row) =>
-      (status === 'all' || row.status === status) &&
-      `${row.name} ${row.payload.code ?? ''}`
-        .toLocaleLowerCase()
-        .includes(search.trim().toLocaleLowerCase()) &&
-      (!from || Date.parse(row.expiresAt ?? '') >= Date.parse(from)) &&
-      (!to || Date.parse(row.scheduledAt ?? '') < Date.parse(to) + 86400000),
-  );
+  const exportPromotions = async () => {
+    setExporting(true);
+    try {
+      const query = filters();
+      const exported = [];
+      let next = 1;
+      for (;;) {
+        const response = await marketingApi.promotionPage({
+          ...query,
+          page: next,
+        });
+        exported.push(...response.data);
+        if (!response.hasNext) break;
+        next++;
+      }
+      downloadRowsAsExcel({
+        filename: title,
+        sheetName: title,
+        columns: ['عنوان', 'کد', 'مقدار', 'وضعیت'],
+        rows: exported.map((row) => [
+          row.name,
+          String(row.payload.code ?? ''),
+          String(row.payload.value),
+          statusLabels[row.status] ?? row.status,
+        ]),
+      });
+    } catch (caught) {
+      onNotice(
+        caught instanceof Error
+          ? caught.message
+          : 'دریافت پیشنهادها ناموفق بود.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
   const open = adding || Boolean(editor);
   return (
     <section
@@ -321,20 +377,8 @@ export function MarketingPromotionsPanel({
           <Button
             variant="outline"
             aria-label="خروجی اکسل"
-            disabled={loading || Boolean(error)}
-            onClick={() =>
-              downloadRowsAsExcel({
-                filename: title,
-                sheetName: title,
-                columns: ['عنوان', 'کد', 'مقدار', 'وضعیت'],
-                rows: filtered.map((row) => [
-                  row.name,
-                  String(row.payload.code ?? ''),
-                  String(row.payload.value),
-                  statusLabels[row.status] ?? row.status,
-                ]),
-              })
-            }
+            disabled={loading || exporting || Boolean(error)}
+            onClick={() => void exportPromotions()}
           >
             <Download className="size-4" />
           </Button>
@@ -365,23 +409,40 @@ export function MarketingPromotionsPanel({
           aria-label="جست‌وجو"
           placeholder="جست‌وجو"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          maxLength={200}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            goTo(1);
+          }}
         />
         <Choice
           label="وضعیت"
           value={status}
-          onChange={setStatus}
+          onChange={(value) => {
+            setStatus(value);
+            goTo(1);
+          }}
           options={{ all: 'همه وضعیت‌ها', ...statusLabels }}
         />
         <FormField label="از تاریخ" id="promotion-filter-from">
           <DatePicker
             id="promotion-filter-from"
             value={from}
-            onChange={setFrom}
+            onChange={(value) => {
+              setFrom(value);
+              goTo(1);
+            }}
           />
         </FormField>
         <FormField label="تا تاریخ" id="promotion-filter-to">
-          <DatePicker id="promotion-filter-to" value={to} onChange={setTo} />
+          <DatePicker
+            id="promotion-filter-to"
+            value={to}
+            onChange={(value) => {
+              setTo(value);
+              goTo(1);
+            }}
+          />
         </FormField>
       </div>
       {error ? (
@@ -412,7 +473,7 @@ export function MarketingPromotionsPanel({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => (
+              {rows.map((row) => (
                 <tr key={row.id} className="border-t border-border">
                   <td className="p-3">{row.name}</td>
                   <td>{String(row.payload.code ?? '—')}</td>
@@ -474,7 +535,27 @@ export function MarketingPromotionsPanel({
               ))}
             </tbody>
           </table>
-          {!filtered.length ? (
+          {page > 1 || hasNext ? (
+            <div className="flex items-center justify-between gap-2 border-t p-3">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() => goTo(page - 1)}
+              >
+                صفحه قبل
+              </Button>
+              <span>{page.toLocaleString('fa-IR')}</span>
+              <Button
+                variant="outline"
+                disabled={!hasNext}
+                onClick={() => goTo(page + 1)}
+              >
+                صفحه بعد
+              </Button>
+            </div>
+          ) : null}
+
+          {!rows.length ? (
             <p className="p-4 text-muted-foreground">رکوردی پیدا نشد.</p>
           ) : null}
         </div>

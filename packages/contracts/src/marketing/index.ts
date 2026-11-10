@@ -160,6 +160,21 @@ export interface MarketingAssetViewV1 extends MarketingAssetInputV1 {
   externalExecutionStatus: 'UNAVAILABLE';
 }
 
+export interface MarketingPromotionPageQueryV1 {
+  kind: 'COUPON' | 'OFFER';
+  page?: number;
+  search?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface MarketingPromotionPageV1 {
+  data: MarketingAssetViewV1[];
+  page: number;
+  hasNext: boolean;
+}
+
 export interface MarketingSourceCountV1 {
   sourceCategory: string;
   count: number;
