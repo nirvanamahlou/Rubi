@@ -23,12 +23,10 @@ function fixture() {
   };
   const domain = {
     authorizeRecordingDownload: vi.fn(),
-    callRecordingContext: vi
-      .fn()
-      .mockResolvedValue({
-        connectionId: 'connection',
-        rootCallId: 'synthetic.1',
-      }),
+    callRecordingContext: vi.fn().mockResolvedValue({
+      connectionId: 'connection',
+      rootCallId: 'synthetic.1',
+    }),
   };
   const service = new IssabelRecordingsService(
     db as never,
