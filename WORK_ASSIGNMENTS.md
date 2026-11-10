@@ -12046,3 +12046,9 @@ Owner explicitly coordinates overlap with PC-A and authorizes independent diagno
 Reserve passenger-files table CSS/markup, amendment draft age hydration and focused regressions. Preserve existing insurance worktree edits; independent branch from develop fdf5cd950. Fix table min-width override and checkbox sizing; retain booked child bands and infer only missing child bands from known DOB at travel date. No schema/dependency/production data changes. User authorizes develop merge after checks.
 
 PASSENGER-EDITOR-LAYOUT-1110 validation:25 focused Web tests and scoped ESLint pass. Final hosted quality/typecheck/build/test gates required before owner-authorized develop merge. No deployment requested.
+
+## RESERVATION-CANCELLED-SELECTION-1110 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-cancelled-selection-1110 from develop4620591c2. Owner requests the cancellation message appear only for the selected contract rather than permanently on every cancelled queue row, then develop merge. Reserve bounded foundation workspace/action-panel presentation and tests, own task/status notes. Preserve red cancellation styling, status, actions and permissions. No API/schema/dependency/data or deployment changes; existing source reservations are released. Exact-head hosted checks precede authorized merge.
+
+RESERVATION-CANCELLED-SELECTION-1110 validation:56 focused queue/table/action-panel tests and scoped ESLint pass. Cancellation notice is attached only to the selected cancelled contract identity; no queue cell contains the repeated text, while cancelled rows retain their red state. Source reservation releases on frozen publication; exact-head hosted gates precede authorized develop merge. No deployment requested.

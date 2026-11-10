@@ -427,10 +427,10 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
     expect(html).toContain(`data-tone="${tone}"`);
   for (const label of ['واچر صادرشده', 'آماده صدور واچر هتل', 'ابطال‌شده'])
     expect(html).toContain(label);
+  const table = html.match(/<table\b[\s\S]*?<\/table>/)?.[0];
+  expect(table).toContain('data-cancelled="true"');
+  expect(table).not.toContain('این قرارداد باطل شده است');
   expect(html.match(/این قرارداد باطل شده است/g)).toHaveLength(1);
-  expect(html).toMatch(
-    /<tr[^>]*data-cancelled="true"[^>]*>[\s\S]*?این قرارداد باطل شده است[\s\S]*?<\/tr>/,
-  );
   expect(html).toContain('aria-live="polite"');
   expect(html).toContain('درخواست جدید به');
   const denied = renderToStaticMarkup(
@@ -441,6 +441,24 @@ it('renders workflow colors with readable statuses and accessible arrival alert'
     />,
   );
   expect(denied).not.toContain('درخواست جدید به');
+});
+
+it('does not show a cancellation notice when the selected contract is active even with cancelled rows', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[
+        { ...row('active'), contractNumber: '1' },
+        { ...row('cancelled-a'), contractNumber: '2', status: 'CANCELLED' },
+        { ...row('cancelled-b'), contractNumber: '3', status: 'CANCELLED' },
+      ]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+    />,
+  );
+  expect(html.match(/data-cancelled="true"/g)).toHaveLength(2);
+  expect(html).not.toContain('این قرارداد باطل شده است');
 });
 
 it('does not render generic reservation operation cards on the MANIFEST pane', () => {
