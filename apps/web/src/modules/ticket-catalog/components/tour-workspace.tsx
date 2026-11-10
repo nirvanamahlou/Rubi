@@ -582,44 +582,54 @@ export function TourWorkspace({
                   همان شعبه اضافه کنید.
                 </p>
               </fieldset>
-              <Choice
-                label="شهر مبدأ"
-                value={draft.originId}
-                options={references.cities}
-                onChange={(originId) => {
-                  const details = {
-                    ...(draft.details ?? { version: 1 as const }),
-                  };
-                  const code = defaultTourAirport(
-                    originId,
-                    references.airports,
-                  );
-                  if (code) details.originAirportCode = code;
-                  else delete details.originAirportCode;
-                  setDraft({ ...draft, originId, details });
-                }}
-              />
-              <Choice
-                label="شهر مقصد"
-                value={draft.destinationId}
-                options={references.cities}
-                onChange={(destinationId) => {
-                  const details = {
-                    ...(draft.details ?? { version: 1 as const }),
-                  };
-                  const code = defaultTourAirport(
-                    destinationId,
-                    references.airports,
-                  );
-                  if (code) details.destinationAirportCode = code;
-                  else delete details.destinationAirportCode;
-                  if (details.destinations?.length)
-                    details.destinations = details.destinations.map((s, i) =>
-                      i === 0 ? { ...s, cityId: destinationId } : s,
-                    );
-                  setDraft({ ...draft, destinationId, hotelIds: [], details });
-                }}
-              />
+              {!draft.details?.isCombined && (
+                <>
+                  <Choice
+                    label="شهر مبدأ"
+                    value={draft.originId}
+                    options={references.cities}
+                    onChange={(originId) => {
+                      const details = {
+                        ...(draft.details ?? { version: 1 as const }),
+                      };
+                      const code = defaultTourAirport(
+                        originId,
+                        references.airports,
+                      );
+                      if (code) details.originAirportCode = code;
+                      else delete details.originAirportCode;
+                      setDraft({ ...draft, originId, details });
+                    }}
+                  />
+                  <Choice
+                    label="شهر مقصد"
+                    value={draft.destinationId}
+                    options={references.cities}
+                    onChange={(destinationId) => {
+                      const details = {
+                        ...(draft.details ?? { version: 1 as const }),
+                      };
+                      const code = defaultTourAirport(
+                        destinationId,
+                        references.airports,
+                      );
+                      if (code) details.destinationAirportCode = code;
+                      else delete details.destinationAirportCode;
+                      if (details.destinations?.length)
+                        details.destinations = details.destinations.map(
+                          (s, i) =>
+                            i === 0 ? { ...s, cityId: destinationId } : s,
+                        );
+                      setDraft({
+                        ...draft,
+                        destinationId,
+                        hotelIds: [],
+                        details,
+                      });
+                    }}
+                  />
+                </>
+              )}
               <div className="grid gap-2">
                 <label className="flex items-center gap-2">
                   <input
@@ -698,17 +708,20 @@ export function TourWorkspace({
                 countries={references.countries}
                 cities={references.cities}
                 onChange={(value) => {
-                  if (value.destinationId === draft.destinationId) {
-                    setDraft(value);
-                    return;
-                  }
                   const details = { ...value.details, version: 1 as const };
-                  const code = defaultTourAirport(
-                    value.destinationId,
-                    references.airports,
-                  );
-                  if (code) details.destinationAirportCode = code;
-                  else delete details.destinationAirportCode;
+                  for (const [field, previous, next] of [
+                    ['originAirportCode', draft.originId, value.originId],
+                    [
+                      'destinationAirportCode',
+                      draft.destinationId,
+                      value.destinationId,
+                    ],
+                  ] as const) {
+                    if (previous === next) continue;
+                    const code = defaultTourAirport(next, references.airports);
+                    if (code) details[field] = code;
+                    else delete details[field];
+                  }
                   setDraft({ ...value, details });
                 }}
               />

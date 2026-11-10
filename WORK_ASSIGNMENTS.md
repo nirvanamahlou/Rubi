@@ -639,6 +639,10 @@ Owner requests city-tour/guide/insurance toggles, required active-plan choice fo
 
 Replace free-text provider-country code/name/English controls with read-only displays and an always-visible themed searchable provider country selector. Load the existing protected catalog automatically for managers, retain manual retry, keep legacy saved options visible and never rewrite existing mappings on catalog reads. Adding a Master Data country can prefill only a unique exact ISO match; English names come from the matching canonical reference or an ISO display name, never another country. Key the settings form by branch to isolate late responses. Six focused client/mapping/selection tests pass, including rate/plan preservation; full exact-head quality/tests/build/PostgreSQL gates precede authorized develop merge. No schema, dependency, live issuance, data writes or deployment changes; source reservations release after verified merge.
 
+## COMBINED-TOUR-ROUTE-UI-1110 — PC-A — READY_FOR_CI
+
+Combined tours hide both legacy top route fields; regular tours retain them. One origin selector lives inside the combined-route section above the existing stacked destination/stay rows. Origin and first-destination changes synchronize canonical route IDs and clear/recompute only changed airport metadata while retaining stays/nights.14 focused route/workspace/overview tests pass, including both form modes and combined origin edits; further first-destination regression and full final-head CI gate authorized develop merge. No API/schema/dependency/runtime/operational data/deployment changes; source reservations release upon verified merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
