@@ -44,6 +44,7 @@ describe('documents shared contract v1', () => {
       'OWNED',
       'UPLOADED',
       'RECENTLY_VIEWED',
+      'FAVORITES',
     ]);
   });
 
