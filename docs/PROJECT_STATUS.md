@@ -1928,6 +1928,10 @@ Hotel meal/service, room-type and facility selectors now expose a clear Add acti
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
 
+## I18N-STARTUP-1110 — PC-B
+
+Build the English phrase index only on the first unmatched English translation that needs Persian phrase lookup. Persian and exact English lookup avoid index initialization. Reuse the source inventory in coverage tests. Thirteen focused tests passed. The median of 20 local module initialization and first Persian lookup samples fell from 55.3 ms to 16.8 ms with JSON cached. Bundle download size is outside this measurement.
+
 ## 2026-10-01 — RESERVATION-PASSENGER-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservation purchase now shows the contract hotel and its assigned passengers directly, records a nightly hotel amount per passenger, calculates each stay total from the sent reservation-form dates, and sends only the server-recalculated aggregate to Finance. Hotel/transfer broker and currency choices are active searchable Master Data references. Contract transfers appear immediately below the hotel, default to its broker and can be changed independently. The additive nullable JSON passenger breakdown preserves legacy purchase rows. 11 focused tests, scoped lint, API/Web typechecks, Prisma validation and the full six-task production build with 55 Web routes pass. No dependency, permission, seed, operational-data or runtime change. Owner requested develop merge after CI.
@@ -9727,6 +9731,7 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
-## I18N-STARTUP-1110 — PC-B
+## HR-PAY-DOCS-1110 — PC-B
+Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
 
-Build the English phrase index only on the first unmatched English translation that needs Persian phrase lookup. Persian and exact English lookup avoid index initialization. Reuse the source inventory in coverage tests. Thirteen focused tests passed. The median of 20 local module initialization and first Persian lookup samples fell from 55.3 ms to 16.8 ms with JSON cached. Bundle download size is outside this measurement.
+SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
