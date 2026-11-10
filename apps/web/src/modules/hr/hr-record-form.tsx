@@ -1137,7 +1137,9 @@ function HrRecordFormFields({
                       ? { privateData: input.privateData }
                       : {}),
                     ...(input.status ? { status: input.status } : {}),
-                    ...(input.data ? { data: input.data } : {}),
+                    ...(input.data && definition.key !== 'time.leavePolicies'
+                      ? { data: input.data }
+                      : {}),
                     ...(isUnit ||
                     isChartEmployee ||
                     isApplicant ||

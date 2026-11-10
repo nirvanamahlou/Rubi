@@ -9735,3 +9735,5 @@ SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a 
 HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
 
 WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
+
+HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the locked company scope. Accept a legacy unchanged organization branch reference on update while retaining validation for new references and authorization for the policy itself.
