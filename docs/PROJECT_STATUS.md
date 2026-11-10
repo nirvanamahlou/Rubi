@@ -9784,8 +9784,9 @@ DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list sc
 Minute polls use a recent two-day window, with a 31-day daily recovery pass and
 an optional manual date range. The connector caches personnel, scopes routine
 work calculations to affected employees, and exposes per-source success totals.
-Existing attendance records and period locks remain authoritative. Verification:
-40 focused tests passed before integration with the latest develop.
+Existing attendance records and period locks remain authoritative. After integrating
+the latest develop, 23 focused Radan and attendance editor tests and all three
+Documents contract tests passed. No deployment or live Radan calls were made.
 
 ## I18N-LAZY-CATALOG-1110
 
