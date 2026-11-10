@@ -1,5 +1,10 @@
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+## TOUR-ROOM-EDITOR-1110 — PC-A — READY_FOR_CI
+
+Reserve SalesContractForm tour hotel presentation, SalesTourPicker room initialization and focused Sales room/published-price regressions. Base ff37f5bfc; owner authorizes modern per-room tour hotel UI matching flight-plus-hotel, package-owned flight selection, occupancy-based published pricing and green develop merge. Prior tour-service definition scope merged in PR1581; preserve it. No schema/dependency/data/deployment changes.
+
+
 BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.
 
 User requires unchanged row dimensions: hint is absolutely positioned in the existing cell padding,9px text/10px line height, with no layout height contribution.18 focused date/render checks pass before final CI.

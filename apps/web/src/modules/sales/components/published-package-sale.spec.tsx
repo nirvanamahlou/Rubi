@@ -214,3 +214,51 @@ it('does not replace outbound-day check-in with a next-day published package sta
   expect(state.hotel.checkOut).toBe(price.checkOut);
   expect(state.packageSaleQuote).toBeUndefined();
 });
+
+it('sums each tour room composition once without changing package-owned flights', async () => {
+  const childPrice = {
+    ...price,
+    publicationId: 'child-band',
+    roomCode: packageRoomCode({
+      roomTypeId: 'room',
+      adults: 2,
+      childAges: [{ min: 6, maxExclusive: 12 }],
+      board: 'BB',
+    }),
+    prices: [
+      { currencyCode: 'EUR', amount: '260.00' },
+      { currencyCode: 'IRR', amount: '1250' },
+    ],
+  };
+  hooks.fetch.mockResolvedValue({ data: [price, childPrice] });
+  state = {
+    ...state,
+    ticket: {
+      ...state.ticket,
+      outboundOfferId: 'package-out',
+      returnOfferId: 'package-back',
+    },
+    hotel: {
+      ...state.hotel,
+      rooms: [
+        state.hotel.rooms![0]!,
+        { ...state.hotel.rooms![0]!, ordinal: 2, childAges: [8] },
+      ],
+    },
+  };
+  render();
+  await Promise.resolve();
+  render();
+  render();
+  expect(
+    state.packageSaleQuote?.items.map((item) => item.publicationId),
+  ).toEqual(['pub', 'child-band']);
+  expect(state.contractPrices).toEqual([
+    { currencyCode: 'EUR', amount: '460.00' },
+    { currencyCode: 'IRR', amount: '2250' },
+  ]);
+  expect(state.ticket).toMatchObject({
+    outboundOfferId: 'package-out',
+    returnOfferId: 'package-back',
+  });
+});

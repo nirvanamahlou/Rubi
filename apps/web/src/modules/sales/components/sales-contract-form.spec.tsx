@@ -685,3 +685,55 @@ it('enables pricing for a complete flight-plus-combined-hotel itinerary', () => 
     fixture.step = 0;
   }
 });
+
+it.each([false, true])(
+  'uses only the modern tour hotel editor (rooms selected: %s) and keeps package flights',
+  (selected) => {
+    fixture.ticketDraft = {
+      ...emptySalesForm,
+      roomDrivenGuests: true,
+      serviceKinds: ['FLIGHT', 'HOTEL'],
+      tour: {
+        id: 'synthetic-tour',
+        startsOn: '2099-10-01',
+        endsOn: '2099-10-04',
+        package: { name: 'Synthetic tour', hotelIds: ['hotel'] },
+      } as SalesFormState['tour'],
+      hotel: {
+        ...emptySalesForm.hotel,
+        hotelId: 'hotel',
+        name: 'Synthetic Hotel',
+        rooms: selected
+          ? [
+              {
+                ordinal: 1,
+                roomTypeId: 'room',
+                roomTypeNameSnapshot: 'Standard',
+                adults: 2,
+                childAges: [8],
+              },
+            ]
+          : [],
+      },
+    };
+    fixture.step = 0;
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html.match(/هتل و ترکیب هر اتاق/g)).toHaveLength(1);
+      expect(html).toContain('تعداد اتاق');
+      expect(html).not.toContain('کل اتاق‌های درخواستی');
+      expect(html).not.toContain('تعداد اتاق یک‌نفره');
+      expect(html).not.toContain('تعداد اتاق دونفره');
+      expect(html).not.toContain('نفر اضافه هتل');
+      expect(html).not.toContain('انتخاب تاریخ بلیط رفت و برگشت');
+      expect(html).not.toContain('جست‌وجوی بلیط');
+      if (selected) {
+        expect(html).toContain('دسته‌بندی اتاق');
+        expect(html).toContain('تعداد کل مسافران انتخاب‌شده: ۳');
+      }
+    } finally {
+      fixture.ticketDraft = null;
+      fixture.step = 0;
+    }
+  },
+);

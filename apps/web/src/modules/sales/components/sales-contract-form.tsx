@@ -2075,11 +2075,12 @@ export function SalesContractForm() {
                               </FormField>
                             </section>
                           ) : null}
-                          {activeDetail === 'HOTEL' ||
-                          (activeDetail === 'TOUR' &&
-                            state.serviceKinds.includes('HOTEL')) ||
-                          (activeDetail === 'FLIGHT' &&
-                            state.serviceKinds.includes('HOTEL')) ? (
+                          {!usesRoomDrivenGuests(state) &&
+                          (activeDetail === 'HOTEL' ||
+                            (activeDetail === 'TOUR' &&
+                              state.serviceKinds.includes('HOTEL')) ||
+                            (activeDetail === 'FLIGHT' &&
+                              state.serviceKinds.includes('HOTEL'))) ? (
                             <section className="grid gap-4 rounded-xl border p-4">
                               <div className="grid gap-4 md:grid-cols-3">
                                 {!state.hotel.rooms ? (

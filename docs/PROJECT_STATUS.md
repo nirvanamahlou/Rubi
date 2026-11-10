@@ -1,5 +1,10 @@
 ## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
 
+## TOUR-ROOM-EDITOR-1110 — PC-A — READY_FOR_CI
+
+Tour selection uses the same ServiceParties hotel, total-room and per-room occupancy editor as flight-plus-hotel contracts. Hide the duplicate legacy SGL/DBL/extra-bed panel, initialize fresh room selections when changing tours, and retain package-owned outbound/return offers without a second ticket picker. Existing published-package matching prices each room by hotel/type/child band and sums currencies independently.56 focused Sales regressions pass, including empty/populated tour UI, tour-switch initialization and mixed-room published totals; final exact-head hosted gates precede authorized develop merge. No schema/dependency/data/deployment changes.
+
+
 BIRTHDATE-PERSIAN-HINT-1110 — PC-A: reserve an opt-in Sales-entry birth-date hint and focused date/render tests. Show a small Persian equivalent under a valid Gregorian birth date using UTC-only conversion; hide for blank/invalid values or Persian mode. Preserve stored ISO date, validation and insurance payload. No schema, dependency, production changes. User authorizes green develop merge.
 
 User requires unchanged row dimensions: hint is absolutely positioned in the existing cell padding,9px text/10px line height, with no layout height contribution.18 focused date/render checks pass before final CI.
