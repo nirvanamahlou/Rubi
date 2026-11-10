@@ -12162,6 +12162,7 @@ User authorizes complete multi-destination tour definition, exact destination fi
 COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricingTourCombinationSource link for every draft/publication hotel rate, alongside nullable immutable combination snapshots. Source and sole migration reservations release on frozen PR publication; no operational database or deployment changed. Tests cover consecutive 2/3-city pricing, route filtering, sale publication, airfare-once, forged stay rejection and three-city UI rendering.
 
 ## DOCUMENTS-SECTIONS-1110 — PC-B — IN_PROGRESS
+
 Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
