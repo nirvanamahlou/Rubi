@@ -1,4 +1,3 @@
-import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { useTranslations } from 'next-intl';
 import { expect, it, vi } from 'vitest';
@@ -24,10 +23,9 @@ it('leaves the English catalog unmerged for Persian and reuses it after English 
   const { Providers } = await import('@/components/providers');
   const render = (initialLanguage: 'fa' | 'en') =>
     renderToString(
-      createElement(Providers, {
-        initialLanguage,
-        children: createElement(Label),
-      }),
+      <Providers initialLanguage={initialLanguage}>
+        <Label />
+      </Providers>,
     );
 
   expect(catalogRead).not.toHaveBeenCalled();
