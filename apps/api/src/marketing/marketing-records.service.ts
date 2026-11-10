@@ -16,6 +16,8 @@ import type {
   MarketingAssetViewV1,
   MarketingCampaignInputV1,
   MarketingCampaignViewV1,
+  MarketingCampaignPageV1,
+  MarketingCampaignPageQueryV1,
   MarketingPromotionPageQueryV1,
   MarketingPromotionPageV1,
 } from '@nora/contracts';
@@ -338,6 +340,65 @@ export class MarketingRecordsService {
       orderBy: [{ startsAt: 'desc' }, { id: 'desc' }],
     });
     return { data: rows.map(presentCampaign) };
+  }
+
+  async listCampaignPage(
+    query: MarketingCampaignPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingCampaignPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    if (!actor.branchIds.length) return { data: [], page: 1, total: 0 };
+    const pageSize = query.pageSize ?? 4;
+    const search = query.search?.trim() ?? '';
+    const status = query.status === 'RUNNING' ? 'ACTIVE' : query.status;
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND deleted_at IS NULL
+      ${status && status !== 'ALL' ? Prisma.sql`AND status = ${status}` : Prisma.empty}
+      ${query.channel && query.channel !== 'ALL' ? Prisma.sql`AND ${query.channel} = ANY(channels)` : Prisma.empty}
+      ${query.company && query.company !== 'ALL' ? Prisma.sql`AND execution_company = ${query.company}` : Prisma.empty}
+      ${query.startsAfter ? Prisma.sql`AND ends_at >= ${new Date(query.startsAfter)}` : Prisma.empty}
+      ${query.endsBefore ? Prisma.sql`AND starts_at < ${new Date(Date.parse(query.endsBefore) + 86400000)}` : Prisma.empty}
+      ${search ? Prisma.sql`AND strpos(lower(concat_ws(' ', name, internal_code, campaign_type, objective, owner_user_id)), lower(${search})) > 0` : Prisma.empty}
+    `;
+    const sortColumns = {
+      updatedAt: Prisma.sql`updated_at`,
+      startsAt: Prisma.sql`starts_at`,
+      budgetAmount: Prisma.sql`budget_amount`,
+      name: Prisma.sql`name`,
+    };
+    const sort = sortColumns[query.sortBy ?? 'updatedAt'];
+    const direction =
+      query.sortDirection === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const [count] = await tx.$queryRaw<{ total: bigint }[]>`
+        SELECT count(*) AS total FROM marketing_campaigns WHERE ${where}
+      `;
+        const total = Number(count?.total ?? 0);
+        const page = Math.min(
+          query.page ?? 1,
+          Math.max(1, Math.ceil(total / pageSize)),
+        );
+        if (!total) return { data: [], page, total };
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM marketing_campaigns WHERE ${where}
+        ORDER BY ${sort} ${direction}, id ASC
+        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+      `;
+        const rows = await tx.marketingCampaign.findMany({
+          where: { id: { in: ids.map(({ id }) => id) } },
+          include: { spendLines: true },
+        });
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        return {
+          data: ids.map(({ id }) => presentCampaign(byId.get(id)!)),
+          page,
+          total,
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async campaign(id: string, actor: AuthenticatedActor) {

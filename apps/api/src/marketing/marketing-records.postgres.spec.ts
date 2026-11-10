@@ -190,6 +190,51 @@ describe.skipIf(!enabled)(
       await client.$disconnect();
     });
 
+    it('filters campaigns before paging and orders exact numeric budgets', async () => {
+      const prefix = 'PAGED-' + suffix;
+      const entries = [];
+      for (const [index, budgetAmount] of ['10', '2', '100'].entries()) {
+        const result = await service.createCampaign(
+          { ...input(prefix + '-' + index), budgetAmount },
+          actor,
+          branchId,
+          randomUUID(),
+        );
+        entries.push(result.data);
+      }
+      const query = {
+        search: prefix.toLowerCase(),
+        status: 'DRAFT',
+        channel: 'SMS',
+        company: 'NIAYESH_SEIR_SAHAR',
+        startsAfter: '2099-02-01',
+        endsBefore: '2099-01-01',
+        sortBy: 'budgetAmount' as const,
+        sortDirection: 'asc' as const,
+        pageSize: 2,
+      };
+      const first = await service.listCampaignPage(query, promotionActor);
+      const last = await service.listCampaignPage(
+        { ...query, page: 99 },
+        promotionActor,
+      );
+      expect(first).toMatchObject({ page: 1, total: 3 });
+      expect(first.data.map(({ id }) => id)).toEqual([
+        entries[1]?.id,
+        entries[0]?.id,
+      ]);
+      expect(last).toMatchObject({ page: 2, total: 3 });
+      expect(last.data.map(({ id }) => id)).toEqual([entries[2]?.id]);
+      expect(
+        (
+          await service.listCampaignPage(query, {
+            ...promotionActor,
+            branchIds: [randomUUID()],
+          })
+        ).total,
+      ).toBe(0);
+    });
+
     it('pages filtered promotions without exposing another branch or deleted rows', async () => {
       const prefix = 'Pagination-' + suffix;
       const timestamp = new Date('2099-01-15T00:00:00Z');
