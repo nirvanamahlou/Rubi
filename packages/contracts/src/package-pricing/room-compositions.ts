@@ -22,7 +22,17 @@ export function packageRoomCode(value: PackageRoomIdentity): string {
 export function packageRoomIdentity(code: string): PackageRoomIdentity | null {
   if (typeof code !== 'string' || code.length > 2000) return null;
   try {
-    const v: unknown = JSON.parse(code);
+    let v: unknown = JSON.parse(code);
+    if (
+      v &&
+      !Array.isArray(v) &&
+      typeof v === 'object' &&
+      'combined' in v &&
+      v.combined === 1 &&
+      'identity' in v &&
+      typeof v.identity === 'string'
+    )
+      v = JSON.parse(v.identity);
     if (
       !Array.isArray(v) ||
       v.length !== 5 ||

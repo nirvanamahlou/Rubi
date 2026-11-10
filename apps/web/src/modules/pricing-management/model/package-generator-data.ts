@@ -35,6 +35,44 @@ export function packageGeneratorData(
   batch: PackageTourHotelPurchaseBatchV1,
   publication: PackageTourPublicationV1,
 ) {
+  if (publication.hotelCombinations?.length) {
+    const combinations = publication.hotelCombinations;
+    const rows = combinations.map((q) => ({
+      ...batch.rows[0]!,
+      id: q.definition.id,
+      hotelName: q.stays.map((s) => s.hotelName).join(' / '),
+    }));
+    return compositionGeneratorData(
+      grid,
+      { ...batch, rows },
+      {
+        ...publication,
+        selectedHotelRateIds: combinations.map((q) => q.definition.id),
+        roomPrices: combinations.map((q) => ({
+          hotelRateId: q.definition.id,
+          roomCode: q.roomCode,
+          roomTypeName: q.stays.map((s) => s.roomTypeName).join(' / '),
+          board: q.stays
+            .map((s) => packageRoomIdentity(s.roomCode)?.board ?? '')
+            .join(' / '),
+          hotelPurchase: '0',
+          hotelSale: '0',
+          packagePurchase: null,
+          packageSale: null,
+          commissionAmount: null,
+          netProfit: null,
+          currencyCode: publication.currencyCode,
+          currencyAmounts: q.prices.map((p) => ({
+            currencyCode: p.currencyCode,
+            sale: p.amount,
+            purchase: null,
+            profit: null,
+            commission: '0',
+          })),
+        })),
+      },
+    );
+  }
   if (!publication.selectedHotelRateIds?.length)
     throw Error('هتلی برای خروجی انتخاب نشده است.');
   if (publication.roomPrices.some((p) => packageRoomIdentity(p.roomCode)))

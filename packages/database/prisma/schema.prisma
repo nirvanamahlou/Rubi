@@ -5522,6 +5522,7 @@ model ReservationHotelRatePackSource {
 }
 
 model ReservationHotelGroupRate {
+  combinationSources  PackagePricingTourCombinationSource[]
   pricingAdjustments  PackagePricingTourAdjustment[]
   publishedRoomPrices PackagePricingTourPublishedRoomPrice[]
   id                  String                                 @id @default(uuid()) @db.Uuid
@@ -5571,6 +5572,8 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  combinationSources          PackagePricingTourCombinationSource[]
+  hotelCombinations           Json?
   rialConversion              Json?
   selectedRoomKeys            Json?
   roomSaleOverrides           Json?
@@ -5578,31 +5581,31 @@ model PackagePricingTourDraft {
   priceFields                 Json?
   familyAdults                Int?
   familyChildren              Int?
-  id                          String                               @id @default(uuid()) @db.Uuid
-  tourDepartureId             String                               @db.Uuid
-  batchId                     String                               @db.Uuid
-  branchId                    String                               @db.Uuid
-  version                     Int                                  @default(1)
-  currencyCode                String                               @db.VarChar(3)
-  adultFlightSale             Decimal                              @db.Decimal(24, 4)
-  adultFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
-  childFlightSale             Decimal                              @db.Decimal(24, 4)
-  childFlightSaleCurrencyCode String                               @default("IRR") @db.VarChar(3)
-  businessUplift              Decimal                              @db.Decimal(24, 4)
-  businessUpliftCurrencyCode  String                               @default("IRR") @db.VarChar(3)
-  commissionPercent           Decimal                              @db.Decimal(10, 4)
-  commissionMode              String                               @default("percent") @db.VarChar(12)
-  commissionAmount            Decimal                              @default(0) @db.Decimal(24, 4)
-  commissionCurrencyCode      String                               @default("IRR") @db.VarChar(3)
-  createdByUserId             String                               @db.Uuid
-  updatedByUserId             String                               @db.Uuid
-  createdAt                   DateTime                             @default(now()) @db.Timestamptz(3)
-  updatedAt                   DateTime                             @updatedAt @db.Timestamptz(3)
-  tour                        TourDeparture                        @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
-  batch                       ReservationHotelRateBatch            @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  branch                      Branch                               @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  creator                     User                                 @relation("TourPricingDraftCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updater                     User                                 @relation("TourPricingDraftUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  id                          String                                @id @default(uuid()) @db.Uuid
+  tourDepartureId             String                                @db.Uuid
+  batchId                     String                                @db.Uuid
+  branchId                    String                                @db.Uuid
+  version                     Int                                   @default(1)
+  currencyCode                String                                @db.VarChar(3)
+  adultFlightSale             Decimal                               @db.Decimal(24, 4)
+  adultFlightSaleCurrencyCode String                                @default("IRR") @db.VarChar(3)
+  childFlightSale             Decimal                               @db.Decimal(24, 4)
+  childFlightSaleCurrencyCode String                                @default("IRR") @db.VarChar(3)
+  businessUplift              Decimal                               @db.Decimal(24, 4)
+  businessUpliftCurrencyCode  String                                @default("IRR") @db.VarChar(3)
+  commissionPercent           Decimal                               @db.Decimal(10, 4)
+  commissionMode              String                                @default("percent") @db.VarChar(12)
+  commissionAmount            Decimal                               @default(0) @db.Decimal(24, 4)
+  commissionCurrencyCode      String                                @default("IRR") @db.VarChar(3)
+  createdByUserId             String                                @db.Uuid
+  updatedByUserId             String                                @db.Uuid
+  createdAt                   DateTime                              @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                              @updatedAt @db.Timestamptz(3)
+  tour                        TourDeparture                         @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  batch                       ReservationHotelRateBatch             @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  branch                      Branch                                @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  creator                     User                                  @relation("TourPricingDraftCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updater                     User                                  @relation("TourPricingDraftUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
   adjustments                 PackagePricingTourAdjustment[]
   publications                PackagePricingTourPublishedVersion[]
 
@@ -5624,9 +5627,11 @@ model PackagePricingTourAdjustment {
 }
 
 /**
- * Immutable publication. Hotel alternatives are separate, never summed together.
+ * Immutable publication. Alternatives remain separate; explicit combined-destination packages retain their own summed stay quotes.
  */
 model PackagePricingTourPublishedVersion {
+  combinationSources          PackagePricingTourCombinationSource[]
+  hotelCombinations           Json?
   rialConversion              Json?
   selectedHotelRateIds        Json?
   priceFields                 Json?
@@ -8525,4 +8530,19 @@ model FinanceExchangeAudit {
   createdAt   DateTime              @default(now()) @db.Timestamptz(3)
 
   @@index([officeId, createdAt])
+}
+
+model PackagePricingTourCombinationSource {
+  id             String                              @id @default(uuid()) @db.Uuid
+  draftId        String                              @db.Uuid
+  publicationId  String?                             @db.Uuid
+  hotelRateId    String                              @db.Uuid
+  combinationKey String                              @db.VarChar(80)
+  ordinal        Int
+  draft          PackagePricingTourDraft             @relation(fields: [draftId], references: [id], onDelete: Restrict)
+  publication    PackagePricingTourPublishedVersion? @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  hotelRate      ReservationHotelGroupRate           @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
+
+  @@index([draftId, publicationId])
+  @@index([hotelRateId])
 }

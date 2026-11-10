@@ -1,4 +1,9 @@
 import {
+  quoteCombinedHotels,
+  type CombinedHotelPackageV1,
+  type CombinedHotelQuoteV1,
+} from '@nora/contracts';
+import {
   packageRoomToRial,
   packageFieldsToRial,
   packageAmountToRial,
@@ -173,6 +178,53 @@ export class PackageTourPricingService {
       ) !== JSON.stringify(quote.prices)
     )
       throw new BadRequestException('قیمت فروش معتبر نیست.');
+    for (const [roomIndex, price] of selected.entries()) {
+      if (!price?.stays) continue;
+      const actual = [
+        {
+          hotelId: hotel.hotelId,
+          checkInDate: hotel.checkInDate,
+          checkOutDate: hotel.checkOutDate,
+          rooms: hotel.rooms,
+        },
+        ...(hotel.additionalStays ?? []),
+      ];
+      if (actual.length !== price.stays.length)
+        throw new BadRequestException(
+          'تمام اقامت‌های پکیج ترکیبی باید در قرارداد باشند.',
+        );
+      price.stays.forEach((stay, i) => {
+        const current = actual[i],
+          room = current?.rooms?.[roomIndex];
+        if (
+          !current ||
+          current.hotelId !== stay.hotelId ||
+          current.checkInDate !== stay.checkIn ||
+          current.checkOutDate !== stay.checkOut ||
+          !room ||
+          !matchingPublishedRooms(
+            [
+              {
+                ...price,
+                hotelId: stay.hotelId,
+                checkIn: stay.checkIn,
+                checkOut: stay.checkOut,
+                roomCode: stay.roomCode,
+              },
+            ],
+            {
+              ...room,
+              hotelId: current.hotelId,
+              checkIn: current.checkInDate,
+              checkOut: current.checkOutDate,
+            },
+          ).length
+        )
+          throw new BadRequestException(
+            'هتل، تاریخ و ترکیب اتاق اقامت‌ها با پکیج منتشرشده مطابقت ندارد.',
+          );
+      });
+    }
     this.validateContractAmounts(input, quote.prices);
     return hotel.hotelId;
   }
@@ -251,8 +303,29 @@ export class PackageTourPricingService {
       const batch = packageTourSelectionBatch(grid, draft.batchId);
       const publication = draft.publications[0];
       if (!batch || !publication) continue;
-      for (const price of publication.roomPrices) {
-        const row = batch.rows.find((r) => r.id === price.hotelRateId);
+      const combinedQuotes = (Array.isArray(publication.hotelCombinations)
+        ? publication.hotelCombinations
+        : []) as unknown as CombinedHotelQuoteV1[];
+      const combinedPrices = combinedQuotes.map((q) => ({
+        hotelRateId: q.definition.rooms[0]!.rateId,
+        roomCode: q.roomCode,
+        roomTypeName: q.stays.map((s) => s.roomTypeName).join(' / '),
+        currencyAmounts: q.prices.map((p) => ({
+          currencyCode: p.currencyCode,
+          sale: p.amount,
+          priceBasis: 'HOTEL_ONLY',
+        })),
+      }));
+      for (const price of [...publication.roomPrices, ...combinedPrices]) {
+        const combination = combinedQuotes.find(
+          (q) => q.roomCode === price.roomCode,
+        );
+        const row = combination
+          ? {
+              hotelId: combination.stays[0]!.hotelId,
+              hotelName: combination.stays.map((s) => s.hotelName).join(' / '),
+            }
+          : batch.rows.find((r) => r.id === price.hotelRateId);
         const identity = packageRoomIdentity(price.roomCode);
         if (!row || !identity) continue;
         const amounts =
@@ -330,8 +403,9 @@ export class PackageTourPricingService {
           hotelName: row.hotelName,
           roomTypeName: price.roomTypeName ?? '',
           roomCode: price.roomCode,
-          checkIn: grid.tour.startsOn,
-          checkOut: grid.tour.endsOn,
+          checkIn: combination?.stays[0]?.checkIn ?? grid.tour.startsOn,
+          checkOut: combination?.stays[0]?.checkOut ?? grid.tour.endsOn,
+          ...(combination ? { stays: combination.stays } : {}),
           prices,
         });
       }
@@ -391,6 +465,29 @@ export class PackageTourPricingService {
     )
       throw new BadRequestException('پیش‌نویس قیمت معتبر نیست.');
     const grid = await this.pricing.tourCostGrid(input.tourDepartureId, actor);
+    const combined = grid.tour.package.details?.destinations?.length
+      ? (() => {
+          try {
+            const q = quoteCombinedHotels(grid, input.hotelCombinations ?? []);
+            if (!q.length) throw Error('حداقل یک ترکیب کامل هتل لازم است.');
+            return q;
+          } catch (e) {
+            throw new BadRequestException(
+              e instanceof Error ? e.message : 'ترکیب معتبر نیست.',
+            );
+          }
+        })()
+      : undefined;
+    if (combined)
+      input = {
+        ...input,
+        selectedHotelRateIds: [],
+        selectedRoomKeys: [],
+        roomSaleOverrides: [],
+        adjustments: [],
+      };
+    if (!combined && input.hotelCombinations?.length)
+      throw new BadRequestException('این تور ترکیبی نیست.');
     const batch = packageTourSelectionBatch(
       grid,
       input.batchId,
@@ -569,6 +666,13 @@ export class PackageTourPricingService {
               };
             })
           : undefined);
+      const combinationData = combined
+        ? {
+            hotelCombinations: combined.map(
+              (q) => q.definition,
+            ) as unknown as Prisma.InputJsonValue,
+          }
+        : {};
       const fieldsData =
         storedFields === undefined
           ? {}
@@ -619,6 +723,7 @@ export class PackageTourPricingService {
               familyChildren: input.familyChildren ?? null,
               rialConversion: rialConversion ?? Prisma.DbNull,
               ...fieldsData,
+              ...combinationData,
               ...roomSalesData,
               ...selectedData,
               updatedByUserId: actor.userId,
@@ -646,6 +751,7 @@ export class PackageTourPricingService {
               familyChildren: input.familyChildren ?? null,
               rialConversion: rialConversion ?? Prisma.DbNull,
               ...fieldsData,
+              ...combinationData,
               ...roomSalesData,
               ...selectedData,
               createdByUserId: actor.userId,
@@ -653,6 +759,22 @@ export class PackageTourPricingService {
               updatedAt: now,
             },
           });
+      if (combined) {
+        await tx.packagePricingTourCombinationSource.deleteMany({
+          where: { draftId: draft.id, publicationId: null },
+        });
+        await tx.packagePricingTourCombinationSource.createMany({
+          data: combined.flatMap((q) =>
+            q.definition.rooms.map((room, i) => ({
+              id: randomUUID(),
+              draftId: draft.id,
+              hotelRateId: room.rateId,
+              combinationKey: q.definition.id,
+              ordinal: i + 1,
+            })),
+          ),
+        });
+      }
       if (existing)
         await tx.packagePricingTourAdjustment.deleteMany({
           where: { draftId: draft.id },
@@ -696,6 +818,20 @@ export class PackageTourPricingService {
     if (draft.version !== input.expectedDraftVersion)
       throw new ConflictException('نسخه پیش‌نویس قیمت تغییر کرده است.');
     const grid = await this.pricing.tourCostGrid(draft.tourDepartureId, actor);
+    let combined: CombinedHotelQuoteV1[] | undefined;
+    if (grid.tour.package.details?.destinations?.length) {
+      try {
+        combined = quoteCombinedHotels(
+          grid,
+          draft.hotelCombinations as unknown as CombinedHotelPackageV1[],
+        );
+        if (!combined.length) throw Error('حداقل یک ترکیب کامل هتل لازم است.');
+      } catch (e) {
+        throw new UnprocessableEntityException(
+          e instanceof Error ? e.message : 'ترکیب معتبر نیست.',
+        );
+      }
+    }
     const batch = packageTourSelectionBatch(
       grid,
       draft.batchId,
@@ -704,10 +840,11 @@ export class PackageTourPricingService {
     if (
       !batch ||
       batch.currencyCode !== draft.currencyCode ||
-      batch.checkIn > grid.tour.startsOn ||
-      (batch.method === 'STAY'
-        ? batch.checkOut < grid.tour.endsOn
-        : batch.checkOut <= grid.tour.startsOn) ||
+      (!combined && batch.checkIn > grid.tour.startsOn) ||
+      (!combined &&
+        (batch.method === 'STAY'
+          ? batch.checkOut < grid.tour.endsOn
+          : batch.checkOut <= grid.tour.startsOn)) ||
       dateSpan(grid.tour.startsOn, grid.tour.endsOn) !== grid.nights
     )
       throw new UnprocessableEntityException(
@@ -773,6 +910,26 @@ export class PackageTourPricingService {
           rialRates,
         )
       : null;
+    if (combined && rialRates)
+      combined = combined.map((q) => ({
+        ...q,
+        purchase: publishedSaleTotals([
+          {
+            prices: q.purchase.map((p) => ({
+              currencyCode: 'IRR',
+              amount: packageAmountToRial(p.amount, p.currencyCode, rialRates),
+            })),
+          },
+        ]),
+        prices: publishedSaleTotals([
+          {
+            prices: q.prices.map((p) => ({
+              currencyCode: 'IRR',
+              amount: packageAmountToRial(p.amount, p.currencyCode, rialRates),
+            })),
+          },
+        ]),
+      }));
     const legacyPrices = () =>
       batch.rows.flatMap((row) => {
         const sellableRooms =
@@ -886,142 +1043,151 @@ export class PackageTourPricingService {
           }
         });
       });
-    const prices = Array.isArray(draft.selectedHotelRateIds)
-      ? (() => {
-          const ids = draft.selectedHotelRateIds;
-          if (
-            !ids.length ||
-            ids.some((id) => typeof id !== 'string' || !rateIds.has(id)) ||
-            new Set(ids).size !== ids.length
-          )
-            throw new UnprocessableEntityException(
-              'هتل‌های منتخب این بازه معتبر نیستند.',
-            );
-          return batch.rows
-            .filter((row) => ids.includes(row.id))
-            .flatMap((row) => {
-              const adjustment = byRow.get(row.id);
-              const calculated = (() => {
-                try {
-                  return (
-                    Array.isArray(draft.selectedRoomKeys)
-                      ? buildHotelOnlyPackageCompositions
-                      : buildHotelPackageTable
-                  )({
-                    row,
-                    checkIn: grid.tour.startsOn,
-                    checkOut: grid.tour.endsOn,
-                    currencyCode: batch.currencyCode,
-                    calculation: {
-                      adjustment: {
-                        direction:
-                          (adjustment?.direction as 'increase' | 'decrease') ??
-                          'increase',
-                        mode:
-                          (adjustment?.mode as 'fixed' | 'percent') ??
-                          'percent',
-                        value: adjustment?.value.toString() ?? '0',
+    const prices = combined
+      ? []
+      : Array.isArray(draft.selectedHotelRateIds)
+        ? (() => {
+            const ids = draft.selectedHotelRateIds;
+            if (
+              !ids.length ||
+              ids.some((id) => typeof id !== 'string' || !rateIds.has(id)) ||
+              new Set(ids).size !== ids.length
+            )
+              throw new UnprocessableEntityException(
+                'هتل‌های منتخب این بازه معتبر نیستند.',
+              );
+            return batch.rows
+              .filter((row) => ids.includes(row.id))
+              .flatMap((row) => {
+                const adjustment = byRow.get(row.id);
+                const calculated = (() => {
+                  try {
+                    return (
+                      Array.isArray(draft.selectedRoomKeys)
+                        ? buildHotelOnlyPackageCompositions
+                        : buildHotelPackageTable
+                    )({
+                      row,
+                      checkIn: grid.tour.startsOn,
+                      checkOut: grid.tour.endsOn,
+                      currencyCode: batch.currencyCode,
+                      calculation: {
+                        adjustment: {
+                          direction:
+                            (adjustment?.direction as
+                              'increase' | 'decrease') ?? 'increase',
+                          mode:
+                            (adjustment?.mode as 'fixed' | 'percent') ??
+                            'percent',
+                          value: adjustment?.value.toString() ?? '0',
+                        },
+                        adultFlight: {
+                          amount: draft.adultFlightSale.toString(),
+                          currencyCode: draft.adultFlightSaleCurrencyCode,
+                        },
+                        childFlight: {
+                          amount: draft.childFlightSale.toString(),
+                          currencyCode: draft.childFlightSaleCurrencyCode,
+                        },
+                        businessUplift: {
+                          amount: draft.businessUplift.toString(),
+                          currencyCode: draft.businessUpliftCurrencyCode,
+                        },
+                        businessCabin,
+                        commissionPercent: draft.commissionPercent.toString(),
+                        commissionMode: (draft.commissionMode ?? 'percent') as
+                          'percent' | 'fixed',
+                        commissionAmount: {
+                          amount: draft.commissionAmount?.toString() ?? '0',
+                          currencyCode:
+                            draft.commissionCurrencyCode ?? draft.currencyCode,
+                        },
+                        infantFlight: Array.isArray(draft.priceFields)
+                          ? validateTourPriceFields(draft.priceFields).find(
+                              (field) => field.kind === 'infantFlight',
+                            )
+                          : undefined,
+                        extraSaleFields: Array.isArray(draft.priceFields)
+                          ? validateTourPriceFields(draft.priceFields).filter(
+                              (field) => field.kind === 'custom',
+                            )
+                          : [],
+                        flightCosts,
                       },
-                      adultFlight: {
-                        amount: draft.adultFlightSale.toString(),
-                        currencyCode: draft.adultFlightSaleCurrencyCode,
-                      },
-                      childFlight: {
-                        amount: draft.childFlightSale.toString(),
-                        currencyCode: draft.childFlightSaleCurrencyCode,
-                      },
-                      businessUplift: {
-                        amount: draft.businessUplift.toString(),
-                        currencyCode: draft.businessUpliftCurrencyCode,
-                      },
-                      businessCabin,
-                      commissionPercent: draft.commissionPercent.toString(),
-                      commissionMode: (draft.commissionMode ?? 'percent') as
-                        'percent' | 'fixed',
-                      commissionAmount: {
-                        amount: draft.commissionAmount?.toString() ?? '0',
-                        currencyCode:
-                          draft.commissionCurrencyCode ?? draft.currencyCode,
-                      },
-                      infantFlight: Array.isArray(draft.priceFields)
-                        ? validateTourPriceFields(draft.priceFields).find(
-                            (field) => field.kind === 'infantFlight',
-                          )
-                        : undefined,
-                      extraSaleFields: Array.isArray(draft.priceFields)
-                        ? validateTourPriceFields(draft.priceFields).filter(
-                            (field) => field.kind === 'custom',
-                          )
-                        : [],
-                      flightCosts,
-                    },
-                  });
-                } catch (error) {
-                  throw new BadRequestException(
-                    error instanceof Error
-                      ? error.message
-                      : 'محاسبه قیمت معتبر نیست.',
-                  );
-                }
-              })();
-              if (
-                !calculated.length ||
-                (!Array.isArray(draft.selectedRoomKeys) &&
-                  calculated.length !== 3)
-              )
-                throw new UnprocessableEntityException(
-                  'تعرفه سینگل، دبل و کودک با تخت برای تمام شب‌ها لازم است.',
-                );
-              const overrides = Array.isArray(draft.roomSaleOverrides)
-                ? validatePackageRoomSales(draft.roomSaleOverrides)
-                : [];
-              return calculated
-                .filter(
-                  (raw) =>
-                    !Array.isArray(draft.selectedRoomKeys) ||
-                    draft.selectedRoomKeys.includes(
-                      JSON.stringify([row.id, raw.roomCode]),
-                    ),
+                    });
+                  } catch (error) {
+                    throw new BadRequestException(
+                      error instanceof Error
+                        ? error.message
+                        : 'محاسبه قیمت معتبر نیست.',
+                    );
+                  }
+                })();
+                if (
+                  !calculated.length ||
+                  (!Array.isArray(draft.selectedRoomKeys) &&
+                    calculated.length !== 3)
                 )
-                .map((raw) => {
-                  const item = applyPackageRoomSales(
-                    rialRates
-                      ? packageRoomToRial(
-                          applyPackageRoomSales(raw, overrides, 'percent', '0'),
-                          rialRates,
-                        )
-                      : raw,
-                    overrides,
-                    (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
-                    Array.isArray(draft.selectedRoomKeys)
-                      ? '0'
-                      : draft.commissionPercent.toString(),
+                  throw new UnprocessableEntityException(
+                    'تعرفه سینگل، دبل و کودک با تخت برای تمام شب‌ها لازم است.',
                   );
-                  const single =
-                    item.currencyAmounts.length === 1
-                      ? item.currencyAmounts[0]
-                      : undefined;
-                  return {
-                    ...item,
-                    hotelPurchase: new Prisma.Decimal(item.hotelPurchase),
-                    hotelSale: new Prisma.Decimal(item.hotelSale),
-                    packagePurchase: single?.purchase ?? null,
-                    packageSale: single?.sale ?? null,
-                    commissionAmount: single?.commission ?? null,
-                    netProfit: single?.profit ?? null,
-                    currencyAmounts:
-                      item.currencyAmounts as unknown as Prisma.InputJsonValue,
-                  };
-                });
-            });
-        })()
-      : legacyPrices();
+                const overrides = Array.isArray(draft.roomSaleOverrides)
+                  ? validatePackageRoomSales(draft.roomSaleOverrides)
+                  : [];
+                return calculated
+                  .filter(
+                    (raw) =>
+                      !Array.isArray(draft.selectedRoomKeys) ||
+                      draft.selectedRoomKeys.includes(
+                        JSON.stringify([row.id, raw.roomCode]),
+                      ),
+                  )
+                  .map((raw) => {
+                    const item = applyPackageRoomSales(
+                      rialRates
+                        ? packageRoomToRial(
+                            applyPackageRoomSales(
+                              raw,
+                              overrides,
+                              'percent',
+                              '0',
+                            ),
+                            rialRates,
+                          )
+                        : raw,
+                      overrides,
+                      (draft.commissionMode ?? 'percent') as
+                        'percent' | 'fixed',
+                      Array.isArray(draft.selectedRoomKeys)
+                        ? '0'
+                        : draft.commissionPercent.toString(),
+                    );
+                    const single =
+                      item.currencyAmounts.length === 1
+                        ? item.currencyAmounts[0]
+                        : undefined;
+                    return {
+                      ...item,
+                      hotelPurchase: new Prisma.Decimal(item.hotelPurchase),
+                      hotelSale: new Prisma.Decimal(item.hotelSale),
+                      packagePurchase: single?.purchase ?? null,
+                      packageSale: single?.sale ?? null,
+                      commissionAmount: single?.commission ?? null,
+                      netProfit: single?.profit ?? null,
+                      currencyAmounts:
+                        item.currencyAmounts as unknown as Prisma.InputJsonValue,
+                    };
+                  });
+              });
+          })()
+        : legacyPrices();
     if (
+      !combined &&
       Array.isArray(draft.selectedRoomKeys) &&
       (prices.length !== draft.selectedRoomKeys.length || !prices.length)
     )
       throw new UnprocessableEntityException('قیمت فروش معتبر نیست.');
-    if (!prices.length)
+    if (!combined && !prices.length)
       throw new UnprocessableEntityException('قیمت فروش معتبر نیست.');
     const frozenSales = Array.isArray(draft.roomSaleOverrides)
       ? validatePackageRoomSales(draft.roomSaleOverrides)
@@ -1060,6 +1226,7 @@ export class PackageTourPricingService {
     }
     const fingerprint = sourceHash({
       tour: grid.tour,
+      hotelCombinations: combined,
       batch,
       costs: grid.flightPurchaseCosts,
       draftVersion: draft.version,
@@ -1093,6 +1260,22 @@ export class PackageTourPricingService {
         data: {
           id: randomUUID(),
           draftId,
+          ...(combined
+            ? {
+                combinationSources: {
+                  create: combined.flatMap((q) =>
+                    q.definition.rooms.map((room, i) => ({
+                      id: randomUUID(),
+                      draftId: draft.id,
+                      hotelRateId: room.rateId,
+                      combinationKey: q.definition.id,
+                      ordinal: i + 1,
+                    })),
+                  ),
+                },
+                hotelCombinations: combined as unknown as Prisma.InputJsonValue,
+              }
+            : {}),
           ...(Array.isArray(draft.selectedHotelRateIds)
             ? {
                 selectedHotelRateIds:
@@ -1177,6 +1360,12 @@ export class PackageTourPricingService {
   ): PackageTourDraftV1 {
     return {
       version: 1,
+      ...(Array.isArray(row.hotelCombinations)
+        ? {
+            hotelCombinations:
+              row.hotelCombinations as unknown as CombinedHotelPackageV1[],
+          }
+        : {}),
       convertToRial: !!row.rialConversion,
       rialConversion: row.rialConversion as Record<string, string> | null,
       expectedVersion: row.version,
@@ -1233,6 +1422,12 @@ export class PackageTourPricingService {
       version: 1,
       id: row.id,
       draftId: row.draftId,
+      ...(Array.isArray(row.hotelCombinations)
+        ? {
+            hotelCombinations:
+              row.hotelCombinations as unknown as CombinedHotelQuoteV1[],
+          }
+        : {}),
       rialConversion: row.rialConversion as Record<string, string> | null,
       priceVersion: row.version,
       draftVersion: row.draftVersion,
