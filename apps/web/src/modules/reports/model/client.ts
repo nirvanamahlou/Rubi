@@ -5,6 +5,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export interface SalesByOrganizationReportResult {
+  chartMeasure?: string;
   dataLayout?: 'SOURCE_COLUMNS';
   columns?: readonly { key: string; label: string; kind: string }[];
   reportCode: string;
@@ -275,6 +276,7 @@ export const reportingApi = {
       return {
         ...(travel.dataLayout ? { dataLayout: travel.dataLayout } : {}),
         ...(travel.columns ? { columns: travel.columns } : {}),
+        ...(travel.chartMeasure ? { chartMeasure: travel.chartMeasure } : {}),
         reportCode: travel.reportCode,
         reportVersion: travel.reportVersion,
         grain: travel.grain,

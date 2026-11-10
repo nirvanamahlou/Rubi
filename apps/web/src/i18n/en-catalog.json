@@ -18019,5 +18019,8 @@
   "هتل هلیا": "Helia Hotel",
   "هوشی‌مین": "Ho Chi Minh City",
   "هوشی‌مین، دانانگ، هانوی و خلیج هالونگ": "Ho Chi Minh City, Da Nang, Hanoi and Ha Long Bay",
-  "یک تخته": "Single room"
+  "یک تخته": "Single room",
+  "راهنمای ارزهای نمودار": "Chart currency legend",
+  "سهم هر بخش براساس معیار انتخاب‌شده محاسبه شده است.": "Each share is calculated using the selected measure.",
+  "مبالغ ارزها با هم جمع نمی‌شوند؛ مقیاس هر ارز مستقل است.": "Currency amounts are not added together; each currency uses an independent scale."
 }

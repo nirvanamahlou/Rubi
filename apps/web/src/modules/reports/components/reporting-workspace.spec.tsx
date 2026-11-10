@@ -118,6 +118,51 @@ function renderResultPanel(
 }
 
 describe('ReportingWorkspace', () => {
+  it('shows one dashboard-style bar group per expert, with combined currency labels', () => {
+    const result = {
+      ...reportResult,
+      rows: [
+        {
+          ...reportResult.rows[0]!,
+          branchId: 'دفتر نمونه',
+          ownerUserId: 'کارشناس نمونه',
+          amountsByCurrency: [
+            { currencyCode: 'IRR', amount: '1250000' },
+            { currencyCode: 'USD', amount: '500' },
+          ],
+        },
+      ],
+    };
+    const html = renderResultPanel({ mode: 'chart', started: true, result });
+    expect(html.match(/data-report-chart-row=/g)).toHaveLength(1);
+    expect(html.match(/دفتر نمونه · کارشناس نمونه<\/span>/g)).toHaveLength(1);
+    expect(html).toContain('1,250,000');
+    expect(html).toContain('500');
+    expect(html).toContain(' + ');
+    expect(html).toContain('linear-gradient(to right');
+    expect(html).toContain('data-currency="USD"');
+    expect(html).toContain('dir="rtl"');
+  });
+  it.each(['horizontal-bar', 'column', 'pie'] as const)(
+    'plots selected contract/passenger counts in %s rather than money',
+    (chartType) => {
+      for (const [column, label] of [
+        ['contractCount', 'تعداد قرارداد'],
+        ['passengerCount', 'تعداد مسافر'],
+      ] as const) {
+        const html = renderResultPanel({
+          mode: 'chart',
+          chartType,
+          started: true,
+          result: reportResult,
+          sort: { column, direction: 'DESC' },
+        });
+        expect(html).toContain(`${label} به تفکیک شعبه و کارشناس`);
+        expect(html).not.toContain('1,250,000');
+        expect(html).not.toContain('راهنمای ارزهای نمودار');
+      }
+    },
+  );
   it('renders every native source column with sort arrows and its original values, without legacy money columns', () => {
     const html = renderResultPanel({
       started: true,
@@ -476,7 +521,7 @@ describe('ReportingWorkspace', () => {
       result: reportResult,
     });
     expect(columnChart).toContain('نمودار ستونی');
-    expect(columnChart).toContain('ارتفاع هر ستون');
+    expect(columnChart).toContain('data-report-chart-row');
     expect(columnChart).toContain('overflow-auto');
     const pieChart = renderResultPanel({
       chartType: 'pie',

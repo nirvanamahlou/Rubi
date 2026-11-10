@@ -12,6 +12,12 @@ import { currencySymbol } from '@/lib/currency-symbol';
 import { useReportLiveRefresh } from '../model/use-report-live-refresh';
 import resultTableStyles from './report-result-table.module.css';
 import { ReportPrerequisites } from './report-prerequisites';
+import { ReportHorizontalBars } from './report-horizontal-bars';
+import {
+  isReportChartMetric,
+  reportChartGroups,
+  reportChartMetric,
+} from '../model/chart-data';
 
 import {
   AlertTriangle,
@@ -1014,6 +1020,23 @@ export function ReportResultPanel({
   started: boolean;
 }) {
   const hasRows = Boolean(result?.rows.length);
+  const [selectedMetric, setSelectedMetric] = useState<{
+    reportCode: string;
+    column: string;
+  } | null>(null);
+  const metricColumn = isReportChartMetric(result, sort.column)
+    ? sort.column
+    : selectedMetric?.reportCode === report.code
+      ? selectedMetric.column
+      : '';
+  const chartMetric = useMemo(
+    () => reportChartMetric(result, metricColumn, report.measures[0] ?? 'مبلغ'),
+    [result, metricColumn, report.measures],
+  );
+  const chartGroups = useMemo(
+    () => reportChartGroups(result, chartMetric),
+    [result, chartMetric],
+  );
   const [readinessAttempt, setReadinessAttempt] = useState(0);
   const readinessKey = report.code + ':' + readinessAttempt;
   const [readinessResponse, setReadinessResponse] = useState<{
@@ -1057,31 +1080,16 @@ export function ReportResultPanel({
   );
   const chartRows = useMemo(
     () =>
-      (result?.rows ?? []).flatMap((row) =>
-        row.amountsByCurrency?.length
-          ? row.amountsByCurrency.map((money) => ({
-              ...row,
-              grainId: row.grainId + ':' + money.currencyCode,
-              amount: money.amount,
-              currencyCode: money.currencyCode,
-            }))
-          : [row],
+      chartGroups.flatMap(({ row, values }) =>
+        values.map((value) => ({
+          ...row,
+          grainId: row.grainId + ':' + value.currencyCode,
+          amount: value.amount,
+          currencyCode: value.currencyCode,
+        })),
       ),
-    [result],
+    [chartGroups],
   );
-  const maxAmountByCurrency = useMemo(() => {
-    const maximums = new Map<string, number>();
-    for (const row of chartRows) {
-      maximums.set(
-        row.currencyCode,
-        Math.max(
-          maximums.get(row.currencyCode) ?? 0,
-          reportAmountMagnitude(row.amount),
-        ),
-      );
-    }
-    return maximums;
-  }, [chartRows]);
   const pieGroups = useMemo(() => {
     const rowsByCurrency = new Map<
       string,
@@ -1305,12 +1313,18 @@ export function ReportResultPanel({
               <FormField id="report-result-sort" label="مرتب‌سازی براساس">
                 <Select
                   disabled={running}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    setSelectedMetric({
+                      reportCode: report.code,
+                      column: isReportChartMetric(result, value)
+                        ? value
+                        : chartMetric.key,
+                    });
                     onSortChange({
                       column: value as ReportSort['column'],
                       direction: sort.direction,
-                    })
-                  }
+                    });
+                  }}
                   value={sort.column}
                 >
                   <SelectTrigger className="min-w-48" id="report-result-sort">
@@ -1593,126 +1607,33 @@ export function ReportResultPanel({
               </table>
             </div>
           ) : chartType === 'horizontal-bar' ? (
-            <div
-              aria-label={`نمودار میله‌ای افقی ${report.measures[0] ?? 'مبلغ'} به تفکیک ${report.dimensions.slice(0, 2).join(' و ')}`}
-              className="space-y-3 rounded-2xl border p-4"
-              role="img"
-            >
-              <div>
-                <h3 className="text-sm font-bold">
-                  {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
-                  {report.dimensions.slice(0, 2).join(' و ')}
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  طول هر میله نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
-                </p>
-              </div>
-              <div
-                aria-label="داده‌های نمودار میله‌ای؛ برای مشاهده موارد بیشتر اسکرول کنید"
-                className="max-h-[32rem] space-y-3 overflow-y-auto overscroll-contain pe-2"
-                tabIndex={0}
-              >
-                {chartRows.map((row) => {
-                  const maximum =
-                    maxAmountByCurrency.get(row.currencyCode) ?? 0;
-                  const width = maximum
-                    ? Math.max(
-                        3,
-                        (reportAmountMagnitude(row.amount) / maximum) * 100,
-                      )
-                    : 3;
-                  return (
-                    <div className="space-y-1" key={row.grainId}>
-                      <div className="flex justify-between gap-3 text-xs">
-                        <span className="truncate">
-                          {row.branchId} · {row.ownerUserId}
-                        </span>
-                        <span className="shrink-0 font-semibold" dir="ltr">
-                          {formatReportMoney(row.amount)}{' '}
-                          {currencySymbol(row.currencyCode ?? '')}
-                        </span>
-                      </div>
-                      <div className="h-3 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${width}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <ReportHorizontalBars
+              groups={chartGroups}
+              metric={chartMetric}
+              dimensions={report.dimensions.slice(0, 2).join(' و ')}
+            />
           ) : chartType === 'column' ? (
-            <div
-              aria-label={`نمودار ستونی ${report.measures[0] ?? 'مبلغ'} به تفکیک ${report.dimensions.slice(0, 2).join(' و ')}`}
-              className="space-y-3 rounded-2xl border p-4"
-              role="img"
-            >
-              <div>
-                <h3 className="text-sm font-bold">
-                  {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
-                  {report.dimensions.slice(0, 2).join(' و ')}
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  ارتفاع هر ستون نسبت به بیشترین مبلغ همان ارز محاسبه شده است.
-                </p>
-              </div>
-              <div
-                aria-label="داده‌های نمودار ستونی؛ برای مشاهده موارد بیشتر اسکرول کنید"
-                className="max-h-[32rem] overflow-auto overscroll-contain pb-2"
-                tabIndex={0}
-              >
-                <div className="flex min-w-max items-end gap-4 border-b border-border px-3 pt-8">
-                  {chartRows.map((row) => {
-                    const maximum =
-                      maxAmountByCurrency.get(row.currencyCode) ?? 0;
-                    const height = maximum
-                      ? Math.max(
-                          6,
-                          (reportAmountMagnitude(row.amount) / maximum) * 100,
-                        )
-                      : 6;
-                    return (
-                      <div
-                        className="w-24 shrink-0 text-center"
-                        key={row.grainId}
-                      >
-                        <span
-                          className="block truncate text-[11px] font-semibold"
-                          dir="ltr"
-                        >
-                          {formatReportMoney(row.amount)}{' '}
-                          {currencySymbol(row.currencyCode ?? '')}
-                        </span>
-                        <div className="mt-2 flex h-44 items-end justify-center">
-                          <div
-                            className="w-12 rounded-t-lg bg-primary"
-                            style={{ height: `${height}%` }}
-                          />
-                        </div>
-                        <span className="mt-2 block truncate text-[11px] text-muted-foreground">
-                          {row.branchId} · {row.ownerUserId}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <ReportHorizontalBars
+              layout="column"
+              groups={chartGroups}
+              metric={chartMetric}
+              dimensions={report.dimensions.slice(0, 2).join(' و ')}
+            />
           ) : (
             <div
-              aria-label={`نمودار دایره‌ای ${report.measures[0] ?? 'مبلغ'} به تفکیک ${report.dimensions.slice(0, 2).join(' و ')}`}
+              aria-label={`نمودار دایره‌ای ${chartMetric.label} به تفکیک ${report.dimensions.slice(0, 2).join(' و ')}`}
               className="space-y-4 rounded-2xl border p-4"
               role="img"
             >
               <div>
                 <h3 className="text-sm font-bold">
-                  سهم {report.measures[0] ?? 'مبلغ'} به تفکیک{' '}
+                  سهم {chartMetric.label} به تفکیک{' '}
                   {report.dimensions.slice(0, 2).join(' و ')}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  سهم هر بخش در هر ارز به‌صورت مستقل محاسبه شده است.
+                  {chartMetric.money
+                    ? 'سهم هر بخش در هر ارز به‌صورت مستقل محاسبه شده است.'
+                    : 'سهم هر بخش براساس معیار انتخاب‌شده محاسبه شده است.'}
                 </p>
               </div>
               <div
@@ -1736,7 +1657,9 @@ export function ReportResultPanel({
                           className="mt-2 block text-xs font-bold"
                           dir="ltr"
                         >
-                          {currencySymbol(group.currencyCode ?? '')}
+                          {chartMetric.money
+                            ? currencySymbol(group.currencyCode ?? '')
+                            : chartMetric.label}
                         </span>
                       </div>
                       <div className="mt-4 border-t border-border pt-4">

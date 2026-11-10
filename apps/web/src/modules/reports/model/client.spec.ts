@@ -56,6 +56,7 @@ describe('reporting public projection client', () => {
       sort: { column: 'remaining', direction: 'ASC' },
     });
     expect(result.dataLayout).toBe('SOURCE_COLUMNS');
+    expect(result.chartMeasure).toBe('allocated');
     expect(result.rows[0]?.amount).toBe('7');
     expect(result.rows[0]?.sourceValues?.remaining).toBe(3);
     expect(JSON.parse(fetch.mock.calls[0]?.[1].body).sort).toEqual({

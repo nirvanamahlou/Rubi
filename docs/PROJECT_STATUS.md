@@ -1,3 +1,7 @@
+## REPORT-CHART-METRICS-1110 — PC-C — READY_FOR_CI
+
+Report bars use Dashboard-style fixed labels, grouped independent currency tracks and exact combined values. Numeric sort choices now drive horizontal/column/pie measures, with unique contract/passenger counts; name sorting retains the selected metric. Operational chartMeasure metadata is preserved. 92 Web report tests and scoped lint pass. No schema/API/financial calculation or production change. See docs/tasks/REPORTING-CHART-METRICS-1110.md.
+
 ## REPORT-EXCEL-BIDI-1110 — PC-C — READY_FOR_CI
 
 Shared Reporting XLSX monetary text now uses explicit LTR cell direction, bounded amount/currency pairs and wrapping height. Preserve RTL sheet, B Nazanin, exact decimals and unchanged source/CSV. 167 targeted Reporting tests pass. Synthetic output generated; desktop modal automation was unreliable, so visual acceptance is not claimed. Owner authorizes develop PR/merge after all exact-head hosted gates; no deployment. See docs/tasks/REPORTING-EXCEL-BIDI-1110.md.
