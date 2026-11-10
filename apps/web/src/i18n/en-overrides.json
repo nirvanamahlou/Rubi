@@ -5859,5 +5859,8 @@
   "دریافت تاریخچه انجام نشد. دوباره تلاش کنید.": "Could not load history. Try again.",
   "در حال دریافت تاریخچه…": "Loading history…",
   "فعالیتی برای نمایش وجود ندارد.": "No activity to display.",
-  "اقدام": "Action"
+  "اقدام": "Action",
+  "پیام‌رسان": "Messenger",
+  "قیمت‌گذاری پکیج": "Package pricing",
+  "کارها": "Tasks"
 }
