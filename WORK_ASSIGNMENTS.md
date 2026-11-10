@@ -12128,3 +12128,9 @@ COMPANY-LEDGER-1110 CI follow-up: reserve bounded English translations in Web en
 ## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — IN_PROGRESS
 
 Owner requests per-export Manifest template selection with ticket-defined default and newly registered Master Data templates visible in ticket editing. Reserve Manifest export UI/download/API input and validation, existing picker pagination/labels, Master Data public projection diagnostics only, contracts/tests and own notes. Preserve active publication/file/date checks, document access, branch scope and idempotent export identity. No schema/dependency/deployment or business-data writes. Source reservation releases after verified develop merge.
+
+## HR-PAY-DOCS-1110 — PC-B — IN_PROGRESS
+Scope: HR inbox category grouping, employee pay document form using existing employee.docs and Documents APIs, employee requests tab label. No migration/dependency changes. Base origin/develop 0d6317420. Files: hr-inbox, hr-navigation, hr-employee-profile and new scoped helpers/components/tests.
+
+
+HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web typecheck and production build verified. Uses existing API authorization and RESTRICTED document storage; no server deployment or migration. PR review pending.

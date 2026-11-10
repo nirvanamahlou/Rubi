@@ -3,6 +3,7 @@ import {
   employeeLeaveDataset,
   isEmployeeLeave,
 } from './employee-leave-dataset';
+import { HrPayDocuments } from './hr-pay-documents';
 import { HrAttendanceEditor } from './hr-attendance-editor';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useRouteAccess } from '@/modules/iam/access-context';
@@ -409,6 +410,16 @@ export function HrEmployeeProfile({
               : {})}
           />
         )}
+        {group.id === 'pay' && !timeline.loading && !timeline.error ? (
+          <HrPayDocuments
+            key={`${employee.id}:${source.tab}`}
+            employee={employee}
+            section={source.label}
+            records={records}
+            store={store}
+            onSaved={timeline.retry}
+          />
+        ) : null}
       </HrPanel>
       <div className={ui.grid}>
         {source.tab === 'leave' ? (
