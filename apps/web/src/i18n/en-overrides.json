@@ -2935,6 +2935,7 @@
   "حساب‌های مجاز تعدیل": "Eligible adjustment accounts",
   "داشبورد حسابداری": "Accounting dashboard",
   "درخواست‌های اتصال موجود": "Existing connection requests",
+  "ظرفیت ساخت خروجی پر است. دوباره تلاش کنید.": "Report export capacity is full. Please try again.",
   "دریافت داده ناموفق بود.": "Failed to load data.",
   "ذخیره‌شده در محل امن": "Stored securely",
   "سن نامعلوم": "Unknown age",
@@ -5858,5 +5859,18 @@
   "این گره از چارت کنار گذاشته می‌شود.": "This node will be removed from the chart.",
   "دیفالت منیفست": "Default Manifest",
   "گزارش‌گیری": "Reporting",
-  "ظرفیت ساخت خروجی پر است. دوباره تلاش کنید.": "Report export capacity is full. Please try again."
+  "افزودن مدرک ·": "Add document ·",
+  "ثبت مدرک": "Save document",
+  "حقوق و پرداخت /": "Pay and payments /",
+  "درخواست‌ها و مأموریت‌ها": "Requests and assignments",
+  "ذخیره مدرک انجام نشد.": "Could not save the document.",
+  "فایل این مدرک در دسترس نیست.": "The file for this document is unavailable.",
+  "مشاهده مدرک حقوق و پرداخت کارمند": "View employee pay document",
+  "دریافت تاریخچه انجام نشد. دوباره تلاش کنید.": "Could not load history. Try again.",
+  "در حال دریافت تاریخچه…": "Loading history…",
+  "فعالیتی برای نمایش وجود ندارد.": "No activity to display.",
+  "اقدام": "Action",
+  "پیام‌رسان": "Messenger",
+  "قیمت‌گذاری پکیج": "Package pricing",
+  "کارها": "Tasks"
 }

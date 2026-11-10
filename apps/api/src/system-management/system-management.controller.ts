@@ -310,6 +310,12 @@ export class SystemManagementController {
     );
   }
 
+  @Get('activity')
+  @RequirePermissions('system.audit.read')
+  activity(@Query('cursor') cursor?: string) {
+    return this.system.listActivity(cursor);
+  }
+
   private metadata(request: AuthenticatedRequest) {
     return {
       requestId: getRequestId(request),

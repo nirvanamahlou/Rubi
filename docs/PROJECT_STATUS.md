@@ -5250,6 +5250,10 @@ Hotel table checkboxes open existing request/voucher workflow. Sent requests lig
 
 Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
 
+## ARCHITECTURE-REMEDIATION-1110 — PC-B
+
+First implementation slice covers attendance connector identity and penalty reads, messaging and notification query load, safe error diagnostics, authenticated Web requests, HR encryption key compatibility, report rendering isolation and authenticated downloads. See docs/tasks/ARCHITECTURE-REMEDIATION-1110.md for test evidence and remaining audit work.
+
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
 A4 reservation preview fits RTL modal without clipping; native print size retained. Multi-page lazy-logo hang fixed; fonts/images ready before PDF print.7 tests and build passed;3-page synthetic PDF visually checked. Save as PDF remains browser destination. Web restart pending. See tasks/RESERVATION-FORM-PREVIEW-0910.md.
@@ -9727,6 +9731,7 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
-## ARCHITECTURE-REMEDIATION-1110 — PC-B
+## HR-PAY-DOCS-1110 — PC-B
+Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
 
-First implementation slice covers attendance connector identity and penalty reads, messaging and notification query load, safe error diagnostics, authenticated Web requests, HR encryption key compatibility, report rendering isolation and authenticated downloads. See docs/tasks/ARCHITECTURE-REMEDIATION-1110.md for test evidence and remaining audit work.
+SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
