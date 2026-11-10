@@ -86,7 +86,12 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     ]),
     group('settings', 'تنظیمات کارکرد', [
       source('time', 'leavePolicies', 'سیاست و سهمیه', 'تعریف سیاست مرخصی'),
-      source('time', 'penaltySettings', 'تنظیمات جریمه', 'تنظیمات جریمه'),
+      source(
+        'time',
+        'penaltySettings',
+        'تنظیمات جریمه و تشویق',
+        'تنظیمات جریمه و تشویق',
+      ),
       source('time', 'holidays', 'تعطیلات', 'ثبت تعطیلی'),
     ]),
     group('device', 'دستگاه', [

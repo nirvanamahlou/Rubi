@@ -289,6 +289,7 @@ const fieldType = (label: string): ContextualFieldType => {
 };
 
 const optionalField = (label: string) =>
+  /^مبلغ (تشویق هر دقیقه اضافه‌کاری|جریمه هر دقیقه کسری کار) /.test(label) ||
   /نتیجه|خروجی|پایان|انقضا|تکمیل|وابستگی|اثر مالی|حساب مقصد|لینک|رزومه|فایل پیوست|مدت محرمانگی|مرجع حل اختلاف/.test(
     label,
   );
@@ -447,7 +448,7 @@ function buildInitialFormValues(
           ? persianDateToIso(context.initialValues[index] ?? '')
           : (context.initialValues[index] ?? '')
         : context.tab === 'penaltySettings' &&
-            field.label.startsWith('مبلغ جریمه')
+            /مبلغ جریمه هر دقیقه (تأخیر|خروج زودهنگام)/.test(field.label)
           ? '50000'
           : isAutomaticRegistrationDate(field.label)
             ? todayIso()

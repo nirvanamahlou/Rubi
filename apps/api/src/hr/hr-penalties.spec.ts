@@ -32,6 +32,10 @@ function setup(extra: unknown[] = [], values = policy.values) {
   const internal = service as unknown as {
     dailyPenalty: (row: unknown) => Promise<string | null>;
     attendanceView: () => unknown;
+    dailyAttendanceAmounts: (
+      row: unknown,
+      includeOvertime: boolean,
+    ) => Promise<unknown>;
   };
   internal.attendanceView = () => ({
     shiftStart: new Date('2026-11-08T05:30:00Z'),
@@ -55,6 +59,7 @@ function setup(extra: unknown[] = [], values = policy.values) {
     service,
     row,
     findMany,
+    amounts: () => internal.dailyAttendanceAmounts(row, true),
   });
 }
 describe('daily attendance penalties', () => {

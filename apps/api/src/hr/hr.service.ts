@@ -161,6 +161,15 @@ const jobResources = new Set([
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 
+type AttendanceAmounts = {
+  dailyPenaltyToman: string | null;
+  overtimeAmountToman: string | null;
+};
+const emptyAttendanceAmounts: AttendanceAmounts = {
+  dailyPenaltyToman: null,
+  overtimeAmountToman: null,
+};
+
 @Injectable()
 export class HrService {
   constructor(
@@ -551,9 +560,17 @@ export class HrService {
           'مبلغ جریمه باید عدد صحیح غیرمنفی به تومان باشد.',
         );
     validate.isoDate(values[2]!);
-    for (const value of values.slice(3))
+    for (const value of values.slice(3, 6))
       if (!['بله', 'خیر'].includes(value))
         throw new BadRequestException('وضعیت معافیت معتبر نیست.');
+    for (let index = 6; index < 8; index++) {
+      const rate = validate.digits(values[index] ?? '');
+      if (rate && !/^\d{1,12}$/.test(rate))
+        throw new BadRequestException(
+          'مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.',
+        );
+      values[index] = rate;
+    }
   }
   private async canManuallyEditAttendance(actor: AuthenticatedActor) {
     if (!actor.permissions.includes('hr.manage')) return false;
@@ -566,12 +583,35 @@ export class HrService {
   }
 
   async dailyPenalty(row: RecordRow): Promise<string | null> {
-    return (await this.dailyPenalties([row])).get(row.id) ?? null;
+    return (await this.dailyAttendanceAmounts(row)).dailyPenaltyToman;
   }
 
   async dailyPenalties(
     rows: readonly RecordRow[],
   ): Promise<Map<string, string>> {
+    const amounts = await this.dailyAttendanceAmountMap(rows, false);
+    const penalties = new Map<string, string>();
+    for (const [id, { dailyPenaltyToman }] of amounts) {
+      if (dailyPenaltyToman !== null) penalties.set(id, dailyPenaltyToman);
+    }
+    return penalties;
+  }
+
+  private async dailyAttendanceAmounts(
+    row: RecordRow,
+    includeOvertime = false,
+  ) {
+    return (
+      (await this.dailyAttendanceAmountMap([row], includeOvertime)).get(
+        row.id,
+      ) ?? emptyAttendanceAmounts
+    );
+  }
+
+  private async dailyAttendanceAmountMap(
+    rows: readonly RecordRow[],
+    includeOvertime: boolean,
+  ): Promise<Map<string, AttendanceAmounts>> {
     const byBranch = new Map<string, RecordRow[]>();
     for (const row of rows) {
       if (
@@ -586,7 +626,7 @@ export class HrService {
       branchRows.push(row);
       byBranch.set(row.branchId, branchRows);
     }
-    const result = new Map<string, string>();
+    const result = new Map<string, AttendanceAmounts>();
     for (const [branchId, branchRows] of byBranch) {
       const policies = await this.database.client.hrRecord.findMany({
         where: {
@@ -699,10 +739,14 @@ export class HrService {
             throw new ConflictException('حجم داده کارکرد بیش از حد مجاز است.');
           result.set(
             row.id,
-            this.calculateDailyPenalty(row, row.employeeId!, date, policy, [
-              ...shared,
-              ...dayPunches,
-            ]),
+            this.calculateDailyAttendanceAmounts(
+              row,
+              row.employeeId!,
+              date,
+              policy,
+              [...shared, ...dayPunches],
+              includeOvertime,
+            ),
           );
         }
       }
@@ -710,16 +754,25 @@ export class HrService {
     return result;
   }
 
-  private calculateDailyPenalty(
+  private calculateDailyAttendanceAmounts(
     row: RecordRow,
     employeeId: string,
     date: string,
     policy: RecordRow,
     source: RecordRow[],
-  ): string {
+    includeOvertime: boolean,
+  ): AttendanceAmounts {
     const rates = policy.values as string[];
+    const data = row.data as HrWorkflowData | null;
+    const amount = {
+      overtimeAmountToman:
+        includeOvertime && rates[6] && data?.overtimeMinutes != null
+          ? new Prisma.Decimal(rates[6]).mul(data.overtimeMinutes).toFixed(0)
+          : null,
+    };
     const view = this.attendanceView(source, employeeId, date);
-    if (!view.shiftStart || !view.shiftEnd || !view.events.length) return '0';
+    if (!view.shiftStart || !view.shiftEnd || !view.events.length)
+      return { ...amount, dailyPenaltyToman: '0' };
     if (
       rates[5] === 'بله' &&
       ((row.data as HrWorkflowData | null | undefined)?.attendanceDeviceError ??
@@ -732,7 +785,15 @@ export class HrService {
             (item.data as HrWorkflowData).attendanceDeviceError === true,
         ))
     )
-      return '0';
+      return { ...amount, dailyPenaltyToman: '0' };
+    if (rates[7] && data?.deficitMinutes != null)
+      return {
+        ...amount,
+        dailyPenaltyToman: new Prisma.Decimal(rates[7])
+          .mul(data.deficitMinutes)
+          .toFixed(0),
+      };
+    if (rates[7]) return { ...amount, dailyPenaltyToman: null };
     const metrics = attendanceScheduleMetrics(
       view.events,
       view.shiftStart,
@@ -765,7 +826,7 @@ export class HrService {
       view.shiftEnd,
       intervals,
     );
-    return new Prisma.Decimal(rates[0]!)
+    const dailyPenaltyToman = new Prisma.Decimal(rates[0]!)
       .mul(Math.max(0, (metrics.lateMinutes ?? 0) - coverage.lateCredit))
       .add(
         new Prisma.Decimal(rates[1]!).mul(
@@ -773,22 +834,23 @@ export class HrService {
         ),
       )
       .toFixed(0);
+    return { ...amount, dailyPenaltyToman };
   }
 
   private async recordDtos(rows: RecordRow[], actor: AuthenticatedActor) {
-    const [labels, penalties] = await Promise.all([
+    const [labels, amounts] = await Promise.all([
       this.assignmentLabels(rows, actor),
-      this.dailyPenalties(rows),
+      this.dailyAttendanceAmountMap(rows, true),
     ]);
     return Promise.all(
-      rows.map((row) => this.recordDto(row, actor, labels, penalties)),
+      rows.map((row) => this.recordDto(row, actor, labels, amounts)),
     );
   }
   private async recordDto(
     row: RecordRow,
     actor: AuthenticatedActor,
     display?: AssignmentLabels,
-    penalties?: ReadonlyMap<string, string>,
+    amounts?: ReadonlyMap<string, AttendanceAmounts>,
   ): Promise<HrRecordDto> {
     const schema = validate.resource(row.section, row.tab);
     const ownSlip =
@@ -852,11 +914,9 @@ export class HrService {
         : {
             ...(publicHrData(row.data) as HrWorkflowData),
             ...(schema.key === 'time.attendance'
-              ? {
-                  dailyPenaltyToman: penalties
-                    ? (penalties.get(row.id) ?? null)
-                    : await this.dailyPenalty(row),
-                }
+              ? amounts
+                ? (amounts.get(row.id) ?? emptyAttendanceAmounts)
+                : await this.dailyAttendanceAmounts(row, true)
               : {}),
           },
     };
@@ -1929,7 +1989,11 @@ export class HrService {
     const legacy =
       row.section === 'time'
         ? (
-            { workingHours: 8, leaveTransferRules: 9 } as Record<string, number>
+            {
+              workingHours: 8,
+              leaveTransferRules: 9,
+              penaltySettings: 6,
+            } as Record<string, number>
           )[row.tab]
         : undefined;
     if (
