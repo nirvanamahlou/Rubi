@@ -63,9 +63,11 @@ PR1559 merged with all eight final-head gates green (source dc25af58a, develop m
 
 Owner authorizes full new-applicant insurance issuance without a Sales contract, catalogue-only duration selection, preserving initial provider failures, develop merge and bounded release. Added an encrypted branch/creator-linked applicant value object, audited private reads, database-enforced contract-or-applicant linkage, replay/CAS guards and the existing leased/fingerprinted worker for both paths. Primary Request insurance opens the complete new form; contractual preparation remains available. Existing contract FKs and Finance release behavior remain intact. No fabricated Customer/contract, new dependencies or provider-mode change. Local89 API/integration/Customer checks,23 Web/translation checks and API/Web types pass; fresh actual PostgreSQL standalone transaction/constraint/rollback proof is required in the mandatory gate before merge. Migration20261109100000 is additive/data-preserving and must precede API/Web. See docs/tasks/INSURANCE-STANDALONE-1109.md.
 
-## INSURANCE-ADVISORY-LOCK-1109 — PC-A — VALIDATING
+## INSURANCE-ADVISORY-LOCK-1109 — PC-A — DEPLOYED
 
 The remaining correction HTTP500 is reproduced as Prisma P2010 decoding PostgreSQL void from the advisory-lock query. A shared text-cast lock helper preserves serialization for correction and confirmation. Real Prisma/PostgreSQL regression checks extend the existing mandatory insurance gate. No passenger data mutation, policy issuance, provider-mode change, migration or dependency change. Owner's existing bounded repair/merge/deploy authorization applies. See docs/tasks/INSURANCE-ADVISORY-LOCK-1109.md.
+
+PR1552 merged after all8 exact-head checks succeeded; bounded API release verified.41 insurance tests and3 real adapter/lock concurrency tests pass in the candidate image. The actual compiled helper succeeds on the live database in a read-only rolled-back transaction. Web remains unchanged, Worker image/environment remains unchanged and is recreated for API namespace; health/static assets/401 boundaries/Worker/AMI/recording and zero restarts pass. Fresh encrypted backup verified offserver. No additional cleanup or passenger issuance performed. Receipt: /opt/rubi/insurance-advisory-lock-1109/verified.json.
 
 ## INSURANCE-CORRECT-SUBMIT-1109 — PC-A — DEPLOYED
 
