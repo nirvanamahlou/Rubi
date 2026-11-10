@@ -3570,6 +3570,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
 
+## WORKBENCH-VERBATIM-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A11. Reserve the Workbench message composer, one explicit text display helper and focused localization coverage. Preserve user-authored messages, names and attachment titles in both display languages. Keep translation for interface actions and labels. No API, database or dependency change.
+
 ## WORKBENCH-026 — PC-B — UI_VERIFIED
 
 - Sales messenger six user-requested editable templates. Reserve message-templates only and own docs; reuse existing draft attachments. No Sales domain/API/schema changes or real customer data.
@@ -12185,6 +12189,12 @@ Reserve Documents list API/repository, additive domains and FAVORITES query cont
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
 
-## WORKBENCH-VERBATIM-1110 — PC-B — IN_PROGRESS
+## HR-PAY-DOCS-1110 — PC-B — IN_PROGRESS
 
-Architecture finding A11. Reserve the Workbench message composer, one explicit text display helper and focused localization coverage. Preserve user-authored messages, names and attachment titles in both display languages. Keep translation for interface actions and labels. No API, database or dependency change.
+Scope: HR inbox category grouping, employee pay document form using existing employee.docs and Documents APIs, employee requests tab label. No migration/dependency changes. Base origin/develop 0d6317420. Files: hr-inbox, hr-navigation, hr-employee-profile and new scoped helpers/components/tests.
+
+HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web typecheck and production build verified. Uses existing API authorization and RESTRICTED document storage; no server deployment or migration. PR review pending.
+
+## SYSTEM-ACTIVITY-1110 — PC-A — IN_PROGRESS
+
+Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.

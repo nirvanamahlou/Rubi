@@ -306,7 +306,7 @@ const unorderedEmployeeGroups: readonly HrGroup[] = [
     source('employee', 'assets', 'تجهیزات', '', true),
     source('employee', 'docs', 'مدارک', 'افزودن مدرک'),
   ]),
-  group('requests', 'درخواست‌ها', [
+  group('requests', 'درخواست‌ها و مأموریت‌ها', [
     source('employee', 'requests', 'درخواست‌ها', '', true),
     source('employee', 'mission', 'مأموریت‌ها', '', true),
   ]),

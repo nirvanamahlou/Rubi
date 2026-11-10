@@ -2850,6 +2850,10 @@ lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات 
 
 در فرم، جدول، پروفایل و خروجی Excel «انواع هواپیما»، عنوان فارسی حذف و سازنده/مدل به یک فیلد «سازنده و مدل» تبدیل شد. API مقدار ترکیبی را اعتبارسنجی و در ستون‌های فعلی تفکیک می‌کند و برای سازگاری مصرف‌کنندگان قبلی یک نام داخلی غیرنمایشی می‌سازد؛ بنابراین Schema، Migration و قرارداد مرکزی تغییر نکرده‌اند. Fixtureهای آزمایشی ساده و واقع‌نما نیز با `Airbus / A320-200` و `Boeing / 777-300ER` هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در [MASTER-008-AIRCRAFT-FIELDS](tasks/MASTER-008-AIRCRAFT-FIELDS.md).
 
+## WORKBENCH-VERBATIM-1110 — PC-B
+
+Messaging renders stored text, sender and member names, group titles, quoted and forwarded text, reaction names, and attachment titles without applying the UI dictionary. Interface copy still follows the selected language. Eleven focused rendering and reaction tests passed. This is the Workbench slice of architecture finding A11.
+
 ## WORKBENCH-041 — رفع خطای پیام‌رسان
 
 در نگاشت پیام‌های عادی، شناسهٔ خالیِ فرستندهٔ فورواردشده دیگر به کوئری UUID کاربران ارسال نمی‌شود؛ این مشکل باعث خطای ۵۰۰ در فهرست گفتگوها و ایجاد گفت‌وگوی مستقیم بود. تست رگرسیون پیام‌رسان، lint و rebuild API موفق شدند و API جدید روی ۴۱۹۱ فعال است.
@@ -9727,6 +9731,7 @@ Ordered city destinations and per-destination nights are stored in versioned Tou
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
 
-## WORKBENCH-VERBATIM-1110 — PC-B
+## HR-PAY-DOCS-1110 — PC-B
+Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
 
-Messaging renders stored text, sender and member names, group titles, quoted and forwarded text, reaction names, and attachment titles without applying the UI dictionary. Interface copy still follows the selected language. Eleven focused rendering and reaction tests passed. This is the Workbench slice of architecture finding A11.
+SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.

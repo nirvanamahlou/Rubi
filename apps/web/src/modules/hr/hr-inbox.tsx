@@ -1,4 +1,5 @@
 'use client';
+import { matchesHrRequestType } from './hr-request-type';
 import { leaveDescription } from '@/modules/workbench/leave-description';
 import { LeaveEvidenceList } from './leave-evidence-list';
 import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
@@ -9,11 +10,7 @@ import { ClipboardCheck } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
-import {
-  HR_RADAN_REQUEST_TYPES,
-  getHrResource,
-  type HrRecordDto,
-} from '@nora/contracts';
+import { getHrResource, type HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 import {
   HrExportButton,
@@ -71,9 +68,7 @@ export function HrInbox({
             result.filter(
               (item) =>
                 getHrResource(item.section, item.tab)?.approval &&
-                (!requestType ||
-                  `${item.section}.${item.tab}` === requestType ||
-                  item.data.requestSubtype === requestType),
+                matchesHrRequestType(item, requestType),
             ),
           );
       })
@@ -114,11 +109,7 @@ export function HrInbox({
           item.senderId) &&
       (!range.from || item.createdAt.slice(0, 10) >= range.from) &&
       (!range.to || item.createdAt.slice(0, 10) <= range.to) &&
-      (!requestType ||
-        (item.leave &&
-          ['requests.leave', 'time.leave', 'requests.radanLeave'].includes(
-            requestType,
-          ))),
+      (!requestType || (item.leave && requestType === 'leave')),
   );
   const visibleItems = items.filter((item) => !item.code.startsWith('WB-'));
   const onReview = async () => {
@@ -239,17 +230,9 @@ export function HrInbox({
               onChange={(e) => setRequestType(e.target.value)}
             >
               <option value="">همه درخواست‌ها</option>
-              <option value="time.leave">مرخصی</option>
-              <option value="requests.leave">مرخصی میزکار</option>
-              <option value="time.corrections">اصلاح تردد</option>
-              <option value="requests.attendance">اصلاح تردد میزکار</option>
-              <option value="time.mission">مأموریت</option>
-              <option value="expenses.mission">مأموریت و سفر</option>
-              <option value="time.overtime">اضافه‌کاری</option>
-              <option value="time.remote">دورکاری</option>
-              {HR_RADAN_REQUEST_TYPES.map((type) => (
-                <option key={type}>{type}</option>
-              ))}
+              <option value="leave">مرخصی</option>
+              <option value="attendance">اصلاح تردد</option>
+              <option value="advance">مساعده</option>
             </NativeSearchSelect>
           </label>
           <label>
