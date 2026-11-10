@@ -14,6 +14,7 @@ import {
 } from '@nora/contracts';
 import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
 import { PassengerServiceEditor } from './passenger-service-editor';
+import { addAmendmentHotel } from './amendment-extra-services';
 import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
 import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -539,7 +540,13 @@ export function ReservationSalesAmendment({
               </div>
             </div>
           ) : (
-            <p>این قرارداد هتل ندارد.</p>
+            <Button
+              type="button"
+              disabled={busy || saved}
+              onClick={() => setDraft((current) => addAmendmentHotel(current))}
+            >
+              افزودن هتل
+            </Button>
           ))}
         {section === 'OTHER' && (
           <>

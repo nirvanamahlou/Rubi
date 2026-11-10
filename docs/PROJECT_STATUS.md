@@ -9626,6 +9626,10 @@ HR-COMPANY-SCOPE-1108 validation update: hosted production builds, quality and P
 
 Added inclusive from/to flight-date controls beside TicketPurchaseWorkspace search/status, using the displayed flight-day source and existing system calendar picker. Open bounds, exact-day selection, range clearing and inverted-range error are supported; parent filters/search/status and purchase/payment scope remain unchanged.14 module tests and scoped lint pass. No API/schema/dependency/data change. Full final-head hosted gates precede the user-authorized develop merge; no production deployment requested. See tasks/FLIGHT-PURCHASE-DATE-FILTER-1109.md.
 
+## RESERVATION-EXTRA-SERVICES-HOTEL-1110 — PC-A
+
+Reservations passenger corrections expose Insurance, City Tour and Guide even if the original contract omitted them. Selecting one creates the standard Sales service once and allocates it only to the selected passenger; existing service references are retained. Empty hotel amendments initialize a hotel selection and guest links so the existing hotel, room, date and additional-stay editors become usable. Existing prices are retained. Focused Web and API amendment regressions plus full hosted gates precede develop merge; no schema/dependency/deployment changes.
+
 ## TOUR-TICKET-DATE-SELECTION-1110 — PC-A
 
 Package pricing departure controls now expose separate Gregorian outbound/return calendars. Red day markers reflect active route/branch tickets and each selector filters to its chosen Tehran civil day. Outbound selection/publication preserves the requested return date, date edits clear stale selections, and floating drafts use and follow the chosen date with both airport cities available. No API/schema/dependency or live data/deployment changes. Focused interaction/date/API regressions and full hosted gates precede develop merge.
