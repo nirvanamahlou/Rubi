@@ -26,7 +26,19 @@ describe('Sales Finance inbox projection', () => {
         ],
         contract: { AND: [{ branchId: { in: ['branch-b', 'branch-a'] } }, {}] },
       },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currencyCode: true,
+        method: true,
+        description: true,
+        paymentReference: true,
+        destinationAccountId: true,
+        destinationAccountTitle: true,
+        dueAt: true,
+        createdAt: true,
+        createdByUserId: true,
         contract: {
           select: {
             id: true,

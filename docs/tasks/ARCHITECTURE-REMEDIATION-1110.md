@@ -14,7 +14,7 @@ product behavior, authorization, financial atomicity and persisted data.
 | Attendance and HR | Batched penalty evaluation, explicit optional reasons and key ring in PR #1600 | Named field adapters for legacy positional records; distributed Radan execution |
 | Web transport and locale | Shared HTTP retry on migrated clients and one HR refresh in PR #1600; lazy fallback index in PR #1604 | Migrate other clients and defer catalog transfer; split translation responsibilities |
 | Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611 | Durable reporting jobs, bounded row projection and buffered scan/upload paths |
-| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614 | Other Marketing collections and producer-side bounds for the full Finance inbox |
+| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614; scoped Reservations purchase projection in PR #1626; bounded ticket revision reads and field-selected Sales receipts | Other Marketing collections and end-to-end Finance inbox pagination, including Sales and Procurement limits |
 | Module boundaries | Recursive repository import guard in PR #1600 | Explicit public ports, transaction abstractions and ownership for direct database reads |
 
 The architecture and deployment baselines now distinguish checked-in behavior

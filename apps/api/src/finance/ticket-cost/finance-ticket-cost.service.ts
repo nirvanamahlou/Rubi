@@ -45,6 +45,21 @@ const money = (value: string, allowZero = false) => {
   return decimal;
 };
 
+type TicketQueueRow = {
+  requestId: string;
+  id: string;
+  version: number;
+  createdAt: Date;
+  invoiceAmount: Prisma.Decimal;
+  currencyCode: string;
+  seatCount: number | null;
+  unitCost: Prisma.Decimal | null;
+  reason: string;
+  cumulativePaid: Prisma.Decimal | null;
+  remainingAmount: Prisma.Decimal | null;
+  paymentCount: number;
+};
+
 @Injectable()
 export class FinanceTicketCostService {
   constructor(
@@ -763,33 +778,6 @@ export class FinanceTicketCostService {
   }
 
   async queueStates(requestIds: readonly string[]) {
-    if (!requestIds.length)
-      return new Map<
-        string,
-        {
-          purchaseGroup?: { id: string; seatCount: number; totalCost: string };
-          createdAt: string | null;
-          costVersion: number;
-          costRevisionId: string;
-          invoiceAmount: string;
-          currencyCode: string;
-          seatCount: number | null;
-          unitCost: string | null;
-          paymentCount: number;
-          paidAmount: string;
-          remainingAmount: string;
-          status: 'READY_FOR_PAYMENT' | 'PAYING';
-        }
-      >();
-    const rows =
-      await this.database.client.financeTicketPurchaseCostRevision.findMany({
-        where: { requestId: { in: [...requestIds] } },
-        orderBy: { version: 'desc' },
-        include: {
-          payments: { orderBy: { version: 'desc' }, take: 1 },
-          _count: { select: { payments: true } },
-        },
-      });
     const states = new Map<
       string,
       {
@@ -807,24 +795,49 @@ export class FinanceTicketCostService {
         status: 'READY_FOR_PAYMENT' | 'PAYING';
       }
     >();
+    if (!requestIds.length) return states;
+    const uniqueIds = [...new Set(requestIds)];
+    const rows = await this.database.client.$queryRaw<TicketQueueRow[]>`
+      SELECT selected.id AS "requestId", cost.id, cost.version,
+             cost."createdAt", cost."invoiceAmount", cost."currencyCode",
+             cost."seatCount", cost."unitCost", cost.reason,
+             payment."cumulativePaid", payment."remainingAmount",
+             (SELECT count(*)::int
+              FROM "FinanceTicketPurchasePaymentRevision" AS history
+              WHERE history."costRevisionId" = cost.id) AS "paymentCount"
+      FROM unnest(${uniqueIds}::uuid[]) AS selected(id)
+      JOIN LATERAL (
+        SELECT id, version, "createdAt", "invoiceAmount", "currencyCode",
+               "seatCount", "unitCost", reason
+        FROM "FinanceTicketPurchaseCostRevision"
+        WHERE "requestId" = selected.id
+        ORDER BY version DESC
+        LIMIT 1
+      ) AS cost ON true
+      LEFT JOIN LATERAL (
+        SELECT "cumulativePaid", "remainingAmount"
+        FROM "FinanceTicketPurchasePaymentRevision"
+        WHERE "costRevisionId" = cost.id
+        ORDER BY version DESC
+        LIMIT 1
+      ) AS payment ON true
+    `;
     for (const row of rows) {
-      if (states.has(row.requestId)) continue;
-      const latest = row.payments[0];
       const purchaseGroup = readPurchasePool(row.reason);
       states.set(row.requestId, {
         ...(purchaseGroup ? { purchaseGroup } : {}),
-        createdAt: row.createdAt?.toISOString() ?? null,
+        createdAt: row.createdAt.toISOString(),
         costVersion: row.version,
         costRevisionId: row.id,
         invoiceAmount: row.invoiceAmount.toString(),
         currencyCode: row.currencyCode,
         seatCount: row.seatCount,
         unitCost: row.unitCost?.toString() ?? null,
-        paymentCount: row._count.payments,
-        paidAmount: latest?.cumulativePaid.toString() ?? '0',
+        paymentCount: row.paymentCount,
+        paidAmount: row.cumulativePaid?.toString() ?? '0',
         remainingAmount:
-          latest?.remainingAmount.toString() ?? row.invoiceAmount.toString(),
-        status: latest ? 'PAYING' : 'READY_FOR_PAYMENT',
+          row.remainingAmount?.toString() ?? row.invoiceAmount.toString(),
+        status: row.paymentCount ? 'PAYING' : 'READY_FOR_PAYMENT',
       });
     }
     return states;
