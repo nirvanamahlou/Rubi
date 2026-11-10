@@ -55,6 +55,7 @@ export const DOCUMENT_PERSONAL_VIEW_CODES = [
   'OWNED',
   'UPLOADED',
   'RECENTLY_VIEWED',
+  'FAVORITES',
 ] as const;
 export type DocumentPersonalViewCode =
   (typeof DOCUMENT_PERSONAL_VIEW_CODES)[number];
@@ -86,6 +87,8 @@ export interface DocumentListQueryV1 {
   categoryId?: string;
   branchId?: string;
   domain?: DocumentDomainCode;
+  /** Comma-separated archive domains; intersected with authorized domains. */
+  domains?: string;
   archiveStatus?: DocumentArchiveStatusCode;
   scanStatus?: DocumentScanStatusCode;
   validity?: DocumentValidityFilter;
