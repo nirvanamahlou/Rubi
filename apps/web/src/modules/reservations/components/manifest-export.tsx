@@ -20,6 +20,21 @@ import { ManifestReferenceFilter } from './manifest-reference-filter';
 import { manifestReferenceQuery } from './manifest-reference-filter';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import styles from './manifest-export.module.css';
+import { ManifestTemplatePicker } from '@/modules/ticket-catalog/components/manifest-template-picker';
+async function loadManifestTemplates(search: string, page: number) {
+  const base = getPublicApiBaseUrl();
+  if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
+  const response = await authenticatedFetch(
+    base,
+    '/reservations/manifests/templates?' +
+      new URLSearchParams({ search, page: String(page) }),
+  );
+  if (!response.ok) throw new Error('دریافت قالب‌ها ناموفق بود.');
+  return response.json() as Promise<{
+    data: { id: string; name: string }[];
+    hasMore: boolean;
+  }>;
+}
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -204,6 +219,9 @@ export function ManifestExport() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
+  const [templateOverrides, setTemplateOverrides] = useState<
+    Record<string, { id: string | null; name: string }>
+  >({});
   const downloadKeys = useRef(new Map<string, string>());
   const downloading = useRef(false);
   const [errorOfferId, setErrorOfferId] = useState('');
@@ -277,7 +295,12 @@ export function ManifestExport() {
   };
 
   async function download(ticket: ReservationManifestTicketCardV1) {
-    if (!ticket.template || busy || downloading.current) return;
+    if (
+      (!ticket.template && !templateOverrides[ticket.offerId]?.id) ||
+      busy ||
+      downloading.current
+    )
+      return;
     setErrorOfferId(ticket.offerId);
     const base = getPublicApiBaseUrl();
     if (!base) {
@@ -294,6 +317,9 @@ export function ManifestExport() {
         await requestManifestDownload(
           {
             offerId: ticket.offerId,
+            ...(templateOverrides[ticket.offerId]?.id
+              ? { manifestTemplateId: templateOverrides[ticket.offerId]!.id! }
+              : {}),
             ...searchedDates,
             includePreviouslyExported,
           },
@@ -322,7 +348,9 @@ export function ManifestExport() {
           ' قرارداد و ' +
           passengers +
           ' مسافر در قالب «' +
-          ticket.template.name +
+          (templateOverrides[ticket.offerId]?.id
+            ? templateOverrides[ticket.offerId]!.name
+            : ticket.template?.name || '') +
           '» آماده شد' +
           (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
           (warnings !== '0'
@@ -551,16 +579,37 @@ export function ManifestExport() {
                           {ticket.passengerCount} مسافر
                         </td>
                         <td>
-                          {ticket.template
-                            ? ticket.template.name +
-                              ' · نسخه ' +
-                              ticket.template.versionNumber
-                            : ticket.unavailableReason}
+                          <ManifestTemplatePicker
+                            id={'manifest-template-' + ticket.offerId}
+                            value={
+                              templateOverrides[ticket.offerId]?.id ?? null
+                            }
+                            name={templateOverrides[ticket.offerId]?.name}
+                            readOnly={Boolean(busy)}
+                            loadOptions={loadManifestTemplates}
+                            onChange={(id, name) =>
+                              setTemplateOverrides((current) => ({
+                                ...current,
+                                [ticket.offerId]: { id, name },
+                              }))
+                            }
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {ticket.template
+                              ? ticket.template.name +
+                                ' · نسخه ' +
+                                ticket.template.versionNumber
+                              : ticket.unavailableReason}
+                          </span>
                         </td>
                         <td>
                           <Button
                             type="button"
-                            disabled={!ticket.template || Boolean(busy)}
+                            disabled={
+                              (!ticket.template &&
+                                !templateOverrides[ticket.offerId]?.id) ||
+                              Boolean(busy)
+                            }
                             onClick={() => void download(ticket)}
                           >
                             {busy === ticket.offerId

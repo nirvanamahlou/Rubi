@@ -647,6 +647,23 @@ export class ReservationManifestService {
     return rows;
   }
 
+  async templateChoices(
+    search: string,
+    page: number,
+    actor: AuthenticatedActor,
+  ) {
+    this.requirePermissions(actor);
+    if (
+      typeof search !== 'string' ||
+      search.length > 160 ||
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 10000
+    )
+      throw new BadRequestException('فیلتر قالب منیفست معتبر نیست.');
+    return this.directory.manifestTemplateChoices(search, page);
+  }
+
   async exportTicket(
     offerId: string,
     input: ReservationManifestTicketExportInputV1,
@@ -664,9 +681,23 @@ export class ReservationManifestService {
     if (!group)
       throw new BadRequestException('بلیط انتخاب‌شده در این بازه وجود ندارد.');
     const ticket = group.ticket;
-    const template =
-      ticket.transportType === 'FLIGHT' &&
-      ticket.flightSupplyType !== 'FLOATING'
+    if (
+      input.manifestTemplateId !== undefined &&
+      (typeof input.manifestTemplateId !== 'string' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          input.manifestTemplateId,
+        ))
+    )
+      throw new BadRequestException(
+        'قالب منیفست انتخاب‌شده فعال یا معتبر نیست.',
+      );
+    const template = input.manifestTemplateId
+      ? await this.directory.manifestTemplateById(
+          input.manifestTemplateId,
+          tehranDay(ticket.departureAt),
+        )
+      : ticket.transportType === 'FLIGHT' &&
+          ticket.flightSupplyType !== 'FLOATING'
         ? await this.selectedTemplate(
             offerId,
             actor,
@@ -676,7 +707,12 @@ export class ReservationManifestService {
     if (template && !this.documents)
       throw new BadRequestException('سرویس فایل قالب MANIFEST آماده نیست.');
 
-    const persistedKey = 'ticket:' + offerId + ':' + idempotencyKey.trim();
+    const persistedKey =
+      'ticket:' +
+      offerId +
+      ':' +
+      idempotencyKey.trim() +
+      (input.manifestTemplateId ? ':' + input.manifestTemplateId : '');
     const existing =
       await this.database.client.reservationManifestExport.findUnique({
         where: {
@@ -1180,6 +1216,16 @@ export class ReservationManifestBatchController {
     @Inject(ReservationManifestService)
     private readonly service: ReservationManifestService,
   ) {}
+
+  @Get('templates')
+  @Header('Cache-Control', 'private, no-store')
+  templates(
+    @Query('search') search: string = '',
+    @Query('page') page: string = '1',
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.templateChoices(search, Number(page), req.actor);
+  }
 
   @Get('routes')
   @Header('Cache-Control', 'private, no-store')

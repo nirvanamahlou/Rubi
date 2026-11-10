@@ -9656,3 +9656,7 @@ FINANCE-DETAILS-NEXT-TO-AMOUNT-1109 places General Details next to the amount on
 ## HR-RADAN-PRODUCTION-1101 — DEPLOYED
 
 Merged Radan attendance integration is active on Avina with Tehran quarter-hour peak/full-hour off-peak slots. Initial72 real punches yield43 daily summaries; automatic17:00 run verifies idempotence and next17:15 slot. Public HTTPS health/authenticated status/HR200, preserved Call Center code and unchanged Worker image/data services verified after encrypted/offsite backups. Exact native codes and existing working hours retained; one unmatched source punch remains unresolved. Company workstation bridge must stay running. No migration, grants or Radan writes. See tasks/HR-RADAN-PRODUCTION-1101.md.
+
+## MANIFEST-TEMPLATE-PICKER-1110 — PC-A — READY_FOR_CI
+
+Per-ticket export template override uses the same published Master Data projection through an existing Reservations permission boundary; omitted override preserves the ticket-defined default. Every chosen template is validated server-side for active publication, XLSX file and travel date and read only through Documents. Request-key scope includes explicit template identity, preserving legacy default keys. The shared ticket/export picker now reads all pages rather than silently truncating after25 choices. Existing registered ticket selection remains unchanged by one-off export. No schema, dependencies, business data or deployment changes; exact-head full hosted gates precede owner-authorized develop merge. Source lease releases on verified merge.

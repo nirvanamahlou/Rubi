@@ -42,6 +42,7 @@ export async function manifestResponseError(
 export async function requestManifestDownload(
   input: {
     offerId: string;
+    manifestTemplateId?: string;
     fromDate: string;
     toDate: string;
     includePreviouslyExported: boolean;
@@ -52,6 +53,7 @@ export async function requestManifestDownload(
   const exportFile = (includeAll: boolean) => {
     const scope = [
       input.offerId,
+      ...(input.manifestTemplateId ? [input.manifestTemplateId] : []),
       input.fromDate,
       input.toDate,
       includeAll ? 'all' : 'new',
@@ -69,6 +71,9 @@ export async function requestManifestDownload(
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
         body: JSON.stringify({
+          ...(input.manifestTemplateId
+            ? { manifestTemplateId: input.manifestTemplateId }
+            : {}),
           fromDate: input.fromDate,
           toDate: input.toDate,
           includePreviouslyExported: includeAll,

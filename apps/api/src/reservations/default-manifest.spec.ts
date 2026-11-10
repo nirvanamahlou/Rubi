@@ -683,3 +683,43 @@ it('loads route choices before search without reading passengers or Finance', as
     f.service.listRoutes({ ...(actor as object), permissions: [] } as never),
   ).rejects.toThrow('مجوز');
 });
+
+it('validates and renders an explicit published template without changing the ticket selection', async () => {
+  const f = fixture();
+  const id = '10000000-0000-4000-8000-000000000009';
+  f.documents.readManifestTemplateReference.mockResolvedValue({
+    stream: Readable.from([
+      await readFile(
+        join(__dirname, 'templates', 'iran-airtour-antalya-pax-list.xlsx'),
+      ),
+    ]),
+  });
+  await f.service.exportTicket(
+    'offer',
+    { ...range, manifestTemplateId: id },
+    'override',
+    actor,
+  );
+  expect(f.directory.manifestTemplateById).toHaveBeenCalledWith(
+    id,
+    '2026-10-01',
+  );
+  expect(f.documents.readManifestTemplateReference).toHaveBeenCalled();
+  await expect(
+    f.service.exportTicket(
+      'offer',
+      { ...range, manifestTemplateId: '../file' },
+      'invalid',
+      actor,
+    ),
+  ).rejects.toThrow();
+  f.directory.manifestTemplateById.mockRejectedValue(new Error('inactive'));
+  await expect(
+    f.service.exportTicket(
+      'offer',
+      { ...range, manifestTemplateId: id },
+      'inactive',
+      actor,
+    ),
+  ).rejects.toThrow('inactive');
+});
