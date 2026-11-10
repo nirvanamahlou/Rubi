@@ -134,8 +134,9 @@ export function CombinedHotelPackages({
                       <option value="">انتخاب نوع اتاق و ترکیب نفرات</option>
                       {selected?.prices.map((p) => (
                         <option key={p.roomCode} value={p.roomCode}>
-                          {p.roomTypeName} · {packageRoomTitle(p.roomCode)} ·{' '}
-                          {p.hotelPurchase} {p.currencyCode}
+                          {p.roomTypeName} {p.board ? `· ${p.board}` : ''} ·{' '}
+                          {packageRoomTitle(p.roomCode)} · {p.hotelPurchase}{' '}
+                          {p.currencyCode}
                         </option>
                       ))}
                     </NativeSearchSelect>

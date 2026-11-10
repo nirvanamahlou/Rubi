@@ -665,7 +665,20 @@ export function TourWorkspace({
                 value={draft}
                 countries={references.countries}
                 cities={references.cities}
-                onChange={setDraft}
+                onChange={(value) => {
+                  if (value.destinationId === draft.destinationId) {
+                    setDraft(value);
+                    return;
+                  }
+                  const details = { ...value.details, version: 1 as const };
+                  const code = defaultTourAirport(
+                    value.destinationId,
+                    references.airports,
+                  );
+                  if (code) details.destinationAirportCode = code;
+                  else delete details.destinationAirportCode;
+                  setDraft({ ...value, details });
+                }}
               />
               <TourDetailsForm
                 value={draft.details ?? { version: 1 }}

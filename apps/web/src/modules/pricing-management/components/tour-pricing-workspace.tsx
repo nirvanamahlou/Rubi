@@ -1039,7 +1039,12 @@ export function TourPricingWorkspace() {
             grid={grid}
             value={hotelCombinations}
             onChange={setHotelCombinations}
-            disabled={saving}
+            disabled={
+              saving ||
+              !session?.user.permissions.includes(
+                'package_pricing.period.manage',
+              )
+            }
           />
         ) : null}
         <TourPriceFields
