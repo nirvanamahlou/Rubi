@@ -1291,6 +1291,10 @@ COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after
 
 Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatting, i18n, Web/API types and builds pass. Docker Web3100/API4192 are healthy on rubi-integrations-local:1017-site-onboarding-v2 with unchanged schema, no migration/seed and retained volumes. Browser verified direct entry, inline brand, Back retention, loopback rejection, actual existing-system save/audit, light/dark and mobile. No sample site or URL saved; four systems remain. Ready for local review; publication awaits a new explicit instruction.
 
+## SALES-REPORT-SOURCE-PAGES-1111
+
+Read Sales report contracts and their relations in cursor batches of 500 within the existing reporting snapshot. Resolve reservation cancellation and project contract/currency rows per batch. Report sorting and grouping still consume the projected rows.
+
 ## FINANCE-FX-PAGE-1110 (PC-B)
 
 Reserve Finance inbox page assembly, FX display enrichment timing and focused tests. Preserve query semantics, summary counts and all existing authorization and Finance commands. No contract, schema, dependency or deployment change.
