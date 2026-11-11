@@ -9955,3 +9955,7 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
+
+NORA-CONTRACT-GUIDE: local implementation of sales guidance and authorized contract read assistance; seven focused tests pass, scoped lint passes. Full diagnostic validation and browser acceptance remain pending.
+
+NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form validation guidance and authenticated contract inspection are implemented. 122 regressions, scoped lint, Web TypeScript and production build pass. Deployed authenticated browser acceptance is pending. See docs/tasks/NORA-CONTRACT-GUIDE.md.

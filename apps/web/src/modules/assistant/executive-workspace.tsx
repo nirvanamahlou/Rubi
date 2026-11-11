@@ -1,4 +1,8 @@
 'use client';
+import { usePathname } from 'next/navigation';
+import { readContractFormHelp } from './contract-form-help';
+import { inspectContractQuestion } from './contract-inspection';
+import { contractGuideAnswer } from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import { explainPersonal } from './recommendation-policy';
@@ -234,7 +238,7 @@ export function AssistantComposer({
 
   const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string }>
+    Array<{ role: 'user' | 'assistant'; content: string; local?: boolean }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const [actionResult, setActionResult] =
@@ -242,6 +246,11 @@ export function AssistantComposer({
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
     null,
   );
+  const pathname = usePathname();
+  const contractId = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    contractId.current = undefined;
+  }, [pathname]);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const prompts: readonly [AssistantText, AssistantAction][] = [
@@ -287,6 +296,63 @@ export function AssistantComposer({
   const submit = async () => {
     if (denied || !draft.trim() || actionState === 'loading') return;
     const message = draft.trim();
+    const formHelp = readContractFormHelp(message);
+    if (formHelp) {
+      setMessages((previous) =>
+        [
+          ...previous,
+          { role: 'user' as const, content: message, local: true },
+          { role: 'assistant' as const, content: formHelp, local: true },
+        ].slice(-12),
+      );
+      setChatError(null);
+      setActionResult(null);
+      setDraft('');
+      return;
+    }
+    pending.current?.abort();
+    const inspectionController = new AbortController();
+    pending.current = inspectionController;
+    setActionState('loading');
+    const inspection = await inspectContractQuestion(
+      message,
+      document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
+        .noraContractId ?? contractId.current,
+    );
+    if (inspectionController.signal.aborted) return;
+    setActionState(null);
+    if (inspection) {
+      contractId.current = inspection.contractId;
+      setMessages((previous) =>
+        [
+          ...previous,
+          { role: 'user' as const, content: message, local: true },
+          { role: 'assistant' as const, content: inspection.text, local: true },
+        ].slice(-12),
+      );
+      setChatError(null);
+      setActionResult(null);
+      setDraft('');
+      return;
+    }
+    const guide = contractGuideAnswer(
+      message,
+      window.location.pathname === '/sales' ||
+        window.location.pathname.startsWith('/sales/contracts/'),
+    );
+    if (guide) {
+      setMessages((previous) =>
+        [
+          ...previous,
+          { role: 'user' as const, content: message, local: true },
+          { role: 'assistant' as const, content: guide, local: true },
+        ].slice(-12),
+      );
+      setChatError(null);
+      setActionResult(null);
+      setDraft('');
+      return;
+    }
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
@@ -303,6 +369,7 @@ export function AssistantComposer({
           version: 1,
           message,
           history: messages
+            .filter((item) => !item.local)
             .slice(-12)
             .map((item) => ({ ...item, content: item.content.slice(0, 1000) })),
         }),
