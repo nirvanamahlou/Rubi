@@ -9971,3 +9971,7 @@ NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form v
 ## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
 
 Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B
+
+HR leave policies support an optional per-request hourly limit in minutes. Existing policies without a limit keep their previous behavior. 61 focused API and Web tests passed.

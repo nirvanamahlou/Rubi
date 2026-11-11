@@ -12462,3 +12462,7 @@ NORA-CONTRACT-GUIDE validation: 85 assistant and 37 Sales regressions pass; scop
 Reserve job title table action icons.
 
 NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels and generated API/standalone English catalogues required by the existing completeness gate. No operational API behavior changes.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B — READY_FOR_CI
+
+Add a per-request hourly leave limit to HR policy records and validate submissions and approvals.
