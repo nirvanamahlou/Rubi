@@ -9929,6 +9929,9 @@ Employee pay views now support restricted archived evidence with title, date, ar
 
 SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
 
+## MANIFEST-REMOVE-CODE-BOX-1110
+
+Default PNL export no longer contains the System Acceptable Code form button. Workbook columns, data mapping, help sheets and XLSM project remain unchanged. Focused workbook export checks and hosted CI precede authorized develop merge; no deployment.
 HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
 
 WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
