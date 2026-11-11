@@ -64,6 +64,7 @@ import {
 } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
+import type { StagedDocumentFile } from './document-multipart.interceptor';
 import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   MAX_DOCUMENT_SIZE_BYTES,
@@ -180,8 +181,7 @@ const validSortFields = new Set<DocumentSortCode>([
   'sizeBytes',
 ]);
 
-function detectMimeType(file: UploadedDocumentFile): string {
-  const bytes = file.buffer;
+function detectMimeType(bytes: Buffer, declaredMimeType: string): string {
   const spreadsheet = spreadsheetFileType(bytes);
   if (spreadsheet) return spreadsheet;
   if (bytes.subarray(0, 4).equals(Buffer.from('%PDF')))
@@ -198,14 +198,14 @@ function detectMimeType(file: UploadedDocumentFile): string {
   if (
     bytes[0] === 0x50 &&
     bytes[1] === 0x4b &&
-    file.mimetype.includes('wordprocessingml')
+    declaredMimeType.includes('wordprocessingml')
   )
-    return file.mimetype;
+    return declaredMimeType;
   if (
-    file.mimetype.startsWith('text/') &&
+    declaredMimeType.startsWith('text/') &&
     !bytes.subarray(0, Math.min(bytes.length, 1024)).includes(0)
   )
-    return file.mimetype;
+    return declaredMimeType;
   return 'application/octet-stream';
 }
 
@@ -1513,7 +1513,7 @@ export class DocumentsService {
   }
   incomingUpload(
     dto: DocumentUploadDto,
-    file: UploadedDocumentFile | undefined,
+    file: UploadedDocumentFile | StagedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ) {
@@ -2067,7 +2067,7 @@ export class DocumentsService {
 
   async upload(
     dto: DocumentUploadDto,
-    file: UploadedDocumentFile | undefined,
+    file: UploadedDocumentFile | StagedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
     scanPolicy?: typeof masterDataLogoScanExemption,
@@ -2175,8 +2175,19 @@ export class DocumentsService {
         'تاریخ اعتبار برای این نوع سند الزامی است.',
       );
     }
-    const detectedMimeType = detectMimeType(file);
-    const sha256 = createHash('sha256').update(file.buffer).digest('hex');
+    const staged = 'staged' in file ? file.staged : undefined;
+    const prefix = 'buffer' in file ? file.buffer : file.staged.prefix;
+    // ZIP and OLE use the existing full-container workbook validation.
+    const inspectContainer =
+      staged &&
+      ((prefix[0] === 0x50 && prefix[1] === 0x4b) ||
+        (prefix[0] === 0xd0 && prefix[1] === 0xcf));
+    const inspected = inspectContainer
+      ? await this.storage.readQuarantined(staged.objectKey, file.size)
+      : prefix;
+    const detectedMimeType = detectMimeType(inspected, file.mimetype);
+    const sha256 =
+      staged?.sha256 ?? createHash('sha256').update(prefix).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
     const uploadPolicy = await this.configuredUploadPolicy(dto.branchId);
     const maxDocumentSizeBytes = uploadPolicy.maxFileSizeBytes;
@@ -2187,7 +2198,7 @@ export class DocumentsService {
         detectedMimeType,
         sizeBytes: file.size,
         sha256,
-        magicBytes: [...file.buffer.subarray(0, 16)],
+        magicBytes: [...prefix.subarray(0, 16)],
         ...(openXml
           ? { archiveEntryCount: 1, archiveUncompressedBytes: file.size }
           : {}),
@@ -2208,9 +2219,10 @@ export class DocumentsService {
         errors: validation.errors,
       });
     }
-    const documentId = randomUUID();
+    const documentId = staged?.documentId ?? randomUUID();
     const versionId = randomUUID();
-    const storageObjectKey = `documents/${documentId}/v1/${randomUUID()}.bin`;
+    const storageObjectKey =
+      staged?.objectKey ?? `documents/${documentId}/v1/${randomUUID()}.bin`;
     const configuredAccess = this.settings
       ? await this.settings.json<{ classification?: unknown }>(
           'documents',
@@ -2243,7 +2255,9 @@ export class DocumentsService {
     const confidentialCode = dto.confidentialAccessCode
       ? await hashConfidentialCode(dto.confidentialAccessCode)
       : null;
-    await this.storage.putQuarantined(storageObjectKey, file.buffer);
+    if ('buffer' in file)
+      await this.storage.putQuarantined(storageObjectKey, file.buffer);
+    let committed = false;
     try {
       const row = await this.repository.createUploaded({
         documentId,
@@ -2283,6 +2297,8 @@ export class DocumentsService {
           ? { skipAntivirusForMasterDataLogo: true }
           : {}),
       });
+      committed = true;
+      if (staged) staged.retained = true;
       if (scanPolicy !== masterDataLogoScanExemption) {
         // Upload is already committed. A scanner/read failure must never
         // remove the private file needed by the durable scan retry.
@@ -2300,9 +2316,10 @@ export class DocumentsService {
       }
       return { data: this.mapDetail(row, actor) };
     } catch (error) {
-      await this.storage
-        .removeQuarantined(storageObjectKey)
-        .catch(() => undefined);
+      if (!committed)
+        await this.storage
+          .removeQuarantined(storageObjectKey)
+          .catch(() => undefined);
       throw error;
     }
   }

@@ -1116,6 +1116,10 @@ The native receipt/refund report consumes each cursor batch directly into the re
 
 CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
 
+## STREAM-DOCUMENT-MULTIPART-1111 — PC-B
+
+Archive and incoming multipart routes stream directly into an encrypted staged object while computing SHA-256 and retaining a bounded prefix. ZIP/OLE recognition still uses a full decrypted container and internal Buffer callers remain compatible. Existing multipart limits and rejected-request cleanup are covered by HTTP tests.
+
 ## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
 
 Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
