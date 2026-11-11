@@ -102,6 +102,10 @@ when only selected paths are addressed.
   pages. The existing per-source count limits and exact currency aggregation
   remain. Other native source paths still materialize their rows.
 
+- The notification feed groups unread counts by destination in PostgreSQL and
+  retrieves only the requested unread IDs. The existing route authorization,
+  exact count and priority for Call Center assignments apply in one snapshot.
+
 ## HR encryption configuration
 
 Existing ciphertext without a key identifier is read with the key named
