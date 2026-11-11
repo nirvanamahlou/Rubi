@@ -1,3 +1,4 @@
+import { contractGuidePath } from './contract-guides';
 import type { SalesContractDetail } from '@nora/contracts';
 
 const statuses: Record<string, string> = {
@@ -55,7 +56,11 @@ export function contractInspectionText(data: SalesContractDetail): string {
         `ارز ${balance.currencyCode}، مبلغ ${balance.amount}، وصول تأییدشده ${balance.confirmedPaid}، در انتظار مالی ${balance.pendingFinance}، مانده ${balance.outstanding}`,
     ),
     next,
-    'مسیر بررسی و اصلاح، فروش و ارتباط با مشتری ← قراردادها ← پرونده قرارداد',
+    contractGuidePath([
+      'فروش و ارتباط با مشتری',
+      'قرارداد',
+      'ردیف قرارداد موردنظر',
+    ]),
     `آخرین تغییر قرارداد ${data.updatedAt}`,
   ].join('\n');
 }

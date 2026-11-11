@@ -1,13 +1,14 @@
-import { contractGuideAnswer } from './contract-guides';
+import {
+  contractGuideAnswer,
+  normalizeContractQuestion,
+} from './contract-guides';
 import { contractInspectionText } from './contract-inspection-text';
 
 export async function inspectContractQuestion(
   message: string,
   previousId?: string,
 ): Promise<{ text: string; contractId?: string } | undefined> {
-  const normalized = message.replace(/[۰-۹]/g, (digit) =>
-    String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)),
-  );
+  const normalized = normalizeContractQuestion(message);
   const reference = normalized.match(
     /قرارداد\s*(?:شماره\s*)?([A-Za-z0-9][A-Za-z0-9/-]*)/u,
   )?.[1];
@@ -16,7 +17,9 @@ export async function inspectContractQuestion(
     ?.trim();
   const followup =
     previousId &&
-    /کجا|اصلاح|وضعیت|حالا|بررسی|مانع|چرا|این قرارداد/.test(normalized);
+    /کجا|اصلاح|وضعیت|حالا|بررسی|مانع|چرا|این قرارداد|بعدش|بعد از این|ادامه|پیگیریش/.test(
+      normalized,
+    );
   if (!reference && !customerSearch && !followup) return;
   const { salesApi, SalesApiError } =
     await import('@/modules/sales/api/client');
@@ -45,7 +48,12 @@ export async function inspectContractQuestion(
     const { data } = await salesApi.detail(id);
     return {
       contractId: id,
-      text: [contractInspectionText(data), contractGuideAnswer(message, true)]
+      text: [
+        contractInspectionText(data),
+        /چطور|چجور|چگونه|کجا|مراحل|نحوه|راهنما/.test(message)
+          ? contractGuideAnswer(message, true, true)
+          : undefined,
+      ]
         .filter(Boolean)
         .join('\n'),
     };
