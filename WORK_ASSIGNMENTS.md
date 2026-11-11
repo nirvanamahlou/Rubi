@@ -1383,6 +1383,10 @@ Reserve receipt and refund report paging and its cursor regression. Read each ev
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
 
+## FINANCE-PURCHASE-TRANSPORT-1111 — PC-B — READY_FOR_CI
+
+Reserve browser API adapters for the Finance inbox, Procurement, and Reservation purchases. Reuse the existing authenticated transport while preserving headers, cancellation, retry and error semantics.
+
 ## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B — READY_FOR_CI
 
 Reserve the shared browser transport, Documents, Customers and Correspondence API adapters, and focused regressions. Preserve request payloads, domain errors, file cancellation and existing timeout behavior.

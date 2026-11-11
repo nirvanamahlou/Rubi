@@ -1,5 +1,5 @@
 'use client';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 
 import type {
   FinanceHistoryQueryV1,
@@ -24,7 +24,7 @@ import type {
   HrConnectionDecision,
 } from '@nora/contracts';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { SessionRefreshUnavailableError } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export class FinanceInboxApiError extends Error {
@@ -39,12 +39,12 @@ export class FinanceInboxApiError extends Error {
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
-  retried = false,
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new FinanceInboxApiError('نشانی API کارتابل مالی تنظیم نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}${path}`, {
+  const response = await authenticatedFetch(`${baseUrl}${path}`, baseUrl, {
+    timeoutMs: null,
     ...init,
     credentials: 'include',
     cache: 'no-store',
@@ -53,18 +53,13 @@ export async function apiRequest<T>(
       ...(init.body ? { 'content-type': 'application/json' } : {}),
       ...init.headers,
     },
-  }).catch(() => {
+  }).catch((error: unknown) => {
+    if (error instanceof SessionRefreshUnavailableError) throw error;
     throw new FinanceInboxApiError(
       'ارتباط با سرور برقرار نشد؛ دوباره تلاش کنید.',
       0,
     );
   });
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
-    return apiRequest(path, init, true);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;

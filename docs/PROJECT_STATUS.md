@@ -5,6 +5,10 @@
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
 
 
+## FINANCE-PURCHASE-TRANSPORT-1111 — PC-B
+
+Finance Inbox, Procurement, and Reservation Purchases reuse the localized authenticated transport with their existing timeout policies. Finance regressions verify the same body and idempotency key on authentication retry and preserve the session-refresh outage error.
+
 ## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B
 
 Documents, Customers and Correspondence reuse the localized authenticated browser transport. Existing timeouts and domain responses are preserved. A cancelled document request is not replayed after session refresh. Thirty-nine focused Web tests and scoped ESLint passed.
