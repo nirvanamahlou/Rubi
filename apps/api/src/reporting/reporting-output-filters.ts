@@ -99,11 +99,10 @@ export function filterReportOutput(
       predicates.push((row) => selected.includes(valueOf(row, c.key)));
     }
   }
-  const rows = predicates.length
-    ? result.rows.filter((row) =>
-        predicates.every((predicate) => predicate(row)),
-      )
-    : result.rows;
+  const start = (query.page - 1) * query.pageSize;
+  const end = start + query.pageSize;
+  const pageRows: TravelReportResultV1['rows'][number][] = [];
+  let matchingCount = 0;
   const totals = new Map<
     string,
     Record<
@@ -115,8 +114,13 @@ export function filterReportOutput(
       Prisma.Decimal
     >
   >();
-  if (predicates.length && result.totalsByCurrency.length)
-    for (const row of rows) {
+  if (predicates.length)
+    for (const row of result.rows) {
+      if (!predicates.every((predicate) => predicate(row))) continue;
+      if (allRows || (matchingCount >= start && matchingCount < end))
+        pageRows.push(row);
+      matchingCount++;
+      if (!result.totalsByCurrency.length) continue;
       if (
         result.reportCode === 'sales_contract_pipeline' &&
         ![
@@ -153,13 +157,12 @@ export function filterReportOutput(
   return {
     ...result,
     columnFilters: definitions,
-    rows: allRows
-      ? rows
-      : rows.slice(
-          (query.page - 1) * query.pageSize,
-          query.page * query.pageSize,
-        ),
-    total: rows.length,
+    rows: predicates.length
+      ? pageRows
+      : allRows
+        ? result.rows
+        : result.rows.slice(start, end),
+    total: predicates.length ? matchingCount : result.rows.length,
     page: query.page,
     pageSize: query.pageSize,
     ...(predicates.length
