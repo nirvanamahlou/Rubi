@@ -12,6 +12,9 @@ import { concatMap } from 'rxjs';
 import { DatabaseService } from '../database/database.service';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 
+export const TELEPHONY_LEASE_ACTIVITY =
+  'POST /customer-affairs/call-center/telephony/lease';
+
 @Injectable()
 export class SystemActivityInterceptor implements NestInterceptor {
   private readonly logger = new Logger(SystemActivityInterceptor.name);
@@ -40,6 +43,8 @@ export class SystemActivityInterceptor implements NestInterceptor {
       .map((part) => part.replace(/^\/+|\/+$/g, ''))
       .filter(Boolean)
       .join('/');
+    if (`${request.method} /${path}` === TELEPHONY_LEASE_ACTIVITY)
+      return next.handle();
     const section = path.split('/')[0] ?? 'system-management';
 
     return next.handle().pipe(
