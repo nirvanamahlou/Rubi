@@ -81,6 +81,11 @@ when only selected paths are addressed.
   sorts those candidates. The legacy listing and export order are preserved.
   Source collection and deep offsets still need database-backed pagination.
 
+- The travel facts fallback folds eligibility, groups, currency totals,
+  filter options and source timestamp in one traversal. Its input can be a
+  single-use iterable. Database query batches and native source streaming
+  remain open.
+
 ## HR encryption configuration
 
 Existing ciphertext without a key identifier is read with the key named

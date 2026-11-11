@@ -1116,6 +1116,10 @@ Allow authenticated archive downloads and PDF previews while a scan is pending, 
 
 The Reports workspace now queues exports and retries in PostgreSQL, tracks status by owner, and downloads only once the file is ready. A database lease lets another API instance recover interrupted work and prevents an expired worker from publishing. The queue checks the current session, permissions, branch scope and report definition before generation. Session and access are checked again before publication. Ready artifacts and run status commit together. Existing synchronous API clients and stored artifacts retain their previous response shapes. Apply the additive reporting export queue migration before deploying the API, then deploy Web. Database-side row projection still materializes the selected report data before the rendering worker runs.
 
+## REPORT-FACT-AGGREGATION-1111 — PC-B
+
+The travel fallback groups eligible facts, accumulates exact currency totals, and derives filters and the source timestamp in one pass. Native timestamp maxima no longer expand all rows into function arguments. The fallback accepts an iterable, with database streaming still pending.
+
 ## REPORTING-FILTER-PROJECTION-1111
 
 Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
