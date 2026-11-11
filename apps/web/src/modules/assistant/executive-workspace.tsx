@@ -2,7 +2,10 @@
 import { usePathname } from 'next/navigation';
 import { readContractFormHelp } from './contract-form-help';
 import { inspectContractQuestion } from './contract-inspection';
-import { contractGuideAnswer } from './contract-guides';
+import {
+  normalizeContractQuestion,
+  resolveContractGuide,
+} from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import { explainPersonal } from './recommendation-policy';
@@ -248,8 +251,10 @@ export function AssistantComposer({
   );
   const pathname = usePathname();
   const contractId = useRef<string | undefined>(undefined);
+  const guideTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     contractId.current = undefined;
+    if (!pathname?.startsWith('/sales')) guideTopic.current = undefined;
   }, [pathname]);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
@@ -296,61 +301,60 @@ export function AssistantComposer({
   const submit = async () => {
     if (denied || !draft.trim() || actionState === 'loading') return;
     const message = draft.trim();
-    const formHelp = readContractFormHelp(message);
-    if (formHelp) {
+    const replyLocally = (content: string) => {
       setMessages((previous) =>
         [
           ...previous,
           { role: 'user' as const, content: message, local: true },
-          { role: 'assistant' as const, content: formHelp, local: true },
+          { role: 'assistant' as const, content, local: true },
         ].slice(-12),
       );
       setChatError(null);
       setActionResult(null);
+      setActionState(null);
       setDraft('');
+    };
+    const formHelp = readContractFormHelp(message);
+    if (formHelp) {
+      replyLocally(formHelp);
+      return;
+    }
+    const selectedContract =
+      document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
+        .noraContractId ?? contractId.current;
+    const guide = resolveContractGuide(
+      message,
+      pathname === '/sales' ||
+        Boolean(pathname?.startsWith('/sales/contracts/')),
+      guideTopic.current,
+    );
+    const recordFollowup =
+      selectedContract &&
+      /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
+        normalizeContractQuestion(message),
+      );
+    if (guide && !recordFollowup) {
+      guideTopic.current = guide.topicId;
+      if (guide.topicId === 'create') contractId.current = undefined;
+      replyLocally(guide.text);
       return;
     }
     pending.current?.abort();
     const inspectionController = new AbortController();
     pending.current = inspectionController;
     setActionState('loading');
-    const inspection = await inspectContractQuestion(
-      message,
-      document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
-        .noraContractId ?? contractId.current,
-    );
+    const inspection = await inspectContractQuestion(message, selectedContract);
     if (inspectionController.signal.aborted) return;
     setActionState(null);
     if (inspection) {
       contractId.current = inspection.contractId;
-      setMessages((previous) =>
-        [
-          ...previous,
-          { role: 'user' as const, content: message, local: true },
-          { role: 'assistant' as const, content: inspection.text, local: true },
-        ].slice(-12),
-      );
-      setChatError(null);
-      setActionResult(null);
-      setDraft('');
+      guideTopic.current = undefined;
+      replyLocally(inspection.text);
       return;
     }
-    const guide = contractGuideAnswer(
-      message,
-      window.location.pathname === '/sales' ||
-        window.location.pathname.startsWith('/sales/contracts/'),
-    );
     if (guide) {
-      setMessages((previous) =>
-        [
-          ...previous,
-          { role: 'user' as const, content: message, local: true },
-          { role: 'assistant' as const, content: guide, local: true },
-        ].slice(-12),
-      );
-      setChatError(null);
-      setActionResult(null);
-      setDraft('');
+      guideTopic.current = guide.topicId;
+      replyLocally(guide.text);
       return;
     }
     pending.current?.abort();
