@@ -1076,6 +1076,10 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## SALES-REPORT-SOURCE-PAGES-1111
+
+Read Sales report contracts and their relations in cursor batches of 500 within the existing reporting snapshot. Resolve reservation cancellation and project contract/currency rows per batch. Report sorting and grouping still consume the projected rows.
+
 ## FINANCE-FX-PAGE-1110
 
 Finance inbox pages load purchase FX evidence after applying filters, ordering and the page boundary. Out-of-range pages skip those reads, while summary counts still cover all filtered results and the legacy list retains FX evidence. All 73 focused tests passed. Source reads and totals still use the assembled queue, so end-to-end pagination remains open.
