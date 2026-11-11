@@ -59,8 +59,10 @@ when only selected paths are addressed.
   pass for bounded memory and preserve the existing encrypted file format.
   Antivirus jobs hash streamed plaintext while writing their private temporary
   input file. Uploads and the demo scanner still accept buffers. Storage writes
-  encrypt in 64 KiB chunks without copying the full ciphertext; the renderer
-  and multipart upload still produce buffered inputs.
+  encrypt in 64 KiB chunks without copying the full ciphertext. Both report
+  export paths now stream output from the rendering worker into this storage
+  writer. The worker sends one chunk at a time and waits for its consumption.
+  Report rows and multipart uploads still produce buffered inputs.
 - Ninety-nine focused Documents and Reporting tests passed. The tests cover
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store

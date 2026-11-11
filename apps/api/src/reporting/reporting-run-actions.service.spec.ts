@@ -101,8 +101,7 @@ describe('Reporting form action history', () => {
     const service = new ReportingService(
       repo as never,
       {
-        buildInWorker: vi.fn(),
-        store: vi.fn(),
+        buildAndStore: vi.fn(),
         read: vi.fn(),
       } as never,
     );
@@ -149,12 +148,11 @@ describe('Reporting form action history', () => {
   it('uses the published report export retention when the file is completed', async () => {
     const repo = repository();
     const files = {
-      buildInWorker: vi.fn().mockResolvedValue({
-        extension: 'csv',
-        buffer: Buffer.from('report'),
+      buildAndStore: vi.fn().mockResolvedValue({
+        objectKey: 'reports/export.bin',
+        sizeBytes: 6,
         checksum: 'checksum',
       }),
-      store: vi.fn().mockResolvedValue('reports/export.bin'),
       read: vi.fn(),
     };
     const settings = {

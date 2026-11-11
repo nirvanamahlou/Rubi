@@ -1579,19 +1579,15 @@ export class ReportingService {
       throw new BadRequestException(
         `حداکثر ${configuredLimit} ردیف را می‌توان در یک خروجی دریافت کرد.`,
       );
-    const file = await this.exportFiles.buildInWorker(
+    const file = await this.exportFiles.buildAndStore(
+      artifactId,
       format,
       result,
       report.title,
     );
-    const objectKey = await this.exportFiles.store(
-      artifactId,
-      file.extension,
-      file.buffer,
-    );
     return {
-      objectKey,
-      sizeBytes: file.buffer.length,
+      objectKey: file.objectKey,
+      sizeBytes: file.sizeBytes,
       checksum: file.checksum,
       expiryDays,
       recordCount: result.total,
@@ -1736,20 +1732,16 @@ export class ReportingService {
       };
     }
     try {
-      const file = await this.exportFiles.buildInWorker(
+      const file = await this.exportFiles.buildAndStore(
+        String(artifact.id),
         input.format,
         result,
         report.title,
       );
-      const objectKey = await this.exportFiles.store(
-        String(artifact.id),
-        file.extension,
-        file.buffer,
-      );
       await this.repository.finishExport(
         String(artifact.id),
-        objectKey,
-        file.buffer.length,
+        file.objectKey,
+        file.sizeBytes,
         file.checksum,
         expiryDays,
       );
@@ -1761,8 +1753,8 @@ export class ReportingService {
       return {
         ...artifact,
         status: 'READY',
-        objectKey,
-        sizeBytes: file.buffer.length,
+        objectKey: file.objectKey,
+        sizeBytes: file.sizeBytes,
         checksumSha256: file.checksum,
       };
     } catch (error) {

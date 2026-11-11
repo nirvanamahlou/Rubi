@@ -44,7 +44,13 @@ function csvCell(value: unknown) {
   return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
-function csv(result: ReportExportInput, reportName: string) {
+type ReportChunkWriter = (chunk: Uint8Array) => void;
+
+function csv(
+  result: ReportExportInput,
+  reportName: string,
+  write: ReportChunkWriter,
+) {
   const metadata = [
     ['نام گزارش', reportName],
     ['کد گزارش', result.reportCode],
@@ -58,7 +64,7 @@ function csv(result: ReportExportInput, reportName: string) {
     '',
     result.columns.map((column) => csvCell(column.label)).join(','),
   );
-  const chunks = [Buffer.from('\uFEFF' + lines.join('\r\n'), 'utf8')];
+  write(Buffer.from('\uFEFF' + lines.join('\r\n'), 'utf8'));
   lines.length = 0;
   for (const row of result.rows) {
     lines.push(
@@ -72,13 +78,11 @@ function csv(result: ReportExportInput, reportName: string) {
         .join(','),
     );
     if (lines.length === 256) {
-      chunks.push(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
+      write(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
       lines.length = 0;
     }
   }
-  if (lines.length)
-    chunks.push(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
-  return chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks);
+  if (lines.length) write(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
 }
 
 const exportFilterLabels: Readonly<Record<string, string>> = {
@@ -240,7 +244,11 @@ function excelTableColumnNames(
   });
 }
 
-function xlsx(result: ReportExportInput, reportName: string) {
+function xlsx(
+  result: ReportExportInput,
+  reportName: string,
+  write: ReportChunkWriter,
+) {
   const filters = exportFilterEntries(result);
   const generatedAt = reportGeneratedAtTehran(result.generatedAtUtc);
   const tableColumnNames = excelTableColumnNames(result.columns);
@@ -353,10 +361,9 @@ function xlsx(result: ReportExportInput, reportName: string) {
       `<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="ReportData" displayName="ReportData" ref="A7:${excelColumn(result.columns.length - 1)}${rowCount}" totalsRowShown="0"><autoFilter ref="A7:${excelColumn(result.columns.length - 1)}${rowCount}"/><tableColumns count="${result.columns.length}">${tableColumnNames.map((name, index) => `<tableColumn id="${index + 1}" name="${escapeXml(name)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`,
     ),
   };
-  const chunks: Uint8Array[] = [];
   const zip = new Zip((error, bytes) => {
     if (error) throw error;
-    chunks.push(bytes);
+    write(bytes);
   });
   for (const [name, bytes] of Object.entries(files)) {
     const entry = new ZipDeflate(name, { level: 6 });
@@ -391,7 +398,6 @@ function xlsx(result: ReportExportInput, reportName: string) {
     true,
   );
   zip.end();
-  return Buffer.concat(chunks);
 }
 
 function pdf(result: ReportExportInput, reportName: string) {
@@ -426,27 +432,40 @@ function pdf(result: ReportExportInput, reportName: string) {
   return Buffer.from(body, 'binary');
 }
 
-export function build(
+export function renderReport(
   format: 'CSV' | 'XLSX' | 'PDF',
   result: ReportExportInput,
   reportName: string,
+  write: ReportChunkWriter,
 ) {
-  const buffer =
-    format === 'CSV'
-      ? csv(result, reportName)
-      : format === 'XLSX'
-        ? xlsx(result, reportName)
-        : pdf(result, reportName);
-  const extension = format.toLowerCase();
+  const hash = createHash('sha256');
+  const emit: ReportChunkWriter = (bytes) => {
+    hash.update(bytes);
+    if (bytes.length) write(bytes);
+  };
+  if (format === 'CSV') csv(result, reportName, emit);
+  else if (format === 'XLSX') xlsx(result, reportName, emit);
+  else emit(pdf(result, reportName));
   return {
-    buffer,
     contentType:
       format === 'CSV'
         ? 'text/csv; charset=utf-8'
         : format === 'XLSX'
           ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           : 'application/pdf',
-    extension,
-    checksum: createHash('sha256').update(buffer).digest('hex'),
+    extension: format.toLowerCase(),
+    checksum: hash.digest('hex'),
   };
+}
+
+export function build(
+  format: Parameters<typeof renderReport>[0],
+  result: ReportExportInput,
+  reportName: string,
+) {
+  const chunks: Uint8Array[] = [];
+  const metadata = renderReport(format, result, reportName, (chunk) =>
+    chunks.push(chunk),
+  );
+  return { ...metadata, buffer: Buffer.concat(chunks) };
 }

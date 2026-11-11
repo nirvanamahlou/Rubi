@@ -1307,6 +1307,10 @@ Read Sales report contracts and their relations in cursor batches of 500 within 
 
 Reserve Finance inbox page assembly, FX display enrichment timing and focused tests. Preserve query semantics, summary counts and all existing authorization and Finance commands. No contract, schema, dependency or deployment change.
 
+## REPORT-WORKER-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve report worker rendering, output transfer and artifact storage integration. Keep both report entry points, format fidelity, checksums and retention.
+
 ## REPORTING-WORKER-INPUT-1111
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
