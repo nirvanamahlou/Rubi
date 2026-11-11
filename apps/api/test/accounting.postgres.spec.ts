@@ -1,3 +1,7 @@
+import {
+  accountingTestUrl,
+  assertAccountingTestDatabase,
+} from './accounting-test-database';
 import { randomUUID } from 'node:crypto';
 import {
   beforeAll,
@@ -21,7 +25,7 @@ import { AccountingService } from '../src/finance/accounting/accounting.service'
 import { MasterDataService } from '../src/master-data/master-data.service';
 import { MasterDataRepository } from '../src/master-data/master-data.repository';
 
-const url = process.env.ACCOUNTING_TEST_DATABASE_URL;
+const url = accountingTestUrl('ACCOUNTING_TEST_DATABASE_URL');
 describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
   let db: DatabaseClient,
     service: AccountingService,
@@ -100,18 +104,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       ),
     ) as T;
   beforeAll(async () => {
-    const target = new URL(url!);
-    if (
-      target.hostname !== '127.0.0.1' ||
-      !(
-        (target.port === '55437' &&
-          ['/accounting_test', '/accounting_clean'].includes(
-            target.pathname,
-          )) ||
-        (target.port === '55494' && target.pathname === '/accounting_design_qa')
-      )
-    )
-      throw new Error('Dedicated accounting test container required.');
+    assertAccountingTestDatabase(url!, '55437', 'accounting_test');
     db = createDatabaseClient(url);
     await db.branch.create({
       data: {

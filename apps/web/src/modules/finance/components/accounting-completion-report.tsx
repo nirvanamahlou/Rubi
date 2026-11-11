@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { AccountingSnapshotV1 } from '@nora/contracts';
 import { AccountingButton as Button } from './accounting-operations';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FormField } from '@/components/ui/form-controls';
+import { FormField, Input } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import Link from '@/i18n/link';
 import { apiRequest } from '../api/finance-inbox-api';
@@ -12,7 +12,20 @@ import {
   completionJournalHref,
   type CompletionLineReport,
 } from '../accounting-completion-routes';
-import { exportAccountingView } from '../accounting-view-export';
+import {
+  accountingViewRows,
+  exportAccountingRows,
+} from '../accounting-view-export';
+
+const statusOptions = [
+  { value: 'ALL', label: 'همه اسناد حذف‌نشده' },
+  { value: 'POSTED', label: 'قطعی' },
+  { value: 'DRAFT', label: 'ثبت موقت' },
+  { value: 'MEMORANDUM', label: 'ثبت یادداشت' },
+  { value: 'PENDING_APPROVAL', label: 'منتظر تأیید' },
+  { value: 'APPROVED', label: 'بررسی شده' },
+  { value: 'CANCELLED', label: 'حذف شده' },
+];
 
 export function AccountingCompletionReport({
   book,
@@ -20,6 +33,12 @@ export function AccountingCompletionReport({
   book: AccountingSnapshotV1;
 }) {
   const [periodId, setPeriod] = useState(book.periods[0]?.id ?? '');
+  const [extra, setExtra] = useState<Record<string, string>>({
+    status: 'POSTED',
+    amountMode: 'BASE',
+  });
+  const change = (key: string, value: string) =>
+    setExtra((current) => ({ ...current, [key]: value }));
   const [from, setFrom] = useState(''),
     [to, setTo] = useState(''),
     [accountId, setAccount] = useState('');
@@ -34,6 +53,9 @@ export function AccountingCompletionReport({
     from,
     to,
     accountId,
+    ...Object.fromEntries(
+      Object.entries(extra).filter(([, value]) => value !== ''),
+    ),
   }).toString();
   const current = request?.filter === filter;
   const query = useQuery({
@@ -51,7 +73,24 @@ export function AccountingCompletionReport({
     setExportError('');
     if (!table.current || !report) return;
     try {
-      await exportAccountingView(table.current, 'xlsx');
+      await exportAccountingRows(
+        [
+          ['اقلام سند', book.book.title],
+          ['از تاریخ', report.from, 'تا تاریخ', report.to],
+          [
+            'وضعیت سند',
+            statusOptions.find((option) => option.value === report.basis)
+              ?.label ?? report.basis,
+            'ارز',
+            report.currency,
+            'صفحه',
+            String(report.page),
+          ],
+          ...accountingViewRows(table.current),
+          ['جمع بدهکار', report.debit, 'جمع بستانکار', report.credit],
+        ],
+        'xlsx',
+      );
     } catch (error) {
       setExportError(
         error instanceof Error ? error.message : 'دریافت خروجی ناموفق بود.',
@@ -62,7 +101,7 @@ export function AccountingCompletionReport({
     <section className="space-y-4" dir="rtl">
       <h2 className="text-lg font-black">اقلام سند</h2>
       <p className="text-sm text-muted-foreground">
-        مبنای گزارش: اسناد قطعی · ارز پایه {book.book.baseCurrency}
+        ارز پایه {book.book.baseCurrency}
       </p>
       <form
         className="grid gap-4 sm:grid-cols-2"
@@ -85,6 +124,108 @@ export function AccountingCompletionReport({
                   (row) => row.id === period.fiscalYearId,
                 )?.title ?? period.startDate,
             }))}
+          />
+        </FormField>
+        <FormField label="تا دوره مالی">
+          <SearchCombobox
+            label="تا دوره مالی"
+            value={extra.toPeriodId ?? ''}
+            onValueChange={(value) => change('toPeriodId', value)}
+            options={book.periods.map((period) => ({
+              value: period.id,
+              label:
+                book.configurations.find(
+                  (row) => row.id === period.fiscalYearId,
+                )?.title ?? period.startDate,
+            }))}
+          />
+        </FormField>
+        <FormField label="نوع سند">
+          <SearchCombobox
+            label="نوع سند"
+            value={extra.typeId ?? ''}
+            onValueChange={(value) => change('typeId', value)}
+            options={book.configurations
+              .filter((row) => row.kind === 'voucher-types')
+              .map((row) => ({ value: row.id, label: row.title }))}
+          />
+        </FormField>
+        <FormField label="وضعیت سند">
+          <SearchCombobox
+            label="وضعیت سند"
+            value={extra.status ?? 'POSTED'}
+            onValueChange={(value) => change('status', value)}
+            options={statusOptions}
+          />
+        </FormField>
+        {['fromNumber', 'toNumber'].map((key, index) => (
+          <FormField
+            key={key}
+            label={index === 0 ? 'از شماره سند' : 'تا شماره سند'}
+          >
+            <Input
+              aria-label={index === 0 ? 'از شماره سند' : 'تا شماره سند'}
+              inputMode="numeric"
+              value={extra[key] ?? ''}
+              onChange={(event) => change(key, event.target.value)}
+            />
+          </FormField>
+        ))}
+        {[4, 5, 6].map((level) => (
+          <FormField key={level} label={`سطح ${level}`}>
+            <SearchCombobox
+              label={`سطح ${level}`}
+              value={extra[`detail${level}Id`] ?? ''}
+              onValueChange={(value) => change(`detail${level}Id`, value)}
+              options={book.details.map((detail) => ({
+                value: detail.id,
+                label: `${detail.code} — ${detail.title}`,
+              }))}
+            />
+          </FormField>
+        ))}
+        <FormField label="فیلتر شرح">
+          <SearchCombobox
+            label="فیلتر شرح"
+            value={extra.descriptionMode ?? 'contains'}
+            onValueChange={(value) => change('descriptionMode', value)}
+            options={[
+              { value: 'contains', label: 'شامل' },
+              { value: 'equals', label: 'برابر' },
+              { value: 'startsWith', label: 'شروع با' },
+              { value: 'endsWith', label: 'پایان با' },
+            ]}
+          />
+        </FormField>
+        <FormField label="شرح سند">
+          <Input
+            aria-label="شرح سند"
+            value={extra.description ?? ''}
+            onChange={(event) => change('description', event.target.value)}
+          />
+        </FormField>
+        <FormField label="ارز">
+          <Input
+            aria-label="ارز"
+            maxLength={3}
+            dir="ltr"
+            placeholder="USD"
+            required={extra.amountMode === 'FOREIGN'}
+            value={extra.currency ?? ''}
+            onChange={(event) =>
+              change('currency', event.target.value.toUpperCase())
+            }
+          />
+        </FormField>
+        <FormField label="مبنای مبلغ">
+          <SearchCombobox
+            label="مبنای مبلغ"
+            value={extra.amountMode ?? 'BASE'}
+            onValueChange={(value) => change('amountMode', value)}
+            options={[
+              { value: 'BASE', label: 'مبلغ به ارز عملیاتی' },
+              { value: 'FOREIGN', label: 'مبلغ به ارز' },
+            ]}
           />
         </FormField>
         <FormField label="حساب">
@@ -116,6 +257,7 @@ export function AccountingCompletionReport({
             setFrom('');
             setTo('');
             setAccount('');
+            setExtra({ status: 'POSTED', amountMode: 'BASE' });
             setRequest(null);
           }}
         >
@@ -136,7 +278,12 @@ export function AccountingCompletionReport({
           <div ref={table} className="overflow-auto rounded-xl border">
             <p className="p-3">
               <span>اقلام سند</span> · {report.from} — {report.to} ·{' '}
-              {report.currency} · صفحه {report.page}
+              {report.currency} ·{' '}
+              {
+                statusOptions.find((option) => option.value === report.basis)
+                  ?.label
+              }{' '}
+              · صفحه {report.page}
             </p>
             <table className="w-full text-sm">
               <thead>

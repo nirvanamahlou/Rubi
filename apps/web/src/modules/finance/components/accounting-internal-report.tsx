@@ -84,6 +84,7 @@ export function AccountingInternalReport({
       rowAxis: 'account',
       columnAxis: 'month',
       includeOpening: true,
+      calendar: 'PERSIAN',
     }) as Record<string, string | boolean>;
   const [values, setValues] = useState(initial),
     [requested, setRequested] = useState<Record<string, string> | null>(null),
@@ -203,7 +204,27 @@ export function AccountingInternalReport({
           ]);
     try {
       await exportAccountingRows(
-        [[`${definition.title} — پیش‌نمایش داخلی`], headers, ...rows],
+        [
+          [`${definition.title} — پیش‌نمایش داخلی`],
+          ['دفتر کل', book.book.title, 'ارز', data.currency],
+          ['از تاریخ', data.from, 'تا تاریخ', data.to],
+          ...(kind === 'aging'
+            ? [
+                [
+                  'تجزیه سنی بر مبنای تخمین FIFO است؛ تطبیق ماهانهٔ منبع تأیید نشده است.',
+                ],
+              ]
+            : []),
+          ...(kind === 'analysis'
+            ? [
+                [
+                  'این نما تجمیعی است؛ ثبت تطبیق اقلام منبع در این دوره تأیید نشده و فعال نیست.',
+                ],
+              ]
+            : []),
+          headers,
+          ...rows,
+        ],
         'xlsx',
       );
     } catch (error) {
@@ -249,12 +270,23 @@ export function AccountingInternalReport({
       </div>
       <fieldset className="rounded-xl border bg-background p-4">
         <legend className="px-2 font-bold">فیلتر</legend>
+        <FormField label="تقویم">
+          <SearchCombobox
+            label="تقویم"
+            value={String(values.calendar)}
+            onValueChange={(value) => change('calendar', value)}
+            options={[
+              { value: 'PERSIAN', label: 'شمسی' },
+              { value: 'GREGORIAN', label: 'میلادی' },
+            ]}
+          />
+        </FormField>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {definition.fields.map((field, index) => {
             const key = internalReportFieldKey(field, kind),
               id = `internal-report-${field.sourceControlId ?? index}-${index}`,
               choices = key ? options(key) : undefined;
-            const disabled = field.disabled || !key || query.isFetching;
+            const disabled = !key || query.isFetching;
             return (
               <FormField key={id} id={id} label={field.label}>
                 <div data-source-control-id={field.sourceControlId}>
@@ -310,6 +342,12 @@ export function AccountingInternalReport({
         <p>
           تجزیه سنی بر مبنای تاریخ سند و تخمین FIFO است؛ سن نامعلوم افتتاحیه جدا
           نمایش داده می‌شود.
+        </p>
+      )}
+      {kind === 'analysis' && (
+        <p role="status">
+          این نما تجمیعی است؛ ثبت تطبیق اقلام منبع در این دوره تأیید نشده و فعال
+          نیست.
         </p>
       )}
       {current && query.isFetching && <p role="status">در حال بارگذاری…</p>}
