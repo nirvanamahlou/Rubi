@@ -12450,3 +12450,5 @@ NORA-CONTRACT-GUIDE validation: 85 assistant and 37 Sales regressions pass; scop
 ## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B — READY_FOR_CI
 
 Reserve job title table action icons.
+
+NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels and generated API/standalone English catalogues required by the existing completeness gate. No operational API behavior changes.
