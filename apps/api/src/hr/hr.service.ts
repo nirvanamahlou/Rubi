@@ -5755,6 +5755,7 @@ export class HrService {
     ]);
     if (typeof input.active !== 'boolean')
       throw new BadRequestException('وضعیت معتبر نیست.');
+    const active = input.active;
     const requestedStatus = HR_ATTENDANCE_STATUSES.find(
       (status) => status === input.status,
     );
@@ -5846,7 +5847,7 @@ export class HrService {
                 continue;
               const { status, data: next } = this.attendanceStatusChange(
                 row,
-                input.active,
+                active,
                 override,
               );
               await tx.hrRecord.update({
