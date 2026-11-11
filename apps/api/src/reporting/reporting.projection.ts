@@ -168,15 +168,15 @@ function accumulateMoney(
       .toString();
 }
 
-export function buildTravelReportResult(input: {
+type TravelProjectionOptions = {
   code: string;
   query: ReportQueryV1;
-  facts: Iterable<ReportingFactRow>;
-  now: Date;
   includeAllRows?: boolean;
   dimensionOverride?: readonly [DimensionKey, DimensionKey];
   dimensionIdentity?: (fact: ReportingFactRow) => readonly [string, string];
-}): TravelReportResultV1 {
+};
+
+export function createTravelReportProjection(input: TravelProjectionOptions) {
   const dimensions = input.dimensionOverride ?? REPORT_DIMENSIONS[input.code];
   if (!dimensions)
     throw new BadRequestException('این گزارش به Projection سفر متصل نشده است.');
@@ -196,8 +196,8 @@ export function buildTravelReportResult(input: {
       pendingReservationOrderIds: Set<string>;
     }
   >();
-  for (const fact of input.facts) {
-    if (!isEligibleTravelFact(input.code, fact)) continue;
+  const add = (fact: ReportingFactRow) => {
+    if (!isEligibleTravelFact(input.code, fact)) return;
     sourceRowCount++;
     latestSourceTime = Math.max(latestSourceTime, fact.dataAsOf.getTime());
     currencies.add(fact.currencyCode);
@@ -273,170 +273,184 @@ export function buildTravelReportResult(input: {
     current.refundAmount = firstCurrency.refundAmount!;
     current.settlementBalance = firstCurrency.settlementBalance!;
     groups.set(key, current);
-  }
-  const sortable = new Set<keyof TravelReportRowV1>([
-    'primaryDimension',
-    'secondaryDimension',
-    'currencyCode',
-    'orderCount',
-    'passengerCount',
-    'ticketCount',
-    'salesAmount',
-    'purchaseAmount',
-    'grossProfit',
-    'refundAmount',
-    'settlementBalance',
-  ]);
-  if (exposesPendingReservationActions(input.code))
-    sortable.add('pendingReservationActions');
-  const sort = input.query.sort ?? {
-    column: 'salesAmount',
-    direction: 'DESC' as const,
   };
-  if (!sortable.has(sort.column as keyof TravelReportRowV1))
-    throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
-  const rows = [...groups.values()].map((group) => ({
-    grainId: group.grainId,
-    primaryDimension: group.primaryDimension,
-    secondaryDimension: group.secondaryDimension,
-    currencyCode: group.currencyCode,
-    orderCount: group.orderCount,
-    passengerCount: group.passengerCount,
-    ticketCount: group.ticketCount,
-    salesAmount: group.salesAmount,
-    purchaseAmount: group.purchaseAmount,
-    grossProfit: group.grossProfit,
-    refundAmount: group.refundAmount,
-    settlementBalance: group.settlementBalance,
-    pendingReservationActions: group.pendingReservationActions,
-    amountsByCurrency: [...group.money].map(([currencyCode, money]) => ({
-      currencyCode,
-      amount: money.salesAmount!,
-    })),
-    sourceValues: {
-      primaryDimension: group.primaryDimension,
-      secondaryDimension: group.secondaryDimension,
-      orderCount: group.orderCount,
-      passengerCount: group.passengerCount,
-      ticketCount: group.ticketCount,
-      pendingReservationActions: group.pendingReservationActions,
-      ...Object.fromEntries(
-        [
-          'salesAmount',
-          'purchaseAmount',
-          'grossProfit',
-          'refundAmount',
-          'settlementBalance',
-        ].map((name) => [
-          name,
-          currencyValues(
-            new Map(
-              [...group.money].map(([currency, money]) => [
-                currency,
-                money[name]!,
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    },
-  }));
-  const mixedCurrencies = currencies.size > 1;
-  rows.sort((left, right) => {
-    const l = left[sort.column as keyof TravelReportRowV1];
-    const r = right[sort.column as keyof TravelReportRowV1];
-    const compared = [
+  const finish = (now: Date): TravelReportResultV1 => {
+    const sortable = new Set<keyof TravelReportRowV1>([
+      'primaryDimension',
+      'secondaryDimension',
+      'currencyCode',
+      'orderCount',
+      'passengerCount',
+      'ticketCount',
       'salesAmount',
       'purchaseAmount',
       'grossProfit',
       'refundAmount',
       'settlementBalance',
-    ].includes(sort.column)
-      ? !mixedCurrencies
-        ? amount(String(l)).comparedTo(amount(String(r)))
-        : left.orderCount - right.orderCount
-      : typeof l === 'number' && typeof r === 'number'
-        ? l - r
-        : String(l).localeCompare(String(r), 'fa');
-    return compared * (sort.direction === 'ASC' ? 1 : -1);
-  });
-  const totalsByCurrency = [...totals].map(([currencyCode, money]) => ({
-    currencyCode,
-    salesAmount: money.salesAmount!,
-    purchaseAmount: money.purchaseAmount!,
-    grossProfit: money.grossProfit!,
-    refundAmount: money.refundAmount!,
-    settlementBalance: money.settlementBalance!,
-  }));
-  const generatedAtUtc = input.now.toISOString();
-  const offset = (input.query.page - 1) * input.query.pageSize;
-  return {
-    reportCode: input.code,
-    reportVersion: 1,
-    grain: 'ORDER_ITEM_CURRENCY',
-    sourceProjection: 'reporting.travel.facts.v1',
-    dataLayout: 'SOURCE_COLUMNS',
-    chartMeasure: 'salesAmount',
-    columns: [
-      {
-        key: 'primaryDimension',
-        label: DIMENSION_LABELS[dimensions[0]],
-        kind: 'TEXT',
+    ]);
+    if (exposesPendingReservationActions(input.code))
+      sortable.add('pendingReservationActions');
+    const sort = input.query.sort ?? {
+      column: 'salesAmount',
+      direction: 'DESC' as const,
+    };
+    if (!sortable.has(sort.column as keyof TravelReportRowV1))
+      throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
+    const rows = [...groups.values()].map((group) => ({
+      grainId: group.grainId,
+      primaryDimension: group.primaryDimension,
+      secondaryDimension: group.secondaryDimension,
+      currencyCode: group.currencyCode,
+      orderCount: group.orderCount,
+      passengerCount: group.passengerCount,
+      ticketCount: group.ticketCount,
+      salesAmount: group.salesAmount,
+      purchaseAmount: group.purchaseAmount,
+      grossProfit: group.grossProfit,
+      refundAmount: group.refundAmount,
+      settlementBalance: group.settlementBalance,
+      pendingReservationActions: group.pendingReservationActions,
+      amountsByCurrency: [...group.money].map(([currencyCode, money]) => ({
+        currencyCode,
+        amount: money.salesAmount!,
+      })),
+      sourceValues: {
+        primaryDimension: group.primaryDimension,
+        secondaryDimension: group.secondaryDimension,
+        orderCount: group.orderCount,
+        passengerCount: group.passengerCount,
+        ticketCount: group.ticketCount,
+        pendingReservationActions: group.pendingReservationActions,
+        ...Object.fromEntries(
+          [
+            'salesAmount',
+            'purchaseAmount',
+            'grossProfit',
+            'refundAmount',
+            'settlementBalance',
+          ].map((name) => [
+            name,
+            currencyValues(
+              new Map(
+                [...group.money].map(([currency, money]) => [
+                  currency,
+                  money[name]!,
+                ]),
+              ),
+            ),
+          ]),
+        ),
       },
-      {
-        key: 'secondaryDimension',
-        label: DIMENSION_LABELS[dimensions[1]],
-        kind: 'TEXT',
-      },
-      { key: 'orderCount', label: 'تعداد سفارش', kind: 'NUMBER' },
-      { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
-      { key: 'ticketCount', label: 'تعداد بلیت', kind: 'NUMBER' },
-      { key: 'salesAmount', label: 'فروش', kind: 'TEXT' },
-      { key: 'purchaseAmount', label: 'خرید', kind: 'TEXT' },
-      { key: 'grossProfit', label: 'سود ناخالص', kind: 'TEXT' },
-      { key: 'refundAmount', label: 'استرداد', kind: 'TEXT' },
-      { key: 'settlementBalance', label: 'مانده تسویه', kind: 'TEXT' },
-      ...(exposesPendingReservationActions(input.code)
-        ? [
-            {
-              key: 'pendingReservationActions' as const,
-              label: 'اقدام رزرو در انتظار',
-              kind: 'NUMBER' as const,
-            },
-          ]
-        : []),
-    ],
-    rows: input.includeAllRows
-      ? rows
-      : rows.slice(offset, offset + input.query.pageSize),
-    total: rows.length,
-    page: input.query.page,
-    pageSize: input.query.pageSize,
-    previewLimit: MAX_PREVIEW_PAGE_SIZE,
-    generatedAtUtc,
-    sourceDataAsOfUtc: sourceRowCount
-      ? new Date(latestSourceTime).toISOString()
-      : null,
-    totalsByCurrency,
-    filterSnapshot: createFilterSnapshot({
+    }));
+    const mixedCurrencies = currencies.size > 1;
+    rows.sort((left, right) => {
+      const l = left[sort.column as keyof TravelReportRowV1];
+      const r = right[sort.column as keyof TravelReportRowV1];
+      const compared = [
+        'salesAmount',
+        'purchaseAmount',
+        'grossProfit',
+        'refundAmount',
+        'settlementBalance',
+      ].includes(sort.column)
+        ? !mixedCurrencies
+          ? amount(String(l)).comparedTo(amount(String(r)))
+          : left.orderCount - right.orderCount
+        : typeof l === 'number' && typeof r === 'number'
+          ? l - r
+          : String(l).localeCompare(String(r), 'fa');
+      return compared * (sort.direction === 'ASC' ? 1 : -1);
+    });
+    const totalsByCurrency = [...totals].map(([currencyCode, money]) => ({
+      currencyCode,
+      salesAmount: money.salesAmount!,
+      purchaseAmount: money.purchaseAmount!,
+      grossProfit: money.grossProfit!,
+      refundAmount: money.refundAmount!,
+      settlementBalance: money.settlementBalance!,
+    }));
+    const generatedAtUtc = now.toISOString();
+    const offset = (input.query.page - 1) * input.query.pageSize;
+    return {
       reportCode: input.code,
       reportVersion: 1,
       grain: 'ORDER_ITEM_CURRENCY',
-      query: { ...input.query, sort },
-      capturedAtUtc: generatedAtUtc,
-    }),
-    filterOptions: Object.fromEntries(
-      optionSets.map(([name, , values]) => [
-        name,
-        [...values].sort((a, b) => a.localeCompare(b, 'fa')),
-      ]),
-    ),
-    reconciliation: {
-      matchesApprovedProjection: true,
-      sourceRowCount,
-    },
-    warnings: sourceRowCount
-      ? []
-      : ['در محدوده انتخاب‌شده رکوردی در Public Projection وجود ندارد.'],
+      sourceProjection: 'reporting.travel.facts.v1',
+      dataLayout: 'SOURCE_COLUMNS',
+      chartMeasure: 'salesAmount',
+      columns: [
+        {
+          key: 'primaryDimension',
+          label: DIMENSION_LABELS[dimensions[0]],
+          kind: 'TEXT',
+        },
+        {
+          key: 'secondaryDimension',
+          label: DIMENSION_LABELS[dimensions[1]],
+          kind: 'TEXT',
+        },
+        { key: 'orderCount', label: 'تعداد سفارش', kind: 'NUMBER' },
+        { key: 'passengerCount', label: 'تعداد مسافر', kind: 'NUMBER' },
+        { key: 'ticketCount', label: 'تعداد بلیت', kind: 'NUMBER' },
+        { key: 'salesAmount', label: 'فروش', kind: 'TEXT' },
+        { key: 'purchaseAmount', label: 'خرید', kind: 'TEXT' },
+        { key: 'grossProfit', label: 'سود ناخالص', kind: 'TEXT' },
+        { key: 'refundAmount', label: 'استرداد', kind: 'TEXT' },
+        { key: 'settlementBalance', label: 'مانده تسویه', kind: 'TEXT' },
+        ...(exposesPendingReservationActions(input.code)
+          ? [
+              {
+                key: 'pendingReservationActions' as const,
+                label: 'اقدام رزرو در انتظار',
+                kind: 'NUMBER' as const,
+              },
+            ]
+          : []),
+      ],
+      rows: input.includeAllRows
+        ? rows
+        : rows.slice(offset, offset + input.query.pageSize),
+      total: rows.length,
+      page: input.query.page,
+      pageSize: input.query.pageSize,
+      previewLimit: MAX_PREVIEW_PAGE_SIZE,
+      generatedAtUtc,
+      sourceDataAsOfUtc: sourceRowCount
+        ? new Date(latestSourceTime).toISOString()
+        : null,
+      totalsByCurrency,
+      filterSnapshot: createFilterSnapshot({
+        reportCode: input.code,
+        reportVersion: 1,
+        grain: 'ORDER_ITEM_CURRENCY',
+        query: { ...input.query, sort },
+        capturedAtUtc: generatedAtUtc,
+      }),
+      filterOptions: Object.fromEntries(
+        optionSets.map(([name, , values]) => [
+          name,
+          [...values].sort((a, b) => a.localeCompare(b, 'fa')),
+        ]),
+      ),
+      reconciliation: {
+        matchesApprovedProjection: true,
+        sourceRowCount,
+      },
+      warnings: sourceRowCount
+        ? []
+        : ['در محدوده انتخاب‌شده رکوردی در Public Projection وجود ندارد.'],
+    };
   };
+  return { add, finish };
+}
+
+export function buildTravelReportResult(
+  input: TravelProjectionOptions & {
+    facts: Iterable<ReportingFactRow>;
+    now: Date;
+  },
+): TravelReportResultV1 {
+  const projection = createTravelReportProjection(input);
+  for (const fact of input.facts) projection.add(fact);
+  return projection.finish(input.now);
 }

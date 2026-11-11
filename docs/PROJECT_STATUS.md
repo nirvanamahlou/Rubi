@@ -1108,6 +1108,10 @@ Allow authenticated archive downloads and PDF previews while a scan is pending, 
 
 The Reports workspace now queues exports and retries in PostgreSQL, tracks status by owner, and downloads only once the file is ready. A database lease lets another API instance recover interrupted work and prevents an expired worker from publishing. The queue checks the current session, permissions, branch scope and report definition before generation. Session and access are checked again before publication. Ready artifacts and run status commit together. Existing synchronous API clients and stored artifacts retain their previous response shapes. Apply the additive reporting export queue migration before deploying the API, then deploy Web. Database-side row projection still materializes the selected report data before the rendering worker runs.
 
+## REPORT-FACT-BATCHES-1111 — PC-B
+
+Fallback preview and export now read travel facts in 1,000-row batches within one read-only repeatable snapshot. An isolated PostgreSQL test verifies tied timestamps across the boundary, exact decimals and branch scope. Native source readers and grouped output still materialize their data.
+
 ## REPORT-FACT-AGGREGATION-1111 — PC-B
 
 The travel fallback groups eligible facts, accumulates exact currency totals, and derives filters and the source timestamp in one pass. Native timestamp maxima no longer expand all rows into function arguments. The fallback accepts an iterable, with database streaming still pending.
