@@ -19,9 +19,15 @@ import type {
   MarketingCampaignPageV1,
   MarketingCampaignPageQueryV1,
   MarketingPromotionPageQueryV1,
+  MarketingSegmentPageQueryV1,
+  MarketingSegmentPageV1,
   MarketingPromotionPageV1,
 } from '@nora/contracts';
-import { MARKETING_RECORDS_CONTRACT_VERSION } from '@nora/contracts';
+import {
+  MARKETING_ASSET_STATUS_LABELS,
+  MARKETING_RECORDS_CONTRACT_VERSION,
+  MARKETING_SEGMENT_PAGE_SIZE,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -738,6 +744,57 @@ export class MarketingRecordsService {
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     return { data: rows.map(presentAsset) };
+  }
+
+  async listSegments(
+    query: MarketingSegmentPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingSegmentPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    if (!actor.branchIds.length) return { data: [], page: 1, total: 0 };
+    const pageSize = MARKETING_SEGMENT_PAGE_SIZE;
+    const search = query.search?.trim().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    const labels = Object.entries(MARKETING_ASSET_STATUS_LABELS).map(
+      ([status, label]) => Prisma.sql`WHEN ${status} THEN ${label}::text`,
+    );
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND kind = 'SEGMENT'
+      AND status <> 'DELETED'
+      ${query.status ? Prisma.sql`AND status = ${query.status}` : Prisma.empty}
+      ${
+        search
+          ? Prisma.sql`AND strpos(
+        lower(translate(trim(name || ' ' || (CASE status ${Prisma.join(labels, ' ')} ELSE '' END)), 'يك', 'یک')),
+        lower(${search})
+      ) > 0`
+          : Prisma.empty
+      }
+    `;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const [count] = await tx.$queryRaw<{ count: bigint }[]>`
+          SELECT count(*) AS count FROM marketing_assets WHERE ${where}
+        `;
+        const total = Number(count!.count);
+        const page = Math.min(
+          query.page ?? 1,
+          Math.max(1, Math.ceil(total / pageSize)),
+        );
+        if (!total) return { data: [], page, total };
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+          SELECT id FROM marketing_assets WHERE ${where}
+          ORDER BY updated_at DESC, id DESC
+          LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+        `;
+        const rows = await tx.marketingAsset.findMany({
+          where: { id: { in: ids.map(({ id }) => id) } },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        });
+        return { data: rows.map(presentAsset), page, total };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async listPromotions(

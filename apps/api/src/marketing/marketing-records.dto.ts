@@ -18,6 +18,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { MARKETING_ASSET_STATUS_LABELS } from '@nora/contracts';
+
 const AMOUNT = /^\d{1,20}(?:\.\d{1,4})?$/;
 const CURRENCY = /^[A-Z]{3}$/;
 const ASSET_KINDS = [
@@ -122,6 +124,19 @@ export class MarketingCampaignPageQueryDto {
   @IsOptional() @IsIn(['asc', 'desc']) sortDirection?: 'asc' | 'desc';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(2) @Max(20) pageSize?: number;
+}
+
+export class MarketingSegmentPageQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(Number.MAX_SAFE_INTEGER)
+  page?: number;
+  @IsOptional() @IsString() @MaxLength(240) search?: string;
+  @IsOptional()
+  @IsIn(Object.keys(MARKETING_ASSET_STATUS_LABELS))
+  status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
 }
 
 export class MarketingPromotionPageQueryDto {
