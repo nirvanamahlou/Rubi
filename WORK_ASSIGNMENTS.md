@@ -1319,6 +1319,10 @@ Reserve report worker rendering, output transfer and artifact storage integratio
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## XLSX-RANGE-INSPECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve staged XLSX format inspection and authenticated range reads. Preserve existing compatibility fallback, archive limits and macro checks.
+
 ## DOCUMENT-STREAM-SCAN-1111
 
 Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.

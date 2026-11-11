@@ -1,7 +1,8 @@
 import { Readable } from 'node:stream';
 import { createHash, scryptSync } from 'node:crypto';
 
-import type { AuthenticatedActor } from '@nora/contracts';
+import { XLSX_MIME, type AuthenticatedActor } from '@nora/contracts';
+import { strToU8, zipSync } from 'fflate';
 import {
   BadRequestException,
   ConflictException,
@@ -164,6 +165,7 @@ describe('DocumentsService security and persistence flow', () => {
   };
   const storage = {
     readQuarantined: vi.fn(),
+    readQuarantinedRange: vi.fn(),
     verifyQuarantined: vi.fn(),
     putQuarantined: vi.fn(),
     removeQuarantined: vi.fn(),
@@ -1853,7 +1855,7 @@ describe('DocumentsService security and persistence flow', () => {
     expect(repository.createUploaded).not.toHaveBeenCalled();
   });
 
-  it.each(['buffer', 'stream'] as const)(
+  it.each(['buffer', 'stream', 'xlsx'] as const)(
     'stores a standalone %s upload without a primary relation',
     async (mode) => {
       const dto: DocumentUploadDto = {
@@ -1864,13 +1866,29 @@ describe('DocumentsService security and persistence flow', () => {
         ownerUserId: actor.userId,
         confidentiality: 'INTERNAL',
       };
-      const buffer = Buffer.from('%PDF-1.7\nsynthetic standalone document');
+      const buffer =
+        mode === 'xlsx'
+          ? Buffer.from(
+              zipSync({
+                '[Content_Types].xml': strToU8(
+                  '<Types><Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" /></Types>',
+                ),
+                'xl/workbook.xml': strToU8('<workbook/>'),
+              }),
+            )
+          : Buffer.from('%PDF-1.7\nsynthetic standalone document');
+      const mimetype = mode === 'xlsx' ? XLSX_MIME : 'application/pdf';
+      if (mode === 'xlsx')
+        storage.readQuarantinedRange.mockImplementation(
+          async (_key, _size, offset, length) =>
+            buffer.subarray(offset, offset + length),
+        );
       repository.uploadReferences.mockResolvedValue({
         documentType: {
           id: dto.documentTypeId,
           domain: 'SALES',
           defaultConfidentiality: 'INTERNAL',
-          allowedMimeTypes: ['application/pdf'],
+          allowedMimeTypes: [mimetype],
           maxFileSizeBytes: 25 * 1024 * 1024,
           requiresExpiry: false,
         },
@@ -1891,18 +1909,21 @@ describe('DocumentsService security and persistence flow', () => {
       await service.upload(
         dto,
         {
-          ...(mode === 'stream' ? { staged } : { buffer }),
-          mimetype: 'application/pdf',
-          originalname: 'standalone.pdf',
+          ...(mode === 'buffer' ? { buffer } : { staged }),
+          mimetype,
+          originalname: mode === 'xlsx' ? 'standalone.xlsx' : 'standalone.pdf',
           size: buffer.length,
         },
         actor,
         {},
       );
-      if (mode === 'stream') {
+      if (mode !== 'buffer') {
         expect(staged.retained).toBe(true);
         expect(storage.putQuarantined).not.toHaveBeenCalled();
         expect(storage.readQuarantined).not.toHaveBeenCalled();
+        expect(storage.readQuarantinedRange).toHaveBeenCalledTimes(
+          mode === 'xlsx' ? 1 : 0,
+        );
         expect(repository.createUploaded).toHaveBeenCalledWith(
           expect.objectContaining({
             documentId: staged.documentId,

@@ -1116,6 +1116,10 @@ The hotel currency selector is registered in the existing manual field-access ca
 
 CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
 
+## XLSX-RANGE-INSPECTION-1111 — PC-B
+
+Ordinary staged ZIP workbooks use bounded authenticated ranges for the ZIP directory and content manifest. Each range authenticates the complete encrypted object without retaining its complete plaintext. ZIP64, large metadata and OLE containers retain the compatibility parser.
+
 ## STREAM-DOCUMENT-MULTIPART-1111 — PC-B
 
 Archive and incoming multipart routes stream directly into an encrypted staged object while computing SHA-256 and retaining a bounded prefix. ZIP/OLE recognition still uses a full decrypted container and internal Buffer callers remain compatible. Existing multipart limits and rejected-request cleanup are covered by HTTP tests.
