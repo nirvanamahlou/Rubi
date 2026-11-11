@@ -1299,6 +1299,10 @@ Reserve Finance inbox page assembly, FX display enrichment timing and focused te
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
 
+## REPORTING-CSV-MEMORY-1111 (PC-B)
+
+Reserve CSV encoding and its byte-level regression. Preserve export bytes and storage behavior.
+
 ## REPORTING-DURABLE-EXPORT-1110 (PC-B)
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.

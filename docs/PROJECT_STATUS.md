@@ -1084,6 +1084,10 @@ Finance inbox pages load purchase FX evidence after applying filters, ordering a
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## REPORTING-CSV-MEMORY-1111
+
+CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
+
 ## REPORTING-DURABLE-EXPORT-1110
 
 The Reports workspace now queues exports and retries in PostgreSQL, tracks status by owner, and downloads only once the file is ready. A database lease lets another API instance recover interrupted work and prevents an expired worker from publishing. The queue checks the current session, permissions, branch scope and report definition before generation. Session and access are checked again before publication. Ready artifacts and run status commit together. Existing synchronous API clients and stored artifacts retain their previous response shapes. Apply the additive reporting export queue migration before deploying the API, then deploy Web. Database-side row projection still materializes the selected report data before the rendering worker runs.
