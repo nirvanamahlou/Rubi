@@ -248,6 +248,12 @@ Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
 
+## ASSISTANT-REMOVE-NOTICE-1111 — PC-C — READY_FOR_REVIEW
+
+Remove the requested Groq/session disclosure paragraph from the shared Assistant composer, its empty footer wrapper and textarea described-by reference. Send tooltip now uses the existing Send label. Existing conversation, authorization and provider behavior remain unchanged. Bounded UI-only work; no live publication or automatic merge.
+
+Validation:28 existing composer tests, scoped lint, full Web TypeScript and optimized production build pass.
+
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
 PR1669 repair: the sole conflict was append-only work assignments; retain both blocks. Added10 missing English labels without altering the completeness guard and regenerated both offline consumers.56 integrated Assistant/i18n regressions pass. User now explicitly authorizes merge after all exact-head CI gates succeed; no server deployment.

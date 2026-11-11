@@ -12442,6 +12442,12 @@ Reserve the incoming-letter upload adapter and its test. Return once the file an
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
 
+## ASSISTANT-REMOVE-NOTICE-1111 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-remove-notice-1111 from develop06766d707. Reserve Assistant composer only and own notes. Owner requests removing the Groq/session notice shown beneath conversation; remove its empty wrapper and dangling described-by reference, use the ordinary Send tooltip. Prior Assistant and Nora guide scopes merged/released; no active overlap found. No backend/provider, permission, dependency or deployment changes.
+
+28 existing composer regressions, scoped ESLint, full Web TypeScript and optimized production build pass. No new tests for this reversible text-only removal. Source freezes on push and reservation releases at handoff; review PR only.
+
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
 PR1669 CI/merge follow-up reserves only10 missing English override entries and the two generated offline catalogues. Prior Nora guide translation scope merged/released. Preserve both concurrent work-assignment blocks; no production publication. User explicitly authorizes green-gate merge after repairs.

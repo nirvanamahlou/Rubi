@@ -226,7 +226,6 @@ export function AssistantComposer({
   floating?: boolean;
 }) {
   const inputId = useId();
-  const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
   useEffect(() => {
@@ -435,7 +434,6 @@ export function AssistantComposer({
           id={inputId}
           ref={input}
           aria-label={t(c.composerTitle)}
-          aria-describedby={helpId}
           placeholder={t(c.composerPlaceholder)}
           className={styles.composerInput}
           rows={1}
@@ -482,7 +480,7 @@ export function AssistantComposer({
             className={styles.composerSend}
             disabled={denied || !draft.trim() || actionState === 'loading'}
             aria-label={t(c.send)}
-            title={t(c.chatPolicy)}
+            title={t(c.send)}
           >
             <ArrowUp size={24} aria-hidden="true" />
           </button>
@@ -536,11 +534,6 @@ export function AssistantComposer({
           </p>
         )}
         {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
-        <div className={styles.composerFooter}>
-          <p id={helpId} className={styles.composerHint} role="status">
-            {t(c.chatPolicy)}
-          </p>
-        </div>
         {!denied && actionResult && 'filters' in actionResult && (
           <div className={styles.composerHint}>
             <p>
