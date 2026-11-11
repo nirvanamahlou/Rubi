@@ -433,6 +433,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-package-currency-select-1102 from develop98e
 
 Delivered searchable code/name currency choices using the complete active Sales selection directory; arbitrary typed values cannot update price fields. Loading/failure disables currency selection with retry; legacy unavailable currency codes remain visible and unchanged. Amounts and commission modes retain their existing behavior.22 focused field/workspace/reference/i18n regressions pass; scoped lint, Web typecheck and production build plus final-head hosted checks gate owner-authorized merge. No migration/API/dependency/runtime changes. Source freezes on push and releases on verified merge.
 
+## FINANCE-BOUNDED-PAGE-1111 — PC-B — READY_FOR_CI
+
+Reserve the Finance inbox page filtering, ranking and summary calculation and their focused tests. Preserve exported and legacy queue results, source health, and money ordering.
+
 ## FINANCE-INBOX-PURCHASES-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-finance-inbox-purchases-1102 from develop8220d4e5d. Owner authorizes account-or-paying-supplier selection, one purchase FX input per currency, complete Reservations purchase inbox, purchase/receipt action filters and develop merge after checks. Reserve Finance payment-source policy/service consumers, inbox service/query/controller and focused tests; Finance Web payment controls/FX capture/filter/client/tests, additive FinanceInboxQuery action-category contract, Reservations public pagination/history projection only as needed and own docs/translations. Producer Finance preserves source XOR, active purchase-currency or IRR branch accounts, validated suppliers and immutable FX snapshots; consumer Web ships compatible optional filters and grouped capture. Reservations remains purchase-data owner; Finance uses its public service. Investigate first-page100 truncation and superseded-intake evidence before selecting the bounded fix. No migration/dependency/accounting ownership changes, operational payment or deployment authorized. Prior same-owner source scopes are published; Accounting/partner dossier PC-B scopes stay untouched.

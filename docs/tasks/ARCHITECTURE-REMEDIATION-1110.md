@@ -64,6 +64,11 @@ when only selected paths are addressed.
 - Removed the attendance forms' extra list refresh after saving. The HR store
   revision is the single signal for that list to reload.
 
+- Finance pages count and summarize the complete filtered set in one pass.
+  Ranking keeps only the best rows through the requested page endpoint and
+  sorts those candidates. The legacy listing and export order are preserved.
+  Source collection and deep offsets still need database-backed pagination.
+
 ## HR encryption configuration
 
 Existing ciphertext without a key identifier is read with the key named
