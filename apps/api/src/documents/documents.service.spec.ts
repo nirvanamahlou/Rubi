@@ -1821,7 +1821,11 @@ describe('DocumentsService security and persistence flow', () => {
       row({ confidentiality: 'INTERNAL' }),
     );
 
-    await service.upload(dto, file, actor, {});
+    await service.upload(dto, file, actor, {}, 'background');
+    expect(scanProcessor.processVersion).not.toHaveBeenCalled();
+    expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
+      'skipAntivirusForMasterDataLogo',
+    );
     expect(repository.findCaseReference).not.toHaveBeenCalled();
     expect(repository.createUploaded).toHaveBeenCalledWith(
       expect.objectContaining({

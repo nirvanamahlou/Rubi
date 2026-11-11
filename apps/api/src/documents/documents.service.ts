@@ -2070,7 +2070,7 @@ export class DocumentsService {
     file: UploadedDocumentFile | StagedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
-    scanPolicy?: typeof masterDataLogoScanExemption,
+    scanPolicy?: typeof masterDataLogoScanExemption | 'background',
   ): Promise<{ data: DocumentDetailV1 }> {
     if (!file) throw new BadRequestException('انتخاب فایل الزامی است.');
     if (dto.isIncomingLetter && !dto.senderName?.trim()) {
@@ -2299,7 +2299,7 @@ export class DocumentsService {
       });
       committed = true;
       if (staged) staged.retained = true;
-      if (scanPolicy !== masterDataLogoScanExemption) {
+      if (scanPolicy === undefined) {
         // Upload is already committed. A scanner/read failure must never
         // remove the private file needed by the durable scan retry.
         try {

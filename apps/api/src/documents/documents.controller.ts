@@ -262,6 +262,7 @@ export class DocumentsController {
       file,
       request.actor,
       requestMetadata(request),
+      'background',
     );
   }
 
