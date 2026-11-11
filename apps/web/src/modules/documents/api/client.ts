@@ -1,4 +1,4 @@
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type {
   DocumentAuditResponseV1,
   DocumentAccessGrantInputV1,
@@ -19,7 +19,6 @@ import type {
 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '../../../lib/environment';
-import { refreshAuthenticatedSession } from '../../../lib/auth-session';
 import { notifyNotificationFeedChanged } from '../../notifications/api/client';
 
 export class DocumentsApiError extends Error {
@@ -32,25 +31,18 @@ export class DocumentsApiError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-  retriedAfterRefresh = false,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: { accept: 'application/json', ...init?.headers },
-  });
-  if (
-    response.status === 401 &&
-    !retriedAfterRefresh &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
-    return request<T>(path, init, true);
+  const response = await authenticatedFetch(
+    `${baseUrl}/documents${path}`,
+    baseUrl,
+    {
+      timeoutMs: null,
+      ...init,
+      headers: { accept: 'application/json', ...init?.headers },
+    },
+  );
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
@@ -75,43 +67,31 @@ async function requestFile(
   signal?: AbortSignal,
   accessGrantToken?: string,
   confidentialAccessGrantToken?: string,
-  retriedAfterRefresh = false,
 ): Promise<{ blob: Blob; disposition: string | null }> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...(signal ? { signal } : {}),
-    headers: {
-      accept: '*/*',
-      ...(sensitiveReason
-        ? {
-            'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
-          }
-        : {}),
-      ...(accessGrantToken
-        ? { 'x-document-access-grant': accessGrantToken }
-        : {}),
-      ...(confidentialAccessGrantToken
-        ? { 'x-document-confidential-grant': confidentialAccessGrantToken }
-        : {}),
+  const response = await authenticatedFetch(
+    `${baseUrl}/documents${path}`,
+    baseUrl,
+    {
+      timeoutMs: null,
+      ...(signal ? { signal } : {}),
+      headers: {
+        accept: '*/*',
+        ...(sensitiveReason
+          ? {
+              'x-sensitive-read-reason': encodeURIComponent(sensitiveReason),
+            }
+          : {}),
+        ...(accessGrantToken
+          ? { 'x-document-access-grant': accessGrantToken }
+          : {}),
+        ...(confidentialAccessGrantToken
+          ? { 'x-document-confidential-grant': confidentialAccessGrantToken }
+          : {}),
+      },
     },
-  });
-  if (
-    response.status === 401 &&
-    !retriedAfterRefresh &&
-    (await refreshAuthenticatedSession(baseUrl))
-  ) {
-    return requestFile(
-      path,
-      sensitiveReason,
-      signal,
-      accessGrantToken,
-      confidentialAccessGrantToken,
-      true,
-    );
-  }
+  );
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
