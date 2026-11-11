@@ -1686,6 +1686,10 @@ Selected flight loads now expose View, Edit Load and Delete Load together. Edit 
 
 Ticket Catalog flight search now exposes all weekdays including Wednesday. Application dialogs no longer close from an outside click, while explicit close/Escape remain available. Ticket forms save with Ctrl+S, and generated dates appear in chronological columns for row, outbound/return day and date. Ticket Catalog UUID creation is compatible with HTTP LAN origins where `crypto.randomUUID` is absent. Focused tests, localization coverage, Web TypeScript and scoped lint pass; the updated local port 3000 runtime returns HTTP 200. No API/schema/migration/dependency or operational-data change.
 
+## FINANCE-FX-SCOPED-EVIDENCE-1111 — PC-B
+
+Finance purchase FX evidence queries now apply the displayed source/payment version bounds in PostgreSQL, project only calculation fields, and skip absent or local-currency sources. Twenty-three targeted API tests passed.
+
 ## MARKETING-PROMOTION-PAGES-1110 — PC-B
 
 Discounts and offers request 50 rows per page after server-side branch, kind, status, name/code and date filters. Excel retrieves all matching pages on demand. The Marketing hub no longer preloads campaign records outside the Campaigns section. Sixteen focused Web tests and 31 API/PostgreSQL tests passed in a disposable database. Audience groups now read 25 records per page with server-side name and status search, exact branch-scoped totals, and page adjustment after deletion. Forty-one focused Web tests and the new PostgreSQL integration test passed. Remaining Marketing collections use their existing API.

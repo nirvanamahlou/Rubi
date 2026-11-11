@@ -27,6 +27,23 @@ type Capture = {
   rateToIrr?: string;
   actorUserId: string;
 };
+const paymentFields = {
+  version: true,
+  paidAmount: true,
+  rialEquivalent: true,
+} as const;
+
+async function readEvidenceBatches<T, Row>(
+  keys: readonly T[],
+  read: (batch: T[]) => Promise<Row[]>,
+) {
+  const rows: Row[] = [];
+  for (let i = 0; i < keys.length; i += 500) {
+    for (const row of await read(keys.slice(i, i + 500))) rows.push(row);
+  }
+  return rows;
+}
+
 @Injectable()
 export class PurchaseFxService {
   constructor(
@@ -109,54 +126,89 @@ export class PurchaseFxService {
     });
   }
   async enrich(items: FinanceInboxItemV1[], actor: AuthenticatedActor) {
-    const reservationIds = items.flatMap(
-      (i) => i.reservationPurchase?.lines.map((p) => p.purchaseId) ?? [],
+    const reservationVersions = items.flatMap(
+      (item) =>
+        item.reservationPurchase?.lines
+          .filter((line) => line.currencyCode !== 'IRR')
+          .map((line) => ({
+            purchaseId: line.purchaseId,
+            version: { lte: line.financeVersion },
+          })) ?? [],
     );
-    const ticketIds = items
-      .filter((i) => i.ticketPurchase)
-      .map((i) => i.sourceContextReference);
-    const invoiceIds = items
-      .filter((i) => i.id.startsWith('purchases:invoice:'))
-      .map((i) => i.sourceReference);
+    const foreignPurchases = items.filter(
+      (item) =>
+        item.kind === 'PAYMENT_REQUEST' &&
+        item.amount &&
+        item.amount.currencyCode !== 'IRR',
+    );
+    const ticketVersions = foreignPurchases
+      .filter((item) => item.ticketPurchase)
+      .map((item) => ({
+        costRevisionId: item.sourceContextReference,
+        version: { lte: item.ticketPurchase!.paymentCount },
+      }));
+    const invoiceVersions = foreignPurchases
+      .filter((item) => item.id.startsWith('purchases:invoice:'))
+      .map((item) => ({
+        sourceId: item.sourceReference,
+        sourceVersion: item.sourceVersion,
+        version: { lte: item.financeVersion ?? 0 },
+      }));
+    const branchId = { in: [...actor.branchIds] };
+    const status: { in: ('PAID' | 'PARTIALLY_PAID')[] } = {
+      in: ['PAID', 'PARTIALLY_PAID'],
+    };
+    const database = this.db.client;
+    const snapshotKeys: Prisma.FinancePurchaseFxSnapshotWhereInput[] = [
+      ...new Set(reservationVersions.map(({ purchaseId }) => purchaseId)),
+    ].map((reservationPurchaseId) => ({ reservationPurchaseId }));
+    for (const ticketCostId of new Set(
+      ticketVersions.map((item) => item.costRevisionId),
+    ))
+      snapshotKeys.push({ ticketCostId });
+    for (const { sourceId, sourceVersion } of invoiceVersions)
+      snapshotKeys.push({ invoiceRevision: { sourceId, sourceVersion } });
+
     const [snapshots, reservationPayments, ticketPayments, invoicePayments] =
       await Promise.all([
-        this.db.client.financePurchaseFxSnapshot.findMany({
-          where: {
-            branchId: { in: [...actor.branchIds] },
-            OR: [
-              { reservationPurchaseId: { in: reservationIds } },
-              { ticketCostId: { in: ticketIds } },
-              { invoiceRevision: { sourceId: { in: invoiceIds } } },
-            ],
-          },
-          include: {
-            invoiceRevision: {
-              select: { sourceId: true, sourceVersion: true },
+        readEvidenceBatches(snapshotKeys, (OR) =>
+          database.financePurchaseFxSnapshot.findMany({
+            where: { branchId, OR },
+            select: {
+              reservationPurchaseId: true,
+              ticketCostId: true,
+              rateToIrr: true,
+              source: true,
+              baselineAt: true,
+              invoiceRevision: {
+                select: { sourceId: true, sourceVersion: true },
+              },
             },
-          },
-        }),
-        this.db.client.financeSupplierPaymentRevision.findMany({
-          where: {
-            purchaseId: { in: reservationIds },
-            status: { in: ['PAID', 'PARTIALLY_PAID'] },
-            purchase: { intake: { branchId: { in: [...actor.branchIds] } } },
-          },
-        }),
-        this.db.client.financeTicketPurchasePaymentRevision.findMany({
-          where: {
-            costRevisionId: { in: ticketIds },
-            status: { in: ['PAID', 'PARTIALLY_PAID'] },
-            cost: { branchId: { in: [...actor.branchIds] } },
-          },
-        }),
-        this.db.client.financeProcurementInvoiceRevision.findMany({
-          where: {
-            sourceId: { in: invoiceIds },
-            branchId: { in: [...actor.branchIds] },
-            paidAmount: { not: null },
-            status: { in: ['PAID', 'PARTIALLY_PAID'] },
-          },
-        }),
+          }),
+        ),
+        readEvidenceBatches(reservationVersions, (OR) =>
+          database.financeSupplierPaymentRevision.findMany({
+            where: {
+              purchaseId: { in: OR.map(({ purchaseId }) => purchaseId) },
+              status,
+              purchase: { intake: { branchId } },
+              OR,
+            },
+            select: { ...paymentFields, purchaseId: true },
+          }),
+        ),
+        readEvidenceBatches(ticketVersions, (OR) =>
+          database.financeTicketPurchasePaymentRevision.findMany({
+            where: { status, cost: { branchId }, OR },
+            select: { ...paymentFields, costRevisionId: true },
+          }),
+        ),
+        readEvidenceBatches(invoiceVersions, (OR) =>
+          database.financeProcurementInvoiceRevision.findMany({
+            where: { branchId, status, paidAmount: { not: null }, OR },
+            select: { ...paymentFields, sourceId: true, sourceVersion: true },
+          }),
+        ),
       ]);
     for (const item of items) {
       const entries =
@@ -203,8 +255,14 @@ export class PurchaseFxService {
           item.ticketPurchase?.paymentCount ??
           item.financeVersion ??
           0;
-        const evidence = payments
-          .filter((p) => p.version <= paymentVersion)
+        const scopedPayments = [
+          ...new Map(
+            payments
+              .filter((payment) => payment.version <= paymentVersion)
+              .map((payment) => [payment.version, payment]),
+          ).values(),
+        ];
+        const evidence = scopedPayments
           .filter((p) => p.paidAmount !== null && p.rialEquivalent !== null)
           .map((p) => ({
             paidAmount: p.paidAmount!.toString(),
@@ -222,8 +280,7 @@ export class PurchaseFxService {
             snap?.rateToIrr.toString() ?? null,
             evidence,
           ),
-          ...(evidence.length !==
-          payments.filter((p) => p.version <= paymentVersion).length
+          ...(evidence.length !== scopedPayments.length
             ? {
                 actualPaidEquivalent: null,
                 realizedGainLoss: null,

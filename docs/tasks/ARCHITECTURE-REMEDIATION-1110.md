@@ -65,6 +65,10 @@ when only selected paths are addressed.
   revision is the single signal for that list to reload. The bootstrap store shares
   overlapping refresh requests and starts a fresh read after a committed mutation.
 
+- Purchase FX evidence reads only the projected money fields for visible
+  foreign-currency purchase versions. Bound OR predicates in batches and
+  preserve the branch and revision checks used for exact comparisons.
+
 ## HR encryption configuration
 
 Existing ciphertext without a key identifier is read with the key named
