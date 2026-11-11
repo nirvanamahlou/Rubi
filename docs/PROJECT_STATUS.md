@@ -1100,6 +1100,10 @@ Logo deduplication selects only the newest matching document and required file m
 
 Document and report artifact storage now encrypts in 64 KiB chunks and patches the GCM tag into the existing file header. Failed producers remove the partial file and key collisions retain the earlier object. The renderer still returns buffered output. Twelve storage and reporting export tests passed.
 
+## DOCUMENT-BUFFER-READ-1111 — PC-B
+
+Compatibility document reads check file size before allocating a single output buffer and fill it in 64 KiB authenticated chunks. ZIP/OLE inspection still requires the full plaintext buffer. The ciphertext and intermediate full plaintext copies are eliminated.
+
 ## DOCUMENT-STREAM-SCAN-1111
 
 Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
