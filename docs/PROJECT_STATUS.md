@@ -1124,6 +1124,10 @@ Dashboard fact-based filters read distinct values in SQL using the same scope pr
 
 Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.
 
+## NATIVE-SALES-STREAM-1111 — PC-B
+
+Native Sales reports feed each contract/currency batch into the report and contract aggregators, reusing authorized label lookups for repeated IDs. The test covers 501 contracts, 1,002 currency rows and exact per-currency totals. Other consumers of the public collecting adapter and grouped report output still materialize their data.
+
 ## REPORTING-EXPORT-FILTER-MEMORY-1111
 
 Reports build filter choices only for interactive output. Exports preserve filter labels and selected rows, and reuse the source row array when no output predicates apply. Database rows still materialize before rendering.

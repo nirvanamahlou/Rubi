@@ -22,7 +22,7 @@ export interface SalesReportingActor {
 }
 
 /** Sales-owned, contract/currency read model. No passenger/service money join. */
-export async function readSalesReportingProjection(
+export async function* scanSalesReportingPages(
   client: DatabaseClient,
   actor: SalesReportingActor,
   query: SalesReportingQuery,
@@ -214,7 +214,6 @@ export async function readSalesReportingProjection(
     });
   };
 
-  const projected: Awaited<ReturnType<typeof projectPage>> = [];
   let count = 0;
   let after: string | undefined;
   for (;;) {
@@ -225,8 +224,23 @@ export async function readSalesReportingProjection(
       throw new BadRequestException(
         'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.',
       );
-    for (const row of await projectPage(rows)) projected.push(row);
-    if (rows.length < take) return projected;
+    yield await projectPage(rows);
+    if (rows.length < take) return;
     after = rows[rows.length - 1]!.id;
   }
+}
+
+type SalesReportingPage =
+  ReturnType<typeof scanSalesReportingPages> extends AsyncIterable<infer Page>
+    ? Page
+    : never;
+export type SalesReportingRow = SalesReportingPage[number];
+
+export async function readSalesReportingProjection(
+  ...args: Parameters<typeof scanSalesReportingPages>
+) {
+  const projected: SalesReportingRow[] = [];
+  for await (const page of scanSalesReportingPages(...args))
+    for (const row of page) projected.push(row);
+  return projected;
 }
