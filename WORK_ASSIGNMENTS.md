@@ -12427,3 +12427,6 @@ Reserve the incoming-letter upload adapter and its test. Return once the file an
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
+
+## NORA-GERMANY-EGRESS-1111 — PC-C — COMPLETE
+Owner authorizes Germany relay and ERP Nora activation with existing messages-only Groq policy. Reserve new bounded operations relay/runtime/setup/test files and own docs. Two-host private SSH forwarding, pinned host key, fixed Groq CONNECT target, no public proxy, no ERP DB/key/history sent to Germany outside encrypted Groq TLS. No schema/dependency or business-data change. Preserve active peer deploys using shared server lease; private key/env never in Git.

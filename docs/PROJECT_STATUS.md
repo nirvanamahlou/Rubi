@@ -9944,3 +9944,6 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
+
+## NORA-GERMANY-EGRESS-1111 — PC-C — 2026-11-11
+Production Nora free chat is active through a restricted Germany TLS CONNECT relay and pinned SSH tunnel. Web transport and strict public Origin normalization were configured; actual authenticated ERP UI returned Persian replies and correctly recalled the first message. Native assistant tests: 68/68; relay deny test and cross-origin/unauthenticated rejection checks passed. No migration/dependency/core image update. Operational route, pinned source, deployment preservation and rollback: scripts/operations/nora-egress/README.md.
