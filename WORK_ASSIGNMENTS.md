@@ -1379,6 +1379,10 @@ Reserve Marketing durable panel loading, its existing UI tests and project notes
 
 Reserve additive Contracts package exports for pure Sales pricing and upload formats, selected existing consumers and verification. Keep the root export and existing symbols available. No dependency version, lockfile, schema or API changes.
 
+## REPORTING-PREVIEW-FILTER-PAGE-1111
+
+Reserve report output filtering and pagination. A single pass counts all matching rows and accumulates exact currency totals while retaining only the requested preview rows. Export continues to return all matching rows.
+
 ## HR-RETIRE-PHASE-A-PROTOTYPE-1110 — PC-B — READY_FOR_CI
 
 Reserve the unused Phase A HR prototype files and their dedicated tests, HR contract HTTP/PostgreSQL regression, and historical HR task documentation. Preserve the active HrService, controller, contracts and persisted behavior. No migration or dependency changes.

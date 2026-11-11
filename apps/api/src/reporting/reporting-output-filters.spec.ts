@@ -80,6 +80,10 @@ describe('authorized output-grain report filters', () => {
     );
     const next = filterReportOutput(fixture(), { ...input, page: 2 });
     expect(next.rows[0]?.grainId).not.toBe(table.rows[0]?.grainId);
+    const empty = filterReportOutput(fixture(), { ...input, page: 3 });
+    expect(empty.rows).toEqual([]);
+    expect(empty.total).toBe(2);
+    expect(empty.totalsByCurrency).toEqual(exported.totalsByCurrency);
   });
   it('keeps distinct counts and exact currency legs together and exports readable filter labels', () => {
     const result = filterReportOutput(

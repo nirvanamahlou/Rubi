@@ -9848,6 +9848,10 @@ Audience segments and automation load their authorized assets without fetching t
 
 The Contracts package exposes dedicated Sales pricing and upload-format entry points. Selected Web and API consumers use the leaves and the root retains its existing exports. A fresh Node process loaded two Contracts files for the two leaves compared with 107 after importing the root. Both CommonJS and ESM resolve the leaves, which share the same implementations as the root. The Contracts build and 47 focused API/Web tests passed. Other domains and their DTO/display separation remain open.
 
+## REPORTING-PREVIEW-FILTER-PAGE-1111
+
+Reserve report output filtering and pagination. A single pass counts all matching rows and accumulates exact currency totals while retaining only the requested preview rows. Export continues to return all matching rows.
+
 ## HR-RETIRE-PHASE-A-PROTOTYPE-1110
 
 Retired unused Phase A HR types, policies, command proposals and prototype-only tests after verifying that no runtime consumer imports them. The historical design remains accessible through Git. The authenticated PostgreSQL test now activates the contract through HTTP, replays the same idempotency key, and checks persisted version, state, document linkage and audit count. All 52 targeted tests passed against an isolated PostgreSQL 18 database.
