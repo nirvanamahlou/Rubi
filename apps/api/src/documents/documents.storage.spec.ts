@@ -87,6 +87,9 @@ describe('LocalDocumentStorage encryption boundary', () => {
   it('rejects corrupted ciphertext before delivering it, including changes after opening', async () => {
     const contents = Buffer.alloc(160 * 1024, 11);
     await storage.putQuarantined(objectKey, contents);
+    await expect(
+      storage.verifyQuarantined(objectKey, contents.length),
+    ).resolves.toBeUndefined();
     const stream = await storage.openQuarantined(objectKey, contents.length);
     const file = await open(
       join(root, 'quarantine', ...objectKey.split('/')),
@@ -103,6 +106,9 @@ describe('LocalDocumentStorage encryption boundary', () => {
     }
     await expect(
       storage.openQuarantined(objectKey, contents.length),
+    ).rejects.toThrow();
+    await expect(
+      storage.verifyQuarantined(objectKey, contents.length),
     ).rejects.toThrow();
     const chunks: Buffer[] = [];
     const consume = async () => {

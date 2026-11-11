@@ -497,6 +497,44 @@ export class DocumentsRepository {
     return { rows, total };
   }
 
+  findMasterDataLogoDuplicate(input: {
+    branchId: string;
+    resource: string;
+    recordId: string;
+    versionNote: string;
+    actorUserId: string;
+  }) {
+    return this.database.client.document.findFirst({
+      where: {
+        branchId: input.branchId,
+        archiveStatus: 'ACTIVE',
+        documentType: { domain: 'BRAND' },
+        confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+        NOT: {
+          sourceModule: 'WORKBENCH',
+          sourceEntityType: 'WorkbenchFeedback',
+          ownerUserId: { not: input.actorUserId },
+        },
+        relations: {
+          some: {
+            relationType: 'PRIMARY_CASE',
+            sourceModule: 'master-data',
+            sourceEntityType: input.resource,
+            sourceEntityId: input.recordId,
+          },
+        },
+        currentVersion: { versionNote: input.versionNote },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        currentVersion: {
+          select: { storageObjectKey: true, sizeBytes: true, scanStatus: true },
+        },
+      },
+    });
+  }
+
   findProfilePhoto(id: string, ownerUserId: string) {
     return this.database.client.document.findFirst({
       where: { id, ownerUserId, archiveStatus: 'ACTIVE' },
