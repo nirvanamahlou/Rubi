@@ -1296,3 +1296,7 @@ a.card:hover {
   background: light-dark(#e5e7eb, #30343b);
   color: light-dark(#525866, #b9c0ca);
 }
+
+.table tbody tr[data-unread] > td {
+  background-color: color-mix(in srgb, #fbbf24 15%, var(--color-card, Canvas));
+}

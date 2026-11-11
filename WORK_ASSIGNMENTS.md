@@ -12470,3 +12470,7 @@ Owner requests comprehensive ERP contract workflow guidance, colloquial Persian 
 ## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B — READY_FOR_CI
 
 Add a per-request hourly leave limit to HR policy records and validate submissions and approvals.
+
+## HR-REQUEST-FORWARDING-1111 — PC-B — IN_PROGRESS
+
+Connect the HR request center to personal workbench and finance referrals, and persist per-user read state. Reuse existing records and destination permissions.
