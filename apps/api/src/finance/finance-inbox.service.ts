@@ -52,6 +52,7 @@ import { ProcurementPublicService } from '../procurement/procurement-public.serv
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
 import { readFinanceHistory } from './finance-history';
+import { readFinanceInvoiceQueueStates } from './finance-invoice-queue-read';
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
@@ -245,17 +246,10 @@ export class FinanceInboxService {
         .listFinanceInvoiceSources(actor.branchIds)
         .then(async (items) => ({
           items,
-          rows: items.length
-            ? await this.database.client.financeProcurementInvoiceRevision.findMany(
-                {
-                  where: {
-                    sourceId: { in: items.map((item) => item.sourceId) },
-                  },
-                  orderBy: [{ sourceId: 'asc' }, { version: 'desc' }],
-                  distinct: ['sourceId'],
-                },
-              )
-            : [],
+          states: await readFinanceInvoiceQueueStates(
+            this.database.client,
+            items.map((item) => item.sourceId),
+          ),
         })),
       this.procurement.listFinanceCorrections(actor.branchIds),
     ]);
@@ -307,11 +301,8 @@ export class FinanceInboxService {
     ];
     const correctionItems =
       correctionResult.status === 'fulfilled' ? correctionResult.value : [];
-    const financeRows =
-      invoiceResult.status === 'fulfilled' ? invoiceResult.value.rows : [];
-    const financeBySource = new Map(
-      financeRows.map((row) => [row.sourceId, row] as const),
-    );
+    const financeBySource =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value.states : null;
     const payrollRows =
       await this.database.client.financeOperationalRequest.findMany({
         where: {
@@ -580,7 +571,7 @@ export class FinanceInboxService {
           },
         })),
       ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
-        const finance = financeBySource.get(invoice.sourceId);
+        const finance = financeBySource?.get(invoice.sourceId);
         const status: FinanceRequestStatus =
           finance && finance.sourceVersion === invoice.sourceVersion
             ? finance.status === 'APPROVED'

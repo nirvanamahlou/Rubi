@@ -21,6 +21,9 @@ The architecture and deployment baselines now distinguish checked-in behavior
 from target design. The API repository guard also covers static re-exports,
 type references and literal dynamic imports or require calls.
 
+The Finance inbox reads only the latest projected revision per authorized
+procurement invoice. The Procurement source handoff scan remains separate.
+
 ## Coordination and validation
 
 Reserve only review-related implementation and tests, with no lockfile or dependency

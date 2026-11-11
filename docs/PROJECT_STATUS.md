@@ -1152,6 +1152,8 @@ The existing API and Web lint jobs enforce type-aware Promise handling on the au
 
 The HR workspace now shares an in-flight bootstrap across overlapping refreshes. A committed mutation supersedes the previous read, and an older response cannot overwrite the new result. Four focused Web regressions cover coalescing, ordering, retry and dependent list invalidation.
 
+The Finance inbox fetches only the latest revision for each authorized procurement invoice through the existing source/version index. Stale source versions still appear as under review. The projection preserves exact decimals.
+
 The architecture and deployment baselines distinguish repository implementation from target design. The API repository boundary test covers nested static re-exports, type references and literal dynamic imports or require calls. Existing explicit composition exceptions remain scoped. Fifteen focused tests and scoped ESLint passed. No runtime, migration or dependency changes.
 
 ## FINANCE-HR-REFERRAL-READ-1110
