@@ -9,12 +9,23 @@ import type { DatabaseService } from '../database/database.service';
 import { SalesRepository } from './sales.repository';
 import { SalesService } from './sales.service';
 
+function salesReceiptPages(findMany: ReturnType<typeof vi.fn>) {
+  const tx = { salesContractPaymentEntry: { findMany } };
+  const transaction = vi.fn(async (read: (client: typeof tx) => unknown) =>
+    read(tx),
+  );
+  return {
+    repository: new SalesRepository({
+      client: { $transaction: transaction },
+    } as unknown as DatabaseService),
+    transaction,
+  };
+}
+
 describe('Sales Finance inbox projection', () => {
   it('queries pending and due scheduled receipts only in the requested branches', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
-    const repository = new SalesRepository({
-      client: { salesContractPaymentEntry: { findMany } },
-    } as unknown as DatabaseService);
+    const { repository } = salesReceiptPages(findMany);
 
     await repository.pendingFinancePayments(['branch-b', 'branch-a']);
 
@@ -26,7 +37,19 @@ describe('Sales Finance inbox projection', () => {
         ],
         contract: { AND: [{ branchId: { in: ['branch-b', 'branch-a'] } }, {}] },
       },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currencyCode: true,
+        method: true,
+        description: true,
+        paymentReference: true,
+        destinationAccountId: true,
+        destinationAccountTitle: true,
+        dueAt: true,
+        createdAt: true,
+        createdByUserId: true,
         contract: {
           select: {
             id: true,
@@ -45,9 +68,7 @@ describe('Sales Finance inbox projection', () => {
 
   it('includes confirmed receipts only when explicitly requested, within the same branch scope', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
-    const repository = new SalesRepository({
-      client: { salesContractPaymentEntry: { findMany } },
-    } as unknown as DatabaseService);
+    const { repository } = salesReceiptPages(findMany);
     await repository.pendingFinancePayments(['branch-a'], true);
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -57,8 +78,45 @@ describe('Sales Finance inbox projection', () => {
         },
       }),
     );
-    expect(findMany.mock.calls[0]![0]).not.toHaveProperty('take');
+    expect(findMany.mock.calls[0]![0]).toHaveProperty('take', 200);
   });
+
+  it.each([false, true])(
+    'reads receipts beyond the first 200 in a consistent snapshot (%s)',
+    async (includeConfirmed) => {
+      const first = Array.from({ length: 200 }, (_, index) => ({
+        id: String(index),
+      }));
+      const last = { id: '200' };
+      const findMany = vi
+        .fn()
+        .mockResolvedValueOnce(first)
+        .mockResolvedValueOnce([last]);
+      const { repository, transaction } = salesReceiptPages(findMany);
+      const scope = { contractNumber: { startsWith: 'SYN-' } };
+
+      expect(
+        await repository.pendingFinancePayments(
+          ['branch-a'],
+          includeConfirmed,
+          scope,
+        ),
+      ).toEqual([...first, last]);
+      expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
+        isolationLevel: 'RepeatableRead',
+      });
+      expect(findMany).toHaveBeenCalledTimes(2);
+      expect(findMany.mock.calls[1]![0]).toEqual({
+        ...findMany.mock.calls[0]![0],
+        cursor: { id: '199' },
+        skip: 1,
+      });
+      expect(findMany.mock.calls[1]![0].where.contract.AND).toEqual([
+        { branchId: { in: ['branch-a'] } },
+        scope,
+      ]);
+    },
+  );
 
   it.each([false, true])(
     'projects persisted confirmation state within actor branches (%s)',

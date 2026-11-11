@@ -4,12 +4,14 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
-  Res,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -28,8 +30,8 @@ import {
   SaveReportDto,
   ShareSavedReportDto,
 } from './reporting.dto';
+import { ReportingExportQueue } from './reporting-export-queue.service';
 import { ReportingService } from './reporting.service';
-import type { Response } from 'express';
 
 @ApiTags('Reporting')
 @ApiCookieAuth('rubi_access')
@@ -38,6 +40,7 @@ import type { Response } from 'express';
 export class ReportingController {
   constructor(
     @Inject(ReportingService) private readonly service: ReportingService,
+    @Inject(ReportingExportQueue) private readonly queue: ReportingExportQueue,
   ) {}
 
   @Get('catalog')
@@ -136,16 +139,14 @@ export class ReportingController {
   async download(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
-    @Res() response: Response,
   ) {
     const file = await this.service.downloadExport(id, request.actor);
-    response.setHeader('Content-Type', file.contentType);
-    response.setHeader(
-      'Content-Disposition',
-      `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
-    );
-    response.setHeader('Content-Length', String(file.buffer.length));
-    response.send(file.buffer);
+    return new StreamableFile(file.stream, {
+      type: file.contentType,
+      disposition:
+        "attachment; filename*=UTF-8''" + encodeURIComponent(file.fileName),
+      length: file.sizeBytes,
+    });
   }
 
   @Get(':code/metadata')
@@ -188,6 +189,40 @@ export class ReportingController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.previewRun(code, body, request.actor);
+  }
+
+  @Post(':code/export-jobs')
+  @HttpCode(202)
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  @ApiBody({ type: ExportCreateDto })
+  queueExport(
+    @Param('code') code: string,
+    @Body() body: ExportCreateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.enqueue(code, body, request.actor);
+  }
+
+  @Post('export-jobs/:id/retry')
+  @HttpCode(202)
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  retryQueuedExport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.retry(id, request.actor);
+  }
+
+  @Get('export-jobs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  exportStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.status(id, request.actor);
   }
 
   @Post(':code/exports')

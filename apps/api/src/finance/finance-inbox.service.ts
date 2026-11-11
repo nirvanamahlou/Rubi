@@ -30,6 +30,8 @@ import type {
   FinanceProcurementCorrectionDecisionCommandV1,
   FinanceInboxSourceStateV1,
   FinanceInboxV1,
+  FinanceInboxQueryV1,
+  FinanceInboxPageV1,
   FinanceRequestStatus,
   FinanceReceiptDecisionCommandV1,
   FinanceSettlementAccountCreateV1,
@@ -50,9 +52,16 @@ import { ProcurementPublicService } from '../procurement/procurement-public.serv
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
 import { readFinanceHistory } from './finance-history';
+import { readFinanceInvoiceQueueStates } from './operations/finance-invoice-queue-read';
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+
+import {
+  compareFinanceQueueOrder,
+  selectFinanceInboxPage,
+  validateInboxQuery,
+} from './finance-inbox-query';
 
 const hrStatus: Record<HrConnectionStatus, FinanceRequestStatus> = {
   SUBMITTED: 'NEW',
@@ -113,46 +122,6 @@ export class FinanceInboxService {
     };
   }
 
-  private async completeHrInbox(actor: AuthenticatedActor) {
-    const first = await this.hr.list({ target: 'finance', page: 1 }, actor);
-    const items = [...first.items];
-    if (first.total === undefined) return first;
-    const seen = new Set(items.map((item) => item.id));
-    const pages = Math.ceil(first.total / first.pageSize);
-    if (
-      !Number.isSafeInteger(first.total) ||
-      first.total < 0 ||
-      !Number.isSafeInteger(first.pageSize) ||
-      first.pageSize < 1 ||
-      pages > 1000 ||
-      seen.size !== items.length
-    )
-      throw new ConflictException(
-        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
-      );
-    for (let page = 2; page <= pages; page++) {
-      const next = await this.hr.list({ target: 'finance', page }, actor);
-      if (
-        next.total !== first.total ||
-        next.page !== page ||
-        next.pageSize !== first.pageSize ||
-        !next.items.length ||
-        new Set(next.items.map((item) => item.id)).size !== next.items.length ||
-        next.items.some((item) => seen.has(item.id))
-      )
-        throw new ConflictException(
-          'فهرست ارجاع‌ها هم‌زمان تغییر کرده است؛ دوباره به‌روز کنید.',
-        );
-      next.items.forEach((item) => seen.add(item.id));
-      items.push(...next.items);
-    }
-    if (items.length !== first.total)
-      throw new ConflictException(
-        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
-      );
-    return { ...first, items };
-  }
-
   private async completeReservationInbox(actor: AuthenticatedActor) {
     if (typeof this.reservations.listForFinance === 'function')
       return this.reservations.listForFinance(actor.branchIds, actor);
@@ -187,6 +156,49 @@ export class FinanceInboxService {
     actor: AuthenticatedActor,
     includeCompleted = false,
   ): Promise<FinanceInboxV1> {
+    const result = await this.readQueue(actor, includeCompleted);
+    return {
+      ...result,
+      items: await this.enrichFx(result.items, actor),
+    };
+  }
+
+  async page(
+    query: FinanceInboxQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<FinanceInboxPageV1> {
+    const { page, pageSize } = validateInboxQuery(query, actor);
+    const result = await this.readQueue(actor, !!query.approvalGroup, false);
+    const selected = selectFinanceInboxPage(
+      result.items,
+      query,
+      page,
+      pageSize,
+      result.generatedAt,
+    );
+    return {
+      ...result,
+      ...selected,
+      items: await this.enrichFx(selected.items, actor),
+      page,
+      pageSize,
+    };
+  }
+
+  private async enrichFx(
+    items: FinanceInboxItemV1[],
+    actor: AuthenticatedActor,
+  ) {
+    return this.purchaseFx && items.length
+      ? this.purchaseFx.enrich(items, actor)
+      : items;
+  }
+
+  private async readQueue(
+    actor: AuthenticatedActor,
+    includeCompleted: boolean,
+    ordered = true,
+  ) {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
         code: 'FINANCE_INBOX_FORBIDDEN',
@@ -202,7 +214,7 @@ export class FinanceInboxService {
       correctionResult,
     ] = await Promise.allSettled([
       this.sales.financeInbox(actor, includeCompleted),
-      this.completeHrInbox(actor),
+      this.hr.readFinanceInbox(actor),
       this.completeReservationInbox(actor),
       this.procurement
         .listFinanceTicketPurchases(actor.branchIds)
@@ -216,23 +228,16 @@ export class FinanceInboxService {
         .listFinanceInvoiceSources(actor.branchIds)
         .then(async (items) => ({
           items,
-          rows: items.length
-            ? await this.database.client.financeProcurementInvoiceRevision.findMany(
-                {
-                  where: {
-                    sourceId: { in: items.map((item) => item.sourceId) },
-                  },
-                  orderBy: [{ sourceId: 'asc' }, { version: 'desc' }],
-                  distinct: ['sourceId'],
-                },
-              )
-            : [],
+          states: await readFinanceInvoiceQueueStates(
+            this.database.client,
+            items.map((item) => item.sourceId),
+          ),
         })),
       this.procurement.listFinanceCorrections(actor.branchIds),
     ]);
     const salesItems =
       salesResult.status === 'fulfilled' ? salesResult.value : [];
-    const hrItems = hrResult.status === 'fulfilled' ? hrResult.value.items : [];
+    const hrItems = hrResult.status === 'fulfilled' ? hrResult.value : [];
     const reservationItems =
       reservationsResult.status === 'fulfilled'
         ? reservationsResult.value.flatMap((intake) => {
@@ -242,7 +247,9 @@ export class FinanceInboxService {
             >();
             for (const purchase of intake.servicePurchases ?? []) {
               const groupId = purchase.batchId ?? purchase.id;
-              groups.set(groupId, [...(groups.get(groupId) ?? []), purchase]);
+              const group = groups.get(groupId);
+              if (group) group.push(purchase);
+              else groups.set(groupId, [purchase]);
             }
             return [...groups]
               .filter(([, purchases]) =>
@@ -276,11 +283,8 @@ export class FinanceInboxService {
     ];
     const correctionItems =
       correctionResult.status === 'fulfilled' ? correctionResult.value : [];
-    const financeRows =
-      invoiceResult.status === 'fulfilled' ? invoiceResult.value.rows : [];
-    const financeBySource = new Map(
-      financeRows.map((row) => [row.sourceId, row] as const),
-    );
+    const financeBySource =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value.states : null;
     const payrollRows =
       await this.database.client.financeOperationalRequest.findMany({
         where: {
@@ -549,7 +553,7 @@ export class FinanceInboxService {
           },
         })),
       ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
-        const finance = financeBySource.get(invoice.sourceId);
+        const finance = financeBySource?.get(invoice.sourceId);
         const status: FinanceRequestStatus =
           finance && finance.sourceVersion === invoice.sourceVersion
             ? finance.status === 'APPROVED'
@@ -613,10 +617,8 @@ export class FinanceInboxService {
         sourceVersion: correction.sourceVersion,
         origin: 'PERSISTED_SOURCE',
       })),
-    ].sort((left, right) => {
-      const due = (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999');
-      return due || right.createdAt.localeCompare(left.createdAt);
-    });
+    ];
+    if (ordered) items.sort(compareFinanceQueueOrder);
 
     const sources: FinanceInboxSourceStateV1[] = [
       this.sourceState(
@@ -661,9 +663,7 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items: this.purchaseFx
-        ? await this.purchaseFx.enrich(items, actor)
-        : items,
+      items,
       sources: [
         ...sources,
         {
@@ -676,7 +676,7 @@ export class FinanceInboxService {
             'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },
       ],
-    };
+    } satisfies FinanceInboxV1;
   }
 
   purchaseFxQuote(currency: string, actor: AuthenticatedActor) {

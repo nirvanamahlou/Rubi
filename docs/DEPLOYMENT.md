@@ -1,6 +1,21 @@
 # معماری استقرار و عملیات
 
-وضعیت: طرح اولیه؛ هیچ deployment در Bootstrap انجام نمی‌شود.
+وضعیت: پیکربندی‌های موجود در مخزن و قواعد انتشار. وضعیت لحظه‌ای سرورها از
+سوابق انتشار و بررسی محیط مربوطه به دست می‌آید.
+
+## پیکربندی موجود در مخزن
+
+- `infrastructure/compose.dev.yaml` سرویس‌های محلی PostgreSQL، Redis و MinIO را فراهم می‌کند.
+  `infrastructure/compose.apps.yaml` فرایندهای محلی API و Web را روی شبکهٔ مشترک Compose
+  راه می‌اندازد و مسیر فایل‌های Documents را mount می‌کند.
+- کنترل سلامت API در `GET /api/v1/health` زنده‌بودن فرایند را گزارش می‌کند.
+  Compose برای Web صفحهٔ ورود را بررسی می‌کند. این probeها آمادگی همهٔ وابستگی‌ها را نمی‌سنجند.
+- `.github/workflows/ci.yml` روی revision مشخص بررسی کیفیت، تست کامل، build و اجرای migration
+  و seed روی PostgreSQL 18 را اجرا می‌کند.
+- Documents به‌صورت پیش‌فرض اسکن را در API انجام می‌دهد. برای جداسازی،
+  `DOCUMENTS_SCAN_EXECUTION=worker` در API باید همراه اجرای
+  `apps/api/src/documents/document-scan-worker.ts` در فرایند جدا با دسترسی به همان
+  پایگاه داده و محل فایل‌های رمزگذاری‌شده تنظیم شود.
 
 ## محیط‌ها
 
@@ -19,7 +34,7 @@ Nginx/TLS → Next.js web و NestJS API؛ Workerهای BullMQ جدا؛ PostgreSQ
 API و Worker image version یکسان/سازگار با event contract deploy می‌شوند. health endpoints:
 `/health/live`, `/health/ready`; readiness dependency critical را بررسی می‌کند.
 
-## Pipeline پیشنهادی
+## الگوی انتشار هدف
 
 1. install از lockfile و verify toolchain
 2. format/lint، typecheck، unit و architecture tests
@@ -51,7 +66,7 @@ backup freshness. alertها severity/owner/runbook دارند؛ Sentry release �
 TLS modern، body/header/time limits، security headers، rate limit edge، trusted proxy config؛ DB/Redis/
 object admin public نیست. outbound allowlist و egress observation برای Providerها.
 
-## موارد پیش از اجرا
+## تصمیم‌های عملیاتی هر محیط
 
 انتخاب hosting/region، domains، certificate/DNS owner، secret manager، managed/self-hosted services،
 RPO/RTO، expected traffic، on-call و maintenance window باید تایید شود.

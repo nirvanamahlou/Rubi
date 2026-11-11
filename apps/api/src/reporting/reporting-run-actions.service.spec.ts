@@ -17,7 +17,7 @@ const query: ReportQueryV1 = {
 
 function repository() {
   return {
-    facts: vi.fn().mockResolvedValue([]),
+    scanFacts: vi.fn().mockResolvedValue(undefined),
     createRun: vi
       .fn()
       .mockResolvedValue({ id: '22222222-2222-4222-8222-222222222222' }),
@@ -62,7 +62,7 @@ describe('Reporting form action history', () => {
 
   it('marks a failed result request as failed in the same run row', async () => {
     const repo = repository();
-    repo.facts.mockRejectedValueOnce(new Error('connection lost'));
+    repo.scanFacts.mockRejectedValueOnce(new Error('connection lost'));
     const service = new ReportingService(repo as never);
     await expect(
       service.previewRun('sales_by_service_route', query, actor),
@@ -101,8 +101,7 @@ describe('Reporting form action history', () => {
     const service = new ReportingService(
       repo as never,
       {
-        build: vi.fn(),
-        store: vi.fn(),
+        buildAndStore: vi.fn(),
         read: vi.fn(),
       } as never,
     );
@@ -126,7 +125,7 @@ describe('Reporting form action history', () => {
 
   it('records an export click even when fetching its data fails', async () => {
     const repo = repository();
-    repo.facts.mockRejectedValueOnce(new Error('connection lost'));
+    repo.scanFacts.mockRejectedValueOnce(new Error('connection lost'));
     const service = new ReportingService(
       repo as never,
       { build: vi.fn(), store: vi.fn(), read: vi.fn() } as never,
@@ -149,12 +148,11 @@ describe('Reporting form action history', () => {
   it('uses the published report export retention when the file is completed', async () => {
     const repo = repository();
     const files = {
-      build: vi.fn().mockReturnValue({
-        extension: 'csv',
-        buffer: Buffer.from('report'),
+      buildAndStore: vi.fn().mockResolvedValue({
+        objectKey: 'reports/export.bin',
+        sizeBytes: 6,
         checksum: 'checksum',
       }),
-      store: vi.fn().mockResolvedValue('reports/export.bin'),
       read: vi.fn(),
     };
     const settings = {

@@ -4,6 +4,25 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./iam/session": {
+      "types": "./dist/iam/session.d.ts",
+      "default": "./dist/iam/session.js"
+    },
+    "./sales/pricing": {
+      "types": "./dist/sales/pricing.d.ts",
+      "default": "./dist/sales/pricing.js"
+    },
+    "./upload-formats": {
+      "types": "./dist/upload-formats.d.ts",
+      "default": "./dist/upload-formats.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist"
   ],

@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import type { ReportSource, ReportSourceActor } from '../common/report-source';
+import { retainRankedRow } from '../common/retain-ranked-row';
 import { readCustomerReporting } from '../customers/customer-reporting.public';
 import { readDocumentComplianceReporting } from '../documents/document-reporting.public';
 import { readHrAttendanceReporting } from '../hr/hr-reporting.public';
@@ -110,20 +111,23 @@ export function assembleOperationalResult(
   if (!source.columns.some((c) => c.key === column))
     throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
   const kind = source.columns.find((c) => c.key === column)!.kind;
-  const currencyCount = new Set(
-    rawSource.rows.map((r) => r.values.currencyCode).filter(Boolean),
-  ).size;
-  const sorted = [...source.rows].sort((a, b) => {
+  const currencyCodes = new Set<string | number>();
+  for (const row of rawSource.rows) {
+    const currencyCode = row.values.currencyCode;
+    if (currencyCode) currencyCodes.add(currencyCode);
+  }
+  const monetaryColumn = rawSource.columns.some(
+    (c) => c.key === column && c.kind === 'MONEY',
+  );
+  type SourceRow = ReportSource['rows'][number];
+  const compareRows = (a: SourceRow, b: SourceRow) => {
     const left = a.values[column] ?? '',
       right = b.values[column] ?? '';
     let diff = 0;
-    if (
-      rawSource.columns.some((c) => c.key === column && c.kind === 'MONEY') &&
-      (a.chartAmounts || b.chartAmounts)
-    ) {
+    if (monetaryColumn && (a.chartAmounts || b.chartAmounts)) {
       // No cross-currency ranking until an FX policy is explicitly approved.
       diff =
-        currencyCount === 1 &&
+        currencyCodes.size === 1 &&
         column === source.chartMeasure &&
         a.chartAmounts?.[0] &&
         b.chartAmounts?.[0]
@@ -152,8 +156,30 @@ export function assembleOperationalResult(
     return diff
       ? diff * (query.sort?.direction === 'ASC' ? 1 : -1)
       : a.id.localeCompare(b.id);
-  });
-  const fullRows: TravelReportResultV1['rows'][number][] = sorted.map((r) => ({
+  };
+  const offset = (query.page - 1) * query.pageSize;
+  const end = offset + query.pageSize;
+  let selected: readonly SourceRow[];
+  if (includeAllRows) {
+    selected = [...source.rows].sort(compareRows);
+  } else if (offset >= source.rows.length) {
+    selected = [];
+  } else if (end >= source.rows.length) {
+    selected = [...source.rows].sort(compareRows).slice(offset);
+  } else {
+    type RankedRow = { row: SourceRow; index: number };
+    const compare = (a: RankedRow, b: RankedRow) =>
+      compareRows(a.row, b.row) || a.index - b.index;
+    const ranked: RankedRow[] = [];
+    for (const [index, row] of source.rows.entries()) {
+      retainRankedRow(ranked, { row, index }, end, compare);
+    }
+    selected = ranked
+      .sort(compare)
+      .slice(offset)
+      .map(({ row }) => row);
+  }
+  const rows: TravelReportResultV1['rows'] = selected.map((r) => ({
     grainId: r.id,
     primaryDimension: String(r.values.primaryDimension ?? ''),
     secondaryDimension: String(r.values.secondaryDimension ?? ''),
@@ -179,20 +205,18 @@ export function assembleOperationalResult(
     dataLayout: 'SOURCE_COLUMNS',
     chartMeasure: source.chartMeasure,
     columns: source.columns,
-    rows: includeAllRows
-      ? fullRows
-      : fullRows.slice(
-          (query.page - 1) * query.pageSize,
-          query.page * query.pageSize,
-        ),
-    total: fullRows.length,
+    rows,
+    total: source.rows.length,
     page: query.page,
     pageSize: query.pageSize,
     previewLimit: 100,
     generatedAtUtc: new Date().toISOString(),
     sourceDataAsOfUtc: source.rows.length
       ? new Date(
-          Math.max(...source.rows.map((r) => r.updatedAt.getTime())),
+          source.rows.reduce(
+            (latest, row) => Math.max(latest, row.updatedAt.getTime()),
+            -Infinity,
+          ),
         ).toISOString()
       : null,
     totalsByCurrency: [],
@@ -216,15 +240,7 @@ export function assembleOperationalResult(
           ),
         ),
       ],
-      currency: [
-        ...new Set(
-          rawSource.rows.flatMap((r) =>
-            typeof r.values.currencyCode === 'string' && r.values.currencyCode
-              ? [r.values.currencyCode]
-              : [],
-          ),
-        ),
-      ],
+      currency: [...currencyCodes].filter((code) => typeof code === 'string'),
     },
     reconciliation: {
       matchesApprovedProjection: true,

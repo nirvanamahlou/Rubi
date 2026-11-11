@@ -4,10 +4,18 @@ Reservations inbox headers now have pointer/keyboard column resize handles. Keep
 
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
+## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
+
+PostgreSQL aggregates unread counts by destination and selects a bounded feed with the same authorization and assignment priority. Seven focused tests, API typecheck, scoped lint, and an isolated PostgreSQL check passed.
+
 ## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
 
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
 
+
+## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B
+
+Documents, Customers and Correspondence reuse the localized authenticated browser transport. Existing timeouts and domain responses are preserved. A cancelled document request is not replayed after session refresh. Thirty-nine focused Web tests and scoped ESLint passed.
 
 ## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
 
@@ -1080,9 +1088,141 @@ Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, C
 
 Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
 
+## SALES-REPORT-SOURCE-PAGES-1111
+
+Read Sales report contracts and their relations in cursor batches of 500 within the existing reporting snapshot. Resolve reservation cancellation and project contract/currency rows per batch. Report sorting and grouping still consume the projected rows.
+
+## FINANCE-FX-PAGE-1110
+
+Finance inbox pages load purchase FX evidence after applying filters, ordering and the page boundary. Out-of-range pages skip those reads, while summary counts still cover all filtered results and the legacy list retains FX evidence. All 73 focused tests passed. Source reads and totals still use the assembled queue, so end-to-end pagination remains open.
+
+## REPORT-WORKER-STREAM-1111 — PC-B
+
+Both report export paths stream worker output into encrypted storage. The worker waits for each bounded chunk to be consumed, with no complete plaintext artifact buffer on these paths. Output size and SHA-256 retain their existing contract. Source rows are still materialized. Twenty-one focused export and storage tests passed.
+
+## REPORTING-WORKER-INPUT-1111
+
+Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
+
+## LOGO-DUPLICATE-PROJECTION-1111 — PC-B
+
+Logo deduplication selects only the newest matching document and required file metadata within the existing branch, source and confidentiality scope. Existing objects are authenticated in bounded chunks without buffering plaintext. Missing-object replacement and corrupt-object rejection remain in place. Multipart upload still receives a buffer.
+
+## STREAM-ENCRYPTED-ARTIFACTS-1111 — PC-B
+
+Document and report artifact storage now encrypts in 64 KiB chunks and patches the GCM tag into the existing file header. Failed producers remove the partial file and key collisions retain the earlier object. The renderer still returns buffered output. Twelve storage and reporting export tests passed.
+
+## DOCUMENT-BUFFER-READ-1111 — PC-B
+
+Compatibility document reads check file size before allocating a single output buffer and fill it in 64 KiB authenticated chunks. ZIP/OLE inspection still requires the full plaintext buffer. The ciphertext and intermediate full plaintext copies are eliminated.
+
+## DOCUMENT-STREAM-SCAN-1111
+
+Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
+
+## HOTEL-CURRENCY-FIELD-ACCESS-1110
+
+The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
+
+## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B
+
+Operational report previews retain only the ranked candidates through the page endpoint and map only displayed rows. Exact source totals, stable tie ordering, source freshness, available filters and full export order are preserved. Source projections still materialize their rows.
+
+## NATIVE-PAYMENTS-STREAM-1111 — PC-B
+
+The native receipt/refund report consumes each cursor batch directly into the report projection. It keeps only one raw page and retains the existing 10,000-event limit for each source. Other native projections still materialize source rows.
+
+## REPORTING-CSV-MEMORY-1111
+
+CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
+
+## XLSX-RANGE-INSPECTION-1111 — PC-B
+
+Ordinary staged ZIP workbooks use bounded authenticated ranges for the ZIP directory and content manifest. Each range authenticates the complete encrypted object without retaining its complete plaintext. ZIP64, large metadata and OLE containers retain the compatibility parser.
+
+## STREAM-DOCUMENT-MULTIPART-1111 — PC-B
+
+Archive and incoming multipart routes stream directly into an encrypted staged object while computing SHA-256 and retaining a bounded prefix. ZIP/OLE recognition still uses a full decrypted container and internal Buffer callers remain compatible. Existing multipart limits and rejected-request cleanup are covered by HTTP tests.
+
+## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
+
+Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
+
+## REPORTING-DURABLE-EXPORT-1110
+
+The Reports workspace now queues exports and retries in PostgreSQL, tracks status by owner, and downloads only once the file is ready. A database lease lets another API instance recover interrupted work and prevents an expired worker from publishing. The queue checks the current session, permissions, branch scope and report definition before generation. Session and access are checked again before publication. Ready artifacts and run status commit together. Existing synchronous API clients and stored artifacts retain their previous response shapes. Apply the additive reporting export queue migration before deploying the API, then deploy Web. Database-side row projection still materializes the selected report data before the rendering worker runs.
+
+## REPORT-FACT-BATCHES-1111 — PC-B
+
+Fallback preview and export now read travel facts in 1,000-row batches within one read-only repeatable snapshot. An isolated PostgreSQL test verifies tied timestamps across the boundary, exact decimals and branch scope. Native source readers and grouped output still materialize their data.
+
+## REPORT-FACT-AGGREGATION-1111 — PC-B
+
+The travel fallback groups eligible facts, accumulates exact currency totals, and derives filters and the source timestamp in one pass. Native timestamp maxima no longer expand all rows into function arguments. The fallback accepts an iterable, with database streaming still pending.
+
+## REPORTING-FILTER-PROJECTION-1111
+
+Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
+
+## PROCUREMENT-FINANCE-SOURCE-PAGES-1110
+
+Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.
+
+## NATIVE-SALES-STREAM-1111 — PC-B
+
+Native Sales reports feed each contract/currency batch into the report and contract aggregators, reusing authorized label lookups for repeated IDs. The test covers 501 contracts, 1,002 currency rows and exact per-currency totals. Other consumers of the public collecting adapter and grouped report output still materialize their data.
+
+## REPORTING-EXPORT-FILTER-MEMORY-1111
+
+Reports build filter choices only for interactive output. Exports preserve filter labels and selected rows, and reuse the source row array when no output predicates apply. Database rows still materialize before rendering.
+
+## FINANCE-SOURCE-PROJECTIONS-1110
+
+The Sales inbox reads only receipt fields used by Finance. Ticket queue state reads the latest cost per requested purchase and the latest payment and exact count for that cost, using the existing compound indexes. Earlier cost revisions and their payments stay outside the result. The scoped suite passed 39 tests and the isolated PostgreSQL 18 suite passed all six. Cross-source pagination and the existing Sales and Procurement source limits remain open.
+
+## PAYMENT-REPORT-SOURCE-PAGES-1111
+
+Reserve receipt and refund report paging and its cursor regression. Read each event stream in batches of 500 inside the existing reporting snapshot and project rows immediately. Both streams retain their 10,000-row safety limits and exact amounts.
+
+## RESERVATION-FINANCE-PROJECTION-1110
+
+Reservations supplies Finance with a narrow scoped intake and purchase projection. PostgreSQL retrieves only the latest revision of each selected purchase in the same repeatable-read snapshot. Existing purchase grouping, historical intake visibility, branch/company scope and legacy paid balances remain. Thirty-one targeted tests, API typecheck and an isolated PostgreSQL 18 scenario passed. The producer still reads the scoped purchase collection up to its existing limit. End-to-end Finance inbox pagination remains open.
+
+## WORKBENCH-SHARED-TRANSPORT-1110
+
+Workbench messaging, personal endpoints and feedback use the shared cookie-authenticated transport. JSON requests use the existing 30-second deadline. Attachments and multipart requests allow 120 seconds. Caller cancellation remains linked and 401 can trigger one retry with the same request body. Existing domain error handling remains. All 102 Workbench and transport tests passed. Other Web adapters retain their existing transport.
+
+## IAM-SESSION-RESPONSE-V1-1110
+
+Login and refresh decode the same versioned wire shape before updating browser identity. LoginResponse is inferred from the decoder and still exported at the Contracts root. Roles remain optional for older API responses; permission code strings remain forward-compatible and server authorization is authoritative. Malformed successful responses do not publish a recovered-session event. The Contracts build, 66 Web tests and 20 API tests passed, including real login and rotation against disposable PostgreSQL 18. The wire payload is unchanged. This decoder covers login and refresh; other HTTP schemas remain separate.
+
+## HR-CALCULATION-FIELDS-1110
+
+HR attendance calculation settings map their ten legacy slots to explicit V1 field IDs for API validation and attendance calculations. Masking rules attach to seven existing resource fields and remain in force after display label changes. Verified identical masking coverage across 135 resources and 74 focused API tests against an isolated PostgreSQL 18 instance. Legacy arrays and fieldN persistence remain compatible. Other HR layouts and presentation consumers still require migration.
+
+## TYPE-AWARE-LINT-1110
+
+The existing API and Web lint jobs enforce type-aware Promise handling on the authentication guard, session refresh, shared authenticated fetch, document scanner entry point and report export files. Both package configs reject a bare Promise and a voided Promise while allowing an explicit rejection handler. The standalone document scanner reports shutdown failure without echoing private configuration. Thirty-three focused API and Web tests passed. Browser scenarios and broader type-aware coverage remain open.
+
+## ARCHITECTURE-BOUNDARY-DOCS-1110
+
+The HR workspace now shares an in-flight bootstrap across overlapping refreshes. A committed mutation supersedes the previous read, and an older response cannot overwrite the new result. Four focused Web regressions cover coalescing, ordering, retry and dependent list invalidation.
+
+The Finance inbox fetches only the latest revision for each authorized procurement invoice through the existing source/version index. Stale source versions still appear as under review. The projection preserves exact decimals.
+
+The architecture and deployment baselines distinguish repository implementation from target design. The API repository boundary test covers nested static re-exports, type references and literal dynamic imports or require calls. Existing explicit composition exceptions remain scoped. Fifteen focused tests and scoped ESLint passed. No runtime, migration or dependency changes.
+
+## FINANCE-HR-REFERRAL-READ-1110
+
+Finance reads branch-scoped HR referrals through one bounded projection and writes one read audit event. Response eligibility and source failure handling are preserved. No schema or API contract changes.
+
 ## SALES-REFERENCE-ACCESS-1018 — PC-B
 
 Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.
+
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B
+
+A claimed antivirus job has a five-minute deadline. An expired claim can be picked up again, and the old result cannot override a newer attempt. Exhausted claims remain quarantined and record a scan failure. API polling and inline scanning can be delegated by setting DOCUMENTS_SCAN_EXECUTION=worker and running the standalone document scanner with access to the same database and encrypted storage. The default remains api. 132 API unit tests and one disposable PostgreSQL claim/recovery test passed.
 
 ## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
 
@@ -1327,6 +1467,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-room-party-limits-1015. User authorizes cumu
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
+
+## MARKETING-CAMPAIGN-PAGES-1110 — PC-B
+
+Campaign list queries apply branch scope, search, dates, status, channel and company in PostgreSQL before pagination. Count and selected records use the same snapshot. Excel reads filtered pages only on demand. Calendar and budget load the legacy collection only when their tabs open. 119 Web tests and 32 API/PostgreSQL tests passed. Follow-up depends on promotion pagination PR 1608.
 
 ## SERVICE-PARTY-HOTEL-ROOMS-1014 — PC-A — READY_FOR_CI
 
@@ -1599,6 +1743,14 @@ Selected flight loads now expose View, Edit Load and Delete Load together. Edit 
 ## 2026-10-10 — TICKET-FORM-UX-1010 — PC-B — READY_FOR_REVIEW
 
 Ticket Catalog flight search now exposes all weekdays including Wednesday. Application dialogs no longer close from an outside click, while explicit close/Escape remain available. Ticket forms save with Ctrl+S, and generated dates appear in chronological columns for row, outbound/return day and date. Ticket Catalog UUID creation is compatible with HTTP LAN origins where `crypto.randomUUID` is absent. Focused tests, localization coverage, Web TypeScript and scoped lint pass; the updated local port 3000 runtime returns HTTP 200. No API/schema/migration/dependency or operational-data change.
+
+## FINANCE-FX-SCOPED-EVIDENCE-1111 — PC-B
+
+Finance purchase FX evidence queries now apply the displayed source/payment version bounds in PostgreSQL, project only calculation fields, and skip absent or local-currency sources. Twenty-three targeted API tests passed.
+
+## MARKETING-PROMOTION-PAGES-1110 — PC-B
+
+Discounts and offers request 50 rows per page after server-side branch, kind, status, name/code and date filters. Excel retrieves all matching pages on demand. The Marketing hub no longer preloads campaign records outside the Campaigns section. Sixteen focused Web tests and 31 API/PostgreSQL tests passed in a disposable database. Audience groups now read 25 records per page with server-side name and status search, exact branch-scoped totals, and page adjustment after deletion. Forty-one focused Web tests and the new PostgreSQL integration test passed. Remaining Marketing collections use their existing API.
 
 ## 2026-10-09 — SALES-RESERVATIONS-FINANCE-QA-1009 — PC-A
 
@@ -1931,6 +2083,10 @@ Hotel meal/service, room-type and facility selectors now expose a clear Add acti
 ## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
+
+## I18N-STARTUP-1110 — PC-B
+
+Build the English phrase index only on the first unmatched English translation that needs Persian phrase lookup. Persian and exact English lookup avoid index initialization. Reuse the source inventory in coverage tests. Thirteen focused tests passed. The median of 20 local module initialization and first Persian lookup samples fell from 55.3 ms to 16.8 ms with JSON cached. Bundle download size is outside this measurement.
 
 ## 2026-10-01 — RESERVATION-PASSENGER-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
@@ -2853,6 +3009,10 @@ lint، typecheck و build تولیدی ۴۶ route پاس شدند. جزئیات 
 ## MASTER-008 — یکپارچه‌سازی فیلدهای نوع هواپیما
 
 در فرم، جدول، پروفایل و خروجی Excel «انواع هواپیما»، عنوان فارسی حذف و سازنده/مدل به یک فیلد «سازنده و مدل» تبدیل شد. API مقدار ترکیبی را اعتبارسنجی و در ستون‌های فعلی تفکیک می‌کند و برای سازگاری مصرف‌کنندگان قبلی یک نام داخلی غیرنمایشی می‌سازد؛ بنابراین Schema، Migration و قرارداد مرکزی تغییر نکرده‌اند. Fixtureهای آزمایشی ساده و واقع‌نما نیز با `Airbus / A320-200` و `Boeing / 777-300ER` هماهنگ شدند. ۲۹ تست هدفمند Web، ۲۷ تست هدفمند API، lint محدوده، TypeScript Web/API و build تولیدی هر دو برنامه موفق‌اند. جزئیات در [MASTER-008-AIRCRAFT-FIELDS](tasks/MASTER-008-AIRCRAFT-FIELDS.md).
+
+## WORKBENCH-VERBATIM-1110 — PC-B
+
+Messaging renders stored text, sender and member names, group titles, quoted and forwarded text, reaction names, and attachment titles without applying the UI dictionary. Interface copy still follows the selected language. Eleven focused rendering and reaction tests passed. This is the Workbench slice of architecture finding A11.
 
 ## WORKBENCH-041 — رفع خطای پیام‌رسان
 
@@ -5253,6 +5413,10 @@ Hotel table checkboxes open existing request/voucher workflow. Sent requests lig
 ## CONTRACT-HOTEL-MEAL-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
 Reservations service column now uses meal codes from the selected hotel's existing master-data response when the contract has no explicit service. ROYAL WINGS UALL verified read-only. Same value flows to XLSX without additional requests or contract writes.49 tests, scoped lint/typecheck and build passed; Web restart pending. See tasks/CONTRACT-HOTEL-MEAL-0910.md.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B
+
+First implementation slice covers attendance connector identity and penalty reads, messaging and notification query load, safe error diagnostics, authenticated Web requests, HR encryption key compatibility, report rendering isolation and authenticated downloads. See docs/tasks/ARCHITECTURE-REMEDIATION-1110.md for test evidence and remaining audit work.
 
 ## RESERVATION-FORM-PREVIEW-0910 — PC-A — LOCAL_COMPLETE_PENDING_WEB_RESTART
 
@@ -9730,3 +9894,64 @@ Per-ticket export template override uses the same published Master Data projecti
 Ordered city destinations and per-destination nights are stored in versioned Tour definitions. Combined stays are consecutive from the departure date and must end on the tour end date. Sales suggestions match only the origin and any actual tour destination; unrelated single-city tours are excluded. Pricing reads each city's rates for its own stay, permits multiple complete hotel/room combinations, sums exact purchase amounts by currency and stores one editable sale per combination. Publications freeze the combinations and all rate sources have restrictive FK links; legacy independent hotel publications are unchanged. Published Sales selection applies every stay and server quote validation rejects missing/changed hotels, dates or room compositions. The banner bridge transfers sale amounts only. Additive nullable JSON columns and a restrictive source-link table; no dependency or production-data/deployment changes. Focused shared/API/Web tests and exact-head full hosted gates precede user-authorized develop merge.
 
 DOCUMENTS-SECTIONS-1110: grouped Finance/Procurement and Organization/HR list scopes, source-linked documents, server-side favorite filtering and stale-response protection. Preserves existing branch/domain/sensitive guards; no migration or operational data changes. Repository 37 and service 85 tests passed. Full hosted checks required before merge.
+
+## HR Radan synchronization
+
+Minute polls use a recent two-day window, with a 31-day daily recovery pass and
+an optional manual date range. The connector caches personnel, scopes routine
+work calculations to affected employees, and exposes per-source success totals.
+Existing attendance records and period locks remain authoritative. After integrating
+the latest develop, 23 focused Radan and attendance editor tests and all three
+Documents contract tests passed. No deployment or live Radan calls were made.
+
+## I18N-LAZY-CATALOG-1110
+
+Persian provider startup no longer merges English catalogs or computes English NextIntl messages. The first English render computes and caches them synchronously, preserving SSR and locale switching. A provider regression verifies Persian does not enumerate the English catalog and two English renders reuse the same merge. All 46 i18n tests passed. Catalog modules still ship with the initial JavaScript, so locale-specific asset delivery remains open.
+
+## REPORTING-XLSX-MEMORY-1110
+
+XLSX rendering calculates capped column widths in a prepass and compresses row chunks without retaining the complete cell grid or worksheet XML. The worker transfers exactly the resulting bytes; pooled and sliced buffers are copied into a dedicated allocation before transfer. All eight inflated workbook entries were identical to develop for synthetic zero-row and 650-row reports. A synthetic 10,000 by 24 render reduced peak RSS from 358,752 to 208,484 KiB, while the resulting ZIP grew from 869,916 to 889,377 bytes. All 170 Reporting tests passed. The report query and compressed output still materialize in memory, and durable export scheduling remains open.
+
+## MARKETING-SCOPED-PANEL-LOAD-1110
+
+Audience segments and automation load their authorized assets without fetching the complete campaign collection. Durable panel loads ignore superseded responses, including failed requests after a newer refresh starts. All 120 Marketing Web tests and scoped ESLint passed. Other asset lists and dependent campaign pickers still use their existing collections.
+
+## CONTRACT-DOMAIN-ENTRYPOINTS-1110
+
+The Contracts package exposes dedicated Sales pricing and upload-format entry points. Selected Web and API consumers use the leaves and the root retains its existing exports. A fresh Node process loaded two Contracts files for the two leaves compared with 107 after importing the root. Both CommonJS and ESM resolve the leaves, which share the same implementations as the root. The Contracts build and 47 focused API/Web tests passed. Other domains and their DTO/display separation remain open.
+
+## REPORTING-PREVIEW-FILTER-PAGE-1111
+
+Reserve report output filtering and pagination. A single pass counts all matching rows and accumulates exact currency totals while retaining only the requested preview rows. Export continues to return all matching rows.
+
+## HR-RETIRE-PHASE-A-PROTOTYPE-1110
+
+Retired unused Phase A HR types, policies, command proposals and prototype-only tests after verifying that no runtime consumer imports them. The historical design remains accessible through Git. The authenticated PostgreSQL test now activates the contract through HTTP, replays the same idempotency key, and checks persisted version, state, document linkage and audit count. All 52 targeted tests passed against an isolated PostgreSQL 18 database.
+
+## HR-PAY-DOCS-1110 — PC-B
+Employee pay views now support restricted archived evidence with title, date, archive validity and download, scoped to employee and selected pay view using existing Documents and employee.docs APIs. HR inbox groups legacy/native request sources under leave, attendance correction and advances; neutral all filter retained. Employee requests tab renamed to requests and missions. No schema/dependency or live-data changes. Focused tests, scoped ESLint, Web typecheck and production build verified; 28 focused tests pass.
+
+SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
+
+## MANIFEST-REMOVE-CODE-BOX-1110
+
+Default PNL export no longer contains the System Acceptable Code form button. Workbook columns, data mapping, help sheets and XLSM project remain unchanged. Focused workbook export checks and hosted CI precede authorized develop merge; no deployment.
+HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
+
+WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
+
+HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the locked company scope. Accept a legacy unchanged organization branch reference on update while retaining validation for new references and authorization for the policy itself.
+
+HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance labels as audited overrides. Automatic mode restores the latest calculated status and bulk activation preserves the override. Source punches and existing authorization remain intact.
+
+- HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
+
+- Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B
+
+Incoming letters return once the file and metadata are saved. Scan jobs remain scheduled in the background. Ninety-five focused API tests and scoped ESLint passed, including the incoming owner and file-access boundary.
+
+## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
+
+Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.

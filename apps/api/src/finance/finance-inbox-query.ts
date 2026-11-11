@@ -1,3 +1,4 @@
+import { retainRankedRow } from '../common/retain-ranked-row';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -144,12 +145,14 @@ export function validateInboxQuery(
     throw new BadRequestException('صفحه‌بندی معتبر نیست.');
   return { page, pageSize };
 }
-function inDays(value: string | null, from?: string, to?: string) {
-  if (!from && !to) return true;
+function inDays(
+  value: string | null,
+  start: number | null,
+  end: number | null,
+) {
+  if (start === null && end === null) return true;
   if (!value) return false;
-  const stamp = Date.parse(value),
-    start = day(from),
-    end = day(to);
+  const stamp = Date.parse(value);
   return (
     Number.isFinite(stamp) &&
     (start === null || stamp >= start) &&
@@ -163,83 +166,163 @@ const normalized = (value: string) =>
     .replace(/ك/g, 'ک')
     .trim()
     .toLocaleLowerCase('fa');
+function financeInboxPredicate(query: FinanceInboxQueryV1) {
+  const min = query.minAmount ? decimalUnits(query.minAmount) : null;
+  const max = query.maxAmount ? decimalUnits(query.maxAmount) : null;
+  const createdFrom = day(query.fromDate);
+  const createdTo = day(query.toDate);
+  const dueFrom = day(query.dueFrom);
+  const dueTo = day(query.dueTo);
+  const person = query.person && normalized(query.person);
+  const search = query.search && normalized(query.search);
+  return (item: FinanceInboxItemV1) => {
+    const amount = item.amount ? decimalUnits(item.amount.amount) : null;
+    const status =
+      !query.status ||
+      (query.status === 'OPEN'
+        ? !isClosedFinanceItem(item)
+        : query.status === 'CLOSED'
+          ? isClosedFinanceItem(item)
+          : item.status === query.status);
+    return (
+      status &&
+      (!query.approvalGroup ||
+        (query.approvalGroup === 'APPROVED') === isFinanceApproved(item)) &&
+      (!query.category ||
+        (query.category === 'RECEIPT'
+          ? item.kind === 'RECEIPT_VERIFICATION'
+          : item.kind === 'PAYMENT_REQUEST' &&
+            ['RESERVATIONS', 'PURCHASES'].includes(item.source))) &&
+      (!query.source || item.source === query.source) &&
+      (!query.branchId || item.branchReference === query.branchId) &&
+      (!query.currencyCode ||
+        item.amount?.currencyCode === query.currencyCode) &&
+      (!person ||
+        normalized(
+          [item.partyDisplaySnapshot, item.requesterDisplaySnapshot].join(' '),
+        ).includes(person)) &&
+      (!search ||
+        normalized(
+          [
+            item.title,
+            item.description,
+            item.sourceReference,
+            item.contractReference,
+            item.partyDisplaySnapshot,
+            item.requesterDisplaySnapshot,
+          ].join(' '),
+        ).includes(search)) &&
+      (min === null || (amount !== null && amount >= min)) &&
+      (max === null || (amount !== null && amount <= max)) &&
+      inDays(item.createdAt, createdFrom, createdTo) &&
+      inDays(item.dueAt, dueFrom, dueTo)
+    );
+  };
+}
+
+function financeInboxComparator(query: FinanceInboxQueryV1) {
+  const field = query.sortBy ?? 'createdAt';
+  const direction =
+    (query.sortDirection ?? (field === 'dueAt' ? 'asc' : 'desc')) === 'asc'
+      ? 1
+      : -1;
+  return (a: FinanceInboxItemV1, b: FinanceInboxItemV1) => {
+    const left = field === 'amount' ? a.amount : a[field];
+    const right = field === 'amount' ? b.amount : b[field];
+    if (left === null || right === null) {
+      if (left !== right) return left === null ? 1 : -1;
+    } else if (field === 'amount') {
+      // Different currencies have no common nominal monetary ordering.
+      const currency = a.amount!.currencyCode.localeCompare(
+        b.amount!.currencyCode,
+      );
+      if (currency) return currency;
+      const leftUnits = decimalUnits(a.amount!.amount);
+      const rightUnits = decimalUnits(b.amount!.amount);
+      if (leftUnits !== rightUnits)
+        return (leftUnits < rightUnits ? -1 : 1) * direction;
+    } else {
+      const difference =
+        Date.parse(left as string) - Date.parse(right as string);
+      if (difference) return Math.sign(difference) * direction;
+    }
+    return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
+  };
+}
+
 export function filterFinanceInbox(
   items: readonly FinanceInboxItemV1[],
   query: FinanceInboxQueryV1,
 ) {
   return items
-    .filter((item) => {
-      const amount = item.amount ? decimalUnits(item.amount.amount) : null;
-      const status =
-        !query.status ||
-        (query.status === 'OPEN'
-          ? !isClosedFinanceItem(item)
-          : query.status === 'CLOSED'
-            ? isClosedFinanceItem(item)
-            : item.status === query.status);
-      return (
-        status &&
-        (!query.approvalGroup ||
-          (query.approvalGroup === 'APPROVED') === isFinanceApproved(item)) &&
-        (!query.category ||
-          (query.category === 'RECEIPT'
-            ? item.kind === 'RECEIPT_VERIFICATION'
-            : item.kind === 'PAYMENT_REQUEST' &&
-              ['RESERVATIONS', 'PURCHASES'].includes(item.source))) &&
-        (!query.source || item.source === query.source) &&
-        (!query.branchId || item.branchReference === query.branchId) &&
-        (!query.currencyCode ||
-          item.amount?.currencyCode === query.currencyCode) &&
-        (!query.person ||
-          normalized(
-            [item.partyDisplaySnapshot, item.requesterDisplaySnapshot].join(
-              ' ',
-            ),
-          ).includes(normalized(query.person))) &&
-        (!query.search ||
-          normalized(
-            [
-              item.title,
-              item.description,
-              item.sourceReference,
-              item.contractReference,
-              item.partyDisplaySnapshot,
-              item.requesterDisplaySnapshot,
-            ].join(' '),
-          ).includes(normalized(query.search))) &&
-        (!query.minAmount ||
-          (amount !== null && amount >= decimalUnits(query.minAmount))) &&
-        (!query.maxAmount ||
-          (amount !== null && amount <= decimalUnits(query.maxAmount))) &&
-        inDays(item.createdAt, query.fromDate, query.toDate) &&
-        inDays(item.dueAt, query.dueFrom, query.dueTo)
-      );
-    })
-    .sort((a, b) => {
-      const field = query.sortBy ?? 'createdAt';
-      const direction =
-        (query.sortDirection ?? (field === 'dueAt' ? 'asc' : 'desc')) === 'asc'
-          ? 1
-          : -1;
-      const left = field === 'amount' ? a.amount : a[field];
-      const right = field === 'amount' ? b.amount : b[field];
-      if (left === null || right === null) {
-        if (left !== right) return left === null ? 1 : -1;
-      } else if (field === 'amount') {
-        // Different currencies have no common nominal monetary ordering.
-        const currency = a.amount!.currencyCode.localeCompare(
-          b.amount!.currencyCode,
-        );
-        if (currency) return currency;
-        const leftUnits = decimalUnits(a.amount!.amount);
-        const rightUnits = decimalUnits(b.amount!.amount);
-        if (leftUnits !== rightUnits)
-          return (leftUnits < rightUnits ? -1 : 1) * direction;
-      } else {
-        const difference =
-          Date.parse(left as string) - Date.parse(right as string);
-        if (difference) return Math.sign(difference) * direction;
-      }
-      return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
-    });
+    .filter(financeInboxPredicate(query))
+    .sort(financeInboxComparator(query));
+}
+
+export function compareFinanceQueueOrder(
+  a: FinanceInboxItemV1,
+  b: FinanceInboxItemV1,
+) {
+  return (
+    (a.dueAt ?? '9999').localeCompare(b.dueAt ?? '9999') ||
+    b.createdAt.localeCompare(a.createdAt)
+  );
+}
+
+type RankedItem = { item: FinanceInboxItemV1; index: number };
+
+export function selectFinanceInboxPage(
+  items: readonly FinanceInboxItemV1[],
+  query: FinanceInboxQueryV1,
+  page: number,
+  pageSize: number,
+  generatedAt: string,
+) {
+  const matches = financeInboxPredicate(query);
+  const compareItems = financeInboxComparator(query);
+  const compare = (a: RankedItem, b: RankedItem) =>
+    compareItems(a.item, b.item) ||
+    compareFinanceQueueOrder(a.item, b.item) ||
+    a.index - b.index;
+  const capacity = page * pageSize;
+  const heap: RankedItem[] = [];
+  const summary = {
+    openCount: 0,
+    overdueCount: 0,
+    receiptCount: 0,
+    paymentCount: 0,
+  };
+  let total = 0;
+  for (const [index, item] of items.entries()) {
+    if (!matches(item)) continue;
+    total++;
+    retainRankedRow(heap, { item, index }, capacity, compare);
+    if (isClosedFinanceItem(item)) continue;
+    summary.openCount++;
+    if (item.dueAt && item.dueAt < generatedAt) summary.overdueCount++;
+    if (item.source === 'SALES' || item.direction === 'RECEIPT')
+      summary.receiptCount++;
+    if (
+      ['PAYMENT_REQUEST', 'PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
+        item.kind,
+      ) &&
+      item.amount &&
+      item.direction !== 'RECEIPT' &&
+      item.direction !== 'NON_CASH' &&
+      ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status)
+    )
+      summary.paymentCount++;
+  }
+  const start = (page - 1) * pageSize;
+  return {
+    items:
+      total > start
+        ? heap
+            .sort(compare)
+            .slice(start)
+            .map(({ item }) => item)
+        : [],
+    total,
+    summary,
+  };
 }

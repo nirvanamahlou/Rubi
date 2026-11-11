@@ -1,4 +1,4 @@
-import { receiptFileSupported } from '@nora/contracts';
+import { receiptFileSupported } from '@nora/contracts/upload-formats';
 import {
   BadRequestException,
   Controller,

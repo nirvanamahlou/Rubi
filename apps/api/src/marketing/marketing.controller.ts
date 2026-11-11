@@ -23,6 +23,9 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { MarketingProcessService } from './marketing-process.service';
 import {
   MarketingAssetListQueryDto,
+  MarketingCampaignPageQueryDto,
+  MarketingSegmentPageQueryDto,
+  MarketingPromotionPageQueryDto,
   MarketingAssetDeleteDto,
   MarketingAssetMutationDto,
   MarketingCampaignMutationDto,
@@ -33,7 +36,10 @@ import { MarketingRecordsService } from './marketing-records.service';
 @ApiTags('Marketing')
 @ApiCookieAuth('nora_access')
 @ApiExtraModels(
+  MarketingSegmentPageQueryDto,
   MarketingAssetListQueryDto,
+  MarketingCampaignPageQueryDto,
+  MarketingPromotionPageQueryDto,
   MarketingAssetDeleteDto,
   MarketingAssetMutationDto,
   MarketingCampaignMutationDto,
@@ -62,6 +68,16 @@ export class MarketingController {
   @RequirePermissions('marketing.read')
   campaigns(@Req() req: AuthenticatedRequest) {
     return this.records.listCampaigns(req.actor);
+  }
+
+  @Get('campaigns/page')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  campaignPage(
+    @Query() query: MarketingCampaignPageQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.records.listCampaignPage(query, req.actor);
   }
 
   @Get('campaigns/:id')
@@ -131,6 +147,26 @@ export class MarketingController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.records.listAssets(query.kind, req.actor);
+  }
+
+  @Get('assets/segments')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  segments(
+    @Query() query: MarketingSegmentPageQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.records.listSegments(query, req.actor);
+  }
+
+  @Get('assets/promotions')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  promotions(
+    @Query() query: MarketingPromotionPageQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.records.listPromotions(query, req.actor);
   }
 
   @Post('assets')

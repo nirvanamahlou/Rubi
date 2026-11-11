@@ -216,6 +216,7 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
   ],
   hotels: [
     'name',
+    'currencyId',
     'englishName',
     'cityId',
     'chainId',

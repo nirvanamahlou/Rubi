@@ -291,6 +291,26 @@ export class MessagingRepository {
     });
   }
 
+  async unreadCounts(
+    memberships: Array<{ conversationId: string; lastReadAt: Date | null }>,
+    userId: string,
+  ): Promise<Map<string, number>> {
+    if (!memberships.length) return new Map();
+    const counts = await this.database.client.messagingMessage.groupBy({
+      by: ['conversationId'],
+      where: {
+        senderUserId: { not: userId },
+        conversation: { members: { some: { userId } } },
+        OR: memberships.map(({ conversationId, lastReadAt }) => ({
+          conversationId,
+          ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
+        })),
+      },
+      _count: { _all: true },
+    });
+    return new Map(counts.map((row) => [row.conversationId, row._count._all]));
+  }
+
   unreadCount(conversationId: string, userId: string, lastReadAt: Date | null) {
     return this.database.client.messagingMessage.count({
       where: {

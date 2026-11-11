@@ -220,6 +220,31 @@ describe('ReportingWorkspace', () => {
     expect(workspaceCountForView('saved', null)).toBeUndefined();
   });
 
+  it('waits for the queued artifact before starting the download', async () => {
+    const readStatus = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'GENERATING' })
+      .mockResolvedValueOnce({ status: 'READY' });
+    const startDownload = vi.fn();
+    const wait = vi.fn(async () => {
+      expect(startDownload).not.toHaveBeenCalled();
+    });
+    await expect(
+      createAndDownloadReportExport({
+        createExport: async () => ({ id: 'artifact-queued', status: 'QUEUED' }),
+        readStatus,
+        wait,
+        startDownload,
+        format: 'XLSX',
+        query: {},
+        reportCode: 'sales_by_service_route',
+      }),
+    ).resolves.toBe('artifact-queued');
+    expect(readStatus).toHaveBeenCalledTimes(2);
+    expect(readStatus).toHaveBeenLastCalledWith('artifact-queued');
+    expect(startDownload).toHaveBeenCalledOnce();
+  });
+
   it('creates the selected export directly and starts its download without a second dialog', async () => {
     const createExport = vi.fn(async () => ({ id: 'artifact-1' }));
     const startDownload = vi.fn();

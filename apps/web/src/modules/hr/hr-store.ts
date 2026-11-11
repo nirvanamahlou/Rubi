@@ -14,27 +14,35 @@ export function useHrStore() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const generation = useRef(0);
-  const refresh = useCallback(async () => {
-    const request = ++generation.current;
+  const pending = useRef<Promise<void> | null>(null);
+  const refresh = useCallback(() => {
+    if (pending.current) return pending.current;
     setLoading(true);
-    try {
-      const next = await hrApi.bootstrap();
-      if (request === generation.current) {
+    const request = Promise.resolve()
+      .then(() => hrApi.bootstrap())
+      .then((next) => {
+        if (pending.current !== request) return;
         setData(next);
         setError('');
         setRevision((value) => value + 1);
-      }
-    } catch (e) {
-      if (request === generation.current)
-        setError(e instanceof Error ? e.message : 'دریافت اطلاعات انجام نشد.');
-      throw e;
-    } finally {
-      if (request === generation.current) setLoading(false);
-    }
-  }, []);
-  const invalidate = useCallback(() => {
-    generation.current++;
+      })
+      .catch((error: unknown) => {
+        if (pending.current === request)
+          setError(
+            error instanceof Error
+              ? error.message
+              : 'دریافت اطلاعات انجام نشد.',
+          );
+        throw error;
+      })
+      .finally(() => {
+        if (pending.current === request) {
+          pending.current = null;
+          setLoading(false);
+        }
+      });
+    pending.current = request;
+    return request;
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -42,9 +50,9 @@ export function useHrStore() {
     }, 0);
     return () => {
       window.clearTimeout(timer);
-      invalidate();
+      pending.current = null;
     };
-  }, [refresh, invalidate]);
+  }, [refresh]);
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState === 'visible')
@@ -87,9 +95,12 @@ export function useHrStore() {
     });
   }, []);
   const mutated = useCallback(async () => {
-    setRevision((value) => value + 1);
+    // An earlier request may reflect data before the committed mutation.
+    pending.current = null;
     window.dispatchEvent(new Event('nora:hr-server-change'));
-    await refresh().catch(() => undefined);
+    // Successful refresh already advances the revision. On failure still
+    // invalidate dependent lists so a committed mutation is visible.
+    await refresh().catch(() => setRevision((value) => value + 1));
   }, [refresh]);
   const create = useCallback(
     async (input: HrRecordCreate, key: string) => {

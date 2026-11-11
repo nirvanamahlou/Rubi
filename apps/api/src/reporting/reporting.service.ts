@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ServiceUnavailableException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -21,7 +22,7 @@ import type {
   TravelReportResultV1,
   DashboardProjectionV1,
 } from './reporting.contracts';
-import { buildTravelReportResult } from './reporting.projection';
+import { createTravelReportProjection } from './reporting.projection';
 import {
   ReportingRepository,
   type DashboardFilterOptions,
@@ -248,17 +249,14 @@ export class ReportingService {
         : null;
       try {
         const native = await this.repository.nativeResult?.(code, query, actor);
-        const facts = native
-          ? []
-          : await this.repository.facts(query, serverBranchScope);
         const result =
           native ??
-          buildTravelReportResult({
+          (await this.projectTravelFacts(
             code,
             query,
-            facts,
-            now: new Date(),
-          });
+            serverBranchScope,
+            false,
+          ));
         if (run)
           await this.repository.finishRun(
             String(run.id),
@@ -1509,22 +1507,116 @@ export class ReportingService {
       actor,
       true,
     );
-    const facts = native
-      ? []
-      : await this.repository.facts(query, serverBranchScope);
     return {
       report,
       result:
         native ??
-        buildTravelReportResult({
-          code,
-          query,
-          facts,
-          now: new Date(),
-          includeAllRows: true,
-        }),
+        (await this.projectTravelFacts(code, query, serverBranchScope, true)),
     };
   }
+
+  private async projectTravelFacts(
+    code: string,
+    query: ReportQueryV1,
+    serverBranchScope: readonly string[],
+    includeAllRows: boolean,
+  ) {
+    const projection = createTravelReportProjection({
+      code,
+      query,
+      includeAllRows,
+    });
+    await this.repository!.scanFacts(query, serverBranchScope, projection.add);
+    return projection.finish(new Date());
+  }
+
+  assertExportAccess(actor: ReportingActor) {
+    this.require(actor, 'reporting.export');
+  }
+
+  prepareQueuedExport(
+    code: string,
+    queryInput: ReportQueryV1,
+    actor: ReportingActor,
+  ) {
+    this.require(actor, 'reporting.export');
+    const report = this.metadata(code, actor);
+    if (report.producerStatus !== 'READY')
+      throw new ConflictException(
+        'خروجی این گزارش هنوز به Public Projection متصل نیست.',
+      );
+    const branchIds =
+      actor.permissions.includes('sales.contracts.read.all') ||
+      actor.permissions.includes('reporting.read')
+        ? []
+        : actor.branchIds;
+    const query = validateReportQuery(
+      { ...queryInput, branchIds },
+      MAX_PREVIEW_PAGE_SIZE,
+    );
+    return { report, query };
+  }
+
+  async renderQueuedExport(
+    artifactId: string,
+    code: string,
+    format: 'CSV' | 'XLSX' | 'PDF',
+    query: ReportQueryV1,
+    actor: ReportingActor,
+    definition: { viewName: string; viewVersion: number },
+  ) {
+    this.require(actor, 'reporting.export');
+    if (!this.exportFiles)
+      throw new ConflictException('سرویس خروجی گزارش در دسترس نیست.');
+    const current = this.metadata(code, actor);
+    if (
+      current.approvedView !== definition.viewName ||
+      current.version !== definition.viewVersion
+    )
+      throw new BadRequestException(
+        'تعریف گزارش تغییر کرده است. خروجی را دوباره درخواست کنید.',
+      );
+    const { configuredLimit, expiryDays } = await this.exportLimits(actor);
+    const { report, result } = await this.travelResult(code, query, actor);
+    if (result.total > configuredLimit)
+      throw new BadRequestException(
+        `حداکثر ${configuredLimit} ردیف را می‌توان در یک خروجی دریافت کرد.`,
+      );
+    const file = await this.exportFiles.buildAndStore(
+      artifactId,
+      format,
+      result,
+      report.title,
+    );
+    return {
+      objectKey: file.objectKey,
+      sizeBytes: file.sizeBytes,
+      checksum: file.checksum,
+      expiryDays,
+      recordCount: result.total,
+    };
+  }
+
+  private async exportLimits(actor: ReportingActor) {
+    const exportSetting = this.settings
+      ? await this.settings.json<{ limit?: unknown; expiry?: unknown }>(
+          'reports',
+          'export',
+          actor.branchIds[0] ? { branchId: actor.branchIds[0] } : {},
+          {},
+        )
+      : { value: {} as { limit?: unknown; expiry?: unknown } };
+    const configuredLimit = boundedInteger(
+      exportSetting.value.limit,
+      1_000,
+      500_000,
+      100_000,
+    );
+    const expiryDays = boundedInteger(exportSetting.value.expiry, 1, 30, 7);
+    return { configuredLimit, expiryDays };
+  }
+
+  private activeExports = 0;
 
   async createExport(
     code: string,
@@ -1536,6 +1628,27 @@ export class ReportingService {
     actor: ReportingActor,
   ) {
     this.require(actor, 'reporting.export');
+    if (this.activeExports >= 2)
+      throw new ServiceUnavailableException(
+        'ظرفیت ساخت خروجی پر است. دوباره تلاش کنید.',
+      );
+    this.activeExports++;
+    try {
+      return await this.generateExport(code, input, actor);
+    } finally {
+      this.activeExports--;
+    }
+  }
+
+  private async generateExport(
+    code: string,
+    input: {
+      format: 'CSV' | 'XLSX' | 'PDF';
+      query: ReportQueryV1;
+      simulateFailure?: boolean;
+    },
+    actor: ReportingActor,
+  ) {
     const started = Date.now();
     if (!this.repository || !this.exportFiles)
       throw new ConflictException('سرویس خروجی گزارش در دسترس نیست.');
@@ -1568,21 +1681,7 @@ export class ReportingService {
       );
       throw error;
     }
-    const exportSetting = this.settings
-      ? await this.settings.json<{ limit?: unknown; expiry?: unknown }>(
-          'reports',
-          'export',
-          actor.branchIds[0] ? { branchId: actor.branchIds[0] } : {},
-          {},
-        )
-      : { value: {} as { limit?: unknown; expiry?: unknown } };
-    const configuredLimit = boundedInteger(
-      exportSetting.value.limit,
-      1_000,
-      500_000,
-      100_000,
-    );
-    const expiryDays = boundedInteger(exportSetting.value.expiry, 1, 30, 7);
+    const { configuredLimit, expiryDays } = await this.exportLimits(actor);
     if (result.total > configuredLimit) {
       await this.repository.failRun(
         String(run.id),
@@ -1636,16 +1735,16 @@ export class ReportingService {
       };
     }
     try {
-      const file = this.exportFiles.build(input.format, result, report.title);
-      const objectKey = await this.exportFiles.store(
+      const file = await this.exportFiles.buildAndStore(
         String(artifact.id),
-        file.extension,
-        file.buffer,
+        input.format,
+        result,
+        report.title,
       );
       await this.repository.finishExport(
         String(artifact.id),
-        objectKey,
-        file.buffer.length,
+        file.objectKey,
+        file.sizeBytes,
         file.checksum,
         expiryDays,
       );
@@ -1657,8 +1756,8 @@ export class ReportingService {
       return {
         ...artifact,
         status: 'READY',
-        objectKey,
-        sizeBytes: file.buffer.length,
+        objectKey: file.objectKey,
+        sizeBytes: file.sizeBytes,
         checksumSha256: file.checksum,
       };
     } catch (error) {
@@ -1692,16 +1791,22 @@ export class ReportingService {
     )
       throw new ConflictException('مهلت دانلود این خروجی پایان یافته است.');
     return {
-      buffer: await this.exportFiles.read(
+      stream: await this.exportFiles.open(
         String(artifact.objectKey),
         Number(artifact.sizeBytes),
       ),
+      sizeBytes: Number(artifact.sizeBytes),
       fileName: String(artifact.fileName),
       contentType: String(artifact.contentType),
     };
   }
 
   async retryExport(id: string, actor: ReportingActor) {
+    const { code, input } = await this.prepareExportRetry(id, actor);
+    return this.createExport(code, input, actor);
+  }
+
+  async prepareExportRetry(id: string, actor: ReportingActor) {
     this.require(actor, 'reporting.export');
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
@@ -1718,9 +1823,9 @@ export class ReportingService {
       sort?: ReportQueryV1['sort'];
       timezone?: 'Asia/Tehran';
     };
-    return this.createExport(
-      String(artifact.reportCode),
-      {
+    return {
+      code: String(artifact.reportCode),
+      input: {
         format: artifact.format as 'CSV' | 'XLSX' | 'PDF',
         query: {
           filters: snapshot.filters ?? {},
@@ -1733,11 +1838,10 @@ export class ReportingService {
           ...(snapshot.branchIds?.length
             ? { branchIds: snapshot.branchIds }
             : {}),
-          timezone: snapshot.timezone ?? 'Asia/Tehran',
+          timezone: snapshot.timezone ?? ('Asia/Tehran' as const),
         },
       },
-      actor,
-    );
+    };
   }
 }
 

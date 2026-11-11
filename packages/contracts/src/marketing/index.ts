@@ -160,6 +160,61 @@ export interface MarketingAssetViewV1 extends MarketingAssetInputV1 {
   externalExecutionStatus: 'UNAVAILABLE';
 }
 
+export interface MarketingCampaignPageQueryV1 {
+  search?: string;
+  status?: string;
+  channel?: string;
+  company?: string;
+  startsAfter?: string;
+  endsBefore?: string;
+  sortBy?: 'updatedAt' | 'startsAt' | 'budgetAmount' | 'name';
+  sortDirection?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MarketingCampaignPageV1 {
+  data: MarketingCampaignViewV1[];
+  page: number;
+  total: number;
+}
+
+export const MARKETING_ASSET_STATUS_LABELS = {
+  DRAFT: 'پیش‌نویس',
+  ACTIVE: 'فعال',
+  PAUSED: 'متوقف',
+  ARCHIVED: 'بایگانی‌شده',
+} as const;
+
+export const MARKETING_SEGMENT_PAGE_SIZE = 25;
+
+export interface MarketingSegmentPageQueryV1 {
+  page?: number;
+  search?: string;
+  status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
+}
+
+export interface MarketingSegmentPageV1 {
+  data: MarketingAssetViewV1[];
+  page: number;
+  total: number;
+}
+
+export interface MarketingPromotionPageQueryV1 {
+  kind: 'COUPON' | 'OFFER';
+  page?: number;
+  search?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface MarketingPromotionPageV1 {
+  data: MarketingAssetViewV1[];
+  page: number;
+  hasNext: boolean;
+}
+
 export interface MarketingSourceCountV1 {
   sourceCategory: string;
   count: number;

@@ -4,6 +4,7 @@ import type { HttpAdapterHost } from '@nestjs/core';
 import type { Request } from 'express';
 
 import { getRequestId } from './request-id.middleware';
+import { errorDiagnostics } from './error-diagnostics';
 
 interface NormalizedError {
   code: string;
@@ -30,9 +31,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const normalized = this.normalizeException(exception, status);
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(
-        `${request.method} ${request.url} failed with ${normalized.code}; requestId=${requestId}`,
-      );
+      this.logger.error({
+        event: 'http.unexpected-error',
+        method: request.method,
+        requestId: requestId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128),
+        status,
+        diagnostic: errorDiagnostics(exception),
+      });
     }
 
     httpAdapter.reply(

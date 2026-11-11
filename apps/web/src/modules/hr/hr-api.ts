@@ -1,5 +1,5 @@
 'use client';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 
 import type {
   HrBootstrapDto,
@@ -12,7 +12,6 @@ import type {
   HrRecordUpdate,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export class HrApiError extends Error {
   constructor(
@@ -25,13 +24,12 @@ export class HrApiError extends Error {
 export async function hrRequest<T>(
   path: string,
   init: RequestInit = {},
-  retried = false,
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new HrApiError('آدرس سرویس منابع انسانی تنظیم نشده است.', 0);
   let response: Response;
   try {
-    response = await localizedFetch(`${base}/hr${path}`, {
+    response = await authenticatedFetch(`${base}/hr${path}`, base, {
       ...init,
       credentials: 'include',
       cache: 'no-store',
@@ -43,12 +41,6 @@ export async function hrRequest<T>(
       0,
     );
   }
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return hrRequest<T>(path, init, true);
   if (!response.ok) {
     const data = (await response.json().catch(() => null)) as {
       message?: string;

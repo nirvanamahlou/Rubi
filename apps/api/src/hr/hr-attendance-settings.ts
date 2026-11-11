@@ -1,6 +1,10 @@
 import type { HrWorkflowData } from '@nora/contracts';
+import { readAttendanceRequestComponent } from './hr-legacy-request-fields';
 import { selection } from './hr-radan-completion.domain';
-import { HR_RADAN_CALCULATION_COMPONENTS } from '@nora/contracts';
+import {
+  HR_RADAN_CALCULATION_COMPONENTS,
+  readHrAttendanceCalculationV1,
+} from '@nora/contracts';
 
 type Interval = [number, number];
 function union(intervals: Interval[]) {
@@ -28,8 +32,9 @@ export function configuredAttendance(input: {
   requests: { tab: string; values: string[]; data: HrWorkflowData }[];
   holiday: boolean;
 }) {
+  const settings = readHrAttendanceCalculationV1(input.settings);
   const components = selection(
-    input.settings[1]!,
+    settings.components,
     HR_RADAN_CALCULATION_COMPONENTS,
   );
   const start = input.start.getTime(),
@@ -59,17 +64,20 @@ export function configuredAttendance(input: {
     const a = Math.max(dayStart, Date.parse(data.startsAt)),
       b = Math.min(dayEnd, Date.parse(data.endsAt));
     if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) continue;
-    const isRemote = request.tab === 'remote',
-      isMission = ['radanMission', 'mission'].includes(request.tab),
-      isLeave = ['radanLeave', 'leave'].includes(request.tab);
-    const hourly = isRemote
-      ? request.values[3] === 'ساعتی'
-      : request.values[4] === 'ساعتی';
-    const component = `${isRemote ? 'دورکاری' : isMission ? 'مأموریت' : 'مرخصی'} ${hourly ? 'ساعتی' : 'روزانه'}`;
-    if ((isRemote || isMission || isLeave) && components.includes(component)) {
+    const component = readAttendanceRequestComponent(
+      request.tab,
+      request.values,
+    );
+    if (
+      component &&
+      components.includes(`${component.category} ${component.mode}`)
+    ) {
       if (Math.min(end, b) > Math.max(start, a))
         credits.push([Math.max(start, a), Math.min(end, b)]);
-      if (isMission && input.settings[4] === 'بله') {
+      if (
+        component.category === 'مأموریت' &&
+        settings.creditOutsideMission === 'بله'
+      ) {
         if (a < start) outsideIntervals.push([a, Math.min(start, b)]);
         if (b > end) outsideIntervals.push([Math.max(a, end), b]);
       }
@@ -82,13 +90,13 @@ export function configuredAttendance(input: {
   );
   const worked = input.worked + credit;
   let overtime = input.overtime + outsideMission;
-  if (input.settings[5] === 'بله')
+  if (settings.subtractDeficit === 'بله')
     overtime = Math.max(
       0,
       overtime - Math.max(0, (end - start) / 60000 - worked),
     );
   const holidayOvertime = input.holiday ? overtime : 0;
-  if (input.holiday && input.settings[8] !== 'بله') overtime = 0;
+  if (input.holiday && settings.includeHolidayOvertime !== 'بله') overtime = 0;
   const weekday = new Date(start + 3.5 * 3600000).getUTCDay();
   return {
     worked,
@@ -98,9 +106,9 @@ export function configuredAttendance(input: {
       outsideMissionMinutes: outsideMission,
       holidayOvertimeMinutes: holidayOvertime,
       thursdayMinutes:
-        weekday === 4 && input.settings[6] === 'بله' ? overtime : 0,
+        weekday === 4 && settings.thursdayOvertime === 'بله' ? overtime : 0,
       fridayMinutes:
-        weekday === 5 && input.settings[7] === 'بله' ? overtime : 0,
+        weekday === 5 && settings.fridayOvertime === 'بله' ? overtime : 0,
     },
   };
 }

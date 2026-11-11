@@ -1,3 +1,4 @@
+import { TELEPHONY_LEASE_ACTIVITY } from './system-activity.interceptor';
 import {
   BadRequestException,
   ConflictException,
@@ -951,6 +952,43 @@ export class SystemManagementService {
       pendingBackupRequests,
       failedAdminOperations,
       health,
+    };
+  }
+
+  async listActivity(cursor?: string) {
+    if (cursor !== undefined) validUuid(cursor, 'شناسه تاریخچه');
+    const rows = await this.database.client.systemAuditEvent.findMany({
+      where: {
+        NOT: { entityType: 'UserActivity', action: TELEPHONY_LEASE_ACTIVITY },
+      },
+      select: {
+        id: true,
+        actorUserId: true,
+        entityType: true,
+        entityId: true,
+        action: true,
+        createdAt: true,
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      take: 51,
+    });
+    const page = rows.slice(0, 50);
+    const names = await this.iam.activityActorNames([
+      ...new Set(page.map((row) => row.actorUserId)),
+    ]);
+    return {
+      items: page.map((row) => ({
+        id: row.id,
+        user: names.get(row.actorUserId) ?? row.actorUserId,
+        section:
+          row.entityType === 'UserActivity'
+            ? row.entityId
+            : 'system-management',
+        action: row.action,
+        createdAt: row.createdAt.toISOString(),
+      })),
+      nextCursor: rows.length > 50 ? (page.at(-1)?.id ?? null) : null,
     };
   }
 

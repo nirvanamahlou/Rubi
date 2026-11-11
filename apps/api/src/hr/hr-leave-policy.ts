@@ -5,18 +5,14 @@ import {
 } from '@nora/contracts';
 import { digits, localClockParts } from './hr.validation';
 import type { HrWorkflowData } from '@nora/contracts';
+import { readLeaveRequestFields } from './hr-legacy-request-fields';
 
 export function recordLeave(
   values: readonly string[],
   data: HrWorkflowData,
 ): WorkbenchLeaveInputV1 {
   return {
-    from: values[2]!,
-    to: values[3]!,
-    mode: values.length === 8 ? (values[4] as 'روزانه' | 'ساعتی') : 'روزانه',
-    startTime: values.length === 8 ? values[5] : undefined,
-    endTime: values.length === 8 ? values[6] : undefined,
-    leaveType: values[1] as 'استحقاقی' | 'استعلاجی',
+    ...readLeaveRequestFields(values),
     reason: data.reason ?? '',
     substituteUserId: data.substituteUserId ?? undefined,
     attachmentIds: data.leaveAttachmentIds,

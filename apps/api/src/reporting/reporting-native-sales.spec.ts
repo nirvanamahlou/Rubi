@@ -450,6 +450,84 @@ describe('native Sales report source and shared preview/export path', () => {
     ).toHaveLength(1);
   });
 
+  it('projects each bounded Sales batch before reading the next and respects cancellations across batches', async () => {
+    const { client, findMany } = fixture();
+    const [one] = await findMany();
+    findMany.mockClear();
+    const first = Array.from({ length: 500 }, (_, index) => ({
+      ...one,
+      id: 'contract-' + index,
+    }));
+    const intake = vi.mocked(client.reservationIntake.findMany);
+    findMany.mockResolvedValueOnce(first).mockImplementationOnce(async () => {
+      expect(intake).toHaveBeenCalledTimes(1);
+      return [{ ...one, id: 'cancelled' }];
+    });
+    intake.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        contractId: 'cancelled',
+        workflowRevisions: [
+          { state: { supplierStatus: 'CANCELLED' }, createdAt: new Date() },
+        ],
+      },
+    ] as never);
+
+    const projected = await readSalesReportingProjection(client, actor, {
+      filters: {},
+    });
+    expect(projected).toHaveLength(1000);
+    expect(projected[0]?.id).toBe('contract-0');
+    expect(projected.at(-1)?.id).toBe('contract-499');
+    expect(findMany).toHaveBeenNthCalledWith(2, {
+      ...findMany.mock.calls[0]![0],
+      take: 500,
+      cursor: { id: 'contract-499' },
+      skip: 1,
+    });
+    expect(intake).toHaveBeenCalledTimes(2);
+  });
+
+  it('aggregates consecutive Sales pages and reuses authorized label lookups', async () => {
+    const { client, findMany } = fixture();
+    const [row] = await findMany();
+    const branchLookup = vi.mocked(client.branch.findMany);
+    const userLookup = vi.mocked(client.user.findMany);
+    const cityLookup = vi.mocked(client.masterCity.findMany);
+    findMany
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, index) => ({
+          ...row,
+          id: 'batch-' + index,
+        })),
+      )
+      .mockImplementationOnce(async () => {
+        expect(branchLookup).toHaveBeenCalledTimes(1);
+        expect(userLookup).toHaveBeenCalledTimes(1);
+        expect(cityLookup).toHaveBeenCalledTimes(1);
+        return [{ ...row, id: 'last' }];
+      });
+    const result = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      query,
+      actor,
+    );
+    expect(result.rows[0]).toMatchObject({
+      primaryDimension: 'مرکزی',
+      secondaryDimension: 'کارشناس',
+      orderCount: 501,
+      passengerCount: 1503,
+      amountsByCurrency: [
+        { currencyCode: 'IRR', amount: '450900' },
+        { currencyCode: 'USD', amount: '10020' },
+      ],
+    });
+    expect(result.reconciliation.sourceRowCount).toBe(1002);
+    expect(branchLookup).toHaveBeenCalledTimes(1);
+    expect(userLookup).toHaveBeenCalledTimes(1);
+    expect(cityLookup).toHaveBeenCalledTimes(1);
+  });
+
   it('uses a new read-only repeatable-read snapshot for each native request', async () => {
     const { client } = fixture();
     const execute = vi.fn();

@@ -16,8 +16,18 @@ import type {
   MarketingAssetViewV1,
   MarketingCampaignInputV1,
   MarketingCampaignViewV1,
+  MarketingCampaignPageV1,
+  MarketingCampaignPageQueryV1,
+  MarketingPromotionPageQueryV1,
+  MarketingSegmentPageQueryV1,
+  MarketingSegmentPageV1,
+  MarketingPromotionPageV1,
 } from '@nora/contracts';
-import { MARKETING_RECORDS_CONTRACT_VERSION } from '@nora/contracts';
+import {
+  MARKETING_ASSET_STATUS_LABELS,
+  MARKETING_RECORDS_CONTRACT_VERSION,
+  MARKETING_SEGMENT_PAGE_SIZE,
+} from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -336,6 +346,65 @@ export class MarketingRecordsService {
       orderBy: [{ startsAt: 'desc' }, { id: 'desc' }],
     });
     return { data: rows.map(presentCampaign) };
+  }
+
+  async listCampaignPage(
+    query: MarketingCampaignPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingCampaignPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    if (!actor.branchIds.length) return { data: [], page: 1, total: 0 };
+    const pageSize = query.pageSize ?? 4;
+    const search = query.search?.trim() ?? '';
+    const status = query.status === 'RUNNING' ? 'ACTIVE' : query.status;
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND deleted_at IS NULL
+      ${status && status !== 'ALL' ? Prisma.sql`AND status = ${status}` : Prisma.empty}
+      ${query.channel && query.channel !== 'ALL' ? Prisma.sql`AND ${query.channel} = ANY(channels)` : Prisma.empty}
+      ${query.company && query.company !== 'ALL' ? Prisma.sql`AND execution_company = ${query.company}` : Prisma.empty}
+      ${query.startsAfter ? Prisma.sql`AND ends_at >= ${new Date(query.startsAfter)}` : Prisma.empty}
+      ${query.endsBefore ? Prisma.sql`AND starts_at < ${new Date(Date.parse(query.endsBefore) + 86400000)}` : Prisma.empty}
+      ${search ? Prisma.sql`AND strpos(lower(concat_ws(' ', name, internal_code, campaign_type, objective, owner_user_id)), lower(${search})) > 0` : Prisma.empty}
+    `;
+    const sortColumns = {
+      updatedAt: Prisma.sql`updated_at`,
+      startsAt: Prisma.sql`starts_at`,
+      budgetAmount: Prisma.sql`budget_amount`,
+      name: Prisma.sql`name`,
+    };
+    const sort = sortColumns[query.sortBy ?? 'updatedAt'];
+    const direction =
+      query.sortDirection === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const [count] = await tx.$queryRaw<{ total: bigint }[]>`
+        SELECT count(*) AS total FROM marketing_campaigns WHERE ${where}
+      `;
+        const total = Number(count?.total ?? 0);
+        const page = Math.min(
+          query.page ?? 1,
+          Math.max(1, Math.ceil(total / pageSize)),
+        );
+        if (!total) return { data: [], page, total };
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM marketing_campaigns WHERE ${where}
+        ORDER BY ${sort} ${direction}, id ASC
+        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+      `;
+        const rows = await tx.marketingCampaign.findMany({
+          where: { id: { in: ids.map(({ id }) => id) } },
+          include: { spendLines: true },
+        });
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        return {
+          data: ids.map(({ id }) => presentCampaign(byId.get(id)!)),
+          page,
+          total,
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async campaign(id: string, actor: AuthenticatedActor) {
@@ -675,6 +744,98 @@ export class MarketingRecordsService {
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     return { data: rows.map(presentAsset) };
+  }
+
+  async listSegments(
+    query: MarketingSegmentPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingSegmentPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    if (!actor.branchIds.length) return { data: [], page: 1, total: 0 };
+    const pageSize = MARKETING_SEGMENT_PAGE_SIZE;
+    const search = query.search?.trim().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    const labels = Object.entries(MARKETING_ASSET_STATUS_LABELS).map(
+      ([status, label]) => Prisma.sql`WHEN ${status} THEN ${label}::text`,
+    );
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND kind = 'SEGMENT'
+      AND status <> 'DELETED'
+      ${query.status ? Prisma.sql`AND status = ${query.status}` : Prisma.empty}
+      ${
+        search
+          ? Prisma.sql`AND strpos(
+        lower(translate(trim(name || ' ' || (CASE status ${Prisma.join(labels, ' ')} ELSE '' END)), 'يك', 'یک')),
+        lower(${search})
+      ) > 0`
+          : Prisma.empty
+      }
+    `;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const [count] = await tx.$queryRaw<{ count: bigint }[]>`
+          SELECT count(*) AS count FROM marketing_assets WHERE ${where}
+        `;
+        const total = Number(count!.count);
+        const page = Math.min(
+          query.page ?? 1,
+          Math.max(1, Math.ceil(total / pageSize)),
+        );
+        if (!total) return { data: [], page, total };
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+          SELECT id FROM marketing_assets WHERE ${where}
+          ORDER BY updated_at DESC, id DESC
+          LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+        `;
+        const rows = await tx.marketingAsset.findMany({
+          where: { id: { in: ids.map(({ id }) => id) } },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        });
+        return { data: rows.map(presentAsset), page, total };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
+
+  async listPromotions(
+    query: MarketingPromotionPageQueryV1,
+    actor: AuthenticatedActor,
+  ): Promise<MarketingPromotionPageV1> {
+    this.assertPermissions(actor, 'marketing.read');
+    const page = query.page ?? 1;
+    const pageSize = 50;
+    if (!actor.branchIds.length) return { data: [], page, hasNext: false };
+    const search = query.search?.trim() ?? '';
+    // Match the name and code as one label, including literal wildcard characters.
+    const where = Prisma.sql`
+      branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND kind = ${query.kind}
+      AND status <> 'DELETED'
+      ${query.status ? Prisma.sql`AND status = ${query.status}` : Prisma.empty}
+      ${query.from ? Prisma.sql`AND expires_at >= ${new Date(query.from)}` : Prisma.empty}
+      ${query.to ? Prisma.sql`AND scheduled_at < ${new Date(Date.parse(query.to) + 86400000)}` : Prisma.empty}
+      ${search ? Prisma.sql`AND strpos(lower(name || ' ' || coalesce(payload->>'code', '')), lower(${search})) > 0` : Prisma.empty}
+    `;
+    return this.database.client.$transaction(
+      async (tx) => {
+        const ids = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM marketing_assets
+        WHERE ${where}
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ${pageSize + 1} OFFSET ${(page - 1) * pageSize}
+      `;
+        const rows = await tx.marketingAsset.findMany({
+          where: { id: { in: ids.slice(0, pageSize).map(({ id }) => id) } },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        });
+        return {
+          data: rows.map(presentAsset),
+          page,
+          hasNext: ids.length > pageSize,
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   async saveAsset(

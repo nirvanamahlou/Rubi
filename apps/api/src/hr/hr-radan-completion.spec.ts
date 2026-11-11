@@ -19,6 +19,52 @@ import { readPayslipWorkbook } from './hr-payslip-import';
 
 afterEach(() => vi.unstubAllEnvs());
 describe('observed Radan data boundaries', () => {
+  it('validates the legacy calculation settings by field ID after display changes', () => {
+    const schema = getHrResource('time', 'calculationSettings')!;
+    const display = {
+      ...schema,
+      columns: schema.columns.map((_, i) => String(i)).reverse(),
+      fields: schema.fields.map((field) => ({ ...field, label: 'شماره کارت' })),
+    };
+    const saved = [
+      'پیش‌فرض',
+      '[]',
+      'خیر',
+      '465',
+      'بله',
+      'خیر',
+      'بله',
+      'خیر',
+      'بله',
+      'تردد',
+    ];
+    expect(recordValues(saved, schema)).toEqual(saved);
+    expect(recordValues(saved, display)).toEqual(saved);
+    for (const [slot, invalid] of [
+      [3, '0'],
+      [4, 'bad'],
+      [9, 'bad'],
+    ] as const) {
+      const invalidValues = saved.map((value, i) =>
+        i === slot ? invalid : value,
+      );
+      expect(() => recordValues(invalidValues, display)).toThrow();
+    }
+  });
+
+  it('requires masked legacy contact data even when the display label changes', () => {
+    const schema = getHrResource('employee', 'contact')!;
+    const display = {
+      ...schema,
+      fields: schema.fields.map((field) => ({ ...field, label: 'Contact' })),
+    };
+    const masked = ['موبایل', '0912•••0000', '', ''];
+    expect(recordValues(masked, display)).toEqual(masked);
+    expect(() =>
+      recordValues(['موبایل', '09120000000', '', ''], display),
+    ).toThrow('پوشیده');
+  });
+
   it('keeps exact minutes including Persian digits and rejects malformed time', () => {
     expect(durationMinutes('۱۶:۲۰')).toBe(980);
     expect(durationMinutes('1000:01')).toBe(60001);

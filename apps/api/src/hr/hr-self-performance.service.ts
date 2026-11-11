@@ -164,7 +164,12 @@ export class HrSelfPerformanceService {
                   String((row.data as Record<string, unknown>).firstIn),
                 ),
               ))
-            ? ((row.data ?? {}) as Record<string, unknown>)
+            ? {
+                ...((row.data ?? {}) as Record<string, unknown>),
+                ...(row.status === 'مرخصی'
+                  ? { lateMinutes: 0, deficitMinutes: 0 }
+                  : {}),
+              }
             : {},
         );
     }
@@ -293,9 +298,9 @@ export class HrSelfPerformanceService {
           .map((row) => [(row.values as string[])[1]!, row]),
       ).entries(),
     ].sort(([a], [b]) => b.localeCompare(a));
-    const penalties = new Map<string, string | null>();
-    for (const [date, row] of history)
-      penalties.set(date, await this.hr.dailyPenalty(row));
+    const penalties = await this.hr.dailyPenalties(
+      history.map(([, row]) => row),
+    );
     return {
       monthlyAttendance: {
         period:
@@ -333,10 +338,11 @@ export class HrSelfPerformanceService {
             data.registrationType === 'device'
               ? data.registrationType
               : null,
-          lateMinutes: minutes('lateMinutes'),
+          lateMinutes: row.status === 'مرخصی' ? 0 : minutes('lateMinutes'),
           overtimeMinutes: minutes('overtimeMinutes'),
-          deficitMinutes: minutes('deficitMinutes'),
-          dailyPenaltyToman: penalties.get(date) ?? null,
+          deficitMinutes:
+            row.status === 'مرخصی' ? 0 : minutes('deficitMinutes'),
+          dailyPenaltyToman: penalties.get(row.id) ?? null,
         };
       }),
       todayAttendance: {

@@ -1,4 +1,5 @@
 'use client';
+import { VerbatimText } from '@/i18n/verbatim-text';
 import {
   messagingMentionAtCaret,
   RECEIPT_FILE_ACCEPT,
@@ -853,11 +854,11 @@ export function MessageComposer({
                     disabled={busy}
                   >
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 font-black text-primary">
-                      {initials(contact.displayName)}
+                      <VerbatimText value={initials(contact.displayName)} />
                     </span>
                     <span className="min-w-0 flex-1 overflow-hidden">
                       <span className="block truncate font-bold">
-                        {contact.displayName}
+                        <VerbatimText value={contact.displayName} />
                       </span>
                       <span className="block truncate text-xs font-normal opacity-70">
                         @{contact.username} ·{' '}
@@ -913,7 +914,7 @@ export function MessageComposer({
                         </span>
                         <span className="min-w-0 flex-1 overflow-hidden">
                           <span className="block truncate font-bold">
-                            {conversation.title}
+                            <VerbatimText value={conversation.title} />
                           </span>
                           <span className="block truncate text-xs font-normal opacity-75">
                             {conversation.participants.length.toLocaleString(
@@ -965,11 +966,14 @@ export function MessageComposer({
                     </span>
                     <span className="min-w-0 flex-1 overflow-hidden">
                       <span className="block truncate font-bold">
-                        {conversation.title}
+                        <VerbatimText value={conversation.title} />
                       </span>
                       <span className="block truncate text-xs font-normal opacity-75">
-                        {conversation.lastMessage?.body ??
-                          `${conversation.participants.length.toLocaleString('fa-IR')} عضو`}
+                        {conversation.lastMessage ? (
+                          <VerbatimText value={conversation.lastMessage.body} />
+                        ) : (
+                          `${conversation.participants.length.toLocaleString('fa-IR')} عضو`
+                        )}
                       </span>
                     </span>
                     {conversation.unreadCount > 0 ? (
@@ -1014,18 +1018,22 @@ export function MessageComposer({
                           setAddMembers([]);
                         }}
                       >
-                        {active.title}
+                        <VerbatimText value={active.title} />
                       </button>
                     ) : (
-                      active.title
+                      <VerbatimText value={active.title} />
                     )}
                   </h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {active.type === 'GROUP'
-                      ? `${active.participants.length.toLocaleString('fa-IR')} عضو`
-                      : active.participants
+                    {active.type === 'GROUP' ? (
+                      `${active.participants.length.toLocaleString('fa-IR')} عضو`
+                    ) : (
+                      <VerbatimText
+                        value={active.participants
                           .map((item) => item.displayName)
                           .join('، ')}
+                      />
+                    )}
                   </p>
                 </div>
                 {active.type === 'GROUP' && (
@@ -1184,16 +1192,18 @@ export function MessageComposer({
                         {message.replyTo && (
                           <blockquote className="mb-1.5 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-2 py-1.5 text-xs dark:bg-white/5">
                             <strong className="block truncate">
-                              {message.replyTo.sender.displayName}
+                              <VerbatimText
+                                value={message.replyTo.sender.displayName}
+                              />
                             </strong>
                             <p className="mt-1 line-clamp-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
-                              {message.replyTo.body}
+                              <VerbatimText value={message.replyTo.body} />
                             </p>
                           </blockquote>
                         )}
                         <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] opacity-80">
                           <strong className="truncate">
-                            {message.sender.displayName}
+                            <VerbatimText value={message.sender.displayName} />
                           </strong>
                           <time className="shrink-0">
                             {messageTime(message.createdAt)}
@@ -1201,11 +1211,14 @@ export function MessageComposer({
                         </div>
                         {message.forwardedFrom && (
                           <p className="mt-1 border-s-2 border-current/30 ps-2 text-xs opacity-80">
-                            فوروارد از {message.forwardedFrom.senderDisplayName}
+                            فوروارد از{' '}
+                            <VerbatimText
+                              value={message.forwardedFrom.senderDisplayName}
+                            />
                           </p>
                         )}
                         <p className="mt-1 min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-6">
-                          {message.body}
+                          <VerbatimText value={message.body} />
                         </p>
                         {message.attachments.length ? (
                           <ul className="mt-2 min-w-0 max-w-full space-y-1">
@@ -1227,7 +1240,7 @@ export function MessageComposer({
                                     aria-hidden="true"
                                   />
                                   <span className="min-w-0 truncate">
-                                    {attachment.title}
+                                    <VerbatimText value={attachment.title} />
                                   </span>
                                 </button>
                               </li>
@@ -1329,10 +1342,11 @@ export function MessageComposer({
                   >
                     <div className="min-w-0 flex-1">
                       <strong className="block truncate">
-                        پاسخ به {replying.sender.displayName}
+                        پاسخ به{' '}
+                        <VerbatimText value={replying.sender.displayName} />
                       </strong>
                       <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
-                        {replying.body}
+                        <VerbatimText value={replying.body} />
                       </p>
                     </div>
                     <Button
@@ -1448,7 +1462,9 @@ export function MessageComposer({
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => chooseMention(person.username)}
                       >
-                        <span>{person.displayName}</span>
+                        <span>
+                          <VerbatimText value={person.displayName} />
+                        </span>
                         <bdi className="text-muted-foreground">
                           @{person.username}
                         </bdi>
@@ -1623,7 +1639,9 @@ export function MessageComposer({
                     }
                   />
                   <span>
-                    <strong className="block">{contact.displayName}</strong>
+                    <strong className="block">
+                      <VerbatimText value={contact.displayName} />
+                    </strong>
                     <span className="text-xs text-muted-foreground">
                       {contact.branches.map((branch) => branch.name).join('، ')}
                     </span>
@@ -1663,7 +1681,7 @@ export function MessageComposer({
             </span>
             <div className="min-w-0">
               <DialogTitle className="break-words text-lg">
-                {active?.title}
+                <VerbatimText value={active?.title} />
               </DialogTitle>
               <DialogDescription className="mt-1">
                 <span>اعضای گروه</span> · {active?.participants.length ?? 0}
@@ -1685,10 +1703,10 @@ export function MessageComposer({
                         className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
                         aria-hidden="true"
                       >
-                        {initials(member.displayName)}
+                        <VerbatimText value={initials(member.displayName)} />
                       </span>
                       <span className="min-w-0 flex-1 break-words text-sm">
-                        {member.displayName}
+                        <VerbatimText value={member.displayName} />
                       </span>
                       {canEditGroup && member.id !== currentUserId && (
                         <div className="flex shrink-0 items-center gap-1">
@@ -1782,7 +1800,7 @@ export function MessageComposer({
                               }
                             />
                             <span className="min-w-0 break-words">
-                              {contact.displayName}
+                              <VerbatimText value={contact.displayName} />
                             </span>
                           </label>
                         ))}
@@ -1842,7 +1860,7 @@ export function MessageComposer({
                 onClick={() => void forwardMessage(conversation.id)}
               >
                 <Forward className="size-4" aria-hidden="true" />
-                {conversation.title}
+                <VerbatimText value={conversation.title} />
               </Button>
             ))}
           </div>

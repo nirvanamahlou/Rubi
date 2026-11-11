@@ -92,6 +92,41 @@ it('retains raw metrics while disabling and restoring the day, with audit', asyn
     f.tx.hrRecord.update.mock.calls.every(([q]) => q.where.id === f.row.id),
   ).toBe(true);
 });
+it('sets a scoped manual day status and restores the automatic result without changing punches', async () => {
+  const f = fixture();
+  await f.change(true, { recordId: f.row.id, version: 1, status: 'مرخصی' });
+  expect(f.row).toMatchObject({
+    status: 'مرخصی',
+    data: {
+      attendanceStatusOverride: 'مرخصی',
+      attendancePreviousStatus: 'حاضر',
+      workedMinutes: 480,
+    },
+  });
+  await f.change(false);
+  await f.change(true);
+  expect(f.row.status).toBe('مرخصی');
+  await f.change(true, {
+    recordId: f.row.id,
+    version: f.row.version,
+    status: null,
+  });
+  expect(f.row.status).toBe('حاضر');
+  expect(f.row.data).not.toHaveProperty('attendanceStatusOverride');
+});
+
+it('requires a specific active day for a known manual status', async () => {
+  const f = fixture();
+  await expect(f.change(true, { status: 'غایب' })).rejects.toThrow('وضعیت');
+  await expect(
+    f.change(true, { recordId: f.row.id, version: 1, status: 'ناشناخته' }),
+  ).rejects.toThrow('وضعیت');
+  await expect(
+    f.change(false, { recordId: f.row.id, version: 1, status: 'غایب' }),
+  ).rejects.toThrow('وضعیت');
+  expect(f.tx.hrRecord.update).not.toHaveBeenCalled();
+});
+
 it('denies ordinary accounts before touching attendance', async () => {
   const f = fixture('other');
   await expect(f.change(false)).rejects.toThrow('ویرایش دستی');
@@ -134,4 +169,16 @@ it('never charges a daily penalty for an excluded record', async () => {
       f.service as unknown as { dailyPenalty: (r: unknown) => Promise<unknown> }
     ).dailyPenalty({ ...f.row, status: 'غیرفعال' }),
   ).resolves.toBeNull();
+});
+
+it('updates the selected historical row even when the employee has moved branches', async () => {
+  const f = fixture();
+  f.tx.hrEmployee.findFirst.mockResolvedValue({
+    id: employeeId,
+    branchId: randomUUID(),
+    name: 'Employee',
+  });
+  f.tx.hrRecord.findMany.mockResolvedValue([]);
+  await f.change(true, { recordId: f.row.id, version: 1, status: 'مرخصی' });
+  expect(f.row.status).toBe('مرخصی');
 });

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WindowsDefenderAntivirus } from './documents.antivirus';
 import type {
@@ -42,12 +43,13 @@ describe('DocumentsScanProcessor', () => {
     claimScanJob: vi.fn(),
     finishScanJob: vi.fn(),
   };
-  const storage = { readQuarantined: vi.fn() };
+  const storage = { openQuarantined: vi.fn() };
   const antivirus = { available: true, scan: vi.fn() };
   let processor: DocumentsScanProcessor;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    repository.finishScanJob.mockResolvedValue(true);
     processor = new DocumentsScanProcessor(
       repository as unknown as DocumentsRepository,
       storage as unknown as LocalDocumentStorage,
@@ -55,10 +57,48 @@ describe('DocumentsScanProcessor', () => {
     );
   });
 
-  it('verifies the decrypted hash before recording a real clean result', async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('leaves queue and inline processing to the standalone scanner in worker mode', async () => {
+    vi.stubEnv('DOCUMENTS_SCAN_EXECUTION', 'worker');
+    await processor.onModuleInit();
+    await expect(processor.processVersion(job.versionId)).resolves.toBe(false);
+    expect(repository.pendingScanJobs).not.toHaveBeenCalled();
+    expect(repository.scanJobForVersion).not.toHaveBeenCalled();
+
+    const worker = new DocumentsScanProcessor(
+      repository as unknown as DocumentsRepository,
+      storage as unknown as LocalDocumentStorage,
+      antivirus as unknown as WindowsDefenderAntivirus,
+      true,
+    );
+    repository.pendingScanJobs.mockResolvedValue([]);
+    await worker.processPending();
+    expect(repository.pendingScanJobs).toHaveBeenCalledOnce();
+  });
+
+  it('marks the final expired scan as failed without attempting another scan', async () => {
+    const expired = { ...job, status: 'RUNNING', attempts: 3 };
+    repository.pendingScanJobs.mockResolvedValue([expired]);
+    await processor.processPending();
+    expect(repository.claimScanJob).not.toHaveBeenCalled();
+    expect(antivirus.scan).not.toHaveBeenCalled();
+    expect(repository.finishScanJob).toHaveBeenCalledWith(
+      expired,
+      expect.objectContaining({
+        status: 'SCAN_FAILED',
+        threatCode: 'SCAN_LEASE_EXPIRED',
+      }),
+    );
+  });
+
+  it('passes the verified storage stream and expected hash to the scanner', async () => {
     repository.scanJobForVersion.mockResolvedValue(job);
     repository.claimScanJob.mockResolvedValue(job);
-    storage.readQuarantined.mockResolvedValue(contents);
+    const stream = Readable.from([contents]);
+    storage.openQuarantined.mockResolvedValue(stream);
     antivirus.scan.mockResolvedValue({
       status: 'CLEAN',
       adapterReference: 'windows-defender:MpCmdRun.exe',
@@ -68,17 +108,22 @@ describe('DocumentsScanProcessor', () => {
     });
 
     await expect(processor.processVersion(job.versionId)).resolves.toBe(true);
-    expect(antivirus.scan).toHaveBeenCalledWith(contents, 'document.pdf');
+    expect(antivirus.scan).toHaveBeenCalledWith(
+      { stream, sha256: job.version.sha256 },
+      'document.pdf',
+    );
     expect(repository.finishScanJob).toHaveBeenCalledWith(
       job,
       expect.objectContaining({ status: 'CLEAN', threatCode: null }),
     );
   });
 
-  it('fails closed when decrypted bytes do not match the stored hash', async () => {
+  it('fails closed if encrypted storage cannot be authenticated', async () => {
     repository.scanJobForVersion.mockResolvedValue(job);
     repository.claimScanJob.mockResolvedValue(job);
-    storage.readQuarantined.mockResolvedValue(Buffer.from('tampered'));
+    storage.openQuarantined.mockRejectedValue(
+      new Error('Storage integrity error'),
+    );
 
     await processor.processVersion(job.versionId);
 
@@ -87,7 +132,7 @@ describe('DocumentsScanProcessor', () => {
       job,
       expect.objectContaining({
         status: 'SCAN_FAILED',
-        threatCode: 'STORAGE_HASH_MISMATCH',
+        threatCode: 'ANTIVIRUS_SCAN_FAILED',
       }),
     );
   });

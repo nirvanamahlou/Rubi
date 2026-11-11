@@ -70,6 +70,31 @@ export interface DashboardFilterOptions {
 
 type RecordRow = Record<string, unknown>;
 
+function whereFacts(conditions: Prisma.Sql[]) {
+  return conditions.length
+    ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+    : Prisma.empty;
+}
+
+const factProjection = Prisma.sql`
+  id, "sourceItemId", "orderNumber", "occurredAt", "legalEntityCode",
+  "legalEntityName", "branchId", "branchName", "ownerName", "siteCode",
+  "salesChannel", "serviceType", "customerType", "customerName", "agencyName",
+  "leadSource", "providerName", "airlineName", "originCity", "destinationCity",
+  "routeLabel", "orderStatus", "reservationStatus", "issueStatus", "paymentStatus",
+  "pnrCode", "passengerCount", "segmentCount", "ticketCount", "currencyCode",
+  "salesAmount", "purchaseAmount", "commissionAmount", "refundAmount",
+  "settledAmount", "dataAsOf"
+`;
+const factBatchSize = 1000;
+
+const exportArtifactColumns = Prisma.sql`
+  e.id, e."runId", e."creatorUserId", e."reportCode", e."reportName",
+  e.format, e.status, e."fileName", e."contentType", e."objectKey",
+  e."sizeBytes", e."checksumSha256", e."filterSnapshot", e."errorMessage",
+  e."expiresAt", e."createdAt", e."updatedAt"
+`;
+
 interface ReportingSavedReportActionRun {
   reportCode: string;
   filterSnapshot: unknown;
@@ -124,7 +149,10 @@ export class ReportingRepository {
     );
   }
 
-  async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
+  private factConditions(
+    input: ReportQueryV1,
+    serverBranchIds: readonly string[],
+  ) {
     const conditions: Prisma.Sql[] = [];
     const scalar = (key: string) => {
       const value = input.filters[key];
@@ -132,7 +160,7 @@ export class ReportingRepository {
     };
     if (serverBranchIds.length)
       conditions.push(
-        Prisma.sql`"branchId" IN (${Prisma.join(serverBranchIds)})`,
+        Prisma.sql`"branchId" = ANY(${[...serverBranchIds]}::uuid[])`,
       );
     if (input.legalEntityId)
       conditions.push(Prisma.sql`"legalEntityCode" = ${input.legalEntityId}`);
@@ -165,18 +193,58 @@ export class ReportingRepository {
     } as const;
     for (const [filter, column] of Object.entries(mapping)) {
       const value = scalar(filter);
-      if (value)
-        conditions.push(Prisma.sql`${Prisma.raw(`"${column}"`)} = ${value}`);
+      if (value) {
+        const identifier = Prisma.raw(`"${column}"`);
+        conditions.push(
+          column === 'branchId' || column === 'ownerUserId'
+            ? Prisma.sql`${identifier}::text = ${value}`
+            : Prisma.sql`${identifier} = ${value}`,
+        );
+      }
     }
-    const where = conditions.length
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
-      : Prisma.empty;
+    return conditions;
+  }
+
+  async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
+    const where = whereFacts(this.factConditions(input, serverBranchIds));
     const rows = await this.database.client.$queryRaw<
       ReportingFactRow[]
     >(Prisma.sql`
       SELECT * FROM "reporting_travel_facts" ${where} ORDER BY "occurredAt" DESC, "id" ASC
     `);
     return rows;
+  }
+
+  async scanFacts(
+    input: ReportQueryV1,
+    serverBranchIds: readonly string[],
+    consume: (fact: ReportingFactRow) => void,
+  ) {
+    const conditions = this.factConditions(input, serverBranchIds);
+    await this.database.client.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+        let cursor: Pick<ReportingFactRow, 'occurredAt' | 'id'> | undefined;
+        for (;;) {
+          const after = cursor
+            ? Prisma.sql`"occurredAt" <= ${cursor.occurredAt}
+                AND ("occurredAt" < ${cursor.occurredAt} OR id > ${cursor.id}::uuid)`
+            : null;
+          const where = whereFacts(after ? [...conditions, after] : conditions);
+          const rows: ReportingFactRow[] = await tx.$queryRaw`
+            SELECT ${factProjection} FROM "reporting_travel_facts" ${where}
+            ORDER BY "occurredAt" DESC, id ASC LIMIT ${factBatchSize}
+          `;
+          for (const row of rows) consume(row);
+          if (rows.length < factBatchSize) return;
+          cursor = rows.at(-1)!;
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 20_000,
+      },
+    );
   }
 
   /**
@@ -188,29 +256,34 @@ export class ReportingRepository {
     input: ReportQueryV1,
     serverBranchIds: readonly string[],
   ): Promise<DashboardFilterOptions> {
-    const rows = await this.facts(input, serverBranchIds);
-    const options = (pick: (row: ReportingFactRow) => string | null) =>
+    const where = whereFacts(this.factConditions(input, serverBranchIds));
+    const [values] = await this.database.client.$queryRaw<
+      Record<keyof DashboardFilterOptions, string[] | null>[]
+    >(Prisma.sql`
+      SELECT
+        array_agg(DISTINCT "salesChannel") FILTER (WHERE "salesChannel" <> '') AS "salesChannel",
+        array_agg(DISTINCT "branchName") FILTER (WHERE "branchName" <> '') AS branch,
+        array_agg(DISTINCT "ownerName") FILTER (WHERE "ownerName" <> '') AS agent,
+        array_agg(DISTINCT "serviceType") FILTER (WHERE "serviceType" <> '') AS service,
+        array_agg(DISTINCT "agencyName") FILTER (WHERE "agencyName" <> '') AS agency,
+        array_agg(DISTINCT "providerName") FILTER (WHERE "providerName" <> '') AS provider,
+        array_agg(DISTINCT "currencyCode") FILTER (WHERE "currencyCode" <> '') AS currency,
+        array_agg(DISTINCT "orderStatus") FILTER (WHERE "orderStatus" <> '') AS status
+      FROM "reporting_travel_facts" ${where}
+    `);
+    const options = (key: keyof DashboardFilterOptions) =>
       Object.freeze(
-        [
-          ...new Set(
-            rows
-              .map(pick)
-              .filter(
-                (value): value is string =>
-                  typeof value === 'string' && value.length > 0,
-              ),
-          ),
-        ].sort((a, b) => a.localeCompare(b, 'fa')),
+        (values?.[key] ?? []).sort((a, b) => a.localeCompare(b, 'fa')),
       );
     return {
-      salesChannel: options((row) => row.salesChannel),
-      branch: options((row) => row.branchName),
-      agent: options((row) => row.ownerName),
-      service: options((row) => row.serviceType),
-      agency: options((row) => row.agencyName),
-      provider: options((row) => row.providerName),
-      currency: options((row) => row.currencyCode),
-      status: options((row) => row.orderStatus),
+      salesChannel: options('salesChannel'),
+      branch: options('branch'),
+      agent: options('agent'),
+      service: options('service'),
+      agency: options('agency'),
+      provider: options('provider'),
+      currency: options('currency'),
+      status: options('status'),
     };
   }
 
@@ -463,7 +536,7 @@ export class ReportingRepository {
 
   listExports(actorUserId: string) {
     return this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      SELECT e.*, u."displayName" AS "creatorName" FROM "reporting_export_artifacts" e
+      SELECT ${exportArtifactColumns}, u."displayName" AS "creatorName" FROM "reporting_export_artifacts" e
       JOIN "iam_users" u ON u.id=e."creatorUserId" WHERE e."creatorUserId"=${actorUserId}::uuid
       ORDER BY e."createdAt" DESC LIMIT 30
     `);
@@ -480,8 +553,8 @@ export class ReportingRepository {
     filterSnapshot: unknown;
   }) {
     const rows = await this.database.client.$queryRaw<RecordRow[]>(Prisma.sql`
-      INSERT INTO "reporting_export_artifacts" ("runId", "creatorUserId", "reportCode", "reportName", format, status, "fileName", "contentType", "filterSnapshot", "updatedAt")
-      VALUES (${input.runId}::uuid, ${input.creatorUserId}::uuid, ${input.reportCode}, ${input.reportName}, ${input.format}::"ReportingExportFormat", 'GENERATING', ${input.fileName}, ${input.contentType}, ${json(input.filterSnapshot)}, NOW()) RETURNING *
+      INSERT INTO "reporting_export_artifacts" AS e ("runId", "creatorUserId", "reportCode", "reportName", format, status, "fileName", "contentType", "filterSnapshot", "updatedAt")
+      VALUES (${input.runId}::uuid, ${input.creatorUserId}::uuid, ${input.reportCode}, ${input.reportName}, ${input.format}::"ReportingExportFormat", 'GENERATING', ${input.fileName}, ${input.contentType}, ${json(input.filterSnapshot)}, NOW()) RETURNING ${exportArtifactColumns}
     `);
     return rows[0]!;
   }
@@ -506,7 +579,7 @@ export class ReportingRepository {
 
   async exportById(id: string, actorUserId: string) {
     const rows = await this.database.client.$queryRaw<RecordRow[]>(
-      Prisma.sql`SELECT * FROM "reporting_export_artifacts" WHERE id=${id}::uuid AND "creatorUserId"=${actorUserId}::uuid LIMIT 1`,
+      Prisma.sql`SELECT ${exportArtifactColumns} FROM "reporting_export_artifacts" e WHERE id=${id}::uuid AND "creatorUserId"=${actorUserId}::uuid LIMIT 1`,
     );
     return rows[0];
   }

@@ -23,6 +23,8 @@ export class NotificationsRepository {
     limit: number,
     permissions?: readonly string[],
   ) {
+    if (permissions)
+      return this.listAuthorized(recipientUserId, limit, permissions);
     const [rows, unreadCount] = await this.database.client.$transaction([
       this.database.client.notification.findMany({
         where: { recipientUserId },
@@ -32,30 +34,107 @@ export class NotificationsRepository {
           { occurredAt: 'desc' },
           { id: 'desc' },
         ],
-        ...(permissions ? {} : { take: limit }),
+        take: limit,
       }),
       this.database.client.notification.count({
         where: { recipientUserId, readAt: null },
       }),
     ]);
-    if (permissions) {
-      const allowed = rows.filter(
-        (row) => !row.href || canViewRoute(permissions, row.href),
-      );
-      // Keep actionable assignments visible even beyond the bounded bell feed.
-      allowed.sort((left, right) => {
-        const urgent = (row: NotificationRow) =>
-          row.readAt === null &&
-          row.sourceModule === 'customer-affairs' &&
-          row.eventType === 'call-center.assigned';
-        return Number(urgent(right)) - Number(urgent(left));
-      });
-      return {
-        rows: allowed.slice(0, limit),
-        unreadCount: allowed.filter((row) => row.readAt === null).length,
-      };
-    }
     return { rows, unreadCount };
+  }
+
+  private async listAuthorized(
+    recipientUserId: string,
+    limit: number,
+    permissions: readonly string[],
+  ) {
+    return this.database.client.$transaction(
+      (transaction) =>
+        this.scanAuthorized(transaction, recipientUserId, limit, permissions),
+      { isolationLevel: 'RepeatableRead', timeout: 10000 },
+    );
+  }
+
+  private async scanAuthorized(
+    transaction: Prisma.TransactionClient,
+    recipientUserId: string,
+    limit: number,
+    permissions: readonly string[],
+  ) {
+    const notifications = transaction.notification;
+    const allowed = (row: { href: string | null }) =>
+      !row.href || canViewRoute(permissions, row.href);
+    const scanRead = async function* () {
+      const pageSize = 200;
+      const where = { recipientUserId, readAt: { not: null } };
+      let cursor: string | undefined;
+      for (;;) {
+        const page = await notifications.findMany({
+          where,
+          select: { id: true, href: true },
+          orderBy: [{ readAt: 'asc' }, { occurredAt: 'desc' }, { id: 'desc' }],
+          take: pageSize,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        });
+        yield* page;
+        if (page.length < pageSize) return;
+        cursor = page[page.length - 1]!.id;
+      }
+    };
+
+    const destinations = await notifications.groupBy({
+      by: ['href'],
+      where: { recipientUserId, readAt: null },
+      _count: { _all: true },
+    });
+    const allowedDestinations = destinations.filter(allowed);
+    const unreadCount = allowedDestinations.reduce(
+      (count, row) => count + row._count._all,
+      0,
+    );
+    const allowedHrefs = allowedDestinations.flatMap(({ href }) =>
+      href === null ? [] : [href],
+    );
+    const includeUnlinked = allowedDestinations.some(
+      ({ href }) => href === null,
+    );
+    const unread = unreadCount
+      ? await transaction.$queryRaw<{ id: string }[]>`
+          SELECT id
+          FROM notifications
+          WHERE recipient_user_id = ${recipientUserId}::uuid
+            AND read_at IS NULL
+            AND ((${includeUnlinked} AND href IS NULL)
+                 OR href = ANY(${allowedHrefs}::text[]))
+          ORDER BY CASE
+            WHEN source_module = 'customer-affairs'
+             AND event_type = 'call-center.assigned' THEN 0
+            ELSE 1
+          END, occurred_at DESC, id DESC
+          LIMIT ${limit}
+        `
+      : [];
+    const ids = unread.map(({ id }) => id);
+    if (ids.length < limit) {
+      for await (const row of scanRead()) {
+        if (!allowed(row)) continue;
+        ids.push(row.id);
+        if (ids.length >= limit) break;
+      }
+    }
+    if (!ids.length) return { rows: [], unreadCount };
+    const details = await notifications.findMany({
+      where: { recipientUserId, id: { in: ids } },
+      include: notificationInclude,
+    });
+    const byId = new Map(details.filter(allowed).map((row) => [row.id, row]));
+    return {
+      rows: ids.flatMap((id) => {
+        const row = byId.get(id);
+        return row ? [row] : [];
+      }),
+      unreadCount,
+    };
   }
 
   async markRead(id: string, recipientUserId: string): Promise<number> {

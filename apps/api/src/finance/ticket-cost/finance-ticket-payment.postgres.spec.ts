@@ -9,6 +9,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ProcurementPublicService } from '../../procurement/procurement-public.service';
 import { FinanceTicketCostService } from './finance-ticket-cost.service';
+import { readFinanceInvoiceQueueStates } from '../operations/finance-invoice-queue-read';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 
 const enabled = process.env.NORA_RUN_FINANCE_POSTGRES_TESTS === '1';
@@ -79,6 +80,84 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     if (created && /^nora_finance_test_[a-f0-9]{32}$/.test(databaseName))
       await sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
   }, 60000);
+  it('reads only the latest revision of each selected procurement invoice', async () => {
+    const suffix = randomUUID();
+    const actor = await client.user.create({
+      data: {
+        username: `invoice-${suffix}`,
+        displayName: 'Isolated invoice projection',
+        passwordHash: 'synthetic-not-a-login-hash',
+      },
+    });
+    const branch = await client.branch.create({
+      data: { code: suffix, name: 'Isolated invoice branch' },
+    });
+    const primary = randomUUID();
+    const secondary = randomUUID();
+    const missing = randomUUID();
+    const unrelated = randomUUID();
+    const fields = {
+      branchId: branch.id,
+      actorUserId: actor.id,
+      sourceVersion: 1,
+    };
+    await client.financeProcurementInvoiceRevision.createMany({
+      data: [
+        {
+          ...fields,
+          sourceId: primary,
+          version: 1,
+          status: 'APPROVED',
+          remainingAmount: '9007199254740993.1250',
+        },
+        {
+          ...fields,
+          sourceId: primary,
+          version: 2,
+          status: 'PARTIALLY_PAID',
+          cumulativePaid: '0.0001',
+          remainingAmount: '9007199254740993.1249',
+        },
+        {
+          ...fields,
+          sourceId: secondary,
+          version: 1,
+          status: 'CORRECTION_REQUIRED',
+          remainingAmount: '30',
+          sourceVersion: 2,
+        },
+        {
+          ...fields,
+          sourceId: unrelated,
+          version: 1,
+          status: 'APPROVED',
+          remainingAmount: '10',
+        },
+      ],
+    });
+    const states = await readFinanceInvoiceQueueStates(client, [
+      primary,
+      missing,
+      secondary,
+      primary,
+    ]);
+    expect(new Set(states.keys())).toEqual(new Set([primary, secondary]));
+    expect(states.get(primary)).toMatchObject({
+      sourceVersion: 1,
+      version: 2,
+      status: 'PARTIALLY_PAID',
+    });
+    expect(states.get(primary)?.cumulativePaid.toString()).toBe('0.0001');
+    expect(states.get(primary)?.remainingAmount.toString()).toBe(
+      '9007199254740993.1249',
+    );
+    expect(states.get(secondary)).toMatchObject({
+      sourceVersion: 2,
+      version: 1,
+    });
+    expect(await readFinanceInvoiceQueueStates(client, [])).toEqual(new Map());
+  });
+
   async function fixture(currencyCode = 'IRR') {
     const suffix = randomUUID();
     const user = await client.user.create({
@@ -163,6 +242,75 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     };
     return { service, request, command, actor };
   }
+  it('projects only the latest cost and its payment history for each requested purchase', async () => {
+    const f = await fixture();
+    const unpaid = await fixture('EUR');
+    await f.service.recordPayment(f.request.id, f.command, f.actor);
+    await f.service.recordPayment(
+      f.request.id,
+      {
+        ...f.command,
+        operationId: randomUUID(),
+        expectedPaymentVersion: 1,
+        paidAmount: '15.125',
+      },
+      f.actor,
+    );
+
+    const missing = randomUUID();
+    const ids = [f.request.id, unpaid.request.id, missing, f.request.id];
+    const states = await f.service.queueStates(ids);
+    expect(states.size).toBe(2);
+    expect(states.has(missing)).toBe(false);
+    expect(states.get(f.request.id)).toMatchObject({
+      costVersion: 1,
+      costRevisionId: f.command.costRevisionId,
+      paymentCount: 2,
+      paidAmount: '55.125',
+      remainingAmount: '44.875',
+      status: 'PAYING',
+    });
+    expect(states.get(unpaid.request.id)).toMatchObject({
+      currencyCode: 'EUR',
+      paymentCount: 0,
+      paidAmount: '0',
+      remainingAmount: '100',
+      status: 'READY_FOR_PAYMENT',
+    });
+
+    const groupId = randomUUID();
+    const newer = await client.financeTicketPurchaseCostRevision.create({
+      data: {
+        requestId: f.request.id,
+        branchId: f.request.branchId,
+        actorUserId: f.actor.userId,
+        version: 2,
+        adultUnitCost: '48.0625',
+        childUnitCost: '48.0625',
+        seatCount: 2,
+        unitCost: '48.0625',
+        invoiceAmount: '96.125',
+        currencyCode: 'IRR',
+        reason: ['purchase-group', groupId, '1'.repeat(64), 2, '96.125'].join(
+          ':',
+        ),
+      },
+    });
+
+    const newerStates = await f.service.queueStates(ids);
+    expect(newerStates.get(f.request.id)).toMatchObject({
+      costVersion: 2,
+      costRevisionId: newer.id,
+      createdAt: newer.createdAt.toISOString(),
+      purchaseGroup: { id: groupId, seatCount: 2, totalCost: '96.125' },
+      unitCost: '48.0625',
+      paymentCount: 0,
+      paidAmount: '0',
+      remainingAmount: '96.125',
+      status: 'READY_FOR_PAYMENT',
+    });
+    expect(await f.service.queueStates([])).toEqual(new Map());
+  });
   it('serializes concurrent retries into one persistent payment revision', async () => {
     const f = await fixture();
     const results = await Promise.all([

@@ -5,6 +5,17 @@ afterEach(() => {
   vi.resetModules();
 });
 
+const session = {
+  user: {
+    id: 'user-id',
+    username: 'synthetic',
+    email: null,
+    displayName: 'Synthetic user',
+    permissions: ['ui.profile'],
+    branches: [{ id: 'branch-id', code: 'HQ', name: 'Head office' }],
+  },
+};
+
 describe('shared authentication refresh', () => {
   it.each([401, 403])(
     'ends the session only for an authoritative %s denial',
@@ -28,7 +39,6 @@ describe('shared authentication refresh', () => {
   );
 
   it('keeps network failure recoverable and releases the single-flight lock', async () => {
-    const session = { user: { id: 'user-id' } };
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(new TypeError('offline'))
@@ -60,28 +70,39 @@ describe('shared authentication refresh', () => {
     );
   });
 
-  it('does not dispatch recovered identity for an invalid successful response', async () => {
-    const dispatchEvent = vi.fn();
-    vi.stubGlobal('window', { dispatchEvent });
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }),
-    );
-    const { refreshAuthenticatedSession, SessionRefreshUnavailableError } =
-      await import('./auth-session');
-    await expect(refreshAuthenticatedSession('/api/v1')).rejects.toBeInstanceOf(
-      SessionRefreshUnavailableError,
-    );
-    expect(dispatchEvent).not.toHaveBeenCalled();
-  });
+  it.each([
+    {},
+    { user: { id: 'user-id' } },
+    { user: { ...session.user, branches: ['branch-id'] } },
+    { user: { ...session.user, permissions: [{ code: 'ui.profile' }] } },
+    { user: { ...session.user, roles: [{ code: 'role' }] } },
+  ])(
+    'does not dispatch recovered identity for invalid response %#',
+    async (payload) => {
+      const dispatchEvent = vi.fn();
+      vi.stubGlobal('window', { dispatchEvent });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => payload,
+        }),
+      );
+      const { refreshAuthenticatedSession, SessionRefreshUnavailableError } =
+        await import('./auth-session');
+      await expect(
+        refreshAuthenticatedSession('/api/v1'),
+      ).rejects.toBeInstanceOf(SessionRefreshUnavailableError);
+      expect(dispatchEvent).not.toHaveBeenCalled();
+    },
+  );
 
   it('never shares refresh results between separate API origins', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ user: { id: 'user-id' } }),
+      json: async () => session,
     });
     vi.stubGlobal('fetch', fetchMock);
     const { refreshAuthenticatedSession } = await import('./auth-session');
@@ -92,7 +113,6 @@ describe('shared authentication refresh', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it('notifies mounted UI when a session is recovered', async () => {
-    const session = { user: { id: 'user-id' } };
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -114,7 +134,6 @@ describe('shared authentication refresh', () => {
   });
 
   it('deduplicates simultaneous refreshes in the same tab', async () => {
-    const session = { user: { id: 'user-id' } };
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -133,7 +152,6 @@ describe('shared authentication refresh', () => {
   });
 
   it('retries a concurrent-refresh conflict with the newer shared cookie', async () => {
-    const session = { user: { id: 'user-id' } };
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, status: 409 })

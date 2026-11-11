@@ -257,7 +257,11 @@ export function buildDashboardCharts(
     );
     const tardy = Math.max(
       0,
-      d.lateMinutes == null ? number(v[4]) : number(d.lateMinutes),
+      row.status === 'مرخصی'
+        ? 0
+        : d.lateMinutes == null
+          ? number(v[4])
+          : number(d.lateMinutes),
     );
     if (
       worked > 0 ||

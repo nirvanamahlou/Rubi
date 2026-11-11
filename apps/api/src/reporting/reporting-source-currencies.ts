@@ -55,7 +55,10 @@ export function consolidateSourceCurrencies(
         id,
         at: rows[0]!.at,
         updatedAt: new Date(
-          Math.max(...rows.map((r) => r.updatedAt.getTime())),
+          rows.reduce(
+            (latest, row) => Math.max(latest, row.updatedAt.getTime()),
+            -Infinity,
+          ),
         ),
         values,
         chartAmounts: [...(amounts.get(source.chartMeasure) ?? [])].map(

@@ -1,13 +1,124 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 
-import type { LocalDocumentStorage } from '../documents/documents.storage';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { ConfigService } from '@nestjs/config';
+
+import { LocalDocumentStorage } from '../documents/documents.storage';
 import { validateStorageObjectKey } from '../documents/documents.validation';
 import { ReportingExportService } from './reporting-export.service';
 import type { TravelReportResultV1 } from './reporting.contracts';
 
 describe('ReportingExportService storage boundary', () => {
-  it('keeps each mixed-direction amount attached to its currency in Excel', () => {
+  it('renders the same PDF without cloning any dataset rows into the worker', async () => {
+    const service = new ReportingExportService({} as LocalDocumentStorage);
+    const result = {
+      reportCode: 'sample',
+      generatedAtUtc: '2026-11-10T06:00:00.000Z',
+      sourceProjection: 'reporting.travel.facts.v1',
+      total: 23,
+      rows: [
+        {
+          unused: () => {
+            throw new Error('PDF must not read rows');
+          },
+        },
+      ],
+    } as unknown as TravelReportResultV1;
+    const direct = service.build('PDF', result, 'Synthetic report');
+    const worker = await service.buildInWorker(
+      'PDF',
+      result,
+      'Synthetic report',
+    );
+    expect(worker).toEqual(direct);
+    expect(worker.buffer.toString('ascii')).toContain('(Rows: 23)');
+  }, 30000);
+
+  it.each(['CSV', 'XLSX'] as const)(
+    'streams %s directly into encrypted storage with the correct size and digest',
+    async (format) => {
+      const root = await mkdtemp(join(tmpdir(), 'nora-report-stream-'));
+      try {
+        const storage = new LocalDocumentStorage(
+          new ConfigService({
+            DOCUMENTS_STORAGE_ROOT: root,
+            DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: Buffer.alloc(
+              32,
+              13,
+            ).toString('base64'),
+          }),
+        );
+        const service = new ReportingExportService(storage);
+        const result = {
+          reportCode: 'sample',
+          generatedAtUtc: '2026-11-10T06:00:00.000Z',
+          columns: [{ key: 'note', label: 'Note', kind: 'TEXT' }],
+          rows: Array.from({ length: 2048 }, (_, index) => ({
+            sourceValues: {
+              note: createHash('sha256').update(String(index)).digest('hex'),
+            },
+          })),
+          filterSnapshot: { branchIds: [], filters: {} },
+        } as unknown as TravelReportResultV1;
+        const direct = service.build(format, result, 'Synthetic report');
+        const file = await service.buildAndStore(
+          '44444444-4444-4444-8444-444444444444',
+          format,
+          result,
+          'Synthetic report',
+        );
+        expect(file.sizeBytes).toBe(direct.buffer.length);
+        const stream = await service.open(file.objectKey, file.sizeBytes);
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+        const bytes = Buffer.concat(chunks);
+        expect(file.checksum).toBe(
+          createHash('sha256').update(bytes).digest('hex'),
+        );
+        if (format === 'CSV') expect(bytes).toEqual(direct.buffer);
+        else expect(unzipSync(bytes)).toEqual(unzipSync(direct.buffer));
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+    30000,
+  );
+
+  it('terminates a worker when the storage consumer rejects a chunk', async () => {
+    const storage = {
+      async putQuarantinedStream(
+        _key: string,
+        source: AsyncIterable<Uint8Array>,
+      ) {
+        for await (const chunk of source) {
+          expect(chunk.length).toBeGreaterThan(0);
+          throw new Error('storage write failed');
+        }
+      },
+    };
+    const service = new ReportingExportService(
+      storage as unknown as LocalDocumentStorage,
+    );
+    const result = {
+      rows: [],
+      columns: [],
+      filterSnapshot: { branchIds: [], filters: {} },
+    } as unknown as TravelReportResultV1;
+    await expect(
+      service.buildAndStore(
+        '44444444-4444-4444-8444-444444444444',
+        'CSV',
+        result,
+        'Synthetic report',
+      ),
+    ).rejects.toThrow('storage write failed');
+  }, 10000);
+
+  it('keeps each mixed-direction amount attached to its currency in Excel', async () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);
     const amount = '104704000000 ریال + 16976 € + -54200.25 $';
     const result = {
@@ -30,9 +141,9 @@ describe('ReportingExportService storage boundary', () => {
       ],
       filterSnapshot: { branchIds: [], filters: {} },
     } as unknown as TravelReportResultV1;
-    const workbook = unzipSync(
-      new Uint8Array(service.build('XLSX', result, 'گزارش آزمایشی').buffer),
-    );
+    const file = await service.buildInWorker('XLSX', result, 'گزارش آزمایشی');
+    expect(Buffer.isBuffer(file.buffer)).toBe(true);
+    const workbook = unzipSync(file.buffer);
     const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
     const styles = strFromU8(workbook['xl/styles.xml']!);
     const expected =
@@ -55,7 +166,54 @@ describe('ReportingExportService storage boundary', () => {
       .buffer.toString('utf8');
     expect(csv).toContain('104,704,000,000 ریال + 16,976 € + -54,200.25 $');
     expect(csv).not.toMatch(/[\u200e\u00a0]/);
-  });
+  }, 30000);
+
+  it('keeps the complete worksheet and checksum across multiple compressed chunks', async () => {
+    const service = new ReportingExportService({} as LocalDocumentStorage);
+    const rows = Array.from({ length: 480 }, (_, i) => ({
+      primaryDimension: 'Synthetic <row> & ' + i,
+      sourceValues: {
+        note: createHash('sha256').update(String(i)).digest('hex'),
+      },
+    }));
+    const result = {
+      reportCode: 'sample',
+      generatedAtUtc: '2026-11-10T06:00:00.000Z',
+      columns: [
+        { key: 'primaryDimension', label: 'Label', kind: 'TEXT' },
+        { key: 'note', label: 'Note', kind: 'TEXT' },
+      ],
+      rows,
+      filterSnapshot: { branchIds: [], filters: {} },
+    } as unknown as TravelReportResultV1;
+
+    const file = await service.buildInWorker(
+      'XLSX',
+      result,
+      'Synthetic report',
+    );
+    expect(file.checksum).toBe(
+      createHash('sha256').update(file.buffer).digest('hex'),
+    );
+    const workbook = unzipSync(file.buffer);
+    const sheet = strFromU8(workbook['xl/worksheets/sheet1.xml']!);
+    const table = strFromU8(workbook['xl/tables/table1.xml']!);
+    expect(sheet.match(/<row r="/g)).toHaveLength(487);
+    expect(sheet).toContain('Synthetic &lt;row&gt; &amp; 0');
+    expect(sheet).toContain('Synthetic &lt;row&gt; &amp; 479');
+    expect(sheet).toContain('min="2" max="2" width="42"');
+    expect(table).toContain('ref="A7:B487"');
+
+    const csv = service.build('CSV', result, 'Synthetic report');
+    const lines = csv.buffer.toString('utf8').split('\r\n');
+    expect(lines[0]?.charCodeAt(0)).toBe(0xfeff);
+    expect(lines[7]).toBe('Label,Note');
+    expect(lines.slice(8)).toEqual(
+      rows.map((row) =>
+        [row.primaryDimension, row.sourceValues.note].join(','),
+      ),
+    );
+  }, 30000);
 
   it('uses the compact report, timestamp, filters and banded dataset Excel table', () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);

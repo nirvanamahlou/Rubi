@@ -23,25 +23,22 @@ describe('system management access', () => {
     expect(systemPageSource).toContain('SystemManagementWorkspace');
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
     expect(systemPageSource).not.toContain('<Link');
-    expect(workspaceSource).toContain('styles.userManagementCard');
     expect(workspaceSource).toContain('href="/system/users"');
   });
 
-  it('exposes user management inside system navigation without the Legal Entity callout', () => {
-    expect(workspaceSource).toContain("href: '/system/users'");
-    expect(workspaceSource).not.toContain("href: '/system/legal-entities'");
-    expect(workspaceSource).not.toContain("owner: 'Legal Entity'");
-    expect(workspaceSource).not.toContain(
-      'هویت حقوقی، Branding و سربرگ‌ها در ماژول مالک ثبت می‌شوند.',
+  it('shows user management and permission-gated activity history', () => {
+    expect(workspaceSource).toContain("routeAllowed('/system/users')");
+    expect(workspaceSource).toContain(
+      "permissions?.includes('system.audit.read')",
     );
+    expect(workspaceSource).toContain("['کاربر', 'بخش', 'اقدام', 'تاریخ']");
+    expect(workspaceSource).not.toContain('settingsModules');
+    expect(workspaceSource).not.toContain('/system/operations');
   });
 
-  it('does not duplicate owner APIs and exposes the live operations panel', () => {
+  it('keeps the existing operations route available to authorized callers', () => {
     expect(operationsPageSource).toContain(
       'عملیات حساس در API مالک دوباره مجوزسنجی و ثبت Audit می‌شود',
     );
-    expect(workspaceSource).toContain('managementAreas');
-    expect(workspaceSource).not.toContain('legalEntitiesApi.selectable');
-    expect(workspaceSource).toContain("scope: 'GLOBAL'");
   });
 });

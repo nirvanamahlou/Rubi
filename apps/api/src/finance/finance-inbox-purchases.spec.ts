@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { FinanceInboxService } from './finance-inbox.service';
+import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
 const actor = {
   userId: 'actor',
   branchIds: ['branch'],
@@ -36,7 +37,7 @@ function setup(reservations: unknown, fx?: unknown) {
     );
   const service = new FinanceInboxService(
     { financeInbox: vi.fn().mockResolvedValue([]) } as never,
-    { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+    { readFinanceInbox: vi.fn().mockResolvedValue([]) } as never,
     reservations as never,
     {} as never,
     {
@@ -76,6 +77,64 @@ describe('complete reservation purchase inbox', () => {
     ).toBe(true);
     expect(list).not.toHaveBeenCalled();
     expect(listForFinance).toHaveBeenCalledWith(['branch'], actor);
+  });
+  it('reads FX evidence only for the requested page and preserves complete filtered totals', async () => {
+    const rows = [intake(1), intake(2), intake(3)];
+    rows[2]!.servicePurchases[0]!.currencyCode = 'USD';
+    const findPayments = vi.fn().mockResolvedValue([]);
+    const db = {
+      client: {
+        financePurchaseFxSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
+        financeSupplierPaymentRevision: { findMany: findPayments },
+        financeTicketPurchasePaymentRevision: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        financeProcurementInvoiceRevision: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+      },
+    };
+    const fx = new PurchaseFxService(db as never, {} as never);
+    const { service } = setup(
+      { listForFinance: vi.fn().mockResolvedValue(rows) },
+      fx,
+    );
+
+    const page = await service.page(
+      { currencyCode: 'EUR', page: 2, pageSize: 1 },
+      actor,
+    );
+    expect(page).toMatchObject({
+      total: 2,
+      page: 2,
+      pageSize: 1,
+      summary: { openCount: 2, paymentCount: 2 },
+      items: [
+        {
+          sourceReference: 'purchase-2',
+          purchaseFx: [{ referenceId: 'purchase-2', currencyCode: 'EUR' }],
+        },
+      ],
+    });
+    expect(
+      page.sources.find((source) => source.source === 'RESERVATIONS'),
+    ).toMatchObject({ itemCount: 3, connection: 'CONNECTED' });
+    expect(findPayments).toHaveBeenCalledTimes(1);
+    expect(findPayments).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ purchaseId: { in: ['purchase-2'] } }),
+      }),
+    );
+    const empty = await service.page({ page: 4, pageSize: 1 }, actor);
+    expect(empty.items).toEqual([]);
+    expect(empty.total).toBe(3);
+    expect(findPayments).toHaveBeenCalledTimes(1);
+
+    const legacy = await service.list(actor);
+    expect(legacy.items).toHaveLength(3);
+    expect(legacy.items.every((item) => item.purchaseFx?.length === 1)).toBe(
+      true,
+    );
   });
   it('fully pages compatible older adapters instead of silently stopping at 100', async () => {
     const rows = Array.from({ length: 126 }, (_, n) => intake(n));

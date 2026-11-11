@@ -18,6 +18,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { MARKETING_ASSET_STATUS_LABELS } from '@nora/contracts';
+
 const AMOUNT = /^\d{1,20}(?:\.\d{1,4})?$/;
 const CURRENCY = /^[A-Z]{3}$/;
 const ASSET_KINDS = [
@@ -101,6 +103,57 @@ export class MarketingAssetMutationDto {
 
 export class MarketingAssetListQueryDto {
   @IsOptional() @IsIn(ASSET_KINDS) kind?: (typeof ASSET_KINDS)[number];
+}
+
+export class MarketingCampaignPageQueryDto {
+  @IsOptional() @IsString() @MaxLength(100) search?: string;
+  @IsOptional() @IsString() @MaxLength(24) status?: string;
+  @IsOptional() @IsString() @MaxLength(32) channel?: string;
+  @IsOptional() @IsString() @MaxLength(80) company?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  startsAfter?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  endsBefore?: string;
+  @IsOptional()
+  @IsIn(['updatedAt', 'startsAt', 'budgetAmount', 'name'])
+  sortBy?: 'updatedAt' | 'startsAt' | 'budgetAmount' | 'name';
+  @IsOptional() @IsIn(['asc', 'desc']) sortDirection?: 'asc' | 'desc';
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(2) @Max(20) pageSize?: number;
+}
+
+export class MarketingSegmentPageQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(Number.MAX_SAFE_INTEGER)
+  page?: number;
+  @IsOptional() @IsString() @MaxLength(240) search?: string;
+  @IsOptional()
+  @IsIn(Object.keys(MARKETING_ASSET_STATUS_LABELS))
+  status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
+}
+
+export class MarketingPromotionPageQueryDto {
+  @IsIn(['COUPON', 'OFFER']) kind!: 'COUPON' | 'OFFER';
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @IsOptional()
+  @IsIn(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'])
+  status?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  from?: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601({ strict: true })
+  to?: string;
 }
 
 export class MarketingAssetDeleteDto {

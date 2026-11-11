@@ -56,6 +56,7 @@ export const environmentValidationSchema = Joi.object({
       Joi.ref('CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64'),
     )
     .required(),
+  DOCUMENTS_SCAN_EXECUTION: Joi.string().valid('api', 'worker').default('api'),
   DOCUMENTS_STORAGE_ROOT: Joi.string()
     .trim()
     .when('NODE_ENV', {

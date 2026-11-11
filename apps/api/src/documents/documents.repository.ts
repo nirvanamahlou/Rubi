@@ -44,6 +44,9 @@ export const documentDetailInclude = {
   relations: { orderBy: { createdAt: 'asc' as const } },
 } satisfies Prisma.DocumentInclude;
 
+export const maxDocumentScanAttempts = 3;
+const documentScanLeaseMs = 5 * 60_000;
+
 export const documentScanJobInclude = {
   version: {
     include: {
@@ -492,6 +495,44 @@ export class DocumentsRepository {
       }),
     ]);
     return { rows, total };
+  }
+
+  findMasterDataLogoDuplicate(input: {
+    branchId: string;
+    resource: string;
+    recordId: string;
+    versionNote: string;
+    actorUserId: string;
+  }) {
+    return this.database.client.document.findFirst({
+      where: {
+        branchId: input.branchId,
+        archiveStatus: 'ACTIVE',
+        documentType: { domain: 'BRAND' },
+        confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+        NOT: {
+          sourceModule: 'WORKBENCH',
+          sourceEntityType: 'WorkbenchFeedback',
+          ownerUserId: { not: input.actorUserId },
+        },
+        relations: {
+          some: {
+            relationType: 'PRIMARY_CASE',
+            sourceModule: 'master-data',
+            sourceEntityType: input.resource,
+            sourceEntityId: input.recordId,
+          },
+        },
+        currentVersion: { versionNote: input.versionNote },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        currentVersion: {
+          select: { storageObjectKey: true, sizeBytes: true, scanStatus: true },
+        },
+      },
+    });
   }
 
   findProfilePhoto(id: string, ownerUserId: string) {
@@ -1426,12 +1467,17 @@ export class DocumentsRepository {
     return this.database.client.documentProcessingJob.findMany({
       where: {
         jobType: 'ANTIVIRUS_SCAN',
-        status: { in: ['PENDING', 'FAILED'] },
-        attempts: { lt: 3 },
         availableAt: { lte: new Date() },
+        OR: [
+          {
+            status: { in: ['PENDING', 'FAILED'] },
+            attempts: { lt: maxDocumentScanAttempts },
+          },
+          { status: 'RUNNING' },
+        ],
       },
       include: documentScanJobInclude,
-      orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ availableAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
       take,
     });
   }
@@ -1442,21 +1488,31 @@ export class DocumentsRepository {
         versionId,
         jobType: 'ANTIVIRUS_SCAN',
         status: { in: ['PENDING', 'FAILED'] },
-        attempts: { lt: 3 },
+        attempts: { lt: maxDocumentScanAttempts },
+        availableAt: { lte: new Date() },
       },
       include: documentScanJobInclude,
     });
   }
 
   claimScanJob(id: string): Promise<DocumentScanJobRow | null> {
+    const now = new Date();
     return this.database.client.$transaction(async (transaction) => {
       const claimed = await transaction.documentProcessingJob.updateMany({
         where: {
           id,
-          status: { in: ['PENDING', 'FAILED'] },
-          attempts: { lt: 3 },
+          jobType: 'ANTIVIRUS_SCAN',
+          status: { in: ['PENDING', 'FAILED', 'RUNNING'] },
+          attempts: { lt: maxDocumentScanAttempts },
+          availableAt: { lte: now },
         },
-        data: { status: 'RUNNING', attempts: { increment: 1 } },
+        // On a running row, availableAt is the lease expiry. The attempt
+        // counter and expiry jointly identify this claim when it finishes.
+        data: {
+          status: 'RUNNING',
+          attempts: { increment: 1 },
+          availableAt: new Date(now.getTime() + documentScanLeaseMs),
+        },
       });
       if (claimed.count !== 1) return null;
       return transaction.documentProcessingJob.findUnique({
@@ -1472,7 +1528,21 @@ export class DocumentsRepository {
     const nextAttemptAt = new Date(
       Date.now() + Math.min(15, Math.max(1, job.attempts)) * 60_000,
     );
-    await this.database.client.$transaction(async (transaction) => {
+    return this.database.client.$transaction(async (transaction) => {
+      const completed = await transaction.documentProcessingJob.updateMany({
+        where: {
+          id: job.id,
+          status: 'RUNNING',
+          attempts: job.attempts,
+          availableAt: job.availableAt,
+        },
+        data: {
+          status: scanCompleted ? 'COMPLETED' : 'FAILED',
+          availableAt: scanCompleted ? result.scannedAt : nextAttemptAt,
+          lastErrorCode: result.threatCode,
+        },
+      });
+      if (completed.count !== 1) return false;
       await transaction.documentVersion.update({
         where: { id: job.versionId },
         data: { scanStatus: result.status },
@@ -1486,14 +1556,6 @@ export class DocumentsRepository {
             : result.threatCode || 'ANTIVIRUS_SCAN_FAILED',
           reviewedAt: clean ? result.scannedAt : null,
           reviewReason: `${result.engineVersion} · ${result.adapterReference}`,
-        },
-      });
-      await transaction.documentProcessingJob.update({
-        where: { id: job.id },
-        data: {
-          status: scanCompleted ? 'COMPLETED' : 'FAILED',
-          availableAt: scanCompleted ? result.scannedAt : nextAttemptAt,
-          lastErrorCode: result.threatCode,
         },
       });
       await transaction.documentAuditEvent.create({
@@ -1512,6 +1574,7 @@ export class DocumentsRepository {
           userAgentSummary: result.engineVersion,
         },
       });
+      return true;
     });
   }
 }

@@ -1,11 +1,14 @@
 'use client';
 
+import { MARKETING_SEGMENT_PAGE_SIZE } from '@nora/contracts';
 import type {
   AuthenticatedActor,
   CustomerAffairsMarketingIntakeViewV1,
   MarketingAssetKind,
   MarketingAssetViewV1,
   MarketingCampaignViewV1,
+  MarketingSegmentPageV1,
+  MarketingSegmentPageQueryV1,
 } from '@nora/contracts';
 import {
   Calculator,
@@ -20,7 +23,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -73,40 +76,66 @@ import {
 
 type Notice = (message: string) => void;
 
-function useMarketingData(kinds: MarketingAssetKind[] = []) {
+function useMarketingData(
+  kinds: MarketingAssetKind[],
+  includeCampaigns = true,
+  loadSegmentPage?: () => Promise<MarketingSegmentPageV1>,
+) {
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [campaigns, setCampaigns] = useState<MarketingCampaignViewV1[]>([]);
-  const [assets, setAssets] = useState<MarketingAssetViewV1[]>([]);
+  const [assetResult, setAssetResult] = useState<
+    MarketingAssetViewV1[] | MarketingSegmentPageV1
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const key = kinds.join(',');
+  const revision = useRef({ id: 0 });
   const load = useCallback(async () => {
+    const request = ++revision.current.id;
     setLoading(true);
     setError('');
     try {
-      const [access, campaignResponse, ...assetResponses] = await Promise.all([
-        marketingApi.access(),
-        marketingApi.campaigns(),
-        ...(key ? key.split(',') : []).map((kind) =>
-          marketingApi.assets(kind as MarketingAssetKind),
-        ),
-      ]);
+      const [access, campaignResponse, segmentResponse, ...assetResponses] =
+        await Promise.all([
+          marketingApi.access(),
+          includeCampaigns ? marketingApi.campaigns() : null,
+          loadSegmentPage?.(),
+          ...(key ? key.split(',') : []).map((kind) =>
+            marketingApi.assets(kind as MarketingAssetKind),
+          ),
+        ]);
+      if (request !== revision.current.id) return;
       setActor(access);
-      setCampaigns(campaignResponse.data);
-      setAssets(assetResponses.flatMap((response) => response.data));
+      setCampaigns(campaignResponse?.data ?? []);
+      setAssetResult(
+        segmentResponse ?? assetResponses.flatMap((response) => response.data),
+      );
     } catch (reason) {
+      if (request !== revision.current.id) return;
       setError(
         reason instanceof Error ? reason.message : 'دریافت داده انجام نشد.',
       );
     } finally {
-      setLoading(false);
+      if (request === revision.current.id) setLoading(false);
     }
-  }, [key]);
+  }, [key, includeCampaigns, loadSegmentPage]);
   useEffect(() => {
+    const requestState = revision.current;
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestState.id++;
+    };
   }, [load]);
-  return { actor, campaigns, assets, loading, error, load };
+  return {
+    actor,
+    campaigns,
+    assets: Array.isArray(assetResult) ? assetResult : assetResult.data,
+    segmentPage: Array.isArray(assetResult) ? null : assetResult,
+    loading,
+    error,
+    load,
+  };
 }
 
 function LoadState({
@@ -187,7 +216,6 @@ function AssetActions({
 }
 
 export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
-  const data = useMarketingData(['SEGMENT']);
   const [name, setName] = useState('');
   const [rule, setRule] = useState('');
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
@@ -196,6 +224,23 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const loadSegmentPage = useCallback(
+    () =>
+      marketingApi.segmentPage({
+        page,
+        search,
+        ...(statusFilter === 'all'
+          ? {}
+          : {
+              status: statusFilter as NonNullable<
+                MarketingSegmentPageQueryV1['status']
+              >,
+            }),
+      }),
+    [page, search, statusFilter],
+  );
+  const data = useMarketingData([], false, loadSegmentPage);
   const [formError, setFormError] = useState('');
   const save = async () => {
     if (!data.actor?.branchIds[0] || name.trim().length < 2 || !rule.trim()) {
@@ -253,9 +298,15 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
       <AudienceToolbar
         id="segments"
         search={search}
-        onSearch={setSearch}
+        onSearch={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
         status={statusFilter}
-        onStatus={setStatusFilter}
+        onStatus={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
         statuses={['ACTIVE', 'DRAFT', 'PAUSED', 'ARCHIVED'].map(
           (value) => [value, audienceStatusLabels[value]!] as const,
         )}
@@ -361,14 +412,17 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
       </Dialog>
       <AssetTable
         localized
-        items={data.assets.filter(
-          (item) =>
-            (statusFilter === 'all' || item.status === statusFilter) &&
-            audienceMatches(search, [
-              item.name,
-              audienceStatusLabels[item.status],
-            ]),
-        )}
+        items={data.segmentPage?.data ?? []}
+        pagination={
+          data.segmentPage
+            ? {
+                page: data.segmentPage.page,
+                total: data.segmentPage.total,
+                onPageChange: setPage,
+                disabled: data.loading || !!data.error,
+              }
+            : undefined
+        }
         onDelete={async (item) => {
           if (!window.confirm(`گروه «${item.name}» حذف شود؟`)) return;
           try {
@@ -401,18 +455,21 @@ function AssetTable({
   onDelete,
   onSelect,
   localized = false,
+  pagination,
 }: {
   localized?: boolean;
+  pagination?:
+    | {
+        page: number;
+        total: number;
+        onPageChange: (page: number) => void;
+        disabled: boolean;
+      }
+    | undefined;
   items: MarketingAssetViewV1[];
   onDelete: (item: MarketingAssetViewV1) => void;
   onSelect: (item: MarketingAssetViewV1, mode: 'view' | 'edit') => void;
 }) {
-  const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(items.length / 25));
-  const currentPage = Math.min(page, totalPages);
-  const renderedItems = localized
-    ? items.slice((currentPage - 1) * 25, currentPage * 25)
-    : items;
   if (!items.length)
     return (
       <EmptyState
@@ -437,7 +494,7 @@ function AssetTable({
           </tr>
         </thead>
         <tbody>
-          {renderedItems.map((item) => (
+          {items.map((item) => (
             <tr className="border-t border-border" key={item.id}>
               <td className="p-3 font-bold">{item.name}</td>
               <td className="p-3">
@@ -465,20 +522,22 @@ function AssetTable({
           ))}
         </tbody>
       </table>
-      {localized ? (
+      {pagination ? (
         <div className="flex items-center gap-3 border-t p-4">
           <span className="text-sm text-muted-foreground">
-            {items.length.toLocaleString('fa-IR')} گروه · صفحه{' '}
-            {currentPage.toLocaleString('fa-IR')} از{' '}
-            {totalPages.toLocaleString('fa-IR')}
+            {pagination.total.toLocaleString('fa-IR')} گروه · صفحه{' '}
+            {pagination.page.toLocaleString('fa-IR')} از{' '}
+            {Math.ceil(
+              pagination.total / MARKETING_SEGMENT_PAGE_SIZE,
+            ).toLocaleString('fa-IR')}
           </span>
           <Button
             size="icon"
             variant="outline"
             title="صفحه قبل"
             aria-label="صفحه قبل گروه‌ها"
-            disabled={currentPage <= 1}
-            onClick={() => setPage(currentPage - 1)}
+            disabled={pagination.disabled || pagination.page <= 1}
+            onClick={() => pagination.onPageChange(pagination.page - 1)}
           >
             <ChevronRight aria-hidden="true" className="size-4" />
           </Button>
@@ -487,8 +546,11 @@ function AssetTable({
             variant="outline"
             title="صفحه بعد"
             aria-label="صفحه بعد گروه‌ها"
-            disabled={currentPage >= totalPages}
-            onClick={() => setPage(currentPage + 1)}
+            disabled={
+              pagination.disabled ||
+              pagination.page * MARKETING_SEGMENT_PAGE_SIZE >= pagination.total
+            }
+            onClick={() => pagination.onPageChange(pagination.page + 1)}
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
@@ -2512,7 +2574,7 @@ export function AutomationGraphCanvas({
 }
 
 export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
-  const data = useMarketingData(['AUTOMATION']);
+  const data = useMarketingData(['AUTOMATION'], false);
   const emptyAutomation = (): AutomationDraft => ({
     name: 'اتوماسیون جدید',
     nodes: [{ id: crypto.randomUUID(), title: 'شروع' }],

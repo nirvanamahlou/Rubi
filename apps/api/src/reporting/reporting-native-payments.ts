@@ -1,13 +1,12 @@
 import { Prisma, type DatabaseClient } from '@nora/database';
 import { BadRequestException } from '@nestjs/common';
-import { readSalesPaymentReportingProjection } from '../sales/sales-payment-reporting.public';
+import { scanSalesPaymentReportingProjection } from '../sales/sales-payment-reporting.public';
 import type { SalesReportingActor } from '../sales/sales-reporting.public';
 import type {
   ReportQueryV1,
   TravelReportResultV1,
 } from './reporting.contracts';
-import type { ReportingFactRow } from './reporting.repository';
-import { buildTravelReportResult } from './reporting.projection';
+import { createTravelReportProjection } from './reporting.projection';
 
 export async function nativePaymentReport(
   client: DatabaseClient,
@@ -15,11 +14,6 @@ export async function nativePaymentReport(
   actor: SalesReportingActor,
   includeAllRows = false,
 ): Promise<TravelReportResultV1> {
-  const source = await readSalesPaymentReportingProjection(
-    client,
-    actor,
-    query,
-  );
   const allowed = new Set([
     'primaryDimension',
     'secondaryDimension',
@@ -28,46 +22,7 @@ export async function nativePaymentReport(
     'salesAmount',
     'refundAmount',
   ]);
-  if (query.sort && !allowed.has(query.sort.column))
-    throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
-  const facts: ReportingFactRow[] = source.map((row) => ({
-    id: row.id,
-    orderNumber: row.id,
-    occurredAt: row.at,
-    legalEntityCode: '',
-    legalEntityName: '',
-    branchId: null,
-    branchName: '',
-    ownerName: '',
-    siteCode: '',
-    salesChannel: row.method,
-    serviceType: '',
-    customerType: '',
-    customerName: '',
-    agencyName: null,
-    leadSource: null,
-    providerName: null,
-    airlineName: null,
-    originCity: null,
-    destinationCity: null,
-    routeLabel: null,
-    orderStatus: '',
-    reservationStatus: '',
-    issueStatus: '',
-    paymentStatus: row.kind,
-    pnrCode: null,
-    passengerCount: 0,
-    segmentCount: 0,
-    ticketCount: 0,
-    currencyCode: row.currencyCode,
-    salesAmount: new Prisma.Decimal(row.received),
-    purchaseAmount: new Prisma.Decimal(0),
-    commissionAmount: new Prisma.Decimal(0),
-    refundAmount: new Prisma.Decimal(row.refunded),
-    settledAmount: new Prisma.Decimal(0),
-    dataAsOf: row.updatedAt,
-  }));
-  const result = buildTravelReportResult({
+  const projection = createTravelReportProjection({
     code: 'payments_refunds',
     query: {
       ...query,
@@ -75,10 +30,50 @@ export async function nativePaymentReport(
         ? []
         : actor.branchIds,
     },
-    facts,
-    now: new Date(),
     includeAllRows,
   });
+  await scanSalesPaymentReportingProjection(client, actor, query, (row) =>
+    projection.add({
+      id: row.id,
+      orderNumber: row.id,
+      occurredAt: row.at,
+      legalEntityCode: '',
+      legalEntityName: '',
+      branchId: null,
+      branchName: '',
+      ownerName: '',
+      siteCode: '',
+      salesChannel: row.method,
+      serviceType: '',
+      customerType: '',
+      customerName: '',
+      agencyName: null,
+      leadSource: null,
+      providerName: null,
+      airlineName: null,
+      originCity: null,
+      destinationCity: null,
+      routeLabel: null,
+      orderStatus: '',
+      reservationStatus: '',
+      issueStatus: '',
+      paymentStatus: row.kind,
+      pnrCode: null,
+      passengerCount: 0,
+      segmentCount: 0,
+      ticketCount: 0,
+      currencyCode: row.currencyCode,
+      salesAmount: new Prisma.Decimal(row.received),
+      purchaseAmount: new Prisma.Decimal(0),
+      commissionAmount: new Prisma.Decimal(0),
+      refundAmount: new Prisma.Decimal(row.refunded),
+      settledAmount: new Prisma.Decimal(0),
+      dataAsOf: row.updatedAt,
+    }),
+  );
+  if (query.sort && !allowed.has(query.sort.column))
+    throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
+  const result = projection.finish(new Date());
   const labels: Record<string, string> = {
     primaryDimension: 'نوع تراکنش',
     secondaryDimension: 'روش دریافت',

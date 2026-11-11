@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { rememberHeaderSession } from '@/lib/header-session';
-import type { LoginResponse } from '@nora/contracts';
+import { readIamSessionV1 } from '@nora/contracts/iam/session';
 import { loginDestination } from './login-destination';
 import { loginErrorMessage } from './login-error';
 
@@ -45,7 +45,11 @@ export function LoginForm() {
         setError(loginErrorMessage(response.status));
         return;
       }
-      const session = (await response.json()) as LoginResponse;
+      const session = readIamSessionV1(await response.json());
+      if (!session) {
+        setError('ارتباط با سرور برقرار نشد.');
+        return;
+      }
       rememberHeaderSession(session.user);
       resetTheme();
       const target = search.get('next');

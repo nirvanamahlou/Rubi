@@ -300,6 +300,14 @@ Data model documentation lease: append only the owned CallCenterRequestReview co
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff4248. User confirms that saving any related call result (including no answer) by the responsible expert queues review for the request creator; the creator's decision clears pending review without deleting history. Reserve Call Center workflow queue/list/save, completion and telephony SAVE hooks, bounded access predicates, dedicated review service/tests, workflow client/editor/queue presentation and own notes. Sole temporary schema/migration lease: one additive CallCenterRequestReview receipt model and inverse FK relations; no dependency/lockfile changes. Complete ownership scan found no unreleased schema lease; earlier migration owners are merged/released. Peer alert PR1397 notify/hash handler and MINE PR1407 default/order remain untouched; Navy/Pearl shell correction is merged PR1411. Producer=Customer Affairs review service; consumers=Call Center queue/editor; additive optional review metadata and expectedReviewToken input, no status/assignee mutation from call saves. No production publication in this work item.
 
+## STREAM-ENCRYPTED-ARTIFACTS-1111 — PC-B — READY_FOR_CI
+
+Reserve the encrypted storage writer and targeted tests. Keep the persisted RUBIDOC1 format, exclusive creation and authenticated reads.
+
+## LOGO-DUPLICATE-PROJECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve Master Data logo duplicate lookup and bounded stored-object verification. Preserve branch and confidentiality checks, current revision rules, and missing-object replacement.
+
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
@@ -438,6 +446,10 @@ Reproduced the false UTC-midnight rejection before fixing it.107 focused domain/
 COMPUTER_ID=PC-A; branch codex/pc-a-package-currency-select-1102 from develop98e6679d3. Owner authorizes replacing free-text package price currencies with existing active Master Data currencies and develop merge after checks. Reserve only Pricing Web tour-price-fields, tour-pricing-workspace and focused tests plus own status notes. Reuse existing public listActiveCurrencyReferences('sales') with complete pagination; no Master Data writer, API/contract/schema/migration/dependency change. Preserve saved currency values, amounts, commission modes, immutable publications and peer work. Previous same-owner package pricing source scope is merged/released. No deployment.
 
 Delivered searchable code/name currency choices using the complete active Sales selection directory; arbitrary typed values cannot update price fields. Loading/failure disables currency selection with retry; legacy unavailable currency codes remain visible and unchanged. Amounts and commission modes retain their existing behavior.22 focused field/workspace/reference/i18n regressions pass; scoped lint, Web typecheck and production build plus final-head hosted checks gate owner-authorized merge. No migration/API/dependency/runtime changes. Source freezes on push and releases on verified merge.
+
+## FINANCE-BOUNDED-PAGE-1111 — PC-B — READY_FOR_CI
+
+Reserve the Finance inbox page filtering, ranking and summary calculation and their focused tests. Preserve exported and legacy queue results, source health, and money ordering.
 
 ## FINANCE-INBOX-PURCHASES-1102 — PC-A — READY_FOR_CI
 
@@ -1287,11 +1299,155 @@ COMPUTER_ID=PC-A; branch codex/pc-a-aircraft-save-access-1017 from origin/develo
 
 User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
 
+## DOCUMENTS-SCAN-RECOVERY-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A07. Reserve Documents scanner ownership, recovery of expired job claims, fencing and targeted tests. Preserve quarantine and audited release. Reuse the existing job deadline column without a migration.
+
 ## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-D. User requests an easy, complete new-site definition path after accepting the visual dashboard. Branch codex/pc-d-integrations-site-onboarding-1017 starts from origin/PC-D-Integration@b0181dc5. This target does not yet contain the already reviewed Integrations foundation/dashboard from PR889; reuse only its scoped module/route/contracts/i18n source, not unrelated develop changes. Reserve Integrations Web/API/contracts, route and bounded catalogue registrations, root Dockerfile build coverage for Web/API, CI workflow target and matching policy regression, and this task's status/docs and tests. Existing integrations.registry.v1 producer/consumer gain optional nonsecret site setup metadata together; legacy records without it remain valid. Public SystemManagement storage/IAM scope and CAS/audit remain unchanged. No schema/migration/dependency/lockfile ownership or other-module edits. Local Compose uses existing Rubi services and project image; no external requests, credentials or success claims. User authorizes push, hosted CI and PR to PC-D-Integration; merge only after all checks and required review pass.
 
 Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatting, i18n, Web/API types and builds pass. Docker Web3100/API4192 are healthy on rubi-integrations-local:1017-site-onboarding-v2 with unchanged schema, no migration/seed and retained volumes. Browser verified direct entry, inline brand, Back retention, loopback rejection, actual existing-system save/audit, light/dark and mobile. No sample site or URL saved; four systems remain. Ready for local review; publication awaits a new explicit instruction.
+
+## SALES-REPORT-SOURCE-PAGES-1111
+
+Read Sales report contracts and their relations in cursor batches of 500 within the existing reporting snapshot. Resolve reservation cancellation and project contract/currency rows per batch. Report sorting and grouping still consume the projected rows.
+
+## FINANCE-FX-PAGE-1110 (PC-B)
+
+Reserve Finance inbox page assembly, FX display enrichment timing and focused tests. Preserve query semantics, summary counts and all existing authorization and Finance commands. No contract, schema, dependency or deployment change.
+
+## REPORT-WORKER-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve report worker rendering, output transfer and artifact storage integration. Keep both report entry points, format fidelity, checksums and retention.
+
+## REPORTING-WORKER-INPUT-1111
+
+Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
+
+## XLSX-RANGE-INSPECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve staged XLSX format inspection and authenticated range reads. Preserve existing compatibility fallback, archive limits and macro checks.
+
+## DOCUMENT-STREAM-SCAN-1111
+
+Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
+
+## HOTEL-CURRENCY-FIELD-ACCESS-1110 (PC-B)
+
+Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
+
+## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
+
+Reserve operational report page assembly, its regression, and extraction of the existing Finance ranking heap. Preserve exact sorting, totals, source metadata and exports.
+
+## NATIVE-PAYMENTS-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve the shared cursor iterator and the native receipt/refund projection consumer. Preserve authorization, date filters, source order, exact totals and per-source limits.
+
+## REPORTING-CSV-MEMORY-1111 (PC-B)
+
+Reserve CSV encoding and its byte-level regression. Preserve export bytes and storage behavior.
+
+## STREAM-DOCUMENT-MULTIPART-1111 — PC-B — READY_FOR_CI
+
+Reserve the archive and incoming-letter multipart file intake. Preserve route permissions, existing workbook validation, file limits and cleanup.
+
+## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
+
+Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
+
+## REPORT-FACT-AGGREGATION-1111 — PC-B — READY_FOR_CI
+
+Reserve travel report fallback aggregation and native report source date maxima. Preserve eligibility, row ordering, currency totals and filter options.
+
+## NATIVE-SALES-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve native Sales contract report streaming and grouped output state. Preserve authorized owner lookups, exact currencies, status and ordering.
+
+## REPORTING-DURABLE-EXPORT-1110 (PC-B)
+
+Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.
+
+## REPORT-FACT-BATCHES-1111 — PC-B — READY_FOR_CI
+
+Reserve fallback report fact reads, projection consumer, and regression tests. Keep a repeatable source snapshot and the existing chronological tie ordering.
+
+## REPORTING-FILTER-PROJECTION-1111
+
+Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
+
+## PROCUREMENT-FINANCE-SOURCE-PAGES-1110 (PC-B)
+
+Reserve Procurement invoice and correction reads, Sales receipt reads, their shared database paging helper, Finance export warning and focused regressions. Preserve branch, status, order and DTOs. No schema, dependencies or deployment.
+
+## REPORTING-EXPORT-FILTER-MEMORY-1111
+
+Reports build filter choices only for interactive output. Exports preserve filter labels and selected rows, and reuse the source row array when no output predicates apply. Database rows still materialize before rendering.
+
+## FINANCE-SOURCE-PROJECTIONS-1110 (PC-B)
+
+Reserve Sales receipt projection, Finance ticket purchase queue read and their focused regressions. Preserve scope, ordering, status, Decimal amounts and public responses. No schema, dependencies or deployment.
+
+## PAYMENT-REPORT-SOURCE-PAGES-1111
+
+Reserve receipt and refund report paging and its cursor regression. Read each event stream in batches of 500 inside the existing reporting snapshot and project rows immediately. Both streams retain their 10,000-row safety limits and exact amounts.
+
+## RESERVATION-FINANCE-PROJECTION-1110 — PC-B — READY_FOR_CI
+
+Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
+
+## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B — READY_FOR_CI
+
+Reserve the shared browser transport, Documents, Customers and Correspondence API adapters, and focused regressions. Preserve request payloads, domain errors, file cancellation and existing timeout behavior.
+
+## WORKBENCH-SHARED-TRANSPORT-1110 — PC-B — READY_FOR_CI
+
+Reserve Workbench messaging, personal and feedback HTTP clients, the shared authenticated fetch timeout option and focused tests. Preserve domain errors, cookie handling, payloads and one retry after authentication rejection. No API, dependency or deployment changes.
+
+## IAM-SESSION-RESPONSE-V1-1110 — PC-B — READY_FOR_CI
+
+Reserve shared IAM session response decoder, LoginResponse type, Web login and refresh consumers, and compatibility fixtures. Preserve the wire payload, older responses without role labels, and server authorization. No dependencies or schema changes.
+
+## HR-CALCULATION-FIELDS-1110 — PC-B — READY_FOR_CI
+
+Reserve the shared calculation-settings field metadata and versioned legacy adapter, its registry projection, API validation and attendance calculation consumers, and focused tests. Preserve legacy array and fieldN persistence, public payloads, and existing attendance rules. No HrService, schema, dependency or deployment changes.
+
+## TYPE-AWARE-LINT-1110 — PC-B — READY_FOR_CI
+
+Reserve the API and Web ESLint config overlays for selected authentication, scanner and report export files, the document scanner entry point if needed, and focused verification. No dependency or workflow changes.
+
+## ARCHITECTURE-BOUNDARY-DOCS-1110 — PC-B — READY_FOR_CI
+
+Reserve architecture and deployment baselines, remediation evidence and the existing recursive API repository boundary test. No application runtime, dependency, migration or deployment changes.
+
+## FINANCE-HR-REFERRAL-READ-1110 — PC-B — READY_FOR_CI
+
+Reserve HR-owned Finance referral projection, Finance inbox consumer and targeted tests. Preserve existing referral scope, response eligibility and source failure handling. No schema or API contract changes.
+
+## I18N-LAZY-CATALOG-1110 — PC-B — READY_FOR_CI
+
+Reserve Web translation catalog initialization, provider messages and affected tests. Preserve translation precedence, English SSR and locale switching. No catalog contents, dependency or deployment changes.
+
+## REPORTING-XLSX-MEMORY-1110 — PC-B — READY_FOR_CI
+
+Reserve Reporting XLSX renderer and worker output handoff, focused export tests and status evidence. Preserve report rows, layout, authorization and storage contract. No ReportService, repository, dependency, migration or deployment changes.
+
+## MARKETING-SCOPED-PANEL-LOAD-1110 — PC-B — READY_FOR_CI
+
+Reserve Marketing durable panel loading, its existing UI tests and project notes. Skip campaign reads for panels without a campaign dependency and prevent superseded loads from replacing current records. No API, dependency or schema changes.
+
+## CONTRACT-DOMAIN-ENTRYPOINTS-1110 — PC-B — READY_FOR_CI
+
+Reserve additive Contracts package exports for pure Sales pricing and upload formats, selected existing consumers and verification. Keep the root export and existing symbols available. No dependency version, lockfile, schema or API changes.
+
+## REPORTING-PREVIEW-FILTER-PAGE-1111
+
+Reserve report output filtering and pagination. A single pass counts all matching rows and accumulates exact currency totals while retaining only the requested preview rows. Export continues to return all matching rows.
+
+## HR-RETIRE-PHASE-A-PROTOTYPE-1110 — PC-B — READY_FOR_CI
+
+Reserve the unused Phase A HR prototype files and their dedicated tests, HR contract HTTP/PostgreSQL regression, and historical HR task documentation. Preserve the active HrService, controller, contracts and persisted behavior. No migration or dependency changes.
 
 ## PARTNER-360-IMPORT-1017 — PC-B — IN_PROGRESS
 
@@ -1336,6 +1492,10 @@ Publication follow-up: the user explicitly authorizes Commit, Push, hosted CI, P
 Delivery: mockup-based dashboard, configurable four-system catalogue, four accessible metric dialogs, Jalali periods, comparison/activity/workflow areas and existing nine-section centre are running on local3100/4192. Existing public IAM actor hook is packaged correctly; authenticated localhost and127.0.0.1 browser checks pass.189 tests, scoped lint, Web/API typecheck, Web production build, database declaration build and runtime build pass. Four initial brands/systems initialized through the public audited command; no business-data seed or migration in this redesign. Actual external business metrics/sync/SSO remain unconnected. Bounded source locks released; no GitHub publication or merge. See docs/tasks/INTEGRATIONS-VISUAL-1015.md.
 
 COMPUTER_ID=PC-D; branch codex/pc-d-integrations-visual-1015 from origin/PC-D-Integration@b0181dc5. User authorizes redesign against four supplied mockups and continuing local Docker delivery. Reserve existing Integrations API/registry/contracts/Web module and tests, integration route, bounded i18n registration/catalogue and module-foundation route test, own task/status entries. Port the existing f0f8e21d foundation without parallel module. Producer integrations.registry.v1 and Web consumer ship together, additive export, unchanged IAM/SystemManagement public interfaces. No Migration or Dependency/Lockfile ownership requested; no schema or other-module edits. Runtime-only packaging includes the already-existing IAM access-context public actor hook omitted by the prior overlay; no new IAM behavior. Preserve baseline schema, all volumes, other application source, credentials and adapter paths. Local runtime artifacts/launcher reserved; no external publication/merge authorized under current project policy. Analytics remains unavailable until owner-approved per-system sources exist; mockup numbers are never production data.
+
+## DOCUMENT-BUFFER-READ-1111 — PC-B — READY_FOR_CI
+
+Reserve single-pass authenticated buffered reads and storage regressions. Keep the persisted format and publish plaintext only after GCM authentication.
 
 ## DOCUMENT-DOWNLOAD-ONLY-1015 — PC-A — READY_FOR_CI
 
@@ -1539,6 +1699,10 @@ User explicitly authorizes PC-B to connect the prepared accounting components on
 ## MANUAL-USER-ACCESS-V3-1012 — PC-A — READY_FOR_REVIEW — PR806
 
 COMPUTER_ID=PC-A for this IAM-owned task; isolated branch codex/pc-a-manual-user-access-v3-1012 from origin/develop@61167e61. User explicitly authorizes implementing the reviewed manual-access document, authoritative allow/revoke enforcement, and mapping existing live users to equivalent previous access; genuinely new permissions must remain ungranted and be reported for manual decision. Reserve IAM contracts/API/Web, additive scoped domain authorization consumers/tests, a transactional preview/apply migration command and bounded own task/status/decision documentation. Producer IAM manual access v3, consumers AuthGuard/domain APIs and Web access editor; legacy accounts remain compatible until an explicit verified conversion. Personal snapshots must preserve effective permissions, branch scope, inactive/shared memberships and unknown grants without mutating shared roles. All changed live grants require a preview, durable before snapshot, concurrency check and after-equivalence verification. No dependency/lockfile or schema migration reserved. Accounting and unrelated active owners remain untouched. Root is sole writer; no delegation. Original dirty checkout is untouched. Local target and identity will be verified before operational writes. This authorization includes requested IAM user mapping, not unrelated data changes or destructive migrations.
+
+## MARKETING-CAMPAIGN-PAGES-1110 — PC-B — IN_PROGRESS
+
+Continue the Marketing pagination scope from PR 1608. Reserve campaign list endpoint, filters, and web list and focused tests. No schema or dependency change.
 
 ## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
 
@@ -1873,6 +2037,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 - COMPUTER_ID=PC-B; branch `codex/pc-b-visa-required-documents-1004` from origin/develop@ee053ecc. Human product owner explicitly approves transfer of the sole Migration lock from PC-A to PC-B on 2026-10-04 for this bounded Visa required-document names change. This entry supersedes the historical Migration reservation PC-A/TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 only for lock authority; its task, code, contracts and other ownership remain unchanged. Sole Migration Owner = PC-B/VISA-REQUIRED-DOCUMENTS-1004 until committed delivery; previous owner must re-reserve after release before another migration. Reserve Prisma schema and one additive MasterVisaService field migration, bounded Master Data Visa API/Web/import/export/tests and DATA_MODEL/status documentation. No dependency lock, permissions, runtime or operational database change.
 - Producer Master Data API and consumer Master Data Web remain PC-B. Store optional names only (maximum 50, trimmed nonblank names up to 160 characters, stable deduplication); PATCH omission preserves and an empty list clears. Existing guidance file UUID/data/API compatibility is retained without file upload in the new form. Additive migration defaults historical records to an empty list; no destructive rollback is executed. User authorizes scoped push and develop merge after checks and lead review.
 - Delivered the additive Visa required-document names array, API normalization/projection/export and names-only Web add/remove/edit/View presentation. Legacy guidance UUID remains persisted and exportable but is absent from the new form. A fresh isolated PostgreSQL 17 database applied all 115 migrations; legacy rows defaulted to an empty list, names persisted without changing guidance, and the 51-name DB constraint rejected overflow. Focused API 48 and Web 33 tests, full Master Data API 488 and Web 583 tests, scoped lint, Prisma validate/generate, database/API/Web typechecks/builds and 55-route Web build pass. Database Designer analyzer accepted the scoped target; its migration generator failed internally serializing its own Column object, so repository migration plus actual fresh-database execution are authoritative. No live DB/runtime/browser QA; bounded Migration/API/Web/docs locks release with commit.
+
+## MARKETING-PROMOTION-PAGES-1110 — PC-B — IN_PROGRESS
+
+Reserve a paged Promotions read endpoint, additive query and response types, the discounts and offers panel, and focused tests. Apply filters before selecting pages, preserve branch scope and filtered export. Existing asset consumers retain their read contract. No schema, dependency, or production data change.
 
 ## SUPPLIER-BROKER-FOURTH-KPI-1004 — PC-B — READY_FOR_REVIEW
 
@@ -2340,6 +2508,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 - Branch: `codex/pc-a-hotel-rate-room-capacity-0920` از `origin/develop@7e52d309`؛ محدوده شامل Reservations hotel-rate API/Web، Public Projection، کنترل ظرفیت Sales، Master Data public room reference، Prisma/Migration افزایشی، تست‌ها و اسناد همین Task است.
 - قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
 - نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
+
+## I18N-STARTUP-1110 — PC-B — IN_PROGRESS
+
+Reserve translation phrase-index initialization and reuse of the source inventory in translation coverage tests. Defer fallback index construction until English actually needs it. Preserve exact translations, form values, and locale behavior. No shared dictionary, dependency, API, or database change.
 
 ## TICKET-CAPACITY-HOLD-0920 — PC-A — DONE / MERGED
 
@@ -3575,6 +3747,10 @@ Merged via PR #254 at `e40878f1`. Web3100 runs the production build `55JsHVl1EIR
 ## WORKBENCH-027 — PC-B — UI_VERIFIED
 
 - User removes Tasks/Automation section. Reserve shared navigation/messages/icon mappings/change-notification label and tasks route plus existing nav test. Remove entry globally and redirect legacy route to Workbench, no data/API/schema deletion. Shared runtime coordinated.
+
+## WORKBENCH-VERBATIM-1110 — PC-B — IN_PROGRESS
+
+Architecture finding A11. Reserve the Workbench message composer, one explicit text display helper and focused localization coverage. Preserve user-authored messages, names and attachment titles in both display languages. Keep translation for interface actions and labels. No API, database or dependency change.
 
 ## WORKBENCH-026 — PC-B — UI_VERIFIED
 
@@ -4814,6 +4990,10 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - نتیجه: Hub نه‌بخشی مرجع، تمام زیرتب‌ها، فهرست و تقویم ماهانه کمپین، فیلتر بازه تاریخ، ناوبری ماه/امروز، انتخاب شمسی/میلادی، Dialog جزئیات، Action feedback و فرم چندمرحله‌ای تکمیل شد. ۵ کمپین، ۴۰ رکورد زیرتب و داده‌های Segment/Offer/Coupon/Timeline/Suppression همگی synthetic و قابل تعامل‌اند.
 - Validation: lint کامل ۶ Task، typecheck کامل ۹ Task، ۱٬۴۳۴ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build کامل ۶ Task موفق. Web شامل ۷۵ فایل و ۵۷۹ تست موفق است. Browser QA محلی روی مسیر محافظت‌شده `/marketing` تمام ۹ بخش، جست‌وجو/پاک‌کردن، تقویم، تغییر نوع و ماه، بازکردن رویداد، زیرتب/جزئیات، Action feedback، فرم و موبایل را بدون Console error یا Overflow ماژول پوشش داد.
 - Final lock state: `RELEASED — PC-B/MARKETING-001B ready for review`. هیچ Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation، AppModule، Persistence یا داده واقعی تغییر نکرد.
+
+## FINANCE-FX-SCOPED-EVIDENCE-1111 — PC-B — READY_FOR_CI
+
+Reserve Finance purchase FX evidence reads and tests. Preserve branch authorization, exact decimal comparisons and the displayed source and payment versions.
 
 ## MARKETING-001 — PC-B — READY_FOR_REVIEW
 
@@ -6326,6 +6506,10 @@ Owner requests leave approvals to use the leave policy, and removes calculation 
 - درخواست مالک: «مخاطبان» پیام‌رسان میزکار فقط از حساب‌های واقعی و فعال CRM ساخته شود؛ انتخاب «پیام جدید» نباید واحدهای نمایشی را به‌جای مخاطب نشان دهد.
 - محدوده رزرو: رابط Workbench/Messaging، تست‌های متمرکز همان مسیر و ثبت وضعیت. فهرست حساب‌ها فقط از قرارداد موجود `GET /messaging/contacts` مصرف می‌شود که IAM آن را با `User`های فعال داخلی و شعبهٔ مشترک پروجکت می‌کند؛ بدون تغییر IAM، Schema/Migration، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
 - نتیجه: modal قبلی «واحد مخاطب» حذف شد و دکمهٔ «پیام جدید» مستقیم پیام‌رسان را با تب «مخاطبان» باز می‌کند. در این تب فقط خروجی API کاربران واقعی CRM نمایش داده می‌شود؛ نام نمایشی، نام کاربری و شعبهٔ مجاز هر حساب قابل مشاهده است. واحدها فقط برای انتخاب قالب آماده باقی می‌مانند و گیرنده محسوب نمی‌شوند. typecheck و ESLint Web، ۲ آزمون API قرارداد فهرست/اعتبارسنجی مخاطب و آزمون Web client پیام‌رسان موفق‌اند.
+
+## ARCHITECTURE-REMEDIATION-1110 — PC-B — IN_PROGRESS
+
+Owner authorizes implementation of the GitHub architecture/code review. Base3370748ca; branch codex/pc-b-architecture-remediation-1110. Reserve review-related IAM attendance identity, safe common error diagnostics, Messaging/Notifications read aggregation and their tests first; subsequent scoped changes tracked in docs/tasks/ARCHITECTURE-REMEDIATION-1110.md. Preserve pending HR attendance-editor PR1511 and HR pay-document PR1590. No shared dependency versions, operational data or production rollout. Source responsibilities and validation are recorded per completed slice.
 
 ## 2026-09-27 — WORKBENCH-MESSAGE-TEMPLATE-OVERFLOW-0927 — PC-B — READY_FOR_REVIEW
 
@@ -11496,6 +11680,10 @@ COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests in
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
 
+## FINANCE-INVOICE-REVISION-READ-1111 — PC-B — READY_FOR_CI
+
+Reserve the latest procurement invoice state projection for the Finance inbox and scoped tests. Preserve handoff version matching and read scope. No migration or dependencies.
+
 ## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
 
 Owner requests Marketing process removal, aligned filters, empty dashboard, scoped content uploads, durable campaign/audience deletion, entry sources and named/date-stamped leads; push/develop merge authorized. Reserve Marketing Web/API/contracts/tests, bounded Customer Affairs intake fields/service/DTO, additive English catalog entries and own notes. Sole schema/migration owner PC-B for nullable campaign deletedAt, intake first/last name and entry date, and SOURCE/AUDIENCE asset kind constraint extension. Prior migration reservations merged/released; no competing active source lock found. Producer API and consumer Web ship compatible optional fields together; preserve encrypted contact ownership, branch permissions, audit and optimistic concurrency. No dependency or operational deployment changes. Validation: 91 Marketing API tests including 8 disposable PostgreSQL proofs; 118 Marketing Web tests and 3 translation coverage tests pass. Additive migration and seed rehearsed on disposable PostgreSQL. Local API/Web typechecks, production builds and scoped lint passed. Final audience-field preservation has 30 API/PostgreSQL and 38 Web regression passes; complete final-head hosted checks gate merge. Locks release on verified merge.
@@ -11811,6 +11999,10 @@ Reserve message-popup.ts/spec only: show existing recipient-scoped call-center.a
 Bounded central notification-center.tsx lease: reuse existing call-center:open-queue event on popup click, including same-route/same-hash navigation. No other center behavior changes.
 `nCALL-REQUEST-TOAST-1107: implementation complete;8 focused tests pass. Source frozen on push; no server deployment in this work item.
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
+
+## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
+
+Reserve the notifications feed repository and focused tests. Aggregate unread counts by destination and select only the unread rows needed for the feed.
 
 ## NOTIFICATION-HR-REFRESH-1107 — PC-B — ACTIVE
 
@@ -12190,3 +12382,62 @@ COMBINED-TOUR-DESTINATIONS-1110: implementation adds a restrictive PackagePricin
 Reserve Documents list API/repository, additive domains and FAVORITES query contract, section filters/UI and tests. Preserve domain/branch/sensitive access. Include source-linked existing files without duplicating storage; no migration/dependency/data/deployment changes.
 
 DOCUMENTS-SECTIONS-1110: implementation complete; 122 API tests and scoped lint passed. Additive query contract shared by API/Web. No schema/dependency lock; source scope released for review.
+
+## HR-RADAN-SYNC-1110 - PC-B - IN_PROGRESS
+
+Owner requests lower Radan synchronization load and manual historical reconciliation.
+Branch codex/pc-b-radan-sync-1110, based on origin/develop c6c28098d.
+Scope is the HR connector, attendance import/projection, and the HR work panel.
+The existing sync endpoint accepts an optional date range and status adds per-source
+success summaries. Preserve branch checks, provider mappings and closed periods.
+No schema or dependency changes.
+
+## HR-PAY-DOCS-1110 — PC-B — IN_PROGRESS
+
+Scope: HR inbox category grouping, employee pay document form using existing employee.docs and Documents APIs, employee requests tab label. No migration/dependency changes. Base origin/develop 0d6317420. Files: hr-inbox, hr-navigation, hr-employee-profile and new scoped helpers/components/tests.
+
+HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web typecheck and production build verified. Uses existing API authorization and RESTRICTED document storage; no server deployment or migration. PR review pending.
+
+## SYSTEM-ACTIVITY-1110 — PC-A — IN_PROGRESS
+
+Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.
+
+## MANIFEST-REMOVE-CODE-BOX-1110 — PC-A — READY_FOR_CI
+
+Remove only the System Acceptable Code button and its VML/control references from the bundled default PNL workbook. Preserve all eleven headers, passenger mapping, Help sheets, VBA project, XLSM format and registered templates. No schema/dependency/deployment. User authorizes develop merge after green checks.
+
+## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
+
+Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.
+
+## WORKBENCH-RECIPIENT-SCOPE — PC-A — IN_PROGRESS
+
+Reserve the minimal Workbench request recipient directory, HR unit projection and Workbench form branch selection. Preserve active internal accounts, membership, branch access and Call Center behavior. No role grants, migrations or dependency changes.
+
+## HR-LEAVE-POLICY-EDIT — PC-B — IN_PROGRESS
+
+Reserve the leave policy edit command and form payload, plus a focused regression. Keep existing policy scope and authorization. No data migration or dependencies.
+
+## HR-ATTENDANCE-STATUS-EDITOR — PC-B — IN_PROGRESS
+
+Reserve single-day attendance status controls and scoped command, override preservation during recalculation, additive HR data contract and focused tests. Preserve bulk activation, original punches, authorization and closed-period checks.
+
+## MARKETING-SEGMENT-PAGES-1111 — PC-B — READY_FOR_CI
+
+Reserve the additive Marketing segments page contract, read query, UI table, and scoped tests. The existing asset list stays compatible for selectors. No migration or dependency changes.
+
+## HR-LEGACY-REQUEST-FIELDS-1111 — PC-B — READY_FOR_REVIEW
+
+Reserve legacy request row decoding in HR leave policy and attendance configuration, including focused regressions. Preserve persisted row formats and calculation behavior.
+
+## HR-BOOTSTRAP-COALESCE-1111 — PC-B — READY_FOR_CI
+
+Reserve the HR workspace bootstrap request lifecycle and focused Web tests. A committed mutation must start a fresh read.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B — READY_FOR_CI
+
+Reserve the incoming-letter upload adapter and its test. Return once the file and metadata are saved, with existing owner and access rules and background scan scheduling.
+
+## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
+
+Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.

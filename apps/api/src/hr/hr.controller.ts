@@ -75,9 +75,12 @@ export class HrController {
     if (!this.device) throw new ServiceUnavailableException();
     return this.device.status(req.actor);
   }
-  @Post('attendance/device/sync') deviceSync(@Req() req: AuthenticatedRequest) {
+  @Post('attendance/device/sync') deviceSync(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
     if (!this.device) throw new ServiceUnavailableException();
-    return this.device.sync(req.actor);
+    return this.device.sync(req.actor, false, body);
   }
   @Get('reports/attendance-data')
   @Header('Cache-Control', 'private, no-store')

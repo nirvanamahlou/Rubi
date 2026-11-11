@@ -422,21 +422,26 @@ export const reportingApi = {
   },
   createExport(
     reportCode: string,
-    input: {
-      format: 'CSV' | 'XLSX' | 'PDF';
-      query: Record<string, unknown>;
-      simulateFailure?: boolean;
-    },
+    input: { format: 'CSV' | 'XLSX' | 'PDF'; query: Record<string, unknown> },
   ) {
-    return request<Record<string, unknown>>(`/${reportCode}/exports`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return request<Record<string, unknown>>(
+      `/${encodeURIComponent(reportCode)}/export-jobs`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
+  exportStatus(id: string) {
+    return request<Record<string, unknown>>(
+      `/export-jobs/${encodeURIComponent(id)}`,
+      { method: 'GET' },
+    );
   },
   retryExport(id: string) {
-    return request<Record<string, unknown>>(`/exports/${id}/retry`, {
-      method: 'POST',
-    });
+    return request<Record<string, unknown>>(
+      `/export-jobs/${encodeURIComponent(id)}/retry`,
+      {
+        method: 'POST',
+      },
+    );
   },
   exportDownloadUrl(id: string) {
     return `${getPublicApiBaseUrl()}/reports/exports/${id}/download`;

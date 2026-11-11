@@ -27,7 +27,7 @@ function localizeMessages<T>(value: T): T {
   return value;
 }
 
-const englishMessages = localizeMessages(faMessages);
+let englishMessages: typeof faMessages | undefined;
 
 function ApplicationProviders({ children }: { children: ReactNode }) {
   const { language } = useSystemPreferences();
@@ -47,7 +47,11 @@ function ApplicationProviders({ children }: { children: ReactNode }) {
   return (
     <NextIntlClientProvider
       locale={language}
-      messages={language === 'en' ? englishMessages : faMessages}
+      messages={
+        language === 'en'
+          ? (englishMessages ??= localizeMessages(faMessages))
+          : faMessages
+      }
     >
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>

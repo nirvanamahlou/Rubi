@@ -3,7 +3,8 @@ import { waitForPurchaseContext } from '../model/new-contract-purchases';
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import type { StagedPurchase } from '../model/new-contract-purchases';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
+import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 import type {
   CustomerMutationRequest,
@@ -37,7 +38,6 @@ import type {
   SalesPassengerCompletionCommandV1,
 } from '@nora/contracts';
 
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export class SalesApiError extends Error {
@@ -53,33 +53,30 @@ export class SalesApiError extends Error {
 async function request<T>(
   path: string,
   init?: RequestInit,
-  retried = false,
   asBlob = false,
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new SalesApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/sales${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: {
-      accept: 'application/json',
-      ...(init?.body ? { 'content-type': 'application/json' } : {}),
-      ...init?.headers,
+  const response = await authenticatedFetch(
+    `${baseUrl}/sales${path}`,
+    baseUrl,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+      headers: {
+        accept: 'application/json',
+        ...(init?.body ? { 'content-type': 'application/json' } : {}),
+        ...init?.headers,
+      },
     },
-  }).catch(() => {
+  ).catch(() => {
     throw new SalesApiError(
       'ارتباط با سرور برقرار نشد؛ اتصال را بررسی و دوباره تلاش کنید.',
       0,
       'NETWORK_ERROR',
     );
   });
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
-    return request<T>(path, init, true, asBlob);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       code?: string;
@@ -257,7 +254,6 @@ export const salesApi = {
     return request<Blob>(
       `/contracts/export.xlsx?${queryString(filters)}`,
       undefined,
-      false,
       true,
     );
   },

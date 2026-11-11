@@ -22,7 +22,7 @@ export interface SalesReportingActor {
 }
 
 /** Sales-owned, contract/currency read model. No passenger/service money join. */
-export async function readSalesReportingProjection(
+export async function* scanSalesReportingPages(
   client: DatabaseClient,
   actor: SalesReportingActor,
   query: SalesReportingQuery,
@@ -92,7 +92,8 @@ export async function readSalesReportingProjection(
         branchId: { in: [...actor.branchIds] },
         ...(!branch ? { ownerUserId: actor.userId } : {}),
       };
-  const rows = await client.salesContract.findMany({
+  const mayReadPayments = actor.permissions.includes('sales.payments.read');
+  const reportQuery = {
     where: {
       AND: [
         scope,
@@ -144,77 +145,102 @@ export async function readSalesReportingProjection(
         select: { type: true, title: true, amount: true, currencyCode: true },
       },
       payments: {
-        where: actor.permissions.includes('sales.payments.read')
-          ? {}
-          : { id: { in: [] } },
+        where: mayReadPayments ? {} : { id: { in: [] } },
         select: { amount: true, currencyCode: true, status: true },
       },
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-    take: 10001,
-  });
-  if (rows.length > 10000)
-    throw new BadRequestException(
-      'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.',
+  } satisfies Prisma.SalesContractFindManyArgs;
+  const readPage = (take: number, after?: string) =>
+    client.salesContract.findMany({
+      ...reportQuery,
+      take,
+      ...(after ? { cursor: { id: after }, skip: 1 } : {}),
+    });
+
+  const projectPage = async (rows: Awaited<ReturnType<typeof readPage>>) => {
+    const cancellations = await readReservationReportingCancellations(
+      client,
+      rows.map((row) => row.id),
     );
-  const cancellations = await readReservationReportingCancellations(
-    client,
-    rows.map((row) => row.id),
-  );
-  const currentRows = rows.filter((row) => {
-    const effectiveStatus = cancellations.has(row.id)
-      ? 'CANCELLED'
-      : row.status;
-    return (
-      (pipeline || !cancellations.has(row.id)) &&
-      (!status || effectiveStatus === status)
-    );
-  });
-  if (currentRows.some((row) => !row.priceComponents.length))
-    throw new ConflictException(
-      'قیمت برخی قراردادها کامل نیست؛ گزارش مبلغ قابل محاسبه نیست.',
-    );
-  return currentRows.flatMap((row) => {
-    const effectiveStatus = cancellations.has(row.id)
-      ? 'CANCELLED'
-      : row.status;
-    if (status && effectiveStatus !== status) return [];
-    const balances = calculateSalesBalances(
-      row.priceComponents.map((p) => ({ ...p, amount: p.amount.toString() })),
-      actor.permissions.includes('sales.payments.read')
-        ? row.payments.map((p) => ({ ...p, amount: p.amount.toString() }))
-        : [],
-    );
-    return balances
-      .filter(
-        (balance) => !currencyCode || balance.currencyCode === currencyCode,
+    return rows.flatMap((row) => {
+      const effectiveStatus = cancellations.has(row.id)
+        ? 'CANCELLED'
+        : row.status;
+      if (
+        (!pipeline && cancellations.has(row.id)) ||
+        (status && effectiveStatus !== status)
       )
-      .map((balance) => ({
-        id: row.id,
-        contractNumber: row.contractNumber,
-        branchId: row.branchId,
-        ownerUserId: row.ownerUserId,
-        customerId: row.customerId,
-        originId: row.originId,
-        destinationId: row.destinationId,
-        status: effectiveStatus,
-        reservationStatus: row.reservationStatus,
-        passengerCount: row._count.passengers,
-        serviceKinds: [
-          ...new Set(row.services.map((service) => service.kind)),
-        ].sort(),
-        occurredAt: row.createdAt,
-        dataAsOf:
-          cancellations.get(row.id) &&
-          cancellations.get(row.id)! > row.updatedAt
-            ? cancellations.get(row.id)!
-            : row.updatedAt,
-        departureDate: row.departureDate,
-        currencyCode: balance.currencyCode,
-        salesAmount: balance.amount,
-        outstanding: actor.permissions.includes('sales.payments.read')
-          ? balance.outstanding
-          : null,
-      }));
-  });
+        return [];
+      if (!row.priceComponents.length)
+        throw new ConflictException(
+          'قیمت برخی قراردادها کامل نیست؛ گزارش مبلغ قابل محاسبه نیست.',
+        );
+      const balances = calculateSalesBalances(
+        row.priceComponents.map((p) => ({ ...p, amount: p.amount.toString() })),
+        mayReadPayments
+          ? row.payments.map((p) => ({ ...p, amount: p.amount.toString() }))
+          : [],
+      );
+      return balances
+        .filter(
+          (balance) => !currencyCode || balance.currencyCode === currencyCode,
+        )
+        .map((balance) => ({
+          id: row.id,
+          contractNumber: row.contractNumber,
+          branchId: row.branchId,
+          ownerUserId: row.ownerUserId,
+          customerId: row.customerId,
+          originId: row.originId,
+          destinationId: row.destinationId,
+          status: effectiveStatus,
+          reservationStatus: row.reservationStatus,
+          passengerCount: row._count.passengers,
+          serviceKinds: [
+            ...new Set(row.services.map((service) => service.kind)),
+          ].sort(),
+          occurredAt: row.createdAt,
+          dataAsOf:
+            cancellations.get(row.id) &&
+            cancellations.get(row.id)! > row.updatedAt
+              ? cancellations.get(row.id)!
+              : row.updatedAt,
+          departureDate: row.departureDate,
+          currencyCode: balance.currencyCode,
+          salesAmount: balance.amount,
+          outstanding: mayReadPayments ? balance.outstanding : null,
+        }));
+    });
+  };
+
+  let count = 0;
+  let after: string | undefined;
+  for (;;) {
+    const take = Math.min(500, 10001 - count);
+    const rows = await readPage(take, after);
+    count += rows.length;
+    if (count > 10000)
+      throw new BadRequestException(
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.',
+      );
+    yield await projectPage(rows);
+    if (rows.length < take) return;
+    after = rows[rows.length - 1]!.id;
+  }
+}
+
+type SalesReportingPage =
+  ReturnType<typeof scanSalesReportingPages> extends AsyncIterable<infer Page>
+    ? Page
+    : never;
+export type SalesReportingRow = SalesReportingPage[number];
+
+export async function readSalesReportingProjection(
+  ...args: Parameters<typeof scanSalesReportingPages>
+) {
+  const projected: SalesReportingRow[] = [];
+  for await (const page of scanSalesReportingPages(...args))
+    for (const row of page) projected.push(row);
+  return projected;
 }

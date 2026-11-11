@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 
 import { ForbiddenException, ValidationPipe } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { IamService } from '../iam/iam.service';
 import { PermissionGuard } from '../iam/permission.guard';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
+import { LocalDocumentStorage } from './documents.storage';
 
 const branchId = '33333333-3333-4333-8333-333333333333';
 const actor: AuthenticatedActor = {
@@ -74,6 +76,15 @@ describe('Documents HTTP boundary', () => {
       sizeBytes: 4,
     }),
   };
+  const storage = {
+    putQuarantinedStream: vi.fn(
+      async (_key: string, input: AsyncIterable<Uint8Array>) => {
+        for await (const chunk of input)
+          expect(chunk.byteLength).toBeGreaterThan(0);
+      },
+    ),
+    removeQuarantined: vi.fn().mockResolvedValue(undefined),
+  };
   const iam = {
     authenticate: vi.fn().mockResolvedValue(actor),
     assertPermissions: vi.fn(),
@@ -84,6 +95,7 @@ describe('Documents HTTP boundary', () => {
       controllers: [DocumentsController],
       providers: [
         { provide: DocumentsService, useValue: service },
+        { provide: LocalDocumentStorage, useValue: storage },
         AuthGuard,
         PermissionGuard,
         { provide: IamService, useValue: iam },
@@ -223,9 +235,49 @@ describe('Documents HTTP boundary', () => {
       expect.objectContaining({
         originalname: 'contract.pdf',
         mimetype: 'application/pdf',
+        size: 18,
+        staged: expect.objectContaining({
+          sha256: createHash('sha256')
+            .update('%PDF-1.7\nhttp test')
+            .digest('hex'),
+        }),
       }),
       actor,
       expect.objectContaining({ ipAddress: expect.any(String) }),
+      'background',
+    );
+  });
+
+  it('removes an encrypted staging object when multipart DTO validation fails', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/documents/upload')
+      .set('Cookie', 'nora_access=test')
+      .attach('file', Buffer.from('%PDF-1.7\ninvalid metadata'), {
+        filename: 'invalid.pdf',
+        contentType: 'application/pdf',
+      })
+      .expect(400);
+    expect(service.upload).not.toHaveBeenCalled();
+    expect(storage.putQuarantinedStream).toHaveBeenCalledOnce();
+    const key = storage.putQuarantinedStream.mock.calls[0]![0];
+    await vi.waitFor(() =>
+      expect(storage.removeQuarantined).toHaveBeenCalledWith(key),
+    );
+  });
+
+  it('keeps the multipart size limit and removes truncated uploads', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/documents/upload')
+      .set('Cookie', 'nora_access=test')
+      .attach('file', Buffer.alloc(25 * 1024 * 1024 + 1), {
+        filename: 'large.pdf',
+        contentType: 'application/pdf',
+      })
+      .expect(413);
+    expect(service.upload).not.toHaveBeenCalled();
+    expect(storage.putQuarantinedStream).toHaveBeenCalledOnce();
+    expect(storage.removeQuarantined).toHaveBeenCalledWith(
+      storage.putQuarantinedStream.mock.calls[0]![0],
     );
   });
 

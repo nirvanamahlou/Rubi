@@ -18,7 +18,6 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type {
   DocumentCaseOptionsQueryV1,
@@ -47,9 +46,11 @@ import {
 import {
   type DocumentRequestMetadata,
   DocumentsService,
-  type UploadedDocumentFile,
 } from './documents.service';
-import { MAX_DOCUMENT_SIZE_BYTES } from './documents.validation';
+import {
+  DocumentMultipartInterceptor,
+  type StagedDocumentFile,
+} from './document-multipart.interceptor';
 
 function requestMetadata(
   request: AuthenticatedRequest,
@@ -114,12 +115,10 @@ export class DocumentsController {
     );
   }
   @Post('incoming/upload')
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: MAX_DOCUMENT_SIZE_BYTES } }),
-  )
+  @UseInterceptors(DocumentMultipartInterceptor)
   incomingUpload(
     @Body() dto: DocumentUploadDto,
-    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @UploadedFile() file: StagedDocumentFile | undefined,
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.incomingUpload(
@@ -251,15 +250,11 @@ export class DocumentsController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { files: 1, fileSize: MAX_DOCUMENT_SIZE_BYTES },
-    }),
-  )
+  @UseInterceptors(DocumentMultipartInterceptor)
   @RequirePermissions('documents.upload')
   upload(
     @Body() dto: DocumentUploadDto,
-    @UploadedFile() file: UploadedDocumentFile | undefined,
+    @UploadedFile() file: StagedDocumentFile | undefined,
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.upload(
@@ -267,6 +262,7 @@ export class DocumentsController {
       file,
       request.actor,
       requestMetadata(request),
+      'background',
     );
   }
 
