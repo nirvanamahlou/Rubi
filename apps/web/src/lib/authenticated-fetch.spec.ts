@@ -40,6 +40,28 @@ describe('authenticated transport', () => {
     expect(localizedFetch).toHaveBeenCalledTimes(1);
     expect(refreshAuthenticatedSession).not.toHaveBeenCalled();
   });
+  it('does not replay a file request cancelled during session refresh', async () => {
+    const abort = new AbortController();
+    const response = new Response(null, { status: 401 });
+    vi.mocked(localizedFetch).mockResolvedValue(response);
+    vi.mocked(refreshAuthenticatedSession).mockImplementationOnce(async () => {
+      abort.abort();
+      return { user: { id: 'synthetic' } } as never;
+    });
+
+    expect(
+      await authenticatedFetch('/api/file', '/api', {
+        signal: abort.signal,
+        timeoutMs: null,
+      }),
+    ).toBe(response);
+    expect(refreshAuthenticatedSession).toHaveBeenCalledOnce();
+    expect(localizedFetch).toHaveBeenCalledExactlyOnceWith(
+      '/api/file',
+      expect.objectContaining({ signal: abort.signal }),
+    );
+  });
+
   it('keeps caller cancellation and bounds repeated authentication failure', async () => {
     const abort = new AbortController();
     abort.abort();

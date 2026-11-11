@@ -1387,6 +1387,10 @@ Reserve receipt and refund report paging and its cursor regression. Read each ev
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
 
+## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B — READY_FOR_CI
+
+Reserve the shared browser transport, Documents, Customers and Correspondence API adapters, and focused regressions. Preserve request payloads, domain errors, file cancellation and existing timeout behavior.
+
 ## WORKBENCH-SHARED-TRANSPORT-1110 — PC-B — READY_FOR_CI
 
 Reserve Workbench messaging, personal and feedback HTTP clients, the shared authenticated fetch timeout option and focused tests. Preserve domain errors, cookie handling, payloads and one retry after authentication rejection. No API, dependency or deployment changes.

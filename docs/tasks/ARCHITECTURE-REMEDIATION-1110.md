@@ -56,6 +56,10 @@ when only selected paths are addressed.
   storage. ZIP/OLE validation and other internal upload callers still use
   buffered inputs.
 
+- Documents, Customers and Correspondence share the browser transport for
+  localized requests and one session-refresh retry. Document previews retain
+  caller cancellation during refresh, and existing timeout policies remain.
+
 - The shared authenticated transport passed six focused Web tests. The final
   PR #1600 revision also passed the hosted quality, build, test and migration checks.
 
