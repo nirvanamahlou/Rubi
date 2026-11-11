@@ -1084,6 +1084,10 @@ Read Sales report contracts and their relations in cursor batches of 500 within 
 
 Finance inbox pages load purchase FX evidence after applying filters, ordering and the page boundary. Out-of-range pages skip those reads, while summary counts still cover all filtered results and the legacy list retains FX evidence. All 73 focused tests passed. Source reads and totals still use the assembled queue, so end-to-end pagination remains open.
 
+## REPORT-WORKER-STREAM-1111 — PC-B
+
+Both report export paths stream worker output into encrypted storage. The worker waits for each bounded chunk to be consumed, with no complete plaintext artifact buffer on these paths. Output size and SHA-256 retain their existing contract. Source rows are still materialized. Twenty-one focused export and storage tests passed.
+
 ## REPORTING-WORKER-INPUT-1111
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.

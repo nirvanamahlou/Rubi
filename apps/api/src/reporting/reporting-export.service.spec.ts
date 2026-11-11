@@ -2,7 +2,12 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 
-import type { LocalDocumentStorage } from '../documents/documents.storage';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { ConfigService } from '@nestjs/config';
+
+import { LocalDocumentStorage } from '../documents/documents.storage';
 import { validateStorageObjectKey } from '../documents/documents.validation';
 import { ReportingExportService } from './reporting-export.service';
 import type { TravelReportResultV1 } from './reporting.contracts';
@@ -32,6 +37,86 @@ describe('ReportingExportService storage boundary', () => {
     expect(worker).toEqual(direct);
     expect(worker.buffer.toString('ascii')).toContain('(Rows: 23)');
   }, 30000);
+
+  it.each(['CSV', 'XLSX'] as const)(
+    'streams %s directly into encrypted storage with the correct size and digest',
+    async (format) => {
+      const root = await mkdtemp(join(tmpdir(), 'nora-report-stream-'));
+      try {
+        const storage = new LocalDocumentStorage(
+          new ConfigService({
+            DOCUMENTS_STORAGE_ROOT: root,
+            DOCUMENTS_STORAGE_ENCRYPTION_KEY_BASE64: Buffer.alloc(
+              32,
+              13,
+            ).toString('base64'),
+          }),
+        );
+        const service = new ReportingExportService(storage);
+        const result = {
+          reportCode: 'sample',
+          generatedAtUtc: '2026-11-10T06:00:00.000Z',
+          columns: [{ key: 'note', label: 'Note', kind: 'TEXT' }],
+          rows: Array.from({ length: 2048 }, (_, index) => ({
+            sourceValues: {
+              note: createHash('sha256').update(String(index)).digest('hex'),
+            },
+          })),
+          filterSnapshot: { branchIds: [], filters: {} },
+        } as unknown as TravelReportResultV1;
+        const direct = service.build(format, result, 'Synthetic report');
+        const file = await service.buildAndStore(
+          '44444444-4444-4444-8444-444444444444',
+          format,
+          result,
+          'Synthetic report',
+        );
+        expect(file.sizeBytes).toBe(direct.buffer.length);
+        const stream = await service.open(file.objectKey, file.sizeBytes);
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+        const bytes = Buffer.concat(chunks);
+        expect(file.checksum).toBe(
+          createHash('sha256').update(bytes).digest('hex'),
+        );
+        if (format === 'CSV') expect(bytes).toEqual(direct.buffer);
+        else expect(unzipSync(bytes)).toEqual(unzipSync(direct.buffer));
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+    30000,
+  );
+
+  it('terminates a worker when the storage consumer rejects a chunk', async () => {
+    const storage = {
+      async putQuarantinedStream(
+        _key: string,
+        source: AsyncIterable<Uint8Array>,
+      ) {
+        for await (const chunk of source) {
+          expect(chunk.length).toBeGreaterThan(0);
+          throw new Error('storage write failed');
+        }
+      },
+    };
+    const service = new ReportingExportService(
+      storage as unknown as LocalDocumentStorage,
+    );
+    const result = {
+      rows: [],
+      columns: [],
+      filterSnapshot: { branchIds: [], filters: {} },
+    } as unknown as TravelReportResultV1;
+    await expect(
+      service.buildAndStore(
+        '44444444-4444-4444-8444-444444444444',
+        'CSV',
+        result,
+        'Synthetic report',
+      ),
+    ).rejects.toThrow('storage write failed');
+  }, 10000);
 
   it('keeps each mixed-direction amount attached to its currency in Excel', async () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);
