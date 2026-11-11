@@ -1295,6 +1295,10 @@ Local validation:18 Web,45 API and147 contract tests pass; scoped lint, formatti
 
 Reserve Finance inbox page assembly, FX display enrichment timing and focused tests. Preserve query semantics, summary counts and all existing authorization and Finance commands. No contract, schema, dependency or deployment change.
 
+## REPORTING-WORKER-INPUT-1111
+
+Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110 (PC-B)
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.

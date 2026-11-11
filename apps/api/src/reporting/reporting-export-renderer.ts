@@ -7,6 +7,19 @@ import { strToU8, Zip, ZipDeflate } from 'fflate';
 
 import type { TravelReportResultV1 } from './reporting.contracts';
 
+type ReportExportInput = Pick<
+  TravelReportResultV1,
+  | 'columnFilters'
+  | 'columns'
+  | 'filterSnapshot'
+  | 'generatedAtUtc'
+  | 'grain'
+  | 'reportCode'
+  | 'rows'
+  | 'sourceProjection'
+  | 'total'
+>;
+
 function reportCellValue(
   row: TravelReportResultV1['rows'][number],
   key: string,
@@ -31,7 +44,7 @@ function csvCell(value: unknown) {
   return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
-function csv(result: TravelReportResultV1, reportName: string) {
+function csv(result: ReportExportInput, reportName: string) {
   const metadata = [
     ['نام گزارش', reportName],
     ['کد گزارش', result.reportCode],
@@ -154,7 +167,7 @@ function reportGeneratedAtTehran(value: string) {
   };
 }
 
-function exportFilterEntries(result: TravelReportResultV1): [string, string][] {
+function exportFilterEntries(result: ReportExportInput): [string, string][] {
   const snapshot = result.filterSnapshot;
   const entries: [string, string][] = [];
   if (snapshot.legalEntityId) entries.push(['شرکت', snapshot.legalEntityId]);
@@ -227,7 +240,7 @@ function excelTableColumnNames(
   });
 }
 
-function xlsx(result: TravelReportResultV1, reportName: string) {
+function xlsx(result: ReportExportInput, reportName: string) {
   const filters = exportFilterEntries(result);
   const generatedAt = reportGeneratedAtTehran(result.generatedAtUtc);
   const tableColumnNames = excelTableColumnNames(result.columns);
@@ -381,7 +394,7 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
   return Buffer.concat(chunks);
 }
 
-function pdf(result: TravelReportResultV1, reportName: string) {
+function pdf(result: ReportExportInput, reportName: string) {
   // Dependency-free, valid one-page PDF. Persian metadata remains embedded in UTF-8
   // comments; CSV/XLSX are the fidelity formats until a Unicode PDF renderer is wired.
   const text =
@@ -415,7 +428,7 @@ function pdf(result: TravelReportResultV1, reportName: string) {
 
 export function build(
   format: 'CSV' | 'XLSX' | 'PDF',
-  result: TravelReportResultV1,
+  result: ReportExportInput,
   reportName: string,
 ) {
   const buffer =

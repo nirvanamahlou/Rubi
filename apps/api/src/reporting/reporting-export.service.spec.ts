@@ -8,6 +8,31 @@ import { ReportingExportService } from './reporting-export.service';
 import type { TravelReportResultV1 } from './reporting.contracts';
 
 describe('ReportingExportService storage boundary', () => {
+  it('renders the same PDF without cloning any dataset rows into the worker', async () => {
+    const service = new ReportingExportService({} as LocalDocumentStorage);
+    const result = {
+      reportCode: 'sample',
+      generatedAtUtc: '2026-11-10T06:00:00.000Z',
+      sourceProjection: 'reporting.travel.facts.v1',
+      total: 23,
+      rows: [
+        {
+          unused: () => {
+            throw new Error('PDF must not read rows');
+          },
+        },
+      ],
+    } as unknown as TravelReportResultV1;
+    const direct = service.build('PDF', result, 'Synthetic report');
+    const worker = await service.buildInWorker(
+      'PDF',
+      result,
+      'Synthetic report',
+    );
+    expect(worker).toEqual(direct);
+    expect(worker.buffer.toString('ascii')).toContain('(Rows: 23)');
+  }, 30000);
+
   it('keeps each mixed-direction amount attached to its currency in Excel', async () => {
     const service = new ReportingExportService({} as LocalDocumentStorage);
     const amount = '104704000000 ریال + 16976 € + -54200.25 $';
