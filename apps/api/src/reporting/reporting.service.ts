@@ -22,7 +22,7 @@ import type {
   TravelReportResultV1,
   DashboardProjectionV1,
 } from './reporting.contracts';
-import { buildTravelReportResult } from './reporting.projection';
+import { createTravelReportProjection } from './reporting.projection';
 import {
   ReportingRepository,
   type DashboardFilterOptions,
@@ -249,17 +249,14 @@ export class ReportingService {
         : null;
       try {
         const native = await this.repository.nativeResult?.(code, query, actor);
-        const facts = native
-          ? []
-          : await this.repository.facts(query, serverBranchScope);
         const result =
           native ??
-          buildTravelReportResult({
+          (await this.projectTravelFacts(
             code,
             query,
-            facts,
-            now: new Date(),
-          });
+            serverBranchScope,
+            false,
+          ));
         if (run)
           await this.repository.finishRun(
             String(run.id),
@@ -1510,21 +1507,27 @@ export class ReportingService {
       actor,
       true,
     );
-    const facts = native
-      ? []
-      : await this.repository.facts(query, serverBranchScope);
     return {
       report,
       result:
         native ??
-        buildTravelReportResult({
-          code,
-          query,
-          facts,
-          now: new Date(),
-          includeAllRows: true,
-        }),
+        (await this.projectTravelFacts(code, query, serverBranchScope, true)),
     };
+  }
+
+  private async projectTravelFacts(
+    code: string,
+    query: ReportQueryV1,
+    serverBranchScope: readonly string[],
+    includeAllRows: boolean,
+  ) {
+    const projection = createTravelReportProjection({
+      code,
+      query,
+      includeAllRows,
+    });
+    await this.repository!.scanFacts(query, serverBranchScope, projection.add);
+    return projection.finish(new Date());
   }
 
   assertExportAccess(actor: ReportingActor) {

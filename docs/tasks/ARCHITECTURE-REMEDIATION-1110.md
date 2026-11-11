@@ -83,8 +83,9 @@ when only selected paths are addressed.
 
 - The travel facts fallback folds eligibility, groups, currency totals,
   filter options and source timestamp in one traversal. Its input can be a
-  single-use iterable. Database query batches and native source streaming
-  remain open.
+  single-use iterable. Fallback preview and exports feed this aggregation in
+  1,000-row keyset batches from a single read-only repeatable snapshot. Native
+  source streaming and grouped output materialization remain open.
 
 ## HR encryption configuration
 

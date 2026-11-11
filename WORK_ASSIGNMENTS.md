@@ -1339,6 +1339,10 @@ Reserve travel report fallback aggregation and native report source date maxima.
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.
 
+## REPORT-FACT-BATCHES-1111 — PC-B — READY_FOR_CI
+
+Reserve fallback report fact reads, projection consumer, and regression tests. Keep a repeatable source snapshot and the existing chronological tie ordering.
+
 ## REPORTING-FILTER-PROJECTION-1111
 
 Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.

@@ -70,6 +70,24 @@ export interface DashboardFilterOptions {
 
 type RecordRow = Record<string, unknown>;
 
+function whereFacts(conditions: Prisma.Sql[]) {
+  return conditions.length
+    ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+    : Prisma.empty;
+}
+
+const factProjection = Prisma.sql`
+  id, "sourceItemId", "orderNumber", "occurredAt", "legalEntityCode",
+  "legalEntityName", "branchId", "branchName", "ownerName", "siteCode",
+  "salesChannel", "serviceType", "customerType", "customerName", "agencyName",
+  "leadSource", "providerName", "airlineName", "originCity", "destinationCity",
+  "routeLabel", "orderStatus", "reservationStatus", "issueStatus", "paymentStatus",
+  "pnrCode", "passengerCount", "segmentCount", "ticketCount", "currencyCode",
+  "salesAmount", "purchaseAmount", "commissionAmount", "refundAmount",
+  "settledAmount", "dataAsOf"
+`;
+const factBatchSize = 1000;
+
 const exportArtifactColumns = Prisma.sql`
   e.id, e."runId", e."creatorUserId", e."reportCode", e."reportName",
   e.format, e.status, e."fileName", e."contentType", e."objectKey",
@@ -142,7 +160,7 @@ export class ReportingRepository {
     };
     if (serverBranchIds.length)
       conditions.push(
-        Prisma.sql`"branchId" IN (${Prisma.join(serverBranchIds)})`,
+        Prisma.sql`"branchId" = ANY(${[...serverBranchIds]}::uuid[])`,
       );
     if (input.legalEntityId)
       conditions.push(Prisma.sql`"legalEntityCode" = ${input.legalEntityId}`);
@@ -175,22 +193,58 @@ export class ReportingRepository {
     } as const;
     for (const [filter, column] of Object.entries(mapping)) {
       const value = scalar(filter);
-      if (value)
-        conditions.push(Prisma.sql`${Prisma.raw(`"${column}"`)} = ${value}`);
+      if (value) {
+        const identifier = Prisma.raw(`"${column}"`);
+        conditions.push(
+          column === 'branchId' || column === 'ownerUserId'
+            ? Prisma.sql`${identifier}::text = ${value}`
+            : Prisma.sql`${identifier} = ${value}`,
+        );
+      }
     }
-    return conditions.length
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
-      : Prisma.empty;
+    return conditions;
   }
 
   async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
-    const where = this.factConditions(input, serverBranchIds);
+    const where = whereFacts(this.factConditions(input, serverBranchIds));
     const rows = await this.database.client.$queryRaw<
       ReportingFactRow[]
     >(Prisma.sql`
       SELECT * FROM "reporting_travel_facts" ${where} ORDER BY "occurredAt" DESC, "id" ASC
     `);
     return rows;
+  }
+
+  async scanFacts(
+    input: ReportQueryV1,
+    serverBranchIds: readonly string[],
+    consume: (fact: ReportingFactRow) => void,
+  ) {
+    const conditions = this.factConditions(input, serverBranchIds);
+    await this.database.client.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+        let cursor: Pick<ReportingFactRow, 'occurredAt' | 'id'> | undefined;
+        for (;;) {
+          const after = cursor
+            ? Prisma.sql`"occurredAt" <= ${cursor.occurredAt}
+                AND ("occurredAt" < ${cursor.occurredAt} OR id > ${cursor.id}::uuid)`
+            : null;
+          const where = whereFacts(after ? [...conditions, after] : conditions);
+          const rows: ReportingFactRow[] = await tx.$queryRaw`
+            SELECT ${factProjection} FROM "reporting_travel_facts" ${where}
+            ORDER BY "occurredAt" DESC, id ASC LIMIT ${factBatchSize}
+          `;
+          for (const row of rows) consume(row);
+          if (rows.length < factBatchSize) return;
+          cursor = rows.at(-1)!;
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 20_000,
+      },
+    );
   }
 
   /**
@@ -202,7 +256,7 @@ export class ReportingRepository {
     input: ReportQueryV1,
     serverBranchIds: readonly string[],
   ): Promise<DashboardFilterOptions> {
-    const where = this.factConditions(input, serverBranchIds);
+    const where = whereFacts(this.factConditions(input, serverBranchIds));
     const [values] = await this.database.client.$queryRaw<
       Record<keyof DashboardFilterOptions, string[] | null>[]
     >(Prisma.sql`
