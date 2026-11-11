@@ -1460,6 +1460,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-room-party-limits-1015. User authorizes cumu
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
 
+## MARKETING-DIRECTORY-PAGES-1111 — PC-B
+
+Entry sources and campaign audiences use scoped 25-row pages. Literal normalized search, campaign filtering and exact counts run in PostgreSQL. Existing selectors and mutations keep their contracts.
+
 ## MARKETING-CAMPAIGN-PAGES-1110 — PC-B
 
 Campaign list queries apply branch scope, search, dates, status, channel and company in PostgreSQL before pagination. Count and selected records use the same snapshot. Excel reads filtered pages only on demand. Calendar and budget load the legacy collection only when their tabs open. 119 Web tests and 32 API/PostgreSQL tests passed. Follow-up depends on promotion pagination PR 1608.
