@@ -1092,6 +1092,10 @@ Both report export paths stream worker output into encrypted storage. The worker
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## LOGO-DUPLICATE-PROJECTION-1111 — PC-B
+
+Logo deduplication selects only the newest matching document and required file metadata within the existing branch, source and confidentiality scope. Existing objects are authenticated in bounded chunks without buffering plaintext. Missing-object replacement and corrupt-object rejection remain in place. Multipart upload still receives a buffer.
+
 ## STREAM-ENCRYPTED-ARTIFACTS-1111 — PC-B
 
 Document and report artifact storage now encrypts in 64 KiB chunks and patches the GCM tag into the existing file header. Failed producers remove the partial file and key collisions retain the earlier object. The renderer still returns buffered output. Twelve storage and reporting export tests passed.

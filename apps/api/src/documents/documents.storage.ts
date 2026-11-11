@@ -148,9 +148,46 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
   ): Promise<Readable> {
+    const target = this.pathFor(objectKey);
+    const { header, digests } = await this.authenticateObject(
+      target,
+      objectKey,
+      expectedSizeBytes,
+      true,
+    );
+
+    // GCM authenticates the entire file at final(). Only start delivery after
+    // that succeeds. Compare each ciphertext chunk on the second pass so
+    // changes after verification cannot introduce unverified plaintext.
+    return Readable.from(
+      this.streamVerified(
+        target,
+        objectKey,
+        header,
+        expectedSizeBytes,
+        digests,
+      ),
+      { objectMode: false },
+    );
+  }
+
+  async verifyQuarantined(objectKey: string, expectedSizeBytes: number) {
+    await this.authenticateObject(
+      this.pathFor(objectKey),
+      objectKey,
+      expectedSizeBytes,
+      false,
+    );
+  }
+
+  private async authenticateObject(
+    target: string,
+    objectKey: string,
+    expectedSizeBytes: number,
+    captureDigests: boolean,
+  ) {
     if (!Number.isSafeInteger(expectedSizeBytes) || expectedSizeBytes < 0)
       throw integrityError();
-    const target = this.pathFor(objectKey);
     const file = await open(target, 'r');
     const digests: Buffer[] = [];
     let header: Buffer;
@@ -166,7 +203,7 @@ export class LocalDocumentStorage {
           headerSize + offset,
           Math.min(chunkSize, expectedSizeBytes - offset),
         );
-        digests.push(digest(bytes));
+        if (captureDigests) digests.push(digest(bytes));
         decipher.update(bytes);
       }
       decipher.final();
@@ -174,19 +211,7 @@ export class LocalDocumentStorage {
       await file.close();
     }
 
-    // GCM authenticates the entire file at final(). Only start delivery after
-    // that succeeds. Compare each ciphertext chunk on the second pass so
-    // changes after verification cannot introduce unverified plaintext.
-    return Readable.from(
-      this.streamVerified(
-        target,
-        objectKey,
-        header,
-        expectedSizeBytes,
-        digests,
-      ),
-      { objectMode: false },
-    );
+    return { header, digests };
   }
 
   private async *streamVerified(

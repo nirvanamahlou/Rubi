@@ -298,6 +298,10 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff
 
 Reserve the encrypted storage writer and targeted tests. Keep the persisted RUBIDOC1 format, exclusive creation and authenticated reads.
 
+## LOGO-DUPLICATE-PROJECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve Master Data logo duplicate lookup and bounded stored-object verification. Preserve branch and confidentiality checks, current revision rules, and missing-object replacement.
+
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.

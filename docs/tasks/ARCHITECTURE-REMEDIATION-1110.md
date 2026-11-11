@@ -70,6 +70,9 @@ when only selected paths are addressed.
   export paths now stream output from the rendering worker into this storage
   writer. The worker sends one chunk at a time and waits for its consumption.
   Report rows and multipart uploads still produce buffered inputs.
+- Master Data logo deduplication uses an exact scoped document projection
+  and bounded stored-object authentication before reusing the existing file.
+
 - Ninety-nine focused Documents and Reporting tests passed. The tests cover
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store

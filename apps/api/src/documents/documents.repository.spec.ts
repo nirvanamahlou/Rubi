@@ -5,6 +5,50 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it('finds the latest exact logo match within the authorized document scope', async () => {
+    const findFirst = vi.fn().mockResolvedValue(null);
+    const repository = new DocumentsRepository(
+      { client: { document: { findFirst } } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+    await repository.findMasterDataLogoDuplicate({
+      branchId: 'branch',
+      resource: 'hotels',
+      recordId: 'hotel',
+      versionNote: 'fingerprint',
+      actorUserId: 'user',
+    });
+    expect(findFirst).toHaveBeenCalledExactlyOnceWith({
+      where: {
+        branchId: 'branch',
+        archiveStatus: 'ACTIVE',
+        documentType: { domain: 'BRAND' },
+        confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] },
+        NOT: {
+          sourceModule: 'WORKBENCH',
+          sourceEntityType: 'WorkbenchFeedback',
+          ownerUserId: { not: 'user' },
+        },
+        relations: {
+          some: {
+            relationType: 'PRIMARY_CASE',
+            sourceModule: 'master-data',
+            sourceEntityType: 'hotels',
+            sourceEntityId: 'hotel',
+          },
+        },
+        currentVersion: { versionNote: 'fingerprint' },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        currentVersion: {
+          select: { storageObjectKey: true, sizeBytes: true, scanStatus: true },
+        },
+      },
+    });
+  });
+
   it.each([true, false])(
     'creates scan jobs only for nonexempt uploads (logo=%s)',
     async (exempt) => {
