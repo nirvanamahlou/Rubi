@@ -1,16 +1,30 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { DatabaseClient, Prisma } from '@nora/database';
-import { collectCursorPages } from '../database/collect-cursor-pages';
+import { cursorPages } from '../database/collect-cursor-pages';
 import type {
   SalesReportingActor,
   SalesReportingQuery,
 } from './sales-reporting.public';
 
+type SalesPaymentReportingEvent = {
+  id: string;
+  kind: 'دریافت قطعی' | 'استرداد قطعی';
+  currencyCode: string;
+  method: string;
+  received: string;
+  refunded: string;
+  at: Date;
+  updatedAt: Date;
+};
+
+const maximumEventsPerKind = 10_000;
+
 /** Confirmed receipt and completed refund events, each counted exactly once. */
-export async function readSalesPaymentReportingProjection(
+export async function scanSalesPaymentReportingProjection(
   client: DatabaseClient,
   actor: SalesReportingActor,
   query: SalesReportingQuery,
+  consume: (event: SalesPaymentReportingEvent) => void,
 ) {
   const all = actor.permissions.includes('sales.contracts.read.all');
   const branch = actor.permissions.includes('sales.contracts.read.branch');
@@ -72,28 +86,37 @@ export async function readSalesPaymentReportingProjection(
       ? { currencyCode: scalar('currencyCode')! }
       : {}),
   };
-  const [receipts, refunds] = await Promise.all([
-    collectCursorPages(
-      500,
-      (page) =>
-        client.salesContractPaymentEntry.findMany({
-          where: {
-            ...paymentScope,
-            status: 'FINANCE_CONFIRMED',
-            financeConfirmedAt: { not: null, ...range },
-          },
-          select: {
-            id: true,
-            currencyCode: true,
-            amount: true,
-            method: true,
-            financeConfirmedAt: true,
-            updatedAt: true,
-          },
-          orderBy: [{ financeConfirmedAt: 'asc' }, { id: 'asc' }],
-          ...page,
-        }),
-      (row) => ({
+  const tooManyEvents = () => {
+    throw new BadRequestException(
+      'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.',
+    );
+  };
+  let count = 0;
+  for await (const rows of cursorPages(
+    500,
+    (page) =>
+      client.salesContractPaymentEntry.findMany({
+        where: {
+          ...paymentScope,
+          status: 'FINANCE_CONFIRMED',
+          financeConfirmedAt: { not: null, ...range },
+        },
+        select: {
+          id: true,
+          currencyCode: true,
+          amount: true,
+          method: true,
+          financeConfirmedAt: true,
+          updatedAt: true,
+        },
+        orderBy: [{ financeConfirmedAt: 'asc' }, { id: 'asc' }],
+        ...page,
+      }),
+    maximumEventsPerKind + 1,
+  )) {
+    for (const row of rows) {
+      if (++count > maximumEventsPerKind) tooManyEvents();
+      consume({
         id: row.id,
         kind: 'دریافت قطعی',
         currencyCode: row.currencyCode,
@@ -102,24 +125,29 @@ export async function readSalesPaymentReportingProjection(
         refunded: '0',
         at: row.financeConfirmedAt!,
         updatedAt: row.updatedAt,
+      });
+    }
+  }
+  count = 0;
+  for await (const rows of cursorPages(
+    500,
+    (page) =>
+      client.salesPaymentRefund.findMany({
+        where: { payment: paymentScope, createdAt: range },
+        select: {
+          id: true,
+          amount: true,
+          createdAt: true,
+          payment: { select: { currencyCode: true, method: true } },
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        ...page,
       }),
-      10001,
-    ),
-    collectCursorPages(
-      500,
-      (page) =>
-        client.salesPaymentRefund.findMany({
-          where: { payment: paymentScope, createdAt: range },
-          select: {
-            id: true,
-            amount: true,
-            createdAt: true,
-            payment: { select: { currencyCode: true, method: true } },
-          },
-          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          ...page,
-        }),
-      (row) => ({
+    maximumEventsPerKind + 1,
+  )) {
+    for (const row of rows) {
+      if (++count > maximumEventsPerKind) tooManyEvents();
+      consume({
         id: row.id,
         kind: 'استرداد قطعی',
         currencyCode: row.payment.currencyCode,
@@ -128,13 +156,19 @@ export async function readSalesPaymentReportingProjection(
         refunded: row.amount.toString(),
         at: row.createdAt,
         updatedAt: row.createdAt,
-      }),
-      10001,
-    ),
-  ]);
-  if (receipts.length > 10000 || refunds.length > 10000)
-    throw new BadRequestException(
-      'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.',
-    );
-  return receipts.concat(refunds);
+      });
+    }
+  }
+}
+
+export async function readSalesPaymentReportingProjection(
+  client: DatabaseClient,
+  actor: SalesReportingActor,
+  query: SalesReportingQuery,
+) {
+  const events: SalesPaymentReportingEvent[] = [];
+  await scanSalesPaymentReportingProjection(client, actor, query, (event) =>
+    events.push(event),
+  );
+  return events;
 }

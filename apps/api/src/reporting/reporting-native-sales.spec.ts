@@ -487,6 +487,47 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(intake).toHaveBeenCalledTimes(2);
   });
 
+  it('aggregates consecutive Sales pages and reuses authorized label lookups', async () => {
+    const { client, findMany } = fixture();
+    const [row] = await findMany();
+    const branchLookup = vi.mocked(client.branch.findMany);
+    const userLookup = vi.mocked(client.user.findMany);
+    const cityLookup = vi.mocked(client.masterCity.findMany);
+    findMany
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, index) => ({
+          ...row,
+          id: 'batch-' + index,
+        })),
+      )
+      .mockImplementationOnce(async () => {
+        expect(branchLookup).toHaveBeenCalledTimes(1);
+        expect(userLookup).toHaveBeenCalledTimes(1);
+        expect(cityLookup).toHaveBeenCalledTimes(1);
+        return [{ ...row, id: 'last' }];
+      });
+    const result = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      query,
+      actor,
+    );
+    expect(result.rows[0]).toMatchObject({
+      primaryDimension: 'مرکزی',
+      secondaryDimension: 'کارشناس',
+      orderCount: 501,
+      passengerCount: 1503,
+      amountsByCurrency: [
+        { currencyCode: 'IRR', amount: '450900' },
+        { currencyCode: 'USD', amount: '10020' },
+      ],
+    });
+    expect(result.reconciliation.sourceRowCount).toBe(1002);
+    expect(branchLookup).toHaveBeenCalledTimes(1);
+    expect(userLookup).toHaveBeenCalledTimes(1);
+    expect(cityLookup).toHaveBeenCalledTimes(1);
+  });
+
   it('uses a new read-only repeatable-read snapshot for each native request', async () => {
     const { client } = fixture();
     const execute = vi.fn();

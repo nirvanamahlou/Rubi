@@ -1331,6 +1331,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
 
+## NATIVE-PAYMENTS-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve the shared cursor iterator and the native receipt/refund projection consumer. Preserve authorization, date filters, source order, exact totals and per-source limits.
+
 ## REPORTING-CSV-MEMORY-1111 (PC-B)
 
 Reserve CSV encoding and its byte-level regression. Preserve export bytes and storage behavior.
@@ -1346,6 +1350,10 @@ Allow authenticated archive downloads and PDF previews while a scan is pending, 
 ## REPORT-FACT-AGGREGATION-1111 — PC-B — READY_FOR_CI
 
 Reserve travel report fallback aggregation and native report source date maxima. Preserve eligibility, row ordering, currency totals and filter options.
+
+## NATIVE-SALES-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve native Sales contract report streaming and grouped output state. Preserve authorized owner lookups, exact currencies, status and ordering.
 
 ## REPORTING-DURABLE-EXPORT-1110 (PC-B)
 

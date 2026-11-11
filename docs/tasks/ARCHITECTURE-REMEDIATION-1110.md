@@ -37,6 +37,10 @@ when only selected paths are addressed.
 
 ## Implementation evidence
 
+- Native Sales contract reports feed contract/currency pages into incremental
+  aggregators and cache the authorized display labels within one report run.
+  Grouped rows and other native report sources still materialize their data.
+
 - Daily penalties load policies and shared inputs once per branch and group
   punch reads for up to 50 attendance rows. Dense batches fall back to bounded
   per-day reads so the existing per-day data limit remains intact.
@@ -101,6 +105,10 @@ when only selected paths are addressed.
   single-use iterable. Fallback preview and exports feed this aggregation in
   1,000-row keyset batches from a single read-only repeatable snapshot. Native
   source streaming and grouped output materialization remain open.
+
+- Native receipt/refund rows feed the projection directly in 500-row cursor
+  pages. The existing per-source count limits and exact currency aggregation
+  remain. Other native source paths still materialize their rows.
 
 ## HR encryption configuration
 

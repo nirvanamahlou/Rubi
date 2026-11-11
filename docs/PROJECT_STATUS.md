@@ -1112,6 +1112,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## NATIVE-PAYMENTS-STREAM-1111 — PC-B
+
+The native receipt/refund report consumes each cursor batch directly into the report projection. It keeps only one raw page and retains the existing 10,000-event limit for each source. Other native projections still materialize source rows.
+
 ## REPORTING-CSV-MEMORY-1111
 
 CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
@@ -1147,6 +1151,10 @@ Dashboard fact-based filters read distinct values in SQL using the same scope pr
 ## PROCUREMENT-FINANCE-SOURCE-PAGES-1110
 
 Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.
+
+## NATIVE-SALES-STREAM-1111 — PC-B
+
+Native Sales reports feed each contract/currency batch into the report and contract aggregators, reusing authorized label lookups for repeated IDs. The test covers 501 contracts, 1,002 currency rows and exact per-currency totals. Other consumers of the public collecting adapter and grouped report output still materialize their data.
 
 ## REPORTING-EXPORT-FILTER-MEMORY-1111
 

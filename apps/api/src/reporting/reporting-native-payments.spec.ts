@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import { nativePaymentReport } from './reporting-native-payments';
-import { readSalesPaymentReportingProjection } from '../sales/sales-payment-reporting.public';
+import {
+  readSalesPaymentReportingProjection,
+  scanSalesPaymentReportingProjection,
+} from '../sales/sales-payment-reporting.public';
 
 const actor = {
   userId: 'user',
@@ -125,6 +128,30 @@ describe('confirmed receipt/refund native projection', () => {
       });
     }
   });
+  it('consumes each receipt page before fetching the next and before scanning refunds', async () => {
+    const { client, receipts, refunds } = fixture();
+    const [receipt] = await receipts();
+    const consume = vi.fn();
+    receipts
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, index) => ({
+          ...receipt,
+          id: 'r-' + index,
+        })),
+      )
+      .mockImplementationOnce(async () => {
+        expect(consume).toHaveBeenCalledTimes(500);
+        expect(refunds).not.toHaveBeenCalled();
+        return [receipt];
+      });
+    refunds.mockImplementationOnce(async () => {
+      expect(consume).toHaveBeenCalledTimes(501);
+      return [];
+    });
+    await scanSalesPaymentReportingProjection(client, actor, query, consume);
+    expect(consume).toHaveBeenCalledTimes(501);
+  });
+
   it('fetches only one extra receipt to detect the existing safety limit', async () => {
     const { client, receipts, refunds } = fixture();
     const [receipt] = await receipts();
