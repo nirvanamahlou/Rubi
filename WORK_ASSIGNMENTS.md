@@ -1395,6 +1395,10 @@ Reserve receipt and refund report paging and its cursor regression. Read each ev
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
 
+## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B — READY_FOR_CI
+
+Reserve the shared browser transport, Documents, Customers and Correspondence API adapters, and focused regressions. Preserve request payloads, domain errors, file cancellation and existing timeout behavior.
+
 ## WORKBENCH-SHARED-TRANSPORT-1110 — PC-B — READY_FOR_CI
 
 Reserve Workbench messaging, personal and feedback HTTP clients, the shared authenticated fetch timeout option and focused tests. Preserve domain errors, cookie handling, payloads and one retry after authentication rejection. No API, dependency or deployment changes.
@@ -12396,6 +12400,10 @@ HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web 
 
 Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.
 
+## MANIFEST-REMOVE-CODE-BOX-1110 — PC-A — READY_FOR_CI
+
+Remove only the System Acceptable Code button and its VML/control references from the bundled default PNL workbook. Preserve all eleven headers, passenger mapping, Help sheets, VBA project, XLSM format and registered templates. No schema/dependency/deployment. User authorizes develop merge after green checks.
+
 ## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
 
 Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.
@@ -12423,6 +12431,10 @@ Reserve legacy request row decoding in HR leave policy and attendance configurat
 ## HR-BOOTSTRAP-COALESCE-1111 — PC-B — READY_FOR_CI
 
 Reserve the HR workspace bootstrap request lifecycle and focused Web tests. A committed mutation must start a fresh read.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B — READY_FOR_CI
+
+Reserve the incoming-letter upload adapter and its test. Return once the file and metadata are saved, with existing owner and access rules and background scan scheduling.
 
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 

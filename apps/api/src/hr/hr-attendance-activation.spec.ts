@@ -170,3 +170,15 @@ it('never charges a daily penalty for an excluded record', async () => {
     ).dailyPenalty({ ...f.row, status: 'غیرفعال' }),
   ).resolves.toBeNull();
 });
+
+it('updates the selected historical row even when the employee has moved branches', async () => {
+  const f = fixture();
+  f.tx.hrEmployee.findFirst.mockResolvedValue({
+    id: employeeId,
+    branchId: randomUUID(),
+    name: 'Employee',
+  });
+  f.tx.hrRecord.findMany.mockResolvedValue([]);
+  await f.change(true, { recordId: f.row.id, version: 1, status: 'مرخصی' });
+  expect(f.row.status).toBe('مرخصی');
+});

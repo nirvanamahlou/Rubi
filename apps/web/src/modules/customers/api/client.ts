@@ -5,7 +5,7 @@ import type {
   LedgerPersonView,
   PersonNote,
 } from '@nora/contracts';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type {
   BranchReference,
   CustomerAddressRequest,
@@ -94,27 +94,23 @@ export function customerErrorMessage(
 async function request<T>(
   path: string,
   init?: RequestInit,
-  retriedAfterRefresh = false,
   scope = 'customers',
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/${scope}${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: {
-      accept: 'application/json',
-      ...(init?.body ? { 'content-type': 'application/json' } : {}),
-      ...init?.headers,
+  const response = await authenticatedFetch(
+    `${baseUrl}/${scope}${path}`,
+    baseUrl,
+    {
+      timeoutMs: null,
+      ...init,
+      headers: {
+        accept: 'application/json',
+        ...(init?.body ? { 'content-type': 'application/json' } : {}),
+        ...init?.headers,
+      },
     },
-  });
-  if (
-    response.status === 401 &&
-    !retriedAfterRefresh &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
-    return request<T>(path, init, true, scope);
+  );
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
@@ -303,21 +299,18 @@ export const salesPeopleApi = {
     request<CustomerListResponse>(
       `?${serializeCustomerListQuery(query)}`,
       undefined,
-      false,
       'sales/people',
     ),
   detail: (id: string, reason?: string) =>
     request<{ data: CustomerDetail }>(
       `/${encodeURIComponent(id)}`,
       reason ? { headers: { 'x-sensitive-read-reason': reason } } : undefined,
-      false,
       'sales/people',
     ),
   registrationLookup: (input: CustomerRegistrationLookupRequest) =>
     request<{ data: CustomerDetail | null }>(
       '/registration-lookup',
       body(input),
-      false,
       'sales/people',
     ),
   create: async (input: CustomerMutationRequest, registrationKey?: string) => {
@@ -330,7 +323,6 @@ export const salesPeopleApi = {
             ? { headers: { 'x-registration-key': registrationKey } }
             : {}),
         },
-        false,
         'sales/people',
       );
     try {
@@ -351,14 +343,12 @@ export const salesPeopleApi = {
     request<{ data: CustomerDetail }>(
       `/${encodeURIComponent(id)}`,
       { method: 'PATCH', body: JSON.stringify(input) },
-      false,
       'sales/people',
     ),
   addContact: (id: string, input: CustomerContactRequest) =>
     request<{ data: CustomerDetail }>(
       `/${encodeURIComponent(id)}/contacts`,
       body(input),
-      false,
       'sales/people',
     ),
 };

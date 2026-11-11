@@ -1,6 +1,5 @@
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import type {
   CorrespondenceUser,
   InternalLetterContent,
@@ -13,16 +12,15 @@ async function internalRequest<T>(
   path: string,
   method = 'GET',
   body?: unknown,
-  retried = false,
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(
+  const response = await authenticatedFetch(
     `${base}/correspondence/v1/internal${path}`,
+    base,
     {
       method,
-      credentials: 'include',
-      cache: 'no-store',
+      timeoutMs: null,
       ...(body === undefined
         ? {}
         : {
@@ -31,12 +29,6 @@ async function internalRequest<T>(
           }),
     },
   );
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return internalRequest<T>(path, method, body, true);
   const result = (await response.json().catch(() => null)) as {
     message?: string;
     error?: { message?: string };
@@ -98,25 +90,20 @@ export async function issueLetterNumber(
   companyId: string,
   date: string,
   idempotencyKey: string,
-  retried = false,
 ): Promise<{ number: string; date: string }> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await localizedFetch(
+  const response = await authenticatedFetch(
     `${baseUrl}/correspondence/v1/numbers`,
+    baseUrl,
     {
       method: 'POST',
-      credentials: 'include',
+      cache: 'default',
+      timeoutMs: null,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ companyId, date, idempotencyKey }),
     },
   );
-  if (
-    response.status === 401 &&
-    !retried &&
-    (await refreshAuthenticatedSession(baseUrl))
-  )
-    return issueLetterNumber(companyId, date, idempotencyKey, true);
   const result = (await response.json().catch(() => null)) as {
     number?: string;
     date?: string;

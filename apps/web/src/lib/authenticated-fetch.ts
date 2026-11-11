@@ -5,23 +5,26 @@ import { refreshAuthenticatedSession } from './auth-session';
 export async function authenticatedFetch(
   url: string,
   baseUrl: string,
-  init: RequestInit & { timeoutMs?: number } = {},
+  init: RequestInit & { timeoutMs?: number | null } = {},
 ): Promise<Response> {
   const { timeoutMs = 30_000, ...request } = init;
-  const timeout = AbortSignal.timeout(timeoutMs);
-  const signal = request.signal
-    ? AbortSignal.any([request.signal, timeout])
-    : timeout;
+  const timeout =
+    timeoutMs === null ? undefined : AbortSignal.timeout(timeoutMs);
+  const signal =
+    timeout && request.signal
+      ? AbortSignal.any([request.signal, timeout])
+      : (timeout ?? request.signal);
   const options: RequestInit = {
     credentials: 'include',
     cache: 'no-store',
     ...request,
-    signal,
+    ...(signal ? { signal } : {}),
   };
   const response = await localizedFetch(url, options);
   // Retry only an authentication rejection, once. A failed write response is
   // never automatically replayed as a network/server retry.
-  if (response.status !== 401 || signal.aborted) return response;
+  if (response.status !== 401 || signal?.aborted) return response;
   if (!(await refreshAuthenticatedSession(baseUrl))) return response;
+  if (signal?.aborted) return response;
   return localizedFetch(url, options);
 }

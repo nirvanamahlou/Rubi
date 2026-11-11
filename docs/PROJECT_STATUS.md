@@ -9,6 +9,10 @@ PostgreSQL aggregates unread counts by destination and selects a bounded feed wi
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
 
 
+## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B
+
+Documents, Customers and Correspondence reuse the localized authenticated browser transport. Existing timeouts and domain responses are preserved. A cancelled document request is not replayed after session refresh. Thirty-nine focused Web tests and scoped ESLint passed.
+
 ## MANIFEST-PNL-DEFAULT-1110 — PC-A — READY_FOR_CI
 
 Per-ticket dropdown defaults to the exact eleven-column airline PNL layout, with owner-confirmed XLSM output. Report retains previous XLSX columns and appends authoritative contract seller; active uploaded templates remain selectable independently. Preserve assignment/cancellation/branch/date/new-only rules and separate idempotency per selected format. Sanitized bundled template contains no source passengers; project is copied without execution. Registered templates retain macro stripping. API/Web TypeScript, scoped lint and shared-contract build pass; focused checks cover real HTTP downloads and isolated selections. Synthetic output independently reloads with exact source headers, codes, dates, leading zeros, header filter and matching original VBA SHA256. See docs/tasks/MANIFEST-PNL-DEFAULT-1110.md. No schema/dependency/data/deployment changes; green exact-head gates precede authorized develop merge.
@@ -9929,6 +9933,9 @@ Employee pay views now support restricted archived evidence with title, date, ar
 
 SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
 
+## MANIFEST-REMOVE-CODE-BOX-1110
+
+Default PNL export no longer contains the System Acceptable Code form button. Workbook columns, data mapping, help sheets and XLSM project remain unchanged. Focused workbook export checks and hosted CI precede authorized develop merge; no deployment.
 HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
 
 WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
@@ -9940,6 +9947,10 @@ HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance la
 - HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
 
 - Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B
+
+Incoming letters return once the file and metadata are saved. Scan jobs remain scheduled in the background. Ninety-five focused API tests and scoped ESLint passed, including the incoming owner and file-access boundary.
 
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
