@@ -2,7 +2,6 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type {
   AuthenticatedActor,
   FinanceInboxItemV1,
-  FinanceInboxPageV1,
   FinanceInboxQueryV1,
 } from '@nora/contracts';
 
@@ -309,7 +308,7 @@ export function selectFinanceInboxPage(
   page: number,
   pageSize: number,
   generatedAt: string,
-): Pick<FinanceInboxPageV1, 'items' | 'total' | 'summary'> {
+) {
   const matches = financeInboxPredicate(query);
   const compareItems = financeInboxComparator(query);
   const compare = (a: RankedItem, b: RankedItem) =>
