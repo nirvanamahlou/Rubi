@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { dirname } from 'node:path';
@@ -11,6 +13,57 @@ import {
   clamavScanStatus,
   scannerExitCode,
 } from './documents.antivirus';
+
+describe.each([scanBufferWithWindowsDefender, scanBufferWithClamAV])(
+  'streaming scanner adapter %s',
+  (scan) => {
+    it('stages all verified bytes before calling the engine', async () => {
+      const bytes = Buffer.alloc(180_000, 73);
+      const sha256 = createHash('sha256').update(bytes).digest('hex');
+      const stream = Readable.from([
+        bytes.subarray(0, 65_536),
+        bytes.subarray(65_536),
+      ]);
+      let target = '';
+      const runner = vi.fn(
+        async (_command: string, args: readonly string[]) => {
+          target = args.find((arg) => arg.includes('nora-document-scan-'))!;
+          expect(await readFile(target)).toEqual(bytes);
+          return { exitCode: 0, stdout: '', stderr: '' };
+        },
+      );
+      const result = await scan(
+        {
+          commandPath: 'scanner',
+          contents: { stream, sha256 },
+          safeFileName: 'document.pdf',
+        },
+        runner,
+      );
+      expect(result.status).toBe('CLEAN');
+      expect(runner).toHaveBeenCalledOnce();
+      expect(existsSync(dirname(target))).toBe(false);
+    });
+
+    it('never runs the engine on a stored hash mismatch', async () => {
+      const runner = vi.fn();
+      await expect(
+        scan(
+          {
+            commandPath: 'scanner',
+            contents: {
+              stream: Readable.from([Buffer.from('changed')]),
+              sha256: '0'.repeat(64),
+            },
+            safeFileName: 'document.pdf',
+          },
+          runner,
+        ),
+      ).rejects.toThrow('SHA-256 mismatch');
+      expect(runner).not.toHaveBeenCalled();
+    });
+  },
+);
 
 describe('Windows Defender document adapter', () => {
   it('maps documented command outcomes without inventing a clean result', () => {

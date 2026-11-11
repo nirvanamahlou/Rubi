@@ -1088,6 +1088,10 @@ Finance inbox pages load purchase FX evidence after applying filters, ordering a
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## DOCUMENT-STREAM-SCAN-1111
+
+Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.

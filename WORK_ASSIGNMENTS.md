@@ -1303,6 +1303,10 @@ Reserve Finance inbox page assembly, FX display enrichment timing and focused te
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## DOCUMENT-STREAM-SCAN-1111
+
+Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110 (PC-B)
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
