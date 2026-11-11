@@ -756,7 +756,13 @@ function AccessibleHrSection({
               <HrAttendanceEditor
                 record={attendanceEdit}
                 onClose={() => setAttendanceEdit(null)}
-                onSaved={store.mutated}
+                onSaved={async (saved) => {
+                  setItems((rows) =>
+                    rows.map((row) => (row.id === saved.id ? saved : row)),
+                  );
+                  remember([saved]);
+                  await store.mutated();
+                }}
               />
             )}
             {missionCosts && (
