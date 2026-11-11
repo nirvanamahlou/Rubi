@@ -139,6 +139,18 @@ export class MarketingSegmentPageQueryDto {
   status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
 }
 
+export class MarketingDirectoryPageQueryDto {
+  @IsIn(['SOURCE', 'AUDIENCE']) kind!: 'SOURCE' | 'AUDIENCE';
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(Number.MAX_SAFE_INTEGER)
+  page?: number;
+  @IsOptional() @IsString() @MaxLength(240) search?: string;
+  @IsOptional() @IsUUID() campaignId?: string;
+}
+
 export class MarketingPromotionPageQueryDto {
   @IsIn(['COUPON', 'OFFER']) kind!: 'COUPON' | 'OFFER';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page?: number;
