@@ -87,6 +87,10 @@ when only selected paths are addressed.
   1,000-row keyset batches from a single read-only repeatable snapshot. Native
   source streaming and grouped output materialization remain open.
 
+- Native receipt/refund rows feed the projection directly in 500-row cursor
+  pages. The existing per-source count limits and exact currency aggregation
+  remain. Other native source paths still materialize their rows.
+
 ## HR encryption configuration
 
 Existing ciphertext without a key identifier is read with the key named
