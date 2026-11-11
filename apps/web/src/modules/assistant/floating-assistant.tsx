@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type CSSProperties,
 } from 'react';
 import { MessageCircle, Sparkles, X } from 'lucide-react';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -18,6 +19,10 @@ import styles from './floating-assistant.module.css';
 import { useFloatingDrag } from './use-floating-drag';
 import { resizeEdges } from './floating-resize';
 import { useFloatingResize } from './use-floating-resize';
+import {
+  ChatTextSizeControls,
+  CHAT_TEXT_DEFAULT,
+} from './chat-text-size-controls';
 
 const PreparedChat = dynamic(
   () =>
@@ -65,6 +70,7 @@ function AssistantSession() {
   const t = (text: readonly [string, string]) => text[english ? 1 : 0];
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
+  const [textSize, setTextSize] = useState(CHAT_TEXT_DEFAULT);
   const launcher = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -90,6 +96,9 @@ function AssistantSession() {
           ref={panel}
           id={id}
           className={styles.panel}
+          style={
+            { '--assistant-chat-font-size': `${textSize}px` } as CSSProperties
+          }
           hidden={!open}
           role="dialog"
           aria-modal={false}
@@ -109,6 +118,11 @@ function AssistantSession() {
               <h2 id={id + '-title'}>{t(c.widgetTitle)}</h2>
               <p>{t(c.widgetSubtitle)}</p>
             </div>
+            <ChatTextSizeControls
+              value={textSize}
+              onChange={setTextSize}
+              english={english}
+            />
             <button
               ref={closeButton}
               type="button"

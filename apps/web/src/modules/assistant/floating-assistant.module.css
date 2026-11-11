@@ -188,6 +188,18 @@
 .headerButton:hover {
   background: #ffffff25;
 }
+.headerButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.textSizeControls {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+.textSizeControls .headerButton {
+  width: 30px;
+}
 .body {
   display: flex;
   flex: 1;

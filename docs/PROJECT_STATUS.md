@@ -250,6 +250,8 @@ Reserve Documents workspace default loading and ten-row pagination. Remove filte
 
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
+ASSISTANT-TEXT-SIZE-1111 follow-up: adjacent increase/decrease text controls use labelled icons,14px default and12–24px bounds in2px steps. Floating-only CSS variable changes user/assistant message text without remounting the conversation or changing manual panel geometry.53 focused tests cover both controls, bounds, bilingual labels and existing resize/chat regressions. No API/preferences storage or live publication; same owned review PR1669.
+
 Implemented eight physical edge/corner resize handles, pointer capture/cancel and keyboard arrows (Shift for larger steps), bounded geometry and re-clamping on viewport changes. Removed the expand/restore button; preserve launcher movement, mounted draft/conversation, existing desktop/mobile defaults and actor isolation. Only floating chat message paragraphs use14px. Minimum readable280x300 shrinks to the available viewport; no viewport-specific1915px rule.49 focused tests, scoped ESLint, Web TypeScript and optimized production build pass. No backend/schema/dependency/live-server changes. Source reservation freezes on push and releases at handoff; review PR only, no automatic merge/publication.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS

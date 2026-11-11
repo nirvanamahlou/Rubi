@@ -995,5 +995,5 @@
   align-self: flex-end;
 }
 .floatingComposer .chatMessages p {
-  font-size: 14px;
+  font-size: var(--assistant-chat-font-size, 14px);
 }

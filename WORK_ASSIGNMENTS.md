@@ -12444,6 +12444,8 @@ Reserve the Documents archive upload entry point, dialog, and focused regression
 
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
+Follow-up ASSISTANT-TEXT-SIZE-1111 reopens the same owned PR1669: reserve adjacent text-size header controls, floating-only typography variable and focused tests. Default14px, bounded12–24px in2px steps; preserve conversation, draft, manual geometry and account isolation. No overlapping owner found; no backend, dependencies or deployment.
+
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-resize-1111 from developbb3c0fa37. Reserve floating assistant component/styles, bounded panel resize geometry/hook and regressions, scoped floating message typography and own notes. Owner requests eight-direction manual resizing, removal of expand/restore button and 14px chat messages. Previous Assistant scopes merged/released; no active overlapping owner found. Preserve launcher movement, mounted conversation/draft, close, RTL/LTR and viewport bounds. No API/schema/dependency/production-data changes.
 
 49 focused tests, scoped ESLint, full Web TypeScript and optimized Web production build pass. Source freezes on push and reservation releases at handoff. No production publication or automatic merge is part of this change.
