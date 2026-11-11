@@ -1,4 +1,9 @@
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
+import { getHrResource } from '@nora/contracts';
+import {
+  HrConnectionsService,
+  type HrInboxSource,
+} from '../hr/hr-connections.service';
 import { HrService } from '../hr/hr.service';
 import {
   validateWorkbenchLeave,
@@ -268,6 +273,9 @@ export class CustomerAffairsService {
     @Inject(IamWorkbenchRequestDirectory)
     private readonly requestDirectory?: IamWorkbenchRequestDirectory,
     @Optional() @Inject(HrService) private readonly hr?: HrService,
+    @Optional()
+    @Inject(HrConnectionsService)
+    private readonly hrConnections?: HrConnectionsService,
   ) {}
 
   async dashboard(
@@ -2360,10 +2368,13 @@ export class CustomerAffairsService {
           recipientName: row.executionOwner?.displayName ?? null,
         })),
         ...(this.hr ? await this.hr.leaveSubstituteRequests(actor) : []),
+        ...(this.hrConnections
+          ? await this.hrConnections.inboxForwardedToUser(actor)
+          : []),
       ],
     };
   }
-  async hrWorkbenchRequests(actor: AuthenticatedActor) {
+  async hrWorkbenchRequests(actor: AuthenticatedActor, id?: string) {
     const authorizedBranches: string[] = [];
     for (const branchId of actor.branchIds) {
       const recipients =
@@ -2382,6 +2393,7 @@ export class CustomerAffairsService {
       ? await this.repository.hrWorkbenchRequests(
           authorizedBranches,
           actor.userId,
+          ...(id ? ([id] as const) : []),
         )
       : [];
     return {
@@ -2412,6 +2424,93 @@ export class CustomerAffairsService {
       })),
     };
   }
+  private async hrInboxSource(
+    id: string,
+    source: unknown,
+    actor: AuthenticatedActor,
+  ): Promise<HrInboxSource> {
+    if (
+      !actor.permissions.includes('hr.read') &&
+      !actor.permissions.includes('hr.manage')
+    )
+      throw new ForbiddenException(
+        'مجوز مشاهده کارتابل منابع انسانی وجود ندارد.',
+      );
+    if (source === 'workbench') {
+      const [row] = (await this.hrWorkbenchRequests(actor, id)).data;
+      if (row)
+        return {
+          id,
+          branchId: row.branchId,
+          version: row.version,
+          code: row.trackingNumber,
+          title: row.subject,
+          native: false,
+        };
+    } else if (source === 'hr') {
+      const row = await this.hr!.getRecord(id, actor);
+      const definition = getHrResource(row.section, row.tab);
+      if (definition?.approval && !row.code.startsWith('WB-'))
+        return {
+          id,
+          branchId: row.branchId,
+          version: row.version,
+          code: row.code,
+          native: true,
+          title:
+            row.values[row.columns.indexOf('عنوان درخواست')]?.trim() ||
+            row.data.requestSubtype ||
+            `درخواست ${row.code}`,
+        };
+    } else throw new BadRequestException('نوع درخواست مبنا معتبر نیست.');
+    throw new NotFoundException('درخواست مبنا در کارتابل پیدا نشد.');
+  }
+
+  async hrInboxSeen(actor: AuthenticatedActor) {
+    return { data: await this.hrConnections!.inboxSeen(actor) };
+  }
+
+  async markHrInboxSeen(
+    id: string,
+    source: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    await this.hrConnections!.markInboxSeen(
+      await this.hrInboxSource(id, source, actor),
+      actor,
+    );
+    return { data: { id } };
+  }
+
+  async hrInboxForwardRecipients(
+    id: string,
+    source: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    return {
+      data: await this.hrConnections!.inboxForwardRecipients(
+        await this.hrInboxSource(id, source, actor),
+        actor,
+      ),
+    };
+  }
+
+  async forwardHrInboxRequest(
+    id: string,
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    const source = await this.hrInboxSource(
+      id,
+      (body as { source?: unknown } | null)?.source,
+      actor,
+    );
+    return {
+      data: await this.hrConnections!.forwardInbox(source, body, key, actor),
+    };
+  }
+
   async reviewHrWorkbenchRequest(
     id: string,
     input: { version: number; status: string },

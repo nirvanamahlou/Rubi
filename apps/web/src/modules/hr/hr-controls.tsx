@@ -168,6 +168,7 @@ export function HrTable({
   showOpenButton = false,
   showSelection = true,
   pinEmployeeColumns = false,
+  unreadIds,
 }: {
   data: HrPreviewDataset;
   onOpen?: (index: number) => void;
@@ -183,6 +184,7 @@ export function HrTable({
   showOpenButton?: boolean;
   showSelection?: boolean;
   pinEmployeeColumns?: boolean;
+  unreadIds?: ReadonlySet<string>;
 }) {
   const localSelection = useHrRowSelection(data.columns.join('|'));
   const selected = selectedIds ?? localSelection.selectedIds;
@@ -274,6 +276,9 @@ export function HrTable({
               return (
                 <tr
                   key={recordKey(data, index) || index}
+                  data-unread={
+                    unreadIds?.has(recordKey(data, index)) || undefined
+                  }
                   data-attendance-inactive={
                     data.inactiveRecordIds?.includes(recordKey(data, index)) ||
                     undefined

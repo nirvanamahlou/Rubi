@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   HR_CONNECTION_TARGETS,
@@ -15,9 +16,11 @@ import {
   type HrConnectionList,
   type HrConnectionStatus,
   type HrConnectionTarget,
+  type WorkbenchRequestItemV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
+import { IamService } from '../iam/iam.service';
 import * as validate from './hr.validation';
 
 type Tx = Prisma.TransactionClient;
@@ -53,7 +56,18 @@ interface SharedContent {
   requesterUserId: string;
   dueAt: string;
   response: string | null;
+  recipientUserId?: string;
+  sourceId?: string;
 }
+export interface HrInboxSource {
+  id: string;
+  branchId: string;
+  version: number;
+  code: string;
+  title: string;
+  native: boolean;
+}
+const seenPrefix = 'inbox-seen:';
 const pending = ['SUBMITTED', 'IN_REVIEW'];
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -83,6 +97,7 @@ export function assertHrConnectionTransition(current: string, next: string) {
 export class HrConnectionsService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional() @Inject(IamService) private readonly iam?: IamService,
   ) {}
 
   private scope(actor: AuthenticatedActor): Prisma.HrRecordWhereInput {
@@ -96,6 +111,15 @@ export class HrConnectionsService {
       tab: {
         in: canSendHrConnection(actor) ? [...HR_CONNECTION_TARGETS] : targets,
       },
+      ...(!canSendHrConnection(actor) && targets.includes('tasks')
+        ? {
+            OR: [
+              { tab: { not: 'tasks' } },
+              { data: { path: ['recipientUserId'], equals: Prisma.AnyNull } },
+              { data: { path: ['recipientUserId'], equals: actor.userId } },
+            ],
+          }
+        : {}),
     };
   }
   private async row(tx: Tx, id: string, actor: AuthenticatedActor) {
@@ -112,6 +136,7 @@ export class HrConnectionsService {
   private mayRespond(row: ResponseCandidate, actor: AuthenticatedActor) {
     const data = row.data as unknown as SharedContent;
     return (
+      !data.recipientUserId &&
       hrReceivingTargets(actor).includes(row.tab as HrConnectionTarget) &&
       data.requesterUserId !== actor.userId &&
       row.employee?.userId !== actor.userId
@@ -129,7 +154,9 @@ export class HrConnectionsService {
       sourceCode: data.sourceCode,
       sourceVersion: data.sourceVersion,
       sourceHref: canSendHrConnection(actor)
-        ? `/hr?record=${encodeURIComponent(row.parentId!)}`
+        ? row.parentId
+          ? `/hr?record=${encodeURIComponent(row.parentId)}`
+          : '/hr?section=requests'
         : null,
       employeeLabel: data.employeeLabel,
       status: row.status as HrConnectionStatus,
@@ -347,6 +374,172 @@ export class HrConnectionsService {
     }
     throw new ConflictException('ثبت انجام نشد.');
   }
+  private requireInboxAccess(actor: AuthenticatedActor) {
+    if (
+      !actor.permissions.includes('hr.read') &&
+      !actor.permissions.includes('hr.manage')
+    )
+      throw new ForbiddenException(
+        'مجوز مشاهده کارتابل منابع انسانی وجود ندارد.',
+      );
+  }
+
+  async inboxSeen(actor: AuthenticatedActor) {
+    this.requireInboxAccess(actor);
+    const rows = await this.database.client.hrCommand.findMany({
+      where: { actorId: actor.userId, key: { startsWith: seenPrefix } },
+      select: { key: true },
+    });
+    return rows.map(({ key }) => key.slice(seenPrefix.length));
+  }
+
+  async markInboxSeen(source: HrInboxSource, actor: AuthenticatedActor) {
+    this.requireInboxAccess(actor);
+    if (!actor.branchIds.includes(source.branchId))
+      throw new ForbiddenException();
+    const key = seenPrefix + source.id;
+    await this.database.client.hrCommand.upsert({
+      where: { actorId_key: { actorId: actor.userId, key } },
+      update: {},
+      create: { actorId: actor.userId, key, hash: 'seen', result: {} },
+    });
+  }
+
+  async inboxForwardRecipients(
+    source: HrInboxSource,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertForwardAccess(source, actor);
+    return this.iam!.leaveSubstituteUsers(source.branchId);
+  }
+
+  private assertForwardAccess(
+    source: HrInboxSource,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !canSendHrConnection(actor) ||
+      !actor.branchIds.includes(source.branchId)
+    )
+      throw new ForbiddenException(
+        'مجوز بازارسال درخواست منابع انسانی وجود ندارد.',
+      );
+  }
+
+  async forwardInbox(
+    source: HrInboxSource,
+    body: unknown,
+    key: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertForwardAccess(source, actor);
+    const input = validate.object(body, [
+      'source',
+      'target',
+      'recipientId',
+      'message',
+    ]);
+    if (input.target !== 'tasks' && input.target !== 'finance')
+      throw new BadRequestException('مقصد بازارسال معتبر نیست.');
+    const target = input.target;
+    const recipientUserId =
+      target === 'tasks' ? validate.uuid(input.recipientId) : undefined;
+    const message = validate.text(input.message, 'متن قابل اشتراک', 2000);
+    return this.command(
+      actor,
+      key,
+      {
+        operation: 'inbox.forward',
+        sourceId: source.id,
+        target,
+        recipientUserId,
+        message,
+      },
+      async (tx) => {
+        if (
+          recipientUserId &&
+          !(await this.iam!.leaveSubstituteUsers(source.branchId, tx)).some(
+            ({ id }) => id === recipientUserId,
+          )
+        )
+          throw new BadRequestException('کاربر گیرنده در این شعبه فعال نیست.');
+        const dueAt = new Date(Date.now() + 7 * 86400000).toISOString();
+        const data: SharedContent = {
+          title: source.title,
+          message,
+          sourceId: source.id,
+          sourceCode: source.code,
+          sourceVersion: source.version,
+          ...(recipientUserId ? { recipientUserId } : {}),
+          employeeLabel: null,
+          requesterUserId: actor.userId,
+          dueAt,
+          response: null,
+        };
+        const row = await tx.hrRecord.create({
+          data: {
+            branchId: source.branchId,
+            parentId: source.native ? source.id : null,
+            code: `HR-LINK-${randomUUID().slice(0, 16).toUpperCase()}`,
+            section: 'connections',
+            tab: target,
+            status: 'SUBMITTED',
+            values: [],
+            data: json(data),
+            expiresAt: new Date(dueAt),
+          },
+        });
+        await tx.hrAuditEvent.create({
+          data: {
+            branchId: source.branchId,
+            actorId: actor.userId,
+            recordId: row.id,
+            action: 'connection.inbox.forward',
+            version: 1,
+            toStatus: 'SUBMITTED',
+            changes: json({ sourceId: source.id, target, recipientUserId }),
+          },
+        });
+        return { id: row.id };
+      },
+    );
+  }
+
+  async inboxForwardedToUser(
+    actor: AuthenticatedActor,
+  ): Promise<WorkbenchRequestItemV1[]> {
+    const rows = await this.database.client.hrRecord.findMany({
+      where: {
+        section: 'connections',
+        tab: 'tasks',
+        branchId: { in: actor.branchIds },
+        deletedAt: null,
+        status: { not: 'CANCELLED' },
+        data: { path: ['recipientUserId'], equals: actor.userId },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
+    return rows.map((row) => {
+      const data = row.data as unknown as SharedContent;
+      return {
+        id: row.id,
+        trackingNumber: data.sourceCode,
+        subject: data.title,
+        description: data.message,
+        destinationUnit: 'بازارسال منابع انسانی',
+        status: 'NEW',
+        priority: 'NORMAL',
+        nextActionAt: data.dueAt,
+        updatedAt: row.updatedAt.toISOString(),
+        direction: 'incoming',
+        senderName: 'منابع انسانی',
+        recipientName: null,
+        source: 'hr',
+      };
+    });
+  }
+
   async create(body: unknown, key: unknown, actor: AuthenticatedActor) {
     if (!canSendHrConnection(actor))
       throw new ForbiddenException(

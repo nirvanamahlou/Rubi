@@ -163,3 +163,41 @@ describe('Finance referral projection', () => {
     expect(create).not.toHaveBeenCalled();
   });
 });
+
+describe('HR inbox forwarding', () => {
+  const source = {
+    id: 'request',
+    branchId: 'b',
+    version: 1,
+    code: 'HR-1',
+    title: 'Synthetic',
+    native: false,
+  };
+  const sender = actor(['hr.manage', 'hr.approve', 'hr.sensitive']);
+
+  it('denies forwarding outside the source branch or without sharing authority', async () => {
+    const service = new HrConnectionsService({} as DatabaseService);
+    await expect(
+      service.forwardInbox(source, {}, '', actor(['hr.manage'])),
+    ).rejects.toThrow('مجوز');
+    await expect(
+      service.forwardInbox({ ...source, branchId: 'other' }, {}, '', sender),
+    ).rejects.toThrow('مجوز');
+  });
+
+  it('queries personal referrals by both recipient and allowed branch', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const service = new HrConnectionsService({
+      client: { hrRecord: { findMany } },
+    } as unknown as DatabaseService);
+    await expect(service.inboxForwardedToUser(actor([]))).resolves.toEqual([]);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: { in: ['b'] },
+          data: { path: ['recipientUserId'], equals: 'u' },
+        }),
+      }),
+    );
+  });
+});

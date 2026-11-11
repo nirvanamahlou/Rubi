@@ -549,6 +549,41 @@ export class CustomerAffairsController {
   ) {
     return this.service.removeHrWorkbenchRequest(id, req.actor);
   }
+  @Get('workbench/hr-requests/seen')
+  @Header('Cache-Control', 'private, no-store')
+  hrInboxSeen(@Req() req: AuthenticatedRequest) {
+    return this.service.hrInboxSeen(req.actor);
+  }
+
+  @Post('workbench/hr-requests/:id/seen')
+  markHrInboxSeen(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('source') source: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.markHrInboxSeen(id, source, req.actor);
+  }
+
+  @Get('workbench/hr-requests/:id/forward-recipients')
+  @Header('Cache-Control', 'private, no-store')
+  hrInboxForwardRecipients(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('source') source: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.hrInboxForwardRecipients(id, source, req.actor);
+  }
+
+  @Post('workbench/hr-requests/:id/forward')
+  forwardHrInboxRequest(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.forwardHrInboxRequest(id, body, key, req.actor);
+  }
+
   @Get('workbench/hr-requests')
   @Header('Cache-Control', 'private, no-store')
   hrWorkbenchRequests(@Req() req: AuthenticatedRequest) {
