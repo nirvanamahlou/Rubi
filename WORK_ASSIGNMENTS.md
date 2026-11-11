@@ -12339,3 +12339,7 @@ Reserve the leave policy edit command and form payload, plus a focused regressio
 ## HR-ATTENDANCE-STATUS-EDITOR — PC-B — IN_PROGRESS
 
 Reserve single-day attendance status controls and scoped command, override preservation during recalculation, additive HR data contract and focused tests. Preserve bulk activation, original punches, authorization and closed-period checks.
+
+## HR-LEGACY-REQUEST-FIELDS-1111 — PC-B — READY_FOR_REVIEW
+
+Reserve legacy request row decoding in HR leave policy and attendance configuration, including focused regressions. Preserve persisted row formats and calculation behavior.

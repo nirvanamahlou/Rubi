@@ -73,3 +73,5 @@ HR_PRIVATE_ENCRYPTION_KEY_ID to the new identifier on writers. Keep the legacy
 key available for older ciphertext and command fingerprints. These settings
 are secrets and belong in the runtime secret store. Existing deployments can
 continue using the single key configuration.
+
+- Named adapters now decode daily and hourly leave request rows and classify approved attendance credit components. Other positional HR record types remain open.
