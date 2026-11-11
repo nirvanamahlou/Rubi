@@ -1,5 +1,9 @@
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
+## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
+
+PostgreSQL aggregates unread counts by destination and selects a bounded feed with the same authorization and assignment priority. Seven focused tests, API typecheck, scoped lint, and an isolated PostgreSQL check passed.
+
 ## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
 
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
