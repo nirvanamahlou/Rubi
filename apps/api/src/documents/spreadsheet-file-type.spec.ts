@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { zipSync, strToU8 } from 'fflate';
 import {
@@ -8,6 +9,7 @@ import {
   documentMimeTypes,
 } from '@nora/contracts/upload-formats';
 import { spreadsheetFileType } from './spreadsheet-file-type';
+import { spreadsheetZipTypeFromRanges } from './spreadsheet-zip-ranges';
 import { validateUploadFile } from './documents.validation';
 const xlsx = (extra: Record<string, Uint8Array> = {}) =>
   Buffer.from(
@@ -59,6 +61,40 @@ it('rejects expansion bombs before extracting archive contents', () => {
     spreadsheetFileType(xlsx({ 'xl/huge.xml': new Uint8Array(500000) })),
   ).toBeNull();
 });
+it('recognizes a large ordinary XLSX while reading only its metadata ranges', async () => {
+  const bytes = xlsx({ 'xl/media/image.bin': randomBytes(2 * 1024 * 1024) });
+  const ranges: number[] = [];
+  const found = await spreadsheetZipTypeFromRanges(
+    bytes.length,
+    async (offset, length) => {
+      ranges.push(length);
+      return bytes.subarray(offset, offset + length);
+    },
+  );
+  expect(found).toBe(spreadsheetFileType(bytes));
+  expect(found).toBe(XLSX_MIME);
+  expect(ranges.length).toBeGreaterThan(1);
+  expect(ranges.reduce((sum, length) => sum + length, 0)).toBeLessThan(
+    bytes.length / 4,
+  );
+});
+
+it.each([
+  xlsx({ 'xl/vbaProject.bin': strToU8('synthetic macro label') }),
+  xlsx({ 'xl/huge.xml': new Uint8Array(500000) }),
+  Buffer.from(zipSync({ 'word/document.xml': strToU8('<document/>') })),
+])(
+  'matches the existing spreadsheet rejection for a non-workbook or disallowed ZIP',
+  async (bytes) => {
+    expect(
+      await spreadsheetZipTypeFromRanges(bytes.length, async (offset, length) =>
+        bytes.subarray(offset, offset + length),
+      ),
+    ).toBeNull();
+    expect(spreadsheetFileType(bytes)).toBeNull();
+  },
+);
+
 it.each([
   ['receipt.JFIF', 'image/jfif', 'image/jpeg'],
   [

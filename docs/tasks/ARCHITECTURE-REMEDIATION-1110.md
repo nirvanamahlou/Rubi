@@ -78,6 +78,10 @@ when only selected paths are addressed.
   export paths now stream output from the rendering worker into this storage
   writer. The worker sends one chunk at a time and waits for its consumption.
   Report rows and multipart uploads still produce buffered inputs.
+- Ordinary staged XLSX archives inspect bounded authenticated ZIP metadata
+  ranges. Each range verifies the full object. ZIP64, large metadata and OLE
+  continue using the compatibility buffer.
+
 - Master Data logo deduplication uses an exact scoped document projection
   and bounded stored-object authentication before reusing the existing file.
 
