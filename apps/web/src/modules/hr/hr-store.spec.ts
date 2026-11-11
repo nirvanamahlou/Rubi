@@ -69,13 +69,16 @@ it('shares one pending bootstrap and increments the revision once', async () => 
 
 it('reloads after a commit and ignores any older response', async () => {
   const store = useHrStore();
-  const old = Promise.withResolvers<HrBootstrapDto>();
+  let resolveOld!: (value: HrBootstrapDto) => void;
+  const old = new Promise<HrBootstrapDto>((resolve) => {
+    resolveOld = resolve;
+  });
   const fresh = bootstrap('after-commit');
-  mocks.bootstrap.mockReturnValueOnce(old.promise).mockResolvedValueOnce(fresh);
+  mocks.bootstrap.mockReturnValueOnce(old).mockResolvedValueOnce(fresh);
   const prior = store.refresh();
   await Promise.resolve();
   await store.mutated();
-  old.resolve(bootstrap('before-commit'));
+  resolveOld(bootstrap('before-commit'));
   await prior;
   expect(mocks.bootstrap).toHaveBeenCalledTimes(2);
   expect(mocks.state).toEqual([fresh, '', false, 1]);
