@@ -45,7 +45,9 @@ function csv(result: TravelReportResultV1, reportName: string) {
     '',
     result.columns.map((column) => csvCell(column.label)).join(','),
   );
-  for (const row of result.rows)
+  const chunks = [Buffer.from('\uFEFF' + lines.join('\r\n'), 'utf8')];
+  lines.length = 0;
+  for (const row of result.rows) {
     lines.push(
       result.columns
         .map((column) => {
@@ -56,7 +58,14 @@ function csv(result: TravelReportResultV1, reportName: string) {
         })
         .join(','),
     );
-  return Buffer.from(`\uFEFF${lines.join('\r\n')}`, 'utf8');
+    if (lines.length === 256) {
+      chunks.push(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
+      lines.length = 0;
+    }
+  }
+  if (lines.length)
+    chunks.push(Buffer.from('\r\n' + lines.join('\r\n'), 'utf8'));
+  return chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks);
 }
 
 const exportFilterLabels: Readonly<Record<string, string>> = {

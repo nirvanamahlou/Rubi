@@ -93,6 +93,16 @@ describe('ReportingExportService storage boundary', () => {
     expect(sheet).toContain('Synthetic &lt;row&gt; &amp; 479');
     expect(sheet).toContain('min="2" max="2" width="42"');
     expect(table).toContain('ref="A7:B487"');
+
+    const csv = service.build('CSV', result, 'Synthetic report');
+    const lines = csv.buffer.toString('utf8').split('\r\n');
+    expect(lines[0]?.charCodeAt(0)).toBe(0xfeff);
+    expect(lines[7]).toBe('Label,Note');
+    expect(lines.slice(8)).toEqual(
+      rows.map((row) =>
+        [row.primaryDimension, row.sourceValues.note].join(','),
+      ),
+    );
   }, 30000);
 
   it('uses the compact report, timestamp, filters and banded dataset Excel table', () => {
