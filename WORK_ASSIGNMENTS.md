@@ -12420,6 +12420,10 @@ Reserve legacy request row decoding in HR leave policy and attendance configurat
 
 Reserve the HR workspace bootstrap request lifecycle and focused Web tests. A committed mutation must start a fresh read.
 
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B — READY_FOR_CI
+
+Reserve the incoming-letter upload adapter and its test. Return once the file and metadata are saved, with existing owner and access rules and background scan scheduling.
+
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
