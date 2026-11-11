@@ -57,8 +57,8 @@ import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
 
 import {
-  isClosedFinanceItem,
-  filterFinanceInbox,
+  compareFinanceQueueOrder,
+  selectFinanceInboxPage,
   validateInboxQuery,
 } from './finance-inbox-query';
 
@@ -167,39 +167,20 @@ export class FinanceInboxService {
     actor: AuthenticatedActor,
   ): Promise<FinanceInboxPageV1> {
     const { page, pageSize } = validateInboxQuery(query, actor);
-    const result = await this.readQueue(actor, !!query.approvalGroup);
-    const items = filterFinanceInbox(result.items, query);
-    const open = items.filter((item) => !isClosedFinanceItem(item));
-    return {
-      ...result,
-      items: await this.enrichFx(
-        items.slice((page - 1) * pageSize, page * pageSize),
-        actor,
-      ),
-      total: items.length,
+    const result = await this.readQueue(actor, !!query.approvalGroup, false);
+    const selected = selectFinanceInboxPage(
+      result.items,
+      query,
       page,
       pageSize,
-      summary: {
-        openCount: open.length,
-        overdueCount: open.filter(
-          (item) => item.dueAt && item.dueAt < result.generatedAt,
-        ).length,
-        receiptCount: open.filter(
-          (item) => item.source === 'SALES' || item.direction === 'RECEIPT',
-        ).length,
-        paymentCount: open.filter(
-          (item) =>
-            [
-              'PAYMENT_REQUEST',
-              'PAYROLL_REQUEST',
-              'OPERATIONAL_REQUEST',
-            ].includes(item.kind) &&
-            item.amount &&
-            item.direction !== 'RECEIPT' &&
-            item.direction !== 'NON_CASH' &&
-            ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status),
-        ).length,
-      },
+      result.generatedAt,
+    );
+    return {
+      ...result,
+      ...selected,
+      items: await this.enrichFx(selected.items, actor),
+      page,
+      pageSize,
     };
   }
 
@@ -215,6 +196,7 @@ export class FinanceInboxService {
   private async readQueue(
     actor: AuthenticatedActor,
     includeCompleted: boolean,
+    ordered = true,
   ) {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
@@ -644,10 +626,8 @@ export class FinanceInboxService {
         sourceVersion: correction.sourceVersion,
         origin: 'PERSISTED_SOURCE',
       })),
-    ].sort((left, right) => {
-      const due = (left.dueAt ?? '9999').localeCompare(right.dueAt ?? '9999');
-      return due || right.createdAt.localeCompare(left.createdAt);
-    });
+    ];
+    if (ordered) items.sort(compareFinanceQueueOrder);
 
     const sources: FinanceInboxSourceStateV1[] = [
       this.sourceState(
