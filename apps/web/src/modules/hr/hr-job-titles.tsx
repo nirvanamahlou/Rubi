@@ -1,4 +1,5 @@
 'use client';
+import { FilePenLine, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { HrRecordDto } from '@nora/contracts';
 import {
@@ -88,13 +89,13 @@ export function HrJobTitles({
                       aria-label={`ویرایش ${title.name}`}
                       onClick={() => onForm({ source, record })}
                     >
-                      ویرایش
+                      <FilePenLine className="size-4" aria-hidden="true" />
                     </HrButton>
                     <HrButton
                       aria-label={`حذف ${title.name}`}
                       onClick={() => setRemoving(record)}
                     >
-                      حذف
+                      <Trash2 className="size-4" aria-hidden="true" />
                     </HrButton>
                   </>
                 ) : null;

@@ -12441,3 +12441,7 @@ Reserve the incoming-letter upload adapter and its test. Return once the file an
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B — READY_FOR_CI
+
+Reserve job title table action icons.
