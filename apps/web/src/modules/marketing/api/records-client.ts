@@ -13,6 +13,8 @@ import {
   type MarketingCampaignPageQueryV1,
   type MarketingPromotionPageQueryV1,
   type MarketingPromotionPageV1,
+  type MarketingSegmentPageQueryV1,
+  type MarketingSegmentPageV1,
   type MarketingSourceCountsResponseV1,
 } from '@nora/contracts';
 
@@ -306,6 +308,15 @@ export const marketingApi = {
   assets: (kind?: MarketingAssetKind) =>
     request<{ data: MarketingAssetViewV1[] }>(
       `/marketing/assets${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`,
+    ),
+  segmentPage: (query: MarketingSegmentPageQueryV1) =>
+    request<MarketingSegmentPageV1>(
+      '/marketing/assets/segments?' +
+        new URLSearchParams(
+          Object.entries(query).flatMap(([key, value]) =>
+            value == null ? [] : [[key, String(value)]],
+          ),
+        ),
     ),
   promotionPage: (query: MarketingPromotionPageQueryV1) =>
     request<MarketingPromotionPageV1>(

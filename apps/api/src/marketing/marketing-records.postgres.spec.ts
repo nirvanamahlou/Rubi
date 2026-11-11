@@ -235,6 +235,80 @@ describe.skipIf(!enabled)(
       ).toBe(0);
     });
 
+    it('pages segments with literal normalized search and exact scoped totals', async () => {
+      const prefix = 'گروه كيان %-' + suffix;
+      const timestamp = new Date('2099-01-15T00:00:00Z');
+      const rows = Array.from({ length: 27 }, (_, index) => ({
+        id: randomUUID(),
+        branchId,
+        kind: 'SEGMENT',
+        name: prefix + '-' + index,
+        status: index === 26 ? 'PAUSED' : 'ACTIVE',
+        payload: { rules: [] },
+        createdByUserId: userId,
+        updatedByUserId: userId,
+        updatedAt: timestamp,
+      }));
+      await client.marketingAsset.createMany({
+        data: [
+          ...rows,
+          {
+            ...rows[0]!,
+            id: randomUUID(),
+            name: prefix + '-deleted',
+            status: 'DELETED',
+          },
+          { ...rows[0]!, id: randomUUID(), kind: 'SOURCE' },
+        ],
+      });
+      try {
+        const query = {
+          search: 'کیان %-' + suffix,
+          status: 'ACTIVE',
+        } as const;
+        const first = await service.listSegments(query, promotionActor);
+        const last = await service.listSegments(
+          { ...query, page: 99 },
+          promotionActor,
+        );
+        expect(first).toMatchObject({ page: 1, total: 26 });
+        expect(last).toMatchObject({ page: 2, total: 26 });
+        expect(first.data).toHaveLength(25);
+        expect(
+          (
+            await service.listSegments(
+              { search: suffix + '-0 فعال' },
+              promotionActor,
+            )
+          ).data.map(({ id }) => id),
+        ).toEqual([rows[0]!.id]);
+        expect(last.data).toHaveLength(1);
+        expect([...first.data, ...last.data].map(({ id }) => id)).toEqual(
+          rows
+            .slice(0, 26)
+            .map(({ id }) => id)
+            .sort()
+            .reverse(),
+        );
+        expect(
+          await service.listSegments(query, {
+            ...promotionActor,
+            branchIds: [randomUUID()],
+          }),
+        ).toEqual({ data: [], page: 1, total: 0 });
+        expect(
+          await service.listSegments(
+            { search: prefix + '_ فعال' },
+            promotionActor,
+          ),
+        ).toEqual({ data: [], page: 1, total: 0 });
+      } finally {
+        await client.marketingAsset.deleteMany({
+          where: { branchId, name: { startsWith: prefix } },
+        });
+      }
+    });
+
     it('pages filtered promotions without exposing another branch or deleted rows', async () => {
       const prefix = 'Pagination-' + suffix;
       const timestamp = new Date('2099-01-15T00:00:00Z');
