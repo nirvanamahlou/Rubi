@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertLeaveDeadline,
+  assertHourlyLeaveCount,
   assertMonthlyLeaveQuota,
   leavePolicyValues,
   leaveUsage,
@@ -126,4 +127,22 @@ describe('monthly leave policy', () => {
       ),
     ).toThrow();
   });
+});
+
+it('allows four hourly requests per Persian month across leave types', () => {
+  const hourly = {
+    ...leave,
+    mode: 'ساعتی' as const,
+    startTime: '10:00',
+    endTime: '11:00',
+  };
+  const previous = [hourly, hourly, hourly, hourly];
+  expect(() => assertHourlyLeaveCount(hourly, previous.slice(1))).not.toThrow();
+  expect(() => assertHourlyLeaveCount(hourly, previous)).toThrow();
+  expect(() =>
+    assertHourlyLeaveCount(
+      { ...hourly, from: '2026-12-06', to: '2026-12-06' },
+      previous,
+    ),
+  ).not.toThrow();
 });

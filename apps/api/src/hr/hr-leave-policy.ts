@@ -140,3 +140,27 @@ export function assertMonthlyLeaveQuota(
     if ((totals.get(month) ?? 0) + amount > limit + 0.000001)
       throw new ConflictException('سهمیه ماهانه این نوع مرخصی کافی نیست.');
 }
+
+export const MONTHLY_HOURLY_LEAVE_LIMIT = 4;
+
+export function hourlyLeaveCount(
+  month: string,
+  leaves: WorkbenchLeaveInputV1[],
+) {
+  return leaves.filter(
+    (leave) => leave.mode === 'ساعتی' && leaveUsage(leave).has(month),
+  ).length;
+}
+
+export function assertHourlyLeaveCount(
+  leave: WorkbenchLeaveInputV1,
+  previous: WorkbenchLeaveInputV1[],
+) {
+  if (leave.mode !== 'ساعتی') return;
+  for (const month of leaveUsage(leave).keys()) {
+    if (hourlyLeaveCount(month, previous) >= MONTHLY_HOURLY_LEAVE_LIMIT)
+      throw new ConflictException(
+        'حداکثر چهار نوبت مرخصی ساعتی در ماه مجاز است.',
+      );
+  }
+}
