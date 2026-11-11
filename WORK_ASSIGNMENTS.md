@@ -1307,6 +1307,10 @@ Reserve the hotel currency field in the existing Master Data editable-field cata
 
 Reserve CSV encoding and its byte-level regression. Preserve export bytes and storage behavior.
 
+## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
+
+Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
+
 ## REPORTING-DURABLE-EXPORT-1110 (PC-B)
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.

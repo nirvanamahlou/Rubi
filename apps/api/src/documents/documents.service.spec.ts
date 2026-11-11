@@ -1512,7 +1512,7 @@ describe('DocumentsService security and persistence flow', () => {
   });
 
   it.each(['PREVIEW', 'DOWNLOAD'] as const)(
-    'keeps step-up verification while removing only the preview scan wait (%s)',
+    'keeps configured step-up verification without a scan wait (%s)',
     async (purpose) => {
       repository.findDetail.mockResolvedValue(
         row({
@@ -1538,15 +1538,8 @@ describe('DocumentsService security and persistence flow', () => {
         reader,
         {},
       );
-      if (purpose === 'PREVIEW') {
-        await expect(request).resolves.toMatchObject({
-          data: { purpose: 'PREVIEW' },
-        });
-        expect(iamStepUp.verifyStepUp).toHaveBeenCalled();
-      } else {
-        await expect(request).rejects.toBeInstanceOf(ForbiddenException);
-        expect(iamStepUp.verifyStepUp).not.toHaveBeenCalled();
-      }
+      await expect(request).resolves.toMatchObject({ data: { purpose } });
+      expect(iamStepUp.verifyStepUp).toHaveBeenCalled();
     },
   );
 
@@ -2067,12 +2060,11 @@ describe('DocumentsService security and persistence flow', () => {
         expect(repository.appendAudit).toHaveBeenCalledWith(
           expect.objectContaining({ outcome: 'SUCCESS' }),
         );
-        // The generic document route does not gain this exception.
         await expect(
           service.download(receipt.id, reader, {
             sensitiveReason: 'بررسی رسید',
           }),
-        ).rejects.toThrow();
+        ).resolves.toMatchObject({ mimeType: 'application/pdf' });
         await expect(
           service.download(
             receipt.id,
@@ -2085,13 +2077,13 @@ describe('DocumentsService security and persistence flow', () => {
     },
   );
 
-  it('fails closed for an unscanned download and appends a denial audit', async () => {
+  it('denies a download without file permission even while scan is pending', async () => {
     repository.findDetail.mockResolvedValue(row());
     repository.appendAudit.mockResolvedValue({});
 
     await expect(
       service.download(row().id, actor, { ipAddress: '192.0.2.44' }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.appendAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'documents.download',
@@ -2135,7 +2127,38 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.openQuarantined).toHaveBeenCalledOnce();
   });
 
-  it('does not stream a clean non-image through the preview endpoint', async () => {
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ] as const)(
+    'opens an authorized archive PDF and allows its download with status %s',
+    async (scanStatus) => {
+      const document = row({ confidentiality: 'INTERNAL', scanStatus });
+      repository.findDetail.mockResolvedValue(document);
+      repository.appendAudit.mockResolvedValue({});
+      storage.openQuarantined.mockImplementation(async () =>
+        Readable.from([Buffer.from('%PDF-1.4')]),
+      );
+      const reader: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.download',
+        ],
+      };
+      await expect(
+        service.preview(document.id, reader, {}),
+      ).resolves.toMatchObject({ mimeType: 'application/pdf' });
+      await expect(
+        service.download(document.id, reader, {}),
+      ).resolves.toMatchObject({ mimeType: 'application/pdf' });
+      expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('does not stream an unsupported spreadsheet through the preview endpoint', async () => {
     const previewActor: AuthenticatedActor = {
       ...actor,
       permissions: [
@@ -2145,7 +2168,11 @@ describe('DocumentsService security and persistence flow', () => {
       ],
     };
     repository.findDetail.mockResolvedValue(
-      row({ mimeType: 'application/pdf', scanStatus: 'CLEAN' }),
+      row({
+        mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        scanStatus: 'CLEAN',
+      }),
     );
     repository.appendAudit.mockResolvedValue({});
 
