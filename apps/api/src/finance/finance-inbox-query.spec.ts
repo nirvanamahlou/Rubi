@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthenticatedActor, FinanceInboxItemV1 } from '@nora/contracts';
 import {
+  compareFinanceQueueOrder,
   decimalUnits,
   filterFinanceInbox,
+  selectFinanceInboxPage,
   validateInboxQuery,
 } from './finance-inbox-query';
 const actor = { branchIds: ['branch-a'] } as AuthenticatedActor;
@@ -197,6 +199,95 @@ describe('Finance inbox ordering before pagination', () => {
         sortBy: 'amount',
       }).map((r) => r.id),
     ).toEqual(['a', 'b']);
+  });
+});
+
+describe('bounded Finance inbox page selection', () => {
+  const generatedAt = '2026-10-08T00:00:00Z';
+
+  it.each(['createdAt', 'dueAt', 'amount'] as const)(
+    'matches full ordering for %s across shallow, deep and empty pages',
+    (sortBy) => {
+      const rows: FinanceInboxItemV1[] = Array.from(
+        { length: 112 },
+        (_, index) => ({
+          ...item,
+          id: String(index % 29),
+          description: String(index),
+          branchReference: index % 6 ? 'branch-a' : 'branch-b',
+          createdAt: `2026-10-0${(index % 4) + 1}T00:00:00Z`,
+          dueAt: index % 4 ? `2026-10-0${(index % 6) + 2}T00:00:00Z` : null,
+          amount:
+            index % 3
+              ? {
+                  amount: `9007199254740993.${(index % 17) + 10}`,
+                  currencyCode: index % 2 ? 'IRR' : 'USD',
+                }
+              : null,
+        }),
+      );
+      for (const sortDirection of ['asc', 'desc'] as const) {
+        const query = {
+          sortBy,
+          sortDirection,
+          branchId: 'branch-a',
+          person: 'کریمی',
+        };
+        const expected = filterFinanceInbox(
+          [...rows].sort(compareFinanceQueueOrder),
+          query,
+        );
+        for (const page of [1, 2, 7, 14, 30]) {
+          const selected = selectFinanceInboxPage(
+            rows,
+            query,
+            page,
+            7,
+            generatedAt,
+          );
+          expect(selected.items).toEqual(
+            expected.slice((page - 1) * 7, page * 7),
+          );
+          expect(selected.total).toBe(expected.length);
+        }
+      }
+    },
+  );
+
+  it('computes summary over all matching rows, including rows outside the page', () => {
+    const rows: FinanceInboxItemV1[] = [
+      { ...item, id: 'payment', direction: 'PAYMENT', status: 'PAYING' },
+      {
+        ...item,
+        id: 'receipt',
+        source: 'SALES',
+        kind: 'RECEIPT_VERIFICATION',
+        status: 'NEW',
+      },
+      {
+        ...item,
+        id: 'return',
+        source: 'FINANCE',
+        direction: 'RECEIPT',
+        status: 'NEW',
+        dueAt: null,
+      },
+      { ...item, id: 'non-cash', direction: 'NON_CASH', dueAt: generatedAt },
+      { ...item, id: 'paid', direction: 'PAYMENT', status: 'PAID' },
+      { ...item, id: 'other-branch', branchReference: 'branch-b' },
+    ];
+    expect(
+      selectFinanceInboxPage(rows, { branchId: 'branch-a' }, 9, 1, generatedAt),
+    ).toEqual({
+      items: [],
+      total: 5,
+      summary: {
+        openCount: 4,
+        overdueCount: 2,
+        receiptCount: 2,
+        paymentCount: 1,
+      },
+    });
   });
 });
 

@@ -9880,3 +9880,5 @@ HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the lock
 HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance labels as audited overrides. Automatic mode restores the latest calculated status and bulk activation preserves the override. Source punches and existing authorization remain intact.
 
 - HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
+
+- Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
