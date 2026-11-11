@@ -433,10 +433,6 @@ COMPUTER_ID=PC-A; branch codex/pc-a-package-currency-select-1102 from develop98e
 
 Delivered searchable code/name currency choices using the complete active Sales selection directory; arbitrary typed values cannot update price fields. Loading/failure disables currency selection with retry; legacy unavailable currency codes remain visible and unchanged. Amounts and commission modes retain their existing behavior.22 focused field/workspace/reference/i18n regressions pass; scoped lint, Web typecheck and production build plus final-head hosted checks gate owner-authorized merge. No migration/API/dependency/runtime changes. Source freezes on push and releases on verified merge.
 
-## FINANCE-INVOICE-REVISION-READ-1111 — PC-B — READY_FOR_CI
-
-Reserve the latest procurement invoice state projection for the Finance inbox and scoped tests. Preserve handoff version matching and read scope. No migration or dependencies.
-
 ## FINANCE-INBOX-PURCHASES-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-finance-inbox-purchases-1102 from develop8220d4e5d. Owner authorizes account-or-paying-supplier selection, one purchase FX input per currency, complete Reservations purchase inbox, purchase/receipt action filters and develop merge after checks. Reserve Finance payment-source policy/service consumers, inbox service/query/controller and focused tests; Finance Web payment controls/FX capture/filter/client/tests, additive FinanceInboxQuery action-category contract, Reservations public pagination/history projection only as needed and own docs/translations. Producer Finance preserves source XOR, active purchase-currency or IRR branch accounts, validated suppliers and immutable FX snapshots; consumer Web ships compatible optional filters and grouped capture. Reservations remains purchase-data owner; Finance uses its public service. Investigate first-page100 truncation and superseded-intake evidence before selecting the bounded fix. No migration/dependency/accounting ownership changes, operational payment or deployment authorized. Prior same-owner source scopes are published; Accounting/partner dossier PC-B scopes stay untouched.
@@ -11621,6 +11617,10 @@ Update only the Workbench requests empty-state copy and its English translations
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
+
+## FINANCE-INVOICE-REVISION-READ-1111 — PC-B — READY_FOR_CI
+
+Reserve the latest procurement invoice state projection for the Finance inbox and scoped tests. Preserve handoff version matching and read scope. No migration or dependencies.
 
 ## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
 
