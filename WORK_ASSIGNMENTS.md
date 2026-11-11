@@ -1339,6 +1339,10 @@ Allow authenticated archive downloads and PDF previews while a scan is pending, 
 
 Reserve travel report fallback aggregation and native report source date maxima. Preserve eligibility, row ordering, currency totals and filter options.
 
+## NATIVE-SALES-STREAM-1111 — PC-B — READY_FOR_CI
+
+Reserve native Sales contract report streaming and grouped output state. Preserve authorized owner lookups, exact currencies, status and ordering.
+
 ## REPORTING-DURABLE-EXPORT-1110 (PC-B)
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.

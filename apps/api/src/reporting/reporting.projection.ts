@@ -196,7 +196,10 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
       pendingReservationOrderIds: Set<string>;
     }
   >();
-  const add = (fact: ReportingFactRow) => {
+  const add = (
+    fact: ReportingFactRow,
+    dimensionIdentity?: readonly [string, string],
+  ) => {
     if (!isEligibleTravelFact(input.code, fact)) return;
     sourceRowCount++;
     latestSourceTime = Math.max(latestSourceTime, fact.dataAsOf.getTime());
@@ -204,10 +207,8 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
     for (const [, key, values] of optionSets) values.add(text(fact[key]));
     const primaryDimension = text(fact[dimensions[0]]);
     const secondaryDimension = text(fact[dimensions[1]]);
-    const identity = input.dimensionIdentity?.(fact) ?? [
-      primaryDimension,
-      secondaryDimension,
-    ];
+    const identity = dimensionIdentity ??
+      input.dimensionIdentity?.(fact) ?? [primaryDimension, secondaryDimension];
     const key = JSON.stringify(identity);
     const current = groups.get(key) ?? {
       grainId: key,

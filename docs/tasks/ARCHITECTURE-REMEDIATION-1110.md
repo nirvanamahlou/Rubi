@@ -37,6 +37,10 @@ when only selected paths are addressed.
 
 ## Implementation evidence
 
+- Native Sales contract reports feed contract/currency pages into incremental
+  aggregators and cache the authorized display labels within one report run.
+  Grouped rows and other native report sources still materialize their data.
+
 - Daily penalties load policies and shared inputs once per branch and group
   punch reads for up to 50 attendance rows. Dense batches fall back to bounded
   per-day reads so the existing per-day data limit remains intact.
