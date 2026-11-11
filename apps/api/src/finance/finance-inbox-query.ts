@@ -1,3 +1,4 @@
+import { retainRankedRow } from '../common/retain-ranked-row';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -270,38 +271,6 @@ export function compareFinanceQueueOrder(
 
 type RankedItem = { item: FinanceInboxItemV1; index: number };
 
-/** Keeps the worst retained row at the root so a better row can replace it. */
-function retainFinanceRow(
-  heap: RankedItem[],
-  row: RankedItem,
-  capacity: number,
-  compare: (left: RankedItem, right: RankedItem) => number,
-) {
-  if (heap.length < capacity) {
-    let index = heap.length;
-    heap.push(row);
-    while (index > 0) {
-      const parent = Math.floor((index - 1) / 2);
-      if (compare(heap[parent]!, row) >= 0) break;
-      heap[index] = heap[parent]!;
-      index = parent;
-    }
-    heap[index] = row;
-    return;
-  }
-  if (compare(row, heap[0]!) >= 0) return;
-  let index = 0;
-  while (2 * index + 1 < heap.length) {
-    let child = 2 * index + 1;
-    if (child + 1 < heap.length && compare(heap[child + 1]!, heap[child]!) > 0)
-      child++;
-    if (compare(row, heap[child]!) >= 0) break;
-    heap[index] = heap[child]!;
-    index = child;
-  }
-  heap[index] = row;
-}
-
 export function selectFinanceInboxPage(
   items: readonly FinanceInboxItemV1[],
   query: FinanceInboxQueryV1,
@@ -327,7 +296,7 @@ export function selectFinanceInboxPage(
   for (const [index, item] of items.entries()) {
     if (!matches(item)) continue;
     total++;
-    retainFinanceRow(heap, { item, index }, capacity, compare);
+    retainRankedRow(heap, { item, index }, capacity, compare);
     if (isClosedFinanceItem(item)) continue;
     summary.openCount++;
     if (item.dueAt && item.dueAt < generatedAt) summary.overdueCount++;
