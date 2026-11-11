@@ -1528,6 +1528,7 @@ export class DocumentsService {
       file,
       this.incomingActor(actor),
       metadata,
+      'background',
     );
   }
   async incomingFile(

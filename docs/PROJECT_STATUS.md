@@ -9925,6 +9925,10 @@ HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance la
 
 - Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
 
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B
+
+Incoming letters return once the file and metadata are saved. Scan jobs remain scheduled in the background. Ninety-five focused API tests and scoped ESLint passed, including the incoming owner and file-access boundary.
+
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.

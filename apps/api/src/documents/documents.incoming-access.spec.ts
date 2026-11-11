@@ -50,6 +50,7 @@ describe('authenticated incoming-letter document boundary', () => {
       isIncomingLetter: true,
       branchId: 'branch',
     });
+    expect(upload.mock.calls[0]![4]).toBe('background');
   });
   it('limits owner choices for ordinary staff and preserves existing archive-owner grants', async () => {
     const s = service();
