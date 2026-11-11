@@ -1331,6 +1331,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
 
+## GROUPED-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
+
+Reserve report ranking and row construction for travel and native organization reports. Preserve full export ordering, exact currency amounts and distinct counts.
+
 ## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
 
 Reserve operational report page assembly, its regression, and extraction of the existing Finance ranking heap. Preserve exact sorting, totals, source metadata and exports.

@@ -37,6 +37,10 @@ when only selected paths are addressed.
 
 ## Implementation evidence
 
+- Travel and organization reports rank groups before producing display rows.
+  Preview ranks are bounded through the page endpoint. Exact currency totals,
+  distinct counts and export ordering are preserved.
+
 - Operational report previews reuse the Finance ranking heap and build
   output rows only for the selected page. Full exports preserve stable sort
   order and totals. Source producers still materialize their datasets.

@@ -73,6 +73,36 @@ it('combines currencies before pagination and counts each source item only once'
   ]);
 });
 
+it('builds mixed-currency preview rows in stable export order across groups', () => {
+  const facts = Array.from({ length: 18 }, (_, index) =>
+    fact({
+      id: String(index),
+      orderNumber: String(index),
+      agencyName: 'Agency ' + index,
+      currencyCode: index % 2 ? 'USD' : 'IRR',
+    }),
+  );
+  const input = {
+    code: 'agency_performance',
+    now: new Date('2026-09-13T00:00:00Z'),
+    query: {
+      filters: {},
+      page: 2,
+      pageSize: 5,
+      timezone: 'Asia/Tehran' as const,
+    },
+    facts,
+  };
+  const preview = buildTravelReportResult(input);
+  const all = buildTravelReportResult({ ...input, includeAllRows: true });
+  expect(preview.rows).toEqual(all.rows.slice(5, 10));
+  expect(preview.rows.map((row) => row.primaryDimension)).toEqual(
+    facts.slice(5, 10).map((row) => row.agencyName),
+  );
+  expect(preview.total).toBe(18);
+  expect(preview.totalsByCurrency).toEqual(all.totalsByCurrency);
+});
+
 it('projects a large single-pass input and retains the latest eligible source time', () => {
   const count = 150_000;
   const older = fact();
