@@ -1323,6 +1323,10 @@ Reserve CSV encoding and its byte-level regression. Preserve export bytes and st
 
 Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
 
+## REPORT-FACT-AGGREGATION-1111 — PC-B — READY_FOR_CI
+
+Reserve travel report fallback aggregation and native report source date maxima. Preserve eligibility, row ordering, currency totals and filter options.
+
 ## REPORTING-DURABLE-EXPORT-1110 (PC-B)
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.

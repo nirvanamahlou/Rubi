@@ -73,6 +73,34 @@ it('combines currencies before pagination and counts each source item only once'
   ]);
 });
 
+it('projects a large single-pass input and retains the latest eligible source time', () => {
+  const count = 150_000;
+  const older = fact();
+  const latest = fact({ dataAsOf: new Date('2026-09-11T10:00:00Z') });
+  const excluded = fact({
+    orderStatus: 'CANCELLED',
+    ownerName: 'Excluded agent',
+    dataAsOf: new Date('2026-09-12T10:00:00Z'),
+  });
+  function* source() {
+    for (let index = 1; index < count; index++) yield older;
+    yield latest;
+    yield excluded;
+  }
+  const result = buildTravelReportResult({
+    code: 'sales_by_service_route',
+    now: new Date('2026-09-13T00:00:00Z'),
+    query: { filters: {}, page: 1, pageSize: 10, timezone: 'Asia/Tehran' },
+    facts: source(),
+  });
+  expect(result.sourceDataAsOfUtc).toBe('2026-09-11T10:00:00.000Z');
+  expect(result.reconciliation.sourceRowCount).toBe(count);
+  expect(result.rows).toHaveLength(1);
+  expect(result.rows[0]).toMatchObject({ orderCount: 1, passengerCount: 3 });
+  expect(result.totalsByCurrency[0]?.salesAmount).toBe('1800000000000');
+  expect(result.filterOptions.expert).toEqual([older.ownerName]);
+}, 15000);
+
 describe('travel reporting approved projection', () => {
   it('keeps cancelled pipeline rows separate without adding them or drafts to confirmed sales totals', () => {
     const input = {

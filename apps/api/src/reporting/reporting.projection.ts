@@ -88,66 +88,90 @@ function text(value: unknown) {
 }
 
 /** Eligibility is applied before totals, pagination and export, not just labels. */
-export function eligibleTravelReportFacts(
-  code: string,
-  facts: readonly ReportingFactRow[],
-): readonly ReportingFactRow[] {
-  return facts.filter((fact) => {
-    if (
-      [
-        'sales_by_organization',
-        'sales_by_service_route',
-        'route_passengers',
-        'contract_service_profit',
-        'agency_performance',
-        'lead_to_order_conversion',
-      ].includes(code) &&
-      fact.orderStatus === 'CANCELLED'
-    )
-      return false;
-    switch (code) {
-      case 'paid_not_issued':
-        return (
-          fact.paymentStatus === 'PAID' &&
-          [
-            'PENDING',
-            'NOT_ISSUED',
-            'PARTIALLY_ISSUED',
-            'ERROR',
-            'FAILED',
-          ].includes(fact.issueStatus) &&
-          fact.orderStatus !== 'CANCELLED' &&
-          fact.reservationStatus !== 'CANCELLED'
-        );
-      case 'reservation_errors':
-        return ['ERROR', 'FAILED'].includes(fact.reservationStatus);
-      case 'cancellations_refunds':
-        return (
-          fact.reservationStatus === 'CANCELLED' ||
-          fact.orderStatus === 'CANCELLED' ||
-          fact.refundAmount.greaterThan(0)
-        );
-      case 'tickets_manifest':
-        return fact.ticketCount > 0;
-      case 'purchase_by_supplier':
-        return (
-          Boolean(fact.providerName?.trim()) &&
-          fact.purchaseAmount.greaterThan(0)
-        );
-      case 'agency_performance':
-        return Boolean(fact.agencyName?.trim());
-      case 'lead_to_order_conversion':
-        return Boolean(fact.leadSource?.trim());
-      default:
-        return true;
-    }
-  });
+function isEligibleTravelFact(code: string, fact: ReportingFactRow) {
+  if (
+    [
+      'sales_by_organization',
+      'sales_by_service_route',
+      'route_passengers',
+      'contract_service_profit',
+      'agency_performance',
+      'lead_to_order_conversion',
+    ].includes(code) &&
+    fact.orderStatus === 'CANCELLED'
+  )
+    return false;
+  switch (code) {
+    case 'paid_not_issued':
+      return (
+        fact.paymentStatus === 'PAID' &&
+        [
+          'PENDING',
+          'NOT_ISSUED',
+          'PARTIALLY_ISSUED',
+          'ERROR',
+          'FAILED',
+        ].includes(fact.issueStatus) &&
+        fact.orderStatus !== 'CANCELLED' &&
+        fact.reservationStatus !== 'CANCELLED'
+      );
+    case 'reservation_errors':
+      return ['ERROR', 'FAILED'].includes(fact.reservationStatus);
+    case 'cancellations_refunds':
+      return (
+        fact.reservationStatus === 'CANCELLED' ||
+        fact.orderStatus === 'CANCELLED' ||
+        fact.refundAmount.greaterThan(0)
+      );
+    case 'tickets_manifest':
+      return fact.ticketCount > 0;
+    case 'purchase_by_supplier':
+      return (
+        Boolean(fact.providerName?.trim()) && fact.purchaseAmount.greaterThan(0)
+      );
+    case 'agency_performance':
+      return Boolean(fact.agencyName?.trim());
+    case 'lead_to_order_conversion':
+      return Boolean(fact.leadSource?.trim());
+    default:
+      return true;
+  }
+}
+
+const factOptions = {
+  company: 'legalEntityName',
+  branch: 'branchName',
+  site: 'siteCode',
+  expert: 'ownerName',
+  currency: 'currencyCode',
+  status: 'orderStatus',
+  serviceType: 'serviceType',
+  provider: 'providerName',
+  agency: 'agencyName',
+  route: 'routeLabel',
+} as const;
+
+const confirmedPipelineStatuses = new Set([
+  'CONFIRMED',
+  'SENT_TO_RESERVATIONS',
+  'IN_PROGRESS',
+  'COMPLETED',
+]);
+
+function accumulateMoney(
+  totals: Record<string, string>,
+  amounts: Record<string, Prisma.Decimal>,
+) {
+  for (const [name, value] of Object.entries(amounts))
+    totals[name] = amount(totals[name] ?? '0')
+      .plus(value)
+      .toString();
 }
 
 export function buildTravelReportResult(input: {
   code: string;
   query: ReportQueryV1;
-  facts: readonly ReportingFactRow[];
+  facts: Iterable<ReportingFactRow>;
   now: Date;
   includeAllRows?: boolean;
   dimensionOverride?: readonly [DimensionKey, DimensionKey];
@@ -156,7 +180,13 @@ export function buildTravelReportResult(input: {
   const dimensions = input.dimensionOverride ?? REPORT_DIMENSIONS[input.code];
   if (!dimensions)
     throw new BadRequestException('این گزارش به Projection سفر متصل نشده است.');
-  const facts = eligibleTravelReportFacts(input.code, input.facts);
+  const optionSets = Object.entries(factOptions).map(
+    ([name, key]) => [name, key, new Set<string>()] as const,
+  );
+  const currencies = new Set<string>();
+  const totals = new Map<string, Record<string, string>>();
+  let sourceRowCount = 0;
+  let latestSourceTime = -Infinity;
   const groups = new Map<
     string,
     TravelReportRowV1 & {
@@ -166,7 +196,12 @@ export function buildTravelReportResult(input: {
       pendingReservationOrderIds: Set<string>;
     }
   >();
-  for (const fact of facts) {
+  for (const fact of input.facts) {
+    if (!isEligibleTravelFact(input.code, fact)) continue;
+    sourceRowCount++;
+    latestSourceTime = Math.max(latestSourceTime, fact.dataAsOf.getTime());
+    currencies.add(fact.currencyCode);
+    for (const [, key, values] of optionSets) values.add(text(fact[key]));
     const primaryDimension = text(fact[dimensions[0]]);
     const secondaryDimension = text(fact[dimensions[1]]);
     const identity = input.dimensionIdentity?.(fact) ?? [
@@ -207,13 +242,7 @@ export function buildTravelReportResult(input: {
     current.passengerCount +=
       fact.passengerCount - (previousCounts?.passengers ?? 0);
     current.ticketCount += fact.ticketCount - (previousCounts?.tickets ?? 0);
-    const money = current.money.get(fact.currencyCode) ?? {
-      salesAmount: '0',
-      purchaseAmount: '0',
-      grossProfit: '0',
-      refundAmount: '0',
-      settlementBalance: '0',
-    };
+    const money = current.money.get(fact.currencyCode) ?? {};
     const additions = {
       salesAmount: fact.salesAmount,
       purchaseAmount: fact.purchaseAmount,
@@ -225,9 +254,17 @@ export function buildTravelReportResult(input: {
         .minus(fact.refundAmount)
         .minus(fact.settledAmount),
     };
-    for (const [name, value] of Object.entries(additions))
-      money[name] = amount(money[name]!).plus(value).toString();
+    accumulateMoney(money, additions);
     current.money.set(fact.currencyCode, money);
+    // Drafts and cancellations are displayed in pipeline rows but not totals.
+    if (
+      input.code !== 'sales_contract_pipeline' ||
+      confirmedPipelineStatuses.has(fact.orderStatus)
+    ) {
+      const currencyTotal = totals.get(fact.currencyCode) ?? {};
+      accumulateMoney(currencyTotal, additions);
+      totals.set(fact.currencyCode, currencyTotal);
+    }
     // Scalar compatibility fields retain the first currency, never a mixed sum.
     const firstCurrency = current.money.get(current.currencyCode)!;
     current.salesAmount = firstCurrency.salesAmount!;
@@ -304,8 +341,7 @@ export function buildTravelReportResult(input: {
       ),
     },
   }));
-  const mixedCurrencies =
-    new Set(facts.map((fact) => fact.currencyCode)).size > 1;
+  const mixedCurrencies = currencies.size > 1;
   rows.sort((left, right) => {
     const l = left[sort.column as keyof TravelReportRowV1];
     const r = right[sort.column as keyof TravelReportRowV1];
@@ -324,50 +360,16 @@ export function buildTravelReportResult(input: {
         : String(l).localeCompare(String(r), 'fa');
     return compared * (sort.direction === 'ASC' ? 1 : -1);
   });
-  // Pipeline rows retain cancelled/draft contracts as separate status groups,
-  // but its sales headline must only sum confirmed active contracts.
-  const totalFacts =
-    input.code === 'sales_contract_pipeline'
-      ? facts.filter((fact) =>
-          [
-            'CONFIRMED',
-            'SENT_TO_RESERVATIONS',
-            'IN_PROGRESS',
-            'COMPLETED',
-          ].includes(fact.orderStatus),
-        )
-      : facts;
-  const currencies = [...new Set(totalFacts.map((fact) => fact.currencyCode))];
-  const totalsByCurrency = currencies.map((currencyCode) => {
-    const scoped = totalFacts.filter(
-      (fact) => fact.currencyCode === currencyCode,
-    );
-    const sum = (select: (fact: ReportingFactRow) => Prisma.Decimal) =>
-      scoped
-        .reduce(
-          (total, fact) => total.plus(select(fact)),
-          new Prisma.Decimal(0),
-        )
-        .toString();
-    return {
-      currencyCode,
-      salesAmount: sum((fact) => fact.salesAmount),
-      purchaseAmount: sum((fact) => fact.purchaseAmount),
-      grossProfit: sum((fact) =>
-        fact.salesAmount.minus(fact.purchaseAmount).plus(fact.commissionAmount),
-      ),
-      refundAmount: sum((fact) => fact.refundAmount),
-      settlementBalance: sum((fact) =>
-        fact.salesAmount.minus(fact.refundAmount).minus(fact.settledAmount),
-      ),
-    };
-  });
+  const totalsByCurrency = [...totals].map(([currencyCode, money]) => ({
+    currencyCode,
+    salesAmount: money.salesAmount!,
+    purchaseAmount: money.purchaseAmount!,
+    grossProfit: money.grossProfit!,
+    refundAmount: money.refundAmount!,
+    settlementBalance: money.settlementBalance!,
+  }));
   const generatedAtUtc = input.now.toISOString();
   const offset = (input.query.page - 1) * input.query.pageSize;
-  const option = (key: keyof ReportingFactRow) =>
-    [...new Set(facts.map((fact) => text(fact[key])))].sort((a, b) =>
-      a.localeCompare(b, 'fa'),
-    );
   return {
     reportCode: input.code,
     reportVersion: 1,
@@ -412,10 +414,8 @@ export function buildTravelReportResult(input: {
     pageSize: input.query.pageSize,
     previewLimit: MAX_PREVIEW_PAGE_SIZE,
     generatedAtUtc,
-    sourceDataAsOfUtc: facts.length
-      ? new Date(
-          Math.max(...facts.map((fact) => fact.dataAsOf.getTime())),
-        ).toISOString()
+    sourceDataAsOfUtc: sourceRowCount
+      ? new Date(latestSourceTime).toISOString()
       : null,
     totalsByCurrency,
     filterSnapshot: createFilterSnapshot({
@@ -425,23 +425,17 @@ export function buildTravelReportResult(input: {
       query: { ...input.query, sort },
       capturedAtUtc: generatedAtUtc,
     }),
-    filterOptions: {
-      company: option('legalEntityName'),
-      branch: option('branchName'),
-      site: option('siteCode'),
-      expert: option('ownerName'),
-      currency: option('currencyCode'),
-      status: option('orderStatus'),
-      serviceType: option('serviceType'),
-      provider: option('providerName'),
-      agency: option('agencyName'),
-      route: option('routeLabel'),
-    },
+    filterOptions: Object.fromEntries(
+      optionSets.map(([name, , values]) => [
+        name,
+        [...values].sort((a, b) => a.localeCompare(b, 'fa')),
+      ]),
+    ),
     reconciliation: {
       matchesApprovedProjection: true,
-      sourceRowCount: facts.length,
+      sourceRowCount,
     },
-    warnings: facts.length
+    warnings: sourceRowCount
       ? []
       : ['در محدوده انتخاب‌شده رکوردی در Public Projection وجود ندارد.'],
   };

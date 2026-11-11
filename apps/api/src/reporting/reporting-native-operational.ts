@@ -192,7 +192,10 @@ export function assembleOperationalResult(
     generatedAtUtc: new Date().toISOString(),
     sourceDataAsOfUtc: source.rows.length
       ? new Date(
-          Math.max(...source.rows.map((r) => r.updatedAt.getTime())),
+          source.rows.reduce(
+            (latest, row) => Math.max(latest, row.updatedAt.getTime()),
+            -Infinity,
+          ),
         ).toISOString()
       : null,
     totalsByCurrency: [],
