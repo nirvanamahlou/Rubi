@@ -1116,6 +1116,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B
+
+Operational report previews retain only the ranked candidates through the page endpoint and map only displayed rows. Exact source totals, stable tie ordering, source freshness, available filters and full export order are preserved. Source projections still materialize their rows.
+
 ## NATIVE-PAYMENTS-STREAM-1111 — PC-B
 
 The native receipt/refund report consumes each cursor batch directly into the report projection. It keeps only one raw page and retains the existing 10,000-event limit for each source. Other native projections still materialize source rows.

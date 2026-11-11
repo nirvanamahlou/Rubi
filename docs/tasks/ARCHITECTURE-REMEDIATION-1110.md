@@ -10,7 +10,7 @@ product behavior, authorization, financial atomicity and persisted data.
 | Scope | Implemented in develop | Remaining |
 | --- | --- | --- |
 | IAM and diagnostics | Dedicated attendance integration identity and safe unexpected-error context in PR #1600 | Validate runtime ownership when changing attendance sync |
-| Messaging and notifications | Batched identities and unread lookups, compact paged metadata and exact authorization counts in PR #1600; verbatim chat text in PR #1603 | Exact notification counts still visit unread metadata |
+| Messaging and notifications | Batched identities and unread lookups, compact paged metadata and exact authorization counts in PR #1600; verbatim chat text in PR #1603; grouped unread counts and bounded unread selection in PR #1658 | Read history is still checked in batches when needed to fill the feed |
 | Attendance and HR | Batched penalty evaluation, explicit optional reasons and key ring in PR #1600 | Named field adapters for legacy positional records; distributed Radan execution |
 | Web transport and locale | Shared HTTP retry on migrated clients and one HR refresh in PR #1600; lazy fallback index in PR #1604 | Migrate other clients and defer catalog transfer; split translation responsibilities |
 | Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611; durable Reports workspace export and retry queue in PR #1631; streamed antivirus job input | Bounded database row projection and buffered uploads; legacy synchronous export endpoints remain available |
@@ -37,6 +37,10 @@ when only selected paths are addressed.
 
 ## Implementation evidence
 
+- Operational report previews reuse the Finance ranking heap and build
+  output rows only for the selected page. Full exports preserve stable sort
+  order and totals. Source producers still materialize their datasets.
+
 - Native Sales contract reports feed contract/currency pages into incremental
   aggregators and cache the authorized display labels within one report run.
   Grouped rows and other native report sources still materialize their data.
@@ -48,10 +52,9 @@ when only selected paths are addressed.
   and return it only after authentication. ZIP/OLE still needs the result
   buffer, without the previous full ciphertext and plaintext copies.
 
-- The bell scans compact notification metadata in pages of 200 in a consistent
-  database snapshot. It counts authorized unread rows, preserves assignment
-  priority and fetches details for the selected rows only. Exact counting still
-  visits unread metadata because route permissions are evaluated in contracts.
+- When the unread results do not fill the bell, it scans compact read history
+  metadata in pages of 200 in the same database snapshot. Details are fetched
+  only for selected rows.
 - Archive and incoming multipart uploads stream directly into encrypted
   storage. ZIP/OLE validation and other internal upload callers still use
   buffered inputs.
