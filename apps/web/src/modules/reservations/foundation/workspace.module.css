@@ -600,7 +600,7 @@
   outline: 2px solid #185abd;
   outline-offset: -2px;
 }
-.requestTable td:nth-child(5) {
+.requestTable td:nth-child(3) {
   max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
