@@ -821,11 +821,7 @@ export function DocumentsWorkspace() {
     try {
       const response = await documentsApi.upload(form);
       setUploadOpen(false);
-      setNotice(
-        response.data.currentVersion.scanStatus === 'CLEAN'
-          ? `سند ${response.data.archiveCode} ثبت و با موفقیت اسکن شد.`
-          : `سند ${response.data.archiveCode} ثبت شد؛ دریافت فایل تا پایان بررسی امنیتی بسته می‌ماند.`,
-      );
+      setNotice(`سند ${response.data.archiveCode} ثبت شد.`);
       await load();
       await openDetail(response.data.id);
       return true;

@@ -502,24 +502,6 @@ export function DocumentUploadDialog({
                 </span>
               </span>
             </label>
-            {!incomingLetter && (
-              <Alert
-                className="mt-4"
-                description={
-                  options?.uploadPolicy.antivirusAvailable
-                    ? 'موتور امنیتی فعال است؛ فایل پس از بارگذاری فوراً اسکن می‌شود و فقط نتیجه پاک اجازه دریافت می‌گیرد.'
-                    : 'موتور امنیتی در این محیط فعال نیست؛ فایل خصوصی می‌ماند و تا انجام بررسی امنیتی قابل دریافت نخواهد بود.'
-                }
-                title={
-                  options?.uploadPolicy.antivirusAvailable
-                    ? 'اسکن امنیتی فعال'
-                    : 'حفاظت تا زمان بررسی امنیتی'
-                }
-                tone={
-                  options?.uploadPolicy.antivirusAvailable ? 'info' : 'warning'
-                }
-              />
-            )}
           </section>
 
           {validationError || error ? (
@@ -539,11 +521,7 @@ export function DocumentUploadDialog({
               انصراف
             </Button>
             <Button disabled={submitting || !file || !options} type="submit">
-              {submitting
-                ? 'در حال ارسال و اسکن امن…'
-                : options?.uploadPolicy.antivirusAvailable
-                  ? 'بارگذاری و اسکن امن'
-                  : 'بارگذاری با حفاظت امنیتی'}
+              {submitting ? 'در حال بارگذاری…' : 'بارگذاری سند'}
             </Button>
           </div>
         </form>

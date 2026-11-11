@@ -9928,3 +9928,7 @@ HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance la
 - HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
 
 - Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
+
+## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
+
+Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.

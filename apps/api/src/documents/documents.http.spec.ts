@@ -244,6 +244,7 @@ describe('Documents HTTP boundary', () => {
       }),
       actor,
       expect.objectContaining({ ipAddress: expect.any(String) }),
+      'background',
     );
   });
 
