@@ -56,6 +56,8 @@
   flex-direction: column;
   width: min(360px, calc(100vw - 40px));
   height: min(420px, calc(100dvh - 120px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
   overflow: hidden;
   border: 1px solid #365679;
   border-radius: 22px;
@@ -63,9 +65,78 @@
   background: #0d2445;
   box-shadow: 0 14px 48px #07152e55;
 }
-.panel[data-expanded='true'] {
-  width: min(640px, calc(100vw - 40px));
-  height: min(680px, calc(100dvh - 120px));
+.panel[data-resizing='true'] {
+  user-select: none;
+}
+.resizeHandle {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+.resizeHandle:focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: -3px;
+}
+.resizeHandle[data-edge='n'],
+.resizeHandle[data-edge='s'] {
+  left: 16px;
+  right: 16px;
+  height: 8px;
+  cursor: ns-resize;
+}
+.resizeHandle[data-edge='n'] {
+  top: 0;
+}
+.resizeHandle[data-edge='s'] {
+  bottom: 0;
+}
+.resizeHandle[data-edge='e'],
+.resizeHandle[data-edge='w'] {
+  top: 16px;
+  bottom: 16px;
+  width: 8px;
+  cursor: ew-resize;
+}
+.resizeHandle[data-edge='e'] {
+  right: 0;
+}
+.resizeHandle[data-edge='w'] {
+  left: 0;
+}
+.resizeHandle[data-edge='ne'],
+.resizeHandle[data-edge='nw'],
+.resizeHandle[data-edge='se'],
+.resizeHandle[data-edge='sw'] {
+  width: 16px;
+  height: 16px;
+  z-index: 3;
+}
+.resizeHandle[data-edge='ne'],
+.resizeHandle[data-edge='nw'] {
+  top: 0;
+}
+.resizeHandle[data-edge='se'],
+.resizeHandle[data-edge='sw'] {
+  bottom: 0;
+}
+.resizeHandle[data-edge='ne'],
+.resizeHandle[data-edge='se'] {
+  right: 0;
+}
+.resizeHandle[data-edge='nw'],
+.resizeHandle[data-edge='sw'] {
+  left: 0;
+}
+.resizeHandle[data-edge='ne'],
+.resizeHandle[data-edge='sw'] {
+  cursor: nesw-resize;
+}
+.resizeHandle[data-edge='nw'],
+.resizeHandle[data-edge='se'] {
+  cursor: nwse-resize;
 }
 .panel[hidden] {
   display: none;
@@ -142,9 +213,5 @@
     width: calc(100vw - 24px);
     bottom: 68px;
     height: min(420px, calc(100dvh - 104px));
-  }
-  .panel[data-expanded='true'] {
-    width: calc(100vw - 24px);
-    height: calc(100dvh - 104px);
   }
 }

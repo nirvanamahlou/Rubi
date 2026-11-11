@@ -12441,3 +12441,9 @@ Reserve the incoming-letter upload adapter and its test. Return once the file an
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
+
+## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-resize-1111 from developbb3c0fa37. Reserve floating assistant component/styles, bounded panel resize geometry/hook and regressions, scoped floating message typography and own notes. Owner requests eight-direction manual resizing, removal of expand/restore button and 14px chat messages. Previous Assistant scopes merged/released; no active overlapping owner found. Preserve launcher movement, mounted conversation/draft, close, RTL/LTR and viewport bounds. No API/schema/dependency/production-data changes.
+
+49 focused tests, scoped ESLint, full Web TypeScript and optimized Web production build pass. Source freezes on push and reservation releases at handoff. No production publication or automatic merge is part of this change.

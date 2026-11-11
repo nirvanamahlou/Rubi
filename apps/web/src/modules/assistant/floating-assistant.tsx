@@ -9,19 +9,32 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Maximize2, Minimize2, MessageCircle, Sparkles, X } from 'lucide-react';
+import { MessageCircle, Sparkles, X } from 'lucide-react';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { assistantCopy as c } from '@/i18n/assistant-copy';
 import styles from './floating-assistant.module.css';
 import { useFloatingDrag } from './use-floating-drag';
+import { resizeEdges } from './floating-resize';
+import { useFloatingResize } from './use-floating-resize';
 
 const PreparedChat = dynamic(
   () =>
     import('./executive-workspace').then((module) => module.AssistantComposer),
   { ssr: false },
 );
+
+const resizeLabels = {
+  n: ['بالا', 'top'],
+  s: ['پایین', 'bottom'],
+  e: ['راست', 'right'],
+  w: ['چپ', 'left'],
+  ne: ['بالا راست', 'top right'],
+  nw: ['بالا چپ', 'top left'],
+  se: ['پایین راست', 'bottom right'],
+  sw: ['پایین چپ', 'bottom left'],
+} as const;
 
 class ChatBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -51,19 +64,18 @@ function AssistantSession() {
   const english = language === 'en';
   const t = (text: readonly [string, string]) => text[english ? 1 : 0];
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const id = useId();
-  const drag = useFloatingDrag({ launcher, panel, open, expanded, english });
+  const drag = useFloatingDrag({ launcher, panel, open, english });
+  const resizeEvents = useFloatingResize(panel, open);
   useEffect(() => {
     if (open) closeButton.current?.focus();
   }, [open]);
   const close = () => {
     setOpen(false);
-    setExpanded(false);
     launcher.current?.focus();
   };
   return (
@@ -78,7 +90,6 @@ function AssistantSession() {
           ref={panel}
           id={id}
           className={styles.panel}
-          data-expanded={expanded}
           hidden={!open}
           role="dialog"
           aria-modal={false}
@@ -98,21 +109,6 @@ function AssistantSession() {
               <h2 id={id + '-title'}>{t(c.widgetTitle)}</h2>
               <p>{t(c.widgetSubtitle)}</p>
             </div>
-            <button
-              type="button"
-              className={styles.headerButton}
-              onClick={() => setExpanded((value) => !value)}
-              aria-label={t(expanded ? c.widgetRestore : c.widgetExpand)}
-              title={t(expanded ? c.widgetRestore : c.widgetExpand)}
-              aria-pressed={expanded}
-              aria-controls={id}
-            >
-              {expanded ? (
-                <Minimize2 size={18} aria-hidden="true" />
-              ) : (
-                <Maximize2 size={18} aria-hidden="true" />
-              )}
-            </button>
             <button
               ref={closeButton}
               type="button"
@@ -135,6 +131,21 @@ function AssistantSession() {
               <PreparedChat t={t} denied={false} english={english} floating />
             </ChatBoundary>
           </div>
+          {resizeEdges.map((edge) => (
+            <button
+              key={edge}
+              type="button"
+              className={styles.resizeHandle}
+              data-edge={edge}
+              aria-label={
+                english
+                  ? `Resize chat: ${t(resizeLabels[edge])}`
+                  : `تغییر اندازه چت: ${t(resizeLabels[edge])}`
+              }
+              aria-controls={id}
+              {...resizeEvents(edge)}
+            />
+          ))}
         </section>
       )}
       <button

@@ -248,6 +248,10 @@ Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
 
+## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
+
+Implemented eight physical edge/corner resize handles, pointer capture/cancel and keyboard arrows (Shift for larger steps), bounded geometry and re-clamping on viewport changes. Removed the expand/restore button; preserve launcher movement, mounted draft/conversation, existing desktop/mobile defaults and actor isolation. Only floating chat message paragraphs use14px. Minimum readable280x300 shrinks to the available viewport; no viewport-specific1915px rule.49 focused tests, scoped ESLint, Web TypeScript and optimized production build pass. No backend/schema/dependency/live-server changes. Source reservation freezes on push and releases at handoff; review PR only, no automatic merge/publication.
+
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
 Implement the user's supplied source-acquaintance-share appearance in its existing card: vivid multicolor ring, centered live contact count and separate RTL legend with counts/percentages. Keep all real categories and current report/filter semantics, including unknown and small sources. Changes are confined to the chart leaf; no shared shell, KPI icons, API, schema or migration changes. Source base: develop 9f71ecf5e. Tests, desktop/mobile visual checks and final-head hosted gates precede the previously authorized bounded Web release.
