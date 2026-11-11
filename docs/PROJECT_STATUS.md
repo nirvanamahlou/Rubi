@@ -1088,6 +1088,10 @@ Finance inbox pages load purchase FX evidence after applying filters, ordering a
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## DOCUMENT-STREAM-SCAN-1111
+
+Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
@@ -1095,6 +1099,10 @@ The hotel currency selector is registered in the existing manual field-access ca
 ## REPORTING-CSV-MEMORY-1111
 
 CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
+
+## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
+
+Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.
 
 ## REPORTING-DURABLE-EXPORT-1110
 

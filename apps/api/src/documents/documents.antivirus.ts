@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import type { Readable } from 'node:stream';
 import { accessSync, constants, statSync } from 'node:fs';
 import { mkdtemp, rm, rmdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -76,8 +78,35 @@ export function clamavScanStatus(exitCode: number | null) {
   return 'SCAN_FAILED' as const;
 }
 
+type ScanContents = Buffer | { stream: Readable; sha256: string };
+
+class ScanIntegrityError extends Error {}
+
+async function* verifyScanContents(
+  stream: AsyncIterable<Buffer>,
+  expectedSha256: string,
+) {
+  const hash = createHash('sha256');
+  for await (const chunk of stream) {
+    hash.update(chunk);
+    yield chunk;
+  }
+  if (hash.digest('hex') !== expectedSha256)
+    throw new ScanIntegrityError('Document scan SHA-256 mismatch.');
+}
+
+function writeScanFile(target: string, contents: ScanContents) {
+  return writeFile(
+    target,
+    Buffer.isBuffer(contents)
+      ? contents
+      : verifyScanContents(contents.stream, contents.sha256),
+    { flag: 'wx', mode: 0o600 },
+  );
+}
+
 export async function scanBufferWithClamAV(
-  input: { commandPath: string; contents: Buffer; safeFileName: string },
+  input: { commandPath: string; contents: ScanContents; safeFileName: string },
   runner: DefenderCommandRunner = runDefenderCommand,
 ): Promise<LocalAntivirusResult> {
   // mkdtemp creates a private0700 directory; no user-controlled path or options.
@@ -86,7 +115,7 @@ export async function scanBufferWithClamAV(
   let status: LocalAntivirusResult['status'] = 'SCAN_FAILED';
   let code: number | null = null;
   try {
-    await writeFile(target, input.contents, { flag: 'wx', mode: 0o600 });
+    await writeScanFile(target, input.contents);
     const result = await runner(input.commandPath, [
       '--no-summary',
       '--infected',
@@ -96,7 +125,8 @@ export async function scanBufferWithClamAV(
     ]);
     code = result.exitCode;
     status = clamavScanStatus(code);
-  } catch {
+  } catch (error) {
+    if (error instanceof ScanIntegrityError) throw error;
     // Spawn, permission, timeout and runner failures never indicate infection/clean.
   } finally {
     await rm(target, { force: true }).catch(() => undefined);
@@ -119,7 +149,7 @@ export async function scanBufferWithClamAV(
 export async function scanBufferWithWindowsDefender(
   input: {
     commandPath: string;
-    contents: Buffer;
+    contents: ScanContents;
     safeFileName: string;
   },
   runner: DefenderCommandRunner = runDefenderCommand,
@@ -130,7 +160,7 @@ export async function scanBufferWithWindowsDefender(
     .slice(0, 12);
   const target = join(scanRoot, `document${extension}`);
   try {
-    await writeFile(target, input.contents, { flag: 'wx', mode: 0o600 });
+    await writeScanFile(target, input.contents);
     const result = await runner(input.commandPath, [
       '-Scan',
       '-ScanType',
@@ -192,8 +222,9 @@ export class WindowsDefenderAntivirus {
     return this.commandPath !== null;
   }
 
-  async scan(contents: Buffer, safeFileName: string) {
+  async scan(contents: ScanContents, safeFileName: string) {
     if (!this.commandPath) {
+      if (!Buffer.isBuffer(contents)) contents.stream.destroy();
       return {
         status: 'SCAN_FAILED',
         adapterReference: `${this.engine}:unavailable`,
@@ -207,10 +238,23 @@ export class WindowsDefenderAntivirus {
       this.engine === 'clamav'
         ? scanBufferWithClamAV
         : scanBufferWithWindowsDefender;
-    return scan({
-      commandPath: this.commandPath,
-      contents,
-      safeFileName,
-    });
+    try {
+      return await scan({
+        commandPath: this.commandPath,
+        contents,
+        safeFileName,
+      });
+    } catch (error) {
+      if (!(error instanceof ScanIntegrityError)) throw error;
+      return {
+        status: 'SCAN_FAILED',
+        adapterReference: 'storage-integrity-check',
+        scannedAt: new Date(),
+        engineVersion: 'SHA-256',
+        threatCode: 'STORAGE_HASH_MISMATCH',
+      } satisfies LocalAntivirusResult;
+    } finally {
+      if (!Buffer.isBuffer(contents)) contents.stream.destroy();
+    }
   }
 }

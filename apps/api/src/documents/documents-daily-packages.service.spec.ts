@@ -284,9 +284,12 @@ describe('immediate daily PDF delivery', () => {
       },
     );
     if (
-      ['CLEAN', 'PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
-        scanStatus,
-      )
+      [
+        'CLEAN',
+        'PENDING_SCAN',
+        'AWAITING_ANTIVIRUS_ADAPTER',
+        'SCAN_FAILED',
+      ].includes(scanStatus)
     ) {
       await expect(result).resolves.toMatchObject({ stream: 'pdf-stream' });
       expect(storage.openQuarantined).toHaveBeenCalledOnce();

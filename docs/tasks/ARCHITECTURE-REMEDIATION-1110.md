@@ -13,8 +13,8 @@ product behavior, authorization, financial atomicity and persisted data.
 | Messaging and notifications | Batched identities and unread lookups, compact paged metadata and exact authorization counts in PR #1600; verbatim chat text in PR #1603 | Exact notification counts still visit unread metadata |
 | Attendance and HR | Batched penalty evaluation, explicit optional reasons and key ring in PR #1600 | Named field adapters for legacy positional records; distributed Radan execution |
 | Web transport and locale | Shared HTTP retry on migrated clients and one HR refresh in PR #1600; lazy fallback index in PR #1604 | Migrate other clients and defer catalog transfer; split translation responsibilities |
-| Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611; durable Reports workspace export and retry queue with fenced publication | Bounded database row projection and buffered scan/upload paths; legacy synchronous export endpoints remain available |
-| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614; scoped Reservations purchase projection in PR #1626; bounded ticket revision reads and field-selected Sales receipts in PR #1628; page-only FX enrichment in PR #1629; cursor batches replace silent Sales and Procurement source limits | Audience groups now filter and paginate in PostgreSQL with exact scoped totals. Other Marketing collections and end-to-end Finance inbox pagination, including bounded global filtering and totals |
+| Reporting and Documents | Worker-thread rendering and authenticated chunked downloads in PR #1600; scan recovery and optional worker ownership in PR #1611; durable Reports workspace export and retry queue in PR #1631; streamed antivirus job input | Bounded database row projection and buffered uploads; legacy synchronous export endpoints remain available |
+| Marketing and Finance | Server pages for promotions and campaigns in PRs #1608 and #1613; scoped HR referral projection in PR #1614; scoped Reservations purchase projection in PR #1626; bounded ticket revision reads and field-selected Sales receipts in PR #1628; page-only FX enrichment in PR #1629; cursor batches replace silent Sales and Procurement source limits; audience groups filter and paginate in PostgreSQL with exact scoped totals | Other Marketing collections and end-to-end Finance inbox pagination, including bounded global filtering and totals |
 | Module boundaries | Recursive repository import guard in PR #1600 | Explicit public ports, transaction abstractions and ownership for direct database reads |
 
 The architecture and deployment baselines now distinguish checked-in behavior
@@ -57,7 +57,8 @@ when only selected paths are addressed.
   file in 64 KiB chunks. Delivery rereads and checks each ciphertext chunk
   against the verified digest before sending it. Downloads trade a second disk
   pass for bounded memory and preserve the existing encrypted file format.
-  Malware scanning and upload still use the existing buffer-based interfaces.
+  Antivirus jobs hash streamed plaintext while writing their private temporary
+  input file. Uploads and the demo scanner still accept buffers.
 - Ninety-nine focused Documents and Reporting tests passed. The tests cover
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store

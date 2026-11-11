@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -42,7 +43,7 @@ describe('DocumentsScanProcessor', () => {
     claimScanJob: vi.fn(),
     finishScanJob: vi.fn(),
   };
-  const storage = { readQuarantined: vi.fn() };
+  const storage = { openQuarantined: vi.fn() };
   const antivirus = { available: true, scan: vi.fn() };
   let processor: DocumentsScanProcessor;
 
@@ -93,10 +94,11 @@ describe('DocumentsScanProcessor', () => {
     );
   });
 
-  it('verifies the decrypted hash before recording a real clean result', async () => {
+  it('passes the verified storage stream and expected hash to the scanner', async () => {
     repository.scanJobForVersion.mockResolvedValue(job);
     repository.claimScanJob.mockResolvedValue(job);
-    storage.readQuarantined.mockResolvedValue(contents);
+    const stream = Readable.from([contents]);
+    storage.openQuarantined.mockResolvedValue(stream);
     antivirus.scan.mockResolvedValue({
       status: 'CLEAN',
       adapterReference: 'windows-defender:MpCmdRun.exe',
@@ -106,17 +108,22 @@ describe('DocumentsScanProcessor', () => {
     });
 
     await expect(processor.processVersion(job.versionId)).resolves.toBe(true);
-    expect(antivirus.scan).toHaveBeenCalledWith(contents, 'document.pdf');
+    expect(antivirus.scan).toHaveBeenCalledWith(
+      { stream, sha256: job.version.sha256 },
+      'document.pdf',
+    );
     expect(repository.finishScanJob).toHaveBeenCalledWith(
       job,
       expect.objectContaining({ status: 'CLEAN', threatCode: null }),
     );
   });
 
-  it('fails closed when decrypted bytes do not match the stored hash', async () => {
+  it('fails closed if encrypted storage cannot be authenticated', async () => {
     repository.scanJobForVersion.mockResolvedValue(job);
     repository.claimScanJob.mockResolvedValue(job);
-    storage.readQuarantined.mockResolvedValue(Buffer.from('tampered'));
+    storage.openQuarantined.mockRejectedValue(
+      new Error('Storage integrity error'),
+    );
 
     await processor.processVersion(job.versionId);
 
@@ -125,7 +132,7 @@ describe('DocumentsScanProcessor', () => {
       job,
       expect.objectContaining({
         status: 'SCAN_FAILED',
-        threatCode: 'STORAGE_HASH_MISMATCH',
+        threatCode: 'ANTIVIRUS_SCAN_FAILED',
       }),
     );
   });

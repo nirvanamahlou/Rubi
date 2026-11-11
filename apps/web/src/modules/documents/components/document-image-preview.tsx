@@ -93,9 +93,10 @@ export function DocumentImagePreview({
   onLoadPreview: LoadDocumentPreview;
 }) {
   const sensitive = isSensitive(document);
-  const previewable = previewableImageMimeTypes.has(
-    document.currentVersion.detectedMimeType,
-  );
+  const isPdf = document.currentVersion.detectedMimeType === 'application/pdf';
+  const previewable =
+    isPdf ||
+    previewableImageMimeTypes.has(document.currentVersion.detectedMimeType);
   const scanAllowed = [
     'CLEAN',
     'PENDING_SCAN',
@@ -136,13 +137,19 @@ export function DocumentImagePreview({
       confidentialAccessToken,
     )
       .then(async (blob) => {
-        if (!previewableImageMimeTypes.has(blob.type)) {
-          throw new Error('پاسخ دریافت‌شده یک تصویر مجاز نیست.');
+        if (
+          isPdf
+            ? blob.type !== 'application/pdf'
+            : !previewableImageMimeTypes.has(blob.type)
+        ) {
+          throw new Error('مشاهده محتوای این سند مجاز نیست.');
         }
-        const safeBlob = await createSafePreviewBlob(
-          blob,
-          `سامانه • ${document.archiveCode} • ${new Date().toLocaleString('fa-IR')}`,
-        );
+        const safeBlob = isPdf
+          ? blob
+          : await createSafePreviewBlob(
+              blob,
+              `سامانه • ${document.archiveCode} • ${new Date().toLocaleString('fa-IR')}`,
+            );
         objectUrl = URL.createObjectURL(safeBlob);
         if (active) setPreviewState({ status: 'ready', url: objectUrl });
         else URL.revokeObjectURL(objectUrl);
@@ -168,6 +175,7 @@ export function DocumentImagePreview({
     approvedReason,
     document,
     confidentialAccessToken,
+    isPdf,
     onLoadPreview,
     readyToLoad,
     requestVersion,
@@ -295,6 +303,15 @@ export function DocumentImagePreview({
 
   if (previewState.status !== 'ready') return null;
 
+  if (isPdf)
+    return (
+      <iframe
+        title={document.title}
+        src={previewState.url}
+        className="h-[65dvh] w-full rounded-xl"
+      />
+    );
+
   return (
     <figure className="w-full">
       <div className="relative mx-auto flex min-h-80 max-h-[60dvh] w-full items-center justify-center overflow-hidden rounded-2xl border border-sky-200 bg-[linear-gradient(45deg,rgba(14,165,233,.06)_25%,transparent_25%,transparent_75%,rgba(14,165,233,.06)_75%),linear-gradient(45deg,rgba(14,165,233,.06)_25%,transparent_25%,transparent_75%,rgba(14,165,233,.06)_75%)] bg-[length:24px_24px] bg-[position:0_0,12px_12px] p-3 shadow-inner dark:border-sky-400/20">
@@ -309,7 +326,6 @@ export function DocumentImagePreview({
       <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
         <ImageIcon aria-hidden="true" className="size-4 text-primary" />
         <span>{document.currentVersion.safeDownloadName}</span>
-        <Badge>تصویر اسکن‌شده و مجاز · نسخه کم‌حجم و واترمارک‌شده</Badge>
       </figcaption>
     </figure>
   );

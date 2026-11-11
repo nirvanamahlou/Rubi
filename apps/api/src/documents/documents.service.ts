@@ -3,7 +3,6 @@ import {
   receiptFileSupported,
   documentMimeTypes,
   XLS_MIME,
-  RECEIPT_MIME_TYPES,
 } from '@nora/contracts';
 import { spreadsheetFileType } from './spreadsheet-file-type';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
@@ -292,8 +291,7 @@ function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
 }
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
-// Preview is a raster-only, authenticated delivery path; scan status is unchanged.
-function imagePreviewScanAllowed(status: string): boolean {
+function fileDeliveryScanAllowed(status: string): boolean {
   return [
     'CLEAN',
     'PENDING_SCAN',
@@ -2545,14 +2543,13 @@ export class DocumentsService {
             actor.permissions.includes('documents.sensitive.download'));
     const previewable =
       dto.purpose !== 'PREVIEW' ||
-      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType);
+      previewableImageMimeTypes.has(row.currentVersion.detectedMimeType) ||
+      row.currentVersion.detectedMimeType === 'application/pdf';
     if (
       !hasPurposePermission ||
       !previewable ||
       row.archiveStatus !== 'ACTIVE' ||
-      !(dto.purpose === 'PREVIEW'
-        ? imagePreviewScanAllowed(row.currentVersion.scanStatus)
-        : row.currentVersion.scanStatus === 'CLEAN')
+      !fileDeliveryScanAllowed(row.currentVersion.scanStatus)
     ) {
       await this.auditAccessGrantFailure(
         row,
@@ -2642,30 +2639,7 @@ export class DocumentsService {
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
-    const receiptPendingAllowed =
-      expectedSource?.sourceModule === 'sales' &&
-      expectedSource.sourceEntityType === 'SalesContractPaymentEntry' &&
-      row.sourceModule === 'sales' &&
-      row.sourceEntityType === 'SalesContractPaymentEntry' &&
-      row.documentType.domain === 'FINANCE' &&
-      row.documentType.code === 'RECEIPT' &&
-      RECEIPT_MIME_TYPES.includes(row.currentVersion.detectedMimeType) &&
-      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
-        row.currentVersion.scanStatus,
-      );
-    const packagePendingAllowed =
-      expectedSource?.sourceModule === 'WORKBENCH' &&
-      expectedSource.sourceEntityType === 'WorkbenchDailyPackage' &&
-      expectedSource.sourceEntityId === row.branchId &&
-      row.sourceModule === 'WORKBENCH' &&
-      row.sourceEntityType === 'WorkbenchDailyPackage' &&
-      row.sourceEntityId === row.branchId &&
-      row.documentType.code === 'BRAND_ASSET_TEMPLATE' &&
-      row.confidentiality === 'INTERNAL' &&
-      row.currentVersion.detectedMimeType === 'application/pdf' &&
-      ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
-        row.currentVersion.scanStatus,
-      );
+    const scanAllowed = fileDeliveryScanAllowed(row.currentVersion.scanStatus);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       actor.permissions.includes('documents.download') &&
@@ -2673,11 +2647,7 @@ export class DocumentsService {
         (actor.permissions.includes('documents.sensitive.download') &&
           isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
-      (row.currentVersion.scanStatus === 'CLEAN' ||
-        packagePendingAllowed ||
-        receiptPendingAllowed ||
-        (row.isIncomingLetter &&
-          imagePreviewScanAllowed(row.currentVersion.scanStatus)));
+      scanAllowed;
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
       actor,
@@ -2706,19 +2676,10 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!allowed) {
-      if (
-        row.currentVersion.scanStatus !== 'CLEAN' &&
-        !packagePendingAllowed &&
-        !receiptPendingAllowed &&
-        !(
-          row.isIncomingLetter &&
-          imagePreviewScanAllowed(row.currentVersion.scanStatus)
-        )
-      ) {
+      if (!scanAllowed)
         throw new ConflictException(
           'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
         );
-      }
       throw new ForbiddenException('دانلود این سند مجاز نیست.');
     }
     return {
@@ -2808,9 +2769,8 @@ export class DocumentsService {
         isOptionalOperationReason(metadata.sensitiveReason, 500));
     const previewable =
       previewableImageMimeTypes.has(row.currentVersion.detectedMimeType) ||
-      (row.isIncomingLetter &&
-        row.currentVersion.detectedMimeType === 'application/pdf');
-    const scanAllowed = imagePreviewScanAllowed(row.currentVersion.scanStatus);
+      row.currentVersion.detectedMimeType === 'application/pdf';
+    const scanAllowed = fileDeliveryScanAllowed(row.currentVersion.scanStatus);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
@@ -2858,7 +2818,7 @@ export class DocumentsService {
     }
     if (!previewable) {
       throw new UnsupportedMediaTypeException(
-        'پیش‌نمایش تصویری فقط برای فایل JPEG یا PNG در دسترس است.',
+        'مشاهده محتوای این سند مجاز نیست.',
       );
     }
     if (!allowed) {
