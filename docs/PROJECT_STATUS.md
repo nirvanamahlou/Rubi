@@ -1,5 +1,9 @@
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
+## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
+
+PostgreSQL aggregates unread counts by destination and selects a bounded feed with the same authorization and assignment priority. Seven focused tests, API typecheck, scoped lint, and an isolated PostgreSQL check passed.
+
 ## FLOATING-MANIFEST-EXPORT-1110 — PC-A — READY_FOR_CI
 
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
@@ -1127,6 +1131,10 @@ The native receipt/refund report consumes each cursor batch directly into the re
 ## REPORTING-CSV-MEMORY-1111
 
 CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preserving the BOM, CRLF delimiters, cell escaping and row order. The renderer still returns a complete buffer for encrypted storage.
+
+## XLSX-RANGE-INSPECTION-1111 — PC-B
+
+Ordinary staged ZIP workbooks use bounded authenticated ranges for the ZIP directory and content manifest. Each range authenticates the complete encrypted object without retaining its complete plaintext. ZIP64, large metadata and OLE containers retain the compatibility parser.
 
 ## STREAM-DOCUMENT-MULTIPART-1111 — PC-B
 
@@ -9932,6 +9940,10 @@ HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance la
 - HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
 
 - Finance inbox pages rank at most the requested page endpoint in memory, count every matching item, and enrich only the selected page. Fifty-seven focused API tests cover ordering, precise monetary comparisons, summary, source health and export parity. Source projections still materialize their eligible rows.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B
+
+Incoming letters return once the file and metadata are saved. Scan jobs remain scheduled in the background. Ninety-five focused API tests and scoped ESLint passed, including the incoming owner and file-access boundary.
 
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 

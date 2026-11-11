@@ -57,6 +57,17 @@ describe('LocalDocumentStorage encryption boundary', () => {
       storage.readQuarantined(objectKey, contents.length),
     ).resolves.toEqual(contents);
     await expect(
+      storage.readQuarantinedRange(objectKey, contents.length, 65_534, 12),
+    ).resolves.toEqual(contents.subarray(65_534, 65_546));
+    await expect(
+      storage.readQuarantinedRange(
+        objectKey,
+        contents.length,
+        contents.length - 1,
+        2,
+      ),
+    ).rejects.toThrow('Stored document failed integrity verification.');
+    await expect(
       storage.readQuarantined(objectKey, Number.MAX_SAFE_INTEGER),
     ).rejects.toThrow('Stored document failed integrity verification.');
     await expect(
@@ -128,6 +139,9 @@ describe('LocalDocumentStorage encryption boundary', () => {
     ).rejects.toThrow();
     await expect(
       storage.readQuarantined(objectKey, contents.length),
+    ).rejects.toThrow();
+    await expect(
+      storage.readQuarantinedRange(objectKey, contents.length, 100_000, 16),
     ).rejects.toThrow();
     const chunks: Buffer[] = [];
     const consume = async () => {

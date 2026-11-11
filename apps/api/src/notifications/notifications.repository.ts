@@ -50,32 +50,28 @@ export class NotificationsRepository {
   ) {
     return this.database.client.$transaction(
       (transaction) =>
-        this.scanAuthorized(
-          transaction.notification,
-          recipientUserId,
-          limit,
-          permissions,
-        ),
+        this.scanAuthorized(transaction, recipientUserId, limit, permissions),
       { isolationLevel: 'RepeatableRead', timeout: 10000 },
     );
   }
 
   private async scanAuthorized(
-    notifications: Prisma.TransactionClient['notification'],
+    transaction: Prisma.TransactionClient,
     recipientUserId: string,
     limit: number,
     permissions: readonly string[],
   ) {
+    const notifications = transaction.notification;
     const allowed = (row: { href: string | null }) =>
       !row.href || canViewRoute(permissions, row.href);
-    const scan = async function* (unread: boolean) {
+    const scanRead = async function* () {
       const pageSize = 200;
-      const where = { recipientUserId, readAt: unread ? null : { not: null } };
+      const where = { recipientUserId, readAt: { not: null } };
       let cursor: string | undefined;
       for (;;) {
         const page = await notifications.findMany({
           where,
-          select: { id: true, href: true, sourceModule: true, eventType: true },
+          select: { id: true, href: true },
           orderBy: [{ readAt: 'asc' }, { occurredAt: 'desc' }, { id: 'desc' }],
           take: pageSize,
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -86,23 +82,41 @@ export class NotificationsRepository {
       }
     };
 
-    const urgent: string[] = [];
-    const ordinary: string[] = [];
-    let unreadCount = 0;
-    // Count all authorized unread destinations, even when the feed is full.
-    for await (const row of scan(true)) {
-      if (!allowed(row)) continue;
-      unreadCount++;
-      const bucket =
-        row.sourceModule === 'customer-affairs' &&
-        row.eventType === 'call-center.assigned'
-          ? urgent
-          : ordinary;
-      if (bucket.length < limit) bucket.push(row.id);
-    }
-    const ids = [...urgent, ...ordinary].slice(0, limit);
+    const destinations = await notifications.groupBy({
+      by: ['href'],
+      where: { recipientUserId, readAt: null },
+      _count: { _all: true },
+    });
+    const allowedDestinations = destinations.filter(allowed);
+    const unreadCount = allowedDestinations.reduce(
+      (count, row) => count + row._count._all,
+      0,
+    );
+    const allowedHrefs = allowedDestinations.flatMap(({ href }) =>
+      href === null ? [] : [href],
+    );
+    const includeUnlinked = allowedDestinations.some(
+      ({ href }) => href === null,
+    );
+    const unread = unreadCount
+      ? await transaction.$queryRaw<{ id: string }[]>`
+          SELECT id
+          FROM notifications
+          WHERE recipient_user_id = ${recipientUserId}::uuid
+            AND read_at IS NULL
+            AND ((${includeUnlinked} AND href IS NULL)
+                 OR href = ANY(${allowedHrefs}::text[]))
+          ORDER BY CASE
+            WHEN source_module = 'customer-affairs'
+             AND event_type = 'call-center.assigned' THEN 0
+            ELSE 1
+          END, occurred_at DESC, id DESC
+          LIMIT ${limit}
+        `
+      : [];
+    const ids = unread.map(({ id }) => id);
     if (ids.length < limit) {
-      for await (const row of scan(false)) {
+      for await (const row of scanRead()) {
         if (!allowed(row)) continue;
         ids.push(row.id);
         if (ids.length >= limit) break;

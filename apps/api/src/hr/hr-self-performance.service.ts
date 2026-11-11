@@ -164,7 +164,12 @@ export class HrSelfPerformanceService {
                   String((row.data as Record<string, unknown>).firstIn),
                 ),
               ))
-            ? ((row.data ?? {}) as Record<string, unknown>)
+            ? {
+                ...((row.data ?? {}) as Record<string, unknown>),
+                ...(row.status === 'مرخصی'
+                  ? { lateMinutes: 0, deficitMinutes: 0 }
+                  : {}),
+              }
             : {},
         );
     }
@@ -333,9 +338,10 @@ export class HrSelfPerformanceService {
             data.registrationType === 'device'
               ? data.registrationType
               : null,
-          lateMinutes: minutes('lateMinutes'),
+          lateMinutes: row.status === 'مرخصی' ? 0 : minutes('lateMinutes'),
           overtimeMinutes: minutes('overtimeMinutes'),
-          deficitMinutes: minutes('deficitMinutes'),
+          deficitMinutes:
+            row.status === 'مرخصی' ? 0 : minutes('deficitMinutes'),
           dailyPenaltyToman: penalties.get(row.id) ?? null,
         };
       }),

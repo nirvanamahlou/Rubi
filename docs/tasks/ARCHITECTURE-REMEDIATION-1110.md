@@ -86,6 +86,10 @@ when only selected paths are addressed.
   export paths now stream output from the rendering worker into this storage
   writer. The worker sends one chunk at a time and waits for its consumption.
   Report rows and multipart uploads still produce buffered inputs.
+- Ordinary staged XLSX archives inspect bounded authenticated ZIP metadata
+  ranges. Each range verifies the full object. ZIP64, large metadata and OLE
+  continue using the compatibility buffer.
+
 - Master Data logo deduplication uses an exact scoped document projection
   and bounded stored-object authentication before reusing the existing file.
 
@@ -113,6 +117,10 @@ when only selected paths are addressed.
 - Native receipt/refund rows feed the projection directly in 500-row cursor
   pages. The existing per-source count limits and exact currency aggregation
   remain. Other native source paths still materialize their rows.
+
+- The notification feed groups unread counts by destination in PostgreSQL and
+  retrieves only the requested unread IDs. The existing route authorization,
+  exact count and priority for Call Center assignments apply in one snapshot.
 
 ## HR encryption configuration
 

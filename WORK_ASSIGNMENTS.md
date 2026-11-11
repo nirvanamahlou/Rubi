@@ -1319,6 +1319,10 @@ Reserve report worker rendering, output transfer and artifact storage integratio
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## XLSX-RANGE-INSPECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve staged XLSX format inspection and authenticated range reads. Preserve existing compatibility fallback, archive limits and macro checks.
+
 ## DOCUMENT-STREAM-SCAN-1111
 
 Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.
@@ -11990,6 +11994,10 @@ Bounded central notification-center.tsx lease: reuse existing call-center:open-q
 `nCALL-REQUEST-TOAST-1107: implementation complete;8 focused tests pass. Source frozen on push; no server deployment in this work item.
 CALL-UNIT-MANAGER-AUDIT-1107 production acceptance: PR1448, source da9d2dc52, merged as 3e4099489b9fddfc82aa460a1343c54686df6433 after all 8 hosted gates passed. Native audited correction applied to Reservations team permission and HR manager unit FK/team permission. Exact directory candidates and public resolveRequestAssignee acceptance: Sales managers 6 each, Finance account 3, Reservations 2, HR 1; all same-unit, foreign-unit selections rejected. HR currently has one active account. 80 targeted tests pass. Existing executive scope and ordinary staff preserved. No app images, Compose or service identities changed; no migration/business-record write. Fresh encrypted database backup recorded privately in /opt/rubi/unit-manager-repair-1107/backup-verified.json. Post-apply runner receipt hit a digest variable collision; independent clean-helper postcheck verified unchanged service identities/Compose and health, and saved verified.json. Fix renames the local hash variable and checks helper callability before writes. No repair is replayed. Follow-up source receipt/fix CI pending.
 
+## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
+
+Reserve the notifications feed repository and focused tests. Aggregate unread counts by destination and select only the unread rows needed for the feed.
+
 ## NOTIFICATION-HR-REFRESH-1107 — PC-B — ACTIVE
 
 Owner authorizes recurring bell alerts repair, probationary/temporary employment contract options and automatic attendance updates, push/develop merge. Reserve change-notifications classifier/regressions, shared HR contract options/contextual fallback, IAM trusted attendance actor resolution and tests, Radan scheduled caller/regressions, HR store visible refresh trigger if needed and own notes. Existing Call Center toast branch is confined to assignment toast; preserve real call workflows/UI. Production read-only diagnosis: recurring telephony lease POST is tracked as create; scheduled sync fails with a ROTATED configured anchor whose family has zero active sessions despite16 current active sessions for that same user. Resolve a currently valid native session for the explicitly configured active HR actor and re-evaluate native grants/branches; never bypass session expiry/revocation, broaden branches, create sessions or write production data. No migrations/dependencies/deployment.
@@ -12415,6 +12423,10 @@ Reserve legacy request row decoding in HR leave policy and attendance configurat
 ## HR-BOOTSTRAP-COALESCE-1111 — PC-B — READY_FOR_CI
 
 Reserve the HR workspace bootstrap request lifecycle and focused Web tests. A committed mutation must start a fresh read.
+
+## INCOMING-LETTER-BACKGROUND-1111 — PC-B — READY_FOR_CI
+
+Reserve the incoming-letter upload adapter and its test. Return once the file and metadata are saved, with existing owner and access rules and background scan scheduling.
 
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B — IN_PROGRESS
 
