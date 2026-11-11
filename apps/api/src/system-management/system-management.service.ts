@@ -1,3 +1,4 @@
+import { TELEPHONY_LEASE_ACTIVITY } from './system-activity.interceptor';
 import {
   BadRequestException,
   ConflictException,
@@ -957,6 +958,9 @@ export class SystemManagementService {
   async listActivity(cursor?: string) {
     if (cursor !== undefined) validUuid(cursor, 'شناسه تاریخچه');
     const rows = await this.database.client.systemAuditEvent.findMany({
+      where: {
+        NOT: { entityType: 'UserActivity', action: TELEPHONY_LEASE_ACTIVITY },
+      },
       select: {
         id: true,
         actorUserId: true,

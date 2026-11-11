@@ -613,6 +613,7 @@ export class HrService {
     rows: readonly RecordRow[],
     includeOvertime: boolean,
   ): Promise<Map<string, AttendanceAmounts>> {
+    const result = new Map<string, AttendanceAmounts>();
     const byBranch = new Map<string, RecordRow[]>();
     for (const row of rows) {
       if (
@@ -623,11 +624,16 @@ export class HrService {
         !(row.values as string[])[1]
       )
         continue;
+      if (row.status === 'مرخصی') {
+        result.set(row.id, {
+          ...emptyAttendanceAmounts,
+          dailyPenaltyToman: '0',
+        });
+      }
       const branchRows = byBranch.get(row.branchId) ?? [];
       branchRows.push(row);
       byBranch.set(row.branchId, branchRows);
     }
-    const result = new Map<string, AttendanceAmounts>();
     for (const [branchId, branchRows] of byBranch) {
       const policies = await this.database.client.hrRecord.findMany({
         where: {
@@ -771,6 +777,7 @@ export class HrService {
           ? new Prisma.Decimal(rates[6]).mul(data.overtimeMinutes).toFixed(0)
           : null,
     };
+    if (row.status === 'مرخصی') return { ...amount, dailyPenaltyToman: '0' };
     const view = this.attendanceView(source, employeeId, date);
     if (!view.shiftStart || !view.shiftEnd || !view.events.length)
       return { ...amount, dailyPenaltyToman: '0' };
@@ -873,6 +880,12 @@ export class HrService {
         ),
       );
     }
+    const fullDayLeave =
+      schema.key === 'time.attendance' && row.status === 'مرخصی';
+    if (fullDayLeave) {
+      values[4] = '0';
+      values[5] = '0';
+    }
     if (schema.key === 'time.leavePolicies')
       values.splice(
         0,
@@ -914,6 +927,9 @@ export class HrService {
         ? {}
         : {
             ...(publicHrData(row.data) as HrWorkflowData),
+            ...(fullDayLeave
+              ? { lateMinutes: 0, earlyMinutes: 0, deficitMinutes: 0 }
+              : {}),
             ...(schema.key === 'time.attendance'
               ? amounts
                 ? (amounts.get(row.id) ?? emptyAttendanceAmounts)
@@ -5708,6 +5724,7 @@ export class HrService {
       key,
       { operation: 'attendance.activation', input },
       async (tx) => {
+        let selectedRecord: RecordRow | undefined;
         if (input.recordId) {
           const record = await this.record(
             tx,
@@ -5725,26 +5742,33 @@ export class HrService {
             input.from !== input.to
           )
             throw new BadRequestException('رکورد کارکرد معتبر نیست.');
+          selectedRecord = record;
         }
         let changed = 0;
         for (const id of ids) {
           const employee = await this.employee(tx, id, actor);
           for (let at = from.getTime(); at <= to.getTime(); at += 86400000) {
             const date = new Date(at).toISOString().slice(0, 10);
-            await this.assertOpenPeriod(tx, employee.branchId, date);
-            const rows = await tx.hrRecord.findMany({
-              where: {
-                ...(typeof input.recordId === 'string'
-                  ? { id: input.recordId }
-                  : {}),
-                branchId: employee.branchId,
-                employeeId: id,
-                section: 'time',
-                tab: 'attendance',
-                deletedAt: null,
-                values: { path: ['1'], equals: date },
-              },
-            });
+            await this.assertOpenPeriod(
+              tx,
+              selectedRecord?.branchId ?? employee.branchId,
+              date,
+            );
+            const rows = selectedRecord
+              ? [selectedRecord]
+              : await tx.hrRecord.findMany({
+                  where: {
+                    ...(typeof input.recordId === 'string'
+                      ? { id: input.recordId }
+                      : {}),
+                    branchId: employee.branchId,
+                    employeeId: id,
+                    section: 'time',
+                    tab: 'attendance',
+                    deletedAt: null,
+                    values: { path: ['1'], equals: date },
+                  },
+                });
             for (const row of rows) {
               const data = (row.data ?? {}) as HrWorkflowData;
               const inactive = inactiveAttendance(row);
