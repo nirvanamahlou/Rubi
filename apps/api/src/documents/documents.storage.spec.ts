@@ -48,6 +48,22 @@ describe('LocalDocumentStorage encryption boundary', () => {
     expect(Buffer.concat(chunks)).toEqual(contents);
   });
 
+  it('fills the compatibility buffer from authenticated chunks and checks size before allocating', async () => {
+    const contents = Buffer.alloc(257 * 1024 + 3);
+    for (let offset = 0; offset < contents.length; offset++)
+      contents[offset] = offset % 251;
+    await storage.putQuarantined(objectKey, contents);
+    await expect(
+      storage.readQuarantined(objectKey, contents.length),
+    ).resolves.toEqual(contents);
+    await expect(
+      storage.readQuarantined(objectKey, Number.MAX_SAFE_INTEGER),
+    ).rejects.toThrow('Stored document failed integrity verification.');
+    await expect(
+      storage.readQuarantined(objectKey, contents.length - 1),
+    ).rejects.toThrow('Stored document failed integrity verification.');
+  });
+
   it('writes an async source in the existing authenticated format', async () => {
     const first = Buffer.alloc(97 * 1024, 12);
     const second = Buffer.from('second stream chunk');
@@ -109,6 +125,9 @@ describe('LocalDocumentStorage encryption boundary', () => {
     ).rejects.toThrow();
     await expect(
       storage.verifyQuarantined(objectKey, contents.length),
+    ).rejects.toThrow();
+    await expect(
+      storage.readQuarantined(objectKey, contents.length),
     ).rejects.toThrow();
     const chunks: Buffer[] = [];
     const consume = async () => {

@@ -40,6 +40,10 @@ when only selected paths are addressed.
 - Daily penalties load policies and shared inputs once per branch and group
   punch reads for up to 50 attendance rows. Dense batches fall back to bounded
   per-day reads so the existing per-day data limit remains intact.
+- Compatibility document reads fill one result buffer from 64 KiB chunks
+  and return it only after authentication. ZIP/OLE still needs the result
+  buffer, without the previous full ciphertext and plaintext copies.
+
 - The bell scans compact notification metadata in pages of 200 in a consistent
   database snapshot. It counts authorized unread rows, preserves assignment
   priority and fetches details for the selected rows only. Exact counting still
