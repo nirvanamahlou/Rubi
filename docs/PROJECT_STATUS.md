@@ -9959,3 +9959,7 @@ Archive uploads return as soon as storage and metadata are committed. The existi
 NORA-CONTRACT-GUIDE: local implementation of sales guidance and authorized contract read assistance; seven focused tests pass, scoped lint passes. Full diagnostic validation and browser acceptance remain pending.
 
 NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form validation guidance and authenticated contract inspection are implemented. 122 regressions, scoped lint, Web TypeScript and production build pass. Deployed authenticated browser acceptance is pending. See docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
+
+Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.

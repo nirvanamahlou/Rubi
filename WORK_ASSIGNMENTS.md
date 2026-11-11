@@ -12446,3 +12446,7 @@ NORA-CONTRACT-GUIDE | PC-C | codex/pc-c-nora-contract-guide | Nora read-only sal
 NORA-CONTRACT-GUIDE: seven guide/lookup regressions pass; scoped lint passes. Work remains IN_PROGRESS pending diagnostic validation integration and browser/build acceptance.
 
 NORA-CONTRACT-GUIDE validation: 85 assistant and 37 Sales regressions pass; scoped ESLint, full Web TypeScript and production Web build pass. Read-only form attributes and selected-row identifier are the bounded Sales consumer contract. Nora uses existing authenticated Sales reads, independent currencies and fresh record reads; native help/evidence messages stay outside provider history. No migration. Authenticated deployed-browser acceptance remains unverified. Source freezes on publication; see docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B — READY_FOR_CI
+
+Reserve job title table action icons.
