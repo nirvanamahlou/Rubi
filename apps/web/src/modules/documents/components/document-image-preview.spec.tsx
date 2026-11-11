@@ -47,6 +47,14 @@ describe('immediate uploaded photo preview', () => {
       expect(html).not.toContain('animate-spin');
     },
   );
+  it('loads an authorized pending PDF through the document preview', () => {
+    const document = image('PENDING_SCAN');
+    document.currentVersion.detectedMimeType = 'application/pdf';
+    const html = renderToStaticMarkup(
+      <DocumentImagePreview document={document} onLoadPreview={vi.fn()} />,
+    );
+    expect(html).toContain('animate-spin');
+  });
   it('still requires permission for pending images', () => {
     const html = renderToStaticMarkup(
       <DocumentImagePreview
