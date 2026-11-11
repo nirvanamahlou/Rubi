@@ -9971,3 +9971,5 @@ NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form v
 ## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
 
 Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.
+
+NORA-CONTRACT-WORKFLOW-GUIDE-1111: 30 source-linked workflow articles, colloquial intent routing, RTL-stable ASCII-arrow paths, guide follow-up context and live-form blocker guidance implemented. 138 assistant regressions and all 3 i18n checks pass. Scoped lint and Web TypeScript pass. No Sales workflow or data mutation. Publication validation pending.
