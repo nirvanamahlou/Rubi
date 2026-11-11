@@ -30,6 +30,7 @@ const state = vi.hoisted(() => ({
   index: 0,
   save: vi.fn(),
   assets: vi.fn(),
+  segmentPage: vi.fn(),
   campaigns: vi.fn(),
   access: vi.fn(),
   remove: vi.fn(),
@@ -65,6 +66,7 @@ vi.mock('../api/records-client', () => ({
   marketingApi: {
     saveAsset: state.save,
     assets: state.assets,
+    segmentPage: state.segmentPage,
     campaigns: state.campaigns,
     access: state.access,
     deleteAsset: state.remove,
@@ -139,32 +141,84 @@ beforeEach(() => {
   ];
   state.access.mockResolvedValue({ branchIds: ['branch-1'] });
   state.assets.mockResolvedValue({ data: [asset] });
+  state.segmentPage.mockResolvedValue({ data: [], page: 1, total: 0 });
   state.campaigns.mockResolvedValue({ data: [] });
   state.save.mockResolvedValue({ data: asset });
   state.remove.mockResolvedValue({});
 });
 
-it('loads audience assets without fetching campaigns and discards an older response', async () => {
-  let resolveOlder!: (value: { data: MarketingAssetViewV1[] }) => void;
-  const older = new Promise<{ data: MarketingAssetViewV1[] }>((resolve) => {
+it('loads audience pages without fetching all assets and discards an older response', async () => {
+  type Page = { data: MarketingAssetViewV1[]; page: number; total: number };
+  let resolveOlder!: (value: Page) => void;
+  const older = new Promise<Page>((resolve) => {
     resolveOlder = resolve;
   });
   const fresh = { ...asset, id: 'new-segment', kind: 'SEGMENT' as const };
-  state.assets
-    .mockReturnValueOnce(older)
-    .mockResolvedValueOnce({ data: [fresh] });
+  const freshPage = { data: [fresh], page: 2, total: 26 };
+  state.segmentPage.mockReturnValueOnce(older).mockResolvedValueOnce(freshPage);
+  state.values = [];
   const tree = nodes(DurableSegmentsPanel({ onNotice: notice }));
   const retry = tree.find((node) => typeof node.props.onRetry === 'function')!
     .props.onRetry as () => void;
   retry();
   retry();
-  await vi.waitFor(() => expect(state.values[2]).toEqual([fresh]));
-  expect(state.assets.mock.calls).toEqual([['SEGMENT'], ['SEGMENT']]);
+  await vi.waitFor(() => expect(state.values).toContain(freshPage));
+  expect(state.segmentPage.mock.calls).toEqual([
+    [{ page: 1, search: '' }],
+    [{ page: 1, search: '' }],
+  ]);
+  expect(state.assets).not.toHaveBeenCalled();
   expect(state.campaigns).not.toHaveBeenCalled();
-  resolveOlder({ data: [{ ...fresh, id: 'old-segment' }] });
+  resolveOlder({ ...freshPage, data: [{ ...fresh, id: 'old-segment' }] });
   await older;
   await Promise.resolve();
-  expect(state.values[2]).toEqual([fresh]);
+  expect(state.values).toContain(freshPage);
+});
+
+it('resets segment pagination when either server filter changes', async () => {
+  state.values = [];
+  const render = () => {
+    state.index = 0;
+    return nodes(DurableSegmentsPanel({ onNotice: notice }));
+  };
+  const retry = (tree: ReturnType<typeof nodes>) =>
+    (
+      tree.find((node) => typeof node.props.onRetry === 'function')!.props
+        .onRetry as () => void
+    )();
+  state.segmentPage.mockResolvedValue({
+    data: [{ ...asset, kind: 'SEGMENT' }],
+    page: 1,
+    total: 26,
+  });
+  retry(render());
+  await vi.waitFor(() =>
+    expect(state.values).toContainEqual(
+      expect.objectContaining({ page: 1, total: 26 }),
+    ),
+  );
+  const table = render().find((node) => node.props.pagination)!;
+  (table.props.pagination as { onPageChange(page: number): void }).onPageChange(
+    2,
+  );
+  retry(render());
+  await vi.waitFor(() =>
+    expect(state.segmentPage).toHaveBeenLastCalledWith({
+      page: 2,
+      search: '',
+    }),
+  );
+  const toolbar = render().find((node) => node.props.id === 'segments')!;
+  (toolbar.props.onSearch as (value: string) => void)('گروه');
+  (toolbar.props.onStatus as (value: string) => void)('PAUSED');
+  retry(render());
+  await vi.waitFor(() =>
+    expect(state.segmentPage).toHaveBeenLastCalledWith({
+      page: 1,
+      search: 'گروه',
+      status: 'PAUSED',
+    }),
+  );
 });
 
 function intake(mode: 'leads' | 'scoring' = 'leads') {
@@ -356,11 +410,6 @@ describe('audience presentation and canonical mutations', () => {
       },
     };
     state.values = [
-      { branchIds: ['branch-1'] },
-      [],
-      [segment],
-      false,
-      '',
       'گروه سفر',
       'شرط ویرایش‌شده',
       segment,
@@ -369,6 +418,12 @@ describe('audience presentation and canonical mutations', () => {
       true,
       '',
       'all',
+      1,
+      { branchIds: ['branch-1'] },
+      [],
+      { data: [segment], page: 1, total: 1 },
+      false,
+      '',
       '',
     ];
     state.index = 0;

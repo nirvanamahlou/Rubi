@@ -1,13 +1,12 @@
+import { MARKETING_ASSET_STATUS_LABELS } from '@nora/contracts';
+
 export const audienceStatusLabels: Record<string, string> = {
   NEW: 'جدید',
   CONTACTED: 'تماس گرفته‌شده',
   QUALIFIED: 'واجد شرایط',
   NURTURE: 'در حال پرورش',
   LOST: 'از دست رفته',
-  DRAFT: 'پیش‌نویس',
-  ACTIVE: 'فعال',
-  PAUSED: 'متوقف',
-  ARCHIVED: 'بایگانی‌شده',
+  ...MARKETING_ASSET_STATUS_LABELS,
 };
 export const audienceSourceLabels: Record<string, string> = {
   WEBSITE: 'وب‌سایت',

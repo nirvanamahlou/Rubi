@@ -179,6 +179,27 @@ export interface MarketingCampaignPageV1 {
   total: number;
 }
 
+export const MARKETING_ASSET_STATUS_LABELS = {
+  DRAFT: 'پیش‌نویس',
+  ACTIVE: 'فعال',
+  PAUSED: 'متوقف',
+  ARCHIVED: 'بایگانی‌شده',
+} as const;
+
+export const MARKETING_SEGMENT_PAGE_SIZE = 25;
+
+export interface MarketingSegmentPageQueryV1 {
+  page?: number;
+  search?: string;
+  status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
+}
+
+export interface MarketingSegmentPageV1 {
+  data: MarketingAssetViewV1[];
+  page: number;
+  total: number;
+}
+
 export interface MarketingPromotionPageQueryV1 {
   kind: 'COUPON' | 'OFFER';
   page?: number;

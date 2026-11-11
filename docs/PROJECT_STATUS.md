@@ -1678,7 +1678,7 @@ Ticket Catalog flight search now exposes all weekdays including Wednesday. Appli
 
 ## MARKETING-PROMOTION-PAGES-1110 — PC-B
 
-Discounts and offers request 50 rows per page after server-side branch, kind, status, name/code and date filters. Excel retrieves all matching pages on demand. The Marketing hub no longer preloads campaign records outside the Campaigns section. Sixteen focused Web tests and 31 API/PostgreSQL tests passed in a disposable database. Other marketing lists still use their existing API.
+Discounts and offers request 50 rows per page after server-side branch, kind, status, name/code and date filters. Excel retrieves all matching pages on demand. The Marketing hub no longer preloads campaign records outside the Campaigns section. Sixteen focused Web tests and 31 API/PostgreSQL tests passed in a disposable database. Audience groups now read 25 records per page with server-side name and status search, exact branch-scoped totals, and page adjustment after deletion. Forty-one focused Web tests and the new PostgreSQL integration test passed. Remaining Marketing collections use their existing API.
 
 ## 2026-10-09 — SALES-RESERVATIONS-FINANCE-QA-1009 — PC-A
 
