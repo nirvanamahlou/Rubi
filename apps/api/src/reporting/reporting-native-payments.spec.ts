@@ -84,6 +84,68 @@ describe('confirmed receipt/refund native projection', () => {
     );
     expect(exported.filterSnapshot.grain).toBe('PAYMENT');
   });
+  it('collects both receipt and refund pages under the same authorized filters', async () => {
+    const { client, receipts, refunds } = fixture();
+    const [receipt] = await receipts();
+    const [refund] = await refunds();
+    receipts
+      .mockClear()
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, i) => ({
+          ...receipt,
+          id: 'receipt-' + i,
+        })),
+      )
+      .mockResolvedValueOnce([receipt]);
+    refunds
+      .mockClear()
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, i) => ({
+          ...refund,
+          id: 'refund-' + i,
+        })),
+      )
+      .mockResolvedValueOnce([refund]);
+
+    const report = await nativePaymentReport(client, query, actor);
+    expect(report.totalsByCurrency[0]).toMatchObject({
+      salesAmount: '450900',
+      refundAmount: '50100',
+    });
+    for (const [reader, id] of [
+      [receipts, 'receipt-499'],
+      [refunds, 'refund-499'],
+    ] as const) {
+      expect(reader).toHaveBeenCalledTimes(2);
+      expect(reader).toHaveBeenNthCalledWith(2, {
+        ...reader.mock.calls[0]![0],
+        take: 500,
+        cursor: { id },
+        skip: 1,
+      });
+    }
+  });
+  it('fetches only one extra receipt to detect the existing safety limit', async () => {
+    const { client, receipts, refunds } = fixture();
+    const [receipt] = await receipts();
+    receipts.mockClear();
+    refunds.mockResolvedValue([]);
+    for (let page = 0; page < 20; page++)
+      receipts.mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, i) => ({
+          ...receipt,
+          id: 'r-' + (page * 500 + i),
+        })),
+      );
+    await expect(
+      readSalesPaymentReportingProjection(client, actor, query),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(receipts).toHaveBeenCalledTimes(21);
+    expect(receipts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ take: 1, cursor: { id: 'r-9999' }, skip: 1 }),
+    );
+  });
+
   it('returns a truthful empty dataset when there are no confirmed receipts/refunds', async () => {
     const { client, receipts, refunds } = fixture();
     receipts.mockResolvedValue([]);

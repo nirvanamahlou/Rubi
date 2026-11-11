@@ -7,16 +7,19 @@ export async function collectCursorPages<Row extends { id: string }, Result>(
     skip?: number;
   }) => Promise<readonly Row[]>,
   project: (row: Row) => Result,
+  maximumRows = Infinity,
 ) {
   const results: Result[] = [];
   let cursor: { id: string } | undefined;
-  for (;;) {
+  while (results.length < maximumRows) {
+    const take = Math.min(pageSize, maximumRows - results.length);
     const rows = await read({
-      take: pageSize,
+      take,
       ...(cursor ? { cursor, skip: 1 } : {}),
     });
     for (const row of rows) results.push(project(row));
-    if (rows.length < pageSize) return results;
+    if (rows.length < take) return results;
     cursor = { id: rows[rows.length - 1]!.id };
   }
+  return results;
 }

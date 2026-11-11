@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { DatabaseClient, Prisma } from '@nora/database';
+import { collectCursorPages } from '../database/collect-cursor-pages';
 import type {
   SalesReportingActor,
   SalesReportingQuery,
@@ -72,59 +73,68 @@ export async function readSalesPaymentReportingProjection(
       : {}),
   };
   const [receipts, refunds] = await Promise.all([
-    client.salesContractPaymentEntry.findMany({
-      where: {
-        ...paymentScope,
-        status: 'FINANCE_CONFIRMED',
-        financeConfirmedAt: { not: null, ...range },
-      },
-      select: {
-        id: true,
-        currencyCode: true,
-        amount: true,
-        method: true,
-        financeConfirmedAt: true,
-        updatedAt: true,
-      },
-      orderBy: [{ financeConfirmedAt: 'asc' }, { id: 'asc' }],
-      take: 10001,
-    }),
-    client.salesPaymentRefund.findMany({
-      where: { payment: paymentScope, createdAt: range },
-      select: {
-        id: true,
-        amount: true,
-        createdAt: true,
-        payment: { select: { currencyCode: true, method: true } },
-      },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      take: 10001,
-    }),
+    collectCursorPages(
+      500,
+      (page) =>
+        client.salesContractPaymentEntry.findMany({
+          where: {
+            ...paymentScope,
+            status: 'FINANCE_CONFIRMED',
+            financeConfirmedAt: { not: null, ...range },
+          },
+          select: {
+            id: true,
+            currencyCode: true,
+            amount: true,
+            method: true,
+            financeConfirmedAt: true,
+            updatedAt: true,
+          },
+          orderBy: [{ financeConfirmedAt: 'asc' }, { id: 'asc' }],
+          ...page,
+        }),
+      (row) => ({
+        id: row.id,
+        kind: 'دریافت قطعی',
+        currencyCode: row.currencyCode,
+        method: row.method,
+        received: row.amount.toString(),
+        refunded: '0',
+        at: row.financeConfirmedAt!,
+        updatedAt: row.updatedAt,
+      }),
+      10001,
+    ),
+    collectCursorPages(
+      500,
+      (page) =>
+        client.salesPaymentRefund.findMany({
+          where: { payment: paymentScope, createdAt: range },
+          select: {
+            id: true,
+            amount: true,
+            createdAt: true,
+            payment: { select: { currencyCode: true, method: true } },
+          },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          ...page,
+        }),
+      (row) => ({
+        id: row.id,
+        kind: 'استرداد قطعی',
+        currencyCode: row.payment.currencyCode,
+        method: row.payment.method,
+        received: '0',
+        refunded: row.amount.toString(),
+        at: row.createdAt,
+        updatedAt: row.createdAt,
+      }),
+      10001,
+    ),
   ]);
   if (receipts.length > 10000 || refunds.length > 10000)
     throw new BadRequestException(
       'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.',
     );
-  return [
-    ...receipts.map((row) => ({
-      id: row.id,
-      kind: 'دریافت قطعی',
-      currencyCode: row.currencyCode,
-      method: row.method,
-      received: row.amount.toString(),
-      refunded: '0',
-      at: row.financeConfirmedAt!,
-      updatedAt: row.updatedAt,
-    })),
-    ...refunds.map((row) => ({
-      id: row.id,
-      kind: 'استرداد قطعی',
-      currencyCode: row.payment.currencyCode,
-      method: row.payment.method,
-      received: '0',
-      refunded: row.amount.toString(),
-      at: row.createdAt,
-      updatedAt: row.createdAt,
-    })),
-  ];
+  return receipts.concat(refunds);
 }
