@@ -8,6 +8,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { SettingsModule } from '../settings/settings.module';
 import { WindowsDefenderAntivirus } from './documents.antivirus';
 import { DocumentsController } from './documents.controller';
+import { DocumentMultipartInterceptor } from './document-multipart.interceptor';
 import { DocumentsRepository } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { DocumentsService } from './documents.service';
@@ -21,6 +22,7 @@ import { LocalDocumentStorage } from './documents.storage';
   providers: [
     AuthGuard,
     PermissionGuard,
+    DocumentMultipartInterceptor,
     DocumentsRepository,
     DocumentsScanProcessor,
     DocumentsService,

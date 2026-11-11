@@ -1327,6 +1327,10 @@ Reserve the hotel currency field in the existing Master Data editable-field cata
 
 Reserve CSV encoding and its byte-level regression. Preserve export bytes and storage behavior.
 
+## STREAM-DOCUMENT-MULTIPART-1111 — PC-B — READY_FOR_CI
+
+Reserve the archive and incoming-letter multipart file intake. Preserve route permissions, existing workbook validation, file limits and cleanup.
+
 ## DOCUMENT-OPEN-WITHOUT-SCAN-WAIT-1111
 
 Allow authenticated archive downloads and PDF previews while a scan is pending, unavailable or failed. Branch scope, file permissions, configured confidential access and quarantine enforcement continue to apply. Remove outdated scan-wait copy from the detail panel.

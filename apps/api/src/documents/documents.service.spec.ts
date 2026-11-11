@@ -1843,53 +1843,75 @@ describe('DocumentsService security and persistence flow', () => {
     expect(repository.createUploaded).not.toHaveBeenCalled();
   });
 
-  it('accepts an archive upload without a related case and persists no primary relation', async () => {
-    const dto: DocumentUploadDto = {
-      title: 'Standalone archive file',
-      documentTypeId: row().documentTypeId,
-      categoryId: row().categoryId!,
-      branchId,
-      ownerUserId: actor.userId,
-      confidentiality: 'INTERNAL',
-    };
-    const buffer = Buffer.from('%PDF-1.7\nsynthetic standalone document');
-    repository.uploadReferences.mockResolvedValue({
-      documentType: {
-        id: dto.documentTypeId,
-        domain: 'SALES',
-        defaultConfidentiality: 'INTERNAL',
-        allowedMimeTypes: ['application/pdf'],
-        maxFileSizeBytes: 25 * 1024 * 1024,
-        requiresExpiry: false,
-      },
-      category: { id: dto.categoryId },
-      owner: { id: actor.userId },
-      branch: { id: branchId },
-    });
-    repository.createUploaded.mockResolvedValue(
-      row({ confidentiality: 'INTERNAL' }),
-    );
-    await service.upload(
-      dto,
-      {
-        buffer,
-        mimetype: 'application/pdf',
-        originalname: 'standalone.pdf',
-        size: buffer.length,
-      },
-      actor,
-      {},
-    );
-    expect(repository.findCaseReference).not.toHaveBeenCalled();
-    expect(repository.createUploaded).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sourceModule: 'DOCUMENTS',
-        sourceEntityType: null,
-        sourceEntityId: null,
-        sourceDisplayLabel: null,
-      }),
-    );
-  });
+  it.each(['buffer', 'stream'] as const)(
+    'stores a standalone %s upload without a primary relation',
+    async (mode) => {
+      const dto: DocumentUploadDto = {
+        title: 'Standalone archive file',
+        documentTypeId: row().documentTypeId,
+        categoryId: row().categoryId!,
+        branchId,
+        ownerUserId: actor.userId,
+        confidentiality: 'INTERNAL',
+      };
+      const buffer = Buffer.from('%PDF-1.7\nsynthetic standalone document');
+      repository.uploadReferences.mockResolvedValue({
+        documentType: {
+          id: dto.documentTypeId,
+          domain: 'SALES',
+          defaultConfidentiality: 'INTERNAL',
+          allowedMimeTypes: ['application/pdf'],
+          maxFileSizeBytes: 25 * 1024 * 1024,
+          requiresExpiry: false,
+        },
+        category: { id: dto.categoryId },
+        owner: { id: actor.userId },
+        branch: { id: branchId },
+      });
+      repository.createUploaded.mockResolvedValue(
+        row({ confidentiality: 'INTERNAL' }),
+      );
+      const staged = {
+        documentId: 'stage-document',
+        objectKey: 'documents/staged.bin',
+        prefix: buffer,
+        sha256: createHash('sha256').update(buffer).digest('hex'),
+        retained: false,
+      };
+      await service.upload(
+        dto,
+        {
+          ...(mode === 'stream' ? { staged } : { buffer }),
+          mimetype: 'application/pdf',
+          originalname: 'standalone.pdf',
+          size: buffer.length,
+        },
+        actor,
+        {},
+      );
+      if (mode === 'stream') {
+        expect(staged.retained).toBe(true);
+        expect(storage.putQuarantined).not.toHaveBeenCalled();
+        expect(storage.readQuarantined).not.toHaveBeenCalled();
+        expect(repository.createUploaded).toHaveBeenCalledWith(
+          expect.objectContaining({
+            documentId: staged.documentId,
+            storageObjectKey: staged.objectKey,
+            sha256: staged.sha256,
+          }),
+        );
+      }
+      expect(repository.findCaseReference).not.toHaveBeenCalled();
+      expect(repository.createUploaded).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceModule: 'DOCUMENTS',
+          sourceEntityType: null,
+          sourceEntityId: null,
+          sourceDisplayLabel: null,
+        }),
+      );
+    },
+  );
 
   it('requires an access code for newly uploaded confidential documents', async () => {
     const dto: DocumentUploadDto = {

@@ -44,6 +44,10 @@ when only selected paths are addressed.
   database snapshot. It counts authorized unread rows, preserves assignment
   priority and fetches details for the selected rows only. Exact counting still
   visits unread metadata because route permissions are evaluated in contracts.
+- Archive and incoming multipart uploads stream directly into encrypted
+  storage. ZIP/OLE validation and other internal upload callers still use
+  buffered inputs.
+
 - The shared authenticated transport passed six focused Web tests. The final
   PR #1600 revision also passed the hosted quality, build, test and migration checks.
 
