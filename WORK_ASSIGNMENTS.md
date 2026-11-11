@@ -1307,6 +1307,10 @@ Reserve Reporting export queue lifecycle, authenticated status and Web export fl
 
 Reserve Procurement invoice and correction reads, Sales receipt reads, their shared database paging helper, Finance export warning and focused regressions. Preserve branch, status, order and DTOs. No schema, dependencies or deployment.
 
+## REPORTING-EXPORT-FILTER-MEMORY-1111
+
+Reports build filter choices only for interactive output. Exports preserve filter labels and selected rows, and reuse the source row array when no output predicates apply. Database rows still materialize before rendering.
+
 ## FINANCE-SOURCE-PROJECTIONS-1110 (PC-B)
 
 Reserve Sales receipt projection, Finance ticket purchase queue read and their focused regressions. Preserve scope, ordering, status, Decimal amounts and public responses. No schema, dependencies or deployment.

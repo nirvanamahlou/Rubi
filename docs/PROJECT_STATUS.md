@@ -1092,6 +1092,10 @@ The Reports workspace now queues exports and retries in PostgreSQL, tracks statu
 
 Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.
 
+## REPORTING-EXPORT-FILTER-MEMORY-1111
+
+Reports build filter choices only for interactive output. Exports preserve filter labels and selected rows, and reuse the source row array when no output predicates apply. Database rows still materialize before rendering.
+
 ## FINANCE-SOURCE-PROJECTIONS-1110
 
 The Sales inbox reads only receipt fields used by Finance. Ticket queue state reads the latest cost per requested purchase and the latest payment and exact count for that cost, using the existing compound indexes. Earlier cost revisions and their payments stay outside the result. The scoped suite passed 39 tests and the isolated PostgreSQL 18 suite passed all six. Cross-source pagination and the existing Sales and Procurement source limits remain open.
