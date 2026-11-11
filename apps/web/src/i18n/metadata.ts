@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { displayLanguageCookieName, parseDisplayLanguage } from './language';
-import { translateUiText } from './translate';
+import { loadEnglishUiCatalog, translateUiText } from './translate';
 
 /** Page titles and descriptions follow the same request language as the shell. */
 export async function localizedMetadata(metadata: Metadata): Promise<Metadata> {
@@ -9,6 +9,7 @@ export async function localizedMetadata(metadata: Metadata): Promise<Metadata> {
     parseDisplayLanguage(
       (await cookies()).get(displayLanguageCookieName)?.value,
     ) ?? 'fa';
+  if (language === 'en') await loadEnglishUiCatalog();
   const visit = (value: unknown): unknown => {
     if (typeof value === 'string') return translateUiText(value, language);
     if (Array.isArray(value)) return value.map(visit);

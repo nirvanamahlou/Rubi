@@ -1,5 +1,6 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { localizeDocumentHtml } from '@/i18n/document';
+import { loadEnglishUiCatalog } from '@/i18n/translate';
 import type { DisplayLanguage } from '@/i18n/language';
 import type { FinanceExportSnapshotV1 } from '@nora/contracts';
 import { execFile } from 'node:child_process';
@@ -94,6 +95,7 @@ export async function renderFinancePdf(
     const font = await readFile(
       join(process.cwd(), 'public/fonts/vazirmatn-arabic-wght-normal.woff2'),
     );
+    if (language === 'en') await loadEnglishUiCatalog();
     const html = localizeDocumentHtml(
       financePrintHtml(snapshot, font.toString('base64'), language),
       language,

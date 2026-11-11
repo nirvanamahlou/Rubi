@@ -37,6 +37,10 @@ when only selected paths are addressed.
 
 ## Implementation evidence
 
+- The English fallback catalog is loaded on demand by the display provider.
+  English metadata and document and import entry points explicitly prepare
+  it before synchronously translating text.
+
 - Operational report previews reuse the Finance ranking heap and build
   output rows only for the selected page. Full exports preserve stable sort
   order and totals. Source producers still materialize their datasets.

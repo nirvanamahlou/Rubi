@@ -6,6 +6,7 @@ export default defineConfig({
   oxc: { jsx: { runtime: 'automatic', importSource: '@/i18n' } },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
+    setupFiles: ['./src/i18n/translation-test-setup.ts'],
     include: [
       '**/*.{test,spec}.?(c|m)[jt]s?(x)',
       'src/modules/ticket-catalog/**/*.render.ts',

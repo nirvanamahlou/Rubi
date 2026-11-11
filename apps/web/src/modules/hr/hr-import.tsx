@@ -1,5 +1,5 @@
 'use client';
-import { translateUiText } from '@/i18n/translate';
+import { loadEnglishUiCatalog, translateUiText } from '@/i18n/translate';
 
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -67,6 +67,8 @@ export function HrImport({
         'کد پرسنلی',
         'شناسه پرونده مرتبط',
       ];
+      if (rawHeaders?.some((header) => header && !expected.includes(header)))
+        await loadEnglishUiCatalog();
       const headers = rawHeaders?.map(
         (header) =>
           expected.find(

@@ -1,6 +1,7 @@
 import { TICKET_LATIN_FONT_URL } from '@/components/travel/flight-ticket-layout';
 import { readTicketLatinFont } from './ticket-pdf-assets';
 import { localizeDocumentHtml } from '@/i18n/document';
+import { loadEnglishUiCatalog } from '@/i18n/translate';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import {
@@ -102,6 +103,7 @@ export async function prepareTicketHtml(
   language: DisplayLanguage = 'fa',
 ): Promise<string> {
   const { fontPath: font } = await resolveTicketPdfRuntime();
+  if (language === 'en') await loadEnglishUiCatalog();
   let document = localizeDocumentHtml(html, language);
   if (document.includes(`url("${TICKET_LATIN_FONT_URL}")`)) {
     const latinFont = await readTicketLatinFont();
