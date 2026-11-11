@@ -4,8 +4,10 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -28,6 +30,7 @@ import {
   SaveReportDto,
   ShareSavedReportDto,
 } from './reporting.dto';
+import { ReportingExportQueue } from './reporting-export-queue.service';
 import { ReportingService } from './reporting.service';
 
 @ApiTags('Reporting')
@@ -37,6 +40,7 @@ import { ReportingService } from './reporting.service';
 export class ReportingController {
   constructor(
     @Inject(ReportingService) private readonly service: ReportingService,
+    @Inject(ReportingExportQueue) private readonly queue: ReportingExportQueue,
   ) {}
 
   @Get('catalog')
@@ -185,6 +189,40 @@ export class ReportingController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.previewRun(code, body, request.actor);
+  }
+
+  @Post(':code/export-jobs')
+  @HttpCode(202)
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  @ApiBody({ type: ExportCreateDto })
+  queueExport(
+    @Param('code') code: string,
+    @Body() body: ExportCreateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.enqueue(code, body, request.actor);
+  }
+
+  @Post('export-jobs/:id/retry')
+  @HttpCode(202)
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  retryQueuedExport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.retry(id, request.actor);
+  }
+
+  @Get('export-jobs/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequireAccessControls('reports.view.downloads')
+  exportStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.queue.status(id, request.actor);
   }
 
   @Post(':code/exports')

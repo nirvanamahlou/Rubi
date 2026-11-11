@@ -5888,5 +5888,14 @@
   "مبلغ جریمه و تشویق باید عدد صحیح غیرمنفی به تومان باشد.": "The penalty and incentive rate must be a non-negative whole amount in Toman.",
   "وضعیت خودکار": "Automatic status",
   "در انتظار تردد": "Awaiting clock-in",
-  "عدم روزکاری": "Non-working day"
+  "عدم روزکاری": "Non-working day",
+  "ساخت فایل ادامه دارد. وضعیت را در بخش دانلودها ببینید.": "The file is still being generated. Check its status in Downloads.",
+  "درخواست تولید مجدد در صف ثبت شد.": "The retry was queued.",
+  "تلاش مجدد ناموفق بود.": "The retry failed.",
+  "تعداد خروجی‌های در انتظار شما به سقف رسیده است.": "You have reached the limit for pending exports.",
+  "تولید خروجی پس از چند تلاش کامل نشد.": "Export generation did not finish after several attempts.",
+  "دسترسی گزارش تغییر کرده است. خروجی را دوباره درخواست کنید.": "Your report access changed. Request the export again.",
+  "تعریف گزارش تغییر کرده است. خروجی را دوباره درخواست کنید.": "The report definition changed. Request the export again.",
+  "مجوز ساخت خروجی گزارش وجود ندارد.": "You do not have permission to export this report.",
+  "سناریوی کنترل‌شده خطای تولید خروجی برای دمو.": "Simulated export generation failure for the demo."
 }

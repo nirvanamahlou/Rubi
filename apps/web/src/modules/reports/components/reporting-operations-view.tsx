@@ -125,6 +125,33 @@ export function ReportingOperationsView({
     const frame = window.requestAnimationFrame(() => void load());
     return () => window.cancelAnimationFrame(frame);
   }, [load, mutationRevision]);
+  useEffect(() => {
+    if (
+      view !== 'downloads' ||
+      !rows.some(
+        (row) => row.status === 'QUEUED' || row.status === 'GENERATING',
+      )
+    )
+      return;
+    let active = true;
+    let refreshing = false;
+    const timer = window.setInterval(async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const next = await reportingApi.listWorkspace<Row>('exports');
+        if (active) setRows(next);
+      } catch {
+        // Keep the last successful status while the next refresh is pending.
+      } finally {
+        refreshing = false;
+      }
+    }, 5_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [rows, view]);
   const visible = rows.slice(0, REPORTING_OPERATIONS_LIMIT).filter((row) => {
     if (view === 'shared') return row.isSharedWithActor === true;
     if (view === 'saved' && row.isSharedWithActor === true) return false;
@@ -295,12 +322,18 @@ export function ReportingOperationsView({
                             size="sm"
                             variant="outline"
                             onClick={async () => {
-                              await reportingApi.retryExport(row.id);
-                              setFeedback(
-                                'درخواست تولید مجدد ثبت و خروجی آماده شد.',
-                              );
-                              await load();
-                              await onMutation?.();
+                              try {
+                                await reportingApi.retryExport(row.id);
+                                setFeedback('درخواست تولید مجدد در صف ثبت شد.');
+                                await load();
+                                await onMutation?.();
+                              } catch (caught) {
+                                setFeedback(
+                                  caught instanceof Error
+                                    ? caught.message
+                                    : 'تلاش مجدد ناموفق بود.',
+                                );
+                              }
                             }}
                           >
                             <RefreshCw className="size-4" /> تلاش مجدد
