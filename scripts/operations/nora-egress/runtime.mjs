@@ -18,4 +18,3 @@ service.listen(4300, '0.0.0.0');
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.once(signal, () => service.close());
 }
-
