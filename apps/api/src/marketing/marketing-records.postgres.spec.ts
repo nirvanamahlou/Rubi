@@ -317,10 +317,10 @@ describe.skipIf(!enabled)(
         randomUUID(),
       );
       const name = 'كيان %-' + suffix;
-      const rows = Array.from({ length: 26 }, () => ({
+      const rows = Array.from({ length: 26 }, (_, index) => ({
         branchId,
         kind: 'AUDIENCE',
-        name,
+        name: name + index,
         status: 'ACTIVE',
         payload: {},
         campaignId: campaign.data.id,
@@ -330,8 +330,8 @@ describe.skipIf(!enabled)(
       await client.marketingAsset.createMany({
         data: [
           ...rows,
-          { ...rows[0]!, campaignId: null },
-          { ...rows[0]!, status: 'DELETED' },
+          { ...rows[0]!, name: name + '-unlinked', campaignId: null },
+          { ...rows[0]!, name: name + '-deleted', status: 'DELETED' },
           { ...rows[0]!, kind: 'SOURCE', campaignId: null },
         ],
       });
