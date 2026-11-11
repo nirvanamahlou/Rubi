@@ -1098,25 +1098,13 @@ export class DocumentsService {
       );
 
     const versionNote = masterDataLogoMarker(file);
-    const duplicate = (
-      await this.repository.list(
-        {
-          domain: 'BRAND',
-          archiveStatus: 'ACTIVE',
-          branchId: branch.id,
-          sourceModule: 'master-data',
-          sourceEntityType: input.resource,
-          sourceEntityId: input.recordId,
-          sortBy: 'updatedAt',
-          sortDirection: 'desc',
-          page: 1,
-          pageSize: 100,
-        },
-        actor.branchIds,
-        ['BRAND'],
-        actor.userId,
-      )
-    ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
+    const duplicate = await this.repository.findMasterDataLogoDuplicate({
+      branchId: branch.id,
+      resource: input.resource,
+      recordId: input.recordId,
+      versionNote,
+      actorUserId: actor.userId,
+    });
     if (
       duplicate?.currentVersion &&
       !['INFECTED', 'QUARANTINED'].includes(duplicate.currentVersion.scanStatus)
@@ -1124,7 +1112,7 @@ export class DocumentsService {
       try {
         // A saved metadata reference is not proof that its encrypted object
         // survived a storage move. Never reuse a missing or corrupt object.
-        await this.storage.readQuarantined(
+        await this.storage.verifyQuarantined(
           duplicate.currentVersion.storageObjectKey,
           Number(duplicate.currentVersion.sizeBytes),
         );

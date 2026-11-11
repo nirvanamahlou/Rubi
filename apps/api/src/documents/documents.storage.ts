@@ -5,14 +5,7 @@ import {
   randomBytes,
 } from 'node:crypto';
 import { constants } from 'node:fs';
-import {
-  access,
-  mkdir,
-  open,
-  readFile,
-  rm,
-  type FileHandle,
-} from 'node:fs/promises';
+import { access, mkdir, open, rm, type FileHandle } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -148,31 +141,13 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
   ): Promise<Readable> {
-    if (!Number.isSafeInteger(expectedSizeBytes) || expectedSizeBytes < 0)
-      throw integrityError();
     const target = this.pathFor(objectKey);
-    const file = await open(target, 'r');
-    const digests: Buffer[] = [];
-    let header: Buffer;
-    try {
-      const stat = await file.stat();
-      if (!stat.isFile() || stat.size - headerSize !== expectedSizeBytes)
-        throw integrityError();
-      header = await readExactly(file, 0, headerSize);
-      const decipher = this.decipher(objectKey, header);
-      for (let offset = 0; offset < expectedSizeBytes; offset += chunkSize) {
-        const bytes = await readExactly(
-          file,
-          headerSize + offset,
-          Math.min(chunkSize, expectedSizeBytes - offset),
-        );
-        digests.push(digest(bytes));
-        decipher.update(bytes);
-      }
-      decipher.final();
-    } finally {
-      await file.close();
-    }
+    const { header, digests } = await this.authenticateObject(
+      target,
+      objectKey,
+      expectedSizeBytes,
+      'stream',
+    );
 
     // GCM authenticates the entire file at final(). Only start delivery after
     // that succeeds. Compare each ciphertext chunk on the second pass so
@@ -187,6 +162,55 @@ export class LocalDocumentStorage {
       ),
       { objectMode: false },
     );
+  }
+
+  async verifyQuarantined(objectKey: string, expectedSizeBytes: number) {
+    await this.authenticateObject(
+      this.pathFor(objectKey),
+      objectKey,
+      expectedSizeBytes,
+      'verify',
+    );
+  }
+
+  private async authenticateObject(
+    target: string,
+    objectKey: string,
+    expectedSizeBytes: number,
+    mode: 'verify' | 'stream' | 'buffer',
+  ) {
+    if (!Number.isSafeInteger(expectedSizeBytes) || expectedSizeBytes < 0)
+      throw integrityError();
+    const file = await open(target, 'r');
+    const digests: Buffer[] = [];
+    let header: Buffer;
+    let contents: Buffer | undefined;
+    try {
+      const stat = await file.stat();
+      if (!stat.isFile() || stat.size - headerSize !== expectedSizeBytes)
+        throw integrityError();
+      if (mode === 'buffer') contents = Buffer.allocUnsafe(expectedSizeBytes);
+      header = await readExactly(file, 0, headerSize);
+      const decipher = this.decipher(objectKey, header);
+      for (let offset = 0; offset < expectedSizeBytes; offset += chunkSize) {
+        const bytes = await readExactly(
+          file,
+          headerSize + offset,
+          Math.min(chunkSize, expectedSizeBytes - offset),
+        );
+        if (mode === 'stream') digests.push(digest(bytes));
+        const plaintext = decipher.update(bytes);
+        if (contents) plaintext.copy(contents, offset);
+      }
+      decipher.final();
+    } catch (error) {
+      contents?.fill(0);
+      throw error;
+    } finally {
+      await file.close();
+    }
+
+    return { header, digests, contents };
   }
 
   private async *streamVerified(
@@ -235,14 +259,12 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
   ): Promise<Buffer> {
-    const target = this.pathFor(objectKey);
-    const stored = await readFile(target);
-    const decipher = this.decipher(objectKey, stored.subarray(0, headerSize));
-    const contents = Buffer.concat([
-      decipher.update(stored.subarray(headerSize)),
-      decipher.final(),
-    ]);
-    if (contents.length !== expectedSizeBytes) throw integrityError();
-    return contents;
+    const { contents } = await this.authenticateObject(
+      this.pathFor(objectKey),
+      objectKey,
+      expectedSizeBytes,
+      'buffer',
+    );
+    return contents!;
   }
 }

@@ -298,6 +298,10 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff
 
 Reserve the encrypted storage writer and targeted tests. Keep the persisted RUBIDOC1 format, exclusive creation and authenticated reads.
 
+## LOGO-DUPLICATE-PROJECTION-1111 — PC-B — READY_FOR_CI
+
+Reserve Master Data logo duplicate lookup and bounded stored-object verification. Preserve branch and confidentiality checks, current revision rules, and missing-object replacement.
+
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
@@ -1462,6 +1466,10 @@ Publication follow-up: the user explicitly authorizes Commit, Push, hosted CI, P
 Delivery: mockup-based dashboard, configurable four-system catalogue, four accessible metric dialogs, Jalali periods, comparison/activity/workflow areas and existing nine-section centre are running on local3100/4192. Existing public IAM actor hook is packaged correctly; authenticated localhost and127.0.0.1 browser checks pass.189 tests, scoped lint, Web/API typecheck, Web production build, database declaration build and runtime build pass. Four initial brands/systems initialized through the public audited command; no business-data seed or migration in this redesign. Actual external business metrics/sync/SSO remain unconnected. Bounded source locks released; no GitHub publication or merge. See docs/tasks/INTEGRATIONS-VISUAL-1015.md.
 
 COMPUTER_ID=PC-D; branch codex/pc-d-integrations-visual-1015 from origin/PC-D-Integration@b0181dc5. User authorizes redesign against four supplied mockups and continuing local Docker delivery. Reserve existing Integrations API/registry/contracts/Web module and tests, integration route, bounded i18n registration/catalogue and module-foundation route test, own task/status entries. Port the existing f0f8e21d foundation without parallel module. Producer integrations.registry.v1 and Web consumer ship together, additive export, unchanged IAM/SystemManagement public interfaces. No Migration or Dependency/Lockfile ownership requested; no schema or other-module edits. Runtime-only packaging includes the already-existing IAM access-context public actor hook omitted by the prior overlay; no new IAM behavior. Preserve baseline schema, all volumes, other application source, credentials and adapter paths. Local runtime artifacts/launcher reserved; no external publication/merge authorized under current project policy. Analytics remains unavailable until owner-approved per-system sources exist; mockup numbers are never production data.
+
+## DOCUMENT-BUFFER-READ-1111 — PC-B — READY_FOR_CI
+
+Reserve single-pass authenticated buffered reads and storage regressions. Keep the persisted format and publish plaintext only after GCM authentication.
 
 ## DOCUMENT-DOWNLOAD-ONLY-1015 — PC-A — READY_FOR_CI
 

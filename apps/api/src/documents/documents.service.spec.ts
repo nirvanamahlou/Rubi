@@ -138,6 +138,7 @@ function row(
 describe('DocumentsService security and persistence flow', () => {
   const repository = {
     list: vi.fn(),
+    findMasterDataLogoDuplicate: vi.fn().mockResolvedValue(null),
     options: vi.fn(),
     ensureMasterDataLogoReferences: vi.fn(),
     caseOptions: vi.fn(),
@@ -163,6 +164,7 @@ describe('DocumentsService security and persistence flow', () => {
   };
   const storage = {
     readQuarantined: vi.fn(),
+    verifyQuarantined: vi.fn(),
     putQuarantined: vi.fn(),
     removeQuarantined: vi.fn(),
     openQuarantined: vi.fn(),
@@ -669,11 +671,11 @@ describe('DocumentsService security and persistence flow', () => {
         documentTypes: [{ id: 'brand', code: 'BRAND_ASSET_TEMPLATE' }],
         categories: [{ id: 'category', code: 'BRAND_ASSETS' }],
       });
-      repository.list.mockResolvedValue({ rows: [duplicate], total: 1 });
+      repository.findMasterDataLogoDuplicate.mockResolvedValue(duplicate);
       if (state === 'available')
-        storage.readQuarantined.mockResolvedValue(file.buffer);
+        storage.verifyQuarantined.mockResolvedValue(undefined);
       else
-        storage.readQuarantined.mockRejectedValue(
+        storage.verifyQuarantined.mockRejectedValue(
           Object.assign(
             new Error(state),
             state === 'missing' ? { code: 'ENOENT' } : {},
@@ -700,6 +702,14 @@ describe('DocumentsService security and persistence flow', () => {
             ? { id: 'replacement', reused: false, scanStatus: 'PENDING_SCAN' }
             : { id: duplicate.id, reused: true },
         );
+        expect(repository.findMasterDataLogoDuplicate).toHaveBeenCalledWith({
+          branchId,
+          resource: 'suppliers',
+          recordId: 'supplier',
+          versionNote: duplicate.currentVersion!.versionNote,
+          actorUserId: actor.userId,
+        });
+        expect(storage.readQuarantined).not.toHaveBeenCalled();
         expect(upload).toHaveBeenCalledTimes(state === 'missing' ? 1 : 0);
       }
     },
