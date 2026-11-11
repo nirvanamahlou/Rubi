@@ -1,6 +1,6 @@
 ## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
 
-CI follow-up reserves only the new resize-header label in en-overrides and deterministic offline catalogue mirrors; no unrelated translation edits. Full-suite failure identified the missing English label; behavior regressions passed.
+CI follow-up reserves only the new resize-header label in Web en-overrides; no unrelated translation edits. Full-suite failure identified the missing English label; behavior regressions passed. Latest develop272e65aaf is merged before final validation.
 
 Base72f4b1669; codex/pc-a-reservation-column-resize-1110. Owner authorizes drag-resizing Reservations inbox columns, page-visit-only widths and green develop merge. Reserve foundation workspace table integration/CSS, new local resizable table and focused regressions; bounded status notes only. Prior inbox scopes are merged/frozen. Preserve natural initial widths, rows/status/actions, filters and exports. No storage, API, schema, dependency, operational data or deployment changes. Source lease releases on verified merge.
 
