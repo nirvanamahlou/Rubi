@@ -22,10 +22,29 @@ export class ReportingExportService {
     reportName: string,
   ): Promise<ReturnType<typeof build>> {
     const extension = extname(__filename);
+    const renderInput: Parameters<typeof build>[1] = {
+      reportCode: result.reportCode,
+      generatedAtUtc: result.generatedAtUtc,
+      sourceProjection: result.sourceProjection,
+      total: result.total,
+      grain: result.grain,
+      filterSnapshot: result.filterSnapshot,
+      columns: format === 'PDF' ? [] : result.columns,
+      rows: format === 'PDF' ? [] : result.rows,
+      ...(format === 'XLSX' && result.columnFilters
+        ? {
+            columnFilters: result.columnFilters.map(({ key, label }) => ({
+              key,
+              label,
+              options: [],
+            })),
+          }
+        : {}),
+    };
     const worker = new Worker(
       join(__dirname, 'reporting-export.worker' + extension),
       {
-        workerData: { format, result, reportName },
+        workerData: { format, result: renderInput, reportName },
         execArgv:
           extension === '.ts' ? ['--require', require.resolve('tsx/cjs')] : [],
       },

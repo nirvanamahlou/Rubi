@@ -1080,6 +1080,10 @@ Reproduced false broker-create field denial from internal dossierVersion under m
 
 Finance inbox pages load purchase FX evidence after applying filters, ordering and the page boundary. Out-of-range pages skip those reads, while summary counts still cover all filtered results and the legacy list retains FX evidence. All 73 focused tests passed. Source reads and totals still use the assembled queue, so end-to-end pagination remains open.
 
+## REPORTING-WORKER-INPUT-1111
+
+Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
+
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
