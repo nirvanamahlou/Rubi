@@ -64,6 +64,13 @@ describe('authorized output-grain report filters', () => {
     expect(table.total).toBe(2);
     expect(table.rows).toHaveLength(1);
     expect(chart.rows).toEqual(exported.rows);
+    expect(exported.columnFilters).toEqual(
+      table.columnFilters?.map(({ key, label }) => ({
+        key,
+        label,
+        options: [],
+      })),
+    );
     expect(
       table.columnFilters?.find((c) => c.key === 'columnPrimaryDimension')
         ?.options,
