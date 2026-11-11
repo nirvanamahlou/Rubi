@@ -9955,3 +9955,7 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
+
+Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.
