@@ -16,6 +16,10 @@ import {
   assertLeaveDeadline,
   assertMonthlyLeaveQuota,
   leaveUsage,
+  leaveMonth,
+  hourlyLeaveCount,
+  assertHourlyLeaveCount,
+  MONTHLY_HOURLY_LEAVE_LIMIT,
   recordLeave,
 } from './hr-leave-policy';
 import type {
@@ -4734,6 +4738,12 @@ export class HrService {
         }
       } else await this.assertOpenPeriod(tx, row.branchId, values[2]!);
       const leave = recordLeave(values, data);
+      assertHourlyLeaveCount(
+        leave,
+        peers.map((r) =>
+          recordLeave(r.values as string[], r.data as HrWorkflowData),
+        ),
+      );
       assertMonthlyLeaveQuota(
         leave,
         policy,
@@ -5240,9 +5250,62 @@ export class HrService {
       else t.used = t.used.minus(row.days);
       totals.set(row.type, t);
     }
+    const month = leaveMonth(asOf.toISOString());
+    const [policy, approved] = await Promise.all([
+      this.monthlyLeavePolicy(
+        this.database.client,
+        employee.branchId,
+        'استحقاقی',
+      ),
+      this.database.client.hrRecord.findMany({
+        where: {
+          employeeId: employee.id,
+          deletedAt: null,
+          status: { in: [...validate.APPROVED] },
+          OR: [
+            { section: 'time', tab: 'leave' },
+            { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
+          ],
+          AND: [
+            {
+              values: {
+                path: ['2'],
+                lte: new Date(asOf.getTime() + 31 * 86400000)
+                  .toISOString()
+                  .slice(0, 10),
+              },
+            },
+            {
+              values: {
+                path: ['3'],
+                gte: new Date(asOf.getTime() - 31 * 86400000)
+                  .toISOString()
+                  .slice(0, 10),
+              },
+            },
+          ],
+        },
+        select: { values: true, data: true },
+      }),
+    ]);
+    const leaves = approved.map((row) =>
+      recordLeave(row.values as string[], row.data as HrWorkflowData),
+    );
+    const dailyUsed = leaves
+      .filter(
+        (leave) => leave.mode === 'روزانه' && leave.leaveType === 'استحقاقی',
+      )
+      .reduce((total, leave) => total + (leaveUsage(leave).get(month) ?? 0), 0);
     return {
       employeeId: employee.id,
       year,
+      monthlyDailyRemaining: policy
+        ? Math.max(0, policy.daily - dailyUsed)
+        : null,
+      monthlyHourlyRemaining: Math.max(
+        0,
+        MONTHLY_HOURLY_LEAVE_LIMIT - hourlyLeaveCount(month, leaves),
+      ),
       items: [...totals.entries()].map(([type, value]) => ({
         type,
         granted: value.granted.toFixed(2),
