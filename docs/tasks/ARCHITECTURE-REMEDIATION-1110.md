@@ -65,6 +65,10 @@ when only selected paths are addressed.
   revision is the single signal for that list to reload. The bootstrap store shares
   overlapping refresh requests and starts a fresh read after a committed mutation.
 
+- Purchase FX evidence reads only the projected money fields for visible
+  foreign-currency purchase versions. Bound OR predicates in batches and
+  preserve the branch and revision checks used for exact comparisons.
+
 - Finance pages count and summarize the complete filtered set in one pass.
   Ranking keeps only the best rows through the requested page endpoint and
   sorts those candidates. The legacy listing and export order are preserved.

@@ -4937,6 +4937,10 @@ Explicit user follow-up: group headings toggle their own links like3200, whole-s
 - Validation: lint کامل ۶ Task، typecheck کامل ۹ Task، ۱٬۴۳۴ تست موفق با ۷۰ تست PostgreSQL اختیاری skip و Production Build کامل ۶ Task موفق. Web شامل ۷۵ فایل و ۵۷۹ تست موفق است. Browser QA محلی روی مسیر محافظت‌شده `/marketing` تمام ۹ بخش، جست‌وجو/پاک‌کردن، تقویم، تغییر نوع و ماه، بازکردن رویداد، زیرتب/جزئیات، Action feedback، فرم و موبایل را بدون Console error یا Overflow ماژول پوشش داد.
 - Final lock state: `RELEASED — PC-B/MARKETING-001B ready for review`. هیچ Migration، Dependency/Lockfile، Shared Contract، IAM، Navigation، AppModule، Persistence یا داده واقعی تغییر نکرد.
 
+## FINANCE-FX-SCOPED-EVIDENCE-1111 — PC-B — READY_FOR_CI
+
+Reserve Finance purchase FX evidence reads and tests. Preserve branch authorization, exact decimal comparisons and the displayed source and payment versions.
+
 ## MARKETING-001 — PC-B — READY_FOR_REVIEW
 
 - درخواست صریح مالک: Foundation حرفه‌ای ماژول Marketing در Phase A بدون Persistence، مستقل از Documents در PC-B و Ticket Catalog/Sales در PC-A. `COMPUTER_ID=PC-B`.
