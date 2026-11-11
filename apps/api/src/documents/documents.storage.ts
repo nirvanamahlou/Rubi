@@ -178,8 +178,18 @@ export class LocalDocumentStorage {
     objectKey: string,
     expectedSizeBytes: number,
     mode: 'verify' | 'stream' | 'buffer',
+    range = { offset: 0, length: expectedSizeBytes },
   ) {
     if (!Number.isSafeInteger(expectedSizeBytes) || expectedSizeBytes < 0)
+      throw integrityError();
+    const rangeEnd = range.offset + range.length;
+    if (
+      !Number.isSafeInteger(range.offset) ||
+      !Number.isSafeInteger(range.length) ||
+      range.offset < 0 ||
+      range.length < 0 ||
+      rangeEnd > expectedSizeBytes
+    )
       throw integrityError();
     const file = await open(target, 'r');
     const digests: Buffer[] = [];
@@ -189,7 +199,7 @@ export class LocalDocumentStorage {
       const stat = await file.stat();
       if (!stat.isFile() || stat.size - headerSize !== expectedSizeBytes)
         throw integrityError();
-      if (mode === 'buffer') contents = Buffer.allocUnsafe(expectedSizeBytes);
+      if (mode === 'buffer') contents = Buffer.allocUnsafe(range.length);
       header = await readExactly(file, 0, headerSize);
       const decipher = this.decipher(objectKey, header);
       for (let offset = 0; offset < expectedSizeBytes; offset += chunkSize) {
@@ -200,7 +210,17 @@ export class LocalDocumentStorage {
         );
         if (mode === 'stream') digests.push(digest(bytes));
         const plaintext = decipher.update(bytes);
-        if (contents) plaintext.copy(contents, offset);
+        if (contents) {
+          const start = Math.max(offset, range.offset);
+          const end = Math.min(offset + plaintext.length, rangeEnd);
+          if (start < end)
+            plaintext.copy(
+              contents,
+              start - range.offset,
+              start - offset,
+              end - offset,
+            );
+        }
       }
       decipher.final();
     } catch (error) {
@@ -255,16 +275,31 @@ export class LocalDocumentStorage {
     return decipher;
   }
 
-  async readQuarantined(
+  async readQuarantinedRange(
     objectKey: string,
     expectedSizeBytes: number,
+    offset: number,
+    length: number,
   ): Promise<Buffer> {
     const { contents } = await this.authenticateObject(
       this.pathFor(objectKey),
       objectKey,
       expectedSizeBytes,
       'buffer',
+      { offset, length },
     );
     return contents!;
+  }
+
+  async readQuarantined(
+    objectKey: string,
+    expectedSizeBytes: number,
+  ): Promise<Buffer> {
+    return this.readQuarantinedRange(
+      objectKey,
+      expectedSizeBytes,
+      0,
+      expectedSizeBytes,
+    );
   }
 }

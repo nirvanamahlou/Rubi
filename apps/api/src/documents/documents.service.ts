@@ -5,6 +5,7 @@ import {
   XLS_MIME,
 } from '@nora/contracts';
 import { spreadsheetFileType } from './spreadsheet-file-type';
+import { spreadsheetZipTypeFromRanges } from './spreadsheet-zip-ranges';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
@@ -181,8 +182,11 @@ const validSortFields = new Set<DocumentSortCode>([
   'sizeBytes',
 ]);
 
-function detectMimeType(bytes: Buffer, declaredMimeType: string): string {
-  const spreadsheet = spreadsheetFileType(bytes);
+function detectMimeType(
+  bytes: Buffer,
+  declaredMimeType: string,
+  spreadsheet = spreadsheetFileType(bytes),
+): string {
   if (spreadsheet) return spreadsheet;
   if (bytes.subarray(0, 4).equals(Buffer.from('%PDF')))
     return 'application/pdf';
@@ -2177,15 +2181,24 @@ export class DocumentsService {
     }
     const staged = 'staged' in file ? file.staged : undefined;
     const prefix = 'buffer' in file ? file.buffer : file.staged.prefix;
-    // ZIP and OLE use the existing full-container workbook validation.
-    const inspectContainer =
-      staged &&
-      ((prefix[0] === 0x50 && prefix[1] === 0x4b) ||
-        (prefix[0] === 0xd0 && prefix[1] === 0xcf));
-    const inspected = inspectContainer
-      ? await this.storage.readQuarantined(staged.objectKey, file.size)
-      : prefix;
-    const detectedMimeType = detectMimeType(inspected, file.mimetype);
+    const zip = prefix[0] === 0x50 && prefix[1] === 0x4b;
+    const ole = prefix[0] === 0xd0 && prefix[1] === 0xcf;
+    const zipType =
+      staged && zip
+        ? await spreadsheetZipTypeFromRanges(file.size, (offset, length) =>
+            this.storage.readQuarantinedRange(
+              staged.objectKey,
+              file.size,
+              offset,
+              length,
+            ),
+          )
+        : undefined;
+    const inspected =
+      staged && (ole || (zip && zipType === undefined))
+        ? await this.storage.readQuarantined(staged.objectKey, file.size)
+        : prefix;
+    const detectedMimeType = detectMimeType(inspected, file.mimetype, zipType);
     const sha256 =
       staged?.sha256 ?? createHash('sha256').update(prefix).digest('hex');
     const openXml = detectedMimeType.includes('openxmlformats');
