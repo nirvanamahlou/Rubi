@@ -110,4 +110,23 @@ it('accepts a lone clock and allows metadata edits without rewriting punches', a
       data: expect.objectContaining({ data: { attendanceDeviceError: true } }),
     }),
   );
+  await service.editAttendance(
+    id,
+    { version: 1, status: 'حاضر با تأخیر', deviceError: true },
+    'synthetic-status',
+    actor,
+  );
+  expect(updateMany).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'حاضر',
+        data: expect.objectContaining({
+          attendanceStatusOverride: 'حاضر با تأخیر',
+          attendanceDeviceError: true,
+        }),
+      }),
+    }),
+  );
+  expect(create).not.toHaveBeenCalled();
+  expect(processAttendance).not.toHaveBeenCalled();
 });

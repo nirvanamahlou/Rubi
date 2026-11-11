@@ -252,3 +252,25 @@ it('excludes disabled days and their punches from cached dashboard and report in
   const other = record('attendance', ['Worker', '2026-11-09']);
   expect(eligibleAttendanceRecords([day, punch, other])).toEqual([other]);
 });
+
+it('reflects a saved status in both tables and restores the automatic deficit when cleared', () => {
+  const day = record('attendance', ['Worker', '2026-11-08', '', '', '10', '5']);
+  day.status = 'حاضر';
+  day.data = { lateMinutes: 10, earlyMinutes: 5, deficitMinutes: 15 };
+  for (const build of [
+    employeeAttendanceDataset,
+    (rows: (typeof day)[]) => recentAttendanceDataset(rows, []),
+  ]) {
+    const cell = (column: string) => {
+      const data = build([day]);
+      return data.rows[0]![data.columns.indexOf(column)];
+    };
+    day.data.attendanceStatusOverride = 'حاضر با تأخیر';
+    expect(cell('وضعیت')).toBe('حاضر با تأخیر');
+    expect(cell('کسری کار')).toBe('10');
+    expect(cell('خروج زودهنگام')).toBe('0');
+    delete day.data.attendanceStatusOverride;
+    expect(cell('کسری کار')).toBe('15');
+    expect(day.data.deficitMinutes).toBe(15);
+  }
+});
