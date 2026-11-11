@@ -294,6 +294,10 @@ Data model documentation lease: append only the owned CallCenterRequestReview co
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-followup-review-1105 from develop 957ff4248. User confirms that saving any related call result (including no answer) by the responsible expert queues review for the request creator; the creator's decision clears pending review without deleting history. Reserve Call Center workflow queue/list/save, completion and telephony SAVE hooks, bounded access predicates, dedicated review service/tests, workflow client/editor/queue presentation and own notes. Sole temporary schema/migration lease: one additive CallCenterRequestReview receipt model and inverse FK relations; no dependency/lockfile changes. Complete ownership scan found no unreleased schema lease; earlier migration owners are merged/released. Peer alert PR1397 notify/hash handler and MINE PR1407 default/order remain untouched; Navy/Pearl shell correction is merged PR1411. Producer=Customer Affairs review service; consumers=Call Center queue/editor; additive optional review metadata and expectedReviewToken input, no status/assignee mutation from call saves. No production publication in this work item.
 
+## STREAM-ENCRYPTED-ARTIFACTS-1111 — PC-B — READY_FOR_CI
+
+Reserve the encrypted storage writer and targeted tests. Keep the persisted RUBIDOC1 format, exclusive creation and authenticated reads.
+
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.

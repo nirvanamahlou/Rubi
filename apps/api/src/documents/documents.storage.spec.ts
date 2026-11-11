@@ -48,6 +48,42 @@ describe('LocalDocumentStorage encryption boundary', () => {
     expect(Buffer.concat(chunks)).toEqual(contents);
   });
 
+  it('writes an async source in the existing authenticated format', async () => {
+    const first = Buffer.alloc(97 * 1024, 12);
+    const second = Buffer.from('second stream chunk');
+    async function* source() {
+      yield first;
+      await Promise.resolve();
+      yield second;
+    }
+    await storage.putQuarantinedStream(objectKey, source());
+    const stream = await storage.openQuarantined(
+      objectKey,
+      first.length + second.length,
+    );
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    expect(Buffer.concat(chunks)).toEqual(Buffer.concat([first, second]));
+  });
+
+  it('cleans up failed streams without replacing an existing file', async () => {
+    async function* source() {
+      yield Buffer.from('partially produced content');
+      throw new Error('source failed');
+    }
+    await expect(
+      storage.putQuarantinedStream(objectKey, source()),
+    ).rejects.toThrow('source failed');
+    const target = join(root, 'quarantine', ...objectKey.split('/'));
+    await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' });
+    await storage.putQuarantined(objectKey, Buffer.from('existing'));
+    const existing = await readFile(target);
+    await expect(
+      storage.putQuarantinedStream(objectKey, source()),
+    ).rejects.toMatchObject({ code: 'EEXIST' });
+    expect(await readFile(target)).toEqual(existing);
+  });
+
   it('rejects corrupted ciphertext before delivering it, including changes after opening', async () => {
     const contents = Buffer.alloc(160 * 1024, 11);
     await storage.putQuarantined(objectKey, contents);

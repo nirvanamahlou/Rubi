@@ -11,7 +11,6 @@ import {
   open,
   readFile,
   rm,
-  writeFile,
   type FileHandle,
 } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
@@ -88,20 +87,57 @@ export class LocalDocumentStorage {
     await access(this.quarantineRoot, constants.R_OK | constants.W_OK);
   }
 
-  async putQuarantined(objectKey: string, contents: Buffer): Promise<void> {
+  putQuarantined(objectKey: string, contents: Buffer): Promise<void> {
+    return this.putQuarantinedStream(objectKey, [contents]);
+  }
+
+  async putQuarantinedStream(
+    objectKey: string,
+    contents: Iterable<Uint8Array> | AsyncIterable<Uint8Array>,
+  ): Promise<void> {
     const target = this.pathFor(objectKey);
     const iv = randomBytes(12);
     const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
     cipher.setAAD(Buffer.from(objectKey, 'utf8'));
-    const encrypted = Buffer.concat([cipher.update(contents), cipher.final()]);
-    const stored = Buffer.concat([
-      Buffer.from('RUBIDOC1', 'ascii'),
-      iv,
-      cipher.getAuthTag(),
-      encrypted,
-    ]);
+
+    async function* encryptedChunks() {
+      const header = Buffer.alloc(headerSize);
+      header.write('RUBIDOC1', 'ascii');
+      iv.copy(header, 8);
+      yield header;
+      for await (const chunk of contents) {
+        for (let offset = 0; offset < chunk.length; offset += chunkSize)
+          yield cipher.update(chunk.subarray(offset, offset + chunkSize));
+      }
+      yield cipher.final();
+    }
+
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    await writeFile(target, stored, { flag: 'wx', mode: 0o600 });
+    const file = await open(target, 'wx', 0o600);
+    try {
+      try {
+        await file.writeFile(encryptedChunks());
+        const tag = cipher.getAuthTag();
+        // Finalize the existing header layout without buffering the ciphertext.
+        let offset = 0;
+        while (offset < tag.length) {
+          const { bytesWritten } = await file.write(
+            tag,
+            offset,
+            tag.length - offset,
+            8 + iv.length + offset,
+          );
+          if (!bytesWritten)
+            throw new Error('Could not write document authentication tag.');
+          offset += bytesWritten;
+        }
+      } finally {
+        await file.close();
+      }
+    } catch (error) {
+      await rm(target, { force: true });
+      throw error;
+    }
   }
 
   async removeQuarantined(objectKey: string): Promise<void> {

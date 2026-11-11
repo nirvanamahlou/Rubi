@@ -1088,6 +1088,10 @@ Finance inbox pages load purchase FX evidence after applying filters, ordering a
 
 Reserve the export worker input boundary and byte-level verification. Transfer only renderer inputs. PDF uses its existing summary fields and no dataset rows. CSV and XLSX continue to transfer the rows used by their renderers.
 
+## STREAM-ENCRYPTED-ARTIFACTS-1111 — PC-B
+
+Document and report artifact storage now encrypts in 64 KiB chunks and patches the GCM tag into the existing file header. Failed producers remove the partial file and key collisions retain the earlier object. The renderer still returns buffered output. Twelve storage and reporting export tests passed.
+
 ## DOCUMENT-STREAM-SCAN-1111
 
 Reserve document scanner input, verified storage streaming and scanner regressions. Hash each plaintext chunk while staging in the existing private scan directory. Run the scanner only after the complete stored digest matches. Upload buffering remains open.

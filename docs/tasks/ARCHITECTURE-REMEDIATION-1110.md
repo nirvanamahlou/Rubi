@@ -58,7 +58,9 @@ when only selected paths are addressed.
   against the verified digest before sending it. Downloads trade a second disk
   pass for bounded memory and preserve the existing encrypted file format.
   Antivirus jobs hash streamed plaintext while writing their private temporary
-  input file. Uploads and the demo scanner still accept buffers.
+  input file. Uploads and the demo scanner still accept buffers. Storage writes
+  encrypt in 64 KiB chunks without copying the full ciphertext; the renderer
+  and multipart upload still produce buffered inputs.
 - Ninety-nine focused Documents and Reporting tests passed. The tests cover
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store
