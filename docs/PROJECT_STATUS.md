@@ -250,6 +250,8 @@ Reserve Documents workspace default loading and ten-row pagination. Remove filte
 
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
+PR1669 repair: the sole conflict was append-only work assignments; retain both blocks. Added10 missing English labels without altering the completeness guard and regenerated both offline consumers.56 integrated Assistant/i18n regressions pass. User now explicitly authorizes merge after all exact-head CI gates succeed; no server deployment.
+
 ASSISTANT-TEXT-SIZE-1111 follow-up: adjacent increase/decrease text controls use labelled icons,14px default and12–24px bounds in2px steps. Floating-only CSS variable changes user/assistant message text without remounting the conversation or changing manual panel geometry.53 focused tests cover both controls, bounds, bilingual labels and existing resize/chat regressions. No API/preferences storage or live publication; same owned review PR1669.
 
 Implemented eight physical edge/corner resize handles, pointer capture/cancel and keyboard arrows (Shift for larger steps), bounded geometry and re-clamping on viewport changes. Removed the expand/restore button; preserve launcher movement, mounted draft/conversation, existing desktop/mobile defaults and actor isolation. Only floating chat message paragraphs use14px. Minimum readable280x300 shrinks to the available viewport; no viewport-specific1915px rule.49 focused tests, scoped ESLint, Web TypeScript and optimized production build pass. No backend/schema/dependency/live-server changes. Source reservation freezes on push and releases at handoff; review PR only, no automatic merge/publication.
@@ -9961,3 +9963,11 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
+
+NORA-CONTRACT-GUIDE: local implementation of sales guidance and authorized contract read assistance; seven focused tests pass, scoped lint passes. Full diagnostic validation and browser acceptance remain pending.
+
+NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form validation guidance and authenticated contract inspection are implemented. 122 regressions, scoped lint, Web TypeScript and production build pass. Deployed authenticated browser acceptance is pending. See docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
+
+Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.

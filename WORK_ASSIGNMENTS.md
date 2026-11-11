@@ -12444,8 +12444,21 @@ Reserve the Documents archive upload entry point, dialog, and focused regression
 
 ## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
 
+PR1669 CI/merge follow-up reserves only10 missing English override entries and the two generated offline catalogues. Prior Nora guide translation scope merged/released. Preserve both concurrent work-assignment blocks; no production publication. User explicitly authorizes green-gate merge after repairs.
+
 Follow-up ASSISTANT-TEXT-SIZE-1111 reopens the same owned PR1669: reserve adjacent text-size header controls, floating-only typography variable and focused tests. Default14px, bounded12–24px in2px steps; preserve conversation, draft, manual geometry and account isolation. No overlapping owner found; no backend, dependencies or deployment.
 
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-resize-1111 from developbb3c0fa37. Reserve floating assistant component/styles, bounded panel resize geometry/hook and regressions, scoped floating message typography and own notes. Owner requests eight-direction manual resizing, removal of expand/restore button and 14px chat messages. Previous Assistant scopes merged/released; no active overlapping owner found. Preserve launcher movement, mounted conversation/draft, close, RTL/LTR and viewport bounds. No API/schema/dependency/production-data changes.
 
-49 focused tests, scoped ESLint, full Web TypeScript and optimized Web production build pass. Source freezes on push and reservation releases at handoff. No production publication or automatic merge is part of this change.
+49 focused tests, scoped ESLint, full Web TypeScript and optimized Web production build pass. Source freezes on push and reservation releases after verified merge. Owner subsequently authorizes PR1669 repairs and merge after all CI gates pass; production publication remains excluded. Integrated i18n and Assistant regressions:56 passed; both concurrent work-assignment blocks retained.
+
+NORA-CONTRACT-GUIDE | PC-C | codex/pc-c-nora-contract-guide | Nora read-only sales contract assistance, form context and tests | READY_FOR_REVIEW
+NORA-CONTRACT-GUIDE: seven guide/lookup regressions pass; scoped lint passes. Work remains IN_PROGRESS pending diagnostic validation integration and browser/build acceptance.
+
+NORA-CONTRACT-GUIDE validation: 85 assistant and 37 Sales regressions pass; scoped ESLint, full Web TypeScript and production Web build pass. Read-only form attributes and selected-row identifier are the bounded Sales consumer contract. Nora uses existing authenticated Sales reads, independent currencies and fresh record reads; native help/evidence messages stay outside provider history. No migration. Authenticated deployed-browser acceptance remains unverified. Source freezes on publication; see docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B — READY_FOR_CI
+
+Reserve job title table action icons.
+
+NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels and generated API/standalone English catalogues required by the existing completeness gate. No operational API behavior changes.

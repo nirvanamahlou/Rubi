@@ -541,6 +541,11 @@ export function SalesWorkspace() {
                       selectedContractId === contract.id,
                     )}
                     key={contract.id}
+                    data-nora-contract-id={
+                      selectedContractId === contract.id
+                        ? contract.id
+                        : undefined
+                    }
                     aria-selected={selectedContractId === contract.id}
                     onClick={() => setSelectedContractId(contract.id)}
                     onFocusCapture={() => setSelectedContractId(contract.id)}
