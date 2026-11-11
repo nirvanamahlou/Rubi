@@ -1104,6 +1104,10 @@ Sales receipts and Procurement invoice and correction sources now read cursor ba
 
 The Sales inbox reads only receipt fields used by Finance. Ticket queue state reads the latest cost per requested purchase and the latest payment and exact count for that cost, using the existing compound indexes. Earlier cost revisions and their payments stay outside the result. The scoped suite passed 39 tests and the isolated PostgreSQL 18 suite passed all six. Cross-source pagination and the existing Sales and Procurement source limits remain open.
 
+## PAYMENT-REPORT-SOURCE-PAGES-1111
+
+Reserve receipt and refund report paging and its cursor regression. Read each event stream in batches of 500 inside the existing reporting snapshot and project rows immediately. Both streams retain their 10,000-row safety limits and exact amounts.
+
 ## RESERVATION-FINANCE-PROJECTION-1110
 
 Reservations supplies Finance with a narrow scoped intake and purchase projection. PostgreSQL retrieves only the latest revision of each selected purchase in the same repeatable-read snapshot. Existing purchase grouping, historical intake visibility, branch/company scope and legacy paid balances remain. Thirty-one targeted tests, API typecheck and an isolated PostgreSQL 18 scenario passed. The producer still reads the scoped purchase collection up to its existing limit. End-to-end Finance inbox pagination remains open.

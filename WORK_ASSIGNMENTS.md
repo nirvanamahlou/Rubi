@@ -1319,6 +1319,10 @@ Reserve Procurement invoice and correction reads, Sales receipt reads, their sha
 
 Reserve Sales receipt projection, Finance ticket purchase queue read and their focused regressions. Preserve scope, ordering, status, Decimal amounts and public responses. No schema, dependencies or deployment.
 
+## PAYMENT-REPORT-SOURCE-PAGES-1111
+
+Reserve receipt and refund report paging and its cursor regression. Read each event stream in batches of 500 inside the existing reporting snapshot and project rows immediately. Both streams retain their 10,000-row safety limits and exact amounts.
+
 ## RESERVATION-FINANCE-PROJECTION-1110 — PC-B — READY_FOR_CI
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
