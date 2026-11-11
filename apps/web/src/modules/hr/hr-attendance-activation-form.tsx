@@ -1,90 +1,11 @@
 'use client';
 import { useRef, useState } from 'react';
-import {
-  HR_ATTENDANCE_STATUSES,
-  type HrEmployeeDto,
-  type HrRecordDto,
-} from '@nora/contracts';
+import { type HrEmployeeDto } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton } from './hr-controls';
 import { hrRequest } from './hr-api';
 import ui from './hr-unified.module.css';
-
-export function AttendanceStatusControl({
-  record,
-  onSaved,
-}: {
-  record: HrRecordDto;
-  onSaved: () => Promise<void>;
-}) {
-  const [status, setStatus] = useState<string>(
-    record.data.attendanceActive === false || record.status === 'غیرفعال'
-      ? 'inactive'
-      : (record.data.attendanceStatusOverride ?? 'auto'),
-  );
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
-  const retry = useRef({ body: '', key: crypto.randomUUID() });
-  return (
-    <div className="grid gap-3 rounded-xl border p-4">
-      <label className={ui.field}>
-        وضعیت
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          disabled={busy}
-        >
-          <option value="auto">وضعیت خودکار</option>
-          {HR_ATTENDANCE_STATUSES.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-          <option value="inactive">غیرفعال</option>
-        </select>
-      </label>
-      <HrButton
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setError('');
-          try {
-            const body = JSON.stringify({
-              employeeIds: [record.employeeId],
-              from: record.values[1],
-              to: record.values[1],
-              active: status !== 'inactive',
-              ...(status === 'inactive'
-                ? {}
-                : { status: status === 'auto' ? null : status }),
-              recordId: record.id,
-              version: record.version,
-            });
-            if (retry.current.body !== body)
-              retry.current = { body, key: crypto.randomUUID() };
-            await hrRequest('/attendance/activation', {
-              method: 'POST',
-              headers: {
-                'content-type': 'application/json',
-                'idempotency-key': retry.current.key,
-              },
-              body,
-            });
-            await onSaved();
-          } catch (e) {
-            setError(e instanceof Error ? e.message : 'ثبت انجام نشد.');
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        ثبت وضعیت
-      </HrButton>
-      {error && <p role="alert">{error}</p>}
-    </div>
-  );
-}
 
 export function HrAttendanceActivationForm({
   employees,
