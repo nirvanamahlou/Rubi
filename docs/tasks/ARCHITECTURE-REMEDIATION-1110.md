@@ -62,7 +62,8 @@ when only selected paths are addressed.
 - Ninety-nine focused Documents and Reporting tests passed. The tests cover
   multiple chunks and mutation after successful verification.
 - Removed the attendance forms' extra list refresh after saving. The HR store
-  revision is the single signal for that list to reload.
+  revision is the single signal for that list to reload. The bootstrap store shares
+  overlapping refresh requests and starts a fresh read after a committed mutation.
 
 ## HR encryption configuration
 

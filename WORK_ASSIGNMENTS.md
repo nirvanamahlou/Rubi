@@ -12351,3 +12351,7 @@ Reserve single-day attendance status controls and scoped command, override prese
 ## HR-LEGACY-REQUEST-FIELDS-1111 — PC-B — READY_FOR_REVIEW
 
 Reserve legacy request row decoding in HR leave policy and attendance configuration, including focused regressions. Preserve persisted row formats and calculation behavior.
+
+## HR-BOOTSTRAP-COALESCE-1111 — PC-B — READY_FOR_CI
+
+Reserve the HR workspace bootstrap request lifecycle and focused Web tests. A committed mutation must start a fresh read.
