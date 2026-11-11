@@ -131,7 +131,10 @@ export class ReportingRepository {
     );
   }
 
-  async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
+  private factConditions(
+    input: ReportQueryV1,
+    serverBranchIds: readonly string[],
+  ) {
     const conditions: Prisma.Sql[] = [];
     const scalar = (key: string) => {
       const value = input.filters[key];
@@ -175,9 +178,13 @@ export class ReportingRepository {
       if (value)
         conditions.push(Prisma.sql`${Prisma.raw(`"${column}"`)} = ${value}`);
     }
-    const where = conditions.length
+    return conditions.length
       ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
       : Prisma.empty;
+  }
+
+  async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
+    const where = this.factConditions(input, serverBranchIds);
     const rows = await this.database.client.$queryRaw<
       ReportingFactRow[]
     >(Prisma.sql`
@@ -195,29 +202,34 @@ export class ReportingRepository {
     input: ReportQueryV1,
     serverBranchIds: readonly string[],
   ): Promise<DashboardFilterOptions> {
-    const rows = await this.facts(input, serverBranchIds);
-    const options = (pick: (row: ReportingFactRow) => string | null) =>
+    const where = this.factConditions(input, serverBranchIds);
+    const [values] = await this.database.client.$queryRaw<
+      Record<keyof DashboardFilterOptions, string[] | null>[]
+    >(Prisma.sql`
+      SELECT
+        array_agg(DISTINCT "salesChannel") FILTER (WHERE "salesChannel" <> '') AS "salesChannel",
+        array_agg(DISTINCT "branchName") FILTER (WHERE "branchName" <> '') AS branch,
+        array_agg(DISTINCT "ownerName") FILTER (WHERE "ownerName" <> '') AS agent,
+        array_agg(DISTINCT "serviceType") FILTER (WHERE "serviceType" <> '') AS service,
+        array_agg(DISTINCT "agencyName") FILTER (WHERE "agencyName" <> '') AS agency,
+        array_agg(DISTINCT "providerName") FILTER (WHERE "providerName" <> '') AS provider,
+        array_agg(DISTINCT "currencyCode") FILTER (WHERE "currencyCode" <> '') AS currency,
+        array_agg(DISTINCT "orderStatus") FILTER (WHERE "orderStatus" <> '') AS status
+      FROM "reporting_travel_facts" ${where}
+    `);
+    const options = (key: keyof DashboardFilterOptions) =>
       Object.freeze(
-        [
-          ...new Set(
-            rows
-              .map(pick)
-              .filter(
-                (value): value is string =>
-                  typeof value === 'string' && value.length > 0,
-              ),
-          ),
-        ].sort((a, b) => a.localeCompare(b, 'fa')),
+        (values?.[key] ?? []).sort((a, b) => a.localeCompare(b, 'fa')),
       );
     return {
-      salesChannel: options((row) => row.salesChannel),
-      branch: options((row) => row.branchName),
-      agent: options((row) => row.ownerName),
-      service: options((row) => row.serviceType),
-      agency: options((row) => row.agencyName),
-      provider: options((row) => row.providerName),
-      currency: options((row) => row.currencyCode),
-      status: options((row) => row.orderStatus),
+      salesChannel: options('salesChannel'),
+      branch: options('branch'),
+      agent: options('agent'),
+      service: options('service'),
+      agency: options('agency'),
+      provider: options('provider'),
+      currency: options('currency'),
+      status: options('status'),
     };
   }
 

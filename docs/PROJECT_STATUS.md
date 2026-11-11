@@ -1092,6 +1092,10 @@ CSV encodes groups of 256 rows to UTF-8, bounding temporary text while preservin
 
 The Reports workspace now queues exports and retries in PostgreSQL, tracks status by owner, and downloads only once the file is ready. A database lease lets another API instance recover interrupted work and prevents an expired worker from publishing. The queue checks the current session, permissions, branch scope and report definition before generation. Session and access are checked again before publication. Ready artifacts and run status commit together. Existing synchronous API clients and stored artifacts retain their previous response shapes. Apply the additive reporting export queue migration before deploying the API, then deploy Web. Database-side row projection still materializes the selected report data before the rendering worker runs.
 
+## REPORTING-FILTER-PROJECTION-1111
+
+Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
+
 ## PROCUREMENT-FINANCE-SOURCE-PAGES-1110
 
 Sales receipts and Procurement invoice and correction sources now read cursor batches in repeatable-read snapshots. The old 200 and 500 row caps are batch sizes. Branch and status predicates stay active on every batch, and a Sales due-time cutoff is shared by every page. Finance still combines source results for global filters, totals and sorting. The export limit of 2,000 matching rows remains.

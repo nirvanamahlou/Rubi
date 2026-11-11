@@ -35,6 +35,78 @@ describe.skipIf(!enabled)(
       await db?.$disconnect();
     });
 
+    it('returns only distinct dashboard labels inside the fact scope', async () => {
+      const branch = await db.branch.create({
+        data: { code: randomUUID(), name: 'Allowed branch' },
+      });
+      const occurredAt = new Date('2026-10-02T00:00:00Z');
+      const common = {
+        sourceVersion: 1,
+        orderNumber: 'Synthetic',
+        occurredAt,
+        legalEntityCode: 'SYN',
+        legalEntityName: 'Synthetic',
+        branchId: branch.id,
+        branchName: branch.name,
+        ownerName: 'Agent',
+        siteCode: 'MAIN',
+        salesChannel: 'WEB',
+        serviceType: 'FLIGHT',
+        customerType: 'PERSON',
+        customerName: 'Synthetic',
+        orderStatus: 'CONFIRMED',
+        reservationStatus: 'CONFIRMED',
+        issueStatus: 'ISSUED',
+        paymentStatus: 'SETTLED',
+        currencyCode: 'IRR',
+        salesAmount: '100',
+        purchaseAmount: '50',
+        dataAsOf: occurredAt,
+      };
+      await db.reportingTravelFact.createMany({
+        data: [
+          {},
+          { providerName: '' },
+          { providerName: 'Provider' },
+          { branchId: null, providerName: 'Outside branch' },
+          { legalEntityCode: 'OTHER', providerName: 'Outside company' },
+          {
+            occurredAt: new Date('2026-09-30T00:00:00Z'),
+            providerName: 'Outside date',
+          },
+        ].map((overrides) => ({
+          ...common,
+          sourceItemId: randomUUID(),
+          ...overrides,
+        })),
+      });
+      const repo = new ReportingRepository({ client: db } as never);
+      expect(
+        await repo.dashboardFilterOptions(
+          {
+            legalEntityId: 'SYN',
+            filters: {
+              fromUtc: '2026-10-01T00:00:00Z',
+              toUtc: '2026-10-03T00:00:00Z',
+            },
+            page: 1,
+            pageSize: 25,
+            timezone: 'Asia/Tehran',
+          },
+          [branch.id],
+        ),
+      ).toEqual({
+        salesChannel: ['WEB'],
+        branch: ['Allowed branch'],
+        agent: ['Agent'],
+        service: ['FLIGHT'],
+        agency: [],
+        provider: ['Provider'],
+        currency: ['IRR'],
+        status: ['CONFIRMED'],
+      });
+    });
+
     it('persists a single claim, fences stale workers and publishes run and artifact together', async () => {
       const firstWorker = new ReportingExportQueueRepository({
         client: db,

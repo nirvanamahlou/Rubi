@@ -1307,6 +1307,10 @@ Reserve CSV encoding and its byte-level regression. Preserve export bytes and st
 
 Reserve Reporting export queue lifecycle, authenticated status and Web export flow. PC-B holds the migration lock for additive queue fields and index on Reporting export artifacts. Existing synchronous endpoints and persisted artifacts remain compatible. Worker rechecks IAM and access controls, leases and fences publication. No dependencies or deployment.
 
+## REPORTING-FILTER-PROJECTION-1111
+
+Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
+
 ## PROCUREMENT-FINANCE-SOURCE-PAGES-1110 (PC-B)
 
 Reserve Procurement invoice and correction reads, Sales receipt reads, their shared database paging helper, Finance export warning and focused regressions. Preserve branch, status, order and DTOs. No schema, dependencies or deployment.
