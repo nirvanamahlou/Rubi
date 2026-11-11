@@ -1,3 +1,9 @@
+## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
+
+CI follow-up reserves only the new resize-header label in Web en-overrides; no unrelated translation edits. Full-suite failure identified the missing English label; behavior regressions passed. Latest develop272e65aaf is merged before final validation.
+
+Base72f4b1669; codex/pc-a-reservation-column-resize-1110. Owner authorizes drag-resizing Reservations inbox columns, page-visit-only widths and green develop merge. Reserve foundation workspace table integration/CSS, new local resizable table and focused regressions; bounded status notes only. Prior inbox scopes are merged/frozen. Preserve natural initial widths, rows/status/actions, filters and exports. No storage, API, schema, dependency, operational data or deployment changes. Source lease releases on verified merge.
+
 ## RESERVATION-REPORT-MODULE-1110 — PC-A — IN_PROGRESS
 
 Owner requests extracting the issued passenger-services report into an independent Reservation Report module under Reservations, removing its flight-management tab and moving the user-management selection while preserving other names and behavior; develop merge authorized. Reserve new route/report wrapper, navigation/messages, stable IAM report-screen relocation and read prerequisite, report API screen guard and focused tests. Retain the existing screen ID and domain read permission, branch/data/export constraints and all other ticket screens. No migration, permission/data rewrite, dependencies or deployment. Prior services/hotel scope merged in PR1591.
