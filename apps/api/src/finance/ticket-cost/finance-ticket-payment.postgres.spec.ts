@@ -9,7 +9,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ProcurementPublicService } from '../../procurement/procurement-public.service';
 import { FinanceTicketCostService } from './finance-ticket-cost.service';
-import { readFinanceInvoiceQueueStates } from '../finance-invoice-queue-read';
+import { readFinanceInvoiceQueueStates } from '../operations/finance-invoice-queue-read';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 
 const enabled = process.env.NORA_RUN_FINANCE_POSTGRES_TESTS === '1';

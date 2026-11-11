@@ -52,7 +52,7 @@ import { ProcurementPublicService } from '../procurement/procurement-public.serv
 import { FinanceDeliveryService } from './document-delivery/finance-delivery.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
 import { readFinanceHistory } from './finance-history';
-import { readFinanceInvoiceQueueStates } from './finance-invoice-queue-read';
+import { readFinanceInvoiceQueueStates } from './operations/finance-invoice-queue-read';
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
