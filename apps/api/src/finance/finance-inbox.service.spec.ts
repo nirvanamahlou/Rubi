@@ -385,9 +385,16 @@ describe('FinanceInboxService', () => {
           financeOperationalRequest: {
             findMany: vi.fn().mockResolvedValue([]),
           },
-          financeProcurementInvoiceRevision: {
-            findMany: vi.fn().mockResolvedValue([]),
-          },
+          $queryRaw: vi.fn().mockResolvedValue([
+            {
+              sourceId: 'invoice-1',
+              sourceVersion: 1,
+              version: 4,
+              status: 'PAID',
+              cumulativePaid: '35000000',
+              remainingAmount: '0',
+            },
+          ]),
         },
       } as never,
       procurement as never,
@@ -444,6 +451,8 @@ describe('FinanceInboxService', () => {
     ).toMatchObject({
       source: 'PURCHASES',
       status: 'UNDER_REVIEW',
+      settlement: null,
+      financeVersion: 4,
       origin: 'PERSISTED_SOURCE',
       amount: { amount: '35000000', currencyCode: 'IRR' },
       branchReference: 'branch-a',

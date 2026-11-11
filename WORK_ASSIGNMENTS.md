@@ -11634,6 +11634,10 @@ COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests in
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance-inbox-presentation.spec.tsx render wrapper: mount the real app QueryClientProvider required by the new query panel; all pre-existing assertions remain unchanged.
 
+## FINANCE-INVOICE-REVISION-READ-1111 — PC-B — READY_FOR_CI
+
+Reserve the latest procurement invoice state projection for the Finance inbox and scoped tests. Preserve handoff version matching and read scope. No migration or dependencies.
+
 ## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
 
 Owner requests Marketing process removal, aligned filters, empty dashboard, scoped content uploads, durable campaign/audience deletion, entry sources and named/date-stamped leads; push/develop merge authorized. Reserve Marketing Web/API/contracts/tests, bounded Customer Affairs intake fields/service/DTO, additive English catalog entries and own notes. Sole schema/migration owner PC-B for nullable campaign deletedAt, intake first/last name and entry date, and SOURCE/AUDIENCE asset kind constraint extension. Prior migration reservations merged/released; no competing active source lock found. Producer API and consumer Web ship compatible optional fields together; preserve encrypted contact ownership, branch permissions, audit and optimistic concurrency. No dependency or operational deployment changes. Validation: 91 Marketing API tests including 8 disposable PostgreSQL proofs; 118 Marketing Web tests and 3 translation coverage tests pass. Additive migration and seed rehearsed on disposable PostgreSQL. Local API/Web typechecks, production builds and scoped lint passed. Final audience-field preservation has 30 API/PostgreSQL and 38 Web regression passes; complete final-head hosted checks gate merge. Locks release on verified merge.
