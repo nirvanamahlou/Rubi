@@ -1,4 +1,5 @@
 import type { HrWorkflowData } from '@nora/contracts';
+import { readAttendanceRequestComponent } from './hr-legacy-request-fields';
 import { selection } from './hr-radan-completion.domain';
 import {
   HR_RADAN_CALCULATION_COMPONENTS,
@@ -63,17 +64,20 @@ export function configuredAttendance(input: {
     const a = Math.max(dayStart, Date.parse(data.startsAt)),
       b = Math.min(dayEnd, Date.parse(data.endsAt));
     if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) continue;
-    const isRemote = request.tab === 'remote',
-      isMission = ['radanMission', 'mission'].includes(request.tab),
-      isLeave = ['radanLeave', 'leave'].includes(request.tab);
-    const hourly = isRemote
-      ? request.values[3] === 'ساعتی'
-      : request.values[4] === 'ساعتی';
-    const component = `${isRemote ? 'دورکاری' : isMission ? 'مأموریت' : 'مرخصی'} ${hourly ? 'ساعتی' : 'روزانه'}`;
-    if ((isRemote || isMission || isLeave) && components.includes(component)) {
+    const component = readAttendanceRequestComponent(
+      request.tab,
+      request.values,
+    );
+    if (
+      component &&
+      components.includes(`${component.category} ${component.mode}`)
+    ) {
       if (Math.min(end, b) > Math.max(start, a))
         credits.push([Math.max(start, a), Math.min(end, b)]);
-      if (isMission && settings.creditOutsideMission === 'بله') {
+      if (
+        component.category === 'مأموریت' &&
+        settings.creditOutsideMission === 'بله'
+      ) {
         if (a < start) outsideIntervals.push([a, Math.min(start, b)]);
         if (b > end) outsideIntervals.push([Math.max(a, end), b]);
       }

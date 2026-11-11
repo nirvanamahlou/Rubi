@@ -9876,3 +9876,5 @@ WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission 
 HR-LEAVE-POLICY-EDIT: Save existing policy values without re-submitting the locked company scope. Accept a legacy unchanged organization branch reference on update while retaining validation for new references and authorization for the policy itself.
 
 HR-ATTENDANCE-STATUS-EDITOR: Single-day editor supports calculated attendance labels as audited overrides. Automatic mode restores the latest calculated status and bulk activation preserves the override. Source punches and existing authorization remain intact.
+
+- HR leave policy and attendance credits now decode the legacy request rows through named fields. Daily and hourly layouts remain compatible. Fifteen focused HR tests passed.
