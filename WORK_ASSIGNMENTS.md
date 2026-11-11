@@ -12466,3 +12466,7 @@ NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels an
 ## NORA-CONTRACT-WORKFLOW-GUIDE-1111 — PC-C — READY_FOR_CI
 
 Owner requests comprehensive ERP contract workflow guidance, colloquial Persian recognition and arrow navigation paths. Reserve assistant contract guides/form-help/composer and focused regressions, additive English labels and generated catalogues, bounded task/status documentation. Prior guide PR1672 is merged and deployed, its source scope is released. Read-only Nora guidance only; no Sales business workflow, migration, dependency or operational data changes. Base origin/develop a8206946f.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B — READY_FOR_CI
+
+Add a per-request hourly leave limit to HR policy records and validate submissions and approvals.

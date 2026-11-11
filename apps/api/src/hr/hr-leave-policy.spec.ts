@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertLeaveDeadline,
+  assertHourlyLeaveDuration,
   assertHourlyLeaveCount,
   assertMonthlyLeaveQuota,
   leavePolicyValues,
@@ -145,4 +146,32 @@ it('allows four hourly requests per Persian month across leave types', () => {
       previous,
     ),
   ).not.toThrow();
+});
+
+describe('hourly leave duration per request', () => {
+  const fields = ['استحقاقی', '2', '8', '1', '0', 'خیر', '0', '465'];
+  const limited = parseMonthlyLeavePolicy([...fields, '۹۰'])!;
+  const hourly = {
+    ...leave,
+    mode: 'ساعتی' as const,
+    startTime: '09:15',
+    endTime: '10:45',
+  };
+
+  it('allows the exact cap and rejects one extra minute at submission and approval', () => {
+    expect(() => assertHourlyLeaveDuration(hourly, limited)).not.toThrow();
+    const tooLong = { ...hourly, endTime: '10:46' };
+    expect(() => assertHourlyLeaveDuration(tooLong, limited)).toThrow(/90/);
+    expect(() => assertMonthlyLeaveQuota(tooLong, limited, [])).toThrow(/90/);
+    expect(() => assertHourlyLeaveDuration(leave, limited)).not.toThrow();
+  });
+
+  it('keeps existing and blank policies uncapped and rejects invalid caps', () => {
+    for (const values of [fields, [...fields, '']]) {
+      const uncapped = parseMonthlyLeavePolicy(values)!;
+      expect(() => assertHourlyLeaveDuration(hourly, uncapped)).not.toThrow();
+    }
+    for (const value of ['0', '1.5', '1441', '-1'])
+      expect(() => parseMonthlyLeavePolicy([...fields, value])).toThrow();
+  });
 });

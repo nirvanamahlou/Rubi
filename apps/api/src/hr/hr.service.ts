@@ -14,6 +14,7 @@ import {
   leavePolicyValues,
   parseMonthlyLeavePolicy,
   assertLeaveDeadline,
+  assertHourlyLeaveDuration,
   assertMonthlyLeaveQuota,
   leaveUsage,
   leaveMonth,
@@ -2015,6 +2016,7 @@ export class HrService {
             {
               workingHours: 8,
               leaveTransferRules: 9,
+              leavePolicies: Array.isArray(value) && value.length === 7 ? 7 : 8,
               penaltySettings: 6,
             } as Record<string, number>
           )[row.tab]
@@ -3145,6 +3147,7 @@ export class HrService {
     );
     if (!policy)
       throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
+    assertHourlyLeaveDuration(leave, policy);
     assertLeaveDeadline(leave, policy, new Date());
     if (leave.substituteUserId) {
       if (
