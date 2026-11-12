@@ -269,7 +269,19 @@ export interface CustomerAffairsMarketingIntakeInputV1 {
   lastFollowUpAt?: string | null;
 }
 
+export type MarketingLeadStage = 'LEAD' | 'ORDER' | 'SALE';
+
+export interface MarketingLeadActivity {
+  date: string;
+  source: string;
+  leads: number;
+  orders: number;
+  convertedLeads: number;
+  customers: number;
+}
+
 export interface CustomerAffairsMarketingIntakeViewV1 {
+  stage?: MarketingLeadStage;
   firstName?: string | null;
   lastName?: string | null;
   entryDate?: string | null;

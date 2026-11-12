@@ -19,3 +19,8 @@ The owner confirmed direct entry of a year such as ۱۴۰۵. Ledger allocation n
 Validation: 76 PostgreSQL core/company-ledger tests passed, including all eight company-ledger cases; focused Web/i18n checks and scoped API/Web lint passed. API/Web TypeScript and both production builds passed. PostgreSQL fixtures use the dedicated disposable local Accounting test database, never the restored operational database.
 
 Browser acceptance is not claimed: the computer-use connection failed to initialize with a missing kernel-assets path. The running local application and production website have not been updated by this task.
+
+## Publication authorization
+
+The owner subsequently explicitly requested PR to develop and merge without CI. PR1692 targets develop. Integrate current develop by preserving both appended task reservations; no product source conflict or production deployment.
+

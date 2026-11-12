@@ -1,6 +1,6 @@
 import type * as ReactModule from 'react';
 import type { ReactNode, ReactElement } from 'react';
-import type { TourPackageInputV1 } from '@nora/contracts';
+import type { MasterDataRecord, TourPackageInputV1 } from '@nora/contracts';
 import { expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   index: 0,
@@ -139,4 +139,57 @@ it('edits the origin in the combined block without dropping stays and synchroniz
       )
       .map((node) => node.props.value),
   ).toEqual(['first', 'second']);
+});
+
+it('limits every city picker to its own country and clears the city on country change', () => {
+  h.index = 0;
+  const cities = [
+    { id: 'tehran', attributes: { countryId: 'ir' } },
+    { id: 'mashhad', attributes: { countryId: 'ir' } },
+    { id: 'antalya', attributes: { countryId: 'tr' } },
+    { id: 'bodrum', attributes: { countryId: 'tr' } },
+    { id: 'paris', attributes: { countryId: 'fr' } },
+  ] as unknown as MasterDataRecord[];
+  const onChange = vi.fn();
+  const tree = nodes(
+    TourDestinations({
+      value: {
+        originId: 'tehran',
+        destinationId: 'antalya',
+        hotelIds: [],
+        details: {
+          version: 1,
+          isCombined: true,
+          destinations: [
+            { cityId: 'antalya', nights: 4 },
+            { cityId: 'paris', nights: 3 },
+          ],
+        },
+      } as unknown as TourPackageInputV1,
+      countries: [],
+      cities,
+      onChange,
+    }),
+  );
+  const picker = (label: string) =>
+    tree.find(
+      (n) => n.type === SearchableReference && n.props.label === label,
+    )!;
+  const ids = (label: string) =>
+    (picker(label).props.options as typeof cities).map((c) => c.id);
+  expect(ids('شهر مبدأ')).toEqual(['tehran', 'mashhad']);
+  expect(ids('شهر مقصد 1')).toEqual(['antalya', 'bodrum']);
+  expect(ids('شهر مقصد 2')).toEqual(['paris']);
+  (picker('کشور مقصد 1').props.onChange as (id: string) => void)('fr');
+  expect(onChange.mock.lastCall?.[0]).toMatchObject({
+    destinationId: '',
+    details: {
+      destinations: [
+        { cityId: '', nights: 4 },
+        { cityId: 'paris', nights: 3 },
+      ],
+    },
+  });
+  (picker('کشور مبدأ').props.onChange as (id: string) => void)('tr');
+  expect(onChange.mock.lastCall?.[0].originId).toBe('');
 });
