@@ -2110,6 +2110,10 @@ Hotel meal/service, room-type and facility selectors now expose a clear Add acti
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
 
+## I18N-CATALOG-TRANSFER-1111 — PC-B
+
+The English fallback catalog loads on demand. Persian rendering does not need it, and English SSR and hydration wait for it. English metadata, document preparation and translated spreadsheet headers load the same catalog where needed. The production build emits the catalog in a separate 2,317,347-byte uncompressed chunk. A local production HTTP check verified distinct Persian and English login titles and no catalog chunk reference in the Persian response.
+
 ## I18N-STARTUP-1110 — PC-B
 
 Build the English phrase index only on the first unmatched English translation that needs Persian phrase lookup. Persian and exact English lookup avoid index initialization. Reuse the source inventory in coverage tests. Thirteen focused tests passed. The median of 20 local module initialization and first Persian lookup samples fell from 55.3 ms to 16.8 ms with JSON cached. Bundle download size is outside this measurement.

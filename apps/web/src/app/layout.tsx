@@ -8,7 +8,7 @@ import {
   displayLanguageCookieName,
   parseDisplayLanguage,
 } from '@/i18n/language';
-import { translateUiText } from '@/i18n/translate';
+import { loadEnglishUiCatalog, translateUiText } from '@/i18n/translate';
 import './globals.css';
 
 const metadata: Metadata = {
@@ -24,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     parseDisplayLanguage(
       (await cookies()).get(displayLanguageCookieName)?.value,
     ) ?? 'fa';
+  if (language === 'en') await loadEnglishUiCatalog();
   return {
     ...metadata,
     title: {

@@ -1,4 +1,5 @@
 import { localizeDocumentHtml } from '@/i18n/document';
+import { loadEnglishUiCatalog } from '@/i18n/translate';
 import { renderPdfWithSmallOverflowFit } from '@/lib/pdf-overflow-fit';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
@@ -108,6 +109,7 @@ export async function prepareContractHtml(
   language: DisplayLanguage = 'fa',
 ): Promise<string> {
   const { fontPath: font } = await resolveContractPdfRuntime();
+  if (language === 'en') await loadEnglishUiCatalog();
   let html = localizeDocumentHtml(contractPrintHtml(output, refs), language);
   if (font) {
     const fontBytes = await readFile(/* turbopackIgnore: true */ font);

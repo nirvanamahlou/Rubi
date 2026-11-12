@@ -39,6 +39,9 @@ The Marketing directory page adds a read contract for the Marketing API and Web.
 
 ## Implementation evidence
 
+- The English fallback catalog is loaded on demand by the display provider.
+  English metadata and document and import entry points explicitly prepare
+  it before synchronously translating text.
 - Travel and organization reports rank groups before producing display rows.
   Preview ranks are bounded through the page endpoint. Exact currency totals,
   distinct counts and export ordering are preserved.

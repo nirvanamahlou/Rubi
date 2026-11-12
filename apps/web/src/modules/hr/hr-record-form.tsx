@@ -3,6 +3,7 @@ import { HrMissionForm } from './hr-mission-form';
 import { HrLeaveForm } from './hr-leave-form';
 import { WeeklyShiftForm } from './weekly-shift-form';
 import {
+  HR_BRANCH_REGISTRATION_COLUMNS,
   HR_DEFAULT_LEAVE_DAY_MINUTES,
   isHrSharedResource,
 } from '@nora/contracts';
@@ -748,7 +749,7 @@ function HrRecordFormFields({
                   : []),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
-                  ? ['مدیر']
+                  ? ['مدیر', ...HR_BRANCH_REGISTRATION_COLUMNS]
                   : []),
                 ...(target.source.section === 'lifecycle' &&
                 target.source.tab === 'onboarding'

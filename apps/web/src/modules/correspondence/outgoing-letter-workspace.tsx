@@ -11,7 +11,7 @@ import {
   Send,
   Save,
 } from 'lucide-react';
-import type { InternalLetterRecord } from '@nora/contracts';
+import type { CorrespondenceUser, InternalLetterRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui';
 import { issueLetterNumber, internalLetters } from './api';
@@ -24,6 +24,14 @@ import {
   type Letter,
 } from './letter';
 import { letterDownloads, renderLetterPages } from './letter-export';
+
+const today = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
 
 export function OutgoingLetterWorkspace({
   internal = false,
@@ -45,15 +53,36 @@ export function OutgoingLetterWorkspace({
   const previewRevision = useRef(0);
   const [templateId, setTemplateId] = useState<string>('general');
   const [letterDate, setLetterDate] = useState(
-    () =>
-      initialRecord?.dateISO ??
-      new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Tehran',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date()),
+    () => initialRecord?.dateISO ?? today(),
   );
+  const composeInternal = internal && !initialRecord;
+  const [users, setUsers] = useState<CorrespondenceUser[]>([]);
+  const [sender, setSender] = useState('');
+  const [addressedUserId, setAddressedUserId] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const attachmentInput = useRef<HTMLInputElement>(null);
+  const [directoryError, setDirectoryError] = useState('');
+  useEffect(() => {
+    if (!composeInternal) return;
+    let active = true;
+    void Promise.all([internalLetters.users(), internalLetters.currentUser()])
+      .then(([rows, me]) => {
+        if (!active) return;
+        setUsers(rows);
+        setSender(me.displayName);
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setDirectoryError(
+            cause instanceof Error
+              ? cause.message
+              : 'فهرست کاربران بارگذاری نشد.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [composeInternal]);
   const [letter, setLetter] = useState<Letter>(
     initialRecord?.letter ?? {
       company: companies[0].title,
@@ -106,6 +135,7 @@ export function OutgoingLetterWorkspace({
     previewRevision.current += 1;
     setNotice('');
     if (key === 'company') requestKey.current = null;
+    sendKey.current = null;
     setLetter({
       ...letter,
       [key]: value,
@@ -122,11 +152,14 @@ export function OutgoingLetterWorkspace({
     setBusy(true);
     setFiles([]);
     try {
-      const text = composeLetter(letter);
-      let numberedLetter = letter;
+      if (composeInternal && (!addressedUserId || !sender))
+        throw new Error('گیرنده را از فهرست کاربران انتخاب کنید.');
+      const draft = composeInternal ? { ...letter, sender } : letter;
+      const text = composeLetter(draft);
+      let numberedLetter = draft;
       if (!letter.number) {
         // Validate artwork before consuming a persistent number; retries reuse the same key.
-        await renderLetterPages(letter, text);
+        await renderLetterPages(draft, text);
         requestKey.current ??= crypto.randomUUID();
         const company = companies.find(
           (company) => company.title === letter.company,
@@ -137,7 +170,7 @@ export function OutgoingLetterWorkspace({
           requestKey.current,
         );
         numberedLetter = {
-          ...letter,
+          ...draft,
           number: result.number,
           date: result.date.replace(
             /\d/g,
@@ -258,6 +291,49 @@ export function OutgoingLetterWorkspace({
               </select>
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
+              {composeInternal && (
+                <>
+                  <label className="block text-sm font-medium">
+                    گیرنده
+                    <select
+                      className={inputClass}
+                      value={addressedUserId}
+                      required
+                      onChange={(event) => {
+                        const user = users.find(
+                          ({ id }) => id === event.target.value,
+                        );
+                        setAddressedUserId(user?.id ?? '');
+                        update('recipient', user?.displayName ?? '');
+                        setLetter((current) => ({
+                          ...current,
+                          recipientTitle: user?.jobTitle ?? '',
+                        }));
+                      }}
+                    >
+                      <option value="">انتخاب گیرنده</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-sm font-medium">
+                    عنوان گیرنده
+                    <input
+                      className={inputClass}
+                      value={letter.recipientTitle ?? ''}
+                      readOnly
+                    />
+                  </label>
+                  {directoryError && (
+                    <p role="alert" className="text-destructive sm:col-span-2">
+                      {directoryError}
+                    </p>
+                  )}
+                </>
+              )}
               {(
                 [
                   'recipient',
@@ -267,57 +343,104 @@ export function OutgoingLetterWorkspace({
                   'attachment',
                   'signer',
                 ] as const
-              ).map((key) => (
-                <label
-                  key={key}
-                  className={`block text-sm font-medium ${key === 'subject' ? 'sm:col-span-2' : ''}`}
-                >
-                  {
+              )
+                .filter(
+                  (key) =>
+                    !composeInternal || key === 'subject' || key === 'signer',
+                )
+                .map((key) => (
+                  <label
+                    key={key}
+                    className={`block text-sm font-medium ${key === 'subject' ? 'sm:col-span-2' : ''}`}
+                  >
                     {
-                      recipient: 'گیرنده',
-                      recipientTitle: 'عنوان گیرنده',
-                      sender: 'فرستنده',
-                      subject: 'موضوع',
-                      attachment: 'پیوست',
-                      signer: 'نام و سمت امضاکننده',
-                    }[key]
-                  }
+                      {
+                        recipient: 'گیرنده',
+                        recipientTitle: 'عنوان گیرنده',
+                        sender: 'فرستنده',
+                        subject: 'موضوع',
+                        attachment: 'پیوست',
+                        signer: 'نام و سمت امضاکننده',
+                      }[key]
+                    }
+                    <input
+                      className={inputClass}
+                      value={letter[key] ?? ''}
+                      required={
+                        key === 'recipient' ||
+                        key === 'subject' ||
+                        key === 'sender'
+                      }
+                      maxLength={
+                        key === 'subject' || key === 'recipient' ? 160 : 80
+                      }
+                      disabled={busy || readOnly || sent}
+                      onChange={(event) => update(key, event.target.value)}
+                    />
+                  </label>
+                ))}
+              {composeInternal ? (
+                <label className="block text-sm font-medium sm:col-span-2">
+                  مدارک پیوست
                   <input
+                    type="file"
+                    multiple
                     className={inputClass}
-                    value={letter[key] ?? ''}
-                    required={
-                      key === 'recipient' ||
-                      key === 'subject' ||
-                      key === 'sender'
-                    }
-                    maxLength={
-                      key === 'subject' || key === 'recipient' ? 160 : 80
-                    }
-                    disabled={busy || readOnly || sent}
-                    onChange={(event) => update(key, event.target.value)}
+                    ref={attachmentInput}
+                    onChange={(event) => {
+                      const selected = [...(event.currentTarget.files ?? [])];
+                      if (
+                        selected.length > 5 ||
+                        selected.some((file) => file.size > 10 * 1024 * 1024)
+                      ) {
+                        event.currentTarget.value = '';
+                        setAttachments([]);
+                        update('attachment', '');
+                        setError(
+                          'حداکثر ۵ پیوست و ۱۰ مگابایت برای هر فایل مجاز است.',
+                        );
+                        return;
+                      }
+                      setAttachments(selected);
+                      update(
+                        'attachment',
+                        selected.length
+                          ? `${selected.length.toLocaleString('fa-IR')} فایل`
+                          : '',
+                      );
+                    }}
+                  />
+                  {attachments.map((file, index) => (
+                    <span
+                      className="block break-all text-muted-foreground"
+                      key={index}
+                    >
+                      {file.name}
+                    </span>
+                  ))}
+                </label>
+              ) : (
+                <label className="block text-sm font-medium">
+                  تاریخ نامه
+                  <DatePicker
+                    aria-label="تاریخ نامه"
+                    value={letterDate}
+                    disabled={busy || readOnly || sent || !!initialRecord}
+                    onChange={(value) => {
+                      if (!value) return;
+                      requestKey.current = null;
+                      setLetterDate(value);
+                      update(
+                        'date',
+                        new Intl.DateTimeFormat('fa-IR', {
+                          timeZone: 'Asia/Tehran',
+                        }).format(new Date(`${value}T12:00:00+03:30`)),
+                      );
+                      setLetter((current) => ({ ...current, number: '' }));
+                    }}
                   />
                 </label>
-              ))}
-              <label className="block text-sm font-medium">
-                تاریخ نامه
-                <DatePicker
-                  aria-label="تاریخ نامه"
-                  value={letterDate}
-                  disabled={busy || readOnly || sent || !!initialRecord}
-                  onChange={(value) => {
-                    if (!value) return;
-                    requestKey.current = null;
-                    setLetterDate(value);
-                    update(
-                      'date',
-                      new Intl.DateTimeFormat('fa-IR', {
-                        timeZone: 'Asia/Tehran',
-                      }).format(new Date(`${value}T12:00:00+03:30`)),
-                    );
-                    setLetter((current) => ({ ...current, number: '' }));
-                  }}
-                />
-              </label>
+              )}
             </div>
             {letter.number && (
               <p role="status" className="rounded-xl bg-primary/5 p-3 text-sm">
@@ -373,6 +496,11 @@ export function OutgoingLetterWorkspace({
                   sendKey.current = null;
                   setSent(false);
                   setNotice('');
+                  setLetterDate(today());
+                  setAddressedUserId('');
+                  setAttachments([]);
+                  if (attachmentInput.current)
+                    attachmentInput.current.value = '';
                   setLetter((current) => ({
                     ...current,
                     number: '',
@@ -403,6 +531,7 @@ export function OutgoingLetterWorkspace({
                 requestKey.current = null;
                 setSent(false);
                 setNotice('');
+                setLetterDate(today());
                 setLetter((current) => ({ ...current, number: '' }));
                 setBody('');
                 setPreview([]);
@@ -532,9 +661,43 @@ export function OutgoingLetterWorkspace({
           )}
         </div>
       </div>
+      {initialRecord?.attachments?.length ? (
+        <div className="flex flex-wrap gap-2">
+          {initialRecord.attachments.map((file) => (
+            <Button
+              key={file.id}
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const blob = await internalLetters.attachment(
+                    initialRecord.id,
+                    file.id,
+                  );
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = file.name;
+                  link.click();
+                  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : 'دریافت پیوست نامه انجام نشد.',
+                  );
+                }
+              }}
+            >
+              {file.name}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       {internal && !initialRecord && (
         <LetterRecipientDialog
           open={sendOpen}
+          {...(addressedUserId ? { initialRecipientId: addressedUserId } : {})}
           onOpenChange={setSendOpen}
           onSubmit={async (recipientId) => {
             sendKey.current ??= crypto.randomUUID();
@@ -543,6 +706,8 @@ export function OutgoingLetterWorkspace({
               letterDate,
               recipientId,
               sendKey.current,
+              addressedUserId,
+              attachments,
             );
             setSent(true);
             setNotice('نامه به دریافتی گیرندگان ارسال شد.');

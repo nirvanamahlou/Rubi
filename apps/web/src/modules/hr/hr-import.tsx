@@ -1,10 +1,14 @@
 'use client';
-import { translateUiText } from '@/i18n/translate';
+import { loadEnglishUiCatalog, translateUiText } from '@/i18n/translate';
 
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useState } from 'react';
-import { getHrResource, type HrRecordDto } from '@nora/contracts';
+import {
+  HR_BRANCH_REGISTRATION_COLUMNS,
+  getHrResource,
+  type HrRecordDto,
+} from '@nora/contracts';
 import {
   Dialog,
   DialogContent,
@@ -67,6 +71,8 @@ export function HrImport({
         'کد پرسنلی',
         'شناسه پرونده مرتبط',
       ];
+      if (rawHeaders?.some((header) => header && !expected.includes(header)))
+        await loadEnglishUiCatalog();
       const headers = rawHeaders?.map(
         (header) =>
           expected.find(
@@ -76,7 +82,14 @@ export function HrImport({
       );
       if (
         !headers ||
-        definition.columns.some((column) => !headers.includes(column))
+        definition.columns.some(
+          (column) =>
+            !headers.includes(column) &&
+            !(
+              definition.key === 'organization.branches' &&
+              HR_BRANCH_REGISTRATION_COLUMNS.some((label) => label === column)
+            ),
+        )
       )
         throw new Error(
           'ستون‌های فایل با این بخش یکسان نیستند؛ ابتدا قالب اکسل را دریافت کنید.',

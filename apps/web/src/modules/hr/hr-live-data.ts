@@ -1,4 +1,8 @@
-import { getHrResource, type HrRecordDto } from '@nora/contracts';
+import {
+  getHrResource,
+  HR_BRANCH_REGISTRATION_COLUMNS,
+  type HrRecordDto,
+} from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { hrFieldLabel, retiredHrColumns } from './hr-form-model';
 import { hrDisplayDate } from './hr-dates';
@@ -9,11 +13,14 @@ export function recordsDataset(
   records: readonly HrRecordDto[],
 ): HrPreviewDataset {
   const source = getHrResource(section, tab);
+  const hidden = retiredHrColumns(section, tab);
+  if (section === 'organization' && tab === 'branches') {
+    hidden.push(...HR_BRANCH_REGISTRATION_COLUMNS);
+  }
   const visible =
     source?.columns
       .map((label, index) => ({ label, index }))
-      .filter((item) => !retiredHrColumns(section, tab).includes(item.label)) ??
-    [];
+      .filter((item) => !hidden.includes(item.label)) ?? [];
   const items = records.filter(
     (record) =>
       record.section === section && record.tab === tab && !record.deletedAt,
