@@ -1,7 +1,10 @@
 import type {
   SalesContractDetail,
   SalesContractSummary,
+  SalesContractListQuery,
 } from '@nora/contracts';
+import { ledgerEvidence } from './contract-ledger';
+import { itineraryEvidence, currentOfferEvidence } from './contract-itinerary';
 import { salesApi } from '@/modules/sales/api/client';
 import { paymentReceiptsApi } from '@/modules/sales/api/payment-receipts';
 import { normalizeContractQuestion } from './contract-guides';
@@ -26,6 +29,11 @@ export function actionReason(row: SalesContractSummary) {
 export function portfolioKind(message: string) {
   const q = normalizeContractQuestion(message);
   if (!/قرارداد/.test(q) || /قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(q)) return;
+  if (/قراردادها|قرارداد های|کدام قرارداد|چه قرارداد/.test(q)) {
+    if (/مغایرت|رسید|مالی/.test(q)) return 'finance';
+    if (/مدارک|خدمات|خدمت/.test(q)) return 'services';
+    if (/تاریخچه|تغییرات/.test(q)) return 'history';
+  }
   if (
     /متوقف|راکد|معطل/.test(q) &&
     /قراردادها|قرارداد های|کدام قرارداد|چه قرارداد/.test(q)
@@ -37,67 +45,190 @@ export function portfolioKind(message: string) {
   )
     return 'mine';
 }
-export async function portfolioReport(message: string, userId: string) {
+export function readPortfolioScope(): SalesContractListQuery {
+  if (typeof document === 'undefined') return {};
+  try {
+    const raw = JSON.parse(
+      document.querySelector<HTMLElement>('[data-nora-sales-filters]')?.dataset
+        .noraSalesFilters || '{}',
+    );
+    const keys = [
+      'branchId',
+      'ownerUserId',
+      'status',
+      'settlementStatus',
+      'reservationStatus',
+      'currencyCode',
+      'travelFrom',
+      'travelTo',
+      'createdFrom',
+      'createdTo',
+      'customerType',
+      'agencyCustomerId',
+      'supplyType',
+      'serviceKind',
+      'destinationId',
+      'originId',
+      'search',
+    ];
+    return Object.fromEntries(
+      keys
+        .filter((key) => typeof raw?.[key] === 'string' && raw[key])
+        .map((key) => [key, raw[key]]),
+    );
+  } catch {
+    return {};
+  }
+}
+function scopeHeader(filters: SalesContractListQuery) {
+  return [
+    'محدوده: شرکت و شعب مجاز حساب فعلی؛ شعبه: ' +
+      (filters.branchId || 'همه مجاز') +
+      '؛ فروشنده: ' +
+      (filters.ownerUserId || 'همه مجاز') +
+      '؛ وضعیت: ' +
+      (filters.status || 'همه') +
+      '؛ ارز: ' +
+      (filters.currencyCode || 'همه'),
+    'بازه ثبت: ' +
+      (filters.createdFrom || 'بدون حد آغاز') +
+      ' تا ' +
+      (filters.createdTo || 'بدون حد پایان') +
+      '؛ بازه سفر: ' +
+      (filters.travelFrom || 'بدون حد آغاز') +
+      ' تا ' +
+      (filters.travelTo || 'بدون حد پایان'),
+  ];
+}
+export async function portfolioReport(
+  message: string,
+  userId: string,
+  link?: (row: SalesContractSummary) => void,
+  signal?: AbortSignal,
+) {
   const kind = portfolioKind(message);
-  const page = Math.max(
-    1,
-    Number(
-      normalizeContractQuestion(message).match(/صفحه\s+(\d{1,5})/)?.[1] ?? 1,
-    ),
-  );
-  const list = await salesApi.list({
-    ...(/(?:^|\s)(?:من|خودم)(?:\s|$)|کارهایم/.test(
-      normalizeContractQuestion(message),
-    )
+  const q = normalizeContractQuestion(message);
+  const page = Math.max(1, Number(q.match(/صفحه\s+(\d{1,5})/)?.[1] ?? 1));
+  const scope = readPortfolioScope();
+  const filters = {
+    ...scope,
+    ...(kind === 'stalled' && /(?:^|\s)(?:من|خودم)(?:\s|$)/.test(q)
       ? { ownerUserId: userId }
       : {}),
-    page,
-    pageSize: 10,
-    sortBy: 'updatedAt',
-    sortDirection: 'asc',
-  });
-  const rows: string[] = [];
-  for (const row of list.data) {
-    const reason = actionReason(row);
-    if (!reason) continue;
-    if (kind === 'mine') {
-      rows.push(row.contractNumber + ' — ' + reason);
-      continue;
+  };
+  if (kind === 'finance' || kind === 'services' || kind === 'history') {
+    // Page Sales first, then read evidence for this page only. Each source enforces its own scope.
+    const list = await salesApi.list({
+      ...filters,
+      page,
+      pageSize: 10,
+      sortBy: 'createdAt',
+      sortDirection: 'asc',
+    });
+    const lines = [
+      ...scopeHeader(filters),
+      'صفحه ' +
+        page +
+        '؛ تعداد قراردادهای محدوده: ' +
+        list.meta.total +
+        '؛ زمان خواندن (تهران): ' +
+        date(new Date().toISOString()),
+    ];
+    for (const row of list.data) {
+      signal?.throwIfAborted();
+      try {
+        const detail = (await salesApi.detail(row.id)).data;
+        link?.(row);
+        lines.push(
+          row.contractNumber,
+          await recordReport(
+            kind === 'finance'
+              ? 'مغایرت مالی و رسید'
+              : kind === 'services'
+                ? 'خدمات و مدارک'
+                : 'تاریخچه و تغییرات',
+            detail,
+            signal,
+          ),
+        );
+      } catch (error) {
+        signal?.throwIfAborted();
+        lines.push(row.contractNumber, reportError(error));
+      }
     }
-    const events = await salesApi
-      .statusHistory(row.id)
-      .then((r) => r.data)
-      .catch(() => undefined);
-    const event = events?.[0]?.toStatus === row.status ? events[0] : undefined;
-    const days =
-      event &&
-      Math.floor((Date.now() - Date.parse(event.changedAt)) / 86400000);
-    rows.push(
-      row.contractNumber +
-        ' — ' +
-        reason +
-        '؛ ' +
-        (typeof days === 'number' && days >= 0
-          ? days + ' روز از ورود به وضعیت قرارداد'
-          : events
-            ? 'زمان ورود به وضعیت ثبت نشده'
-            : 'تاریخچه قابل بررسی نیست'),
-    );
+    if (!list.data.length) lines.push('در این صفحه قراردادی یافت نشد.');
+    return lines.join('\n');
   }
-  return [
+  const seen = new Set<string>();
+  const hits: { row: SalesContractSummary; reason: string }[] = [];
+  for (let sourcePage = 1; ; sourcePage++) {
+    signal?.throwIfAborted();
+    const list = await salesApi.list({
+      ...filters,
+      page: sourcePage,
+      pageSize: 100,
+      sortBy: 'createdAt',
+      sortDirection: 'asc',
+    });
+    if (sourcePage !== list.meta.page) throw Error('pagination');
+    for (const row of list.data) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      const reason = actionReason(row);
+      if (!reason) continue;
+      // An employee who sold a contract is not necessarily its finance or reservation approver.
+      if (
+        kind === 'mine' &&
+        !(
+          row.assignedUserId === userId ||
+          (!row.assignedUserId &&
+            row.ownerUserId === userId &&
+            reason.startsWith('فروش'))
+        )
+      )
+        continue;
+      hits.push({ row, reason });
+    }
+    if (sourcePage * list.meta.pageSize >= list.meta.total) break;
+    if (!list.data.length) throw Error('incomplete page');
+  }
+  const lines = [
+    ...scopeHeader(filters),
     'صفحه ' +
       page +
       ' از ' +
-      Math.max(1, Math.ceil(list.meta.total / list.meta.pageSize)) +
-      ' فهرست مجاز، به ترتیب قدیمی‌ترین به‌روزرسانی',
-    ...rows,
-    !rows.length ? 'در این صفحه مورد نیازمند اقدام یافت نشد.' : '',
-    list.meta.total > page * list.meta.pageSize
-      ? 'برای ادامه همان گزارش را با شماره صفحه بعد بخواهید.'
-      : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+      Math.max(1, Math.ceil(hits.length / 10)) +
+      '؛ تعداد موارد: ' +
+      hits.length +
+      '؛ زمان خواندن (تهران): ' +
+      date(new Date().toISOString()),
+  ];
+  for (const { row, reason } of hits.slice((page - 1) * 10, page * 10)) {
+    signal?.throwIfAborted();
+    link?.(row);
+    let time = '';
+    if (kind === 'stalled')
+      try {
+        const events = (await salesApi.statusHistory(row.id)).data;
+        const event = events
+          .filter((e) => e.toStatus === row.status)
+          .sort((a, b) => Date.parse(b.changedAt) - Date.parse(a.changedAt))[0];
+        const days = event
+          ? Math.floor((Date.now() - Date.parse(event.changedAt)) / 86400000)
+          : NaN;
+        time =
+          Number.isFinite(days) && days >= 0
+            ? days +
+              ' روز از ورود به وضعیت قرارداد؛ زمان توقف خدمت ممکن است متفاوت باشد.'
+            : 'زمان ورود به وضعیت ثبت نشده';
+      } catch (error) {
+        time = reportError(error);
+      }
+    lines.push([row.contractNumber, reason, time].filter(Boolean).join(' — '));
+  }
+  if (!hits.slice((page - 1) * 10, page * 10).length)
+    lines.push('در این صفحه مورد نیازمند اقدام یافت نشد.');
+  return lines.join('\n');
 }
 function reportError(error: unknown) {
   const status =
@@ -110,10 +241,43 @@ function reportError(error: unknown) {
       ? 'منبع این بخش در محدوده مجاز پیدا نشد.'
       : 'دریافت جزئیات این بخش ناموفق بود.';
 }
+function changedFields(before: unknown, after: unknown) {
+  if (
+    !before ||
+    !after ||
+    typeof before !== 'object' ||
+    typeof after !== 'object'
+  )
+    return [];
+  const labels: Record<string, string> = {
+    totals: 'مبلغ',
+    status: 'وضعیت',
+    reservationStatus: 'وضعیت رزرواسیون',
+    payments: 'پرداخت‌ها',
+    passengers: 'مسافران',
+    departureDate: 'تاریخ رفت',
+    services: 'خدمات',
+    hotelSelection: 'اقامت',
+    ticketSelections: 'پروازها',
+    priceComponents: 'قیمت',
+  };
+  return Object.entries(labels)
+    .filter(
+      ([key]) =>
+        Object.hasOwn(before, key) &&
+        Object.hasOwn(after, key) &&
+        JSON.stringify((before as Record<string, unknown>)[key]) !==
+          JSON.stringify((after as Record<string, unknown>)[key]),
+    )
+    .map(([, v]) => v + ' تغییر کرد');
+}
 const reportTopics = {
+  summary: /خلاصه|پرونده کامل/,
   history: /تاریخچه|تغییرات|توقف|متوقف/,
   audit: /تغییرات|ممیزی/,
-  payment: /رسید|مغایرت|وصول|سررسید/,
+  payment: /رسید|مغایرت|وصول|سررسید|مالی|مانده|تخفیف|کمیسیون|پرداخت/,
+  itinerary: /تخصیص|مسافر|مسیر|اقامت|رده سنی|تاریخ سفر/,
+  offer: /ظرفیت|نرخ فعلی|قیمت فعلی|اعتبار قیمت/,
   service: /مدرک|مدارک|خدمت|خدمات|ناقص/,
 };
 export function isContractReportQuestion(message: string) {
@@ -121,16 +285,31 @@ export function isContractReportQuestion(message: string) {
   return Object.values(reportTopics).some((pattern) => pattern.test(question));
 }
 
-export async function recordReport(message: string, data: SalesContractDetail) {
+export async function recordReport(
+  message: string,
+  data: SalesContractDetail,
+  signal: AbortSignal = new AbortController().signal,
+) {
   const q = normalizeContractQuestion(message);
   const lines: string[] = [];
+  const summary = /خلاصه|پرونده کامل/.test(q);
+  if (reportTopics.itinerary.test(q)) lines.push(...itineraryEvidence(data));
+  if (reportTopics.offer.test(q)) {
+    try {
+      lines.push(...(await currentOfferEvidence(data, signal)));
+    } catch (error) {
+      lines.push(reportError(error));
+    }
+  }
   if (reportTopics.history.test(q)) {
     try {
       const events = (await salesApi.statusHistory(data.id)).data;
       lines.push(
         'تاریخچه وضعیت قرارداد (زمان تهران)',
-        ...events.map(
-          (e) => date(e.changedAt) + ' — ' + e.toStatus + ' — ' + e.reason,
+        ...events.map((e) =>
+          [date(e.changedAt), e.toStatus, e.reason, e.changedByUserId]
+            .filter(Boolean)
+            .join(' — '),
         ),
       );
       if (!events.length) lines.push('رویداد تغییر وضعیت ثبت نشده است.');
@@ -143,7 +322,15 @@ export async function recordReport(message: string, data: SalesContractDetail) {
       const audit = (await salesApi.contractAudit(data.id)).data;
       lines.push(
         ...audit.map((e) =>
-          [date(e.occurredAt), e.action, e.outcome].join(' — '),
+          [
+            date(e.occurredAt),
+            e.action,
+            e.outcome,
+            e.actorUserId,
+            ...changedFields(e.beforeSnapshot, e.afterSnapshot),
+          ]
+            .filter(Boolean)
+            .join(' — '),
         ),
       );
       if (!audit.length) lines.push('رویداد ممیزی ثبت نشده است.');
@@ -151,21 +338,44 @@ export async function recordReport(message: string, data: SalesContractDetail) {
       lines.push(reportError(error));
     }
   }
-  if (reportTopics.payment.test(q)) {
+  if (summary || reportTopics.payment.test(q)) {
     try {
       const entries = await paymentReceiptsApi
         .entries(data.id)
         .then((response) => response.data)
         .catch((error: unknown) => {
           lines.push(reportError(error));
-          return [];
+          return undefined;
         });
+      if (entries) lines.push(...ledgerEvidence(data));
       for (const payment of data.payments) {
-        const entry = entries.find((item) => item.id === payment.id);
+        const entry = entries?.find((item) => item.id === payment.id);
         const count = entry
           ? await paymentReceiptsApi
               .list(data.id, payment.id)
-              .then((response) => response.meta.total)
+              .then(async (response) => {
+                let incomplete = response.data.filter(
+                  (d) => d.isIncomplete,
+                ).length;
+                for (
+                  let page = 2;
+                  (page - 1) * response.meta.pageSize < response.meta.total;
+                  page++
+                ) {
+                  signal.throwIfAborted();
+                  const more = await paymentReceiptsApi.list(
+                    data.id,
+                    payment.id,
+                    page,
+                  );
+                  if (more.meta.page !== page || !more.data.length)
+                    throw Error('incomplete page');
+                  incomplete += more.data.filter((d) => d.isIncomplete).length;
+                }
+                if (incomplete)
+                  lines.push('مدارک ناقص این پرداخت: ' + incomplete);
+                return response.meta.total;
+              })
               .catch((error: unknown) => {
                 lines.push(reportError(error));
                 return undefined;
@@ -195,12 +405,12 @@ export async function recordReport(message: string, data: SalesContractDetail) {
             .join(' — '),
         );
       }
-      if (!data.payments.length) lines.push('پرداخت ثبت‌شده ندارد.');
+      if (entries && !data.payments.length) lines.push('پرداخت ثبت‌شده ندارد.');
     } catch (error) {
       lines.push(reportError(error));
     }
   }
-  if (reportTopics.service.test(q)) {
+  if (summary || reportTopics.service.test(q)) {
     lines.push(
       data.customerDocumentDeliveryApproved === undefined
         ? 'اطلاعات تأیید تحویل در این پاسخ موجود نیست.'
@@ -214,6 +424,42 @@ export async function recordReport(message: string, data: SalesContractDetail) {
           .filter(Boolean)
           .join(' — '),
       );
+    if (data.reservationStatus !== 'NOT_SENT' && data.servicesDetail?.length) {
+      try {
+        const { data: d } = await salesApi.documentReadiness(data.id);
+        lines.push(
+          d.deliverable
+            ? 'مجوز تحویل برقرار است.'
+            : d.financeApproved
+              ? 'تحویل به دلیل وضعیت لغو مسدود است.'
+              : 'مالی هنوز اجازه تحویل نداده است.',
+        );
+        if (data.services.includes('FLIGHT'))
+          lines.push(
+            'تعداد اسناد بلیت ثبت‌شده: ' +
+              d.tickets +
+              '؛ پروازهایی که مدرک مستقل ندارند باید توسط رزرواسیون بررسی شوند.',
+          );
+        if (data.services.includes('HOTEL'))
+          lines.push(
+            d.voucher ? 'واچر صادر شده است.' : 'واچر هنوز صادر نشده است.',
+          );
+        if (data.services.includes('INSURANCE'))
+          lines.push(
+            d.insured ? 'بیمه صادر شده است.' : 'بیمه هنوز صادر نشده است.',
+          );
+        if (data.services.includes('VISA'))
+          lines.push(
+            'صدور ویزا از وضعیت قرارداد قابل تأیید نیست؛ پرونده ویزا را بررسی کنید.',
+          );
+        if (d.appliedVersion !== null && d.contractVersion > d.appliedVersion)
+          lines.push(
+            'نسخه مدارک رزرواسیون از نسخه قرارداد عقب‌تر است؛ پیش از تحویل بازبینی شود.',
+          );
+      } catch (error) {
+        lines.push(reportError(error));
+      }
+    }
     if (data.isFloating && data.status !== 'CANCELLED') {
       try {
         const intake = (await salesApi.readPurchaseContext(data.id)).data;

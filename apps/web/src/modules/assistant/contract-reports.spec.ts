@@ -11,6 +11,7 @@ import { paymentReceiptsApi } from '@/modules/sales/api/payment-receipts';
 vi.mock('@/modules/sales/api/client', () => ({
   salesApi: {
     list: vi.fn(),
+    detail: vi.fn(),
     statusHistory: vi.fn(),
     contractAudit: vi.fn(),
     readPurchaseContext: vi.fn(),
@@ -29,21 +30,52 @@ const contract = {
   servicesDetail: [],
 } as unknown as SalesContractDetail;
 describe('read-only contract reports', () => {
-  it('limits personal work to the authenticated owner and reports the page actually inspected', async () => {
+  it('selects assigned work across sellers and excludes work assigned to someone else', async () => {
     vi.mocked(salesApi.list).mockResolvedValue({
-      data: [contract],
-      meta: { total: 22, page: 2, pageSize: 10 },
+      data: [
+        {
+          ...contract,
+          id: 'mine',
+          assignedUserId: 'owner',
+          ownerUserId: 'other',
+        },
+        {
+          ...contract,
+          id: 'theirs',
+          contractNumber: 'hidden',
+          ownerUserId: 'owner',
+          assignedUserId: 'other',
+        },
+      ],
+      meta: { total: 2, page: 1, pageSize: 100 },
     });
     const report = await portfolioReport(
-      'قراردادهای من برای پیگیری صفحه ۲',
+      'قراردادهای من برای پیگیری صفحه ۱',
       'owner',
     );
     expect(salesApi.list).toHaveBeenCalledWith(
-      expect.objectContaining({ ownerUserId: 'owner', page: 2 }),
+      expect.objectContaining({ page: 1 }),
     );
     expect(report).toContain('A123');
-    expect(report).toContain('صفحه 2');
+    expect(report).toContain('صفحه 1');
+    expect(report).not.toContain('hidden');
     expect(portfolioKind('قراردادهای نیازمند اقدام')).toBeUndefined();
+  });
+  it('paginates the authorized portfolio and distinguishes denied read from a missing row', async () => {
+    vi.mocked(salesApi.list).mockResolvedValue({
+      data: [contract],
+      meta: { page: 2, pageSize: 10, total: 11 },
+    });
+    vi.mocked(salesApi.detail).mockRejectedValue({ status: 403 });
+    const report = await portfolioReport(
+      'مغایرت مالی قراردادها صفحه ۲',
+      'owner',
+    );
+    expect(salesApi.list).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, pageSize: 10 }),
+    );
+    expect(report).toContain('دسترسی');
+    expect(report).toContain('A123');
   });
   it('does not measure a stall from last modification when there is no transition', async () => {
     vi.mocked(salesApi.list).mockResolvedValue({

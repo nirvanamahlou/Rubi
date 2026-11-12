@@ -12550,3 +12550,5 @@ Reserve Sales contract tour picker order and active option visibility tests. Own
 ## TOUR-COUNTRY-CITY-1112 — PC-A — IN_PROGRESS
 
 Reserve combined tour country/city filtering and focused regression coverage. Keep selected country separately from city so changing country clears city and restricts city choices; isolate each destination and reindex overrides on removal. No schema/dependency/deployment. User authorizes green develop merge.
+
+PC-C / NORA-CONTRACT-EVIDENCE-1112: reserve Nora scoped contract evidence, report and composer consumers, bounded Sales form diagnostics and deep-link wiring, regression tests and status notes on codex/pc-c-nora-contract-evidence-1112. Existing authorized reads only; no migration, dependency or production change.

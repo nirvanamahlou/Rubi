@@ -10020,3 +10020,5 @@ PC-C / NORA-CONTRACT-UAT-1112: 13 local Chrome scenarios passed against syntheti
 TOUR-HOTEL-FIRST-1112: Tour selection now precedes hotel/room occupancy and identities; hide premature passenger counts while selecting TOUR. Keep existing room-driven hotel editor and package hotel/route/capacity constraints. Antalya search also accepts unaccented Persian alef and the tour picker exposes all fetched options instead of five.34 focused tests pass; full CI gates merge. No production deployment or real tour record mutation.
 
 TOUR-COUNTRY-CITY-1112: Combined tour origin and destination city lists are scoped to each selected country; changing country clears the previous city without auto-selecting another. Pending country selection survives the empty city, and removing a destination preserves neighboring country selections. Three focused route tests pass; quality/build CI gates authorized develop merge. No schema or production changes.
+
+PC-C · 2026-11-12: Nora contract evidence, scoped reports and recovery — see [scope and validation](tasks/NORA-CONTRACT-EVIDENCE-1112.md). No production deployment.
