@@ -49,7 +49,7 @@ describe('contract inspection', () => {
   it('finds an exact reference beyond the first page without reading a similar number', async () => {
     const page = (n: number, id: string, contractNumber: string) =>
       ({
-        data: [{ id, contractNumber }],
+        data: [{ ...contract, id, contractNumber }],
         meta: { page: n, pageSize: 1, total: 2 },
       }) as Awaited<ReturnType<typeof salesApi.list>>;
     vi.mocked(salesApi.list)
