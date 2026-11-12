@@ -994,3 +994,6 @@
 .chatMessages p[data-role='assistant'] {
   align-self: flex-end;
 }
+.floatingComposer .chatMessages p {
+  font-size: var(--assistant-chat-font-size, 14px);
+}

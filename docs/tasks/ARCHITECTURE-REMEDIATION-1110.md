@@ -35,11 +35,16 @@ Record exact tests, remaining work and delivery state; never equate a static
 architecture check with end-to-end behavior or claim the entire report resolved
 when only selected paths are addressed.
 
+The Marketing directory page adds a read contract for the Marketing API and Web. Existing asset consumers retain their contract.
+
 ## Implementation evidence
 
 - The English fallback catalog is loaded on demand by the display provider.
   English metadata and document and import entry points explicitly prepare
   it before synchronously translating text.
+- Travel and organization reports rank groups before producing display rows.
+  Preview ranks are bounded through the page endpoint. Exact currency totals,
+  distinct counts and export ordering are preserved.
 
 - Operational report previews reuse the Finance ranking heap and build
   output rows only for the selected page. Full exports preserve stable sort
@@ -66,6 +71,10 @@ when only selected paths are addressed.
 - Documents, Customers and Correspondence share the browser transport for
   localized requests and one session-refresh retry. Document previews retain
   caller cancellation during refresh, and existing timeout policies remain.
+
+- Finance Inbox, Procurement and Reservation Purchases share the browser
+  transport. Finance write retries after authentication retain their original
+  body and idempotency key, and refresh outages stay distinguishable.
 
 - The shared authenticated transport passed six focused Web tests. The final
   PR #1600 revision also passed the hosted quality, build, test and migration checks.

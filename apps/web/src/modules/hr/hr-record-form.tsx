@@ -740,6 +740,9 @@ function HrRecordFormFields({
               hiddenLabels,
               optionalLabels: [
                 ...radanOptionalLabels(definition),
+                ...(definition.key === 'time.leavePolicies'
+                  ? ['حداکثر مدت مرخصی ساعتی به دقیقه']
+                  : []),
                 ...(definition.key === 'time.biometric'
                   ? ['رمز عبور شبکه']
                   : []),
@@ -817,6 +820,7 @@ function HrRecordFormFields({
                 'روز تقویم': 'date',
                 اولویت: 'number',
                 'طول مرخصی روزانه به دقیقه': 'number',
+                'حداکثر مدت مرخصی ساعتی به دقیقه': 'number',
                 'نام الگو': 'text',
                 'نام روند': 'text',
                 'عنوان تنظیمات': 'text',

@@ -58,6 +58,27 @@ export function employeeAttendanceDataset(
           .sort();
       const arrivals = times('ورود');
       const departures = times('خروج');
+      const inactive =
+        record.status === 'غیرفعال' || record.data.attendanceActive === false;
+      const override = inactive
+        ? undefined
+        : record.data.attendanceStatusOverride;
+      const clearLate =
+        override === 'حاضر' || override === 'حاضر با خروج زودهنگام';
+      const clearEarly = override === 'حاضر' || override === 'حاضر با تأخیر';
+      const exempt = override === 'مرخصی' || override === 'عدم روزکاری';
+      const deficit = record.data.deficitMinutes;
+      const displayedDeficit =
+        exempt || override === 'حاضر'
+          ? 0
+          : deficit == null
+            ? null
+            : Math.max(
+                0,
+                deficit -
+                  (clearLate ? (record.data.lateMinutes ?? 0) : 0) -
+                  (clearEarly ? (record.data.earlyMinutes ?? 0) : 0),
+              );
       return [
         hrDisplayDate(date),
         /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date))
@@ -72,11 +93,9 @@ export function employeeAttendanceDataset(
         record.data.lastOut !== undefined
           ? attendanceClock(record.data.lastOut)
           : (departures.at(-1) ?? '—'),
-        record.values[4] ?? '—',
-        record.values[5] ?? '—',
-        record.data.deficitMinutes == null
-          ? '—'
-          : String(record.data.deficitMinutes),
+        inactive ? '—' : clearLate || exempt ? '0' : (record.values[4] ?? '—'),
+        inactive ? '—' : clearEarly || exempt ? '0' : (record.values[5] ?? '—'),
+        inactive || displayedDeficit == null ? '—' : String(displayedDeficit),
         record.data.overtimeMinutes == null
           ? '—'
           : String(record.data.overtimeMinutes),
@@ -86,19 +105,18 @@ export function employeeAttendanceDataset(
         record.data.dailyPenaltyToman == null
           ? '—'
           : `${Number(record.data.dailyPenaltyToman).toLocaleString('fa-IR')} تومان`,
-        record.status !== 'غیرفعال' &&
-        record.data.attendanceActive !== false &&
-        record.data.attendanceStatusOverride
-          ? record.data.attendanceStatusOverride
-          : record.status === 'حاضر'
-            ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
-              ? 'حاضر با تأخیر و خروج زودهنگام'
-              : Number(record.values[4]) > 0
-                ? 'حاضر با تأخیر'
-                : Number(record.values[5]) > 0
-                  ? 'حاضر با خروج زودهنگام'
-                  : 'حاضر'
-            : record.status,
+        inactive
+          ? 'غیرفعال'
+          : (override ??
+            (record.status === 'حاضر'
+              ? Number(record.values[4]) > 0 && Number(record.values[5]) > 0
+                ? 'حاضر با تأخیر و خروج زودهنگام'
+                : Number(record.values[4]) > 0
+                  ? 'حاضر با تأخیر'
+                  : Number(record.values[5]) > 0
+                    ? 'حاضر با خروج زودهنگام'
+                    : 'حاضر'
+              : record.status)),
       ];
     }),
   };

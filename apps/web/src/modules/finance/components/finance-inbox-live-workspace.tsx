@@ -1675,7 +1675,7 @@ export function FinanceInboxLiveWorkspace() {
                                 openHrResponse(selected, 'HR_ANSWER')
                               }
                             >
-                              ثبت پاسخ ارجاع
+                              تأیید ارجاع
                             </Button>
                           ) : null}
                           <Button

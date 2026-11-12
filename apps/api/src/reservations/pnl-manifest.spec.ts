@@ -123,3 +123,26 @@ it('only fills national ID for Iranian passengers on domestic flights as require
   );
   expect(foreign.parsed[1]?.cells[5]?.value).toBe('');
 });
+
+it('omits the System Acceptable Code button and dangling drawing/control parts from the default and exported workbook', async () => {
+  const source = await template();
+  for (const workbook of [source, buildPnlManifest(source, [passenger])]) {
+    const files = unzipSync(workbook);
+    expect(
+      Object.keys(files).filter((path) => /vmlDrawing|ctrlProps/.test(path)),
+    ).toEqual([]);
+    expect(strFromU8(files['xl/worksheets/sheet1.xml']!)).not.toContain(
+      'legacyDrawing',
+    );
+    expect(files['xl/worksheets/_rels/sheet1.xml.rels']).toBeUndefined();
+    expect(strFromU8(files['[Content_Types].xml']!)).not.toContain(
+      'Extension="vml"',
+    );
+    expect(
+      Object.entries(files)
+        .filter(([path]) => /\.(xml|vml|rels)$/.test(path))
+        .map(([, bytes]) => strFromU8(bytes))
+        .join(''),
+    ).not.toContain('System Acceptable Code');
+  }
+});

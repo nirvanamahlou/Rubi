@@ -186,7 +186,8 @@ export const MARKETING_ASSET_STATUS_LABELS = {
   ARCHIVED: 'بایگانی‌شده',
 } as const;
 
-export const MARKETING_SEGMENT_PAGE_SIZE = 25;
+export const MARKETING_ASSET_PAGE_SIZE = 25;
+export const MARKETING_SEGMENT_PAGE_SIZE = MARKETING_ASSET_PAGE_SIZE;
 
 export interface MarketingSegmentPageQueryV1 {
   page?: number;
@@ -194,10 +195,19 @@ export interface MarketingSegmentPageQueryV1 {
   status?: keyof typeof MARKETING_ASSET_STATUS_LABELS;
 }
 
-export interface MarketingSegmentPageV1 {
+export interface MarketingAssetPageV1 {
   data: MarketingAssetViewV1[];
   page: number;
   total: number;
+}
+
+export type MarketingSegmentPageV1 = MarketingAssetPageV1;
+
+export interface MarketingDirectoryPageQueryV1 {
+  kind: 'SOURCE' | 'AUDIENCE';
+  page?: number;
+  search?: string;
+  campaignId?: string;
 }
 
 export interface MarketingPromotionPageQueryV1 {

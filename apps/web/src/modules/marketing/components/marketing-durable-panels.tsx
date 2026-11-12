@@ -1,13 +1,13 @@
 'use client';
 
-import { MARKETING_SEGMENT_PAGE_SIZE } from '@nora/contracts';
+import { MARKETING_ASSET_PAGE_SIZE } from '@nora/contracts';
 import type {
   AuthenticatedActor,
   CustomerAffairsMarketingIntakeViewV1,
   MarketingAssetKind,
   MarketingAssetViewV1,
   MarketingCampaignViewV1,
-  MarketingSegmentPageV1,
+  MarketingAssetPageV1,
   MarketingSegmentPageQueryV1,
 } from '@nora/contracts';
 import {
@@ -79,12 +79,12 @@ type Notice = (message: string) => void;
 function useMarketingData(
   kinds: MarketingAssetKind[],
   includeCampaigns = true,
-  loadSegmentPage?: () => Promise<MarketingSegmentPageV1>,
+  loadAssetPage?: () => Promise<MarketingAssetPageV1>,
 ) {
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [campaigns, setCampaigns] = useState<MarketingCampaignViewV1[]>([]);
   const [assetResult, setAssetResult] = useState<
-    MarketingAssetViewV1[] | MarketingSegmentPageV1
+    MarketingAssetViewV1[] | MarketingAssetPageV1
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -95,11 +95,11 @@ function useMarketingData(
     setLoading(true);
     setError('');
     try {
-      const [access, campaignResponse, segmentResponse, ...assetResponses] =
+      const [access, campaignResponse, assetPageResponse, ...assetResponses] =
         await Promise.all([
           marketingApi.access(),
           includeCampaigns ? marketingApi.campaigns() : null,
-          loadSegmentPage?.(),
+          loadAssetPage?.(),
           ...(key ? key.split(',') : []).map((kind) =>
             marketingApi.assets(kind as MarketingAssetKind),
           ),
@@ -108,7 +108,8 @@ function useMarketingData(
       setActor(access);
       setCampaigns(campaignResponse?.data ?? []);
       setAssetResult(
-        segmentResponse ?? assetResponses.flatMap((response) => response.data),
+        assetPageResponse ??
+          assetResponses.flatMap((response) => response.data),
       );
     } catch (reason) {
       if (request !== revision.current.id) return;
@@ -118,7 +119,7 @@ function useMarketingData(
     } finally {
       if (request === revision.current.id) setLoading(false);
     }
-  }, [key, includeCampaigns, loadSegmentPage]);
+  }, [key, includeCampaigns, loadAssetPage]);
   useEffect(() => {
     const requestState = revision.current;
     const timer = window.setTimeout(() => void load(), 0);
@@ -131,7 +132,7 @@ function useMarketingData(
     actor,
     campaigns,
     assets: Array.isArray(assetResult) ? assetResult : assetResult.data,
-    segmentPage: Array.isArray(assetResult) ? null : assetResult,
+    assetPage: Array.isArray(assetResult) ? null : assetResult,
     loading,
     error,
     load,
@@ -225,7 +226,7 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const loadSegmentPage = useCallback(
+  const loadAssetPage = useCallback(
     () =>
       marketingApi.segmentPage({
         page,
@@ -240,7 +241,7 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
       }),
     [page, search, statusFilter],
   );
-  const data = useMarketingData([], false, loadSegmentPage);
+  const data = useMarketingData([], false, loadAssetPage);
   const [formError, setFormError] = useState('');
   const save = async () => {
     if (!data.actor?.branchIds[0] || name.trim().length < 2 || !rule.trim()) {
@@ -412,12 +413,12 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
       </Dialog>
       <AssetTable
         localized
-        items={data.segmentPage?.data ?? []}
+        items={data.assetPage?.data ?? []}
         pagination={
-          data.segmentPage
+          data.assetPage
             ? {
-                page: data.segmentPage.page,
-                total: data.segmentPage.total,
+                page: data.assetPage.page,
+                total: data.assetPage.total,
                 onPageChange: setPage,
                 disabled: data.loading || !!data.error,
               }
@@ -450,6 +451,13 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
   );
 }
 
+type AssetPagination = {
+  page: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  disabled: boolean;
+};
+
 function AssetTable({
   items,
   onDelete,
@@ -458,14 +466,7 @@ function AssetTable({
   pagination,
 }: {
   localized?: boolean;
-  pagination?:
-    | {
-        page: number;
-        total: number;
-        onPageChange: (page: number) => void;
-        disabled: boolean;
-      }
-    | undefined;
+  pagination?: AssetPagination | undefined;
   items: MarketingAssetViewV1[];
   onDelete: (item: MarketingAssetViewV1) => void;
   onSelect: (item: MarketingAssetViewV1, mode: 'view' | 'edit') => void;
@@ -523,40 +524,52 @@ function AssetTable({
         </tbody>
       </table>
       {pagination ? (
-        <div className="flex items-center gap-3 border-t p-4">
-          <span className="text-sm text-muted-foreground">
-            {pagination.total.toLocaleString('fa-IR')} گروه · صفحه{' '}
-            {pagination.page.toLocaleString('fa-IR')} از{' '}
-            {Math.ceil(
-              pagination.total / MARKETING_SEGMENT_PAGE_SIZE,
-            ).toLocaleString('fa-IR')}
-          </span>
-          <Button
-            size="icon"
-            variant="outline"
-            title="صفحه قبل"
-            aria-label="صفحه قبل گروه‌ها"
-            disabled={pagination.disabled || pagination.page <= 1}
-            onClick={() => pagination.onPageChange(pagination.page - 1)}
-          >
-            <ChevronRight aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            title="صفحه بعد"
-            aria-label="صفحه بعد گروه‌ها"
-            disabled={
-              pagination.disabled ||
-              pagination.page * MARKETING_SEGMENT_PAGE_SIZE >= pagination.total
-            }
-            onClick={() => pagination.onPageChange(pagination.page + 1)}
-          >
-            <ChevronLeft aria-hidden="true" className="size-4" />
-          </Button>
-        </div>
+        <AssetPageControls pagination={pagination} label="گروه" />
       ) : null}
     </Card>
+  );
+}
+
+function AssetPageControls({
+  pagination,
+  label,
+}: {
+  pagination: AssetPagination;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-t p-4">
+      <span className="text-sm text-muted-foreground">
+        {pagination.total.toLocaleString('fa-IR')} {label} · صفحه{' '}
+        {pagination.page.toLocaleString('fa-IR')} از{' '}
+        {Math.ceil(pagination.total / MARKETING_ASSET_PAGE_SIZE).toLocaleString(
+          'fa-IR',
+        )}
+      </span>
+      <Button
+        size="icon"
+        variant="outline"
+        title="صفحه قبل"
+        aria-label={`صفحه قبل ${label === 'گروه' ? 'گروه‌ها' : label}`}
+        disabled={pagination.disabled || pagination.page <= 1}
+        onClick={() => pagination.onPageChange(pagination.page - 1)}
+      >
+        <ChevronRight aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="outline"
+        title="صفحه بعد"
+        aria-label={`صفحه بعد ${label === 'گروه' ? 'گروه‌ها' : label}`}
+        disabled={
+          pagination.disabled ||
+          pagination.page * MARKETING_ASSET_PAGE_SIZE >= pagination.total
+        }
+        onClick={() => pagination.onPageChange(pagination.page + 1)}
+      >
+        <ChevronLeft aria-hidden="true" className="size-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -1180,9 +1193,23 @@ export function MarketingDirectoryPanel({
   kind: 'SOURCE' | 'AUDIENCE';
   onNotice: Notice;
 }) {
-  const data = useMarketingData([kind]);
   const [search, setSearch] = useState('');
   const [campaignFilter, setCampaignFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const isSource = kind === 'SOURCE';
+  const loadDirectoryPage = useCallback(
+    () =>
+      marketingApi.directoryPage({
+        kind,
+        page,
+        search,
+        ...(campaignFilter !== 'all' && !isSource
+          ? { campaignId: campaignFilter }
+          : {}),
+      }),
+    [kind, page, search, campaignFilter, isSource],
+  );
+  const data = useMarketingData([], !isSource, loadDirectoryPage);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [campaignId, setCampaignId] = useState('none');
@@ -1220,13 +1247,8 @@ export function MarketingDirectoryPanel({
     organizations: 'مشتریان سازمانی',
     marketing: 'سگمنت مارکتینگ',
   };
-  const isSource = kind === 'SOURCE';
   const title = isSource ? 'منابع ورود' : 'مخاطبان کمپین';
-  const items = data.assets.filter(
-    (item) =>
-      audienceMatches(search, [item.name]) &&
-      (campaignFilter === 'all' || item.campaignId === campaignFilter),
-  );
+  const items = data.assets;
   return (
     <section className="grid gap-4" dir="rtl">
       <LoadState
@@ -1239,14 +1261,24 @@ export function MarketingDirectoryPanel({
           <FormField id={`${kind}-search`} label="جست‌وجو">
             <Input
               id={`${kind}-search`}
+              maxLength={240}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setPage(1);
+                setSearch(event.target.value);
+              }}
             />
           </FormField>
         </div>
         {!isSource ? (
           <FormField id="audience-campaign-filter" label="کمپین">
-            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+            <Select
+              value={campaignFilter}
+              onValueChange={(value) => {
+                setPage(1);
+                setCampaignFilter(value);
+              }}
+            >
               <SelectTrigger id="audience-campaign-filter">
                 <SelectValue />
               </SelectTrigger>
@@ -1378,6 +1410,17 @@ export function MarketingDirectoryPanel({
           <p className="p-8 text-center text-muted-foreground">
             رکوردی ثبت نشده است.
           </p>
+        ) : null}
+        {data.assetPage && data.assetPage.total > MARKETING_ASSET_PAGE_SIZE ? (
+          <AssetPageControls
+            label="رکورد"
+            pagination={{
+              page: data.assetPage.page,
+              total: data.assetPage.total,
+              disabled: data.loading || !!data.error,
+              onPageChange: setPage,
+            }}
+          />
         ) : null}
       </Card>
       <Dialog

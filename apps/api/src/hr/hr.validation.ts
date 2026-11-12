@@ -208,6 +208,7 @@ export function recordValues(
     !Array.isArray(value) ||
     (value.length !== schema.columns.length &&
       value.length !== HR_RADAN_LEGACY_LENGTHS[schema.key] &&
+      !(schema.key === 'time.leavePolicies' && value.length === 8) &&
       !(schema.key === 'time.shift' && value.length === 9))
   )
     throw new BadRequestException('تعداد فیلدها با فرم مصوب مطابقت ندارد.');

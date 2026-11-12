@@ -5,8 +5,8 @@ import type {
   ProcurementRequestV1,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { SessionRefreshUnavailableError } from '@/lib/auth-session';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 
 export class ProcurementApiError extends Error {
   constructor(
@@ -43,27 +43,26 @@ const procurementFieldLabels: Record<string, string> = {
 export async function procurementRequest<T>(
   path: string,
   init?: RequestInit,
-  refreshed = false,
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new ProcurementApiError('نشانی سرویس تنظیم نشده است.', 0);
-  const response = await localizedFetch(`${base}/procurement${path}`, {
-    credentials: 'include',
-    cache: 'no-store',
-    ...init,
-    headers: { accept: 'application/json', ...init?.headers },
-  }).catch(() => {
+  const response = await authenticatedFetch(
+    `${base}/procurement${path}`,
+    base,
+    {
+      timeoutMs: null,
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+      headers: { accept: 'application/json', ...init?.headers },
+    },
+  ).catch((error: unknown) => {
+    if (error instanceof SessionRefreshUnavailableError) throw error;
     throw new ProcurementApiError(
       'ارتباط برقرار نشد. اطلاعات فرم حفظ شده است؛ دوباره تلاش کنید.',
       0,
     );
   });
-  if (
-    response.status === 401 &&
-    !refreshed &&
-    (await refreshAuthenticatedSession(base))
-  )
-    return procurementRequest(path, init, true);
   if (!response.ok) {
     const data = (await response.json().catch(() => null)) as {
       message?: string | string[];

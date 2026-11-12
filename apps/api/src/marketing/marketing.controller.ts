@@ -25,6 +25,7 @@ import {
   MarketingAssetListQueryDto,
   MarketingCampaignPageQueryDto,
   MarketingSegmentPageQueryDto,
+  MarketingDirectoryPageQueryDto,
   MarketingPromotionPageQueryDto,
   MarketingAssetDeleteDto,
   MarketingAssetMutationDto,
@@ -37,6 +38,7 @@ import { MarketingRecordsService } from './marketing-records.service';
 @ApiCookieAuth('nora_access')
 @ApiExtraModels(
   MarketingSegmentPageQueryDto,
+  MarketingDirectoryPageQueryDto,
   MarketingAssetListQueryDto,
   MarketingCampaignPageQueryDto,
   MarketingPromotionPageQueryDto,
@@ -157,6 +159,16 @@ export class MarketingController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.records.listSegments(query, req.actor);
+  }
+
+  @Get('assets/directory')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  directory(
+    @Query() query: MarketingDirectoryPageQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.records.listDirectory(query, req.actor);
   }
 
   @Get('assets/promotions')
