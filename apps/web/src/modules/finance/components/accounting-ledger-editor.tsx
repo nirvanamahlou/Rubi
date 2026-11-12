@@ -3,7 +3,17 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
-import { Plus, X, Pencil, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
+import {
+  AccountingFiscalAllocationForm,
+  type FiscalAllocationDraft,
+} from './accounting-fiscal-allocation-form';
 import type {
   AccountingBookV1,
   AccountingLedgerCompanyV1,
@@ -12,8 +22,6 @@ import type {
 } from '@nora/contracts';
 import { AccountingButton as Button } from './accounting-operations';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
-import { DatePicker } from '@/components/ui/date-picker';
-import { SearchCombobox } from '@/components/ui/search-combobox';
 import { accountingApi } from '../api/accounting-api';
 
 type Run = <T = unknown>(
@@ -47,6 +55,8 @@ export function AccountingLedgerEditor({
   const router = useRouter();
   const book = snapshot?.book;
   const initialBook = book;
+  const years =
+    snapshot?.configurations.filter((row) => row.kind === 'fiscal-years') ?? [];
   const formRef = useRef<HTMLFormElement>(null);
   const [creating, setCreating] = useState(!initialBook);
   const [version, setVersion] = useState(initialBook?.version);
@@ -66,16 +76,16 @@ export function AccountingLedgerEditor({
     branchId: initialBook?.branchId ?? branches[0]?.id ?? '',
     baseCurrency: initialBook?.baseCurrency ?? 'IRR',
   });
-  const [period, setPeriod] = useState<{
-    id?: string;
-    version?: number;
-    fiscalYearId: string;
-    fiscalYearCode?: string | undefined;
-    fiscalYearTitle?: string | undefined;
-    startDate: string;
-    endDate: string;
-  } | null>(null);
-  const locked = busy || saving || !company;
+  const [period, setPeriod] = useState<FiscalAllocationDraft | null>(null);
+  const [selectedAllocationId, setSelectedAllocationId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<AccountingPeriodV1 | null>(
+    null,
+  );
+  const [allocationBusy, setAllocationBusy] = useState(false);
+  const locked = busy || saving || allocationBusy || !company;
+  const selectedAllocation = snapshot?.periods.find(
+    (row) => row.id === selectedAllocationId,
+  );
   const set = (key: keyof typeof draft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [key]: value }));
   const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
@@ -141,7 +151,15 @@ export function AccountingLedgerEditor({
       baseCurrency: 'IRR',
     });
   };
-  const openPeriod = (row: AccountingPeriodV1) => setPeriod({ ...row });
+  const openPeriod = (row: AccountingPeriodV1) => {
+    setSelectedAllocationId(row.id);
+    setError('');
+    setPeriod({
+      ...row,
+      fiscalYearCode:
+        years.find((year) => year.id === row.fiscalYearId)?.code ?? '',
+    });
+  };
   const reloadExisting = () => {
     if (book) {
       setCreating(false);
@@ -167,8 +185,49 @@ export function AccountingLedgerEditor({
     else newBook();
     void refresh();
   };
-  const years =
-    snapshot?.configurations.filter((row) => row.kind === 'fiscal-years') ?? [];
+  const saveAllocation = async () => {
+    if (!period || locked) return;
+    if (!period.fiscalYearCode || !period.startDate || !period.endDate) {
+      setError('سال مالی، تاریخ شروع و پایان را کامل کنید.');
+      return;
+    }
+    setAllocationBusy(true);
+    setError('');
+    try {
+      const result = await run('save-period', period, period.version);
+      if (result) setPeriod(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'ذخیره ناموفق بود.');
+    } finally {
+      setAllocationBusy(false);
+    }
+  };
+  const removeAllocation = async () => {
+    if (!deleteTarget || locked) return;
+    setAllocationBusy(true);
+    setError('');
+    try {
+      const result = await run(
+        'delete-period',
+        { id: deleteTarget.id },
+        deleteTarget.version,
+      );
+      if (result) {
+        setSelectedAllocationId('');
+        setPeriod(null);
+      }
+      setDeleteTarget(null);
+    } catch (cause) {
+      setDeleteTarget(null);
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'حذف تخصیص سال مالی ناموفق بود.',
+      );
+    } finally {
+      setAllocationBusy(false);
+    }
+  };
   return (
     <section
       dir="rtl"
@@ -347,13 +406,18 @@ export function AccountingLedgerEditor({
           <table className="w-full text-right text-sm">
             <thead className="bg-primary/10">
               <tr>
-                {['سال مالی', 'تاریخ شروع', 'تاریخ پایان', 'سال', ''].map(
-                  (label) => (
-                    <th key={label} className="border-e px-3 py-2 font-normal">
-                      {label}
-                    </th>
-                  ),
-                )}
+                {[
+                  'انتخاب',
+                  'سال مالی',
+                  'تاریخ شروع',
+                  'تاریخ پایان',
+                  'سال',
+                  '',
+                ].map((label) => (
+                  <th key={label} className="border-e px-3 py-2 font-normal">
+                    {label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -361,7 +425,25 @@ export function AccountingLedgerEditor({
                 snapshot?.periods.map((row) => {
                   const year = years.find((y) => y.id === row.fiscalYearId);
                   return (
-                    <tr key={row.id} className="border-b">
+                    <tr
+                      key={row.id}
+                      aria-selected={selectedAllocationId === row.id}
+                      className={`border-b ${selectedAllocationId === row.id ? 'bg-primary/10' : ''}`}
+                    >
+                      <td className="p-3">
+                        <input
+                          type="radio"
+                          name="ledger-period-selection"
+                          aria-label={`انتخاب تخصیص ${year?.code ?? ''}`}
+                          checked={selectedAllocationId === row.id}
+                          disabled={locked}
+                          onChange={() => {
+                            setSelectedAllocationId(row.id);
+                            setPeriod(null);
+                            setError('');
+                          }}
+                        />
+                      </td>
                       <td className="p-3">{year?.title}</td>
                       <td className="p-3" dir="ltr">
                         {row.startDate}
@@ -401,145 +483,89 @@ export function AccountingLedgerEditor({
             }
             disabled={locked || creating}
             permission="finance.account.manage"
-            onClick={() =>
+            onClick={() => {
+              setSelectedAllocationId('');
+              setError('');
               setPeriod({
                 fiscalYearId: '',
                 fiscalYearCode: '',
-                fiscalYearTitle: '',
                 startDate: '',
                 endDate: '',
-              })
-            }
+              });
+            }}
           >
             <Plus className="size-4 text-green-600" />
           </Button>
-        </div>
-        {period && !creating && (
-          <form
-            className="space-y-3 border p-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (
-                !period.startDate ||
-                !period.endDate ||
-                (!period.fiscalYearId && period.fiscalYearTitle === undefined)
-              ) {
-                setError('سال مالی، تاریخ شروع و پایان را کامل کنید.');
-                return;
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-label="حذف تخصیص سال مالی"
+            title="حذف تخصیص سال مالی"
+            disabled={
+              locked ||
+              creating ||
+              !selectedAllocation ||
+              selectedAllocation.status !== 'OPEN'
+            }
+            permission="finance.account.manage"
+            onClick={() => {
+              if (selectedAllocation) {
+                setError('');
+                setDeleteTarget({ ...selectedAllocation });
               }
-              if (!locked)
-                void run('save-period', period, period.version).then(
-                  (result) => {
-                    if (result) setPeriod(null);
-                  },
-                );
             }}
           >
-            <div className="grid gap-3 md:grid-cols-3">
-              {!period.id && (
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={period.fiscalYearTitle !== undefined}
-                    onChange={(e) =>
-                      setPeriod({
-                        ...period,
-                        fiscalYearId: '',
-                        fiscalYearTitle: e.target.checked ? '' : undefined,
-                        fiscalYearCode: e.target.checked ? '' : undefined,
-                      })
-                    }
-                  />
-                  تعریف سال مالی جدید
-                </label>
-              )}
-              {period.fiscalYearTitle !== undefined ? (
-                <>
-                  <FormField label="عنوان سال مالی *" id="ledger-year-title">
-                    <Input
-                      id="ledger-year-title"
-                      required
-                      maxLength={160}
-                      value={period.fiscalYearTitle}
-                      onChange={(e) =>
-                        setPeriod({
-                          ...period,
-                          fiscalYearTitle: e.target.value,
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="سال *" id="ledger-year-code">
-                    <Input
-                      id="ledger-year-code"
-                      required
-                      inputMode="numeric"
-                      pattern="[1-9][0-9]{0,3}"
-                      maxLength={4}
-                      value={period.fiscalYearCode}
-                      onChange={(e) =>
-                        setPeriod({ ...period, fiscalYearCode: e.target.value })
-                      }
-                    />
-                  </FormField>
-                </>
-              ) : (
-                <FormField label="سال مالی *" id="ledger-year">
-                  <SearchCombobox
-                    id="ledger-year"
-                    value={period.fiscalYearId}
-                    onValueChange={(id) =>
-                      setPeriod({ ...period, fiscalYearId: id })
-                    }
-                    options={years
-                      .filter((row) => row.active)
-                      .map((row) => ({ value: row.id, label: row.title }))}
-                  />
-                </FormField>
-              )}
-              <FormField label="تاریخ شروع *" id="ledger-start">
-                <DatePicker
-                  id="ledger-start"
-                  value={period.startDate}
-                  onChange={(value) =>
-                    setPeriod({ ...period, startDate: value })
-                  }
-                />
-              </FormField>
-              <FormField label="تاریخ پایان *" id="ledger-end">
-                <DatePicker
-                  id="ledger-end"
-                  value={period.endDate}
-                  onChange={(value) => setPeriod({ ...period, endDate: value })}
-                />
-              </FormField>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                size="sm"
-                aria-label="ذخیره تخصیص سال مالی"
-                title="ذخیره تخصیص سال مالی"
-                disabled={locked}
-                permission="finance.account.manage"
-              >
-                <Save className="size-4" />
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                aria-label="بستن تخصیص"
-                title="بستن تخصیص"
-                disabled={locked}
-                onClick={() => setPeriod(null)}
-              >
-                <X className="size-4" />
-              </Button>
-            </div>
-          </form>
+            <Trash2 className="size-4 text-red-600" />
+          </Button>
+        </div>
+        {period && !creating && (
+          <AccountingFiscalAllocationForm
+            draft={period}
+            locked={locked}
+            onChange={setPeriod}
+            onSubmit={() => void saveAllocation()}
+            onCancel={() => setPeriod(null)}
+          />
         )}
       </fieldset>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !allocationBusy) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>حذف تخصیص سال مالی</DialogTitle>
+          <DialogDescription>
+            تخصیص سال{' '}
+            {years.find((year) => year.id === deleteTarget?.fiscalYearId)?.code}{' '}
+            از دفتر {company?.title ?? book?.title} حذف شود؟ تعریف سال مالی حفظ
+            می‌شود.
+          </DialogDescription>
+          <p className="text-sm">
+            فقط تخصیص سال مالی باز و بدون سابقه مالی قابل حذف است.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              disabled={locked}
+              permission="finance.account.manage"
+              onClick={() => void removeAllocation()}
+            >
+              تأیید حذف تخصیص
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={allocationBusy}
+              onClick={() => setDeleteTarget(null)}
+            >
+              انصراف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

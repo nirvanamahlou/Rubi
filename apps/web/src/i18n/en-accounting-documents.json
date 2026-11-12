@@ -358,5 +358,14 @@
   "مالی / دفتر کل / گزارش ها / گزارش های قانونی / گزارش کدینگ استاندارد": "Finance / General Ledger / Reports / Statutory Reports / Standard coding report",
   "مالی / دفتر کل / گزارش ها / گزارش های قانونی / نگاشت کدهای استاندارد": "Finance / General Ledger / Reports / Statutory Reports / Standard code mapping",
   "تجزیه سنی بر مبنای تخمین FIFO است؛ تطبیق ماهانهٔ منبع تأیید نشده است.": "Aging is a FIFO estimate. Monthly source matching remains unverified.",
-  "این نما تجمیعی است؛ ثبت تطبیق اقلام منبع در این دوره تأیید نشده و فعال نیست.": "This is an aggregate view. Source line matching in this period remains unverified and unavailable."
+  "این نما تجمیعی است؛ ثبت تطبیق اقلام منبع در این دوره تأیید نشده و فعال نیست.": "This is an aggregate view. Source line matching in this period remains unverified and unavailable.",
+  "از دفتر": "from ledger",
+  "انتخاب تخصیص": "Select allocation",
+  "تأیید حذف تخصیص": "Confirm allocation removal",
+  "تخصیص سال": "Year allocation",
+  "حذف تخصیص سال مالی": "Remove fiscal year allocation",
+  "حذف تخصیص سال مالی ناموفق بود.": "Could not remove the fiscal year allocation.",
+  "حذف شود؟ تعریف سال مالی حفظ می‌شود.": "Remove it? The fiscal year definition will be retained.",
+  "فقط تخصیص سال مالی باز و بدون سابقه مالی قابل حذف است.": "Only open fiscal year allocations without financial history can be removed.",
+  "تخصیص سال مالی در سوابق استفاده شده و قابل حذف نیست.": "The fiscal year allocation is referenced by existing records and cannot be removed."
 }

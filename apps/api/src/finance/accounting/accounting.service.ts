@@ -1073,6 +1073,33 @@ export class AccountingService {
         message: 'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
       });
   }
+  private async allocationHasReferences(
+    tx: Tx,
+    bookId: string,
+    periodId: string,
+  ) {
+    return !!(
+      (await tx.accountingJournal.findFirst({
+        where: { bookId, periodId },
+        select: { id: true },
+      })) ||
+      (await tx.accountingGeneralDocument.findFirst({
+        where: { bookId, periodId },
+        select: { id: true },
+      })) ||
+      (await tx.accountingStatement.findFirst({
+        where: { bookId, periodId },
+        select: { id: true },
+      })) ||
+      (await tx.accountingJournalStateEvent.findFirst({
+        where: {
+          bookId,
+          OR: [{ oldPeriodId: periodId }, { newPeriodId: periodId }],
+        },
+        select: { id: true },
+      }))
+    );
+  }
   private async execute(
     tx: Tx,
     book: Prisma.AccountingBookGetPayload<object>,
@@ -3566,13 +3593,46 @@ export class AccountingService {
       }
       return configuration;
     }
+    if (action === 'delete-period') {
+      const id = v.uuid(p.id)!;
+      const allocation = await tx.accountingPeriod.findFirst({
+        where: { id, bookId },
+      });
+      if (!allocation) throw new NotFoundException();
+      this.version(allocation.version, expected);
+      const used =
+        allocation.status !== 'OPEN' ||
+        (await this.allocationHasReferences(tx, bookId, id));
+      if (used)
+        v.rule('فقط تخصیص سال مالی باز و بدون سابقه مالی قابل حذف است.');
+      try {
+        const removed = await tx.accountingPeriod.deleteMany({
+          where: { id, bookId, version: allocation.version, status: 'OPEN' },
+        });
+        if (removed.count !== 1)
+          throw new ConflictException(
+            'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+      } catch (cause) {
+        if (
+          cause &&
+          typeof cause === 'object' &&
+          'code' in cause &&
+          cause.code === 'P2003'
+        )
+          v.rule('تخصیص سال مالی در سوابق استفاده شده و قابل حذف نیست.');
+        throw cause;
+      }
+      // The year definition and the command's immutable audit snapshot remain.
+      return { ...allocation, deleted: true };
+    }
     if (action === 'save-period') {
       const id = v.uuid(p.id, true) ?? randomUUID();
       let fiscalYearId = v.uuid(p.fiscalYearId || undefined, true);
       if (!fiscalYearId) {
-        if (p.id) v.rule('سال مالی تخصیص قبلی را انتخاب کنید.');
-        const code = v.text(p.fiscalYearCode, 4, true);
-        const title = v.text(p.fiscalYearTitle, 160, true);
+        const code = detailDigits(v.text(p.fiscalYearCode, 4, true));
+        const hasTitle = p.fiscalYearTitle !== undefined;
+        const title = hasTitle ? v.text(p.fiscalYearTitle, 160, true) : code;
         if (!/^[1-9][0-9]{0,3}$/.test(code))
           v.invalid('سال باید عددی بین ۱ تا ۹۹۹۹ باشد.');
         const existingYear = await tx.accountingConfiguration.findFirst({
@@ -3580,7 +3640,7 @@ export class AccountingService {
         });
         if (
           existingYear &&
-          (!existingYear.active || existingYear.title !== title)
+          (!existingYear.active || (hasTitle && existingYear.title !== title))
         )
           v.rule('این سال با مشخصات دیگری ثبت شده است.');
         const createdYear =
@@ -3600,11 +3660,12 @@ export class AccountingService {
       const existing = await tx.accountingPeriod.findFirst({
         where: { id, bookId },
       });
+      if (!existing && expected !== undefined) throw new NotFoundException();
       if (existing) {
         this.version(existing.version, expected);
         if (
           existing.status !== 'OPEN' ||
-          (await tx.accountingJournal.count({ where: { periodId: id } }))
+          (await this.allocationHasReferences(tx, bookId, id))
         )
           v.rule('دوره استفاده‌شده قابل تغییر نیست.');
       }

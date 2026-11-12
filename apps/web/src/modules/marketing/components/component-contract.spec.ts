@@ -284,7 +284,7 @@ describe('marketing workspace component contract', () => {
     expect(referenceDataSource).not.toContain('تست‌های A/B');
   });
 
-  it('renders RTL pages and leaves dashboard series empty', () => {
+  it('renders RTL pages and connects the dashboard to lead activity', () => {
     expect(workspaceSource).toContain('[&_td]:text-right [&_th]:text-right');
     expect(referencePagesSource).toContain('className="text-right" dir="rtl"');
     expect(referencePagesSource).not.toContain('data-series="leads"');
@@ -292,7 +292,11 @@ describe('marketing workspace component contract', () => {
       'data-series="attributed-sales"',
     );
     expect(referencePagesSource).toContain('سرنخ جدید');
-    expect(referencePagesSource).toContain('فروش منتسب');
+    expect(referencePagesSource).toContain('روند سرنخ و مشتری جدید');
+    expect(referencePagesSource).toContain('marketingApi.leadActivity()');
+    expect(referencePagesSource).not.toContain("label: 'CAC'");
+    expect(referencePagesSource).not.toContain("label: 'ROAS'");
+    expect(referencePagesSource).not.toContain("label: 'فروش منتسب'");
     expect(referencePagesSource).not.toContain('title="داشبورد نمایشی"');
   });
 
