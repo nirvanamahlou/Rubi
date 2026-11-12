@@ -1,3 +1,7 @@
+## LEDGER-FISCAL-ALLOCATION-1112 — PC-D
+
+Ledger fiscal allocation uses direct numeric year plus start/end dates, with Persian/Arabic digit normalization. Remove the new-year toggle and title input; add selected-row removal beside + with confirmation. Preserve fiscal-year definitions, command audit/replay/CAS, company/branch guards and all financial records; reject non-OPEN/referenced allocations and stale resurrection.76 isolated PostgreSQL checks, focused Web/i18n checks, API/Web TypeScript and scoped lint pass; API and Web production builds pass. No schema/dependency changes or deployment. Browser connection unavailable, so visual acceptance is not claimed. See docs/tasks/LEDGER-FISCAL-ALLOCATION-1112.md.
+
 ## NORA-ARROW-RTL-1112 — PC-C
 
 Reversed Persian Nora contract navigation arrows to U+2190 (←), including receipt instructions.63 focused guide/readable-output/i18n tests pass; date/time behavior unchanged. Latest develop translations integrated and missing Nora receipt-guide translation added. No API/schema/data change. Local lint blocked by pre-existing worktree eslint-config-next resolution; hosted checks remain required. Not deployed.

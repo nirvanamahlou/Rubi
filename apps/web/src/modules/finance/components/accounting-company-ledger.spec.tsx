@@ -5,6 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/overlays';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingBaseList } from './accounting-base-list';
+import {
+  AccountingFiscalAllocationForm,
+  normalizeFiscalYearCode,
+} from './accounting-fiscal-allocation-form';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/i18n/link', () => ({
@@ -49,6 +53,39 @@ describe('company ledger form and list', () => {
     expect(html).not.toContain('ledger-branch');
     expect(html).not.toContain('ledger-currency');
     expect(html).toContain('افزودن تخصیص سال مالی');
+    expect(html).toContain('حذف تخصیص سال مالی');
+    expect(
+      html.match(/<button[^>]*aria-label="حذف تخصیص سال مالی"[^>]*>/)?.[0],
+    ).toContain('disabled');
+  });
+  it('renders only a direct year and required dates without the new-year toggle or title', () => {
+    const html = wrap(
+      <AccountingFiscalAllocationForm
+        draft={{
+          fiscalYearId: '',
+          fiscalYearCode: '1405',
+          startDate: '2026-03-21',
+          endDate: '2027-03-20',
+        }}
+        locked={false}
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(html).toContain('value="1405"');
+    expect(html).toContain('id="ledger-year-code"');
+    expect(html).toContain('id="ledger-start"');
+    expect(html).toContain('id="ledger-end"');
+    expect(html).not.toContain('عنوان سال مالی');
+    expect(html).not.toContain('تعریف سال مالی جدید');
+    expect(html).not.toContain('type="checkbox"');
+    expect(html).not.toContain('role="combobox"');
+  });
+  it('normalizes Persian and Arabic year digits without discarding invalid characters', () => {
+    expect(normalizeFiscalYearCode('۱۴۰۵')).toBe('1405');
+    expect(normalizeFiscalYearCode('١٤٠٥')).toBe('1405');
+    expect(normalizeFiscalYearCode('۱۴x۵')).toBe('14x5');
   });
   it('keeps the ledger list usable before the first ledger exists', () => {
     const html = wrap(
