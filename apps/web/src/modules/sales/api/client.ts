@@ -312,6 +312,7 @@ export const salesApi = {
         voucher: boolean;
         supplier: string;
         contractVersion: number;
+        receivedAt: string;
         appliedVersion: number | null;
       };
     }>('/contracts/' + encodeURIComponent(id) + '/document-readiness'),

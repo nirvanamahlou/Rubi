@@ -15,6 +15,7 @@ vi.mock('@/modules/sales/api/client', () => ({
     statusHistory: vi.fn(),
     contractAudit: vi.fn(),
     readPurchaseContext: vi.fn(),
+    documentReadiness: vi.fn(),
   },
 }));
 vi.mock('@/modules/sales/api/payment-receipts', () => ({
@@ -83,6 +84,11 @@ describe('read-only contract reports', () => {
       meta: { total: 1, page: 1, pageSize: 10 },
     });
     vi.mocked(salesApi.statusHistory).mockResolvedValue({ data: [] });
+    vi.mocked(salesApi.documentReadiness).mockResolvedValue({
+      data: { receivedAt: new Date(Date.now() - 4 * 86400000).toISOString() },
+    } as never);
+    const result = await portfolioReport('کدام قرارداد من متوقف است؟', 'owner');
+    expect(result).toContain('4 روز از دریافت درخواست در رزرواسیون');
     expect(
       await portfolioReport('کدام قرارداد من متوقف است؟', 'owner'),
     ).toContain('زمان ورود به وضعیت ثبت نشده');

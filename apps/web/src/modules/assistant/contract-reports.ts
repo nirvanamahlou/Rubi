@@ -224,6 +224,18 @@ export async function portfolioReport(
       } catch (error) {
         time = reportError(error);
       }
+    if (kind === 'stalled' && row.reservationStatus === 'QUEUED') {
+      try {
+        const { data: intake } = await salesApi.documentReadiness(row.id);
+        const days = Math.floor(
+          (Date.now() - Date.parse(intake.receivedAt)) / 86400000,
+        );
+        if (Number.isFinite(days) && days >= 0)
+          time += ' — ' + days + ' روز از دریافت درخواست در رزرواسیون';
+      } catch (error) {
+        time += ' — ' + reportError(error);
+      }
+    }
     lines.push([row.contractNumber, reason, time].filter(Boolean).join(' — '));
   }
   if (!hits.slice((page - 1) * 10, page * 10).length)

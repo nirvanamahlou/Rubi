@@ -121,6 +121,7 @@ export class SalesController {
         voucher: intake.workflow.voucherIssued,
         supplier: intake.workflow.supplierStatus,
         contractVersion: intake.contractVersion,
+        receivedAt: intake.receivedAt,
         appliedVersion: intake.workflow.appliedContractVersion ?? null,
       },
     };
