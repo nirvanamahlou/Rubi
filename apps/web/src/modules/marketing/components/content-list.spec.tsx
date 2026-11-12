@@ -31,6 +31,7 @@ const state = vi.hoisted(() => ({
   save: vi.fn(),
   assets: vi.fn(),
   segmentPage: vi.fn(),
+  directoryPage: vi.fn(),
   campaigns: vi.fn(),
   access: vi.fn(),
   remove: vi.fn(),
@@ -67,6 +68,7 @@ vi.mock('../api/records-client', () => ({
     saveAsset: state.save,
     assets: state.assets,
     segmentPage: state.segmentPage,
+    directoryPage: state.directoryPage,
     campaigns: state.campaigns,
     access: state.access,
     deleteAsset: state.remove,
@@ -142,6 +144,7 @@ beforeEach(() => {
   state.access.mockResolvedValue({ branchIds: ['branch-1'] });
   state.assets.mockResolvedValue({ data: [asset] });
   state.segmentPage.mockResolvedValue({ data: [], page: 1, total: 0 });
+  state.directoryPage.mockResolvedValue({ data: [], page: 1, total: 0 });
   state.campaigns.mockResolvedValue({ data: [] });
   state.save.mockResolvedValue({ data: asset });
   state.remove.mockResolvedValue({});
@@ -799,13 +802,18 @@ describe('durable Marketing directories', () => {
   }
   function seedDirectory() {
     state.values = [
-      { branchIds: ['branch-1'] },
-      [],
-      [{ ...asset, kind: 'AUDIENCE', name: 'مخاطب ثبت شده' }],
-      false,
-      '',
       '',
       'all',
+      1,
+      { branchIds: ['branch-1'] },
+      [],
+      {
+        data: [{ ...asset, kind: 'AUDIENCE', name: 'مخاطب ثبت شده' }],
+        page: 1,
+        total: 26,
+      },
+      false,
+      '',
       false,
       '',
       'none',
@@ -815,10 +823,48 @@ describe('durable Marketing directories', () => {
       null,
     ];
   }
+  it('sends directory filters and page changes without loading unpaged assets', async () => {
+    seedDirectory();
+    const pageControls = directory('AUDIENCE').find(
+      (node) => node.props.pagination,
+    )!;
+    (
+      pageControls.props.pagination as { onPageChange(page: number): void }
+    ).onPageChange(2);
+    const reload = (tree: ReturnType<typeof nodes>) =>
+      (
+        tree.find((node) => typeof node.props.onRetry === 'function')!.props
+          .onRetry as () => void
+      )();
+    reload(directory('AUDIENCE'));
+    await vi.waitFor(() =>
+      expect(state.directoryPage).toHaveBeenLastCalledWith({
+        kind: 'AUDIENCE',
+        page: 2,
+        search: '',
+      }),
+    );
+    const select = directory('AUDIENCE').find(
+      (node) =>
+        node.props.value === 'all' &&
+        typeof node.props.onValueChange === 'function',
+    )!;
+    (select.props.onValueChange as (value: string) => void)('campaign-1');
+    reload(directory('AUDIENCE'));
+    await vi.waitFor(() =>
+      expect(state.directoryPage).toHaveBeenLastCalledWith({
+        kind: 'AUDIENCE',
+        page: 1,
+        search: '',
+        campaignId: 'campaign-1',
+      }),
+    );
+    expect(state.assets).not.toHaveBeenCalled();
+  });
   it('saves a named entry source through the durable API without lead-count queries', async () => {
     seedDirectory();
-    state.values[7] = true;
-    state.values[8] = 'نمایشگاه';
+    state.values[8] = true;
+    state.values[9] = 'نمایشگاه';
     const button = directory('SOURCE').find(
       (node) => node.props.children === 'ذخیره',
     )!;
@@ -833,7 +879,7 @@ describe('durable Marketing directories', () => {
       },
       { branchId: 'branch-1', key: 'command-key' },
     );
-    expect(state.values[7]).toBe(false);
+    expect(state.values[8]).toBe(false);
   });
   it('preserves view and versioned edit actions alongside audience deletion', async () => {
     seedDirectory();
@@ -876,7 +922,7 @@ describe('durable Marketing directories', () => {
       asset.version,
       expect.any(String),
     );
-    expect(state.values[13]).toBeNull();
+    expect(state.values[14]).toBeNull();
   });
 });
 

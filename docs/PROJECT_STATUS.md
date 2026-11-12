@@ -13,6 +13,10 @@ PostgreSQL aggregates unread counts by destination and selects a bounded feed wi
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
 
 
+## FINANCE-PURCHASE-TRANSPORT-1111 — PC-B
+
+Finance Inbox, Procurement, and Reservation Purchases reuse the localized authenticated transport with their existing timeout policies. Finance regressions verify the same body and idempotency key on authentication retry and preserve the session-refresh outage error.
+
 ## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B
 
 Documents, Customers and Correspondence reuse the localized authenticated browser transport. Existing timeouts and domain responses are preserved. A cancelled document request is not replayed after session refresh. Thirty-nine focused Web tests and scoped ESLint passed.
@@ -1138,6 +1142,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## GROUPED-REPORT-PREVIEW-1111 — PC-B
+
+Travel and organization reports rank aggregated groups before formatting preview rows. Sort ties keep their existing order, and organization ranking compares exact Decimal currency amounts. Ninety-six focused tests passed.
+
 ## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B
 
 Operational report previews retain only the ranked candidates through the page endpoint and map only displayed rows. Exact source totals, stable tie ordering, source freshness, available filters and full export order are preserved. Source projections still materialize their rows.
@@ -1481,6 +1489,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-room-party-limits-1015. User authorizes cumu
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
+
+## MARKETING-DIRECTORY-PAGES-1111 — PC-B
+
+Entry sources and campaign audiences use scoped 25-row pages. Literal normalized search, campaign filtering and exact counts run in PostgreSQL. Existing selectors and mutations keep their contracts.
 
 ## MARKETING-CAMPAIGN-PAGES-1110 — PC-B
 

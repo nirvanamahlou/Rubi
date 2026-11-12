@@ -1337,6 +1337,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
 
+## GROUPED-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
+
+Reserve report ranking and row construction for travel and native organization reports. Preserve full export ordering, exact currency amounts and distinct counts.
+
 ## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
 
 Reserve operational report page assembly, its regression, and extraction of the existing Finance ranking heap. Preserve exact sorting, totals, source metadata and exports.
@@ -1396,6 +1400,10 @@ Reserve receipt and refund report paging and its cursor regression. Read each ev
 ## RESERVATION-FINANCE-PROJECTION-1110 — PC-B — READY_FOR_CI
 
 Reserve Reservations public Finance intake projection and its tests. Preserve branch and company scope, latest purchase selection, older intake evidence, payment totals and the operational intake response. No schema, dependency or deployment changes.
+
+## FINANCE-PURCHASE-TRANSPORT-1111 — PC-B — READY_FOR_CI
+
+Reserve browser API adapters for the Finance inbox, Procurement, and Reservation purchases. Reuse the existing authenticated transport while preserving headers, cancellation, retry and error semantics.
 
 ## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B — READY_FOR_CI
 
@@ -12421,6 +12429,10 @@ Reserve the leave policy edit command and form payload, plus a focused regressio
 ## HR-ATTENDANCE-STATUS-EDITOR — PC-B — IN_PROGRESS
 
 Reserve single-day attendance status controls and scoped command, override preservation during recalculation, additive HR data contract and focused tests. Preserve bulk activation, original punches, authorization and closed-period checks.
+
+## MARKETING-DIRECTORY-PAGES-1111 — PC-B — READY_FOR_CI
+
+Reserve an additive Marketing directory page contract, producer and Web client, reusing scoped segment pagination. Keep existing unpaged asset selectors and mutations compatible.
 
 ## MARKETING-SEGMENT-PAGES-1111 — PC-B — READY_FOR_CI
 

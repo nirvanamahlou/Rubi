@@ -20,13 +20,14 @@ import type {
   MarketingCampaignPageQueryV1,
   MarketingPromotionPageQueryV1,
   MarketingSegmentPageQueryV1,
-  MarketingSegmentPageV1,
+  MarketingDirectoryPageQueryV1,
+  MarketingAssetPageV1,
   MarketingPromotionPageV1,
 } from '@nora/contracts';
 import {
   MARKETING_ASSET_STATUS_LABELS,
   MARKETING_RECORDS_CONTRACT_VERSION,
-  MARKETING_SEGMENT_PAGE_SIZE,
+  MARKETING_ASSET_PAGE_SIZE,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
@@ -746,26 +747,43 @@ export class MarketingRecordsService {
     return { data: rows.map(presentAsset) };
   }
 
-  async listSegments(
-    query: MarketingSegmentPageQueryV1,
+  listSegments(query: MarketingSegmentPageQueryV1, actor: AuthenticatedActor) {
+    return this.listAssetPage('SEGMENT', query, actor);
+  }
+
+  listDirectory(
+    query: MarketingDirectoryPageQueryV1,
     actor: AuthenticatedActor,
-  ): Promise<MarketingSegmentPageV1> {
+  ) {
+    return this.listAssetPage(query.kind, query, actor);
+  }
+
+  private async listAssetPage(
+    kind: 'SEGMENT' | MarketingDirectoryPageQueryV1['kind'],
+    query: MarketingSegmentPageQueryV1 & { campaignId?: string },
+    actor: AuthenticatedActor,
+  ): Promise<MarketingAssetPageV1> {
     this.assertPermissions(actor, 'marketing.read');
     if (!actor.branchIds.length) return { data: [], page: 1, total: 0 };
-    const pageSize = MARKETING_SEGMENT_PAGE_SIZE;
+    const pageSize = MARKETING_ASSET_PAGE_SIZE;
     const search = query.search?.trim().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
     const labels = Object.entries(MARKETING_ASSET_STATUS_LABELS).map(
       ([status, label]) => Prisma.sql`WHEN ${status} THEN ${label}::text`,
     );
+    const searchLabel =
+      kind === 'SEGMENT'
+        ? Prisma.sql`name || ' ' || (CASE status ${Prisma.join(labels, ' ')} ELSE '' END)`
+        : Prisma.sql`name`;
     const where = Prisma.sql`
       branch_id IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
-      AND kind = 'SEGMENT'
+      AND kind = ${kind}
       AND status <> 'DELETED'
+      ${query.campaignId ? Prisma.sql`AND campaign_id = ${query.campaignId}::uuid` : Prisma.empty}
       ${query.status ? Prisma.sql`AND status = ${query.status}` : Prisma.empty}
       ${
         search
           ? Prisma.sql`AND strpos(
-        lower(translate(trim(name || ' ' || (CASE status ${Prisma.join(labels, ' ')} ELSE '' END)), 'يك', 'یک')),
+        lower(translate(trim(${searchLabel}), 'يك', 'یک')),
         lower(${search})
       ) > 0`
           : Prisma.empty
