@@ -16,7 +16,7 @@ describe('ERP contract workflow help', () => {
     const reply = resolveContractGuide(question, false);
     expect(reply?.topicId).toBe('create');
     expect(reply?.text).toContain(
-      'فروش و ارتباط با مشتری → قرارداد → قرارداد جدید',
+      'فروش و ارتباط با مشتری ← قرارداد ← قرارداد جدید',
     );
     for (const action of [
       'مشتری و طرف حساب قرارداد',
@@ -66,7 +66,7 @@ describe('ERP contract workflow help', () => {
   ])('routes %s to grounded instructions', (question, topicId) => {
     const reply = resolveContractGuide(question, true);
     expect(reply?.topicId).toBe(topicId);
-    expect(reply?.text).toContain('فروش و ارتباط با مشتری → قرارداد');
+    expect(reply?.text).toContain('فروش و ارتباط با مشتری ← قرارداد');
     expect(reply?.text).toContain('1. ');
     expect(reply?.text).toContain('2. ');
   });

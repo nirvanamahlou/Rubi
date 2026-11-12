@@ -9,7 +9,7 @@ describe('readable contract output', () => {
       'قرارداد',
       'قرارداد جدید',
     ]);
-    expect(path).toContain(' → ');
+    expect(path).toContain(' ← ');
     expect(path).not.toContain('->');
   });
   it('separates the Persian date and Tehran clock time including day rollover', () => {
