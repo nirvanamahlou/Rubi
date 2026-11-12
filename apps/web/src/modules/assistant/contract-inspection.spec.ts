@@ -11,6 +11,7 @@ vi.mock('@/modules/sales/api/client', () => ({
   salesApi: {
     list: vi.fn(),
     detail: vi.fn(),
+    contractAudit: vi.fn(),
     statusHistory: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
@@ -100,6 +101,14 @@ describe('contract inspection', () => {
         ?.text,
     ).toContain('تکمیل شده');
     expect(salesApi.detail).toHaveBeenCalledTimes(2);
+  });
+  it('keeps a standalone audit follow-up local after a partial permission denial', async () => {
+    vi.mocked(salesApi.detail).mockResolvedValue({ data: contract });
+    vi.mocked(salesApi.contractAudit).mockRejectedValue({ status: 403 });
+    const reply = await inspectContractQuestion('ممیزی', contract.id);
+    expect(reply?.contractId).toBe(contract.id);
+    expect(reply?.text).toContain('دسترسی به جزئیات این بخش برقرار نیست');
+    expect(salesApi.contractAudit).toHaveBeenCalledWith(contract.id);
   });
   it('does not retain a readable record after permission denial', async () => {
     vi.mocked(salesApi.detail).mockRejectedValue(

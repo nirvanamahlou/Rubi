@@ -1,6 +1,6 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import { portfolioKind } from './contract-reports';
+import { isContractReportQuestion, portfolioKind } from './contract-reports';
 import { contractAdvice } from './contract-advice';
 import { readContractFormHelp } from './contract-form-help';
 import { inspectContractQuestion } from './contract-inspection';
@@ -219,6 +219,11 @@ function Trend({
     </Panel>
   );
 }
+function selectedSalesContract() {
+  return document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
+    .noraContractId;
+}
+
 export function AssistantComposer({
   t,
   denied,
@@ -257,9 +262,37 @@ export function AssistantComposer({
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
-    contractId.current = undefined;
-    if (!pathname?.startsWith('/sales')) guideTopic.current = undefined;
-    return () => inspecting.current?.abort();
+    const resetRecord = () => {
+      inspecting.current?.abort();
+      contractId.current = undefined;
+      guideTopic.current = undefined;
+      setMessages((previous) =>
+        previous.some((item) => item.local)
+          ? previous.filter((item) => !item.local)
+          : previous,
+      );
+    };
+    resetRecord();
+    let selection = selectedSalesContract();
+    const observer = new MutationObserver(() => {
+      const current = selectedSalesContract();
+      if (current !== selection) {
+        selection = current;
+        resetRecord();
+      }
+    });
+    if (pathname?.startsWith('/sales')) {
+      observer.observe(document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['data-nora-contract-id'],
+      });
+    }
+    return () => {
+      observer.disconnect();
+      inspecting.current?.abort();
+    };
   }, [pathname]);
 
   const prompts: readonly [AssistantText, AssistantAction][] = [
@@ -323,9 +356,8 @@ export function AssistantComposer({
       replyLocally(formHelp);
       return;
     }
-    const selectedContract =
-      document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
-        .noraContractId ?? contractId.current;
+    const selectionAtSubmit = selectedSalesContract();
+    const selectedContract = selectionAtSubmit ?? contractId.current;
     const guide = resolveContractGuide(
       message,
       pathname === '/sales' ||
@@ -345,7 +377,7 @@ export function AssistantComposer({
       /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
         normalizeContractQuestion(message),
       ) ||
-      (selectedContract && /تاریخچه|رسید|مغایرت|خدمات|مدارک/.test(message));
+      (selectedContract && isContractReportQuestion(message));
     const advice =
       !liveReport &&
       !recordFollowup &&
@@ -367,7 +399,10 @@ export function AssistantComposer({
     setActionState('loading');
     const inspection = await inspectContractQuestion(message, selectedContract);
     if (inspecting.current === inspectionController) inspecting.current = null;
-    if (inspectionController.signal.aborted) {
+    if (
+      inspectionController.signal.aborted ||
+      selectionAtSubmit !== selectedSalesContract()
+    ) {
       if (pending.current === inspectionController) setActionState(null);
       return;
     }
