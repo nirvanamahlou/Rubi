@@ -41,6 +41,15 @@ export class AccountingCompletionController {
   ) {
     return this.service.journalLines(bookId, query, request.actor);
   }
+  @Get('journal-browser')
+  @Header('Cache-Control', 'private, no-store')
+  journalBrowser(
+    @Param('bookId') bookId: string,
+    @Query() query: Record<string, unknown>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.journalBrowser(bookId, query, request.actor);
+  }
   @Get('year-end/:periodId')
   @Header('Cache-Control', 'private, no-store')
   yearEnd(

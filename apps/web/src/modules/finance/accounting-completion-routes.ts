@@ -12,11 +12,18 @@ export function accountingCompletionRoute(route: string) {
     return 'chart' as const;
   if (route === 'general-ledger/reports/journal-lines')
     return 'journal-lines' as const;
+  if (route === 'general-ledger/reports/journal-browser')
+    return 'journal-browser' as const;
+  if (route === 'general-ledger/reports/electronic-trade-books')
+    return 'electronic-book' as const;
   return undefined;
 }
 
 export interface CompletionLineReport {
-  basis: 'POSTED';
+  bookId?: string;
+  bookTitle?: string;
+  basis: string;
+  amountMode?: 'BASE' | 'FOREIGN';
   currency: string;
   periodId: string;
   from: string;
@@ -33,6 +40,11 @@ export interface CompletionLineReport {
     date: string | null;
     position: number;
     account: string | null;
+    accountCode?: string | null;
+    accountTitle?: string | null;
+    generalCode?: string | null;
+    generalTitle?: string | null;
+    journalDescription?: string;
     detail4: string | null;
     detail5: string | null;
     detail6: string | null;

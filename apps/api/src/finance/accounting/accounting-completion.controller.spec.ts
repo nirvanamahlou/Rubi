@@ -16,6 +16,8 @@ import { AccountingTaxpayerService } from './accounting-taxpayer.service';
 import { IamModule } from '../../iam/iam.module';
 import { IamService } from '../../iam/iam.service';
 import { DatabaseModule } from '../../database/database.module';
+import { LegalEntitiesModule } from '../../legal-entities/legal-entities.module';
+import { AccountingCompanyScope } from './accounting-company-scope';
 import { ACCESS_COOKIE } from '../../iam/iam.constants';
 
 @Module({})
@@ -53,6 +55,7 @@ class TestIamModule {}
 describe('registered completion module HTTP boundary', () => {
   let app: INestApplication;
   const journalLines = vi.fn(async () => ({ rows: [], total: 0 }));
+  const journalBrowser = vi.fn(async () => ({ rows: [], documents: [] }));
   const yearEndReadiness = vi.fn(async () => ({
     diagnosticOnly: true,
     executionAvailable: false,
@@ -73,8 +76,12 @@ describe('registered completion module HTTP boundary', () => {
       .useModule(TestIamModule)
       .overrideModule(DatabaseModule)
       .useModule(EmptyModule)
+      .overrideModule(LegalEntitiesModule)
+      .useModule(EmptyModule)
+      .overrideProvider(AccountingCompanyScope)
+      .useValue({})
       .overrideProvider(AccountingCompletionService)
-      .useValue({ journalLines, yearEndReadiness })
+      .useValue({ journalLines, journalBrowser, yearEndReadiness })
       .overrideProvider(AccountingTaxpayerService)
       .useValue({ seller: readSeller, saveSeller })
       .compile();
@@ -87,6 +94,7 @@ describe('registered completion module HTTP boundary', () => {
   it('requires authentication and journal-read permission on every mounted read endpoint', async () => {
     for (const path of [
       'completion/journal-lines?periodId=period',
+      'completion/journal-browser?periodId=period',
       'completion/year-end/period',
       'taxpayer/seller',
     ]) {
@@ -102,6 +110,7 @@ describe('registered completion module HTTP boundary', () => {
         .expect(403);
     }
     expect(journalLines).not.toHaveBeenCalled();
+    expect(journalBrowser).not.toHaveBeenCalled();
     expect(yearEndReadiness).not.toHaveBeenCalled();
   });
   it('forwards book/filter/actor scope, forbids caching and keeps seller writes protected', async () => {
@@ -115,6 +124,18 @@ describe('registered completion module HTTP boundary', () => {
     expect(journalLines).toHaveBeenCalledWith(
       'book',
       { periodId: 'period', page: '2' },
+      expect.objectContaining({ branchIds: ['synthetic'] }),
+    );
+    const browser = await request(app.getHttpServer())
+      .get(
+        '/finance/accounting/books/book/completion/journal-browser?periodId=period&axis=monthly',
+      )
+      .set('Cookie', `${ACCESS_COOKIE}=reader`)
+      .expect(200);
+    expect(browser.headers['cache-control']).toBe('private, no-store');
+    expect(journalBrowser).toHaveBeenCalledWith(
+      'book',
+      { periodId: 'period', axis: 'monthly' },
       expect.objectContaining({ branchIds: ['synthetic'] }),
     );
     const readiness = await request(app.getHttpServer())

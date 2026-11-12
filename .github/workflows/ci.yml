@@ -252,6 +252,12 @@ jobs:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
         run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts test/accounting-workflows.postgres.spec.ts test/party-receipts.postgres.spec.ts --maxWorkers=1
 
+      - name: Prove ledger scope, standard mappings and exact report totals
+        # The prior financial-source step has built the shared packages.
+        env:
+          NORA_RUN_LEDGER_PARITY_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/accounting.postgres.spec.ts test/accounting-company-ledger.postgres.spec.ts test/accounting-completion.postgres.spec.ts test/accounting-standard.postgres.spec.ts --maxWorkers=1 --testTimeout=30000
+
       - name: Prove rollback-safe consecutive Sales contract numbers
         # The prior financial-source step has built the shared packages.
         env:

@@ -5,6 +5,8 @@ import { AccountingTaxWorkspace } from './accounting-tax-workspace';
 import { AccountingTaxpayerWorkspace } from './accounting-taxpayer-workspace';
 import { AccountingChartReport } from './accounting-chart-report';
 import { AccountingCompletionReport } from './accounting-completion-report';
+import { AccountingJournalBrowser } from './accounting-journal-browser';
+import { AccountingElectronicBook } from './accounting-electronic-book';
 
 /** Dispatches prepared screens only after the workspace has loaded an authorized book. */
 export function AccountingCompletionWorkspace({
@@ -15,6 +17,10 @@ export function AccountingCompletionWorkspace({
   route: string;
 }) {
   switch (accountingCompletionRoute(route)) {
+    case 'electronic-book':
+      return <AccountingElectronicBook key={book.book.id} book={book} />;
+    case 'journal-browser':
+      return <AccountingJournalBrowser key={book.book.id} book={book} />;
     case 'tax':
       return (
         <AccountingTaxWorkspace

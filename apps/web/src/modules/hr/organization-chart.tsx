@@ -728,6 +728,7 @@ export function OrganizationChart({
         <article
           className={`${styles.orgNode} ${primary ? styles.orgNodePrimary : ''}`}
           data-org-node={node.id}
+          data-node-kind={node.kind}
           style={{
             transform: `translate(${preview[node.id]?.x ?? node.offsetX ?? 0}px, ${preview[node.id]?.y ?? node.offsetY ?? 0}px)`,
           }}

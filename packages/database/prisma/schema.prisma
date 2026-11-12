@@ -7262,6 +7262,7 @@ model AccountingBook {
 }
 
 model AccountingConfiguration {
+  standardEntities  AccountingStandardEntity[]
   id                String                           @id @default(uuid()) @db.Uuid
   bookId            String                           @db.Uuid
   book              AccountingBook                   @relation(fields: [bookId], references: [id], onDelete: Restrict)
@@ -7310,6 +7311,7 @@ model AccountingPeriod {
 }
 
 model AccountingAccount {
+  standardMappings         AccountingStandardMapping[]
   groupDetailAllocations   AccountingAccountGroupDetail[]
   id                       String                          @id @default(uuid()) @db.Uuid
   bookId                   String                          @db.Uuid
@@ -7340,6 +7342,59 @@ model AccountingAccount {
   @@unique([id, bookId])
   @@index([bookId, parentId])
   @@map("accounting_accounts")
+}
+
+model AccountingStandardEntity {
+  id              String                      @id @default(uuid()) @db.Uuid
+  bookId          String                      @db.Uuid
+  standardId      String                      @db.Uuid
+  standard        AccountingConfiguration     @relation(fields: [standardId, bookId], references: [id, bookId], onDelete: Restrict)
+  rowId           String                      @db.Uuid
+  title           String                      @db.VarChar(160)
+  titleEn         String                      @db.VarChar(160)
+  systemEntity    String                      @db.VarChar(80)
+  detailReference String                      @db.VarChar(30)
+  configVersion   Int
+  version         Int                         @default(1)
+  codes           AccountingStandardCode[]
+  mappings        AccountingStandardMapping[]
+
+  @@unique([standardId, rowId])
+  @@unique([id, bookId])
+  @@index([bookId, standardId])
+  @@map("accounting_standard_entities")
+}
+
+model AccountingStandardCode {
+  id       String                      @id @default(uuid()) @db.Uuid
+  bookId   String                      @db.Uuid
+  entityId String                      @db.Uuid
+  entity   AccountingStandardEntity    @relation(fields: [entityId, bookId], references: [id, bookId], onDelete: Restrict)
+  code     String                      @db.VarChar(40)
+  title    String                      @db.VarChar(160)
+  titleEn  String?                     @db.VarChar(160)
+  position Int                         @default(0)
+  mappings AccountingStandardMapping[]
+
+  @@unique([entityId, code])
+  @@unique([id, entityId, bookId])
+  @@map("accounting_standard_codes")
+}
+
+model AccountingStandardMapping {
+  id        String                   @id @default(uuid()) @db.Uuid
+  bookId    String                   @db.Uuid
+  entityId  String                   @db.Uuid
+  entity    AccountingStandardEntity @relation(fields: [entityId, bookId], references: [id, bookId], onDelete: Restrict)
+  codeId    String                   @db.Uuid
+  code      AccountingStandardCode   @relation(fields: [codeId, entityId, bookId], references: [id, entityId, bookId], onDelete: Restrict)
+  accountId String                   @db.Uuid
+  account   AccountingAccount        @relation(fields: [accountId, bookId], references: [id, bookId], onDelete: Restrict)
+  createdAt DateTime                 @default(now()) @db.Timestamptz(3)
+
+  @@unique([entityId, accountId])
+  @@index([codeId, bookId])
+  @@map("accounting_standard_mappings")
 }
 
 model AccountingDetail {

@@ -1,11 +1,16 @@
+import {
+  accountingTestUrl,
+  assertAccountingTestDatabase,
+} from './accounting-test-database';
 import { randomUUID } from 'node:crypto';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { AccountingService } from '../src/finance/accounting/accounting.service';
 import { AccountingCompanyScope } from '../src/finance/accounting/accounting-company-scope';
+import { AccountingCompletionService } from '../src/finance/accounting/accounting-completion.service';
 
-const url = process.env.ACCOUNTING_TEST_DATABASE_URL;
+const url = accountingTestUrl('ACCOUNTING_TEST_DATABASE_URL');
 describe.skipIf(!url)('company ledgers on isolated PostgreSQL', () => {
   let db: DatabaseClient, service: AccountingService;
   const branchId = randomUUID(),
@@ -60,13 +65,7 @@ describe.skipIf(!url)('company ledgers on isolated PostgreSQL', () => {
   ) =>
     service.command(bookId, action, { key, payload, expectedVersion }, actor);
   beforeAll(async () => {
-    const target = new URL(url!);
-    if (
-      target.hostname !== '127.0.0.1' ||
-      target.port !== '55437' ||
-      target.pathname !== '/accounting_test'
-    )
-      throw new Error('Dedicated synthetic database required');
+    assertAccountingTestDatabase(url!, '55437', 'accounting_test');
     db = createDatabaseClient(url);
     await db.branch.create({
       data: { id: branchId, code: branchId, name: 'Synthetic company test' },
@@ -218,6 +217,60 @@ describe.skipIf(!url)('company ledgers on isolated PostgreSQL', () => {
         row.version,
       ),
     ).rejects.toThrow();
+  });
+  it('protects report and year-end read endpoints with the same live company context', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+      where: { legalEntityId: companyA.id },
+    });
+    const period = await db.accountingPeriod.findFirstOrThrow({
+      where: { bookId: book.id },
+    });
+    const reports = new AccountingCompletionService(
+      { client: db } as never,
+      scope,
+    );
+    selection = companyB.code;
+    for (const run of [
+      () => reports.journalLines(book.id, { periodId: period.id }, actor),
+      () => reports.journalBrowser(book.id, { periodId: period.id }, actor),
+      () =>
+        reports.internalReport(
+          book.id,
+          'analysis',
+          { periodId: period.id },
+          actor,
+        ),
+      () => reports.yearEndReadiness(book.id, period.id, actor),
+      () => service.analyticalReport(book.id, 'standard-mapping', {}, actor),
+      () => service.analyticalReport(book.id, 'standard-turnover', {}, actor),
+    ]) {
+      await expect(run()).rejects.toThrow(
+        'دفتر حسابداری در شرکت فعال در دسترس نیست.',
+      );
+    }
+    selection = companyA.code;
+    expect(
+      (await reports.journalLines(book.id, { periodId: period.id }, actor))
+        .total,
+    ).toBe(0);
+    selection = 'ALL';
+    expect(
+      (await reports.journalBrowser(book.id, { periodId: period.id }, actor))
+        .rows,
+    ).toEqual([]);
+    await expect(
+      reports.journalLines(
+        book.id,
+        { periodId: period.id },
+        {
+          ...actor,
+          permissions: actor.permissions.filter(
+            (permission) => permission !== 'legal-entity.aggregate.read',
+          ),
+        },
+      ),
+    ).rejects.toThrow();
+    selection = companyA.code;
   });
   it('preserves legacy ledger IDs and currency and only binds them explicitly', async () => {
     const legacy = await db.accountingBook.create({

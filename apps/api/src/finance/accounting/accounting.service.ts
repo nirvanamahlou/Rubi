@@ -7,6 +7,14 @@ import { listFilterAttributes } from './accounting-list-filter';
 import { trialBalanceTable } from './accounting.trial-balance';
 import { codingStandardAttributes } from './accounting.coding-standard';
 import {
+  copyStandardCodes,
+  seedStandardCatalogs,
+  standardCommand,
+  standardMapping,
+  standardTurnover,
+  syncStandardEntities,
+} from './accounting-standard-ledger';
+import {
   SALES_CONTRACT_EVENT,
   hasPendingSalesContractAccounting,
   assertSalesContractJournalReversible,
@@ -419,6 +427,7 @@ export class AccountingService {
           },
         })),
       });
+      await seedStandardCatalogs(tx, id);
       return created;
     });
   }
@@ -1076,6 +1085,15 @@ export class AccountingService {
     financialSourceRebuild = false,
   ): Promise<unknown> {
     const bookId = book.id;
+    if (
+      [
+        'standard-map',
+        'standard-unmap',
+        'standard-code-save',
+        'standard-code-delete',
+      ].includes(action)
+    )
+      return standardCommand(tx, bookId, action, p, expected);
     if (action === 'workflow-create')
       return captureWorkflow(tx, book, p, actor);
     if (action === 'workflow-cancel') return cancelWorkflow(tx, book, p, actor);
@@ -3527,12 +3545,26 @@ export class AccountingService {
         attributes: json(attributes),
         active: p.active !== false,
       };
-      return existing
+      const saved = existing
         ? tx.accountingConfiguration.update({
             where: { id },
             data: { ...data, version: { increment: 1 } },
           })
         : tx.accountingConfiguration.create({ data: { id, ...data } });
+      const configuration = await saved;
+      if (kind === 'coding-standards') {
+        await syncStandardEntities(tx, configuration);
+        if (p.copySourceId !== undefined) {
+          if (existing) v.rule('کپی فقط در استاندارد جدید مجاز است.');
+          await copyStandardCodes(
+            tx,
+            configuration,
+            p.copySourceId,
+            p.copySourceVersion,
+          );
+        }
+      }
+      return configuration;
     }
     if (action === 'save-period') {
       const id = v.uuid(p.id, true) ?? randomUUID();
@@ -3631,6 +3663,13 @@ export class AccountingService {
       });
       if (existing) {
         this.version(existing.version, expected);
+        if (
+          level !== existing.level &&
+          (await tx.accountingStandardMapping.count({
+            where: { accountId: id, bookId },
+          }))
+        )
+          v.rule('سطح حساب دارای نگاشت استاندارد قابل تغییر نیست.');
         if (
           (await tx.accountingJournalLine.count({
             where: { accountId: id },
@@ -6420,6 +6459,19 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'standard-mapping' || kind === 'standard-turnover')
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          return kind === 'standard-mapping'
+            ? standardMapping(tx, bookId, query)
+            : standardTurnover(tx, bookId, query);
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 20000,
+        },
+      );
     if (kind === 'document-statements') {
       await this.book(this.database.client, bookId, actor);
       const journalId = v.uuid(query.journalId, true);

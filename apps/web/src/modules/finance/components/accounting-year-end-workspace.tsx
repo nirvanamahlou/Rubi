@@ -35,6 +35,9 @@ function ObservedCarryForm({ mode }: { mode: 'opening' | 'final' }) {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-bold">{title}</h2>
+      <p role="status" className="text-sm text-muted-foreground">
+        مراحل بعدی در راهکاران قابل مشاهده نیست
+      </p>
       <fieldset className="grid gap-4 rounded border p-4 sm:grid-cols-2">
         <legend className="px-2 font-bold">ورود اطلاعات</legend>
         <FormField id="carry-date" label="تاریخ سند" required>
