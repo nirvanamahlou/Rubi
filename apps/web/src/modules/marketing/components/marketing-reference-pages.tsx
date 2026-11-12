@@ -1,4 +1,5 @@
 'use client';
+import { MarketingSectionMetrics } from './marketing-section-metrics';
 
 import {
   AlertTriangle,
@@ -5608,6 +5609,8 @@ export function MarketingReferenceSection({
   const [tab, setTab] = useState(tabs.at(0)?.[0] ?? '');
   const [formKind, setFormKind] = useState<SectionFormKind | null>(null);
   const primaryAction = getPrimarySectionAction(section, tab);
+  const metricSection =
+    section === 'audiences' && tab === 'leads' ? 'leads' : section;
   const runPrimaryAction = () => {
     if (!primaryAction) return;
     if (primaryAction.behavior === 'submit') return;
@@ -5646,6 +5649,14 @@ export function MarketingReferenceSection({
             </Button>
           ) : null}
         </div>
+        {metricSection !== 'settings' ? (
+          <div className="mt-4">
+            <MarketingSectionMetrics
+              key={metricSection}
+              section={metricSection}
+            />
+          </div>
+        ) : null}
         {tabs.map(([key, , description]) => (
           <TabsContent className="mt-5" key={key} value={key}>
             {section !== 'audiences' &&
@@ -5658,7 +5669,8 @@ export function MarketingReferenceSection({
             ) : null}
             {section === 'audiences' && key === 'segments' ? (
               <DurableSegmentsPanel onNotice={onNotice} />
-            ) : section === 'leads' && key === 'leads' ? (
+            ) : (section === 'leads' || section === 'audiences') &&
+              key === 'leads' ? (
               <DurableIntakesPanel mode="leads" onNotice={onNotice} />
             ) : section === 'leads' && key === 'scoring' ? (
               <DurableIntakesPanel mode="scoring" onNotice={onNotice} />

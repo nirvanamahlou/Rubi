@@ -10012,3 +10012,5 @@ LEDGER-PARITY-1111 follow-up (2026-11-12): owner authorizes PR1677 to develop an
 PC-C / NORA-CONTRACT-ADVISOR-1112: read-only contract guidance, scoped inspection and operational reports prepared for develop. Acceptance matrix: [NORA-CONTRACT-ADVISOR-1112](tasks/NORA-CONTRACT-ADVISOR-1112.md). No production deployment.
 
 PC-C / NORA-CONTRACT-UAT-1112: 13 local Chrome scenarios passed against synthetic HTTP responses after correcting report follow-ups and late responses after selection changes.
+
+TOUR-HOTEL-FIRST-1112: Tour selection now precedes hotel/room occupancy and identities; hide premature passenger counts while selecting TOUR. Keep existing room-driven hotel editor and package hotel/route/capacity constraints. Antalya search also accepts unaccented Persian alef and the tour picker exposes all fetched options instead of five.34 focused tests pass; full CI gates merge. No production deployment or real tour record mutation.

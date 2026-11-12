@@ -12538,3 +12538,7 @@ PC-C / NORA-CONTRACT-ADVISOR-1112: read-only contract guidance, scoped inspectio
 PC-C / NORA-CONTRACT-UAT-1112: reserve assistant contract acceptance regressions and fixes on codex/pc-c-nora-contract-uat-1112. Local synthetic environment.
 
 PC-C / NORA-CONTRACT-UAT-1112: local acceptance complete; detailed results in docs/tasks/NORA-CONTRACT-ADVISOR-1112.md.
+
+## TOUR-HOTEL-FIRST-1112 — PC-A — IN_PROGRESS
+
+Reserve Sales contract tour picker order and active option visibility tests. Owner requests tour, eligible hotel, room count and occupancy before passenger rows and green develop merge. Preserve route, capacity and publication validation; no schema/dependency/deployment.

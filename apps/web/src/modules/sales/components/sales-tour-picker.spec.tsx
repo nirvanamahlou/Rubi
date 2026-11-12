@@ -104,3 +104,10 @@ describe('contract tour suggestions', () => {
     expect(html.match(/dir="rtl"/g)).toHaveLength(2);
   });
 });
+
+it('finds Antalya with an unaccented Persian alef', () => {
+  const options = salesTourOptions([tour('antalya')], 1);
+  expect(searchOptions(options, 'انتالیا').map((o) => o.value)).toEqual([
+    'antalya',
+  ]);
+});
