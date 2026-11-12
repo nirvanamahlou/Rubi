@@ -41,6 +41,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     let branch: string;
     let otherBranch: string;
     let supplier: string;
+    let supplierOrganizationId: string;
     let supplierEnabled = true;
     let issuer: string;
     let maker: AuthenticatedActor;
@@ -807,19 +808,6 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           updatedByUserId: maker.userId,
         },
       });
-      const organization = await database.client.masterOrganization.create({
-        data: {
-          code: `PT-${randomUUID().slice(0, 12)}`,
-          legalName: 'Synthetic supplier organization',
-          displayName: 'Synthetic Supplier',
-          createdByUserId: maker.userId,
-          updatedByUserId: maker.userId,
-        },
-      });
-      await database.client.masterSupplier.update({
-        where: { id: supplier },
-        data: { organizationId: organization.id },
-      });
       const intake = await database.client.reservationIntake.create({
         data: {
           requestId: randomUUID(),
@@ -837,7 +825,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           serviceClientKey: randomUUID(),
           serviceKind: 'OTHER',
           serviceTitleSnapshot: 'Synthetic service',
-          supplierOrganizationId: organization.id,
+          supplierOrganizationId,
           supplierNameSnapshot: 'Synthetic Supplier',
           version: 1,
           amount: '100',
@@ -922,9 +910,20 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           },
           update: {},
         });
+      const organization = await database.client.masterOrganization.create({
+        data: {
+          code: `PT-${randomUUID().slice(0, 12)}`,
+          legalName: 'Synthetic supplier organization',
+          displayName: 'Synthetic Supplier',
+          createdByUserId: maker.userId,
+          updatedByUserId: maker.userId,
+        },
+      });
+      supplierOrganizationId = organization.id;
       supplier = (
         await database.client.masterSupplier.create({
           data: {
+            organizationId: organization.id,
             code: `PT-${randomUUID().slice(0, 12)}`,
             name: 'Synthetic Supplier',
             createdByUserId: maker.userId,
@@ -2229,7 +2228,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'RETURN_EXCEEDS_ACCEPTANCE',
       );
     });
-    it('reads invoice and correction sources past 500 rows with tied timestamps', async () => {
+    it('reads the latest eligible invoice revision and all correction events past 500 tied rows', async () => {
       const context = await orderedRequest();
       const received = await command(
         context.row,
@@ -2251,7 +2250,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           invoiceId: invoice.id,
           invoiceVersion: index + 1,
           sourceKey: id,
-          status: 'PENDING',
+          status: index === 500 ? 'CANCELLED' : 'PENDING',
           createdAt,
           payload: { sourceId: invoice.id, sourceVersion: index + 1 },
         };
@@ -2282,11 +2281,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           invoicesRead
             .filter((row) => row.sourceId === invoice.id)
             .map((row) => row.sourceVersion),
-        ).toEqual(
-          invoices
-            .sort((a, b) => a.id.localeCompare(b.id))
-            .map((row) => row.invoiceVersion),
-        );
+        ).toEqual([500]);
         const correctionsRead = await publicSources.listFinanceCorrections([
           branch,
         ]);

@@ -17,6 +17,7 @@ import { normalizeHrText } from './hr-data-utils';
 import { HrLoading } from './hr-controls';
 
 const headquarters = 'دفتر مرکزی';
+const ignoreReadOnlyChartAction = () => {};
 
 export function buildHeadquartersChart(
   employees: readonly HrEmployeeDto[],
@@ -450,6 +451,8 @@ export function HrOrganization({
                 onEdit={() => undefined}
                 onDelete={() => undefined}
                 editable={false}
+                onEdit={ignoreReadOnlyChartAction}
+                onDelete={ignoreReadOnlyChartAction}
               />
             </div>
           )}
