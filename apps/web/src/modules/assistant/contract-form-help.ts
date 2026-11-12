@@ -7,8 +7,23 @@ import {
 
 export function readContractFormHelp(message: string): string | undefined {
   const question = normalizeContractQuestion(message);
+  if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(question)) return;
+  const saved = document.querySelector<HTMLElement>('[data-nora-saved]');
   if (
-    !/مرحله بعد|دکمه.*(?:فعال|کار)|جلو نمی|ثبت نمی|ثبت نمیشه|ادامه نمی|خطای ثبت|خطای فرم|ارور ثبت|گیر کرد|گیر کردم/.test(
+    saved?.dataset.noraSaved &&
+    /ثبت|ارسال|رسید|مدرک|بعد|حالا/.test(question)
+  ) {
+    return (
+      'قرارداد ' +
+      saved.dataset.noraSaved +
+      ' ثبت و ارسال شد.' +
+      (saved.dataset.noraReceiptError
+        ? ' بارگذاری رسید کامل نشد؛ از بخش مدارک همان پرداخت اقدام کنید. قرارداد تازه نسازید.'
+        : '')
+    );
+  }
+  if (
+    !/مرحله بعد|دکمه.*(?:فعال|کار)|جلو نمی|ثبت نمی|ثبت نمیشه|ادامه نمی|خطای ثبت|خطای فرم|ارور ثبت|گیر کرد|گیر کردم|ارسال نشد|ثبت نشد|پاسخ ثبت/.test(
       question,
     )
   )
@@ -16,6 +31,37 @@ export function readContractFormHelp(message: string): string | undefined {
   const stage = document.querySelector<HTMLElement>('[data-nora-stage]');
   if (!stage) return;
   const error = stage.dataset.noraError;
+  if (stage.dataset.noraBusy === 'true')
+    return 'عملیات در حال انجام است؛ تا دریافت نتیجه دوباره ثبت نکنید.';
+  if (
+    error &&
+    stage.dataset.noraSubmitPhase === 'confirming' &&
+    stage.dataset.noraCreatedNumber
+  )
+    return (
+      'قرارداد ' +
+      stage.dataset.noraCreatedNumber +
+      ' ساخته شد؛ تأیید ارسال دریافت نشد. وضعیت همین شماره را از فهرست بخوانید و قرارداد جدید نسازید.\n' +
+      error
+    );
+  if (error && stage.dataset.noraSubmitPhase === 'creating')
+    return (
+      error +
+      '\nاگر پاسخ سرور به دستتان نرسید، ابتدا فهرست قراردادها را بررسی کنید؛ تا روشن شدن نتیجه فرم دیگری نسازید.'
+    );
+  let blockers: string[] = [];
+  try {
+    const value: unknown = JSON.parse(stage.dataset.noraBlockers || '[]');
+    if (Array.isArray(value))
+      blockers = value.filter((v): v is string => typeof v === 'string');
+  } catch {
+    /* The visible form error remains available. */
+  }
+  if (blockers.length && stage.dataset.noraReady !== 'true')
+    return [
+      stage.dataset.noraStage,
+      ...new Set([error, ...blockers].filter(Boolean)),
+    ].join('\n');
   if (error) {
     const guide = resolveContractGuide('راهنمای ' + error, true);
     return [
