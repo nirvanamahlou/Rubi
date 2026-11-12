@@ -1,6 +1,6 @@
 import type * as ReactModule from 'react';
 import type { ReactNode, ReactElement } from 'react';
-import type { TourPackageInputV1 } from '@nora/contracts';
+import type { MasterDataRecord, TourPackageInputV1 } from '@nora/contracts';
 import { expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   index: 0,
@@ -149,7 +149,7 @@ it('limits every city picker to its own country and clears the city on country c
     { id: 'antalya', attributes: { countryId: 'tr' } },
     { id: 'bodrum', attributes: { countryId: 'tr' } },
     { id: 'paris', attributes: { countryId: 'fr' } },
-  ] as unknown as import('@nora/contracts').MasterDataRecord[];
+  ] as unknown as MasterDataRecord[];
   const onChange = vi.fn();
   const tree = nodes(
     TourDestinations({
