@@ -12538,3 +12538,7 @@ LEDGER-PARITY-1111 dependency integration: consume PC-B published CI repair336bc
 Reserve read-only Assistant diagnostics, report dispatch, focused tests, additive form diagnostic attributes, bilingual labels and scoped notes. No Sales writes, migrations, dependencies or server deployment.
 
 PC-C / NORA-CONTRACT-ADVISOR-1112: read-only contract guidance, scoped inspection and operational reports prepared for develop. Acceptance matrix: [NORA-CONTRACT-ADVISOR-1112](docs/tasks/NORA-CONTRACT-ADVISOR-1112.md). No production deployment.
+
+## TOUR-HOTEL-FIRST-1112 — PC-A — IN_PROGRESS
+
+Reserve Sales contract tour picker order and active option visibility tests. Owner requests tour, eligible hotel, room count and occupancy before passenger rows and green develop merge. Preserve route, capacity and publication validation; no schema/dependency/deployment.

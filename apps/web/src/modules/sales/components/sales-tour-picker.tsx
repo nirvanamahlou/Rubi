@@ -184,6 +184,7 @@ export function SalesTourPicker({
         placeholder="انتخاب تور فعال…"
         value={state.tour?.id ?? ''}
         selectedLabel={state.tour?.package.name}
+        optionLimit={200}
         options={loading || error ? [] : options}
         loading={loading}
         error={error || undefined}
@@ -236,7 +237,11 @@ export function salesTourOptions(
         ' · ' +
         row.remainingCapacity +
         ' صندلی',
-      searchText: [row.package.details?.airlineName, row.outbound.carrierName]
+      searchText: [
+        row.package.name.replace(/آ/g, 'ا'),
+        row.package.details?.airlineName,
+        row.outbound.carrierName,
+      ]
         .filter(Boolean)
         .join(' '),
       disabled: row.remainingCapacity < passengers,
