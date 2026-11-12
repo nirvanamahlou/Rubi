@@ -12546,3 +12546,9 @@ PC-C / NORA-CONTRACT-UAT-1112: local acceptance complete; detailed results in do
 ## TOUR-HOTEL-FIRST-1112 — PC-A — IN_PROGRESS
 
 Reserve Sales contract tour picker order and active option visibility tests. Owner requests tour, eligible hotel, room count and occupancy before passenger rows and green develop merge. Preserve route, capacity and publication validation; no schema/dependency/deployment.
+
+## LEDGER-FISCAL-ALLOCATION-1112 — PC-D — COMPLETED
+
+COMPUTER_ID=PC-D; branch codex/pc-d-ledger-fiscal-allocation-1112 created from PC-D-Integration and fast-forwarded to develop01269a302 to preserve merged Accounting work. Owner requests removing the new-year checkbox and fiscal-year-title field, and adding removal beside allocation +. Existing explicit Accounting delegation applies; predecessor ledger source scopes are merged/frozen and no active Accounting overlap found. Reserve ledger allocation UI/model, Accounting save/delete-period command, focused Web/PostgreSQL tests, additive translation keys and bounded task/status notes. Preserve company/branch scope, command lock/replay/CAS, dates/overlap/duplicate guards and all financial references. Removal is allocation-only, retains the fiscal-year definition and audit, and rejects any non-OPEN or referenced allocation. No schema/migration/dependency/lockfile edits, live deletes, production deployment or PR/merge authorized for this new unit. Owner confirmed direct year entry (for example ۱۴۰۵), with required start/end dates. Commit/push task branch follows standing owner preference.
+
+Validation complete: 76 isolated PostgreSQL checks, focused Web/i18n checks, API/Web typecheck and builds, scoped lint and formatting pass. Source scope frozen and released for handoff. Browser acceptance unavailable; neither operational data nor running local/production app changed. Task-branch commit/push only; no PR/merge for this unit.

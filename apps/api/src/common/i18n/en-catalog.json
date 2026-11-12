@@ -8628,5 +8628,14 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "از دفتر": "from ledger",
+  "انتخاب تخصیص": "Select allocation",
+  "تأیید حذف تخصیص": "Confirm allocation removal",
+  "تخصیص سال": "Year allocation",
+  "حذف تخصیص سال مالی": "Remove fiscal year allocation",
+  "حذف تخصیص سال مالی ناموفق بود.": "Could not remove the fiscal year allocation.",
+  "حذف شود؟ تعریف سال مالی حفظ می‌شود.": "Remove it? The fiscal year definition will be retained.",
+  "فقط تخصیص سال مالی باز و بدون سابقه مالی قابل حذف است.": "Only open fiscal year allocations without financial history can be removed.",
+  "تخصیص سال مالی در سوابق استفاده شده و قابل حذف نیست.": "The fiscal year allocation is referenced by existing records and cannot be removed."
 }

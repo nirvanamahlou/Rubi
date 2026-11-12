@@ -308,4 +308,276 @@ describe.skipIf(!url)('company ledgers on isolated PostgreSQL', () => {
     selection = companyA.code;
     await expect(service.snapshot(legacy.id, actor)).rejects.toThrow();
   });
+  it('accepts direct numeric years, preserves existing titles and rolls back invalid allocations', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+      where: { legalEntityId: companyA.id },
+    });
+    const known = await db.accountingConfiguration.create({
+      data: {
+        bookId: book.id,
+        kind: 'fiscal-years',
+        code: '2030',
+        title: 'Existing year title',
+        attributes: {},
+      },
+    });
+    const row = (await command(book.id, 'save-period', {
+      fiscalYearCode: '۲۰۳۰',
+      startDate: '2030-01-01',
+      endDate: '2030-12-31',
+    })) as { id: string; fiscalYearId: string; version: number };
+    expect(row.fiscalYearId).toBe(known.id);
+    expect(
+      (
+        await db.accountingConfiguration.findUniqueOrThrow({
+          where: { id: known.id },
+        })
+      ).title,
+    ).toBe('Existing year title');
+    const next = (await command(book.id, 'save-period', {
+      fiscalYearCode: '٢٠٣١',
+      startDate: '2031-01-01',
+      endDate: '2031-12-31',
+    })) as { id: string; fiscalYearId: string; version: number };
+    expect(
+      await db.accountingConfiguration.findUniqueOrThrow({
+        where: { id: next.fiscalYearId },
+      }),
+    ).toMatchObject({ code: '2031', title: '2031' });
+    await expect(
+      command(book.id, 'save-period', {
+        fiscalYearCode: '2032',
+        startDate: '2032-12-31',
+        endDate: '2032-01-01',
+      }),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingConfiguration.count({
+        where: { bookId: book.id, kind: 'fiscal-years', code: '2032' },
+      }),
+    ).toBe(0);
+    await expect(
+      command(book.id, 'save-period', {
+        fiscalYearCode: '2031',
+        startDate: '2033-01-01',
+        endDate: '2033-12-31',
+      }),
+    ).rejects.toThrow();
+    await command(
+      book.id,
+      'save-period',
+      {
+        id: next.id,
+        fiscalYearCode: '2033',
+        startDate: '2033-01-01',
+        endDate: '2033-12-31',
+      },
+      next.version,
+    );
+    expect(
+      await db.accountingConfiguration.findUniqueOrThrow({
+        where: { id: next.fiscalYearId },
+      }),
+    ).toMatchObject({ code: '2031', title: '2031' });
+  });
+  it('removes only an unused allocation with company/permission/CAS/replay guards and prevents stale resurrection', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+      where: { legalEntityId: companyA.id },
+    });
+    const row = (await command(book.id, 'save-period', {
+      fiscalYearCode: '2034',
+      startDate: '2034-01-01',
+      endDate: '2034-12-31',
+    })) as { id: string; fiscalYearId: string; version: number };
+    await expect(
+      command(book.id, 'delete-period', { id: row.id }, row.version + 1),
+    ).rejects.toThrow();
+    selection = companyB.code;
+    await expect(
+      command(book.id, 'delete-period', { id: row.id }, row.version),
+    ).rejects.toThrow();
+    selection = 'ALL';
+    await expect(
+      command(book.id, 'delete-period', { id: row.id }, row.version),
+    ).rejects.toThrow();
+    selection = companyA.code;
+    await expect(
+      service.command(
+        book.id,
+        'delete-period',
+        {
+          key: randomUUID(),
+          payload: { id: row.id },
+          expectedVersion: row.version,
+        },
+        { ...actor, permissions: ['finance.read', 'finance.journal.read'] },
+      ),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingPeriod.findUnique({ where: { id: row.id } }),
+    ).not.toBeNull();
+    const key = randomUUID();
+    const deleted = await command(
+      book.id,
+      'delete-period',
+      { id: row.id },
+      row.version,
+      key,
+    );
+    expect(deleted).toMatchObject({
+      id: row.id,
+      fiscalYearId: row.fiscalYearId,
+      deleted: true,
+    });
+    expect(
+      await command(book.id, 'delete-period', { id: row.id }, row.version, key),
+    ).toEqual(deleted);
+    expect(
+      await db.accountingPeriod.findUnique({ where: { id: row.id } }),
+    ).toBeNull();
+    expect(
+      await db.accountingConfiguration.findUnique({
+        where: { id: row.fiscalYearId },
+      }),
+    ).not.toBeNull();
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId: book.id, action: 'delete-period', key },
+      }),
+    ).toBe(1);
+    await expect(
+      command(
+        book.id,
+        'save-period',
+        {
+          id: row.id,
+          fiscalYearCode: '2035',
+          startDate: '2035-01-01',
+          endDate: '2035-12-31',
+        },
+        row.version,
+      ),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingConfiguration.count({
+        where: { bookId: book.id, kind: 'fiscal-years', code: '2035' },
+      }),
+    ).toBe(0);
+    const reused = (await command(book.id, 'save-period', {
+      fiscalYearCode: '2034',
+      startDate: '2034-01-01',
+      endDate: '2034-12-31',
+    })) as { id: string; version: number };
+    expect(reused.id).not.toBe(row.id);
+    const races = await Promise.allSettled([
+      command(book.id, 'delete-period', { id: reused.id }, reused.version),
+      command(book.id, 'delete-period', { id: reused.id }, reused.version),
+    ]);
+    expect(
+      races.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(races.filter((result) => result.status === 'rejected')).toHaveLength(
+      1,
+    );
+  });
+  it('preserves closed, cancelled-journal, moved-journal-history and general-document allocations', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+      where: { legalEntityId: companyA.id },
+    });
+    const allocate = async (year: string) =>
+      (await command(book.id, 'save-period', {
+        fiscalYearCode: year,
+        startDate: `${year}-01-01`,
+        endDate: `${year}-12-31`,
+      })) as { id: string; version: number };
+    const history = await allocate('2037'),
+      used = await allocate('2038'),
+      closed = await allocate('2039'),
+      general = await allocate('2040');
+    await db.accountingPeriod.update({
+      where: { id: closed.id },
+      data: { status: 'CLOSED' },
+    });
+    const type = await db.accountingConfiguration.create({
+      data: {
+        bookId: book.id,
+        kind: 'voucher-types',
+        code: randomUUID(),
+        title: 'Synthetic allocation evidence',
+        attributes: {},
+      },
+    });
+    const journal = await db.accountingJournal.create({
+      data: {
+        bookId: book.id,
+        periodId: used.id,
+        typeId: type.id,
+        makerId: userId,
+        status: 'CANCELLED',
+        description: 'Synthetic retained journal',
+        attributes: {},
+      },
+    });
+    const evidence = await db.accountingCommand.create({
+      data: {
+        bookId: book.id,
+        actorId: userId,
+        action: 'synthetic-move-evidence',
+        key: randomUUID(),
+        hash: '0'.repeat(64),
+        result: {},
+      },
+    });
+    await db.accountingJournalStateEvent.create({
+      data: {
+        bookId: book.id,
+        journalId: journal.id,
+        commandId: evidence.id,
+        actorId: userId,
+        sequence: 1,
+        eventType: 'MOVE',
+        journalVersion: 1,
+        oldPeriodId: history.id,
+        newPeriodId: used.id,
+      },
+    });
+    await db.accountingGeneralDocument.create({
+      data: {
+        bookId: book.id,
+        periodId: general.id,
+        number: 1,
+        documentDate: '2040-01-01',
+        method: 'NONE',
+        makerId: userId,
+      },
+    });
+    for (const period of [history, used, closed, general]) {
+      await expect(
+        command(book.id, 'delete-period', { id: period.id }, period.version),
+      ).rejects.toThrow(
+        'فقط تخصیص سال مالی باز و بدون سابقه مالی قابل حذف است.',
+      );
+      expect(
+        await db.accountingPeriod.findUnique({ where: { id: period.id } }),
+      ).not.toBeNull();
+    }
+    await expect(
+      command(
+        book.id,
+        'save-period',
+        {
+          id: history.id,
+          fiscalYearCode: '2037',
+          startDate: '2037-02-01',
+          endDate: '2037-12-31',
+        },
+        history.version,
+      ),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: { bookId: book.id, oldPeriodId: history.id },
+      }),
+    ).toBe(1);
+  });
 });
