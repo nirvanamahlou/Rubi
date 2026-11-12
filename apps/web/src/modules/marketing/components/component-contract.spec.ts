@@ -17,7 +17,7 @@ it('removes customer journeys from cards and legacy section routing', () => {
   expect(workspaceSource).not.toContain('و سفر مشتری');
 });
 
-it('gives leads and scoring their own hub section, separate from audiences', () => {
+it('shows leads in audiences while retaining the leads and scoring hub', () => {
   expect(
     marketingSections.find((section) => section.key === 'leads')?.title,
   ).toBe('لیدها');
@@ -29,16 +29,14 @@ it('gives leads and scoring their own hub section, separate from audiences', () 
     'segments',
     'campaign-audience',
     'sources',
+    'leads',
   ]);
   expect(workspaceSource).toContain('leads: Target');
-  expect(referencePagesSource).toContain(
-    "section === 'leads' && key === 'leads'",
+  expect(referencePagesSource.replace(/\s+/g, ' ')).toContain(
+    "(section === 'leads' || section === 'audiences') && key === 'leads'",
   );
   expect(referencePagesSource).toContain(
     "section === 'leads' && key === 'scoring'",
-  );
-  expect(referencePagesSource).not.toContain(
-    "section === 'audiences' && key === 'leads'",
   );
   expect(referencePagesSource).not.toContain(
     "section === 'audiences' && key === 'scoring'",
