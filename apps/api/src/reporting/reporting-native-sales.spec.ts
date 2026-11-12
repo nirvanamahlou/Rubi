@@ -326,6 +326,52 @@ describe('native Sales report source and shared preview/export path', () => {
     expect(exported.rows[0]?.sourceValues?.salesAmount).toBe('900 ریال + 20 $');
     expect(exported.columns.map((c) => c.key)).not.toContain('currencyCode');
   });
+  it('pages organization groups in export order without rounding currency totals', async () => {
+    const { client, findMany } = fixture();
+    const [row] = await findMany();
+    findMany.mockResolvedValue(
+      ['9007199254740993.02', '9007199254740993.01', '9007199254740993.03'].map(
+        (amount, index) => ({
+          ...row,
+          id: 'contract-' + index,
+          ownerUserId: 'owner-' + index,
+          priceComponents: [
+            {
+              type: 'BASE',
+              title: 'خدمت',
+              amount: new Prisma.Decimal(amount),
+              currencyCode: 'IRR',
+            },
+            row.priceComponents[2],
+          ],
+        }),
+      ),
+    );
+    const pageQuery = { ...query, page: 2 };
+    const all = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      pageQuery,
+      actor,
+      true,
+    );
+    const preview = await nativeSalesReport(
+      client,
+      'sales_by_organization',
+      pageQuery,
+      actor,
+    );
+    expect(preview.rows).toEqual(all.rows.slice(1, 2));
+    expect(preview.rows[0]).toMatchObject({
+      orderCount: 1,
+      passengerCount: 3,
+      amountsByCurrency: [
+        { currencyCode: 'IRR', amount: '9007199254740993.02' },
+        { currencyCode: 'USD', amount: '20' },
+      ],
+    });
+    expect(preview.total).toBe(3);
+  });
   it('refuses a complete-looking money report for unpriced contracts', async () => {
     const { client, findMany } = fixture();
     const rows = await findMany();

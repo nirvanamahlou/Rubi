@@ -1,3 +1,4 @@
+import { selectReportRows } from './reporting-page';
 import { Prisma } from '@nora/database';
 import type {
   ReportQueryV1,
@@ -34,8 +35,10 @@ export function createOrganizationMultiCurrencyProjection(
   const groups = new Map<
     string,
     {
-      branchId: string;
-      ownerId: string;
+      grainId: string;
+      primaryDimension: string;
+      secondaryDimension: string;
+      passengerCount: number;
       contracts: Map<string, number>;
       money: Map<string, Prisma.Decimal>;
     }
@@ -53,11 +56,14 @@ export function createOrganizationMultiCurrencyProjection(
         ];
     const key = JSON.stringify([primaryId, secondaryId]);
     const g = groups.get(key) ?? {
-      branchId: primaryLabel,
-      ownerId: secondaryLabel,
+      grainId: key,
+      primaryDimension: primaryLabel,
+      secondaryDimension: secondaryLabel,
+      passengerCount: 0,
       contracts: new Map<string, number>(),
       money: new Map<string, Prisma.Decimal>(),
     };
+    g.passengerCount += row.passengerCount - (g.contracts.get(row.id) ?? 0);
     g.contracts.set(row.id, row.passengerCount);
     g.money.set(
       row.currencyCode,
@@ -69,19 +75,63 @@ export function createOrganizationMultiCurrencyProjection(
   };
   const finish = (result: TravelReportResultV1): TravelReportResultV1 => {
     const currencies = currencyOrder([...sourceCurrencies]);
-    const rows = [...groups].map(([key, g]) => {
+    // Mixed currencies cannot be ranked by amount without an approved FX policy.
+    const requestedColumn =
+      query.sort?.column ?? (grouping ? 'orderCount' : 'salesAmount');
+    const column =
+      grouping && ['salesAmount', 'currencyCode'].includes(requestedColumn)
+        ? 'orderCount'
+        : requestedColumn;
+    const zero = new Prisma.Decimal(0);
+    const selected = selectReportRows(
+      groups.values(),
+      groups.size,
+      query,
+      includeAllRows,
+      (a, b) => {
+        let comparison = 0;
+        if (column === 'salesAmount' || column === 'currencyCode') {
+          for (const currency of currencies) {
+            const av = a.money.get(currency) ?? zero;
+            const bv = b.money.get(currency) ?? zero;
+            comparison = av.comparedTo(bv);
+            if (comparison) break;
+          }
+        } else if (column === 'orderCount')
+          comparison = a.contracts.size - b.contracts.size;
+        else if (column === 'passengerCount')
+          comparison = a.passengerCount - b.passengerCount;
+        else
+          comparison = a[
+            column === 'primaryDimension'
+              ? 'primaryDimension'
+              : 'secondaryDimension'
+          ].localeCompare(
+            b[
+              column === 'primaryDimension'
+                ? 'primaryDimension'
+                : 'secondaryDimension'
+            ],
+            'fa',
+          );
+        return (
+          comparison * (query.sort?.direction === 'ASC' ? 1 : -1) ||
+          a.grainId.localeCompare(b.grainId)
+        );
+      },
+    );
+    const rows = selected.map((g) => {
       const amountsByCurrency = currencyOrder([...g.money.keys()]).map(
         (currencyCode) => ({
           currencyCode,
           amount: g.money.get(currencyCode)!.toString(),
         }),
       );
-      const orderCount = g.contracts.size,
-        passengerCount = [...g.contracts.values()].reduce((a, b) => a + b, 0);
-      const primaryDimension = g.branchId,
-        secondaryDimension = g.ownerId;
+      const orderCount = g.contracts.size;
+      const { grainId, primaryDimension, secondaryDimension, passengerCount } =
+        g;
       return {
-        grainId: key,
+        grainId,
         primaryDimension,
         secondaryDimension,
         currencyCode: amountsByCurrency[0]?.currencyCode ?? '',
@@ -105,46 +155,6 @@ export function createOrganizationMultiCurrencyProjection(
             .join(' + '),
         },
       };
-    });
-    // Mixed currencies cannot be ranked by amount without an approved FX policy.
-    const requestedColumn =
-      query.sort?.column ?? (grouping ? 'orderCount' : 'salesAmount');
-    const column =
-      grouping && ['salesAmount', 'currencyCode'].includes(requestedColumn)
-        ? 'orderCount'
-        : requestedColumn;
-    rows.sort((a, b) => {
-      let comparison = 0;
-      if (column === 'salesAmount' || column === 'currencyCode') {
-        for (const currency of currencies) {
-          const av =
-              a.amountsByCurrency.find((m) => m.currencyCode === currency)
-                ?.amount ?? '0',
-            bv =
-              b.amountsByCurrency.find((m) => m.currencyCode === currency)
-                ?.amount ?? '0';
-          comparison = new Prisma.Decimal(av).comparedTo(bv);
-          if (comparison) break;
-        }
-      } else if (column === 'orderCount' || column === 'passengerCount')
-        comparison = a[column] - b[column];
-      else
-        comparison = a[
-          column === 'primaryDimension'
-            ? 'primaryDimension'
-            : 'secondaryDimension'
-        ].localeCompare(
-          b[
-            column === 'primaryDimension'
-              ? 'primaryDimension'
-              : 'secondaryDimension'
-          ],
-          'fa',
-        );
-      return (
-        comparison * (query.sort?.direction === 'ASC' ? 1 : -1) ||
-        a.grainId.localeCompare(b.grainId)
-      );
     });
     return {
       ...result,
@@ -171,13 +181,8 @@ export function createOrganizationMultiCurrencyProjection(
           kind: 'TEXT',
         },
       ],
-      rows: includeAllRows
-        ? rows
-        : rows.slice(
-            (query.page - 1) * query.pageSize,
-            query.page * query.pageSize,
-          ),
-      total: rows.length,
+      rows,
+      total: groups.size,
       ...(grouping
         ? {
             warnings: [

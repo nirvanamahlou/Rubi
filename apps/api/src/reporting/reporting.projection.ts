@@ -1,3 +1,4 @@
+import { selectReportRows } from './reporting-page';
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 
@@ -297,7 +298,32 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
     };
     if (!sortable.has(sort.column as keyof TravelReportRowV1))
       throw new BadRequestException('ستون مرتب‌سازی گزارش مجاز نیست.');
-    const rows = [...groups.values()].map((group) => ({
+    const mixedCurrencies = currencies.size > 1;
+    const selected = selectReportRows(
+      groups.values(),
+      groups.size,
+      input.query,
+      input.includeAllRows ?? false,
+      (left, right) => {
+        const l = left[sort.column as keyof TravelReportRowV1];
+        const r = right[sort.column as keyof TravelReportRowV1];
+        const compared = [
+          'salesAmount',
+          'purchaseAmount',
+          'grossProfit',
+          'refundAmount',
+          'settlementBalance',
+        ].includes(sort.column)
+          ? !mixedCurrencies
+            ? amount(String(l)).comparedTo(amount(String(r)))
+            : left.orderCount - right.orderCount
+          : typeof l === 'number' && typeof r === 'number'
+            ? l - r
+            : String(l).localeCompare(String(r), 'fa');
+        return compared * (sort.direction === 'ASC' ? 1 : -1);
+      },
+    );
+    const rows = selected.map((group) => ({
       grainId: group.grainId,
       primaryDimension: group.primaryDimension,
       secondaryDimension: group.secondaryDimension,
@@ -343,25 +369,6 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
         ),
       },
     }));
-    const mixedCurrencies = currencies.size > 1;
-    rows.sort((left, right) => {
-      const l = left[sort.column as keyof TravelReportRowV1];
-      const r = right[sort.column as keyof TravelReportRowV1];
-      const compared = [
-        'salesAmount',
-        'purchaseAmount',
-        'grossProfit',
-        'refundAmount',
-        'settlementBalance',
-      ].includes(sort.column)
-        ? !mixedCurrencies
-          ? amount(String(l)).comparedTo(amount(String(r)))
-          : left.orderCount - right.orderCount
-        : typeof l === 'number' && typeof r === 'number'
-          ? l - r
-          : String(l).localeCompare(String(r), 'fa');
-      return compared * (sort.direction === 'ASC' ? 1 : -1);
-    });
     const totalsByCurrency = [...totals].map(([currencyCode, money]) => ({
       currencyCode,
       salesAmount: money.salesAmount!,
@@ -371,7 +378,6 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
       settlementBalance: money.settlementBalance!,
     }));
     const generatedAtUtc = now.toISOString();
-    const offset = (input.query.page - 1) * input.query.pageSize;
     return {
       reportCode: input.code,
       reportVersion: 1,
@@ -408,10 +414,8 @@ export function createTravelReportProjection(input: TravelProjectionOptions) {
             ]
           : []),
       ],
-      rows: input.includeAllRows
-        ? rows
-        : rows.slice(offset, offset + input.query.pageSize),
-      total: rows.length,
+      rows,
+      total: groups.size,
       page: input.query.page,
       pageSize: input.query.pageSize,
       previewLimit: MAX_PREVIEW_PAGE_SIZE,
