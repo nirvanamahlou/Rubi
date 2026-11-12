@@ -21,12 +21,14 @@ async function internalRequest<T>(
     {
       method,
       timeoutMs: null,
-      ...(body === undefined
-        ? {}
-        : {
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          }),
+      ...(body instanceof FormData
+        ? { body }
+        : body === undefined
+          ? {}
+          : {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }),
     },
   );
   const result = (await response.json().catch(() => null)) as {
@@ -41,6 +43,18 @@ async function internalRequest<T>(
 }
 export const internalLetters = {
   users: () => internalRequest<CorrespondenceUser[]>('/users'),
+  currentUser: () => internalRequest<CorrespondenceUser>('/me'),
+  async attachment(letterId: string, id: string) {
+    const base = getPublicApiBaseUrl();
+    if (!base) throw new Error('نشانی API پیکربندی نشده است.');
+    const response = await authenticatedFetch(
+      `${base}/correspondence/v1/internal/${encodeURIComponent(letterId)}/attachments/${encodeURIComponent(id)}`,
+      base,
+      { timeoutMs: null },
+    );
+    if (!response.ok) throw new Error('دریافت پیوست نامه انجام نشد.');
+    return response.blob();
+  },
   list: (query: URLSearchParams) =>
     internalRequest<InternalLetterList>(`?${query.toString()}`),
   detail: (id: string) =>
@@ -50,15 +64,25 @@ export const internalLetters = {
     dateISO: string,
     recipientId: string | string[],
     requestKey: string,
-  ) =>
-    internalRequest<{ id: string }>('', 'POST', {
+    addressedUserId?: string,
+    files: readonly File[] = [],
+  ) => {
+    const input = {
       letter,
       dateISO,
       ...(Array.isArray(recipientId)
         ? { recipientIds: recipientId }
         : { recipientId }),
       requestKey,
-    }),
+      addressedUserId,
+    };
+    if (!files.length)
+      return internalRequest<{ id: string }>('', 'POST', input);
+    const form = new FormData();
+    form.append('letter', JSON.stringify(input));
+    files.forEach((file) => form.append('files', file));
+    return internalRequest<{ id: string }>('/with-attachments', 'POST', form);
+  },
   edit: (id: string, version: number, letter: InternalLetterContent) =>
     internalRequest<{ id: string; version: number }>(`/${id}`, 'PATCH', {
       version,

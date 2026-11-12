@@ -1,4 +1,5 @@
 import { localizeDocumentHtml } from '@/i18n/document';
+import { loadEnglishUiCatalog } from '@/i18n/translate';
 import { renderPdfWithSmallOverflowFit } from '@/lib/pdf-overflow-fit';
 import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
@@ -29,6 +30,7 @@ export async function prepareReservationHtml(
 ): Promise<string> {
   void _language; // Keep the existing caller signature; travel forms are English.
   const { fontPath: font } = await resolveTicketPdfRuntime();
+  await loadEnglishUiCatalog();
   let html = localizeDocumentHtml(
     reservationPdfHtml(
       output,

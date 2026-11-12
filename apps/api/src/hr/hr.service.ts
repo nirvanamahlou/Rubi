@@ -2009,7 +2009,7 @@ export class HrService {
       }
     }
   }
-  private compatibleTimeInput(value: unknown, row: RecordRow) {
+  private compatibleRecordInput(value: unknown, row: RecordRow) {
     const legacy =
       row.section === 'time'
         ? (
@@ -2020,7 +2020,9 @@ export class HrService {
               penaltySettings: 6,
             } as Record<string, number>
           )[row.tab]
-        : undefined;
+        : row.section === 'organization' && row.tab === 'branches'
+          ? 5
+          : undefined;
     if (
       legacy !== undefined &&
       Array.isArray(value) &&
@@ -4040,7 +4042,7 @@ export class HrService {
               schema,
               schema.key === 'employee.identity'
                 ? this.compatibleIdentityInput(input.values ?? row.values, row)
-                : this.compatibleTimeInput(input.values ?? row.values, row),
+                : this.compatibleRecordInput(input.values ?? row.values, row),
               employee,
               row.branchId,
               data,

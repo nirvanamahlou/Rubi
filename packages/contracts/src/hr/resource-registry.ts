@@ -1,6 +1,8 @@
 import { HR_ATTENDANCE_CALCULATION_FIELDS_V1 } from './attendance-calculation-fields';
 import { HR_RESOURCE_COLUMNS } from './resource-columns';
 
+export { HR_BRANCH_REGISTRATION_COLUMNS } from './resource-columns';
+
 export type HrResourceKey = keyof typeof HR_RESOURCE_COLUMNS;
 export type HrFieldType =
   'text' | 'date' | 'time' | 'decimal' | 'money' | 'employee' | 'document';

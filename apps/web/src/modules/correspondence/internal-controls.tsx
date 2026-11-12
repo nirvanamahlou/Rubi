@@ -60,6 +60,7 @@ type RecipientDialogProps = {
     description: string,
   ) => Promise<void>;
   forward?: boolean;
+  initialRecipientId?: string;
 };
 export function LetterRecipientDialog(props: RecipientDialogProps) {
   return props.open ? <OpenRecipientDialog {...props} /> : null;
@@ -69,9 +70,12 @@ function OpenRecipientDialog({
   onOpenChange,
   onSubmit,
   forward = false,
+  initialRecipientId,
 }: RecipientDialogProps) {
   const [users, setUsers] = useState<CorrespondenceUser[]>([]);
-  const [recipients, setRecipients] = useState<string[]>([]);
+  const [recipients, setRecipients] = useState<string[]>(
+    initialRecipientId ? [initialRecipientId] : [],
+  );
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<InternalLetterStatus>('APPROVED');
   const [busy, setBusy] = useState(false),
@@ -101,6 +105,13 @@ function OpenRecipientDialog({
       live = false;
     };
   }, [open, retry]);
+  const grouped = new Map<string, CorrespondenceUser[]>();
+  for (const user of users) {
+    const unit = user.unit || 'بدون واحد';
+    const group = grouped.get(unit) ?? [];
+    group.push(user);
+    grouped.set(unit, group);
+  }
   return (
     <Dialog
       open={open}
@@ -164,30 +175,42 @@ function OpenRecipientDialog({
               </p>
             )}
             <div className="max-h-60 space-y-3 overflow-y-auto">
-              {users.map((user) => (
-                <label
-                  key={user.id}
-                  className="flex items-center gap-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={recipients.includes(user.id)}
-                    disabled={
-                      !recipients.includes(user.id) && recipients.length >= 100
-                    }
-                    onChange={(event) =>
-                      setRecipients((current) =>
-                        event.target.checked
-                          ? [...current, user.id]
-                          : current.filter((id) => id !== user.id),
-                      )
-                    }
-                  />
-                  <span>
-                    {user.displayName} ({user.username})
-                  </span>
-                </label>
-              ))}
+              {[...grouped]
+                .sort(([a], [b]) => a.localeCompare(b, 'fa'))
+                .map(([unit, members]) => (
+                  <section
+                    key={unit}
+                    className="space-y-2 border-b pb-3 last:border-0"
+                  >
+                    <h3 className="text-sm font-semibold">{unit}</h3>
+                    {members.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={recipients.includes(user.id)}
+                          disabled={
+                            user.id === initialRecipientId ||
+                            (!recipients.includes(user.id) &&
+                              recipients.length >= 100)
+                          }
+                          onChange={(event) =>
+                            setRecipients((current) =>
+                              event.target.checked
+                                ? [...current, user.id]
+                                : current.filter((id) => id !== user.id),
+                            )
+                          }
+                        />
+                        <span>
+                          {user.displayName} ({user.username})
+                        </span>
+                      </label>
+                    ))}
+                  </section>
+                ))}
             </div>
           </fieldset>
           {forward && (
