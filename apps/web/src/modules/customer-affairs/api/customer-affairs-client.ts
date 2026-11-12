@@ -186,6 +186,31 @@ export const customerAffairsApi = {
     request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     }),
+  hrInboxSeen: () => request<{ data: string[] }>('/workbench/hr-requests/seen'),
+  markHrInboxSeen: (id: string, source: 'hr' | 'workbench') =>
+    request(
+      `/workbench/hr-requests/${encodeURIComponent(id)}/seen?source=${source}`,
+      { method: 'POST' },
+    ),
+  hrInboxForwardRecipients: (id: string, source: 'hr' | 'workbench') =>
+    request<{ data: { id: string; displayName: string; username: string }[] }>(
+      `/workbench/hr-requests/${encodeURIComponent(id)}/forward-recipients?source=${source}`,
+    ),
+  forwardHrInboxRequest: (
+    id: string,
+    input: {
+      source: 'hr' | 'workbench';
+      target: 'tasks' | 'finance';
+      recipientId?: string;
+      message: string;
+    },
+    key: string,
+  ) =>
+    request(`/workbench/hr-requests/${encodeURIComponent(id)}/forward`, {
+      method: 'POST',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(input),
+    }),
   hrWorkbenchRequests: () =>
     request<{
       data: Array<{

@@ -1859,7 +1859,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     expect(edited.attributes.automaticTemplateId).toBe(template.id);
   }, 60000);
   it('generates source revaluation from currency balances and protects its immutable basis', async () => {
-    await db.masterCurrency.upsert({
+    const dollar = await db.masterCurrency.upsert({
       where: { code: 'USD' },
       update: { isActive: true },
       create: {
@@ -1957,7 +1957,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         {},
         maker,
       ),
-    ).toEqual([{ value: 'USD', label: 'Synthetic dollar' }]);
+    ).toEqual([{ value: 'USD', label: dollar.name }]);
     const template = await command<{ id: string }>('save-template', {
       kind: 'REVALUATION',
       sourceForm: 'rahkaran-documents-v1',
@@ -1994,10 +1994,10 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       attributes: { descriptionEn: string };
     }>('document-revaluation-preview', { ...payload, description: '' });
     expect(defaultDescription.description).toBe(
-      'ثبت بابت سند تسعیر ارز Synthetic dollar',
+      `ثبت بابت سند تسعیر ارز ${dollar.name}`,
     );
     expect(defaultDescription.attributes.descriptionEn).toBe(
-      'Conversion Voucher for Synthetic dollar',
+      dollar.englishName ? `Conversion Voucher for ${dollar.englishName}` : '',
     );
     expect(preview.lines.map((line) => [line.debit, line.credit])).toEqual([
       ['100', '0'],
@@ -2040,7 +2040,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
           type: 'rule',
           field: 'revaluationCurrency',
           operator: 'equals',
-          value: 'Synthetic dollar',
+          value: dollar.name,
         }),
       },
       maker,

@@ -1,3 +1,7 @@
+## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
+
+Reservations inbox headers now have pointer/keyboard column resize handles. Keep the initial natural layout until interaction, then freeze measured column widths and change only the target plus total table width; RTL/LTR direction, pointer capture/loss and safe width limits are covered. Widths live only in the mounted table and reset when leaving/reopening, with no storage/API/export changes.47 focused Web/English coverage checks and scoped lint pass; the missing resize label identified by full CI is translated, with latest develop272e65aaf integrated before final validation; isolated real Chrome drag verifies47 headers,80px RTL delta only on the target, unchanged36px rows, refresh retention and reset on reentry with no browser errors; full Web typecheck and exact-head hosted gates precede authorized develop merge. No dependency/schema/data/deployment changes.
+
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
 ## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
@@ -243,6 +247,20 @@ Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## ASSISTANT-REMOVE-NOTICE-1111 — PC-C — READY_FOR_REVIEW
+
+Remove the requested Groq/session disclosure paragraph from the shared Assistant composer, its empty footer wrapper and textarea described-by reference. Send tooltip now uses the existing Send label. Existing conversation, authorization and provider behavior remain unchanged. Bounded UI-only work; no live publication or automatic merge.
+
+Validation:28 existing composer tests, scoped lint, full Web TypeScript and optimized production build pass.
+
+## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
+
+PR1669 repair: the sole conflict was append-only work assignments; retain both blocks. Added10 missing English labels without altering the completeness guard and regenerated both offline consumers.56 integrated Assistant/i18n regressions pass. User now explicitly authorizes merge after all exact-head CI gates succeed; no server deployment.
+
+ASSISTANT-TEXT-SIZE-1111 follow-up: adjacent increase/decrease text controls use labelled icons,14px default and12–24px bounds in2px steps. Floating-only CSS variable changes user/assistant message text without remounting the conversation or changing manual panel geometry.53 focused tests cover both controls, bounds, bilingual labels and existing resize/chat regressions. No API/preferences storage or live publication; same owned review PR1669.
+
+Implemented eight physical edge/corner resize handles, pointer capture/cancel and keyboard arrows (Shift for larger steps), bounded geometry and re-clamping on viewport changes. Removed the expand/restore button; preserve launcher movement, mounted draft/conversation, existing desktop/mobile defaults and actor isolation. Only floating chat message paragraphs use14px. Minimum readable280x300 shrinks to the available viewport; no viewport-specific1915px rule.49 focused tests, scoped ESLint, Web TypeScript and optimized production build pass. No backend/schema/dependency/live-server changes. Source reservation freezes on push and releases at handoff; review PR only, no automatic merge/publication.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -1119,6 +1137,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
+
+## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B
+
+Operational report previews retain only the ranked candidates through the page endpoint and map only displayed rows. Exact source totals, stable tie ordering, source freshness, available filters and full export order are preserved. Source projections still materialize their rows.
 
 ## NATIVE-PAYMENTS-STREAM-1111 — PC-B
 
@@ -9925,6 +9947,9 @@ Employee pay views now support restricted archived evidence with title, date, ar
 
 SYSTEM-ACTIVITY-1110: The System Management landing shows user management and a permission-gated history. The history lists actor, module, action and time from server audit records; authenticated successful write endpoints are captured without payloads or concrete URLs.
 
+## MANIFEST-REMOVE-CODE-BOX-1110
+
+Default PNL export no longer contains the System Acceptable Code form button. Workbook columns, data mapping, help sheets and XLSM project remain unchanged. Focused workbook export checks and hosted CI precede authorized develop merge; no deployment.
 HR-ATTENDANCE-INCENTIVES: HR penalty settings include optional Toman rates for overtime and work deficit. Attendance exposes the exact overtime amount from the effective branch policy and calculated minutes in the list and employee profile. A configured deficit rate replaces the component penalty for that day to avoid duplicate charges. Old six-field settings remain compatible.
 
 WORKBENCH-RECIPIENT-SCOPE: Workbench request recipient discovery and submission resolve active shared unit copies and normalized HR unit names while preserving same-branch internal account and membership checks. Multi-branch Workbench users can select the request branch from their existing access.
@@ -9946,6 +9971,23 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
 
 
+
+NORA-CONTRACT-GUIDE: local implementation of sales guidance and authorized contract read assistance; seven focused tests pass, scoped lint passes. Full diagnostic validation and browser acceptance remain pending.
+
+NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form validation guidance and authenticated contract inspection are implemented. 122 regressions, scoped lint, Web TypeScript and production build pass. Deployed authenticated browser acceptance is pending. See docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
+
+Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.
+
+NORA-CONTRACT-WORKFLOW-GUIDE-1111: 30 source-linked workflow articles, colloquial intent routing, RTL-stable ASCII-arrow paths, guide follow-up context and live-form blocker guidance implemented. 138 assistant regressions and all 3 i18n checks pass. Scoped lint and Web TypeScript pass. No Sales workflow or data mutation. Publication validation pending.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B
+
+HR leave policies support an optional per-request hourly limit in minutes. Existing policies without a limit keep their previous behavior. 61 focused API and Web tests passed.
+
 ## LEDGER-PARITY-1111 — PC-D
 
 The owner requests remaining General Ledger parity with Rahkaran, preserving existing data and using the current source period. Read-only review covers Accounts, Documents, Year-end and 19 report forms; source final-stage/precondition failures remain explicit rather than enabling guessed operations. Company/branch scope now guards completion reads, journal browsing has five historical/statistical views, line reports add version-safe filters/exact foreign totals/full authorized export, and electronic books expose clearly labelled internal output. Current SANAMA/SANA/SAMAD reference codes, real same-book entity/code/account mapping FKs, atomic metadata projection/copy, mapping CAS/replay/audit and non-multiplying posted turnover are implemented. Source formula/control, supplementary handling and unobserved settlement/monthly-aging semantics remain unverified. API/Web typechecks, builds, 86 existing PostgreSQL regressions, 15 current targeted PostgreSQL tests, 19 API/guard unit tests and 166 Web tests passed at the current checkpoints. The existing CI migration job gains an explicitly gated disposable ledger test step; no manual CI/PR/merge or production rollout is authorized for this new unit. Final local API/Web health200 and authenticated clone acceptance passed. The image and additive238th migration are installed only locally; all original326 table fingerprints remain unchanged except migration history235→238. New mapping visual acceptance is limited by the failed browser tool; source final stages remain unverified. See docs/tasks/LEDGER-PARITY-1111.md for the exact completed scope, blocked behaviors and backup evidence.
+
+LEDGER-PARITY-1111 follow-up (2026-11-12): owner authorizes PR1677 to develop and merge after successful hosted checks, with no production rollout. Preserve develop additions and published migration238; repair the HTTP test dependency fixture, seeded-currency expectations and work-assignment formatting identified by hosted CI. Final head checks/review are required before merge.

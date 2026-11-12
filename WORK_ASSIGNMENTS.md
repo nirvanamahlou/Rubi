@@ -1,3 +1,9 @@
+## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
+
+CI follow-up reserves only the new resize-header label in Web en-overrides; no unrelated translation edits. Full-suite failure identified the missing English label; behavior regressions passed. Latest develop272e65aaf is merged before final validation.
+
+Base72f4b1669; codex/pc-a-reservation-column-resize-1110. Owner authorizes drag-resizing Reservations inbox columns, page-visit-only widths and green develop merge. Reserve foundation workspace table integration/CSS, new local resizable table and focused regressions; bounded status notes only. Prior inbox scopes are merged/frozen. Preserve natural initial widths, rows/status/actions, filters and exports. No storage, API, schema, dependency, operational data or deployment changes. Source lease releases on verified merge.
+
 ## RESERVATION-REPORT-MODULE-1110 — PC-A — IN_PROGRESS
 
 Owner requests extracting the issued passenger-services report into an independent Reservation Report module under Reservations, removing its flight-management tab and moving the user-management selection while preserving other names and behavior; develop merge authorized. Reserve new route/report wrapper, navigation/messages, stable IAM report-screen relocation and read prerequisite, report API screen guard and focused tests. Retain the existing screen ID and domain read permission, branch/data/export constraints and all other ticket screens. No migration, permission/data rewrite, dependencies or deployment. Prior services/hotel scope merged in PR1591.
@@ -1330,6 +1336,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 ## HOTEL-CURRENCY-FIELD-ACCESS-1110 (PC-B)
 
 Reserve the hotel currency field in the existing Master Data editable-field catalog and its focused contract regression. Port the source-only local correction. No account grants, schema, dependencies, or server changes.
+
+## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B — READY_FOR_CI
+
+Reserve operational report page assembly, its regression, and extraction of the existing Finance ranking heap. Preserve exact sorting, totals, source metadata and exports.
 
 ## NATIVE-PAYMENTS-STREAM-1111 — PC-B — READY_FOR_CI
 
@@ -12392,6 +12402,10 @@ HR-PAY-DOCS-1110: implementation complete; 28 focused tests, scoped ESLint, Web 
 
 Reserve System Management landing, authenticated write activity capture and read-only history projection. Preserve existing audit permissions. No schema or dependency changes.
 
+## MANIFEST-REMOVE-CODE-BOX-1110 — PC-A — READY_FOR_CI
+
+Remove only the System Acceptable Code button and its VML/control references from the bundled default PNL workbook. Preserve all eleven headers, passenger mapping, Help sheets, VBA project, XLSM format and registered templates. No schema/dependency/deployment. User authorizes develop merge after green checks.
+
 ## HR-ATTENDANCE-INCENTIVES — PC-B — IN_PROGRESS
 
 Reserve HR penalty settings fields and attendance display calculations, additive HR contracts, translations and regression tests. Keep branch and effective-date rules and legacy policies. No schema or dependency change.
@@ -12428,6 +12442,44 @@ Reserve the incoming-letter upload adapter and its test. Return once the file an
 
 Reserve the Documents archive upload entry point, dialog, and focused regressions. Allow authorized file access immediately after upload and keep scan processing asynchronous for archive uploads.
 
+## ASSISTANT-REMOVE-NOTICE-1111 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-remove-notice-1111 from develop06766d707. Reserve Assistant composer only and own notes. Owner requests removing the Groq/session notice shown beneath conversation; remove its empty wrapper and dangling described-by reference, use the ordinary Send tooltip. Prior Assistant and Nora guide scopes merged/released; no active overlap found. No backend/provider, permission, dependency or deployment changes.
+
+28 existing composer regressions, scoped ESLint, full Web TypeScript and optimized production build pass. No new tests for this reversible text-only removal. Source freezes on push and reservation releases at handoff; review PR only.
+
+## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
+
+PR1669 CI/merge follow-up reserves only10 missing English override entries and the two generated offline catalogues. Prior Nora guide translation scope merged/released. Preserve both concurrent work-assignment blocks; no production publication. User explicitly authorizes green-gate merge after repairs.
+
+Follow-up ASSISTANT-TEXT-SIZE-1111 reopens the same owned PR1669: reserve adjacent text-size header controls, floating-only typography variable and focused tests. Default14px, bounded12–24px in2px steps; preserve conversation, draft, manual geometry and account isolation. No overlapping owner found; no backend, dependencies or deployment.
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-resize-1111 from developbb3c0fa37. Reserve floating assistant component/styles, bounded panel resize geometry/hook and regressions, scoped floating message typography and own notes. Owner requests eight-direction manual resizing, removal of expand/restore button and 14px chat messages. Previous Assistant scopes merged/released; no active overlapping owner found. Preserve launcher movement, mounted conversation/draft, close, RTL/LTR and viewport bounds. No API/schema/dependency/production-data changes.
+
+49 focused tests, scoped ESLint, full Web TypeScript and optimized Web production build pass. Source freezes on push and reservation releases after verified merge. Owner subsequently authorizes PR1669 repairs and merge after all CI gates pass; production publication remains excluded. Integrated i18n and Assistant regressions:56 passed; both concurrent work-assignment blocks retained.
+
+NORA-CONTRACT-GUIDE | PC-C | codex/pc-c-nora-contract-guide | Nora read-only sales contract assistance, form context and tests | READY_FOR_REVIEW
+NORA-CONTRACT-GUIDE: seven guide/lookup regressions pass; scoped lint passes. Work remains IN_PROGRESS pending diagnostic validation integration and browser/build acceptance.
+
+NORA-CONTRACT-GUIDE validation: 85 assistant and 37 Sales regressions pass; scoped ESLint, full Web TypeScript and production Web build pass. Read-only form attributes and selected-row identifier are the bounded Sales consumer contract. Nora uses existing authenticated Sales reads, independent currencies and fresh record reads; native help/evidence messages stay outside provider history. No migration. Authenticated deployed-browser acceptance remains unverified. Source freezes on publication; see docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B — READY_FOR_CI
+
+Reserve job title table action icons.
+
+NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels and generated API/standalone English catalogues required by the existing completeness gate. No operational API behavior changes.
+
+## NORA-CONTRACT-WORKFLOW-GUIDE-1111 — PC-C — READY_FOR_CI
+
+Owner requests comprehensive ERP contract workflow guidance, colloquial Persian recognition and arrow navigation paths. Reserve assistant contract guides/form-help/composer and focused regressions, additive English labels and generated catalogues, bounded task/status documentation. Prior guide PR1672 is merged and deployed, its source scope is released. Read-only Nora guidance only; no Sales business workflow, migration, dependency or operational data changes. Base origin/develop a8206946f.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B — READY_FOR_CI
+
+Add a per-request hourly leave limit to HR policy records and validate submissions and approvals.
+
+## HR-REQUEST-FORWARDING-1111 — PC-B — IN_PROGRESS
+
+Connect the HR request center to personal workbench and finance referrals, and persist per-user read state. Reuse existing records and destination permissions.
 
 ## LEDGER-PARITY-1111 — PC-D — IN_PROGRESS
 
@@ -12438,3 +12490,5 @@ LEDGER-PARITY-1111 phase 2 — sole additive Schema/Migration lease reserved by 
 LEDGER-PARITY-1111 bounded CI reservation: .github/workflows/ci.yml gains one opt-in ledger PostgreSQL step after existing shared builds. Four owned Accounting test suites accept only their named local fixtures or CI=true plus the exact loopback nora_ci service and explicit parity-test flag. Existing jobs/gates remain unchanged; no manual hosted dispatch or merge is authorized here. Reserve bounded DATA_MODEL append documenting the new same-book FKs.
 
 LEDGER-PARITY-1111 — VALIDATED_WITH_SOURCE_LIMITS / FROZEN. API/Web typechecks/builds, all changed TypeScript lint, 166 Web tests, 19 API/guard units, 86 existing PostgreSQL regressions and 15 final scoped PostgreSQL cases pass (company cases overlap). Real authenticated QA reads and rejection paths pass; new mapping visual review is unavailable after browser-tool kernel asset failure. Local canonical image is ledger-parity-1111-standards, migration238 applied; all326 original table hashes match except migration history235→238. Existing volume/financial data preserved; synthetic book/year stay only in QA clone. Current-period source blockers and unsupported statutory/settlement/monthly-aging behaviors remain explicit per owner clarification. Source, Schema/Migration and bounded CI locks release on this frozen publication. Commit/push task branch only under standing preference; no PR/merge or Production deployment authorization.
+
+LEDGER-PARITY-1111 CI/review follow-up — PC-D — IN_PROGRESS (2026-11-12). Owner explicitly authorizes hosted CI, PR to develop and merge after all checks pass; no production deployment. PR1677 targets develop. Reserve owned completion HTTP test fixtures, seeded-currency PostgreSQL expectations and bounded task/status notes; resolve only shared-document/translation merge conflicts while preserving both branches. Migration238 is published and remains immutable. No dependency, runtime or data changes are needed. Current task branch absorbs develop124534ee9 without history rewriting.

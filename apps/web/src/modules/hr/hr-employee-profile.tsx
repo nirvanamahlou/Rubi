@@ -48,6 +48,8 @@ import { useHrFormReferences } from './hr-directory-picker';
 interface LeaveBalances {
   employeeId: string;
   year: number;
+  monthlyDailyRemaining?: number | null;
+  monthlyHourlyRemaining?: number;
   items: { type: string; granted: string; used: string; balance: string }[];
 }
 export function HrEmployeeProfile({
@@ -196,7 +198,13 @@ export function HrEmployeeProfile({
           : source.tab === 'leave'
             ? employeeLeaveDataset(selected)
             : recordsDataset(realSource.section, realSource.tab, selected);
-  const pending = records.filter((item) => /انتظار|بررسی/.test(item.status));
+  const pending = records.filter(
+    (item) =>
+      item.employeeId === employee.id &&
+      !item.deletedAt &&
+      (item.section === 'requests' || isEmployeeLeave(item)) &&
+      /انتظار|بررسی/.test(item.status),
+  );
   const rowSelection = useHrRowSelection(
     JSON.stringify([employee.id, source.tab, range]),
   );
@@ -437,14 +445,17 @@ export function HrEmployeeProfile({
           </div>
         ) : null}
         <div className={ui.card}>
-          <span>مرخصی باقی‌مانده</span>
+          <span>مرخصی روزانه باقی‌مانده</span>
           <strong className={ui.metric}>
-            {balances
-              ? balances.items
-                  .reduce((sum, item) => sum + Number(item.balance), 0)
-                  .toLocaleString('fa-IR')
-              : '—'}{' '}
+            {balances?.monthlyDailyRemaining?.toLocaleString('fa-IR') ?? '—'}{' '}
             روز
+          </strong>
+        </div>
+        <div className={ui.card}>
+          <span>مرخصی ساعتی باقی‌مانده</span>
+          <strong className={ui.metric}>
+            {balances?.monthlyHourlyRemaining?.toLocaleString('fa-IR') ?? '—'}{' '}
+            نوبت
           </strong>
         </div>
         <div className={ui.card}>

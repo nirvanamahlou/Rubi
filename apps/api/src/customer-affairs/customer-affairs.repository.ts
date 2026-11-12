@@ -535,11 +535,12 @@ export class CustomerAffairsRepository {
     });
     return { data: { id } };
   }
-  hrWorkbenchRequests(branchIds: string[], userId: string) {
+  hrWorkbenchRequests(branchIds: string[], userId: string, id?: string) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         branchId: { in: branchIds },
         category: { startsWith: 'WORKBENCH_' },
+        ...(id ? { id } : {}),
         OR: ['منابع انسانی', 'سرمایه انسانی', 'اداری'].map((name) => ({
           executionUnit: { contains: name },
         })),

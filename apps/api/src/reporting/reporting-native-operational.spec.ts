@@ -70,6 +70,47 @@ describe('operational dataset, pagination and exact export columns', () => {
     expect(source.rows[0]?.values.allocated).toBe(0);
     expect(preview.sourceDataAsOfUtc).toBe(at.toISOString());
   });
+  it.each(['ASC', 'DESC'] as const)(
+    'matches full export order across %s preview pages, including ties and missing values',
+    (direction) => {
+      const repeated: ReportSource = {
+        ...source,
+        rows: Array.from({ length: 53 }, (_, index) => ({
+          id: String(index % 7),
+          at,
+          updatedAt: new Date(at.getTime() + index),
+          values: {
+            primaryDimension: String(index),
+            allocated: index % 9 === 0 ? 'نامشخص' : (index * 13) % 6,
+            status: index === 52 ? 'LAST' : 'READY',
+          },
+        })),
+      };
+      const sortedQuery = {
+        ...query,
+        sort: { column: 'allocated', direction },
+      };
+      const full = assembleOperationalResult(
+        'ticket_capacity',
+        sortedQuery,
+        actor,
+        repeated,
+        true,
+      );
+      for (const page of [1, 2, 10, 11, 12]) {
+        const preview = assembleOperationalResult(
+          'ticket_capacity',
+          { ...sortedQuery, page },
+          actor,
+          repeated,
+        );
+        expect(preview.rows).toEqual(full.rows.slice((page - 1) * 5, page * 5));
+        expect(preview.total).toBe(53);
+        expect(preview.filterOptions.status).toEqual(['READY', 'LAST']);
+        expect(preview.sourceDataAsOfUtc).toBe(full.sourceDataAsOfUtc);
+      }
+    },
+  );
   it('uses Decimal ordering rather than floating point for money', () => {
     const money: ReportSource = {
       ...source,

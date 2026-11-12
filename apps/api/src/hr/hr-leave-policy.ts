@@ -40,7 +40,7 @@ export function leavePolicyValues(values: readonly string[]): string[] {
     : fields;
 }
 export function parseMonthlyLeavePolicy(values: readonly string[]) {
-  if (![7, 8].includes(values.length)) return null;
+  if (![7, 8, 9].includes(values.length)) return null;
   const v = values.map(digits);
   const dayMinutes = v[7]?.trim() || String(HR_DEFAULT_LEAVE_DAY_MINUTES);
   if (
@@ -62,7 +62,18 @@ export function parseMonthlyLeavePolicy(values: readonly string[]) {
     throw new BadRequestException(
       'نوع مرخصی، سهمیه ماهانه و مهلت ثبت را کامل و معتبر وارد کنید.',
     );
+  const hourlyLimit = v[8]?.trim();
+  if (
+    hourlyLimit &&
+    (!/^\d{1,4}$/.test(hourlyLimit) ||
+      Number(hourlyLimit) < 1 ||
+      Number(hourlyLimit) > 1440)
+  )
+    throw new BadRequestException(
+      'حداکثر مدت مرخصی ساعتی باید بین ۱ و ۱۴۴۰ دقیقه باشد.',
+    );
   return {
+    hourlyLimitMinutes: hourlyLimit ? Number(hourlyLimit) : null,
     type: v[0]!,
     daily: Number(v[1]),
     dayMinutes: Number(dayMinutes),
@@ -107,6 +118,29 @@ export function leaveMonth(date: string) {
   }).formatToParts(new Date(date));
   return `${parts.find((p) => p.type === 'year')!.value}-${parts.find((p) => p.type === 'month')!.value}`;
 }
+function hourlyDurationMinutes(leave: WorkbenchLeaveInputV1) {
+  return (
+    (Date.parse(`${leave.from}T${leave.endTime}:00Z`) -
+      Date.parse(`${leave.from}T${leave.startTime}:00Z`)) /
+    60000
+  );
+}
+
+export function assertHourlyLeaveDuration(
+  leave: WorkbenchLeaveInputV1,
+  policy: NonNullable<ReturnType<typeof parseMonthlyLeavePolicy>>,
+) {
+  const limit = policy.hourlyLimitMinutes;
+  if (
+    leave.mode === 'ساعتی' &&
+    limit != null &&
+    hourlyDurationMinutes(leave) > limit
+  )
+    throw new BadRequestException(
+      `مدت هر نوبت مرخصی ساعتی نباید بیشتر از ${limit} دقیقه باشد.`,
+    );
+}
+
 export function leaveUsage(leave: WorkbenchLeaveInputV1) {
   const usage = new Map<string, number>();
   for (
@@ -116,11 +150,7 @@ export function leaveUsage(leave: WorkbenchLeaveInputV1) {
   ) {
     const date = new Date(at).toISOString().slice(0, 10);
     const amount =
-      leave.mode === 'روزانه'
-        ? 1
-        : (Date.parse(`${date}T${leave.endTime}:00Z`) -
-            Date.parse(`${date}T${leave.startTime}:00Z`)) /
-          3600000;
+      leave.mode === 'روزانه' ? 1 : hourlyDurationMinutes(leave) / 60;
     const month = leaveMonth(date);
     usage.set(month, (usage.get(month) ?? 0) + amount);
   }
@@ -131,6 +161,7 @@ export function assertMonthlyLeaveQuota(
   policy: NonNullable<ReturnType<typeof parseMonthlyLeavePolicy>>,
   previous: WorkbenchLeaveInputV1[],
 ) {
+  assertHourlyLeaveDuration(leave, policy);
   const totals = new Map<string, number>();
   for (const item of previous.filter((p) => p.mode === leave.mode))
     for (const [month, amount] of leaveUsage(item))
@@ -139,4 +170,28 @@ export function assertMonthlyLeaveQuota(
   for (const [month, amount] of leaveUsage(leave))
     if ((totals.get(month) ?? 0) + amount > limit + 0.000001)
       throw new ConflictException('سهمیه ماهانه این نوع مرخصی کافی نیست.');
+}
+
+export const MONTHLY_HOURLY_LEAVE_LIMIT = 4;
+
+export function hourlyLeaveCount(
+  month: string,
+  leaves: WorkbenchLeaveInputV1[],
+) {
+  return leaves.filter(
+    (leave) => leave.mode === 'ساعتی' && leaveUsage(leave).has(month),
+  ).length;
+}
+
+export function assertHourlyLeaveCount(
+  leave: WorkbenchLeaveInputV1,
+  previous: WorkbenchLeaveInputV1[],
+) {
+  if (leave.mode !== 'ساعتی') return;
+  for (const month of leaveUsage(leave).keys()) {
+    if (hourlyLeaveCount(month, previous) >= MONTHLY_HOURLY_LEAVE_LIMIT)
+      throw new ConflictException(
+        'حداکثر چهار نوبت مرخصی ساعتی در ماه مجاز است.',
+      );
+  }
 }

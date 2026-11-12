@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertLeaveDeadline,
+  assertHourlyLeaveDuration,
+  assertHourlyLeaveCount,
   assertMonthlyLeaveQuota,
   leavePolicyValues,
   leaveUsage,
@@ -125,5 +127,51 @@ describe('monthly leave policy', () => {
         [{ ...leave, mode: 'ساعتی', startTime: '09:00', endTime: '15:00' }],
       ),
     ).toThrow();
+  });
+});
+
+it('allows four hourly requests per Persian month across leave types', () => {
+  const hourly = {
+    ...leave,
+    mode: 'ساعتی' as const,
+    startTime: '10:00',
+    endTime: '11:00',
+  };
+  const previous = [hourly, hourly, hourly, hourly];
+  expect(() => assertHourlyLeaveCount(hourly, previous.slice(1))).not.toThrow();
+  expect(() => assertHourlyLeaveCount(hourly, previous)).toThrow();
+  expect(() =>
+    assertHourlyLeaveCount(
+      { ...hourly, from: '2026-12-06', to: '2026-12-06' },
+      previous,
+    ),
+  ).not.toThrow();
+});
+
+describe('hourly leave duration per request', () => {
+  const fields = ['استحقاقی', '2', '8', '1', '0', 'خیر', '0', '465'];
+  const limited = parseMonthlyLeavePolicy([...fields, '۹۰'])!;
+  const hourly = {
+    ...leave,
+    mode: 'ساعتی' as const,
+    startTime: '09:15',
+    endTime: '10:45',
+  };
+
+  it('allows the exact cap and rejects one extra minute at submission and approval', () => {
+    expect(() => assertHourlyLeaveDuration(hourly, limited)).not.toThrow();
+    const tooLong = { ...hourly, endTime: '10:46' };
+    expect(() => assertHourlyLeaveDuration(tooLong, limited)).toThrow(/90/);
+    expect(() => assertMonthlyLeaveQuota(tooLong, limited, [])).toThrow(/90/);
+    expect(() => assertHourlyLeaveDuration(leave, limited)).not.toThrow();
+  });
+
+  it('keeps existing and blank policies uncapped and rejects invalid caps', () => {
+    for (const values of [fields, [...fields, '']]) {
+      const uncapped = parseMonthlyLeavePolicy(values)!;
+      expect(() => assertHourlyLeaveDuration(hourly, uncapped)).not.toThrow();
+    }
+    for (const value of ['0', '1.5', '1441', '-1'])
+      expect(() => parseMonthlyLeavePolicy([...fields, value])).toThrow();
   });
 });

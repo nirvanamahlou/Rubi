@@ -28,13 +28,11 @@ export function useFloatingDrag({
   launcher,
   panel,
   open,
-  expanded,
   english,
 }: {
   launcher: RefObject<HTMLButtonElement | null>;
   panel: RefObject<HTMLElement | null>;
   open: boolean;
-  expanded: boolean;
   english: boolean;
 }) {
   const [placement, setPlacement] = useState<{
@@ -88,15 +86,16 @@ export function useFloatingDrag({
   useLayoutEffect(() => {
     const element = panel.current;
     if (!element) return;
-    if (!position || !open || !launcher.current) {
+    if (!open || !launcher.current) {
       for (const property of ['position', 'left', 'top', 'right', 'bottom']) {
         element.style.removeProperty(property);
       }
       return;
     }
+    const anchor = launcher.current.getBoundingClientRect();
     const point = placeFloatingPanel(
-      position,
-      launcher.current.getBoundingClientRect(),
+      position ?? { x: anchor.left, y: anchor.top },
+      anchor,
       element.getBoundingClientRect(),
       viewport(),
       english,
@@ -109,7 +108,7 @@ export function useFloatingDrag({
       right: 'auto',
       bottom: 'auto',
     });
-  }, [position, open, expanded, english, panel, launcher, viewportRevision]);
+  }, [position, open, english, panel, launcher, viewportRevision]);
 
   const move = (point: FloatingPoint) => {
     const button = launcher.current;

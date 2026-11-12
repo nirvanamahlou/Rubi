@@ -1342,7 +1342,20 @@ export function SalesContractForm() {
               {referenceRefresh.message}
             </p>
           )}
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p
+            data-nora-stage={salesSteps[step]}
+            data-nora-error={
+              error ||
+              (step === 0
+                ? passengerStepError ||
+                  hotelStepError ||
+                  salesRoomPartyError(state)
+                : finalStepError) ||
+              undefined
+            }
+            data-nora-ready={canContinue && !busy ? 'true' : 'false'}
+            className="mt-1 text-xs text-muted-foreground"
+          >
             مرحله {step + 1} از {salesSteps.length} · {salesSteps[step]}
           </p>
         </div>
