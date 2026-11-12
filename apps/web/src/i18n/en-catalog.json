@@ -18062,5 +18062,12 @@
   "مقصدهای تور ترکیبی": "Combined tour destinations",
   "نرخ اتاق باید برای مقصد و تمام شب‌های همان اقامت موجود باشد.": "The room rate must cover its destination and every stay night.",
   "هتل، تاریخ و ترکیب اتاق اقامت‌ها با پکیج منتشرشده مطابقت ندارد.": "Stay hotels, dates and rooms do not match the published package.",
-  "هر باکس یک پکیج کامل است؛ یک هتل از هر مقصد با قیمت مشترک.": "Each box is one complete package: one hotel from each destination with one shared price."
+  "هر باکس یک پکیج کامل است؛ یک هتل از هر مقصد با قیمت مشترک.": "Each box is one complete package: one hotel from each destination with one shared price.",
+  "انتخاب گیرنده": "Select recipient",
+  "پیوست نامه یافت نشد.": "Letter attachment not found.",
+  "حجم یا تعداد پیوست‌ها بیش از حد مجاز است.": "Attachment size or count exceeds the limit.",
+  "حداکثر ۵ پیوست و ۱۰ مگابایت برای هر فایل مجاز است.": "Up to five attachments are allowed, with a limit of 10 MB per file.",
+  "دریافت پیوست نامه انجام نشد.": "Could not download the letter attachment.",
+  "گیرنده را از فهرست کاربران انتخاب کنید.": "Select the recipient from the user list.",
+  "گیرندهٔ نامه باید در فهرست ارسال باشد.": "The letter recipient must be on the delivery list."
 }
