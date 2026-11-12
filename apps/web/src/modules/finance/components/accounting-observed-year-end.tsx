@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 // Only the introduction was accessible in the source. The owner explicitly
-// requested empty later stages, rather than inferred inputs or issuing actions.
+// requested explicitly marked unavailable stages instead of inferred financial operations.
 export function AccountingObservedYearEnd({
   mode,
 }: {
@@ -52,6 +52,12 @@ export function AccountingObservedYearEnd({
         </ol>
       </nav>
       <div role="region" aria-label={steps[step]} className="min-h-80">
+        <p
+          role="status"
+          className="mb-4 border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
+        >
+          مراحل بعدی در راهکاران قابل مشاهده نیست
+        </p>
         {step === 0 ? (
           <>
             <div className="mb-6 flex justify-end">

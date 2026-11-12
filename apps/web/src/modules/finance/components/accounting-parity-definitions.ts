@@ -9,6 +9,8 @@ export type AccountingParitySupport =
   'supported' | 'dependency' | 'source-error';
 export type AccountingParityImplementation =
   | 'coding-standard'
+  | 'standard-mapping'
+  | 'standard-report'
   | 'configuration'
   | 'ledger'
   | 'accounts'
@@ -35,6 +37,8 @@ export type AccountingParityImplementation =
   | 'analytical-report'
   | 'chart-report'
   | 'journal-line-report'
+  | 'journal-browser-report'
+  | 'electronic-book-report'
   | 'tax-reference'
   | 'taxpayer-seller'
   | 'tax-settings'
@@ -79,6 +83,8 @@ const implementationByRoute: Readonly<
   Record<string, AccountingParityImplementation>
 > = {
   'general-ledger/reports/legal-reports/standards': 'coding-standard',
+  'general-ledger/reports/legal-reports/mappings': 'standard-mapping',
+  'general-ledger/reports/legal-reports/report': 'standard-report',
   'general-ledger/reports/legal-reports/lists/standards': 'configuration-list',
   'general-ledger/base-information/fiscal-years': 'configuration',
   'general-ledger/base-information/ledgers': 'ledger',
@@ -105,7 +111,8 @@ const implementationByRoute: Readonly<
   'general-ledger/year-end/opening': 'year-end-opening',
   'general-ledger/year-end/final': 'year-end-final',
   'general-ledger/year-end/nature-adjustment': 'year-end-nature-adjustment',
-  'general-ledger/reports/journal-browser': 'journal-list',
+  'general-ledger/reports/journal-browser': 'journal-browser-report',
+  'general-ledger/reports/electronic-trade-books': 'electronic-book-report',
   'general-ledger/reports/debit-credit-notices': 'statement-list',
   'general-ledger/reports/account-browser': 'turnover-report',
   'general-ledger/reports/trial-balance': 'trial-balance',
@@ -391,7 +398,89 @@ const explicitGaps: readonly AccountingParityCapture[] = [
 ];
 
 const unique = <T>(items: readonly T[]) => [...new Set(items)];
+const uniqueFields = (items: readonly AccountingParityField[]) => {
+  const fields = new Map<string, AccountingParityField>();
+  for (const field of items) {
+    const key = `${field.sourceControlId || field.label}:${field.type}`;
+    const previous = fields.get(key);
+    if (!previous || (previous.disabled && !field.disabled))
+      fields.set(key, field);
+  }
+  return [...fields.values()];
+};
 const definitions = new Map<string, AccountingParityDefinition>();
+const standardCaptures: AccountingParityCapture[] = [
+  {
+    route: 'general-ledger/reports/legal-reports/mappings',
+    title: 'نگاشت کدهای استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / نگاشت کدهای استاندارد',
+    sourcePage:
+      'Financial/CodingStandardManagement/CodingStandardMapingPages/EditView.view',
+    evidenceStatus: 'observed-layout',
+    fields: ['کدینگ استاندارد', 'نسخه پروتکل', 'موجودیت استاندارد'].map(
+      (label) => ({ label, type: 'text', disabled: false }),
+    ),
+    columns: ['کد', 'عنوان'],
+    actions: ['نگاشت', 'حذف نگاشت', 'بارگذاری مجدد'],
+    stage: 'درخت کدها و دو فهرست نگاشت',
+    blocker:
+      'گزینهٔ دارای گردش در این موجودیت تأیید نشد؛ موجودیت‌های غیرحسابی قرارداد مستقل لازم دارند.',
+  },
+  {
+    route: 'general-ledger/reports/legal-reports/report',
+    title: 'گزارش کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / گزارش کدینگ استاندارد',
+    sourcePage: 'Financial/Reports/CodingStandardReportPages/EditView.view',
+    evidenceStatus: 'observed-layout',
+    fields: [
+      'کدینگ استاندارد',
+      'نسخه پروتکل',
+      'از تاریخ',
+      'تا تاریخ',
+      'از دوره مالی',
+      'تا دوره مالی',
+      'نوع سند',
+    ].map((label) => ({ label, type: 'text', disabled: false })),
+    columns: [],
+    actions: ['گزارش'],
+    stage: 'فیلتر گزارش',
+    blocker:
+      'گردش داخلی بر اساس نگاشت فعلی؛ قالب رسمی پروتکل و اسناد متمم تأیید نشده‌اند.',
+  },
+  {
+    route: 'general-ledger/reports/legal-reports/formulas',
+    title: 'فرمول کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / فرمول کدینگ استاندارد',
+    sourcePage:
+      'Financial/CodingStandardManagement/CodingStandardFormulaPages/Edit.aspx',
+    evidenceStatus: 'source-error',
+    fields: [],
+    columns: [],
+    actions: [],
+    stage: 'خطا',
+    blocker:
+      'فرم فرمول در همین دورهٔ راهکاران خطای سمت سرور دارد؛ فرمول حدسی اجرا نمی‌شود.',
+  },
+  {
+    route: 'general-ledger/reports/legal-reports/validation',
+    title: 'صحت سنجی کنترل',
+    sourcePath: 'مالی / دفتر کل / گزارش ها / گزارش های قانونی / صحت سنجی کنترل',
+    sourcePage:
+      'Financial/CodingStandardManagement/CodingStandardFormulaValidationPages/Edit.aspx',
+    evidenceStatus: 'observed-layout',
+    fields: ['کدینگ استاندارد', 'نسخه', 'از تاریخ', 'تا تاریخ'].map(
+      (label) => ({ label, type: 'text', disabled: false }),
+    ),
+    columns: ['عنوان', 'عنوان کدینگ استاندارد', 'نسخه پروتکل'],
+    actions: ['فیلتر'],
+    stage: 'فهرست کنترل‌ها',
+    blocker:
+      'فهرست کنترل‌های منبع خالی است و فرم فرمول خطا دارد؛ تعریف یا اجرای قواعد مشاهده نشده فعال نیست.',
+  },
+];
 for (const capture of [
   ...accountingParitySource1,
   ...accountingParitySource2,
@@ -399,6 +488,7 @@ for (const capture of [
   ...accountingParitySource4,
   ...menuOnlyCaptures,
   ...explicitGaps,
+  ...standardCaptures,
   ...accountingTaxForms
     .filter((form) => form.key === 'parties' || form.key === 'history')
     .map((form): AccountingParityCapture => ({
@@ -460,7 +550,7 @@ for (const capture of [
       ...(capture.sourcePage ? [capture.sourcePage] : []),
     ]),
     evidenceStatus,
-    fields: unique([...(current?.fields ?? []), ...capture.fields]),
+    fields: uniqueFields([...(current?.fields ?? []), ...capture.fields]),
     columns: unique([...(current?.columns ?? []), ...capture.columns]),
     actions: unique([...(current?.actions ?? []), ...capture.actions]),
     blockers: unique([

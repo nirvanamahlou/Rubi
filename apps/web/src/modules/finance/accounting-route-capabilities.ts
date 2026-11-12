@@ -8,6 +8,12 @@ export function accountingRouteCapabilities(
   const { route, implementation, evidenceStatus } = definition;
   const blocked = evidenceStatus === 'source-error';
   const list = route.includes('/lists/');
+  const sourceStageBlocked = [
+    'closing',
+    'opening',
+    'final',
+    'nature-adjustment',
+  ].some((mode) => route === `general-ledger/year-end/${mode}`);
   const draftForms = [
     'taxpayer-system/settings',
     'taxpayer-system/cancellation-invoice',
@@ -30,6 +36,8 @@ export function accountingRouteCapabilities(
         'account-groups',
         'detail-groups',
         'mapping',
+        'coding-standard',
+        'standard-mapping',
         'detail-conversion',
         'journal-edit',
         'template-list',
@@ -38,6 +46,7 @@ export function accountingRouteCapabilities(
       ].includes(implementation));
   const execution =
     !blocked &&
+    !sourceStageBlocked &&
     [
       'journal-edit',
       'journal-review',
@@ -62,6 +71,9 @@ export function accountingRouteCapabilities(
         'analytical-report',
         'chart-report',
         'journal-line-report',
+        'journal-browser-report',
+        'electronic-book-report',
+        'standard-report',
         'journal-list',
         'configuration-list',
       ].includes(implementation) ||
@@ -77,10 +89,11 @@ export function accountingRouteCapabilities(
       route !== 'taxpayer-system/seller-information',
     externalConnected: false as const,
     fullSourceParityVerified: false as const,
-    completeness: blocked
-      ? ('source-blocked' as const)
-      : storage || execution || reporting
-        ? ('partial' as const)
-        : ('evidence-only' as const),
+    completeness:
+      blocked || sourceStageBlocked
+        ? ('source-blocked' as const)
+        : storage || execution || reporting
+          ? ('partial' as const)
+          : ('evidence-only' as const),
   };
 }

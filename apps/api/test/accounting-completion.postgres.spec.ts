@@ -1,3 +1,7 @@
+import {
+  accountingTestUrl,
+  assertAccountingTestDatabase,
+} from './accounting-test-database';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
@@ -5,7 +9,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { AccountingCompletionService } from '../src/finance/accounting/accounting-completion.service';
 import { AccountingTaxpayerService } from '../src/finance/accounting/accounting-taxpayer.service';
 import { AccountingTaxService } from '../src/finance/accounting/accounting-tax.service';
-const url = process.env.ACCOUNTING_COMPLETION_TEST_DATABASE_URL;
+const url = accountingTestUrl('ACCOUNTING_COMPLETION_TEST_DATABASE_URL');
 describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
   let db: DatabaseClient,
     service: AccountingCompletionService,
@@ -27,13 +31,7 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
     ],
   };
   beforeAll(async () => {
-    const target = new URL(url!);
-    if (
-      target.hostname !== '127.0.0.1' ||
-      target.port !== '55442' ||
-      target.pathname !== '/rubi_completion_test'
-    )
-      throw new Error('Dedicated completion test database required');
+    assertAccountingTestDatabase(url!, '55442', 'rubi_completion_test');
     db = createDatabaseClient(url);
     await db.branch.create({
       data: {
@@ -170,6 +168,17 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
     expect(first.debit).toBe('26000000000000000000.26');
     expect(first.credit).toBe(first.debit);
     expect(second.debit).toBe(first.debit);
+    const exported = await service.journalLines(
+      bookId,
+      { periodId, export: 'true' },
+      { ...actor, permissions: [...actor.permissions, 'finance.export'] },
+    );
+    expect(exported.rows).toHaveLength(52);
+    expect(exported.total).toBe(52);
+    expect(exported.debit).toBe(first.debit);
+    await expect(
+      service.journalLines(bookId, { periodId, export: 'true' }, actor),
+    ).rejects.toThrow();
     const filtered = await service.journalLines(
       bookId,
       { periodId, accountId: debitId },
@@ -260,5 +269,173 @@ describe.skipIf(!url)('independent completion on isolated PostgreSQL', () => {
         .decSmallDealsMergeAmount_input,
     ).toBe('50000000000000.0005');
     expect(await tax.save(bookId, 'thresholds', input, actor)).toEqual(saved);
+  });
+  it('counts the original issuer, later editors and reviewers distinctly and drills into the same scoped journals', async () => {
+    const journal = await db.accountingJournal.create({
+      data: {
+        bookId,
+        periodId,
+        makerId: checkerId,
+        documentDate: '2026-03-21',
+        description: 'Synthetic history fixture',
+        version: 3,
+        status: 'APPROVED',
+        approverId: userId,
+        attributes: {},
+        lines: {
+          create: [
+            {
+              position: 0,
+              accountId: debitId,
+              debit: '101',
+              credit: '0',
+              currency: 'USD',
+              foreignAmount: '1.01',
+              rate: '100',
+              attributes: {},
+            },
+            {
+              position: 1,
+              accountId: creditId,
+              debit: '0',
+              credit: '101',
+              currency: 'USD',
+              foreignAmount: '1.01',
+              rate: '100',
+              attributes: {},
+            },
+          ],
+        },
+      },
+    });
+    const creation = await db.accountingCommand.create({
+      data: {
+        bookId,
+        actorId: userId,
+        key: randomUUID(),
+        hash: 'a'.repeat(64),
+        action: 'journal-document-save',
+        result: { id: journal.id, version: 1 },
+      },
+    });
+    await db.accountingJournalStateEvent.create({
+      data: {
+        bookId,
+        journalId: journal.id,
+        commandId: creation.id,
+        actorId: userId,
+        sequence: 0,
+        eventType: 'CREATE',
+        toStatus: 'DRAFT',
+        journalVersion: 1,
+        newPeriodId: periodId,
+        newDocumentDate: '2026-03-21',
+      },
+    });
+    for (const version of [2, 3])
+      await db.accountingCommand.create({
+        data: {
+          bookId,
+          actorId: checkerId,
+          key: randomUUID(),
+          hash: 'b'.repeat(64),
+          action: 'journal-document-save',
+          result: { id: journal.id, version },
+        },
+      });
+    const review = await db.accountingCommand.create({
+      data: {
+        bookId,
+        actorId: userId,
+        key: randomUUID(),
+        hash: 'c'.repeat(64),
+        action: 'journal-approve',
+        result: { id: journal.id },
+      },
+    });
+    await db.accountingJournalStateEvent.create({
+      data: {
+        bookId,
+        journalId: journal.id,
+        commandId: review.id,
+        actorId: userId,
+        sequence: 0,
+        eventType: 'STATUS',
+        fromStatus: 'DRAFT',
+        toStatus: 'APPROVED',
+        journalVersion: 3,
+        oldPeriodId: periodId,
+        newPeriodId: periodId,
+        oldDocumentDate: '2026-03-21',
+        newDocumentDate: '2026-03-21',
+      },
+    });
+    const filter = { periodId, from: '2026-03-21', to: '2026-03-21' };
+    const users = await service.journalBrowser(
+      bookId,
+      { ...filter, axis: 'user', selectedKey: userId },
+      actor,
+    );
+    expect(users.historicalGap).toBe(false);
+    expect(users.rows.find((row) => row.key === userId)).toMatchObject({
+      issued: 1,
+      issuedLines: 2,
+      changed: 0,
+      reviewed: 1,
+    });
+    expect(users.rows.find((row) => row.key === checkerId)).toMatchObject({
+      issued: 0,
+      changed: 1,
+      changedLines: 2,
+      reviewed: 0,
+    });
+    expect(users.documents.map((row) => row.id)).toEqual([journal.id]);
+    expect(users.totalDocuments).toBe(1);
+    const month = await service.journalBrowser(
+      bookId,
+      { ...filter, axis: 'monthly', calendar: 'PERSIAN' },
+      actor,
+    );
+    expect(month.rows[0]).toMatchObject({
+      key: '1405-01',
+      issued: 1,
+      changed: 1,
+      reviewed: 1,
+    });
+    const amount = await service.journalLines(
+      bookId,
+      {
+        ...filter,
+        status: 'APPROVED',
+        currency: 'USD',
+        amountMode: 'FOREIGN',
+        description: 'fixture',
+        descriptionMode: 'endsWith',
+      },
+      actor,
+    );
+    expect(amount).toMatchObject({
+      total: 2,
+      currency: 'USD',
+      debit: '1.01',
+      credit: '1.01',
+    });
+    expect(amount.rows.map((row) => [row.debit, row.credit])).toEqual([
+      ['1.01', '0'],
+      ['0', '1.01'],
+    ]);
+    const legacy = await service.journalBrowser(
+      bookId,
+      { periodId, from: '2026-03-01', to: '2026-03-01' },
+      actor,
+    );
+    expect(legacy.historicalGap).toBe(true);
+    await expect(
+      service.journalBrowser(
+        bookId,
+        { ...filter, axis: 'monthly', calendar: 'PERSIAN' },
+        { ...actor, branchIds: [] },
+      ),
+    ).rejects.toThrow();
   });
 });

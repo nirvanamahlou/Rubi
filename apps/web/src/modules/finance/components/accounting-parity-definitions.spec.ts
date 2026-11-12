@@ -55,18 +55,18 @@ describe('accounting parity evidence controls', () => {
     const failed = accountingParityDefinitions.filter(
       (d) => d.evidenceStatus === 'source-error',
     );
-    expect(failed).toHaveLength(4);
+    expect(failed).toHaveLength(5);
     expect(
       failed.every((d) => d.title !== 'خطا' && d.stages.includes('خطا')),
     ).toBe(true);
   });
   it('publishes the exact support totals used by the executable matrix', () => {
-    expect(accountingParityDefinitions).toHaveLength(93);
+    expect(accountingParityDefinitions).toHaveLength(97);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
       ),
-    ).toHaveLength(54);
+    ).toHaveLength(57);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',
@@ -76,6 +76,6 @@ describe('accounting parity evidence controls', () => {
       accountingParityDefinitions.filter(
         (item) => item.support === 'source-error',
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
   });
 });

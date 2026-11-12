@@ -26,6 +26,7 @@ describe('source-blocked year-end stages', () => {
       expect(html).not.toContain('<select');
       expect(html).not.toContain('کنترل پیش‌نیازها');
       expect(html).not.toContain('حساب دائمی سود و زیان');
+      expect(html).toContain('مراحل بعدی در راهکاران قابل مشاهده نیست');
       expect(run).not.toHaveBeenCalled();
     },
   );
@@ -54,6 +55,7 @@ describe('observed opening and final forms', () => {
       expect(html.includes('صدور سند معکوس تعدیل ماهیت')).toBe(
         mode === 'opening',
       );
+      expect(html).toContain('مراحل بعدی در راهکاران قابل مشاهده نیست');
       expect(run).not.toHaveBeenCalled();
     },
   );

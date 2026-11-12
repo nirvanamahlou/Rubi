@@ -95,6 +95,28 @@ function render(route: string, failed = false) {
 }
 
 describe('prepared accounting screen integration', () => {
+  it('mounts standard mapping and turnover in the authorized book workspace', () => {
+    expect(render('general-ledger/reports/legal-reports/mappings')).toContain(
+      'جستجوی کد استاندارد',
+    );
+    expect(render('general-ledger/reports/legal-reports/report')).toContain(
+      'گردش داخلی اسناد قطعی',
+    );
+    expect(
+      render('general-ledger/reports/legal-reports/mappings', true),
+    ).not.toContain('جستجوی کد استاندارد');
+    const items = accountingNavigationGroups.flatMap((group) =>
+      group.sections.flatMap((section) => section.items),
+    );
+    for (const route of ['mappings', 'report', 'formulas', 'validation'])
+      expect(
+        items.filter(
+          (item) =>
+            item.href ===
+            `/finance/accounting/general-ledger/reports/legal-reports/${route}`,
+        ),
+      ).toHaveLength(1);
+  });
   it('mounts every prepared route with the requested authorized book', () => {
     const routes = accountingParityDefinitions.filter((item) =>
       accountingCompletionRoute(item.route),
@@ -110,6 +132,8 @@ describe('prepared accounting screen integration', () => {
       ),
       'general-ledger/reports/chart-structure',
       'general-ledger/reports/journal-lines',
+      'general-ledger/reports/journal-browser',
+      'general-ledger/reports/electronic-trade-books',
     ]);
     expect(routes.map((r) => r.route).sort()).toEqual([...expected].sort());
     for (const { route } of routes) {

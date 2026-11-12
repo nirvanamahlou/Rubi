@@ -10,7 +10,7 @@ describe('accounting capability scopes', () => {
   it('records every source route without conflating storage and execution', () => {
     expect(
       accountingParityDefinitions.map(accountingRouteCapabilities),
-    ).toHaveLength(93);
+    ).toHaveLength(97);
     expect(capabilities('taxpayer-system/settings')).toMatchObject({
       storage: true,
       execution: false,
@@ -28,7 +28,8 @@ describe('accounting capability scopes', () => {
       completeness: 'partial',
     });
     expect(capabilities('general-ledger/year-end/final')).toMatchObject({
-      execution: true,
+      completeness: 'source-blocked',
+      execution: false,
       storage: false,
     });
     expect(
