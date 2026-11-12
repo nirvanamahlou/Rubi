@@ -1,4 +1,5 @@
 'use client';
+import { MarketingSectionMetrics } from './marketing-section-metrics';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import type {
@@ -1069,13 +1070,16 @@ export function MarketingWorkspace({
               onOpen={setDetailItem}
             />
           ) : section === 'campaigns' ? (
-            <CampaignsPanel
-              segments={segments}
-              revision={campaignRevision}
-              onNotice={setNotice}
-              onOpen={openCampaign}
-              onDetails={setDeclarationsCampaign}
-            />
+            <>
+              <MarketingSectionMetrics section="campaigns" />
+              <CampaignsPanel
+                segments={segments}
+                revision={campaignRevision}
+                onNotice={setNotice}
+                onOpen={openCampaign}
+                onDetails={setDeclarationsCampaign}
+              />
+            </>
           ) : genericSection ? (
             <MarketingReferenceSection
               key={genericSection}

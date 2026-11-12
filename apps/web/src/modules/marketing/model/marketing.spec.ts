@@ -116,7 +116,7 @@ describe('marketing preview model', () => {
       false,
     );
     expect(Object.keys(marketingSectionTabs)).toHaveLength(8);
-    expect(marketingPreviewItems).toHaveLength(21);
+    expect(marketingPreviewItems).toHaveLength(22);
     expect(
       marketingPreviewItems.some(
         (item) => item.section === 'communications' && item.tab === 'scheduled',
