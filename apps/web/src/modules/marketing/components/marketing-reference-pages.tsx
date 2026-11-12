@@ -15,7 +15,6 @@ import {
   Eye,
   FileText,
   Filter,
-  Gauge,
   Link2,
   Mail,
   Megaphone,
@@ -40,9 +39,11 @@ import {
 } from 'lucide-react';
 import type {
   DocumentDetailV1,
+  MarketingLeadActivity,
   DocumentOptionsResponseV1,
 } from '@nora/contracts';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { marketingApi } from '../api/records-client';
 
 import { MarketingContentLibrary } from './marketing-content-library';
 import { MarketingPromotionsPanel } from './marketing-promotions-panel';
@@ -731,8 +732,66 @@ export function MarketingDashboardReference({
 }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [site, setSite] = useState('all');
-  const [channel, setChannel] = useState('all');
+  const [source, setSource] = useState('all');
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    source: 'all',
+  });
+  const [activity, setActivity] = useState<MarketingLeadActivity[] | null>(
+    null,
+  );
+  const [activityError, setActivityError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void marketingApi.leadActivity().then(
+      ({ data }) => {
+        if (active) setActivity(data);
+      },
+      () => {
+        if (active) setActivityError(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran',
+  }).format(new Date());
+  const start =
+    filters.startDate ||
+    new Date(Date.parse(today) - 29 * 86400000).toISOString().slice(0, 10);
+  const end = filters.endDate || today;
+  const points = new Map<string, { leads: number; customers: number }>();
+  let leads = 0,
+    orders = 0,
+    convertedLeads = 0,
+    customers = 0;
+  for (const point of activity ?? []) {
+    if (
+      point.date < start ||
+      point.date > end ||
+      (filters.source !== 'all' && point.source !== filters.source)
+    )
+      continue;
+    leads += point.leads;
+    orders += point.orders;
+    convertedLeads += point.convertedLeads;
+    customers += point.customers;
+    const total = points.get(point.date) ?? { leads: 0, customers: 0 };
+    total.leads += point.leads;
+    total.customers += point.customers;
+    points.set(point.date, total);
+  }
+  const chart = [...points].sort(([a], [b]) => a.localeCompare(b));
+  const span = Math.max(86400000, Date.parse(end) - Date.parse(start));
+  const peak = chart.reduce(
+    (max, [, point]) => Math.max(max, point.leads, point.customers),
+    1,
+  );
+  const count = (value: number) =>
+    activity ? value.toLocaleString('fa-IR') : '—';
   const topCampaigns: readonly PreviewRow[] = [];
   return (
     <section className="grid gap-5 text-right" dir="rtl">
@@ -751,35 +810,22 @@ export function MarketingDashboardReference({
             value={endDate}
           />
         </FormField>
-        <FormField id="dashboard-reference-site" label="سایت">
+        <FormField id="dashboard-reference-source" label="منبع آشنایی">
           <SimpleSelect
-            ariaLabel="انتخاب سایت"
-            onChange={setSite}
+            ariaLabel="منبع آشنایی"
+            onChange={setSource}
             options={[
-              ['all', 'هر دو سایت'],
-              ['main', 'سایت اصلی'],
-              ['second', 'سایت دوم'],
+              ['all', 'همه منابع'],
+              ...[...new Set(activity?.map((point) => point.source))]
+                .sort()
+                .map((value) => [value, value] as const),
             ]}
-            value={site}
-          />
-        </FormField>
-        <FormField id="dashboard-reference-channel" label="کانال">
-          <SimpleSelect
-            ariaLabel="انتخاب کانال"
-            onChange={setChannel}
-            options={[
-              ['all', 'همه کانال‌ها'],
-              ['sms', 'پیامک'],
-              ['email', 'ایمیل'],
-              ['social', 'شبکه اجتماعی'],
-            ]}
-            value={channel}
+            value={source}
           />
         </FormField>
         <Button
-          onClick={() =>
-            onNotice(`فیلتر داشبورد از ${startDate} تا ${endDate} اعمال شد.`)
-          }
+          disabled={!!startDate && !!endDate && startDate > endDate}
+          onClick={() => setFilters({ startDate, endDate, source })}
         >
           <Filter aria-hidden="true" className="size-4" />
           اعمال فیلتر
@@ -802,83 +848,86 @@ export function MarketingDashboardReference({
           },
           {
             label: 'سرنخ جدید',
-            value: '—',
+            value: count(leads),
             icon: UsersRound,
             detail: '',
             tone: 'violet',
           },
           {
             label: 'مشتری جدید',
-            value: '—',
+            value: count(customers),
             icon: UserRound,
             detail: '',
             tone: 'emerald',
           },
           {
-            label: 'فروش منتسب',
-            value: '—',
-            icon: BarChart3,
+            label: 'نرخ تبدیل',
+            value:
+              activity && leads
+                ? (convertedLeads / leads).toLocaleString('fa-IR', {
+                    style: 'percent',
+                    maximumFractionDigits: 1,
+                  })
+                : '—',
+            icon: Target,
             detail: '',
-            tone: 'emerald',
-          },
-          { label: 'نرخ تبدیل', value: '—', icon: Target, detail: '' },
-          {
-            label: 'CAC',
-            value: '—',
-            icon: CircleDollarSign,
-            detail: '',
-            tone: 'amber',
-          },
-          {
-            label: 'ROAS',
-            value: '—',
-            icon: Gauge,
-            detail: '',
-            tone: 'violet',
           },
         ]}
       />
+      {activityError && <p role="alert">دریافت آمار سرنخ‌ها انجام نشد.</p>}
       <div className="grid gap-4 xl:grid-cols-3">
-        <Panel className="xl:col-span-2" title="روند ایجاد سرنخ و فروش منتسب">
+        <Panel className="xl:col-span-2" title="روند سرنخ و مشتری جدید">
           <div className="p-5">
-            <div className="mb-4 flex flex-wrap items-center gap-5 text-xs font-bold">
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="size-2.5 rounded-full bg-blue-500"
-                />
-                سرنخ جدید
-              </span>
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="size-2.5 rounded-full bg-emerald-500"
-                />
-                فروش منتسب
-              </span>
+            <div className="mb-4 flex flex-wrap gap-5 text-xs font-bold">
+              <span className="text-blue-600">سرنخ جدید</span>
+              <span className="text-emerald-700">مشتری جدید</span>
             </div>
             <svg
-              aria-label="روند ۳۰ روز اخیر؛ سرنخ جدید و فروش منتسب"
+              aria-label="روند سرنخ و مشتری جدید"
               className="h-52 w-full"
               role="img"
               viewBox="0 0 700 220"
             >
-              <defs>
-                <linearGradient
-                  id="marketing-leads-area"
-                  x1="0"
-                  x2="0"
-                  y1="0"
-                  y2="1"
-                >
-                  <stop offset="0" stopColor="#3b82f6" stopOpacity="0.22" />
-                  <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
-                </linearGradient>
-              </defs>
               <path
-                className="fill-none stroke-border [stroke-width:1]"
+                className="fill-none stroke-border"
                 d="M20 30H680M20 80H680M20 130H680M20 180H680"
               />
+              {chart.map(([date, point]) => {
+                const x =
+                  24 + ((Date.parse(date) - Date.parse(start)) / span) * 645;
+                return (
+                  <g key={date}>
+                    <title>
+                      {date} · {point.leads} / {point.customers}
+                    </title>
+                    <rect
+                      x={x - 4}
+                      y={180 - (150 * point.leads) / peak}
+                      width="7"
+                      height={(150 * point.leads) / peak}
+                      fill="#2563eb"
+                    />
+                    <rect
+                      x={x + 4}
+                      y={180 - (150 * point.customers) / peak}
+                      width="7"
+                      height={(150 * point.customers) / peak}
+                      fill="#059669"
+                    />
+                  </g>
+                );
+              })}
+              <text x="20" y="205" className="fill-muted-foreground text-xs">
+                {start}
+              </text>
+              <text
+                x="680"
+                y="205"
+                textAnchor="end"
+                className="fill-muted-foreground text-xs"
+              >
+                {end}
+              </text>
             </svg>
           </div>
         </Panel>
@@ -887,9 +936,9 @@ export function MarketingDashboardReference({
             {[
               ['بازدید —', 'w-full'],
               ['مخاطب —', 'w-5/6'],
-              ['سرنخ —', 'w-2/3'],
-              ['سفارش —', 'w-1/2'],
-              ['فروش —', 'w-1/3'],
+              [`سرنخ ${count(leads)}`, 'w-2/3'],
+              [`سفارش ${count(orders)}`, 'w-1/2'],
+              [`مشتری جدید ${count(customers)}`, 'w-1/3'],
             ].map(([label, width], index) => (
               <div
                 className={cn(
@@ -909,15 +958,7 @@ export function MarketingDashboardReference({
         <div className="xl:col-span-2">
           <PreviewTable
             actions={false}
-            columns={[
-              'کمپین',
-              'کانال',
-              'هزینه',
-              'سرنخ',
-              'فروش',
-              'ROAS',
-              'وضعیت',
-            ]}
+            columns={['کمپین', 'کانال', 'هزینه', 'سرنخ', 'فروش', 'وضعیت']}
             onNotice={onNotice}
             onOpen={onOpen}
             exportable={false}

@@ -255,7 +255,6 @@ function seedIntakes() {
     '2026-11-03',
     'WEBSITE',
     'none',
-    'NEW',
     '',
     ['PHONE_VALID'],
     null,
@@ -307,12 +306,17 @@ describe('audience presentation and canonical mutations', () => {
   it('filters intakes by status and source through the shared toolbar', () => {
     seedIntakes();
     const tree = intake();
+    expect(
+      tree
+        .filter((node) => node.type === 'th')
+        .map((node) => node.props.children),
+    ).toEqual(['نام مخاطب', 'شماره تماس', 'منبع آشنایی', 'وضعیت']);
     const toolbar = tree.find((node) => node.type === AudienceToolbar)!;
-    (toolbar.props.onStatus as (value: string) => void)('LOST');
+    (toolbar.props.onStatus as (value: string) => void)('SALE');
     expect(intake().filter((node) => node.type === 'td')).toHaveLength(0);
     (toolbar.props.onStatus as (value: string) => void)('all');
     (toolbar.props.onSource as (value: string) => void)('WEBSITE');
-    expect(intake().filter((node) => node.type === 'td')).toHaveLength(6);
+    expect(intake().filter((node) => node.type === 'td')).toHaveLength(4);
     (toolbar.props.onSource as (value: string) => void)('PHONE');
     expect(intake().filter((node) => node.type === 'td')).toHaveLength(0);
   });
@@ -359,7 +363,7 @@ describe('audience presentation and canonical mutations', () => {
       },
       'branch-1',
     );
-    expect(state.values[17]).toBe(false);
+    expect(state.values[16]).toBe(false);
   });
   it('scores with original rule IDs and displayed CAS version', async () => {
     seedIntakes();
@@ -382,26 +386,26 @@ describe('audience presentation and canonical mutations', () => {
       maskedPhone: `شماره ${index}`,
     }));
     let tree = intake();
-    expect(tree.filter((node) => node.type === 'td')).toHaveLength(150);
+    expect(tree.filter((node) => node.type === 'td')).toHaveLength(100);
     (
       find(tree, 'aria-label', 'صفحه بعد سرنخ‌ها').props.onClick as () => void
     )();
     tree = intake();
-    expect(tree.filter((node) => node.type === 'td')).toHaveLength(6);
+    expect(tree.filter((node) => node.type === 'td')).toHaveLength(4);
     expect(tree.some((node) => node.props.children === 'شماره 25')).toBe(true);
   });
   it('keeps the intake dialog open with server errors and allows correction', async () => {
     seedIntakes();
     state.values[7] = '09123456789';
-    state.values[17] = true;
+    state.values[16] = true;
     state.createIntake.mockRejectedValueOnce(new Error('ثبت مجاز نیست'));
     await (
       find(intake(), 'aria-label', 'ذخیره سرنخ جدید').props
         .onClick as () => Promise<void>
     )();
-    expect(state.values[17]).toBe(true);
-    expect(state.values[22]).toBe('ثبت مجاز نیست');
-    expect(state.values[21]).toBe(false);
+    expect(state.values[16]).toBe(true);
+    expect(state.values[21]).toBe('ثبت مجاز نیست');
+    expect(state.values[20]).toBe(false);
   });
   it('retains segment status, additional rules and CAS on editor save', async () => {
     const segment = {

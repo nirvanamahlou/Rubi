@@ -6173,5 +6173,8 @@
   "مجوز مشاهده کارتابل منابع انسانی وجود ندارد.": "You do not have permission to view the HR inbox.",
   "مدت هر نوبت مرخصی ساعتی نباید بیشتر از": "Each hourly leave request must not exceed",
   "مقصد بازارسال معتبر نیست.": "The forwarding destination is invalid.",
-  "نوع درخواست مبنا معتبر نیست.": "The original request type is invalid."
+  "نوع درخواست مبنا معتبر نیست.": "The original request type is invalid.",
+  "دریافت آمار سرنخ‌ها انجام نشد.": "Could not load lead activity.",
+  "روند سرنخ و مشتری جدید": "Lead and new customer trend",
+  "همه مخاطبان": "All contacts"
 }

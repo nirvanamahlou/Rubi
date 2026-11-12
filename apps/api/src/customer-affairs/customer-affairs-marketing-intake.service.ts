@@ -13,6 +13,8 @@ import type {
   CustomerAffairsMarketingIntakeInputV1,
   CustomerAffairsMarketingIntakeViewV1,
   MarketingSourceCountsResponseV1,
+  MarketingLeadActivity,
+  MarketingLeadStage,
 } from '@nora/contracts';
 import {
   CUSTOMER_AFFAIRS_MARKETING_INTAKE_CONTRACT_VERSION,
@@ -124,12 +126,150 @@ export class CustomerAffairsMarketingIntakeService {
       'customer_affairs.lead.read',
       'marketing.audience.read',
     );
-    const rows =
-      await this.database.client.customerAffairsMarketingIntake.findMany({
-        where: { branchId: { in: actor.branchIds } },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      });
-    return { data: rows.map(present) };
+    const funnel = await this.leadFunnel(actor.branchIds);
+    return {
+      data: funnel.map(({ row, stage }) => ({ ...present(row), stage })),
+    };
+  }
+
+  async leadActivity(actor: AuthenticatedActor) {
+    this.assertPermissions(actor, 'marketing.read');
+    const activity = new Map<string, MarketingLeadActivity>();
+    const customers = new Map<string, { date: Date; source: string }>();
+    const add = (
+      date: Date,
+      source: string,
+      key: 'leads' | 'orders' | 'convertedLeads' | 'customers',
+    ) => {
+      const day = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tehran',
+      }).format(date);
+      const id = JSON.stringify([day, source]);
+      const point = activity.get(id) ?? {
+        date: day,
+        source,
+        leads: 0,
+        orders: 0,
+        convertedLeads: 0,
+        customers: 0,
+      };
+      point[key]++;
+      activity.set(id, point);
+    };
+    for (const {
+      row,
+      customerId,
+      soldAt,
+      orderedAt,
+      firstSale,
+    } of await this.leadFunnel(actor.branchIds)) {
+      const enteredAt = row.entryDate ?? row.createdAt;
+      add(enteredAt, row.sourceCategory, 'leads');
+      if (orderedAt) add(orderedAt, row.sourceCategory, 'orders');
+      if (soldAt) add(enteredAt, row.sourceCategory, 'convertedLeads');
+      if (!customerId || !soldAt || !firstSale) continue;
+      const current = customers.get(customerId);
+      if (!current || soldAt < current.date)
+        customers.set(customerId, { date: soldAt, source: row.sourceCategory });
+    }
+    for (const { date, source } of customers.values())
+      add(date, source, 'customers');
+    return { data: [...activity.values()] };
+  }
+
+  private async leadFunnel(branchIds: string[]) {
+    const db = this.database.client;
+    const rows = await db.customerAffairsMarketingIntake.findMany({
+      where: { branchId: { in: branchIds } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+    if (!rows.length) return [];
+    const fingerprints = [...new Set(rows.map((row) => row.phoneFingerprint))];
+    const contacts = await db.customerContact.findMany({
+      where: { type: 'PHONE', valueFingerprint: { in: fingerprints } },
+      select: { customerId: true, valueFingerprint: true },
+    });
+    const identities = new Map<string, Set<string>>();
+    for (const contact of contacts) {
+      if (!contact.valueFingerprint) continue;
+      const ids = identities.get(contact.valueFingerprint) ?? new Set<string>();
+      ids.add(contact.customerId);
+      identities.set(contact.valueFingerprint, ids);
+    }
+    const contracts = await db.salesContract.findMany({
+      where: {
+        branchId: { in: branchIds },
+        customerId: {
+          in: [...new Set(contacts.map((contact) => contact.customerId))],
+        },
+        status: { not: 'CANCELLED' },
+        hiddenAt: null,
+      },
+      select: {
+        branchId: true,
+        customerId: true,
+        createdAt: true,
+        payments: {
+          where: {
+            status: 'FINANCE_CONFIRMED',
+            amount: { gt: 0 },
+            financeConfirmedAt: { not: null },
+          },
+          orderBy: { financeConfirmedAt: 'asc' },
+          take: 1,
+          select: { financeConfirmedAt: true },
+        },
+      },
+    });
+    const byCustomer = new Map<string, typeof contracts>();
+    const firstPaidAt = new Map<string, number>();
+    for (const contract of contracts) {
+      const key = `${contract.branchId}:${contract.customerId}`;
+      const group = byCustomer.get(key) ?? [];
+      group.push(contract);
+      const paid = contract.payments[0]?.financeConfirmedAt?.getTime();
+      if (
+        paid !== undefined &&
+        paid < (firstPaidAt.get(contract.customerId) ?? Infinity)
+      )
+        firstPaidAt.set(contract.customerId, paid);
+      byCustomer.set(key, group);
+    }
+    return rows.map((row) => {
+      const matches = identities.get(row.phoneFingerprint);
+      const customerId = matches?.size === 1 ? [...matches][0] : undefined;
+      const related = customerId
+        ? (byCustomer.get(`${row.branchId}:${customerId}`) ?? []).filter(
+            (contract) =>
+              contract.createdAt >= (row.entryDate ?? row.createdAt),
+          )
+        : [];
+      const orderedAt = related.reduce<Date | undefined>(
+        (earliest, contract) =>
+          !earliest || contract.createdAt < earliest
+            ? contract.createdAt
+            : earliest,
+        undefined,
+      );
+      const soldAt = related.reduce<Date | undefined>((earliest, contract) => {
+        const paid = contract.payments[0]?.financeConfirmedAt;
+        return paid && (!earliest || paid < earliest) ? paid : earliest;
+      }, undefined);
+      const stage: MarketingLeadStage = soldAt
+        ? 'SALE'
+        : related.length
+          ? 'ORDER'
+          : 'LEAD';
+      return {
+        row,
+        customerId,
+        soldAt,
+        orderedAt,
+        stage,
+        firstSale:
+          !!customerId && soldAt?.getTime() === firstPaidAt.get(customerId),
+      };
+    });
   }
 
   async create(
