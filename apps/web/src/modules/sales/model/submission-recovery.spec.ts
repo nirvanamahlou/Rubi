@@ -8,7 +8,16 @@ vi.mock('../api/client', () => ({
     status = 500;
   },
 }));
-const payload = { branchId: 'example' } as SalesContractCreateRequest;
+const payload: SalesContractCreateRequest = {
+  customerId: 'example',
+  tripType: 'ONE_WAY',
+  originId: 'a',
+  destinationId: 'b',
+  departureDate: '2026-11-12',
+  services: [],
+  passengers: [],
+  priceComponents: [],
+};
 afterEach(() => vi.resetAllMocks());
 it('recovers an acknowledged server record after the create response was lost, without submitting again', async () => {
   const memory: { current: Attempt | null } = { current: null };
@@ -39,7 +48,7 @@ it('refuses a different payload while the previous write remains unresolved', as
   vi.mocked(salesApi.submissionStatus).mockResolvedValue({ data: null });
   await expect(submitOrRecover(payload, null, memory)).rejects.toThrow();
   await expect(
-    submitOrRecover({ ...payload, branchId: 'different' }, null, memory),
+    submitOrRecover({ ...payload, customerId: 'different' }, null, memory),
   ).rejects.toThrow();
   expect(salesApi.create).toHaveBeenCalledTimes(1);
 });
