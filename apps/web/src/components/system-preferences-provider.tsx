@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -86,7 +87,7 @@ export function SystemPreferencesProvider({
   const [personalLanguage, setPersonalLanguage] =
     useState<DisplayLanguage | null>(initialLanguage);
   const setLanguage = useCallback((language: DisplayLanguage) => {
-    setPersonalLanguage(language);
+    startTransition(() => setPersonalLanguage(language));
     persistDisplayLanguage(language, browserLanguageStorage());
     window.dispatchEvent(
       new CustomEvent(displayLanguageChangedEvent, { detail: language }),
@@ -100,24 +101,30 @@ export function SystemPreferencesProvider({
     const worktime = await systemManagementApi
       .resolveSetting('general', 'worktime')
       .catch(() => null);
-    setPreferences(resolveSystemPreferences(locale?.value, worktime?.value));
+    startTransition(() =>
+      setPreferences(resolveSystemPreferences(locale?.value, worktime?.value)),
+    );
   }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setPersonalLanguage(
-        readDisplayLanguage(browserLanguageStorage()) ?? initialLanguage,
+      startTransition(() =>
+        setPersonalLanguage(
+          readDisplayLanguage(browserLanguageStorage()) ?? initialLanguage,
+        ),
       );
       void load();
     }, 0);
     const reload = () => void load();
     const languageChanged = (event?: Event) =>
-      setPersonalLanguage(
-        parseDisplayLanguage(
-          event instanceof CustomEvent ? event.detail : null,
-        ) ??
-          readDisplayLanguage(browserLanguageStorage()) ??
-          initialLanguage,
+      startTransition(() =>
+        setPersonalLanguage(
+          parseDisplayLanguage(
+            event instanceof CustomEvent ? event.detail : null,
+          ) ??
+            readDisplayLanguage(browserLanguageStorage()) ??
+            initialLanguage,
+        ),
       );
     const storageChanged = (event: StorageEvent) => {
       if (event.key === displayLanguageStorageKey || event.key === null)

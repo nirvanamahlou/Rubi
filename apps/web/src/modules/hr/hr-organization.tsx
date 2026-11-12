@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
 import { HrCompanyCreate } from './hr-company-create';
-import type { HrRecordDto } from '@nora/contracts';
+import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import { OrganizationChart, type OrganizationNode } from './organization-chart';
 import { HrButton, HrConfirmDelete, HrPanel, HrTabs } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
@@ -13,7 +13,83 @@ import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
 import styles from './hr-forms.module.css';
 import { useHrReferenceData } from './hr-reference-data';
+import { normalizeHrText } from './hr-data-utils';
 import { HrLoading } from './hr-controls';
+
+const headquarters = 'دفتر مرکزی';
+const ignoreReadOnlyChartAction = () => {};
+
+export function buildHeadquartersChart(
+  employees: readonly HrEmployeeDto[],
+): OrganizationNode[] {
+  const normalize = (value: string) =>
+    normalizeHrText(value).replace(/[\s‌]+/g, '');
+  const active = employees.filter((employee) => employee.status === 'فعال');
+  const findEmployee = (name: string) => {
+    const matches = active.filter((employee) =>
+      normalize(employee.name).startsWith(normalize(name)),
+    );
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  const ceo = findEmployee('دانیال الطافی');
+  const salesLead = findEmployee('مهسا اعلایی');
+  const node = (
+    id: string,
+    name: string,
+    kind: OrganizationNode['kind'],
+    parentId: string | null,
+    manager = '',
+  ): OrganizationNode => ({
+    id,
+    name,
+    kind,
+    parentId,
+    manager,
+    branch: headquarters,
+    positionCapacity: 0,
+    effectiveFrom: '',
+    status: 'فعال',
+    mutable: false,
+  });
+  const employeeNode = (
+    employee: HrEmployeeDto,
+    parentId: string,
+    position = employee.position,
+  ) => node(employee.id, employee.name, 'EMPLOYEE', parentId, position);
+  const nodes = [
+    node('headquarters', headquarters, 'MANAGEMENT', null),
+    node('headquarters-management', 'مدیریت', 'UNIT', 'headquarters'),
+  ];
+  if (ceo) nodes.push(employeeNode(ceo, 'headquarters-management', 'مدیرعامل'));
+
+  for (const unit of [
+    'حسابداری',
+    'هوش مصنوعی',
+    'رزرواسیون',
+    'منابع انسانی',
+    'مهاجرت',
+    'فروش',
+  ]) {
+    const unitId = `headquarters-${unit}`;
+    const aliases = unit === 'حسابداری' ? [unit, 'مالی'] : [unit];
+    const members = active.filter(
+      (employee) =>
+        employee.id !== ceo?.id &&
+        employee.id !== salesLead?.id &&
+        aliases.some((alias) => normalize(employee.unit) === normalize(alias)),
+    );
+    nodes.push(
+      node(unitId, unit, 'UNIT', ceo?.id ?? 'headquarters-management'),
+    );
+    if (unit === 'فروش' && salesLead)
+      nodes.push(employeeNode(salesLead, unitId, 'مدیر فروش'));
+    for (const member of members) {
+      const parentId = unit === 'فروش' ? (salesLead?.id ?? unitId) : unitId;
+      nodes.push(employeeNode(member, parentId));
+    }
+  }
+  return nodes;
+}
 
 export function buildLiveOrganizationNodes(
   records: readonly HrRecordDto[],
@@ -265,7 +341,7 @@ export function HrOrganization({
   const [group, setGroup] = useState(
     initialTab === 'positions' ? 'jobs' : 'structure',
   );
-  const [view, setView] = useState(initialTab ?? 'orgchart');
+  const [view, setView] = useState(initialTab ?? 'headquarters');
   const [removing, setRemoving] = useState<HrRecordDto | null>(null);
   const references = useHrReferenceData(store);
   const data = references.data;
@@ -301,7 +377,7 @@ export function HrOrganization({
         value={group}
         onChange={(id) => {
           setGroup(id);
-          setView(id === 'structure' ? 'orgchart' : 'positions');
+          setView(id === 'structure' ? 'headquarters' : 'positions');
         }}
       />
       <HrTabs
@@ -309,7 +385,8 @@ export function HrOrganization({
         items={
           group === 'structure'
             ? [
-                { id: 'orgchart', label: 'چارت سازمانی' },
+                { id: 'headquarters', label: 'چارت دفتر مرکزی' },
+                { id: 'orgchart', label: 'چارت دستی' },
                 { id: 'branches', label: 'شعبه‌ها' },
                 { id: 'units', label: 'واحدها' },
                 { id: 'groups', label: 'گروه‌های کارکنان' },
@@ -320,7 +397,26 @@ export function HrOrganization({
         value={view}
         onChange={setView}
       />
-      {view === 'orgchart' ? (
+      {view === 'headquarters' ? (
+        <HrPanel title="چارت سازمانی دفتر مرکزی">
+          {references.loading ? (
+            <HrLoading label="در حال دریافت چارت…" />
+          ) : references.error ? (
+            <p role="alert" className={ui.error}>
+              {references.error}
+            </p>
+          ) : (
+            <div className={styles.orgViewport}>
+              <OrganizationChart
+                nodes={buildHeadquartersChart(data.employees)}
+                editable={false}
+                onEdit={ignoreReadOnlyChartAction}
+                onDelete={ignoreReadOnlyChartAction}
+              />
+            </div>
+          )}
+        </HrPanel>
+      ) : view === 'orgchart' ? (
         <HrPanel
           title="چارت سازمانی"
           actions={

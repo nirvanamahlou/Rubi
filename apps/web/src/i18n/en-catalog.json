@@ -18069,5 +18069,12 @@
   "حداکثر ۵ پیوست و ۱۰ مگابایت برای هر فایل مجاز است.": "Up to five attachments are allowed, with a limit of 10 MB per file.",
   "دریافت پیوست نامه انجام نشد.": "Could not download the letter attachment.",
   "گیرنده را از فهرست کاربران انتخاب کنید.": "Select the recipient from the user list.",
-  "گیرندهٔ نامه باید در فهرست ارسال باشد.": "The letter recipient must be on the delivery list."
+  "گیرندهٔ نامه باید در فهرست ارسال باشد.": "The letter recipient must be on the delivery list.",
+  "چارت دستی": "Manual chart",
+  "چارت دفتر مرکزی": "Headquarters chart",
+  "چارت سازمانی دفتر مرکزی": "Headquarters organization chart",
+  "دانیال الطافی": "Danial Altafi",
+  "مهاجرت": "Immigration",
+  "مهسا اعلایی": "Mahsa Alaei",
+  "هوش مصنوعی": "Artificial intelligence"
 }

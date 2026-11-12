@@ -1381,6 +1381,10 @@ Reserve fallback report fact reads, projection consumer, and regression tests. K
 
 Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
 
+## FINANCE-LATEST-HANDOFFS-1111 — PC-B — IN_PROGRESS
+
+Reserve the Procurement invoice queue read and Finance inbox projection. Preserve branch scope, eligible handoff states, existing source ordering and legacy queue output.
+
 ## PROCUREMENT-FINANCE-SOURCE-PAGES-1110 (PC-B)
 
 Reserve Procurement invoice and correction reads, Sales receipt reads, their shared database paging helper, Finance export warning and focused regressions. Preserve branch, status, order and DTOs. No schema, dependencies or deployment.
@@ -2516,6 +2520,10 @@ Reserve a paged Promotions read endpoint, additive query and response types, the
 - Branch: `codex/pc-a-hotel-rate-room-capacity-0920` از `origin/develop@7e52d309`؛ محدوده شامل Reservations hotel-rate API/Web، Public Projection، کنترل ظرفیت Sales، Master Data public room reference، Prisma/Migration افزایشی، تست‌ها و اسناد همین Task است.
 - قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
 - نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
+
+## I18N-CATALOG-TRANSFER-1111 — PC-B — READY_FOR_CI
+
+Reserve the English UI catalog loader, provider and explicit English import and rendering entry points. Keep Persian startup synchronous and verify English rendering, metadata and generated documents.
 
 ## I18N-STARTUP-1110 — PC-B — IN_PROGRESS
 

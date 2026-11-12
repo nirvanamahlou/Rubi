@@ -271,16 +271,8 @@ export class FinanceInboxService {
       ticketResult.status === 'fulfilled'
         ? ticketResult.value.states
         : new Map();
-    const invoiceItems = [
-      ...new Map(
-        (invoiceResult.status === 'fulfilled'
-          ? [...invoiceResult.value.items].sort(
-              (a, b) => a.sourceVersion - b.sourceVersion,
-            )
-          : []
-        ).map((item) => [item.sourceId, item] as const),
-      ).values(),
-    ];
+    const invoiceItems =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value.items : [];
     const correctionItems =
       correctionResult.status === 'fulfilled' ? correctionResult.value : [];
     const financeBySource =
@@ -291,8 +283,28 @@ export class FinanceInboxService {
           branchId: { in: actor.branchIds },
           AND: [(await this.companyScope?.operationalWhere(actor)) ?? {}],
         },
-        include: {
-          revisions: { orderBy: { version: 'desc' }, take: 1 },
+        select: {
+          id: true,
+          branchId: true,
+          requesterId: true,
+          kind: true,
+          hrRecordId: true,
+          reference: true,
+          title: true,
+          party: true,
+          description: true,
+          amount: true,
+          currencyCode: true,
+          status: true,
+          dueAt: true,
+          createdAt: true,
+          sourceVersion: true,
+          version: true,
+          revisions: {
+            orderBy: { version: 'desc' },
+            take: 1,
+            select: { cumulativePaid: true, remainingAmount: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
       });

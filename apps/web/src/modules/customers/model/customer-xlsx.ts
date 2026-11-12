@@ -1,5 +1,5 @@
 import { browserDisplayLanguage } from '@/i18n/language';
-import { translateUiText } from '@/i18n/translate';
+import { loadEnglishUiCatalog, translateUiText } from '@/i18n/translate';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 export const CUSTOMER_IMPORT_TEMPLATE_VERSION = 'customers-person-v2';
@@ -364,6 +364,14 @@ export async function parseCustomerXlsx(file: File) {
     return values;
   });
   const [headers = [], ...data] = rows;
+  if (
+    headers.some(
+      (header) =>
+        header.trim() &&
+        !customerImportHeaders.some((source) => source === header.trim()),
+    )
+  )
+    await loadEnglishUiCatalog();
   const positions = new Map(
     headers.map((header, index) => [
       customerImportHeaders.find(

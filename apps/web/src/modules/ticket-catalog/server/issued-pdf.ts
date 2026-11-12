@@ -1,4 +1,5 @@
 import { localizeDocumentHtml } from '@/i18n/document';
+import { loadEnglishUiCatalog } from '@/i18n/translate';
 import type { DisplayLanguage } from '@/i18n/language';
 import { reportGregorianTime } from '../model/report-time';
 import { execFile } from 'node:child_process';
@@ -116,6 +117,7 @@ export async function renderIssuedPdf(
     const font = await readFile(
       join(process.cwd(), 'public/fonts/vazirmatn-arabic-wght-normal.woff2'),
     );
+    if (language === 'en') await loadEnglishUiCatalog();
     const html = localizeDocumentHtml(
       issuedPrintHtml(snapshot, font.toString('base64'), language),
       language,
