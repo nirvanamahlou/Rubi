@@ -1805,6 +1805,20 @@ export function SalesContractForm() {
                   </div>
                 ) : null}
                 {step === 0 &&
+                  (state.tour || state.serviceKinds.includes('TOUR')) && (
+                    <SalesTourPicker
+                      refreshRevision={referenceRefresh.revision}
+                      state={state}
+                      countries={references.countries}
+                      cities={references.cities}
+                      hotels={references.hotels}
+                      onChange={(next) => {
+                        setState(next);
+                      }}
+                    />
+                  )}
+                {step === 0 &&
+                !state.serviceKinds.includes('TOUR') &&
                 !usesRoomDrivenGuests(state) &&
                 state.serviceKinds.some(
                   (k) => k !== 'HOTEL' && k !== 'VISA',
@@ -2094,18 +2108,6 @@ export function SalesContractForm() {
                                 حذف تور
                               </Button>
                             </div>
-                          )}
-                          {activeDetail === 'TOUR' && (
-                            <SalesTourPicker
-                              refreshRevision={referenceRefresh.revision}
-                              state={state}
-                              countries={references.countries}
-                              cities={references.cities}
-                              hotels={references.hotels}
-                              onChange={(next) => {
-                                setState(next);
-                              }}
-                            />
                           )}
                           {activeDetail === 'INSURANCE' ? (
                             <SalesInsurancePicker
