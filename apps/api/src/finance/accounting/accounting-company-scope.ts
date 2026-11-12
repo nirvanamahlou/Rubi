@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import type {
   AccountingLedgerCompanyV1,
@@ -17,6 +18,22 @@ export class AccountingCompanyScope {
     @Inject(LegalEntitiesService)
     private readonly entities: LegalEntitiesService,
   ) {}
+
+  /** Reused by report and diagnostic endpoints as well as financial commands. */
+  async assertBook(
+    book: { legalEntityId?: string | null },
+    actor: AuthenticatedActor,
+    allowUnassigned = false,
+  ) {
+    const scope = await this.current(actor);
+    if (
+      !scope.isAggregate &&
+      book.legalEntityId !== scope.company?.id &&
+      !(allowUnassigned && !book.legalEntityId)
+    )
+      throw new NotFoundException('دفتر حسابداری در شرکت فعال در دسترس نیست.');
+    return scope;
+  }
 
   async current(actor: AuthenticatedActor, requireSingle = false) {
     const [{ data: context }, { data: entities }] = await Promise.all([

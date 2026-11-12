@@ -1,21 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { AccountingStandardCodes } from './accounting-standard-mapping';
 import { accountingApi } from '../api/accounting-api';
 import type {
   AccountingConfigurationV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
-import {
-  Copy,
-  FolderOpen,
-  Plus,
-  Search,
-  Trash2,
-  Pencil,
-  Unlink,
-  RefreshCw,
-} from 'lucide-react';
+import { Copy, FolderOpen, Plus, Search, Trash2 } from 'lucide-react';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import {
@@ -112,6 +104,10 @@ export function AccountingCodingStandard({
   const [notes, setNotes] = useState(() =>
     parseSetupNotes(initialRecord?.attributes.notes),
   );
+  const [copySource, setCopySource] = useState<{
+    id: string;
+    version: number;
+  } | null>(null);
   const [tab, setTab] = useState('main');
   const [subtab, setSubtab] = useState('entities');
   const [opening, setOpening] = useState(false);
@@ -123,6 +119,7 @@ export function AccountingCodingStandard({
   const readonly = busy || reloading || selected?.attributes.isSystem === true;
   const adopt = (row: AccountingConfigurationV1 | null) => {
     setSelected(row);
+    setCopySource(null);
     setDraft(initial(row));
     setNotes(parseSetupNotes(row?.attributes.notes));
     setSelectedRow('');
@@ -144,6 +141,12 @@ export function AccountingCodingStandard({
       {
         ...(selected ? { id: selected.id } : {}),
         kind: 'coding-standards',
+        ...(copySource
+          ? {
+              copySourceId: copySource.id,
+              copySourceVersion: copySource.version,
+            }
+          : {}),
         title: draft.title,
         titleEn: draft.titleEn,
         attributes: {
@@ -258,13 +261,13 @@ export function AccountingCodingStandard({
           shortcut="Alt+Shift+C"
           disabled={busy || !selected}
           onClick={() => {
+            setCopySource(
+              selected ? { id: selected.id, version: selected.version } : null,
+            );
             setSelected(null);
             setDraft((old) => ({
               ...old,
-              entities: old.entities.map((r) => ({
-                ...r,
-                id: crypto.randomUUID(),
-              })),
+              entities: old.entities.map((r) => ({ ...r })),
               extraFields: old.extraFields.map((r) => ({
                 ...r,
                 id: crypto.randomUUID(),
@@ -588,66 +591,22 @@ export function AccountingCodingStandard({
             {subtab === 'entities' && (
               <fieldset className="min-h-80 border p-1">
                 <legend className="px-1 text-xs">کدهای استاندارد</legend>
-                <div
-                  role="tree"
-                  aria-label="کدهای استاندارد"
-                  className="min-h-80"
-                />
-                <div
-                  className="flex justify-end gap-1 border-t pt-1"
-                  data-document-shortcut-scope
-                >
-                  <DocumentIconAction
-                    label="جدید — کد استاندارد"
-                    shortcut="Alt+Shift+I"
-                    disabled={busy}
-                    onClick={() =>
-                      setReloadError('ابتدا یک نود را انتخاب کنید.')
-                    }
-                  >
-                    <Plus className="size-3" />
-                  </DocumentIconAction>
-                  <DocumentIconAction
-                    label="ویرایش کد استاندارد"
-                    shortcut="Alt+Shift+J"
-                    disabled
-                    onClick={() => {}}
-                  >
-                    <Pencil className="size-3" />
-                  </DocumentIconAction>
-                  <DocumentIconAction
-                    label="حذف کد استاندارد"
-                    shortcut="Alt+Shift+K"
-                    disabled
-                    onClick={() => {}}
-                  >
-                    <Trash2 className="size-3" />
-                  </DocumentIconAction>
-                  <DocumentIconAction
-                    label="حذف نگاشت‌ها"
-                    shortcut="Alt+Shift+U"
-                    disabled
-                    onClick={() => {}}
-                  >
-                    <Unlink className="size-3" />
-                  </DocumentIconAction>
-                  <DocumentIconAction
-                    label="بارگذاری مجدد کدهای استاندارد"
-                    shortcut="Alt+Shift+L"
-                    disabled={busy}
-                    onClick={() =>
-                      void refresh().catch((error: unknown) =>
-                        setReloadError(
-                          error instanceof Error
-                            ? error.message
-                            : 'بارگذاری ناموفق بود.',
-                        ),
-                      )
-                    }
-                  >
-                    <RefreshCw className="size-3" />
-                  </DocumentIconAction>
-                </div>
+                {selected && selectedRow ? (
+                  <AccountingStandardCodes
+                    key={`${selected.id}:${selected.version}:${selectedRow}`}
+                    bookId={book.book.id}
+                    standardId={selected.id}
+                    rowId={selectedRow}
+                    readonly={!!readonly}
+                    run={run}
+                  />
+                ) : (
+                  <div
+                    role="tree"
+                    aria-label="کدهای استاندارد"
+                    className="min-h-80"
+                  />
+                )}
               </fieldset>
             )}
           </div>

@@ -27,6 +27,27 @@ const line = (
   foreignAmount: currency ? (debit === '0' ? credit : debit) : null,
 });
 describe('I09–I14 internal report engine', () => {
+  it('groups by Persian months when requested and preserves the existing Gregorian API default', () => {
+    const rows = [
+      line('before', '2026-03-20', '9007199254740993.01', '0'),
+      line('after', '2026-03-21', '0', '0.01'),
+    ];
+    expect(
+      aggregateInternalReport(rows, ['month'], '2026-01-01').rows,
+    ).toHaveLength(1);
+    const result = aggregateInternalReport(
+      rows,
+      ['month'],
+      '2026-01-01',
+      'PERSIAN',
+    );
+    expect(
+      result.rows.map((row) => [row.dimensions.month, row.debit, row.credit]),
+    ).toEqual([
+      ['1404-12', '9007199254740993.01', '0'],
+      ['1405-01', '0', '0.01'],
+    ]);
+  });
   it('preserves opening, base totals, source grain and separate foreign currencies', () => {
     const result = aggregateInternalReport(
       [

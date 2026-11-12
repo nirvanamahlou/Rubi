@@ -2,6 +2,8 @@
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 
 import { AccountingCodingStandard } from './accounting-coding-standard';
+import { AccountingStandardMapping } from './accounting-standard-mapping';
+import { AccountingStandardReport } from './accounting-standard-report';
 import { accountingBookId } from '../accounting-book-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FolderOpen, FileText } from 'lucide-react';
@@ -484,6 +486,23 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         refresh={refresh}
       />
     );
+  else if (
+    snapshot &&
+    section === 'general-ledger/reports/legal-reports/mappings'
+  )
+    content = (
+      <AccountingStandardMapping
+        key={bookId}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/reports/legal-reports/report'
+  )
+    content = <AccountingStandardReport key={bookId} book={snapshot} />;
   else if (snapshot && section === 'dashboard')
     content = <AccountingDashboard key={bookId} book={snapshot} />;
   else if (snapshot && section === 'taxpayer-system/settings')

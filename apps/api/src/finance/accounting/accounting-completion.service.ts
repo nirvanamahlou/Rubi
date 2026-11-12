@@ -3,10 +3,19 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
+import { AccountingCompanyScope } from './accounting-company-scope';
+import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
+import {
+  journalBrowserAxes,
+  journalBrowserObservations,
+  journalBrowserRows,
+  type JournalBrowserAxis,
+} from './accounting-journal-browser';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
 import {
@@ -66,11 +75,15 @@ export class AccountingCompletionService {
             'traceableOnly',
             'includeOpening',
             'includeAnyNature',
+            'calendar',
           ].includes(key),
       )
     )
       v.invalid('فیلتر گزارش معتبر نیست.');
     if (Object.values(query).some((value) => typeof value !== 'string'))
+      v.invalid('فیلتر گزارش معتبر نیست.');
+    const calendar = String(query.calendar || 'GREGORIAN');
+    if (!['GREGORIAN', 'PERSIAN'].includes(calendar))
       v.invalid('فیلتر گزارش معتبر نیست.');
     for (const key of [
       'activeOnly',
@@ -317,7 +330,12 @@ export class AccountingCompletionService {
         const aggregate =
           kind === 'aging'
             ? undefined
-            : aggregateInternalReport(lines, dimensions, from);
+            : aggregateInternalReport(
+                lines,
+                dimensions,
+                from,
+                calendar as 'PERSIAN' | 'GREGORIAN',
+              );
         if (kind === 'matrix' && aggregate) {
           const rows = new Set(
             aggregate.rows.map((r) => r.dimensions[dimensions[0]!]),
@@ -334,6 +352,7 @@ export class AccountingCompletionService {
           generatedAt: new Date().toISOString(),
           statutory: false,
           basis: 'POSTED',
+          calendar,
           currency: book.baseCurrency,
           periodId: period.id,
           periodIds,
@@ -398,7 +417,146 @@ export class AccountingCompletionService {
   }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(AccountingCompanyScope)
+    private readonly companyScope?: AccountingCompanyScope,
+    @Optional()
+    @Inject(IamFinanceDirectory)
+    private readonly identity?: IamFinanceDirectory,
   ) {}
+
+  async journalBrowser(
+    bookId: string,
+    query: Query,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      Object.keys(query).some(
+        (key) =>
+          ![
+            'periodId',
+            'from',
+            'to',
+            'axis',
+            'selectedKey',
+            'page',
+            'calendar',
+          ].includes(key),
+      ) ||
+      Object.values(query).some((value) => typeof value !== 'string')
+    )
+      v.invalid('فیلتر گزارش معتبر نیست.');
+    const axis = String(query.axis ?? 'user') as JournalBrowserAxis;
+    if (!journalBrowserAxes.includes(axis)) v.invalid('نوع گزارش معتبر نیست.');
+    const calendar = String(query.calendar || 'GREGORIAN');
+    if (!['PERSIAN', 'GREGORIAN'].includes(calendar))
+      v.invalid('فیلتر گزارش معتبر نیست.');
+    const pageText = String(query.page ?? '1');
+    if (!/^[1-9]\d{0,4}$/.test(pageText)) v.invalid('صفحه معتبر نیست.');
+    const page = Number(pageText);
+    const selectedKey =
+      query.selectedKey === undefined
+        ? undefined
+        : v.text(query.selectedKey, 40);
+    return this.database.client.$transaction(
+      async (tx) => {
+        await this.scope(tx, bookId, actor);
+        const { period, from, to } = await this.period(
+          tx,
+          bookId,
+          Object.fromEntries(
+            Object.entries(query).filter(([key]) =>
+              ['periodId', 'from', 'to'].includes(key),
+            ),
+          ),
+        );
+        const observations = await journalBrowserObservations(
+          tx,
+          bookId,
+          period.id,
+          from,
+          to,
+        );
+        const rows = journalBrowserRows(
+          observations,
+          axis,
+          calendar as 'PERSIAN' | 'GREGORIAN',
+        );
+        const selected = rows.find((row) => row.key === selectedKey);
+        const documents = selected
+          ? await tx.accountingJournal.findMany({
+              where: {
+                bookId,
+                periodId: period.id,
+                id: { in: [...selected.journalIds] },
+              },
+              select: {
+                id: true,
+                number: true,
+                documentDate: true,
+                description: true,
+                status: true,
+              },
+              orderBy: [
+                { documentDate: 'asc' },
+                { number: 'asc' },
+                { id: 'asc' },
+              ],
+              skip: (page - 1) * 50,
+              take: 50,
+            })
+          : [];
+        const names =
+          axis === 'user' && this.identity
+            ? await this.identity.displayNames(
+                rows.map((row) => row.key).filter(Boolean),
+                actor.branchIds,
+              )
+            : [];
+        const types =
+          axis === 'type'
+            ? await tx.accountingConfiguration.findMany({
+                where: {
+                  bookId,
+                  kind: 'voucher-types',
+                  id: { in: rows.map((row) => row.key).filter(Boolean) },
+                },
+                select: { id: true, title: true },
+              })
+            : [];
+        return {
+          axis,
+          calendar,
+          periodId: period.id,
+          from,
+          to,
+          basis: 'SAVED_HISTORY' as const,
+          historicalGap: observations.some((row) => row.historicalGap),
+          documents,
+          totalDocuments: selected?.journalIds.size ?? 0,
+          page,
+          pageSize: 50,
+          rows: rows.map((row) => ({
+            key: row.key,
+            issued: row.issued,
+            issuedLines: row.issuedLines,
+            changed: row.changed,
+            changedLines: row.changedLines,
+            reviewed: row.reviewed,
+            historicalGap: row.historicalGap,
+            title:
+              axis === 'user'
+                ? (names.find((name) => name.id === row.key)?.displayName ??
+                  null)
+                : axis === 'type'
+                  ? (types.find((type) => type.id === row.key)?.title ?? null)
+                  : row.key,
+          })),
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
 
   private async scope(
     tx: Prisma.TransactionClient,
@@ -414,6 +572,7 @@ export class AccountingCompletionService {
       where: { id: v.uuid(bookId)!, branchId: { in: actor.branchIds } },
     });
     if (!book) throw new NotFoundException('دفتر حسابداری پیدا نشد.');
+    await this.companyScope?.assertBook(book, actor);
     return book;
   }
 
@@ -458,23 +617,124 @@ export class AccountingCompletionService {
   }
 
   async journalLines(bookId: string, query: Query, actor: AuthenticatedActor) {
+    const extras = [
+      'toPeriodId',
+      'typeId',
+      'status',
+      'fromNumber',
+      'toNumber',
+      'description',
+      'descriptionMode',
+      'currency',
+      'amountMode',
+      'export',
+    ];
+    if (
+      Object.keys(query).some(
+        (key) => ![...allowed, ...extras].includes(key),
+      ) ||
+      Object.values(query).some((value) => typeof value !== 'string')
+    )
+      v.invalid('فیلتر گزارش معتبر نیست.');
+    if (
+      query.export !== undefined &&
+      !['true', 'false'].includes(String(query.export))
+    )
+      v.invalid('گزینه گزارش معتبر نیست.');
+    const exporting = query.export === 'true';
+    if (exporting && !actor.permissions.includes('finance.export'))
+      throw new ForbiddenException();
+    const statuses = [
+      'MEMORANDUM',
+      'DRAFT',
+      'PENDING_APPROVAL',
+      'APPROVED',
+      'POSTED',
+      'CANCELLED',
+      'ALL',
+    ];
+    const status = String(query.status || 'POSTED');
+    if (!statuses.includes(status)) v.invalid('وضعیت سند معتبر نیست.');
+    const descriptionMode = String(query.descriptionMode || 'contains');
+    if (
+      !['contains', 'equals', 'startsWith', 'endsWith'].includes(
+        descriptionMode,
+      )
+    )
+      v.invalid('فیلتر شرح معتبر نیست.');
+    const amountMode = String(query.amountMode || 'BASE');
+    const currency = v.text(query.currency, 3);
+    if (
+      (currency && !/^[A-Z]{3}$/.test(currency)) ||
+      !['BASE', 'FOREIGN'].includes(amountMode) ||
+      (amountMode === 'FOREIGN' && !currency)
+    )
+      v.invalid('کد ارز معتبر نیست.');
+    const number = (value: unknown) => {
+      if (!value) return undefined;
+      const normalized = String(value).replace(/[۰-۹٠-٩]/g, (d) =>
+        String(d.charCodeAt(0) - (d >= '۰' ? 1776 : 1632)),
+      );
+      if (!/^[1-9]\d{0,9}$/.test(normalized) || Number(normalized) > 2147483647)
+        v.invalid('شماره سند معتبر نیست.');
+      return Number(normalized);
+    };
+    const fromNumber = number(query.fromNumber),
+      toNumber = number(query.toNumber);
+    if (fromNumber && toNumber && fromNumber > toNumber)
+      v.invalid('بازه شماره سند معتبر نیست.');
     return this.database.client.$transaction(
       async (tx) => {
         const book = await this.scope(tx, bookId, actor);
-        const { period, from, to } = await this.period(tx, bookId, query);
+        const { period, from, to, periodIds } = await this.period(
+          tx,
+          bookId,
+          Object.fromEntries(
+            Object.entries(query).filter(([key]) => allowed.includes(key)),
+          ),
+          query.toPeriodId || undefined,
+        );
         const pageText = query.page ?? '1';
         if (typeof pageText !== 'string' || !/^[1-9]\d{0,4}$/.test(pageText))
           v.invalid('صفحه معتبر نیست.');
         const page = Number(pageText),
-          pageSize = 50;
-        const where: Prisma.AccountingJournalLineWhereInput = {
-          journal: {
-            bookId,
-            periodId: period.id,
-            status: 'POSTED',
-            documentDate: { gte: from, lte: to },
-          },
+          pageSize = exporting ? 20000 : 50;
+        if (exporting && page !== 1) v.invalid('صفحه معتبر نیست.');
+        if (
+          query.typeId &&
+          !(await tx.accountingConfiguration.findFirst({
+            where: { id: v.uuid(query.typeId)!, bookId, kind: 'voucher-types' },
+          }))
+        )
+          throw new NotFoundException();
+        const journal: Prisma.AccountingJournalWhereInput = {
+          bookId,
+          periodId: { in: periodIds },
+          status: status === 'ALL' ? { not: 'CANCELLED' } : status,
+          documentDate: { gte: from, lte: to },
+          ...(query.typeId ? { typeId: v.uuid(query.typeId)! } : {}),
+          ...(fromNumber || toNumber
+            ? {
+                number: {
+                  ...(fromNumber ? { gte: fromNumber } : {}),
+                  ...(toNumber ? { lte: toNumber } : {}),
+                },
+              }
+            : {}),
+          ...(query.description
+            ? {
+                description: {
+                  [descriptionMode]: v.text(query.description, 2000),
+                  mode: 'insensitive',
+                },
+              }
+            : {}),
         };
+        const where: Prisma.AccountingJournalLineWhereInput = {
+          journal,
+          ...(currency ? { currency } : {}),
+        };
+        if (amountMode === 'FOREIGN') where.foreignAmount = { not: null };
         if (query.accountId) {
           const account = await tx.accountingAccount.findFirst({
             where: { id: v.uuid(query.accountId)!, bookId },
@@ -492,10 +752,28 @@ export class AccountingCompletionService {
           where[key] = detail.id;
         }
         const total = await tx.accountingJournalLine.count({ where });
+        if (exporting && total > 20000)
+          v.rule(
+            'بازه گزارش را به حداکثر ۲۰۰۰۰ قلم محدود کنید؛ نتیجه ناقص تولید نمی‌شود.',
+          );
         const totals = await tx.accountingJournalLine.aggregate({
           where,
           _sum: { debit: true, credit: true },
         });
+        const foreignDebit =
+          amountMode === 'FOREIGN'
+            ? await tx.accountingJournalLine.aggregate({
+                where: { ...where, debit: { gt: 0 } },
+                _sum: { foreignAmount: true },
+              })
+            : null;
+        const foreignCredit =
+          amountMode === 'FOREIGN'
+            ? await tx.accountingJournalLine.aggregate({
+                where: { ...where, credit: { gt: 0 } },
+                _sum: { foreignAmount: true },
+              })
+            : null;
         const rows = await tx.accountingJournalLine.findMany({
           where,
           select: {
@@ -516,7 +794,21 @@ export class AccountingCompletionService {
               },
             },
             account: {
-              select: { id: true, bookId: true, code: true, title: true },
+              select: {
+                id: true,
+                bookId: true,
+                code: true,
+                title: true,
+                level: true,
+                parent: {
+                  select: {
+                    bookId: true,
+                    level: true,
+                    code: true,
+                    title: true,
+                  },
+                },
+              },
             },
             detail4: { select: { bookId: true, code: true, title: true } },
             detail5: { select: { bookId: true, code: true, title: true } },
@@ -534,16 +826,25 @@ export class AccountingCompletionService {
           row: { bookId: string; code: string; title: string } | null,
         ) => (row?.bookId === bookId ? `${row.code} — ${row.title}` : null);
         return {
-          basis: 'POSTED' as const,
-          currency: book.baseCurrency,
+          basis: status,
+          bookId,
+          bookTitle: book.title,
+          amountMode,
+          currency: amountMode === 'FOREIGN' ? currency : book.baseCurrency,
           periodId: period.id,
           from,
           to,
           page,
           pageSize,
           total,
-          debit: totals._sum.debit?.toFixed() ?? '0',
-          credit: totals._sum.credit?.toFixed() ?? '0',
+          debit:
+            amountMode === 'FOREIGN'
+              ? (foreignDebit?._sum.foreignAmount?.toFixed() ?? '0')
+              : (totals._sum.debit?.toFixed() ?? '0'),
+          credit:
+            amountMode === 'FOREIGN'
+              ? (foreignCredit?._sum.foreignAmount?.toFixed() ?? '0')
+              : (totals._sum.credit?.toFixed() ?? '0'),
           rows: rows.map((row) => ({
             id: row.id,
             journalId: row.journal.id,
@@ -551,12 +852,41 @@ export class AccountingCompletionService {
             date: row.journal.documentDate,
             position: row.position,
             account: label(row.account),
+            accountCode:
+              row.account?.bookId === bookId ? row.account.code : null,
+            accountTitle:
+              row.account?.bookId === bookId ? row.account.title : null,
+            generalCode:
+              row.account?.bookId === bookId && row.account.level === 'GENERAL'
+                ? row.account.code
+                : row.account?.parent?.bookId === bookId &&
+                    row.account.parent.level === 'GENERAL'
+                  ? row.account.parent.code
+                  : null,
+            generalTitle:
+              row.account?.bookId === bookId && row.account.level === 'GENERAL'
+                ? row.account.title
+                : row.account?.parent?.bookId === bookId &&
+                    row.account.parent.level === 'GENERAL'
+                  ? row.account.parent.title
+                  : null,
+            journalDescription: row.journal.description,
             detail4: label(row.detail4),
             detail5: label(row.detail5),
             detail6: label(row.detail6),
             description: row.description || row.journal.description,
-            debit: row.debit.toFixed(),
-            credit: row.credit.toFixed(),
+            debit:
+              amountMode === 'FOREIGN'
+                ? row.debit.gt(0)
+                  ? (row.foreignAmount?.toFixed() ?? '0')
+                  : '0'
+                : row.debit.toFixed(),
+            credit:
+              amountMode === 'FOREIGN'
+                ? row.credit.gt(0)
+                  ? (row.foreignAmount?.toFixed() ?? '0')
+                  : '0'
+                : row.credit.toFixed(),
             currency: row.currency,
             foreignAmount: row.foreignAmount?.toFixed() ?? null,
             rate: row.rate?.toFixed() ?? null,

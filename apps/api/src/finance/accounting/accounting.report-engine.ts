@@ -1,5 +1,6 @@
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
+import { reportMonth } from './accounting-report-calendar';
 
 export interface InternalReportLine {
   id: string;
@@ -39,11 +40,15 @@ export function reportAxes(value: unknown): ReportAxis[] {
     v.invalid('ابعاد گزارش معتبر نیستند.');
   return parts as ReportAxis[];
 }
-const dimension = (r: InternalReportLine, axis: ReportAxis) =>
+const dimension = (
+  r: InternalReportLine,
+  axis: ReportAxis,
+  calendar: 'PERSIAN' | 'GREGORIAN',
+) =>
   axis === 'account'
     ? r.accountId
     : axis === 'month'
-      ? r.documentDate.slice(0, 7)
+      ? reportMonth(r.documentDate, calendar)
       : axis === 'currency'
         ? r.currency
         : r[`${axis}Id`];
@@ -53,6 +58,7 @@ export function aggregateInternalReport(
   lines: InternalReportLine[],
   dimensions: ReportAxis[],
   from: string,
+  calendar: 'PERSIAN' | 'GREGORIAN' = 'GREGORIAN',
 ) {
   const groups = new Map<
     string,
@@ -72,7 +78,7 @@ export function aggregateInternalReport(
     totalCredit = DecimalValue.zero();
   for (const line of lines) {
     const dims = Object.fromEntries(
-      dimensions.map((axis) => [axis, dimension(line, axis)]),
+      dimensions.map((axis) => [axis, dimension(line, axis, calendar)]),
     );
     const key = JSON.stringify(dims);
     let group = groups.get(key);
