@@ -1,3 +1,7 @@
+## NORA-ARROW-RTL-1112 — PC-C — VERIFIED
+
+Owner requests reversing navigation arrows. Reserve assistant contract-guides.ts and existing readable-output and guide regressions only, plus own status notes. Prior PR1679 merged; no competing writer found. No API/schema/dependency/data changes. CI follow-up reserves one additive Nora receipt-guide translation in en-overrides.json; preserve peer translations.
+
 ## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
 
 CI follow-up reserves only the new resize-header label in Web en-overrides; no unrelated translation edits. Full-suite failure identified the missing English label; behavior regressions passed. Latest develop272e65aaf is merged before final validation.
