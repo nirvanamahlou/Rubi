@@ -406,3 +406,17 @@
   padding: 4px;
   cursor: pointer;
 }
+
+.radanChart .orgNode {
+  border-radius: 5px;
+}
+.radanChart .orgNode:not([data-node-kind='EMPLOYEE']) {
+  background: #007f94;
+  color: white;
+}
+.radanChart .orgNode[data-node-kind='EMPLOYEE'] {
+  border-block-start: 4px solid #ca4439;
+}
+.radanChart .orgNodeMeta {
+  display: none;
+}

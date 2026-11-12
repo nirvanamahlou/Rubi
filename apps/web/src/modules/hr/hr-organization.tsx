@@ -61,31 +61,70 @@ export function buildHeadquartersChart(
   ];
   if (ceo) nodes.push(employeeNode(ceo, 'headquarters-management', 'مدیرعامل'));
 
-  for (const unit of [
-    'حسابداری',
-    'هوش مصنوعی',
-    'رزرواسیون',
-    'منابع انسانی',
-    'مهاجرت',
-    'فروش',
-  ]) {
-    const unitId = `headquarters-${unit}`;
-    const aliases = unit === 'حسابداری' ? [unit, 'مالی'] : [unit];
-    const members = active.filter(
-      (employee) =>
-        employee.id !== ceo?.id &&
-        employee.id !== salesLead?.id &&
-        aliases.some((alias) => normalize(employee.unit) === normalize(alias)),
-    );
+  const branches = [
+    {
+      unit: 'حسابداری',
+      chain: [
+        ['سحر سامانیان', 'مدیر مالی'],
+        ['عسل شهبازی', 'حسابدار ارشد'],
+        ['مهشید قربانی', 'صندوقدار'],
+      ],
+    },
+    {
+      unit: 'هوش مصنوعی',
+      peers: [
+        ['نیروانا محلو', 'کارشناس هوش مصنوعی'],
+        ['احسان دارستانی', 'کارشناس هوش مصنوعی'],
+        ['رامتین قشقایی', 'کارشناس هوش مصنوعی'],
+        ['محمد امین ربیعی', 'کارشناس هوش مصنوعی'],
+      ],
+    },
+    {
+      unit: 'رزرواسیون',
+      chain: [
+        ['رویا بهزادنیا', 'مدیر رزرواسیون'],
+        ['الناز برزگر محمدی', 'رزرواسیون هتل'],
+      ],
+    },
+    {
+      unit: 'منابع انسانی',
+      chain: [
+        ['نیما نادری', 'مدیر منابع انسانی'],
+        ['هدایت اسماعیلی', 'نیروی خدماتی'],
+      ],
+    },
+    {
+      unit: 'مهاجرت',
+      peers: [
+        ['دانیال آشوری', 'کارشناس مهاجرت'],
+        ['پویا شفقتیان', 'کارشناس مهاجرت و تولید محتوا'],
+      ],
+    },
+    { unit: 'فروش', chain: [['مهسا اعلایی', 'مدیر فروش']] },
+  ] as const;
+  const assigned = new Set<string>(ceo ? [ceo.id] : []);
+  for (const branch of branches) {
+    const unitId = `headquarters-${branch.unit}`;
     nodes.push(
-      node(unitId, unit, 'UNIT', ceo?.id ?? 'headquarters-management'),
+      node(unitId, branch.unit, 'UNIT', ceo?.id ?? 'headquarters-management'),
     );
-    if (unit === 'فروش' && salesLead)
-      nodes.push(employeeNode(salesLead, unitId, 'مدیر فروش'));
-    for (const member of members) {
-      const parentId = unit === 'فروش' ? (salesLead?.id ?? unitId) : unitId;
-      nodes.push(employeeNode(member, parentId));
+    let parentId = unitId;
+    const people = 'chain' in branch ? branch.chain : branch.peers;
+    for (const [name, role] of people) {
+      const employee = branch.unit === 'فروش' ? salesLead : findEmployee(name);
+      if (!employee || assigned.has(employee.id)) continue;
+      nodes.push(employeeNode(employee, parentId, role));
+      assigned.add(employee.id);
+      if ('chain' in branch) parentId = employee.id;
     }
+  }
+  for (const employee of active) {
+    if (
+      assigned.has(employee.id) ||
+      normalize(employee.unit) !== normalize('فروش')
+    )
+      continue;
+    nodes.push(employeeNode(employee, salesLead?.id ?? 'headquarters-فروش'));
   }
   return nodes;
 }
@@ -405,7 +444,7 @@ export function HrOrganization({
               {references.error}
             </p>
           ) : (
-            <div className={styles.orgViewport}>
+            <div className={`${styles.orgViewport} ${styles.radanChart}`}>
               <OrganizationChart
                 nodes={buildHeadquartersChart(data.employees)}
                 editable={false}
