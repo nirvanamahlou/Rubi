@@ -46,7 +46,11 @@ export async function portfolioReport(message: string, userId: string) {
     ),
   );
   const list = await salesApi.list({
-    ...(kind === 'mine' ? { ownerUserId: userId } : {}),
+    ...(/(?:^|\s)(?:من|خودم)(?:\s|$)|کارهایم/.test(
+      normalizeContractQuestion(message),
+    )
+      ? { ownerUserId: userId }
+      : {}),
     page,
     pageSize: 10,
     sortBy: 'updatedAt',
@@ -138,11 +142,23 @@ export async function recordReport(message: string, data: SalesContractDetail) {
   }
   if (/رسید|مغایرت|وصول|سررسید/.test(q)) {
     try {
-      const entries = (await paymentReceiptsApi.entries(data.id)).data;
+      const entries = await paymentReceiptsApi
+        .entries(data.id)
+        .then((response) => response.data)
+        .catch((error: unknown) => {
+          lines.push(reportError(error));
+          return [];
+        });
       for (const payment of data.payments) {
         const entry = entries.find((item) => item.id === payment.id);
         const count = entry
-          ? (await paymentReceiptsApi.list(data.id, payment.id)).meta.total
+          ? await paymentReceiptsApi
+              .list(data.id, payment.id)
+              .then((response) => response.meta.total)
+              .catch((error: unknown) => {
+                lines.push(reportError(error));
+                return undefined;
+              })
           : undefined;
         lines.push(
           [

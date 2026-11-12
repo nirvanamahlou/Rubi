@@ -342,7 +342,9 @@ export function AssistantComposer({
         normalizeContractQuestion(message),
       ) ||
       portfolioKind(message) ||
-      /قرارداد\s+(?:مشتری|به نام)/.test(normalizeContractQuestion(message)) ||
+      /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
+        normalizeContractQuestion(message),
+      ) ||
       (selectedContract && /تاریخچه|رسید|مغایرت|خدمات|مدارک/.test(message));
     const advice =
       !liveReport &&

@@ -51,13 +51,30 @@ describe('read-only contract reports', () => {
       meta: { total: 1, page: 1, pageSize: 10 },
     });
     vi.mocked(salesApi.statusHistory).mockResolvedValue({ data: [] });
-    expect(await portfolioReport('کدام قرارداد متوقف است؟', 'owner')).toContain(
-      'زمان ورود به وضعیت ثبت نشده',
+    expect(
+      await portfolioReport('کدام قرارداد من متوقف است؟', 'owner'),
+    ).toContain('زمان ورود به وضعیت ثبت نشده');
+    expect(salesApi.list).toHaveBeenCalledWith(
+      expect.objectContaining({ ownerUserId: 'owner' }),
     );
   });
   it('does not turn a denied receipt source into a zero receipt count', async () => {
     vi.mocked(paymentReceiptsApi.entries).mockRejectedValue({ status: 403 });
-    expect(await recordReport('مغایرت رسید', contract)).toContain('دسترسی');
+    const result = await recordReport('مغایرت رسید', {
+      ...contract,
+      payments: [
+        {
+          id: 'p1',
+          amount: '180',
+          currencyCode: 'USD',
+          dueAt: '2026-11-10T00:00:00Z',
+          status: 'SCHEDULED',
+        } as SalesContractDetail['payments'][number],
+      ],
+    });
+    expect(result).toContain('دسترسی');
+    expect(result).toContain('180 USD');
+    expect(result).not.toContain('تعداد مدارک ثبت‌شده: 0');
     expect(paymentReceiptsApi.list).not.toHaveBeenCalled();
   });
   it('distinguishes absent approval from denial and does not issue documents', async () => {

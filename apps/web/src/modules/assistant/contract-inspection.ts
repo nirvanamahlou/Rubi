@@ -33,7 +33,8 @@ export async function inspectContractQuestion(
     /قرارداد\s*(?:شماره\s*)?([A-Za-z0-9][A-Za-z0-9/-]*)/u,
   )?.[1];
   const customerSearch = normalized
-    .match(/قرارداد\s+(?:مشتری|به نام)\s+([^؟?]{2,80})/u)?.[1]
+    .match(/قرارداد(?:\s*های)?\s+(?:مشتری|به نام)\s+([^؟?]{2,80})/u)?.[1]
+    ?.replace(/\s+(?:را|رو|صفحه)\s+.*$/u, '')
     ?.trim();
   const followup =
     previousId &&
@@ -55,6 +56,14 @@ export async function inspectContractQuestion(
     if (reference || customerSearch) {
       let page = await salesApi.list({
         search: (reference ?? customerSearch)!,
+        ...(customerSearch
+          ? {
+              page: Math.max(
+                1,
+                Number(normalized.match(/صفحه\s+(\d{1,5})/)?.[1] ?? 1),
+              ),
+            }
+          : {}),
         pageSize: 10,
       });
       const candidates = [...page.data];
