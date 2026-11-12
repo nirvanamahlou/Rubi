@@ -348,7 +348,7 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-center-panel-scope-1105 from develop de
 
 ## CALL-CENTER-NAVY-PEARL-1105 — PC-C — READY_FOR_CI
 
-COMPUTER_ID=PC-C; branch codex/pc-c-call-center-navy-pearl-1105 from develop ca44d23da. User explicitly approves the Navy/Pearl illustrated-icon reference, implementation, develop PR, merge only after every final-head check and production publication. Reserve Call Center presentation (workspace/workflow/kpis/report/chart/expert dialog), new reusable illustration component, and bounded route-scoped app-shell/leaf CSS changes, own regression/task/status and bounded Web-only release script. Earlier UI-COPY-CLEANUP source is already contained in develop; preserve all approved copy/structure/actions/permissions. Include this chat's prior completion-pagination change. No API/schema/dependency/data changes. CI follow-up reserves one additive Nora receipt-guide translation in en-overrides.json; preserve peer translations. Shell styling/icon substitution applies only to the Call Center route. Release must snapshot current live Web, preserve peer overlays and all non-Web services, lock, verify backup/candidate/CI and rollback on failed health or asset checks.
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-navy-pearl-1105 from develop ca44d23da. User explicitly approves the Navy/Pearl illustrated-icon reference, implementation, develop PR, merge only after every final-head check and production publication. Reserve Call Center presentation (workspace/workflow/kpis/report/chart/expert dialog), new reusable illustration component, and bounded route-scoped app-shell/leaf CSS changes, own regression/task/status and bounded Web-only release script. Earlier UI-COPY-CLEANUP source is already contained in develop; preserve all approved copy/structure/actions/permissions. Include this chat's prior completion-pagination change. No API/schema/dependency/data changes. Shell styling/icon substitution applies only to the Call Center route. Release must snapshot current live Web, preserve peer overlays and all non-Web services, lock, verify backup/candidate/CI and rollback on failed health or asset checks.
 
 ## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
 
@@ -8906,7 +8906,7 @@ owner-authorized develop merge. No production rollout/pilot claimed.
 
 ## FINANCE-INBOX-UI-1012 — PC-A — READY_FOR_REVIEW
 
-Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes. CI follow-up reserves one additive Nora receipt-guide translation in en-overrides.json; preserve peer translations.
+Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes.
 
 Validation: scoped ESLint, existing render regression and Web typecheck passed. Production compilation passed; final Next build and CI gate publication. Presentation locks released with candidate; financial logic unchanged.
 
@@ -11973,7 +11973,7 @@ COMPUTER_ID=PC-C; branch codex/pc-c-call-kpi-duotone-1105 from develop ff31d2fd9
 
 ## CALL-PAGER-HEADSET-1105 — PC-C — IN_PROGRESS
 
-PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. CI follow-up reserves one additive Nora receipt-guide translation in en-overrides.json; preserve peer translations. Standing authorization covers green PR merge and bounded Web release.
+PC-C; base develop d797bdca7; branch codex/pc-c-call-pager-headset-1105. User selects illustrated navy/blue title headset and compact chevron pagination for queue, contacts and expert completion; completion page digits ASCII. Reserve workspace.tsx/.module.css, workflow.module.css, expert-activity.tsx, new title-icon.tsx and own release/docs. Previous same-owner scopes released. No API/schema/dependency/data changes. Standing authorization covers green PR merge and bounded Web release.
 
 ## HR-MISSION-ATTENDANCE-1105 — PC-A — READY_FOR_CI
 
@@ -11982,7 +11982,7 @@ HR-MISSION-ATTENDANCE-1105 scope clarification: existing petty registrations are
 
 ## CALL-BACKGROUND-1105 — PC-C — IN_PROGRESS
 
-PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. CI follow-up reserves one additive Nora receipt-guide translation in en-overrides.json; preserve peer translations. Standing green-gate PR/merge and bounded publication authorization applies.
+PC-C; branch codex/pc-c-call-background-1105; base develop407ae268d. User requests uniform Call Center workspace and surrounding main canvas. Reserve only root workspace.tsx section background override and own release/docs; preserve portalled dossier surfaces, sidebar, cards and all behavior. Prior same-owner scopes released; no overlapping active target writer. No API/schema/dependency/data changes. Standing green-gate PR/merge and bounded publication authorization applies.
 
 ## FINANCE-DIALOG-CLEANUP-1105 — PC-A — READY_FOR_CI
 
