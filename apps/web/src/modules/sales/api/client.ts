@@ -295,6 +295,18 @@ export const salesApi = {
     ),
   list: (query: SalesContractListQuery) =>
     request<SalesContractPage>(`/contracts?${queryString(query)}`),
+  contractAudit: (id: string) =>
+    request<{
+      data: { action: string; outcome: string; occurredAt: string }[];
+    }>('/contracts/' + encodeURIComponent(id) + '/audit'),
+  readPurchaseContext: (id: string) =>
+    request<{ data: ReservationIntakeV1 }>(
+      '/contracts/' + encodeURIComponent(id) + '/purchases/purchase-context',
+    ),
+  statusHistory: (id: string) =>
+    request<{
+      data: { toStatus: string; changedAt: string; reason: string }[];
+    }>('/contracts/' + encodeURIComponent(id) + '/status-history'),
   financeSummary: (id: string) =>
     request<{ data: { balances: SalesBalance[] } }>(
       `/contracts/${encodeURIComponent(id)}/finance-summary`,

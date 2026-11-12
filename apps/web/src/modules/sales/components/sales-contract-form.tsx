@@ -367,6 +367,8 @@ export function SalesContractForm() {
   }, [prefetchKey, canPrefetchTickets]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [submitPhase, setSubmitPhase] = useState('');
+  const [createdNumber, setCreatedNumber] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
   const [savedId, setSavedId] = useState('');
   const [receiptFiles, setReceiptFiles] = useState<(File | null)[]>([]);
@@ -904,6 +906,7 @@ export function SalesContractForm() {
   const submit = async () => {
     if (step !== salesSteps.length - 1 || busy) return;
     setBusy(true);
+    setSubmitPhase('');
     setError('');
     try {
       if (hotelCapacityError) throw new Error(hotelCapacityError);
@@ -930,9 +933,14 @@ export function SalesContractForm() {
       if (options)
         for (const file of receiptFiles)
           if (file) validatePaymentEvidenceFile(options, file);
+      setSubmitPhase('creating');
+      setCreatedNumber('');
       const response = await salesApi.create(payload, submission.current.key);
+      setCreatedNumber(response.data.contractNumber);
+      setSubmitPhase('confirming');
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
+      setSubmitPhase('sent');
       if (draftStorageKey)
         globalThis.sessionStorage?.removeItem(draftStorageKey);
       setSavedNumber(response.data.contractNumber);
@@ -1258,7 +1266,11 @@ export function SalesContractForm() {
   );
   if (savedNumber)
     return (
-      <Card className="mx-auto max-w-2xl p-8 text-center">
+      <Card
+        data-nora-saved={savedNumber}
+        data-nora-receipt-error={receiptError || undefined}
+        className="mx-auto max-w-2xl p-8 text-center"
+      >
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/10 text-emerald-700">
           <Check className="size-7" />
         </span>
@@ -1343,6 +1355,66 @@ export function SalesContractForm() {
             </p>
           )}
           <p
+            data-nora-submit-phase={submitPhase}
+            data-nora-created-number={createdNumber}
+            data-nora-busy={busy}
+            data-nora-blockers={JSON.stringify(
+              step === 0
+                ? [
+                    passengerStepError,
+                    hotelStepError,
+                    salesRoomPartyError(state),
+                    (!state.originId || !state.originCountryId) &&
+                      'کشور و شهر مبدأ',
+                    (!state.destinationCountryId ||
+                      !state.destinationId ||
+                      state.originId === state.destinationId) &&
+                      'کشور و شهر مقصد متفاوت با مبدأ',
+                    !state.serviceKinds.length && 'انتخاب خدمات',
+                    !salesStandaloneServiceDatesValid(state) && 'تاریخ خدمات',
+                    (!passengerCounts.total ||
+                      (passengerCounts.infants > 0 &&
+                        !passengerCounts.adults)) &&
+                      'تعداد مسافران و بزرگسال همراه نوزاد',
+                    state.serviceKinds.includes('HOTEL') &&
+                      (!state.hotel.rooms?.length ||
+                        state.hotel.rooms.some(
+                          (r) =>
+                            !r.roomTypeId ||
+                            r.childAges.some((age) => age === null),
+                        )) &&
+                      'نوع اتاق و سن کودکان',
+                    state.serviceKinds.includes('FLIGHT') &&
+                      (!passengerCounts.seated ||
+                        (!state.tour && !salesSelectedFlightsReady(state)) ||
+                        !salesFlightsValid(state)) &&
+                      'انتخاب و تاریخ پرواز',
+                    state.serviceKinds.includes('INSURANCE') &&
+                      (!state.insurancePlan || !insuranceReady) &&
+                      'طرح و مشخصات بیمه',
+                    state.serviceKinds.includes('VISA') &&
+                      (!state.visaReferenceId ||
+                        !state.visaComposition ||
+                        !(
+                          state.visaComposition.adults +
+                          state.visaComposition.children
+                        ) ||
+                        (state.visaChildAges?.length ?? 0) !==
+                          state.visaComposition.children ||
+                        state.visaChildAges?.some(
+                          (age) => age === null || age < 2 || age >= 12,
+                        )) &&
+                      'مرجع ویزا، تعداد متقاضیان و سن کودکان',
+                    (state.tour || state.serviceKinds.includes('TOUR')) &&
+                      (!state.tour ||
+                        (!state.legacyContract &&
+                          (state.tour.startsOn < salesFlightToday() ||
+                            (state.packageSaleAvailable &&
+                              !state.packageSaleQuote)))) &&
+                      'تاریخ و قیمت معتبر پکیج',
+                  ].filter(Boolean)
+                : [finalStepError].filter(Boolean),
+            )}
             data-nora-stage={salesSteps[step]}
             data-nora-error={
               error ||

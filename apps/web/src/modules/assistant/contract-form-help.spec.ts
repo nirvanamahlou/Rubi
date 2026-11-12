@@ -2,6 +2,32 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readContractFormHelp } from './contract-form-help';
 afterEach(() => vi.unstubAllGlobals());
 describe('live draft guidance', () => {
+  it('distinguishes create success from an unconfirmed reservation handoff', () => {
+    vi.stubGlobal('document', {
+      querySelector: (key: string) =>
+        key === '[data-nora-stage]'
+          ? {
+              dataset: {
+                noraStage: 'final',
+                noraSubmitPhase: 'confirming',
+                noraError: 'timeout',
+                noraCreatedNumber: '123',
+              },
+            }
+          : null,
+    });
+    expect(readContractFormHelp('خطای ثبت')).toContain('قرارداد 123 ساخته شد');
+  });
+  it('preserves successful submission when receipt upload failed', () => {
+    vi.stubGlobal('document', {
+      querySelector: () => ({
+        dataset: { noraSaved: '456', noraReceiptError: 'offline' },
+      }),
+    });
+    expect(readContractFormHelp('حالا رسید چی شد؟')).toContain(
+      'قرارداد تازه نسازید',
+    );
+  });
   it('reads the latest form error and never requests a saved contract number', () => {
     const dataset = {
       noraStage: 'مسیر، خدمات و مسافران',

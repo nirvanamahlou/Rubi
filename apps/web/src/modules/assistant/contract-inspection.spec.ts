@@ -8,7 +8,11 @@ vi.mock('@/modules/sales/api/client', () => ({
       super(message);
     }
   },
-  salesApi: { list: vi.fn(), detail: vi.fn() },
+  salesApi: {
+    list: vi.fn(),
+    detail: vi.fn(),
+    statusHistory: vi.fn().mockResolvedValue({ data: [] }),
+  },
 }));
 import { salesApi, SalesApiError } from '@/modules/sales/api/client';
 import { inspectContractQuestion } from './contract-inspection';
@@ -42,6 +46,27 @@ const contract = {
   ],
 } as unknown as SalesContractDetail;
 describe('contract inspection', () => {
+  it('finds an exact reference beyond the first page without reading a similar number', async () => {
+    const page = (n: number, id: string, contractNumber: string) =>
+      ({
+        data: [{ id, contractNumber }],
+        meta: { page: n, pageSize: 1, total: 2 },
+      }) as Awaited<ReturnType<typeof salesApi.list>>;
+    vi.mocked(salesApi.list)
+      .mockResolvedValueOnce(page(1, 'wrong', '1230'))
+      .mockResolvedValueOnce(page(2, contract.id, '123'));
+    vi.mocked(salesApi.detail).mockResolvedValue({ data: contract });
+    expect((await inspectContractQuestion('قرارداد ۱۲۳'))?.contractId).toBe(
+      contract.id,
+    );
+    expect(salesApi.detail).toHaveBeenCalledTimes(1);
+  });
+  it('requests clarification for multiple records without reading either one', async () => {
+    expect(
+      (await inspectContractQuestion('قرارداد ۱۲۳ و ۴۵۶'))?.contractId,
+    ).toBeUndefined();
+    expect(salesApi.list).not.toHaveBeenCalled();
+  });
   it('does not query a contract for general guidance', async () => {
     expect(
       await inspectContractQuestion('چطور قرارداد بسازم؟'),

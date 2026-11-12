@@ -12510,3 +12510,9 @@ LEDGER-PARITY-1111 — VALIDATED_WITH_SOURCE_LIMITS / FROZEN. API/Web typechecks
 LEDGER-PARITY-1111 CI/review follow-up — PC-D — IN_PROGRESS (2026-11-12). Owner explicitly authorizes hosted CI, PR to develop and merge after all checks pass; no production deployment. PR1677 targets develop. Reserve owned completion HTTP test fixtures, seeded-currency PostgreSQL expectations and bounded task/status notes; resolve only shared-document/translation merge conflicts while preserving both branches. Migration238 is published and remains immutable. No dependency, runtime or data changes are needed. Current task branch absorbs develop124534ee9 without history rewriting.
 
 LEDGER-PARITY-1111 dependency integration: consume PC-B published CI repair336bcbf3c intact (HR hook declaration order and missing translations only). Preserve the owner's commit/history and active HR implementation; no independent HR edit, new feature, migration or data/runtime action. Exact-head hosted gates still apply.
+
+## NORA-CONTRACT-ADVISOR-1112 — PC-C
+
+Reserve read-only Assistant diagnostics, report dispatch, focused tests, additive form diagnostic attributes, bilingual labels and scoped notes. No Sales writes, migrations, dependencies or server deployment.
+
+PC-C / NORA-CONTRACT-ADVISOR-1112: read-only contract guidance, scoped inspection and operational reports prepared for develop. Acceptance matrix: [NORA-CONTRACT-ADVISOR-1112](docs/tasks/NORA-CONTRACT-ADVISOR-1112.md). No production deployment.

@@ -1,5 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
+import { portfolioKind } from './contract-reports';
+import { contractAdvice } from './contract-advice';
 import { readContractFormHelp } from './contract-form-help';
 import { inspectContractQuestion } from './contract-inspection';
 import {
@@ -248,15 +250,18 @@ export function AssistantComposer({
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
     null,
   );
+  const pending = useRef<AbortController | null>(null);
+  const inspecting = useRef<AbortController | null>(null);
+  useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     contractId.current = undefined;
     if (!pathname?.startsWith('/sales')) guideTopic.current = undefined;
+    return () => inspecting.current?.abort();
   }, [pathname]);
-  const pending = useRef<AbortController | null>(null);
-  useEffect(() => () => pending.current?.abort(), []);
+
   const prompts: readonly [AssistantText, AssistantAction][] = [
     [c.quickDaily, 'daily-summary'],
     [c.quickSales, 'sales-analysis'],
@@ -332,7 +337,22 @@ export function AssistantComposer({
       /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
         normalizeContractQuestion(message),
       );
-    if (guide && !recordFollowup) {
+    const liveReport =
+      /قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
+        normalizeContractQuestion(message),
+      ) ||
+      portfolioKind(message) ||
+      /قرارداد\s+(?:مشتری|به نام)/.test(normalizeContractQuestion(message)) ||
+      (selectedContract && /تاریخچه|رسید|مغایرت|خدمات|مدارک/.test(message));
+    const advice =
+      !liveReport &&
+      !recordFollowup &&
+      contractAdvice(message, Boolean(pathname?.startsWith('/sales')));
+    if (advice) {
+      replyLocally(advice);
+      return;
+    }
+    if (guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
       replyLocally(guide.text);
@@ -341,9 +361,14 @@ export function AssistantComposer({
     pending.current?.abort();
     const inspectionController = new AbortController();
     pending.current = inspectionController;
+    inspecting.current = inspectionController;
     setActionState('loading');
     const inspection = await inspectContractQuestion(message, selectedContract);
-    if (inspectionController.signal.aborted) return;
+    if (inspecting.current === inspectionController) inspecting.current = null;
+    if (inspectionController.signal.aborted) {
+      if (pending.current === inspectionController) setActionState(null);
+      return;
+    }
     setActionState(null);
     if (inspection) {
       contractId.current = inspection.contractId;

@@ -281,8 +281,13 @@ describe('compact sales contract form', () => {
     );
     expect(html).not.toContain('تاریخ رفت');
     expect(html).not.toContain('min-h-[420px]');
-    expect(html.indexOf('کشور مبدأ')).toBeLessThan(html.indexOf('شهر مبدأ'));
-    expect(html.indexOf('شهر مبدأ')).toBeLessThan(html.indexOf('کشور مقصد'));
+    const fieldMarkup = html.replace(/ data-nora-blockers="[^"]*"/g, '');
+    expect(fieldMarkup.indexOf('کشور مبدأ')).toBeLessThan(
+      fieldMarkup.indexOf('شهر مبدأ'),
+    );
+    expect(fieldMarkup.indexOf('شهر مبدأ')).toBeLessThan(
+      fieldMarkup.indexOf('کشور مقصد'),
+    );
   });
 });
 
