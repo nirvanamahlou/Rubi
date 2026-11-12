@@ -448,8 +448,6 @@ export function HrOrganization({
             <div className={`${styles.orgViewport} ${styles.radanChart}`}>
               <OrganizationChart
                 nodes={buildHeadquartersChart(data.employees)}
-                onEdit={() => undefined}
-                onDelete={() => undefined}
                 editable={false}
                 onEdit={ignoreReadOnlyChartAction}
                 onDelete={ignoreReadOnlyChartAction}
