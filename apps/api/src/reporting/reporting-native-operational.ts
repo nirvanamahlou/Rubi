@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma, type DatabaseClient } from '@nora/database';
 import type { ReportSource, ReportSourceActor } from '../common/report-source';
-import { retainRankedRow } from '../common/retain-ranked-row';
+import { selectReportRows } from './reporting-page';
 import { readCustomerReporting } from '../customers/customer-reporting.public';
 import { readDocumentComplianceReporting } from '../documents/document-reporting.public';
 import { readHrAttendanceReporting } from '../hr/hr-reporting.public';
@@ -157,28 +157,13 @@ export function assembleOperationalResult(
       ? diff * (query.sort?.direction === 'ASC' ? 1 : -1)
       : a.id.localeCompare(b.id);
   };
-  const offset = (query.page - 1) * query.pageSize;
-  const end = offset + query.pageSize;
-  let selected: readonly SourceRow[];
-  if (includeAllRows) {
-    selected = [...source.rows].sort(compareRows);
-  } else if (offset >= source.rows.length) {
-    selected = [];
-  } else if (end >= source.rows.length) {
-    selected = [...source.rows].sort(compareRows).slice(offset);
-  } else {
-    type RankedRow = { row: SourceRow; index: number };
-    const compare = (a: RankedRow, b: RankedRow) =>
-      compareRows(a.row, b.row) || a.index - b.index;
-    const ranked: RankedRow[] = [];
-    for (const [index, row] of source.rows.entries()) {
-      retainRankedRow(ranked, { row, index }, end, compare);
-    }
-    selected = ranked
-      .sort(compare)
-      .slice(offset)
-      .map(({ row }) => row);
-  }
+  const selected = selectReportRows(
+    source.rows,
+    source.rows.length,
+    query,
+    includeAllRows,
+    compareRows,
+  );
   const rows: TravelReportResultV1['rows'] = selected.map((r) => ({
     grainId: r.id,
     primaryDimension: String(r.values.primaryDimension ?? ''),

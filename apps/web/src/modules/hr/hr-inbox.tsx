@@ -43,6 +43,7 @@ export function HrInbox({
   const [forward, setForward] = useState<HrInboxForwardRow | null>(null);
   const [seen, setSeen] = useState<ReadonlySet<string> | null>(null);
   const [forwarded, setForwarded] = useState(false);
+  const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
     void customerAffairsApi
@@ -68,7 +69,6 @@ export function HrInbox({
   const [requestType, setRequestType] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });
-  const [error, setError] = useState('');
   const [review, setReview] = useState<WorkbenchHrRequest | null>(null);
   const [decision, setDecision] = useState('APPROVED');
   const [busy, setBusy] = useState(false);

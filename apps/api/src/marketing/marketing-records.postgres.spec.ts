@@ -309,6 +309,64 @@ describe.skipIf(!enabled)(
       }
     });
 
+    it('pages entry sources and campaign audiences with scoped counts and literal name search', async () => {
+      const campaign = await service.createCampaign(
+        input('DIR-' + suffix),
+        actor,
+        branchId,
+        randomUUID(),
+      );
+      const name = 'كيان %-' + suffix;
+      const rows = Array.from({ length: 26 }, (_, index) => ({
+        branchId,
+        kind: 'AUDIENCE',
+        name: name + index,
+        status: 'ACTIVE',
+        payload: {},
+        campaignId: campaign.data.id,
+        createdByUserId: userId,
+        updatedByUserId: userId,
+      }));
+      await client.marketingAsset.createMany({
+        data: [
+          ...rows,
+          { ...rows[0]!, name: name + '-unlinked', campaignId: null },
+          { ...rows[0]!, name: name + '-deleted', status: 'DELETED' },
+          { ...rows[0]!, kind: 'SOURCE', campaignId: null },
+        ],
+      });
+      const query = {
+        kind: 'AUDIENCE',
+        search: 'کیان %-' + suffix,
+        campaignId: campaign.data.id,
+      } as const;
+      const first = await service.listDirectory(query, promotionActor);
+      const last = await service.listDirectory(
+        { ...query, page: 99 },
+        promotionActor,
+      );
+      expect(first).toMatchObject({ page: 1, total: 26 });
+      expect(first.data).toHaveLength(25);
+      expect(last).toMatchObject({ page: 2, total: 26 });
+      expect(last.data).toHaveLength(1);
+      expect(
+        (
+          await service.listDirectory(
+            { kind: 'SOURCE', search: query.search },
+            promotionActor,
+          )
+        ).total,
+      ).toBe(1);
+      expect(
+        (
+          await service.listDirectory(query, {
+            ...promotionActor,
+            branchIds: [randomUUID()],
+          })
+        ).total,
+      ).toBe(0);
+    });
+
     it('pages filtered promotions without exposing another branch or deleted rows', async () => {
       const prefix = 'Pagination-' + suffix;
       const timestamp = new Date('2099-01-15T00:00:00Z');
