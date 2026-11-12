@@ -22,6 +22,8 @@ import {
 } from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 
+import { customerIdsForPhoneFingerprints } from '../customers/customer-marketing.public';
+import { marketingContractMilestones } from '../sales/sales-marketing.public';
 import { CustomerContactCrypto } from '../customers/customer-contact.crypto';
 import { DatabaseService } from '../database/database.service';
 import { MarketingRecordsService } from '../marketing/marketing-records.service';
@@ -185,10 +187,7 @@ export class CustomerAffairsMarketingIntakeService {
     });
     if (!rows.length) return [];
     const fingerprints = [...new Set(rows.map((row) => row.phoneFingerprint))];
-    const contacts = await db.customerContact.findMany({
-      where: { type: 'PHONE', valueFingerprint: { in: fingerprints } },
-      select: { customerId: true, valueFingerprint: true },
-    });
+    const contacts = await customerIdsForPhoneFingerprints(db, fingerprints);
     const identities = new Map<string, Set<string>>();
     for (const contact of contacts) {
       if (!contact.valueFingerprint) continue;
@@ -196,31 +195,9 @@ export class CustomerAffairsMarketingIntakeService {
       ids.add(contact.customerId);
       identities.set(contact.valueFingerprint, ids);
     }
-    const contracts = await db.salesContract.findMany({
-      where: {
-        branchId: { in: branchIds },
-        customerId: {
-          in: [...new Set(contacts.map((contact) => contact.customerId))],
-        },
-        status: { not: 'CANCELLED' },
-        hiddenAt: null,
-      },
-      select: {
-        branchId: true,
-        customerId: true,
-        createdAt: true,
-        payments: {
-          where: {
-            status: 'FINANCE_CONFIRMED',
-            amount: { gt: 0 },
-            financeConfirmedAt: { not: null },
-          },
-          orderBy: { financeConfirmedAt: 'asc' },
-          take: 1,
-          select: { financeConfirmedAt: true },
-        },
-      },
-    });
+    const contracts = await marketingContractMilestones(db, branchIds, [
+      ...new Set(contacts.map((contact) => contact.customerId)),
+    ]);
     const byCustomer = new Map<string, typeof contracts>();
     const firstPaidAt = new Map<string, number>();
     for (const contract of contracts) {
