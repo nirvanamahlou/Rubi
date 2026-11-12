@@ -1371,6 +1371,10 @@ Reserve fallback report fact reads, projection consumer, and regression tests. K
 
 Dashboard fact-based filters read distinct values in SQL using the same scope predicates as fact reads. The API sorts the returned labels using the Persian locale. No schema change.
 
+## FINANCE-LATEST-HANDOFFS-1111 — PC-B — IN_PROGRESS
+
+Reserve the Procurement invoice queue read and Finance inbox projection. Preserve branch scope, eligible handoff states, existing source ordering and legacy queue output.
+
 ## PROCUREMENT-FINANCE-SOURCE-PAGES-1110 (PC-B)
 
 Reserve Procurement invoice and correction reads, Sales receipt reads, their shared database paging helper, Finance export warning and focused regressions. Preserve branch, status, order and DTOs. No schema, dependencies or deployment.

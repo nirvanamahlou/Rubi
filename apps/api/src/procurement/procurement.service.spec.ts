@@ -2229,7 +2229,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         'RETURN_EXCEEDS_ACCEPTANCE',
       );
     });
-    it('reads invoice and correction sources past 500 rows with tied timestamps', async () => {
+    it('reads the latest eligible invoice revision and all correction events past 500 tied rows', async () => {
       const context = await orderedRequest();
       const received = await command(
         context.row,
@@ -2251,7 +2251,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           invoiceId: invoice.id,
           invoiceVersion: index + 1,
           sourceKey: id,
-          status: 'PENDING',
+          status: index === 500 ? 'CANCELLED' : 'PENDING',
           createdAt,
           payload: { sourceId: invoice.id, sourceVersion: index + 1 },
         };
@@ -2282,11 +2282,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           invoicesRead
             .filter((row) => row.sourceId === invoice.id)
             .map((row) => row.sourceVersion),
-        ).toEqual(
-          invoices
-            .sort((a, b) => a.id.localeCompare(b.id))
-            .map((row) => row.invoiceVersion),
-        );
+        ).toEqual([500]);
         const correctionsRead = await publicSources.listFinanceCorrections([
           branch,
         ]);
