@@ -49,11 +49,15 @@ describe('internal correspondence screens', () => {
       'ارسال نامه داخلی',
       'قالب آماده',
       'گیرنده',
-      'فرستنده',
+      'عنوان گیرنده',
+      'مدارک پیوست',
       'خروجی عکس',
       'خروجی PDF',
     ])
       expect(html).toContain(label);
+    expect(html).toMatch(/<input[^>]*type="file"[^>]*multiple/);
+    expect(html).not.toContain('aria-label="تاریخ نامه"');
+    expect(html).not.toMatch(/>فرستنده<input/);
     expect(html).toMatch(/disabled=""[^>]*>[^]*?ارسال<\/button>/);
   });
 });

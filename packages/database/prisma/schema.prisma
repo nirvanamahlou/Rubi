@@ -7902,10 +7902,25 @@ model CorrespondenceLetter {
   version    Int                      @default(1)
   createdAt  DateTime                 @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime                 @updatedAt @db.Timestamptz(3)
+  attachments CorrespondenceAttachment[]
   deliveries CorrespondenceDelivery[]
 
   @@index([authorId, createdAt])
   @@map("correspondence_letters")
+}
+
+model CorrespondenceAttachment {
+  id       String               @id @default(uuid()) @db.Uuid
+  letterId String               @db.Uuid
+  letter   CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  name     String               @db.VarChar(255)
+  size     Int
+  digest   String               @db.VarChar(64)
+  bytes    Bytes
+  ordinal  Int
+
+  @@unique([letterId, ordinal])
+  @@map("correspondence_attachments")
 }
 
 model CorrespondenceDelivery {

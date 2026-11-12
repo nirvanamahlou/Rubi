@@ -12484,3 +12484,7 @@ Connect the HR request center to personal workbench and finance referrals, and p
 ## HR-BRANCH-REGISTRATION-DETAILS-1112 — PC-B
 
 Add optional incorporation date, company type, registration number, economic code, and national ID to the HR branch form. Keep legacy five-field submissions and saved records compatible.
+
+## INTERNAL-LETTER-ANNOTATIONS-1112 — PC-B
+
+Internal composition selects a registered recipient and snapshots personnel labels. Recipient pickers group users by unit. New internal letters use the Tehran drafting date and accept up to five arbitrary-format attachments of ten MiB each. The additive attachment migration must run before release.

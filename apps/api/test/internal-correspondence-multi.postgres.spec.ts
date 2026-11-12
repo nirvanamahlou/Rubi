@@ -100,6 +100,71 @@ describe.skipIf(!url)(
       await service.read(ids[1]!, results[0]!.id);
       expect((await service.list(ids[1]!, {})).kpis.unread).toBe(0);
     });
+    it('stores file bytes once and exposes attachments only to letter participants', async () => {
+      const input = { ...(await payload()), addressedUserId: ids[1] };
+      const file = {
+        originalname: 'example.custom',
+        size: 3,
+        buffer: Buffer.from([1, 2, 3]),
+      };
+      const sent = await service.send(ids[0]!, input, [file]);
+      await expect(service.send(ids[0]!, input, [file])).resolves.toEqual(sent);
+      await expect(
+        service.send(ids[0]!, input, [
+          { ...file, buffer: Buffer.from([1, 2, 4]) },
+        ]),
+      ).rejects.toThrow('شناسه ارسال تکراری است.');
+      const record = await service.detail(ids[1]!, sent.id);
+      expect(record.letter).toMatchObject({
+        recipient: 'Synthetic 1',
+        sender: 'Synthetic 0',
+      });
+      expect(record.attachments).toEqual([
+        { id: expect.any(String), name: 'example.custom', size: 3 },
+      ]);
+      const id = record.attachments[0]!.id;
+      const attachment = await service.attachment(ids[1]!, sent.id, id);
+      expect([...attachment.bytes]).toEqual([1, 2, 3]);
+      await expect(service.attachment(ids[2]!, sent.id, id)).rejects.toThrow();
+    });
+    it('prefers the personnel name, job title and organizational unit for an internal account', async () => {
+      const branch = await db.branch.create({
+        data: { code: randomUUID().slice(0, 16), name: 'Synthetic branch' },
+      });
+      const employeeId = randomUUID();
+      try {
+        await db.hrEmployee.create({
+          data: {
+            id: employeeId,
+            personnelCode: employeeId,
+            branchId: branch.id,
+            userId: ids[1]!,
+            name: 'کاربر آزمایشی',
+            unit: 'امور اداری',
+            position: 'کارشناس مکاتبات',
+            kind: 'آزمایشی',
+            grade: '',
+            startedAt: new Date('2026-10-18T00:00:00Z'),
+          },
+        });
+        expect(
+          (await service.users()).find(({ id }) => id === ids[1]),
+        ).toMatchObject({
+          displayName: 'کاربر آزمایشی',
+          jobTitle: 'کارشناس مکاتبات',
+          unit: 'امور اداری',
+        });
+        const input = { ...(await payload()), addressedUserId: ids[1] };
+        const sent = await service.send(ids[0]!, input);
+        expect((await service.detail(ids[1]!, sent.id)).letter).toMatchObject({
+          recipient: 'کاربر آزمایشی',
+          recipientTitle: 'کارشناس مکاتبات',
+        });
+      } finally {
+        await db.hrEmployee.deleteMany({ where: { id: employeeId } });
+        await db.branch.delete({ where: { id: branch.id } });
+      }
+    });
     it('supports recipient editing, conflicts, forwarding statuses, filtering and global hard deletion', async () => {
       const created = await service.send(ids[0]!, await payload());
       const row = await service.detail(ids[1]!, created.id);
@@ -244,7 +309,7 @@ describe.skipIf(!url)(
       expect(directory.some((user) => user.id === ids[3])).toBe(false);
       expect(
         Object.keys(directory.find((user) => user.id === ids[1])!).sort(),
-      ).toEqual(['displayName', 'id', 'username']);
+      ).toEqual(['displayName', 'id', 'jobTitle', 'unit', 'username']);
     });
   },
 );

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { isDeepStrictEqual } from 'node:util';
 import {
   BadRequestException,
@@ -16,6 +18,9 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  StreamableFile,
 } from '@nestjs/common';
 import type {
   InternalLetterContent,
@@ -29,6 +34,42 @@ import { RequireAccessControls } from '../iam/iam.decorators';
 import { IamCorrespondenceDirectory } from '../iam/iam-correspondence-directory';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { correspondenceDateParts } from './correspondence-numbering';
+
+const maxAttachmentCount = 5;
+const maxAttachmentBytes = 10 * 1024 * 1024;
+type LetterFile = { originalname: string; buffer: Buffer; size: number };
+
+function attachmentRecords(files: readonly LetterFile[]) {
+  if (
+    files.length > maxAttachmentCount ||
+    files.some((file) => file.size > maxAttachmentBytes)
+  )
+    throw new BadRequestException('حجم یا تعداد پیوست‌ها بیش از حد مجاز است.');
+  return files.map((file, ordinal) => {
+    const decoded = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const name =
+      Array.from(decoded.includes('�') ? file.originalname : decoded)
+        .map((character) => {
+          const code = character.charCodeAt(0);
+          return code < 32 ||
+            code === 127 ||
+            character === '/' ||
+            character === '\\'
+            ? '_'
+            : character;
+        })
+        .slice(0, 255)
+        .join('')
+        .trim() || 'attachment';
+    return {
+      name,
+      ordinal,
+      size: file.size,
+      bytes: Uint8Array.from(file.buffer),
+      digest: createHash('sha256').update(file.buffer).digest('hex'),
+    };
+  });
+}
 
 const identity = { id: true, displayName: true, username: true } as const;
 const statuses = ['SENT', 'APPROVED', 'REJECTED', 'NEEDS_CORRECTION'] as const;
@@ -76,8 +117,8 @@ export function internalLetterContent(input: unknown): InternalLetterContent {
   const lengths = {
     company: 80,
     recipient: 160,
-    recipientTitle: 80,
-    sender: 80,
+    recipientTitle: 160,
+    sender: 160,
     subject: 160,
     date: 40,
     number: 100,
@@ -152,6 +193,9 @@ export class InternalCorrespondenceService {
 
   users() {
     return this.directory.list();
+  }
+  currentUser(actor: string) {
+    return this.directory.resolve(actor);
   }
   private audit(
     tx: Prisma.TransactionClient,
@@ -275,6 +319,10 @@ export class InternalCorrespondenceService {
       where: { id: correspondenceUuid(id), ...participant(actor) },
       include: {
         author: { select: identity },
+        attachments: {
+          select: { id: true, name: true, size: true },
+          orderBy: { ordinal: 'asc' },
+        },
         deliveries: {
           where: { OR: [{ recipientId: actor }, { senderId: actor }] },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -290,11 +338,31 @@ export class InternalCorrespondenceService {
     const { content, deliveries, ...rest } = row;
     return { ...rest, letter: content, delivery: deliveries[0] };
   }
-  async send(actor: string, body: unknown) {
+  async attachment(actor: string, letterId: string, id: string) {
+    const file = await this.database.client.correspondenceAttachment.findFirst({
+      where: {
+        id: correspondenceUuid(id),
+        letterId: correspondenceUuid(letterId),
+        letter: participant(actor),
+      },
+      select: { name: true, bytes: true },
+    });
+    if (!file) throw new NotFoundException('پیوست نامه یافت نشد.');
+    return file;
+  }
+
+  async send(actor: string, body: unknown, files: readonly LetterFile[] = []) {
     const input = object(body),
-      letter = internalLetterContent(input.letter),
+      draft = object(input.letter),
       targets = correspondenceRecipients(input),
       key = correspondenceUuid(input.requestKey);
+    const addressed =
+      input.addressedUserId === undefined
+        ? null
+        : correspondenceUuid(input.addressedUserId);
+    if (addressed && !targets.includes(addressed))
+      throw new BadRequestException('گیرندهٔ نامه باید در فهرست ارسال باشد.');
+    const attachments = attachmentRecords(files);
     const dateISO = input.dateISO;
     if (
       typeof dateISO !== 'string' ||
@@ -309,7 +377,7 @@ export class InternalCorrespondenceService {
           Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${actor + key},0))`,
         );
         await tx.$queryRaw(
-          Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'internal-letter-number:' + letter.number},0))`,
+          Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'internal-letter-number:' + (typeof draft.number === 'string' ? draft.number.trim().slice(0, 100) : '')},0))`,
         );
         const replays = await tx.correspondenceDelivery.findMany({
           where: { senderId: actor, requestKey: key },
@@ -318,16 +386,65 @@ export class InternalCorrespondenceService {
           const replay = replays[0]!;
           const original = await tx.correspondenceLetter.findUnique({
             where: { id: replay.letterId },
+            include: {
+              attachments: {
+                select: { name: true, size: true, digest: true },
+                orderBy: { ordinal: 'asc' },
+              },
+            },
           });
+          const originalContent = original?.content as
+            (InternalLetterContent & { addressedUserId?: string }) | undefined;
+          const retry = internalLetterContent(
+            addressed && originalContent
+              ? {
+                  ...draft,
+                  recipient: originalContent.recipient,
+                  recipientTitle: originalContent.recipientTitle,
+                  sender: originalContent.sender,
+                }
+              : draft,
+          );
           if (
+            (originalContent?.addressedUserId ?? null) !== addressed ||
             !sameRecipients(replays, targets) ||
             original?.dateISO !== dateISO ||
-            !isDeepStrictEqual(original?.content, letter)
+            !isDeepStrictEqual(
+              original?.content,
+              addressed ? { ...retry, addressedUserId: addressed } : retry,
+            ) ||
+            !isDeepStrictEqual(
+              original?.attachments,
+              attachments.map(({ name, size, digest }) => ({
+                name,
+                size,
+                digest,
+              })),
+            )
           )
             throw new ConflictException('شناسه ارسال تکراری است.');
           return { id: replay.letterId };
         }
-        for (const target of targets) await this.directory.resolve(target, tx);
+        const directory = new Map<
+          string,
+          Awaited<ReturnType<IamCorrespondenceDirectory['resolve']>>
+        >();
+        for (const target of targets)
+          directory.set(target, await this.directory.resolve(target, tx));
+        const recipient = addressed ? directory.get(addressed) : undefined;
+        const letter = internalLetterContent(
+          recipient
+            ? {
+                ...draft,
+                recipient: recipient.displayName,
+                recipientTitle: recipient.jobTitle,
+                sender: (
+                  directory.get(actor) ??
+                  (await this.directory.resolve(actor, tx))
+                ).displayName,
+              }
+            : draft,
+        );
         const number = await tx.systemIssuedNumber.findFirst({
           where: {
             issuedValue: letter.number,
@@ -363,7 +480,13 @@ export class InternalCorrespondenceService {
             authorId: actor,
             number: letter.number,
             dateISO,
-            content: letter as unknown as Prisma.InputJsonObject,
+            content: {
+              ...letter,
+              ...(addressed ? { addressedUserId: addressed } : {}),
+            },
+            ...(attachments.length
+              ? { attachments: { create: attachments } }
+              : {}),
             deliveries: {
               create: targets.map((target) => ({
                 senderId: actor,
@@ -527,6 +650,44 @@ export class InternalCorrespondenceController {
   ) {}
   @Get('users') @Header('Cache-Control', 'private, no-store') users() {
     return this.service.users();
+  }
+  @Get('me')
+  @Header('Cache-Control', 'private, no-store')
+  me(@Req() req: AuthenticatedRequest) {
+    return this.service.currentUser(req.actor.userId);
+  }
+  @Post('with-attachments')
+  @UseInterceptors(
+    FilesInterceptor('files', maxAttachmentCount, {
+      limits: { fileSize: maxAttachmentBytes, fields: 1, fieldSize: 64 * 1024 },
+    }),
+  )
+  sendWithAttachments(
+    @Req() req: AuthenticatedRequest,
+    @Body('letter') raw: string,
+    @UploadedFiles() files: LetterFile[],
+  ) {
+    let body: unknown;
+    try {
+      body = JSON.parse(raw) as unknown;
+    } catch {
+      throw new BadRequestException('اطلاعات نامه معتبر نیست.');
+    }
+    return this.service.send(req.actor.userId, body, files);
+  }
+  @Get(':letterId/attachments/:id')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async attachment(
+    @Req() req: AuthenticatedRequest,
+    @Param('letterId') letterId: string,
+    @Param('id') id: string,
+  ) {
+    const file = await this.service.attachment(req.actor.userId, letterId, id);
+    return new StreamableFile(file.bytes, {
+      type: 'application/octet-stream',
+      disposition: `attachment; filename="attachment"; filename*=UTF-8''${encodeURIComponent(file.name).replace(/['()*]/g, (char) => '%' + char.charCodeAt(0).toString(16))}`,
+    });
   }
   @Get() @Header('Cache-Control', 'private, no-store') list(
     @Req() req: AuthenticatedRequest,
