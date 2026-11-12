@@ -41,6 +41,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     let branch: string;
     let otherBranch: string;
     let supplier: string;
+    let supplierOrganizationId: string;
     let supplierEnabled = true;
     let issuer: string;
     let maker: AuthenticatedActor;
@@ -807,19 +808,6 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           updatedByUserId: maker.userId,
         },
       });
-      const organization = await database.client.masterOrganization.create({
-        data: {
-          code: `PT-${randomUUID().slice(0, 12)}`,
-          legalName: 'Synthetic supplier organization',
-          displayName: 'Synthetic Supplier',
-          createdByUserId: maker.userId,
-          updatedByUserId: maker.userId,
-        },
-      });
-      await database.client.masterSupplier.update({
-        where: { id: supplier },
-        data: { organizationId: organization.id },
-      });
       const intake = await database.client.reservationIntake.create({
         data: {
           requestId: randomUUID(),
@@ -837,7 +825,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           serviceClientKey: randomUUID(),
           serviceKind: 'OTHER',
           serviceTitleSnapshot: 'Synthetic service',
-          supplierOrganizationId: organization.id,
+          supplierOrganizationId,
           supplierNameSnapshot: 'Synthetic Supplier',
           version: 1,
           amount: '100',
@@ -922,9 +910,20 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           },
           update: {},
         });
+      const organization = await database.client.masterOrganization.create({
+        data: {
+          code: `PT-${randomUUID().slice(0, 12)}`,
+          legalName: 'Synthetic supplier organization',
+          displayName: 'Synthetic Supplier',
+          createdByUserId: maker.userId,
+          updatedByUserId: maker.userId,
+        },
+      });
+      supplierOrganizationId = organization.id;
       supplier = (
         await database.client.masterSupplier.create({
           data: {
+            organizationId: organization.id,
             code: `PT-${randomUUID().slice(0, 12)}`,
             name: 'Synthetic Supplier',
             createdByUserId: maker.userId,
