@@ -1,5 +1,13 @@
 import { HR_RADAN_COMPLETION_COLUMNS } from './radan-completion';
 // Approved HR field labels; behavior is defined in resource-registry.ts.
+export const HR_BRANCH_REGISTRATION_COLUMNS = [
+  'تاریخ تأسیس',
+  'نوع شرکت',
+  'شماره ثبت',
+  'کد اقتصادی',
+  'شناسه ملی',
+] as const;
+
 export const HR_RESOURCE_COLUMNS = {
   ...HR_RADAN_COMPLETION_COLUMNS,
   // Managed through employee commands, without a separate UI section.
@@ -899,7 +907,14 @@ export const HR_RESOURCE_COLUMNS = {
     'هدف استفاده',
   ],
   'employee.companyScope': ['دامنه شرکت', 'شرکت'],
-  'organization.branches': ['نام شعبه', 'شرکت', 'شهر', 'مدیر', 'تاریخ اثر'],
+  'organization.branches': [
+    'نام شعبه',
+    'شرکت',
+    'شهر',
+    'مدیر',
+    'تاریخ اثر',
+    ...HR_BRANCH_REGISTRATION_COLUMNS,
+  ],
   'organization.units': [
     'نام واحد',
     'سطح سازمانی',

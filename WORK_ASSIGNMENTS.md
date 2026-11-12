@@ -12480,3 +12480,7 @@ Add a per-request hourly leave limit to HR policy records and validate submissio
 ## HR-REQUEST-FORWARDING-1111 — PC-B — IN_PROGRESS
 
 Connect the HR request center to personal workbench and finance referrals, and persist per-user read state. Reuse existing records and destination permissions.
+
+## HR-BRANCH-REGISTRATION-DETAILS-1112 — PC-B
+
+Add optional incorporation date, company type, registration number, economic code, and national ID to the HR branch form. Keep legacy five-field submissions and saved records compatible.
