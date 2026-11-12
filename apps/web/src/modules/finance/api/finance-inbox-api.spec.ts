@@ -1,17 +1,61 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  refreshAuthenticatedSession,
+  SessionRefreshUnavailableError,
+} from '@/lib/auth-session';
 import { financeInboxApi } from './finance-inbox-api';
 
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://localhost:4200/api/v1',
 }));
-vi.mock('@/lib/auth-session', () => ({
+vi.mock(import('@/lib/auth-session'), async (original) => ({
+  ...(await original()),
   refreshAuthenticatedSession: vi.fn().mockResolvedValue(null),
 }));
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.mocked(refreshAuthenticatedSession).mockClear();
+});
 
 describe('Finance inbox API', () => {
+  it('retries an expired-session write once with the same idempotency key and body', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'hr-1' })));
+    vi.stubGlobal('fetch', fetch);
+    vi.mocked(refreshAuthenticatedSession).mockResolvedValueOnce({
+      user: { id: 'synthetic' },
+    } as never);
+
+    await financeInboxApi.respondHr(
+      'hr-1',
+      { version: 3, status: 'IN_REVIEW', note: 'بررسی مالی' },
+      'response-key',
+    );
+
+    expect(refreshAuthenticatedSession).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[1]).toEqual(fetch.mock.calls[0]);
+    expect(fetch.mock.calls[1]?.[1].headers['idempotency-key']).toBe(
+      'response-key',
+    );
+  });
+
+  it('preserves the session-refresh outage error without replaying the request', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 401 }));
+    const error = new SessionRefreshUnavailableError();
+    vi.stubGlobal('fetch', fetch);
+    vi.mocked(refreshAuthenticatedSession).mockRejectedValueOnce(error);
+
+    await expect(financeInboxApi.payingSuppliers('', 1)).rejects.toBe(error);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('loads paginated suppliers with encoded search and authenticated transport', async () => {
     const data = {
       items: [{ id: 'supplier', name: 'Supplier' }],

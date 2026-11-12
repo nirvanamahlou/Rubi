@@ -63,6 +63,10 @@ when only selected paths are addressed.
   localized requests and one session-refresh retry. Document previews retain
   caller cancellation during refresh, and existing timeout policies remain.
 
+- Finance Inbox, Procurement and Reservation Purchases share the browser
+  transport. Finance write retries after authentication retain their original
+  body and idempotency key, and refresh outages stay distinguishable.
+
 - The shared authenticated transport passed six focused Web tests. The final
   PR #1600 revision also passed the hosted quality, build, test and migration checks.
 

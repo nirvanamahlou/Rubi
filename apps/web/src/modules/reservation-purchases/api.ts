@@ -1,7 +1,6 @@
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
-import { localizedFetch } from '@/i18n/localized-fetch';
+import { authenticatedFetch } from '@/lib/authenticated-fetch';
 import type { PurchaseCategory, PurchaseFilters } from './model';
 export interface PurchaseServiceRow {
   id: string;
@@ -40,14 +39,11 @@ export async function loadPurchaseInbox(
 ): Promise<PurchaseInbox> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی سرور پیکربندی نشده است.');
-  const get = () =>
-    localizedFetch(
-      `${base}/reservations/requests/purchases?${new URLSearchParams({ kind: kind === 'FLOATING' ? 'FLIGHT' : kind, page: String(page), contractNumber, ...filters })}`,
-      { credentials: 'include', cache: 'no-store', signal },
-    );
-  let response = await get();
-  if (response.status === 401 && (await refreshAuthenticatedSession(base)))
-    response = await get();
+  const response = await authenticatedFetch(
+    `${base}/reservations/requests/purchases?${new URLSearchParams({ kind: kind === 'FLOATING' ? 'FLIGHT' : kind, page: String(page), contractNumber, ...filters })}`,
+    base,
+    { signal, timeoutMs: null },
+  );
   const result = await response.json().catch(() => null);
   if (!response.ok)
     throw new Error(
