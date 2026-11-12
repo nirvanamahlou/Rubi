@@ -334,36 +334,36 @@ export class ProcurementPublicService {
     readonly (ProcurementFinanceSourceV1 & { handoffCreatedAt: string })[]
   > {
     if (!branchIds.length) return [];
-    return this.database.client.$transaction(
-      (tx) =>
-        collectCursorPages(
-          financeSourcePageSize,
-          (page) =>
-            tx.procurementFinanceHandoff.findMany({
-              where: {
-                status: {
-                  in: [
-                    'NOT_CONNECTED',
-                    'PENDING',
-                    'ACCEPTED',
-                    'PARTIALLY_PAID',
-                  ],
-                },
-                procurementFinanceHandoffRequestid: {
-                  branchId: { in: [...branchIds] },
-                },
-              },
-              orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-              select: { id: true, payload: true, createdAt: true },
-              ...page,
-            }),
-          (row) => ({
-            ...(row.payload as unknown as ProcurementFinanceSourceV1),
-            handoffCreatedAt: row.createdAt.toISOString(),
-          }),
-        ),
-      { isolationLevel: 'RepeatableRead' },
-    );
+    const rows = await this.database.client.$queryRaw<
+      { payload: Prisma.JsonValue; createdAt: Date }[]
+    >`
+      WITH scoped AS (
+        SELECT handoff.id, handoff."invoiceId", handoff."invoiceVersion",
+               first_value(handoff."invoiceVersion") OVER oldest AS first_version,
+               first_value(handoff."createdAt") OVER oldest AS first_created,
+               first_value(handoff.id) OVER oldest AS first_id
+        FROM procurement_finance_handoff AS handoff
+        JOIN procurement_request AS request ON request.id = handoff."requestId"
+        WHERE request."branchId" = ANY(${[...branchIds]}::uuid[])
+          AND handoff.status IN ('NOT_CONNECTED', 'PENDING', 'ACCEPTED', 'PARTIALLY_PAID')
+        WINDOW oldest AS (
+          PARTITION BY handoff."invoiceId"
+          ORDER BY handoff."invoiceVersion", handoff."createdAt", handoff.id
+        )
+      ), latest AS (
+        SELECT DISTINCT ON ("invoiceId") id, first_version, first_created, first_id
+        FROM scoped
+        ORDER BY "invoiceId", "invoiceVersion" DESC
+      )
+      SELECT handoff.payload, handoff."createdAt"
+      FROM latest
+      JOIN procurement_finance_handoff AS handoff ON handoff.id = latest.id
+      ORDER BY latest.first_version, latest.first_created, latest.first_id
+    `;
+    return rows.map((row) => ({
+      ...(row.payload as unknown as ProcurementFinanceSourceV1),
+      handoffCreatedAt: row.createdAt.toISOString(),
+    }));
   }
 
   async financeInvoiceSource(sourceId: string, branchIds: readonly string[]) {
