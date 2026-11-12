@@ -1,6 +1,6 @@
 ## NORA-ARROW-RTL-1112 — PC-C
 
-Reversed Persian Nora contract navigation arrows to U+2190 (←), including receipt instructions.60 focused guide/readable-output tests pass; date/time behavior unchanged. No API/schema/data change. Local lint blocked by pre-existing worktree eslint-config-next resolution; hosted checks remain required. Not deployed.
+Reversed Persian Nora contract navigation arrows to U+2190 (←), including receipt instructions.63 focused guide/readable-output/i18n tests pass; date/time behavior unchanged. Latest develop translations integrated and missing Nora receipt-guide translation added. No API/schema/data change. Local lint blocked by pre-existing worktree eslint-config-next resolution; hosted checks remain required. Not deployed.
 
 ## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
 
