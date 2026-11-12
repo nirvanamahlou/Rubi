@@ -573,6 +573,8 @@ function AssetPageControls({
   );
 }
 
+const leadStages = { LEAD: 'سرنخ', ORDER: 'سفارش', SALE: 'فروش' } as const;
+
 export function DurableIntakesPanel({
   mode,
   onNotice,
@@ -591,7 +593,6 @@ export function DurableIntakesPanel({
   const [entryDate, setEntryDate] = useState('');
   const [source, setSource] = useState('');
   const [campaignId, setCampaignId] = useState('none');
-  const [status, setStatus] = useState('NEW');
   const [lastFollowUpAt, setLastFollowUpAt] = useState('');
   const [ruleIds, setRuleIds] = useState<string[]>(['PHONE_VALID']);
   const [selected, setSelected] =
@@ -606,7 +607,9 @@ export function DurableIntakesPanel({
   const [page, setPage] = useState(1);
   const visibleItems = items.filter(
     (item) =>
-      (statusFilter === 'all' || item.status === statusFilter) &&
+      (statusFilter === 'all' ||
+        (mode === 'leads' ? (item.stage ?? 'LEAD') : item.status) ===
+          statusFilter) &&
       (sourceFilter === 'all' || item.sourceCategory === sourceFilter) &&
       audienceMatches(search, [
         item.firstName,
@@ -615,7 +618,9 @@ export function DurableIntakesPanel({
         item.firstName
           ? item.sourceCategory
           : audienceSourceLabel(item.sourceCategory),
-        audienceStatusLabels[item.status],
+        mode === 'leads'
+          ? leadStages[item.stage ?? 'LEAD']
+          : audienceStatusLabels[item.status],
         data.campaigns.find((campaign) => campaign.id === item.campaignId)
           ?.name,
       ]),
@@ -673,6 +678,30 @@ export function DurableIntakesPanel({
           void load();
         }}
       />
+      {mode === 'leads' && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            ['همه مخاطبان', items.length],
+            ...Object.entries(leadStages).map(
+              ([stage, label]) =>
+                [
+                  label,
+                  items.filter((item) => (item.stage ?? 'LEAD') === stage)
+                    .length,
+                ] as const,
+            ),
+          ].map(([label, count]) => (
+            <Card key={label} className="p-4">
+              <div className="text-sm text-muted-foreground">{label}</div>
+              <strong className="text-2xl">
+                {error || intakesLoading
+                  ? '—'
+                  : Number(count).toLocaleString('fa-IR')}
+              </strong>
+            </Card>
+          ))}
+        </div>
+      )}
       <AudienceToolbar
         id={mode}
         search={search}
@@ -685,9 +714,13 @@ export function DurableIntakesPanel({
           setStatusFilter(value);
           setPage(1);
         }}
-        statuses={['NEW', 'CONTACTED', 'QUALIFIED', 'NURTURE', 'LOST'].map(
-          (value) => [value, audienceStatusLabels[value]!] as const,
-        )}
+        statuses={
+          mode === 'leads'
+            ? Object.entries(leadStages)
+            : ['NEW', 'CONTACTED', 'QUALIFIED', 'NURTURE', 'LOST'].map(
+                (value) => [value, audienceStatusLabels[value]!] as const,
+              )
+        }
         source={sourceFilter}
         onSource={(value) => {
           setSourceFilter(value);
@@ -704,7 +737,6 @@ export function DurableIntakesPanel({
                 setEntryDate('');
                 setSource('');
                 setCampaignId('none');
-                setStatus('NEW');
                 setLastFollowUpAt('');
                 setFormError('');
                 setEditorOpen(true);
@@ -712,26 +744,28 @@ export function DurableIntakesPanel({
             }
           : {})}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          ['کل سرنخ‌ها', items.length],
-          [
-            'واجد شرایط',
-            items.filter((item) => item.status === 'QUALIFIED').length,
-          ],
-          ['نتیجه فیلتر', visibleItems.length],
-        ].map(([label, count]) => (
-          <Card
-            key={String(label)}
-            className="border-t-2 border-t-primary/40 p-4"
-          >
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <strong className="text-2xl text-primary">
-              {Number(count).toLocaleString('fa-IR')}
-            </strong>
-          </Card>
-        ))}
-      </div>
+      {mode === 'scoring' && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            ['کل سرنخ‌ها', items.length],
+            [
+              'واجد شرایط',
+              items.filter((item) => item.status === 'QUALIFIED').length,
+            ],
+            ['نتیجه فیلتر', visibleItems.length],
+          ].map(([label, count]) => (
+            <Card
+              key={String(label)}
+              className="border-t-2 border-t-primary/40 p-4"
+            >
+              <p className="text-sm text-muted-foreground">{label}</p>
+              <strong className="text-2xl text-primary">
+                {Number(count).toLocaleString('fa-IR')}
+              </strong>
+            </Card>
+          ))}
+        </div>
+      )}
       {mode === 'leads' ? (
         <Dialog
           open={editorOpen}
@@ -815,22 +849,6 @@ export function DurableIntakesPanel({
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField id="intake-status" label="وضعیت" required>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="intake-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['NEW', 'CONTACTED', 'QUALIFIED', 'NURTURE', 'LOST'].map(
-                      (value) => (
-                        <SelectItem key={value} value={value}>
-                          {audienceStatusLabels[value]}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </FormField>
               <FormField id="intake-assignee" label="کارشناس فروش">
                 <Input
                   dir="ltr"
@@ -882,7 +900,7 @@ export function DurableIntakesPanel({
                         phone,
                         sourceCategory: source,
                         campaignId: campaignId === 'none' ? null : campaignId,
-                        status: status as 'NEW',
+                        status: 'NEW',
                         assigneeUserId: data.actor.userId,
                         lastFollowUpAt: lastFollowUpAt
                           ? new Date(lastFollowUpAt).toISOString()
@@ -926,7 +944,6 @@ export function DurableIntakesPanel({
                   setEntryDate('');
                   setSource('');
                   setCampaignId('none');
-                  setStatus('NEW');
                   setLastFollowUpAt('');
                 }}
                 size="icon"
@@ -979,14 +996,17 @@ export function DurableIntakesPanel({
             <caption className="sr-only">فهرست سرنخ‌ها</caption>
             <thead className="bg-muted/50">
               <tr>
-                {[
-                  'تلفن محافظت‌شده',
-                  'منبع ورود',
-                  'کمپین',
-                  'وضعیت',
-                  'امتیاز',
-                  'عملیات',
-                ].map((label) => (
+                {(mode === 'leads'
+                  ? ['نام مخاطب', 'شماره تماس', 'منبع آشنایی', 'وضعیت']
+                  : [
+                      'تلفن محافظت‌شده',
+                      'منبع ورود',
+                      'کمپین',
+                      'وضعیت',
+                      'امتیاز',
+                      'عملیات',
+                    ]
+                ).map((label) => (
                   <th scope="col" className="p-4" key={label}>
                     {label}
                   </th>
@@ -996,83 +1016,119 @@ export function DurableIntakesPanel({
             <tbody>
               {renderedItems.map((item) => (
                 <tr key={item.id} className="border-t hover:bg-muted/30">
-                  <td className="p-4 font-semibold">
-                    <strong className="block">
-                      {[item.firstName, item.lastName]
-                        .filter(Boolean)
-                        .join(' ')}
-                    </strong>
-                    <span dir="ltr">{item.maskedPhone}</span>
-                    <small className="block">
-                      {item.entryDate
-                        ? new Date(item.entryDate).toLocaleDateString('fa-IR', {
-                            timeZone: 'Asia/Tehran',
-                          })
-                        : '—'}
-                    </small>
-                  </td>
-                  <td className="p-4">
-                    {item.firstName
-                      ? item.sourceCategory
-                      : audienceSourceLabel(item.sourceCategory)}
-                  </td>
-                  <td className="p-4">
-                    {data.campaigns.find(
-                      (campaign) => campaign.id === item.campaignId,
-                    )?.name ?? (item.campaignId ? 'کمپین متصل' : 'بدون کمپین')}
-                  </td>
-                  <td className="p-4">
-                    <Badge>
-                      {audienceStatusLabels[item.status] ?? 'نامشخص'}
-                    </Badge>
-                  </td>
-                  <td className="p-4 font-semibold text-primary">
-                    {item.score.toLocaleString('fa-IR')}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title="مشاهده"
-                        aria-label={`مشاهده سرنخ ${item.maskedPhone}`}
-                        onClick={() => setSelected(item)}
-                      >
-                        <Eye aria-hidden="true" className="size-4" />
-                      </Button>
-                      {mode === 'scoring' ? (
-                        <Button
-                          size="icon"
-                          disabled={busy}
-                          title="محاسبه امتیاز"
-                          aria-label={`محاسبه امتیاز ${item.maskedPhone}`}
-                          onClick={async () => {
-                            if (busy) return;
-                            setBusy(true);
-                            try {
-                              await marketingApi.scoreIntake(
-                                item.id,
-                                ruleIds,
-                                item.version,
-                              );
-                              await load();
-                              onNotice('امتیاز سرور ذخیره شد.');
-                            } catch (reason) {
-                              onNotice(
-                                reason instanceof Error
-                                  ? reason.message
-                                  : 'امتیازدهی انجام نشد.',
-                              );
-                            } finally {
-                              setBusy(false);
-                            }
-                          }}
+                  {mode === 'leads' ? (
+                    <>
+                      <td className="p-4">
+                        <button
+                          className="font-semibold hover:underline"
+                          type="button"
+                          onClick={() => setSelected(item)}
                         >
-                          <Calculator aria-hidden="true" className="size-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-                  </td>
+                          {[item.firstName, item.lastName]
+                            .filter(Boolean)
+                            .join(' ') || '—'}
+                        </button>
+                      </td>
+                      <td className="p-4">
+                        <span dir="ltr">{item.maskedPhone}</span>
+                      </td>
+                      <td className="p-4">
+                        {item.firstName
+                          ? item.sourceCategory
+                          : audienceSourceLabel(item.sourceCategory)}
+                      </td>
+                      <td className="p-4">
+                        <Badge>{leadStages[item.stage ?? 'LEAD']}</Badge>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="p-4 font-semibold">
+                        <strong className="block">
+                          {[item.firstName, item.lastName]
+                            .filter(Boolean)
+                            .join(' ')}
+                        </strong>
+                        <span dir="ltr">{item.maskedPhone}</span>
+                        <small className="block">
+                          {item.entryDate
+                            ? new Date(item.entryDate).toLocaleDateString(
+                                'fa-IR',
+                                {
+                                  timeZone: 'Asia/Tehran',
+                                },
+                              )
+                            : '—'}
+                        </small>
+                      </td>
+                      <td className="p-4">
+                        {item.firstName
+                          ? item.sourceCategory
+                          : audienceSourceLabel(item.sourceCategory)}
+                      </td>
+                      <td className="p-4">
+                        {data.campaigns.find(
+                          (campaign) => campaign.id === item.campaignId,
+                        )?.name ??
+                          (item.campaignId ? 'کمپین متصل' : 'بدون کمپین')}
+                      </td>
+                      <td className="p-4">
+                        <Badge>
+                          {audienceStatusLabels[item.status] ?? 'نامشخص'}
+                        </Badge>
+                      </td>
+                      <td className="p-4 font-semibold text-primary">
+                        {item.score.toLocaleString('fa-IR')}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            title="مشاهده"
+                            aria-label={`مشاهده سرنخ ${item.maskedPhone}`}
+                            onClick={() => setSelected(item)}
+                          >
+                            <Eye aria-hidden="true" className="size-4" />
+                          </Button>
+                          {
+                            <Button
+                              size="icon"
+                              disabled={busy}
+                              title="محاسبه امتیاز"
+                              aria-label={`محاسبه امتیاز ${item.maskedPhone}`}
+                              onClick={async () => {
+                                if (busy) return;
+                                setBusy(true);
+                                try {
+                                  await marketingApi.scoreIntake(
+                                    item.id,
+                                    ruleIds,
+                                    item.version,
+                                  );
+                                  await load();
+                                  onNotice('امتیاز سرور ذخیره شد.');
+                                } catch (reason) {
+                                  onNotice(
+                                    reason instanceof Error
+                                      ? reason.message
+                                      : 'امتیازدهی انجام نشد.',
+                                  );
+                                } finally {
+                                  setBusy(false);
+                                }
+                              }}
+                            >
+                              <Calculator
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                            </Button>
+                          }
+                        </div>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -1136,7 +1192,12 @@ export function DurableIntakesPanel({
                     ? selected.sourceCategory
                     : audienceSourceLabel(selected.sourceCategory),
                 ],
-                ['وضعیت', audienceStatusLabels[selected.status] ?? 'نامشخص'],
+                [
+                  'وضعیت',
+                  mode === 'leads'
+                    ? leadStages[selected.stage ?? 'LEAD']
+                    : (audienceStatusLabels[selected.status] ?? 'نامشخص'),
+                ],
                 [
                   'کمپین',
                   data.campaigns.find(

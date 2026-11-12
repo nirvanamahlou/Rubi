@@ -4,6 +4,7 @@ import {
   type AuthenticatedActor,
   type CustomerAffairsMarketingIntakeInputV1,
   type CustomerAffairsMarketingIntakeViewV1,
+  type MarketingLeadActivity,
   type MarketingAssetInputV1,
   type MarketingAssetKind,
   type MarketingAssetViewV1,
@@ -369,6 +370,10 @@ export const marketingApi = {
         headers: mutationHeaders(undefined, key),
         body: JSON.stringify({ expectedVersion }),
       },
+    ),
+  leadActivity: () =>
+    request<{ data: MarketingLeadActivity[] }>(
+      '/customer-affairs/marketing-intakes/lead-activity',
     ),
   intakes: () =>
     request<{ data: CustomerAffairsMarketingIntakeViewV1[] }>(

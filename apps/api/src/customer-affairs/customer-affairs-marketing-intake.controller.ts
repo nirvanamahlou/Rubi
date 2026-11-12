@@ -47,6 +47,13 @@ export class CustomerAffairsMarketingIntakeController {
     return this.service.list(req.actor);
   }
 
+  @Get('lead-activity')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('marketing.read')
+  leadActivity(@Req() req: AuthenticatedRequest) {
+    return this.service.leadActivity(req.actor);
+  }
+
   @Post()
   @RequirePermissions(
     'customer_affairs.lead.create',
