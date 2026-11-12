@@ -25,6 +25,31 @@ describe('HR resource and time validation', () => {
     expect(() => recordValues(['wrong'], resource('time', 'leave'))).toThrow();
     expect(() => object({ values: [], rawSecret: 'x' }, ['values'])).toThrow();
   });
+  it('accepts optional branch registration details and legacy branch records', () => {
+    const schema = resource('organization', 'branches');
+    const legacy = ['شعبه آزمایشی', 'شرکت', 'تهران', '', '2026-11-12'];
+    expect(schema.fields.slice(5).every((field) => !field.required)).toBe(true);
+    expect(recordValues(legacy, schema)).toEqual([
+      ...legacy,
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
+    const full = [
+      ...legacy,
+      '2006-06-07',
+      'سهامی خاص',
+      '0027',
+      '00411',
+      '00101030926',
+    ];
+    expect(recordValues(full, schema)).toEqual(full);
+    expect(() =>
+      recordValues([...legacy, '2006-02-30', '', '', '', ''], schema),
+    ).toThrow();
+  });
   it('requires both HR and manager assessments for a candidate', () => {
     const assessment = resource('recruitment', 'assessment');
     const complete = [

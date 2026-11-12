@@ -1,21 +1,27 @@
-import englishCatalog from './en-catalog.json';
-import accountingDocuments from './en-accounting-documents.json';
-import accountingPageKpis from './en-accounting-page-kpis.json';
-import integrations from './en-integrations.json';
-import englishOverrides from './en-overrides.json';
 import type { DisplayLanguage } from './language';
 import { isCurrencySymbol } from './currency-symbol';
 
+const emptyCatalog: Readonly<Record<string, string>> = {};
 let englishUiCatalog: Readonly<Record<string, string>> | undefined;
+let catalogLoad: Promise<void> | undefined;
+
+export function loadEnglishUiCatalog(): Promise<void> {
+  return (catalogLoad ??= import('./english-ui-catalog')
+    .then(({ mergeEnglishUiCatalog }) => {
+      englishUiCatalog = mergeEnglishUiCatalog();
+    })
+    .catch((error: unknown) => {
+      catalogLoad = undefined;
+      throw error;
+    }));
+}
+
+export function isEnglishUiCatalogLoaded(): boolean {
+  return englishUiCatalog !== undefined;
+}
 
 export function getEnglishUiCatalog(): Readonly<Record<string, string>> {
-  return (englishUiCatalog ??= {
-    ...englishCatalog,
-    ...accountingDocuments,
-    ...accountingPageKpis,
-    ...integrations,
-    ...englishOverrides,
-  });
+  return englishUiCatalog ?? emptyCatalog;
 }
 
 const persianScript = /[\u0600-\u06ff]/;
@@ -70,7 +76,8 @@ export function translateUiText(
     const trailing = value.match(/\s*$/)?.[0] ?? '';
     return `${leading}${latinDigits(exact)}${trailing}`;
   }
-  if (!persianScript.test(value)) return latinDigits(value);
+  if (!englishUiCatalog || !persianScript.test(value))
+    return latinDigits(value);
   const phrases = getPhraseIndex();
   let result = '';
   let changed = false;

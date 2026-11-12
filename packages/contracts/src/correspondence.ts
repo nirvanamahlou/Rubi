@@ -4,6 +4,8 @@ export interface CorrespondenceUser {
   id: string;
   displayName: string;
   username: string;
+  unit?: string;
+  jobTitle?: string;
 }
 export interface InternalLetterContent {
   company: string;
@@ -18,7 +20,13 @@ export interface InternalLetterContent {
   text: string;
   template: string;
 }
+export interface InternalLetterAttachment {
+  id: string;
+  name: string;
+  size: number;
+}
 export interface InternalLetterRecord {
+  attachments?: InternalLetterAttachment[];
   id: string;
   version: number;
   dateISO: string;

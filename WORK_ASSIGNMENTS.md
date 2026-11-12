@@ -2521,6 +2521,10 @@ Reserve a paged Promotions read endpoint, additive query and response types, the
 - قفل‌ها: `Migration Owner = PC-A/HOTEL-RATE-ROOM-CAPACITY-0920`، Reservations/Sales additive shared-contract و Central Docs برای همین Task رزرو هستند. Dependency/Lockfile رزرو نمی‌شود. Query مستقیم جدول ماژول دیگر ممنوع و مراجع نوع اتاق فقط از Public Boundary اطلاعات پایه مصرف می‌شوند.
 - نتیجه: نرخ نسخه‌دار برای نوع اتاق واقعی، ضریب مثبت، ظرفیت مستقل بزرگسال/کودک، فیلتر نوع اتاق قابل‌فروش در قرارداد و کنترل fail-closed ظرفیت در Create/Update/Confirm تکمیل شد. Migration روی PostgreSQL 18.1 خالی، Prisma، lint/typecheck، ۱۰۴ تست هدفمند و Build API/Web پاس شدند. قفل‌ها تا Merge و Handoff رسمی فعال می‌مانند.
 
+## I18N-CATALOG-TRANSFER-1111 — PC-B — READY_FOR_CI
+
+Reserve the English UI catalog loader, provider and explicit English import and rendering entry points. Keep Persian startup synchronous and verify English rendering, metadata and generated documents.
+
 ## I18N-STARTUP-1110 — PC-B — IN_PROGRESS
 
 Reserve translation phrase-index initialization and reuse of the source inventory in translation coverage tests. Defer fallback index construction until English actually needs it. Preserve exact translations, form values, and locale behavior. No shared dictionary, dependency, API, or database change.
@@ -12485,6 +12489,12 @@ Reserve job title table action icons.
 
 NORA-CONTRACT-GUIDE CI follow-up: reserve 44 additive English override labels and generated API/standalone English catalogues required by the existing completeness gate. No operational API behavior changes.
 
+## NORA-READABLE-OUTPUT-1112 — PC-C — READY_FOR_REVIEW
+
+Reserve assistant contract path glyph, separate Tehran date/time rendering, focused regressions and additive i18n labels. Prior PR1673 merged/released. No Sales workflow, schema or data changes.
+
+Integration validation consumes the published PC-B readonly chart callback repair intact and adds 21 English coverage entries required by the merged headquarters chart. Nora changes no HR implementation; the scoped runtime contains only the approved Nora files and translations.
+
 ## NORA-CONTRACT-WORKFLOW-GUIDE-1111 — PC-C — READY_FOR_CI
 
 Owner requests comprehensive ERP contract workflow guidance, colloquial Persian recognition and arrow navigation paths. Reserve assistant contract guides/form-help/composer and focused regressions, additive English labels and generated catalogues, bounded task/status documentation. Prior guide PR1672 is merged and deployed, its source scope is released. Read-only Nora guidance only; no Sales business workflow, migration, dependency or operational data changes. Base origin/develop a8206946f.
@@ -12497,11 +12507,13 @@ Add a per-request hourly leave limit to HR policy records and validate submissio
 
 Connect the HR request center to personal workbench and finance referrals, and persist per-user read state. Reuse existing records and destination permissions.
 
-## NORA-READABLE-OUTPUT-1112 — PC-C — READY_FOR_REVIEW
+## HR-BRANCH-REGISTRATION-DETAILS-1112 — PC-B
 
-Reserve assistant contract path glyph, separate Tehran date/time rendering, focused regressions and additive i18n labels. Prior PR1673 merged/released. No Sales workflow, schema or data changes.
+Add optional incorporation date, company type, registration number, economic code, and national ID to the HR branch form. Keep legacy five-field submissions and saved records compatible.
 
-Integration validation consumes the published PC-B readonly chart callback repair intact and adds 21 English coverage entries required by the merged headquarters chart. Nora changes no HR implementation; the scoped runtime contains only the approved Nora files and translations.
+## INTERNAL-LETTER-ANNOTATIONS-1112 — PC-B
+
+Internal composition selects a registered recipient and snapshots personnel labels. Recipient pickers group users by unit. New internal letters use the Tehran drafting date and accept up to five arbitrary-format attachments of ten MiB each. The additive attachment migration must run before release.
 
 ## LEDGER-PARITY-1111 — PC-D — IN_PROGRESS
 
