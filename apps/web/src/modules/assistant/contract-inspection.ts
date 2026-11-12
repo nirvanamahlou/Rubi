@@ -5,6 +5,7 @@ import {
 import { contractInspectionText } from './contract-inspection-text';
 
 import {
+  isContractReportQuestion,
   portfolioKind,
   portfolioReport,
   recordReport,
@@ -38,9 +39,10 @@ export async function inspectContractQuestion(
     ?.trim();
   const followup =
     previousId &&
-    /کجا|اصلاح|وضعیت|حالا|بررسی|مانع|چرا|این قرارداد|بعدش|بعد از این|ادامه|پیگیریش|تاریخچه|تغییرات|رسید|مغایرت|مدارک|خدمات/.test(
-      normalized,
-    );
+    (isContractReportQuestion(message) ||
+      /کجا|اصلاح|وضعیت|حالا|بررسی|مانع|چرا|این قرارداد|بعدش|بعد از این|ادامه|پیگیریش/.test(
+        normalized,
+      ));
   if (!reference && !customerSearch && !followup && !portfolio) return;
   const { salesApi, SalesApiError } =
     await import('@/modules/sales/api/client');

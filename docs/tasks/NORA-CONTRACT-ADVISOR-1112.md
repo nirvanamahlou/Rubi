@@ -19,3 +19,23 @@ PC-C. This change is a read-only assistant integration. No new permission, migra
 | Ask about stale drafts, concurrent amendment, changed inventory and multiple guide topics | Provide the relevant recovery steps; never promise availability, overwrite data or claim a refund amount. |
 
 Scope limits: the personal list is ownership-based, not a task assignment system. Lists describe the inspected page. Finance delivery clearance is not proof of actual customer delivery. Historical fee policies, undocumented transitions and documents without source evidence cannot be reconstructed by the assistant.
+
+## Local acceptance run, 2026-11-12
+
+The actual floating composer and Sales HTTP clients ran in headless Chrome on loopback. Synthetic HTTP fixtures supplied session, list, detail, receipt, purchase and audit responses. The form exposed synthetic stage attributes. Unexpected requests, including provider calls or Sales writes, failed the test. This exercises the client boundary, not a deployed database, real IAM sessions or an actual payment.
+
+| # | Result | Observed |
+| --- | --- | --- |
+| 1 | Pass | Persian-digit 123 matched on page two. Two references required clarification without another detail read. |
+| 2 | Pass | A synthetic customer search with two matches returned both numbers without a detail read. |
+| 3 | Pass | Route, date, capacity, infant/adult, room/age, visa, insurance and tour-price messages followed the current form state. After correction the route blocker disappeared. |
+| 4 | Pass | Create timeout prompted a lookup before retry. A known created number with failed confirmation prompted recovery of that record. |
+| 5 | Pass | A submitted record with a failed receipt upload retained its contract number and offered receipt recovery. |
+| 6 | Pass | Scheduled overdue, confirmed, pending and rejected payment lines kept IRR and USD separate from evidence counts. |
+| 7 | Fixed, pass | Standalone audit follow-up formerly fell through to conversation. Receipt and audit denial now preserve the readable summary without reporting zero or invoking the provider. |
+| 8 | Pass | Partial service, changed contract, approved delivery and zero issued floating tickets remained distinguishable. Only reads occurred. |
+| 9 | Pass | Cancellation history and amendment headers used Tehran time across midnight. The fixture's private snapshot did not appear. |
+| 10 | Pass | Two owners in separate synthetic session scopes each requested their own page two. A closed record was excluded and the empty page was identified. |
+| 11 | Pass | A three-day-old transition yielded three days in contract status. Removing history produced an unknown duration. |
+| 12 | Fixed, pass | A delayed detail response formerly appeared after another row was selected on the same page. Changing selection, route, account or authorized branch scope now discarded the old response. |
+| 13 | Pass | Browser-local draft, concurrent change, inventory refresh and separate visa and insurance questions produced recovery guidance. |

@@ -110,10 +110,21 @@ function reportError(error: unknown) {
       ? 'منبع این بخش در محدوده مجاز پیدا نشد.'
       : 'دریافت جزئیات این بخش ناموفق بود.';
 }
+const reportTopics = {
+  history: /تاریخچه|تغییرات|توقف|متوقف/,
+  audit: /تغییرات|ممیزی/,
+  payment: /رسید|مغایرت|وصول|سررسید/,
+  service: /مدرک|مدارک|خدمت|خدمات|ناقص/,
+};
+export function isContractReportQuestion(message: string) {
+  const question = normalizeContractQuestion(message);
+  return Object.values(reportTopics).some((pattern) => pattern.test(question));
+}
+
 export async function recordReport(message: string, data: SalesContractDetail) {
   const q = normalizeContractQuestion(message);
   const lines: string[] = [];
-  if (/تاریخچه|تغییرات|توقف|متوقف/.test(q)) {
+  if (reportTopics.history.test(q)) {
     try {
       const events = (await salesApi.statusHistory(data.id)).data;
       lines.push(
@@ -127,7 +138,7 @@ export async function recordReport(message: string, data: SalesContractDetail) {
       lines.push(reportError(error));
     }
   }
-  if (/تغییرات|ممیزی/.test(q)) {
+  if (reportTopics.audit.test(q)) {
     try {
       const audit = (await salesApi.contractAudit(data.id)).data;
       lines.push(
@@ -140,7 +151,7 @@ export async function recordReport(message: string, data: SalesContractDetail) {
       lines.push(reportError(error));
     }
   }
-  if (/رسید|مغایرت|وصول|سررسید/.test(q)) {
+  if (reportTopics.payment.test(q)) {
     try {
       const entries = await paymentReceiptsApi
         .entries(data.id)
@@ -189,7 +200,7 @@ export async function recordReport(message: string, data: SalesContractDetail) {
       lines.push(reportError(error));
     }
   }
-  if (/مدرک|مدارک|خدمت|خدمات|ناقص/.test(q)) {
+  if (reportTopics.service.test(q)) {
     lines.push(
       data.customerDocumentDeliveryApproved === undefined
         ? 'اطلاعات تأیید تحویل در این پاسخ موجود نیست.'

@@ -10010,3 +10010,5 @@ The owner requests remaining General Ledger parity with Rahkaran, preserving exi
 LEDGER-PARITY-1111 follow-up (2026-11-12): owner authorizes PR1677 to develop and merge after successful hosted checks, with no production rollout. Preserve develop additions and published migration238; repair the HTTP test dependency fixture, seeded-currency expectations and work-assignment formatting identified by hosted CI. Final head checks/review are required before merge.
 
 PC-C / NORA-CONTRACT-ADVISOR-1112: read-only contract guidance, scoped inspection and operational reports prepared for develop. Acceptance matrix: [NORA-CONTRACT-ADVISOR-1112](tasks/NORA-CONTRACT-ADVISOR-1112.md). No production deployment.
+
+PC-C / NORA-CONTRACT-UAT-1112: 13 local Chrome scenarios passed against synthetic HTTP responses after correcting report follow-ups and late responses after selection changes.
