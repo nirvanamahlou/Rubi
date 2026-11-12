@@ -1108,6 +1108,9 @@ export function UserManagement() {
                     ref={manualAccessEditor}
                     key={selected.id}
                     userId={selected.id}
+                    canAssignHr={['demo', 'nima'].includes(
+                      selected.username.toLowerCase(),
+                    )}
                     canManage={canManage}
                     options={options}
                     controlLabel={accessControlLabel}

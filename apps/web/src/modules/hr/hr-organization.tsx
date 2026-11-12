@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { HrCompanyCreate } from './hr-company-create';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import { OrganizationChart, type OrganizationNode } from './organization-chart';
@@ -377,6 +378,7 @@ export function HrOrganization({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
+  const { context } = useLegalEntityContext();
   const [group, setGroup] = useState(
     initialTab === 'positions' ? 'jobs' : 'structure',
   );
@@ -426,7 +428,10 @@ export function HrOrganization({
             ? [
                 { id: 'headquarters', label: 'چارت دفتر مرکزی' },
                 { id: 'orgchart', label: 'چارت دستی' },
-                { id: 'branches', label: 'شعبه‌ها' },
+                {
+                  id: 'branches',
+                  label: context?.selection === 'ALL' ? 'شرکت‌ها' : 'شعبه‌ها',
+                },
                 { id: 'units', label: 'واحدها' },
                 { id: 'groups', label: 'گروه‌های کارکنان' },
                 { id: 'groupMembers', label: 'اعضای گروه' },
