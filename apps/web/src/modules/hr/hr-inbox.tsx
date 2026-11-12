@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle, Button } from '@/components/ui';
 import { workbenchRequestStatusLabel } from '@/modules/workbench/workbench-request-status';
 import { DatePicker } from '@/components/ui/date-picker';
 import { HrButton } from './hr-controls';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Forward } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -19,6 +19,10 @@ import {
   HrRangeBar,
   HrTable,
 } from './hr-controls';
+import {
+  HrInboxForwardDialog,
+  type HrInboxForwardRow,
+} from './hr-inbox-forward-dialog';
 import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
@@ -36,6 +40,29 @@ export function HrInbox({
   store: HrStore;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
+  const [forward, setForward] = useState<HrInboxForwardRow | null>(null);
+  const [seen, setSeen] = useState<ReadonlySet<string> | null>(null);
+  const [forwarded, setForwarded] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void customerAffairsApi
+      .hrInboxSeen()
+      .then(({ data }) => {
+        if (active)
+          setSeen((current) => new Set([...data, ...(current ?? [])]));
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'دریافت وضعیت مشاهده انجام نشد.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [items, setItems] = useState<HrRecordDto[]>([]);
   const [status, setStatus] = useState('در انتظار تأیید');
   const [requestType, setRequestType] = useState('');
@@ -131,7 +158,32 @@ export function HrInbox({
       setBusy(false);
     }
   };
+  const inboxRow = (index: number): HrInboxForwardRow => {
+    const native = visibleItems[index];
+    if (native)
+      return {
+        id: native.id,
+        source: 'hr',
+        title:
+          native.values[native.columns.indexOf('عنوان درخواست')]?.trim() ||
+          (native.data.requestSubtype ?? sourceForRecord(native).label),
+      };
+    const item = filteredWorkbench[index - visibleItems.length]!;
+    return { id: item.id, source: 'workbench', title: item.subject };
+  };
   const openRow = (index: number) => {
+    const { id, source } = inboxRow(index);
+    if (!seen?.has(id))
+      void customerAffairsApi
+        .markHrInboxSeen(id, source)
+        .then(() => {
+          setSeen((current) => new Set([...(current ?? []), id]));
+        })
+        .catch((cause: unknown) => {
+          setError(
+            cause instanceof Error ? cause.message : 'ثبت مشاهده انجام نشد.',
+          );
+        });
     if (index < visibleItems.length)
       onSelect(visibleItems[index]!, sourceForRecord(visibleItems[index]!));
     else {
@@ -198,6 +250,10 @@ export function HrInbox({
     ],
     totalLabel: '',
   };
+  const unreadIds = new Set(
+    seen ? data.recordIds.filter((id) => !seen.has(id)) : [],
+  );
+  const { write, approve, sensitive } = store.data!.capabilities;
   return (
     <div className={ui.spaced}>
       <header className={ui.heading}>
@@ -221,7 +277,24 @@ export function HrInbox({
           </>
         }
       />
-      <HrPanel title="درخواست‌ها">
+      <HrPanel
+        title="درخواست‌ها"
+        actions={
+          seen ? (
+            <span
+              className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950 dark:bg-amber-950 dark:text-amber-100"
+              aria-live="polite"
+            >
+              {unreadIds.size.toLocaleString('fa-IR')} درخواست دیده‌نشده
+            </span>
+          ) : null
+        }
+      >
+        {forwarded ? (
+          <p role="status" className="mb-3 text-sm text-primary">
+            درخواست بازارسال شد.
+          </p>
+        ) : null}
         <div className={ui.filters}>
           <label>
             نوع درخواست
@@ -303,17 +376,42 @@ export function HrInbox({
           {...selection}
           onOpen={openRow}
           {...(store.data!.capabilities.write ? { onDelete: setDeleting } : {})}
+          unreadIds={unreadIds}
           rowActions={(index) => (
-            <HrButton
-              onClick={() => openRow(index)}
-              aria-label="رسیدگی"
-              title="رسیدگی"
-            >
-              <ClipboardCheck className="size-4" aria-hidden="true" />
-            </HrButton>
+            <>
+              {write && approve && sensitive ? (
+                <HrButton
+                  onClick={() => {
+                    setForwarded(false);
+                    setForward(inboxRow(index));
+                  }}
+                  aria-label="بازارسال"
+                  title="بازارسال"
+                >
+                  <Forward className="size-4" aria-hidden="true" />
+                </HrButton>
+              ) : null}
+              <HrButton
+                onClick={() => openRow(index)}
+                aria-label="رسیدگی"
+                title="رسیدگی"
+              >
+                <ClipboardCheck className="size-4" aria-hidden="true" />
+              </HrButton>
+            </>
           )}
         />
       </HrPanel>
+      {forward ? (
+        <HrInboxForwardDialog
+          row={forward}
+          onClose={() => setForward(null)}
+          onSent={() => {
+            setForward(null);
+            setForwarded(true);
+          }}
+        />
+      ) : null}
       <Dialog
         open={Boolean(review)}
         onOpenChange={(open) => {

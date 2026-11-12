@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import { AttendanceStatusControl } from './hr-attendance-activation-form';
-import type { HrRecordDto } from '@nora/contracts';
+import { HR_ATTENDANCE_STATUSES, type HrRecordDto } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { TimePicker } from '@/components/ui/time-picker';
 import { HrButton } from './hr-controls';
@@ -15,7 +14,7 @@ export function HrAttendanceEditor({
 }: {
   record: HrRecordDto;
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (record: HrRecordDto) => Promise<void>;
 }) {
   const clock = (v?: string | null) =>
     v
@@ -31,6 +30,11 @@ export function HrAttendanceEditor({
     [reason, setReason] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const initialStatus =
+    record.data.attendanceActive === false || record.status === 'غیرفعال'
+      ? 'inactive'
+      : (record.data.attendanceStatusOverride ?? 'auto');
+  const [status, setStatus] = useState<string>(initialStatus);
   const initialDeviceError = record.data.attendanceDeviceError === true;
   const [deviceError, setDeviceError] = useState(initialDeviceError);
   const retry = useRef({ body: '', key: crypto.randomUUID() });
@@ -45,13 +49,6 @@ export function HrAttendanceEditor({
         <DialogTitle>
           ویرایش تردد · {hrDisplayDate(record.values[1] ?? '')}
         </DialogTitle>
-        <AttendanceStatusControl
-          record={record}
-          onSaved={async () => {
-            await onSaved();
-            onClose();
-          }}
-        />
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
@@ -60,28 +57,44 @@ export function HrAttendanceEditor({
             setBusy(true);
             setError('');
             try {
+              const statusOnly =
+                (e.nativeEvent as SubmitEvent).submitter?.getAttribute(
+                  'value',
+                ) === 'status';
               const body = JSON.stringify({
                 version: record.version,
-                ...(arrival && arrival !== clock(record.data.firstIn)
+                ...(status !== initialStatus
+                  ? { status: status === 'auto' ? null : status }
+                  : {}),
+                ...(!statusOnly &&
+                arrival &&
+                arrival !== clock(record.data.firstIn)
                   ? { arrival }
                   : {}),
-                ...(departure && departure !== clock(record.data.lastOut)
+                ...(!statusOnly &&
+                departure &&
+                departure !== clock(record.data.lastOut)
                   ? { departure }
                   : {}),
-                ...(reason.trim() ? { reason } : {}),
-                ...(deviceError !== initialDeviceError ? { deviceError } : {}),
+                ...(!statusOnly && reason.trim() ? { reason } : {}),
+                ...(!statusOnly && deviceError !== initialDeviceError
+                  ? { deviceError }
+                  : {}),
               });
               if (retry.current.body !== body)
                 retry.current = { body, key: crypto.randomUUID() };
-              await hrRequest(`/attendance/${record.id}/manual`, {
-                method: 'POST',
-                headers: {
-                  'content-type': 'application/json',
-                  'idempotency-key': retry.current.key,
+              const saved = await hrRequest<HrRecordDto>(
+                `/attendance/${record.id}/manual`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'content-type': 'application/json',
+                    'idempotency-key': retry.current.key,
+                  },
+                  body,
                 },
-                body,
-              });
-              await onSaved();
+              );
+              await onSaved(saved);
               onClose();
             } catch (e) {
               setError(e instanceof Error ? e.message : 'ثبت انجام نشد.');
@@ -90,6 +103,31 @@ export function HrAttendanceEditor({
             }
           }}
         >
+          <div className="grid gap-3 rounded-xl border p-4">
+            <label className={ui.field}>
+              وضعیت
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                disabled={busy}
+              >
+                <option value="auto">وضعیت خودکار</option>
+                {HR_ATTENDANCE_STATUSES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+                <option value="inactive">غیرفعال</option>
+              </select>
+            </label>
+            <HrButton
+              type="submit"
+              value="status"
+              disabled={busy || status === initialStatus}
+            >
+              ثبت وضعیت
+            </HrButton>
+          </div>
           <label className={ui.field}>
             ورود
             <TimePicker

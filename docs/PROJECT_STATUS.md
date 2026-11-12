@@ -1,3 +1,7 @@
+## RESERVATION-COLUMN-RESIZE-1110 — PC-A — READY_FOR_CI
+
+Reservations inbox headers now have pointer/keyboard column resize handles. Keep the initial natural layout until interaction, then freeze measured column widths and change only the target plus total table width; RTL/LTR direction, pointer capture/loss and safe width limits are covered. Widths live only in the mounted table and reset when leaving/reopening, with no storage/API/export changes.47 focused Web/English coverage checks and scoped lint pass; the missing resize label identified by full CI is translated, with latest develop272e65aaf integrated before final validation; isolated real Chrome drag verifies47 headers,80px RTL delta only on the target, unchanged36px rows, refresh retention and reset on reentry with no browser errors; full Web typecheck and exact-head hosted gates precede authorized develop merge. No dependency/schema/data/deployment changes.
+
 ## COMPANY-LEDGER-1110 — PC-D — READY_FOR_CI
 
 ## NOTIFICATION-UNREAD-COUNT-1111 — PC-B — READY_FOR_CI
@@ -8,6 +12,10 @@ PostgreSQL aggregates unread counts by destination and selects a bounded feed wi
 
 Reproduced the owner's missing-outbound error for both floating directions in default PNL export. Passenger row lookup now uses the same manifestJourneys identity resolver as listing, assignment filtering and Report, covering contract-only flight metadata rather than only catalog ticketSelections. Regression checks cover outward/return PNL XLSM, Report XLSX and uploaded-template XLSX with no catalog offer; preserve legacy charter fallback, per-leg assigned passengers, output formats and branch/new-only rules. No schema/dependency/operational data or deployment. Green exact-head gates precede authorized develop merge.
 
+
+## FINANCE-PURCHASE-TRANSPORT-1111 — PC-B
+
+Finance Inbox, Procurement, and Reservation Purchases reuse the localized authenticated transport with their existing timeout policies. Finance regressions verify the same body and idempotency key on authentication retry and preserve the session-refresh outage error.
 
 ## DOCUMENT-CUSTOMER-TRANSPORT-1111 — PC-B
 
@@ -243,6 +251,20 @@ Local API/Web TypeScript and production builds, Prisma validation, scoped lint, 
 ## DOCUMENTS-DEFAULT-TEN-1105 — PC-B — IMPLEMENTED
 
 Reserve Documents workspace default loading and ten-row pagination. Remove filter prerequisite, preserve section domain/access restrictions. No API/schema or data changes. Validation: all 38 Documents tests and scoped ESLint passed; default and reset queries use ten rows, favorites are paginated, and filter-required placeholders are removed.
+
+## ASSISTANT-REMOVE-NOTICE-1111 — PC-C — READY_FOR_REVIEW
+
+Remove the requested Groq/session disclosure paragraph from the shared Assistant composer, its empty footer wrapper and textarea described-by reference. Send tooltip now uses the existing Send label. Existing conversation, authorization and provider behavior remain unchanged. Bounded UI-only work; no live publication or automatic merge.
+
+Validation:28 existing composer tests, scoped lint, full Web TypeScript and optimized production build pass.
+
+## ASSISTANT-MANUAL-RESIZE-1111 — PC-C — READY_FOR_REVIEW
+
+PR1669 repair: the sole conflict was append-only work assignments; retain both blocks. Added10 missing English labels without altering the completeness guard and regenerated both offline consumers.56 integrated Assistant/i18n regressions pass. User now explicitly authorizes merge after all exact-head CI gates succeed; no server deployment.
+
+ASSISTANT-TEXT-SIZE-1111 follow-up: adjacent increase/decrease text controls use labelled icons,14px default and12–24px bounds in2px steps. Floating-only CSS variable changes user/assistant message text without remounting the conversation or changing manual panel geometry.53 focused tests cover both controls, bounds, bilingual labels and existing resize/chat regressions. No API/preferences storage or live publication; same owned review PR1669.
+
+Implemented eight physical edge/corner resize handles, pointer capture/cancel and keyboard arrows (Shift for larger steps), bounded geometry and re-clamping on viewport changes. Removed the expand/restore button; preserve launcher movement, mounted draft/conversation, existing desktop/mobile defaults and actor isolation. Only floating chat message paragraphs use14px. Minimum readable280x300 shrinks to the available viewport; no viewport-specific1915px rule.49 focused tests, scoped ESLint, Web TypeScript and optimized production build pass. No backend/schema/dependency/live-server changes. Source reservation freezes on push and releases at handoff; review PR only, no automatic merge/publication.
 
 ## SOURCE-SHARE-LEGEND-1105 — PC-C — IN_PROGRESS
 
@@ -1120,6 +1142,10 @@ Reserve document scanner input, verified storage streaming and scanner regressio
 
 The hotel currency selector is registered in the existing manual field-access catalog. An explicit field grant allows the form to submit the currency. Without that grant, the existing field guard rejects it. All four focused Master Data contract tests passed. No account grants, schema changes, or deployment.
 
+## GROUPED-REPORT-PREVIEW-1111 — PC-B
+
+Travel and organization reports rank aggregated groups before formatting preview rows. Sort ties keep their existing order, and organization ranking compares exact Decimal currency amounts. Ninety-six focused tests passed.
+
 ## OPERATIONAL-REPORT-PREVIEW-1111 — PC-B
 
 Operational report previews retain only the ranked candidates through the page endpoint and map only displayed rows. Exact source totals, stable tie ordering, source freshness, available filters and full export order are preserved. Source projections still materialize their rows.
@@ -1463,6 +1489,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-room-party-limits-1015. User authorizes cumu
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
+
+## MARKETING-DIRECTORY-PAGES-1111 — PC-B
+
+Entry sources and campaign audiences use scoped 25-row pages. Literal normalized search, campaign filtering and exact counts run in PostgreSQL. Existing selectors and mutations keep their contracts.
 
 ## MARKETING-CAMPAIGN-PAGES-1110 — PC-B
 
@@ -9951,3 +9981,17 @@ Incoming letters return once the file and metadata are saved. Scan jobs remain s
 ## ARCHIVE-IMMEDIATE-ACCESS-1111 — PC-B
 
 Archive uploads return as soon as storage and metadata are committed. The existing background worker handles scanning. Ordinary preview and download use existing document permissions and are available while scanning is pending. Removed the contradictory upload notice and scan-specific submit text.
+
+NORA-CONTRACT-GUIDE: local implementation of sales guidance and authorized contract read assistance; seven focused tests pass, scoped lint passes. Full diagnostic validation and browser acceptance remain pending.
+
+NORA-CONTRACT-GUIDE ready for review: fourteen sales help topics, current-form validation guidance and authenticated contract inspection are implemented. 122 regressions, scoped lint, Web TypeScript and production build pass. Deployed authenticated browser acceptance is pending. See docs/tasks/NORA-CONTRACT-GUIDE.md.
+
+## HR-JOB-TITLE-ACTION-ICONS-1111 — PC-B
+
+Job title rows display the standard edit and delete icons. Scoped ESLint, Web typecheck, and 52 focused HR tests passed.
+
+NORA-CONTRACT-WORKFLOW-GUIDE-1111: 30 source-linked workflow articles, colloquial intent routing, RTL-stable ASCII-arrow paths, guide follow-up context and live-form blocker guidance implemented. 138 assistant regressions and all 3 i18n checks pass. Scoped lint and Web TypeScript pass. No Sales workflow or data mutation. Publication validation pending.
+
+## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B
+
+HR leave policies support an optional per-request hourly limit in minutes. Existing policies without a limit keep their previous behavior. 61 focused API and Web tests passed.

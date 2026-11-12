@@ -526,6 +526,38 @@
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
 }
+.columnTitle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.columnResizeHandle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 9px;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  border-inline-end: 2px solid var(--border);
+}
+.columnResizeHandle:hover,
+.columnResizeHandle:focus-visible,
+.requestTable[data-resizing] .columnResizeHandle:active {
+  border-inline-end-color: var(--ring);
+  background: color-mix(in srgb, var(--ring) 15%, transparent);
+  outline: none;
+}
+.requestTable[data-resizing] {
+  user-select: none;
+}
+.destinationText {
+  display: block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .requestTable td {
   padding: 3px 6px;
   height: 32px;
@@ -629,6 +661,22 @@
   min-width: 56px;
   max-width: 56px;
   box-sizing: border-box;
+}
+/* After the first resize, the measured colgroup owns every width independently. */
+.requestTable[data-resized] th,
+.requestTable[data-resized] td {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.requestTable[data-resized] .destinationText {
+  max-width: none;
+}
+.requestTable[data-resized] .serviceGroups {
+  width: auto;
+  max-width: none;
 }
 .exportBar small {
   color: var(--muted-foreground);

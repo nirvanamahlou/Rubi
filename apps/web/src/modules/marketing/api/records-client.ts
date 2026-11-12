@@ -14,6 +14,8 @@ import {
   type MarketingPromotionPageQueryV1,
   type MarketingPromotionPageV1,
   type MarketingSegmentPageQueryV1,
+  type MarketingDirectoryPageQueryV1,
+  type MarketingAssetPageV1,
   type MarketingSegmentPageV1,
   type MarketingSourceCountsResponseV1,
 } from '@nora/contracts';
@@ -312,6 +314,15 @@ export const marketingApi = {
   segmentPage: (query: MarketingSegmentPageQueryV1) =>
     request<MarketingSegmentPageV1>(
       '/marketing/assets/segments?' +
+        new URLSearchParams(
+          Object.entries(query).flatMap(([key, value]) =>
+            value == null ? [] : [[key, String(value)]],
+          ),
+        ),
+    ),
+  directoryPage: (query: MarketingDirectoryPageQueryV1) =>
+    request<MarketingAssetPageV1>(
+      '/marketing/assets/directory?' +
         new URLSearchParams(
           Object.entries(query).flatMap(([key, value]) =>
             value == null ? [] : [[key, String(value)]],

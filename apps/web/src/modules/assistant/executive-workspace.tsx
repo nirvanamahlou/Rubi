@@ -1,4 +1,11 @@
 'use client';
+import { usePathname } from 'next/navigation';
+import { readContractFormHelp } from './contract-form-help';
+import { inspectContractQuestion } from './contract-inspection';
+import {
+  normalizeContractQuestion,
+  resolveContractGuide,
+} from './contract-guides';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import { explainPersonal } from './recommendation-policy';
@@ -222,7 +229,6 @@ export function AssistantComposer({
   floating?: boolean;
 }) {
   const inputId = useId();
-  const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
   useEffect(() => {
@@ -234,7 +240,7 @@ export function AssistantComposer({
 
   const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string }>
+    Array<{ role: 'user' | 'assistant'; content: string; local?: boolean }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const [actionResult, setActionResult] =
@@ -242,6 +248,13 @@ export function AssistantComposer({
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
     null,
   );
+  const pathname = usePathname();
+  const contractId = useRef<string | undefined>(undefined);
+  const guideTopic = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    contractId.current = undefined;
+    if (!pathname?.startsWith('/sales')) guideTopic.current = undefined;
+  }, [pathname]);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const prompts: readonly [AssistantText, AssistantAction][] = [
@@ -287,6 +300,62 @@ export function AssistantComposer({
   const submit = async () => {
     if (denied || !draft.trim() || actionState === 'loading') return;
     const message = draft.trim();
+    const replyLocally = (content: string) => {
+      setMessages((previous) =>
+        [
+          ...previous,
+          { role: 'user' as const, content: message, local: true },
+          { role: 'assistant' as const, content, local: true },
+        ].slice(-12),
+      );
+      setChatError(null);
+      setActionResult(null);
+      setActionState(null);
+      setDraft('');
+    };
+    const formHelp = readContractFormHelp(message);
+    if (formHelp) {
+      replyLocally(formHelp);
+      return;
+    }
+    const selectedContract =
+      document.querySelector<HTMLElement>('[data-nora-contract-id]')?.dataset
+        .noraContractId ?? contractId.current;
+    const guide = resolveContractGuide(
+      message,
+      pathname === '/sales' ||
+        Boolean(pathname?.startsWith('/sales/contracts/')),
+      guideTopic.current,
+    );
+    const recordFollowup =
+      selectedContract &&
+      /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
+        normalizeContractQuestion(message),
+      );
+    if (guide && !recordFollowup) {
+      guideTopic.current = guide.topicId;
+      if (guide.topicId === 'create') contractId.current = undefined;
+      replyLocally(guide.text);
+      return;
+    }
+    pending.current?.abort();
+    const inspectionController = new AbortController();
+    pending.current = inspectionController;
+    setActionState('loading');
+    const inspection = await inspectContractQuestion(message, selectedContract);
+    if (inspectionController.signal.aborted) return;
+    setActionState(null);
+    if (inspection) {
+      contractId.current = inspection.contractId;
+      guideTopic.current = undefined;
+      replyLocally(inspection.text);
+      return;
+    }
+    if (guide) {
+      guideTopic.current = guide.topicId;
+      replyLocally(guide.text);
+      return;
+    }
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
@@ -303,6 +372,7 @@ export function AssistantComposer({
           version: 1,
           message,
           history: messages
+            .filter((item) => !item.local)
             .slice(-12)
             .map((item) => ({ ...item, content: item.content.slice(0, 1000) })),
         }),
@@ -368,7 +438,6 @@ export function AssistantComposer({
           id={inputId}
           ref={input}
           aria-label={t(c.composerTitle)}
-          aria-describedby={helpId}
           placeholder={t(c.composerPlaceholder)}
           className={styles.composerInput}
           rows={1}
@@ -415,7 +484,7 @@ export function AssistantComposer({
             className={styles.composerSend}
             disabled={denied || !draft.trim() || actionState === 'loading'}
             aria-label={t(c.send)}
-            title={t(c.chatPolicy)}
+            title={t(c.send)}
           >
             <ArrowUp size={24} aria-hidden="true" />
           </button>
@@ -469,11 +538,6 @@ export function AssistantComposer({
           </p>
         )}
         {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
-        <div className={styles.composerFooter}>
-          <p id={helpId} className={styles.composerHint} role="status">
-            {t(c.chatPolicy)}
-          </p>
-        </div>
         {!denied && actionResult && 'filters' in actionResult && (
           <div className={styles.composerHint}>
             <p>

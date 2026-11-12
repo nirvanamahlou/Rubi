@@ -14,8 +14,13 @@ import {
   leavePolicyValues,
   parseMonthlyLeavePolicy,
   assertLeaveDeadline,
+  assertHourlyLeaveDuration,
   assertMonthlyLeaveQuota,
   leaveUsage,
+  leaveMonth,
+  hourlyLeaveCount,
+  assertHourlyLeaveCount,
+  MONTHLY_HOURLY_LEAVE_LIMIT,
   recordLeave,
 } from './hr-leave-policy';
 import type {
@@ -2011,6 +2016,7 @@ export class HrService {
             {
               workingHours: 8,
               leaveTransferRules: 9,
+              leavePolicies: Array.isArray(value) && value.length === 7 ? 7 : 8,
               penaltySettings: 6,
             } as Record<string, number>
           )[row.tab]
@@ -3141,6 +3147,7 @@ export class HrService {
     );
     if (!policy)
       throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
+    assertHourlyLeaveDuration(leave, policy);
     assertLeaveDeadline(leave, policy, new Date());
     if (leave.substituteUserId) {
       if (
@@ -4734,6 +4741,12 @@ export class HrService {
         }
       } else await this.assertOpenPeriod(tx, row.branchId, values[2]!);
       const leave = recordLeave(values, data);
+      assertHourlyLeaveCount(
+        leave,
+        peers.map((r) =>
+          recordLeave(r.values as string[], r.data as HrWorkflowData),
+        ),
+      );
       assertMonthlyLeaveQuota(
         leave,
         policy,
@@ -5240,9 +5253,62 @@ export class HrService {
       else t.used = t.used.minus(row.days);
       totals.set(row.type, t);
     }
+    const month = leaveMonth(asOf.toISOString());
+    const [policy, approved] = await Promise.all([
+      this.monthlyLeavePolicy(
+        this.database.client,
+        employee.branchId,
+        'استحقاقی',
+      ),
+      this.database.client.hrRecord.findMany({
+        where: {
+          employeeId: employee.id,
+          deletedAt: null,
+          status: { in: [...validate.APPROVED] },
+          OR: [
+            { section: 'time', tab: 'leave' },
+            { section: 'requests', tab: { in: ['leave', 'radanLeave'] } },
+          ],
+          AND: [
+            {
+              values: {
+                path: ['2'],
+                lte: new Date(asOf.getTime() + 31 * 86400000)
+                  .toISOString()
+                  .slice(0, 10),
+              },
+            },
+            {
+              values: {
+                path: ['3'],
+                gte: new Date(asOf.getTime() - 31 * 86400000)
+                  .toISOString()
+                  .slice(0, 10),
+              },
+            },
+          ],
+        },
+        select: { values: true, data: true },
+      }),
+    ]);
+    const leaves = approved.map((row) =>
+      recordLeave(row.values as string[], row.data as HrWorkflowData),
+    );
+    const dailyUsed = leaves
+      .filter(
+        (leave) => leave.mode === 'روزانه' && leave.leaveType === 'استحقاقی',
+      )
+      .reduce((total, leave) => total + (leaveUsage(leave).get(month) ?? 0), 0);
     return {
       employeeId: employee.id,
       year,
+      monthlyDailyRemaining: policy
+        ? Math.max(0, policy.daily - dailyUsed)
+        : null,
+      monthlyHourlyRemaining: Math.max(
+        0,
+        MONTHLY_HOURLY_LEAVE_LIMIT - hourlyLeaveCount(month, leaves),
+      ),
       items: [...totals.entries()].map(([type, value]) => ({
         type,
         granted: value.granted.toFixed(2),
@@ -5692,6 +5758,7 @@ export class HrService {
     ]);
     if (typeof input.active !== 'boolean')
       throw new BadRequestException('وضعیت معتبر نیست.');
+    const active = input.active;
     const requestedStatus = HR_ATTENDANCE_STATUSES.find(
       (status) => status === input.status,
     );
@@ -5781,22 +5848,11 @@ export class HrService {
                 override === data.attendanceStatusOverride
               )
                 continue;
-              const calculated =
-                inactive || data.attendanceStatusOverride
-                  ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
-                  : row.status;
-              const status = input.active
-                ? override?.startsWith('حاضر')
-                  ? 'حاضر'
-                  : (override ?? calculated)
-                : 'غیرفعال';
-              const next = {
-                ...data,
-                attendanceActive: input.active,
-                attendancePreviousStatus: calculated,
-              };
-              if (override) next.attendanceStatusOverride = override;
-              else delete next.attendanceStatusOverride;
+              const { status, data: next } = this.attendanceStatusChange(
+                row,
+                active,
+                override,
+              );
               await tx.hrRecord.update({
                 where: { id: row.id },
                 data: { status, data: json(next), version: { increment: 1 } },
@@ -5855,6 +5911,32 @@ export class HrService {
       },
     );
   }
+  private attendanceStatusChange(
+    row: RecordRow,
+    active: boolean,
+    override: HrWorkflowData['attendanceStatusOverride'],
+  ) {
+    const data = (row.data ?? {}) as HrWorkflowData;
+    const inactive = inactiveAttendance(row);
+    const calculated =
+      inactive || data.attendanceStatusOverride
+        ? (data.attendancePreviousStatus ?? 'در انتظار تردد')
+        : row.status;
+    const status = active
+      ? override?.startsWith('حاضر')
+        ? 'حاضر'
+        : (override ?? calculated)
+      : 'غیرفعال';
+    const next = {
+      ...data,
+      attendanceActive: active,
+      attendancePreviousStatus: calculated,
+    };
+    if (override) next.attendanceStatusOverride = override;
+    else delete next.attendanceStatusOverride;
+    return { status, data: next };
+  }
+
   async editAttendance(
     id: string,
     body: unknown,
@@ -5869,12 +5951,23 @@ export class HrService {
       'departure',
       'reason',
       'deviceError',
+      'status',
     ]);
     if (
       input.deviceError !== undefined &&
       typeof input.deviceError !== 'boolean'
     )
       throw new BadRequestException('وضعیت خطای دستگاه معتبر نیست.');
+    const override = HR_ATTENDANCE_STATUSES.find(
+      (status) => status === input.status,
+    );
+    if (
+      input.status !== undefined &&
+      input.status !== null &&
+      input.status !== 'inactive' &&
+      !override
+    )
+      throw new BadRequestException('وضعیت معتبر نیست.');
     const version = validate.version(input.version);
     const arrival = validate.text(input.arrival, 'ورود', 5, true);
     const departure = validate.text(input.departure, 'خروج', 5, true);
@@ -5895,7 +5988,12 @@ export class HrService {
           throw new ConflictException('نسخه کارکرد تغییر کرده است.');
         const date = (attendance.values as string[])[1]!;
         const timingChanged = Boolean(arrival || departure);
-        if (!timingChanged && !reason && input.deviceError === undefined)
+        if (
+          !timingChanged &&
+          !reason &&
+          input.deviceError === undefined &&
+          input.status === undefined
+        )
           return { branchId: attendance.branchId, date, timingChanged };
 
         await this.assertOpenPeriod(tx, attendance.branchId, date);
@@ -5915,15 +6013,28 @@ export class HrService {
         const end = correctedTime(departure, previous.lastOut);
         if (timingChanged && start && end && end <= start)
           throw new BadRequestException('خروج باید پس از ورود باشد.');
+        const statusChange =
+          input.status === undefined
+            ? undefined
+            : this.attendanceStatusChange(
+                attendance,
+                input.status !== 'inactive',
+                input.status === 'inactive'
+                  ? previous.attendanceStatusOverride
+                  : override,
+              );
         const changed = await tx.hrRecord.updateMany({
           where: { id: attendance.id, version, deletedAt: null },
           data: {
             version: { increment: 1 },
-            ...(typeof input.deviceError === 'boolean'
+            ...(statusChange ? { status: statusChange.status } : {}),
+            ...(statusChange || typeof input.deviceError === 'boolean'
               ? {
                   data: json({
-                    ...previous,
-                    attendanceDeviceError: input.deviceError,
+                    ...(statusChange?.data ?? previous),
+                    ...(typeof input.deviceError === 'boolean'
+                      ? { attendanceDeviceError: input.deviceError }
+                      : {}),
                   }),
                 }
               : {}),
@@ -5986,6 +6097,7 @@ export class HrService {
           'attendance.manual',
           {
             attendanceId: id,
+            ...(input.status === undefined ? {} : { status: input.status }),
             ...(arrival ? { arrival } : {}),
             ...(departure ? { departure } : {}),
             ...(reason ? { reason } : {}),
