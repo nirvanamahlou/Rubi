@@ -9983,3 +9983,5 @@ NORA-CONTRACT-WORKFLOW-GUIDE-1111: 30 source-linked workflow articles, colloquia
 ## HR-HOURLY-LEAVE-LIMIT-1111 — PC-B
 
 HR leave policies support an optional per-request hourly limit in minutes. Existing policies without a limit keep their previous behavior. 61 focused API and Web tests passed.
+
+NORA-READABLE-OUTPUT-1112 — PC-C: contract guide paths use the Unicode arrow. Contract inspection renders a Persian-calendar date and Tehran clock time on separate labelled lines instead of a raw ISO timestamp. Invalid dates are omitted. 159 Assistant regressions and all three English coverage checks pass; scoped lint, full Web typecheck and optimized Web build pass. Additive English coverage also completes 22 labels already missing on the develop base, without changing HR or Finance behavior. No migration or production data change.

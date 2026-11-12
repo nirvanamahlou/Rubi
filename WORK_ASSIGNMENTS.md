@@ -12480,3 +12480,7 @@ Add a per-request hourly leave limit to HR policy records and validate submissio
 ## HR-REQUEST-FORWARDING-1111 — PC-B — IN_PROGRESS
 
 Connect the HR request center to personal workbench and finance referrals, and persist per-user read state. Reuse existing records and destination permissions.
+
+## NORA-READABLE-OUTPUT-1112 — PC-C — READY_FOR_REVIEW
+
+Reserve assistant contract path glyph, separate Tehran date/time rendering, focused regressions and additive i18n labels. Prior PR1673 merged/released. No Sales workflow, schema or data changes.
