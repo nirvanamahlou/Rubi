@@ -12501,7 +12501,7 @@ Connect the HR request center to personal workbench and finance referrals, and p
 
 Reserve assistant contract path glyph, separate Tehran date/time rendering, focused regressions and additive i18n labels. Prior PR1673 merged/released. No Sales workflow, schema or data changes.
 
-Integration validation consumes the published PC-B readonly chart callback repair intact. Nora changes no HR implementation; the scoped runtime contains only the approved Nora files and translations.
+Integration validation consumes the published PC-B readonly chart callback repair intact and adds 21 English coverage entries required by the merged headquarters chart. Nora changes no HR implementation; the scoped runtime contains only the approved Nora files and translations.
 
 ## LEDGER-PARITY-1111 — PC-D — IN_PROGRESS
 
