@@ -332,7 +332,7 @@ export const contractGuides: readonly ContractGuide[] = [
       components + 'sales-payment-plan.tsx',
     ],
     steps: [
-      'اگر در حال ایجاد قرارداد هستید، در مسیر قیمت و پرداخت -> برنامه پرداخت قرارداد -> رسید پرداخت (اختیاری)، فایل همان پرداخت را انتخاب کنید.',
+      'اگر در حال ایجاد قرارداد هستید، در مسیر قیمت و پرداخت → برنامه پرداخت قرارداد → رسید پرداخت (اختیاری)، فایل همان پرداخت را انتخاب کنید.',
       'برای قرارداد ثبت‌شده، شماره را در فهرست پیدا کنید و «پرداخت‌ها» را در همان ردیف باز کنید.',
       'پرداخت مربوط را انتخاب و مبلغ، ارز، حساب مقصد و شماره پیگیری آن را کنترل کنید.',
       'از قسمت انتخاب مدرک، فایل مربوط به همان پرداخت را انتخاب و عملیات ثبت مدرک را مطابق فرم انجام دهید. وضعیت نتیجه و پیام خطا را بررسی کنید.',
@@ -514,8 +514,8 @@ export interface ContractGuideReply {
 }
 
 export function contractGuidePath(route: readonly string[]): string {
-  // Keep ASCII arrows and Persian labels in a stable order inside RTL chat bubbles.
-  return '\u2066' + route.join(' -> ') + '\u2069';
+  // Keep navigation arrows and Persian labels in a stable order inside RTL chat bubbles.
+  return '\u2066' + route.join(' → ') + '\u2069';
 }
 
 export function formatContractGuide(guide: ContractGuide): string {

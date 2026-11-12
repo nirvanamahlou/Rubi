@@ -61,6 +61,29 @@ export function contractInspectionText(data: SalesContractDetail): string {
       'قرارداد',
       'ردیف قرارداد موردنظر',
     ]),
-    `آخرین تغییر قرارداد ${data.updatedAt}`,
+    ...contractUpdateTime(data.updatedAt),
   ].join('\n');
+}
+
+/** Display the saved UTC instant in the ERP's Tehran time zone, on separate lines. */
+export function contractUpdateTime(value: string): string[] {
+  const instant = new Date(value);
+  if (!Number.isFinite(instant.getTime())) return [];
+  const date = new Intl.DateTimeFormat('fa-IR', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(instant);
+  const time = new Intl.DateTimeFormat('fa-IR', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).format(instant);
+  return [
+    `تاریخ آخرین تغییر قرارداد: ${date}`,
+    `ساعت آخرین تغییر قرارداد (تهران): ${time}`,
+  ];
 }
