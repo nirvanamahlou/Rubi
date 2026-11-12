@@ -136,7 +136,10 @@ export function HrInbox({
           item.senderId) &&
       (!range.from || item.createdAt.slice(0, 10) >= range.from) &&
       (!range.to || item.createdAt.slice(0, 10) <= range.to) &&
-      (!requestType || (item.leave && requestType === 'leave')),
+      (!requestType ||
+        (item.leave && requestType === 'leave') ||
+        (requestType === 'attendance' &&
+          item.description.startsWith('اصلاح تردد\n'))),
   );
   const visibleItems = items.filter((item) => !item.code.startsWith('WB-'));
   const onReview = async () => {

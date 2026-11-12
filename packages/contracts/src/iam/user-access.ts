@@ -2321,6 +2321,8 @@ export function hasManagedAccess(permissions: readonly string[]) {
   return permissions.includes(USER_ACCESS_PROFILE_PERMISSION);
 }
 function hasGroupPermission(permissions: readonly string[], groupId: string) {
+  if (groupId === 'hr' && permissions.includes(denyPermission('hr.home')))
+    return false;
   if (groupId === 'correspondence') return true;
   if (permissions.includes(MANUAL_ACCESS_VERSION))
     return USER_ACCESS_SCREENS.some(
@@ -2353,6 +2355,8 @@ export function canViewScreen(
   permissions: readonly string[],
   id: string,
 ): boolean {
+  if (id.startsWith('hr.') && permissions.includes(denyPermission('hr.home')))
+    return false;
   if (id === 'correspondence.home') return true;
   if (permissions.includes(MANUAL_ACCESS_VERSION))
     return (

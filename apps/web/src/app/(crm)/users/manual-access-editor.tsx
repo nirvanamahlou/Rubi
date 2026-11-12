@@ -46,6 +46,7 @@ interface Props {
     permissions: Array<{ permission: { code: string } }>;
   }>;
   userId: string;
+  canAssignHr?: boolean;
   canManage: boolean;
   options: {
     permissions: Array<{ code: string; name: string }>;
@@ -61,6 +62,7 @@ interface Props {
 export function ManualAccessEditor({
   ref,
   userId,
+  canAssignHr = false,
   canManage,
   options,
   controlLabel,
@@ -241,6 +243,7 @@ export function ManualAccessEditor({
       />
       <fieldset disabled={!canManage || busy} className="grid gap-3">
         {MANUAL_ACCESS_SECTIONS.map(([id, title]) => {
+          if (id === 'hr' && !canAssignHr) return null;
           const sectionMatch = match(title);
           const screens = USER_ACCESS_SCREENS.filter(
             (s) =>
@@ -420,9 +423,6 @@ export function ManualAccessEditor({
             </details>
           );
         })}
-        <Button type="button" onClick={() => void save()} disabled={busy}>
-          {busy ? 'در حال ذخیره…' : 'ذخیره دسترسی‌های دستی'}
-        </Button>
       </fieldset>
     </section>
   );

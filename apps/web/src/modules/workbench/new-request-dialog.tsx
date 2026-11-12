@@ -1,6 +1,7 @@
 'use client';
 import type { WorkbenchLeaveInputV1 } from '@nora/contracts';
 import { LeaveFields, type LeaveUser } from '@/modules/hr/leave-fields';
+import { DatePicker } from '@/components/ui/date-picker';
 import { WorkbenchSelect } from './workbench-select';
 
 import { useEffect, useRef, useState } from 'react';
@@ -43,6 +44,12 @@ function NewRequestForm({
   const [selectedBranchId, setSelectedBranchId] = useState<string>();
   const branchId = selectedBranchId ?? initialBranchId;
   const [leave, setLeave] = useState<WorkbenchLeaveInputV1 | null>(null);
+  const [correction, setCorrection] = useState<{
+    wrongDate: string;
+    wrongTime: string;
+    actualDate: string;
+    actualTime: string;
+  } | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [unit, setUnit] = useState('');
@@ -69,7 +76,7 @@ function NewRequestForm({
   const key = useRef<string | null>(null);
   useEffect(() => {
     key.current = null;
-  }, [branchId, title, body, unit, recipient, priority, leave]);
+  }, [branchId, title, body, unit, recipient, priority, leave, correction]);
   useEffect(() => {
     if (!open || !branchId) return;
     let active = true;
@@ -133,6 +140,13 @@ function NewRequestForm({
           className="grid gap-5 bg-muted/20 p-6 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (
+              correction &&
+              Object.values(correction).some((value) => !value)
+            ) {
+              setError('تاریخ و ساعت تردد اشتباه و واقعی را وارد کنید.');
+              return;
+            }
             if (!branchId || submitting.current) return;
             const member = units
               .find((item) => item.id === unit)
@@ -151,7 +165,13 @@ function NewRequestForm({
                 {
                   ...(leave ? { leave } : {}),
                   subject: title.trim(),
-                  description: body.trim(),
+                  description: correction
+                    ? `اصلاح تردد
+تردد اشتباه: ${correction.wrongDate} ${correction.wrongTime}
+تردد واقعی: ${correction.actualDate} ${correction.actualTime}
+
+${body.trim()}`
+                    : body.trim(),
                   organizationUnitId: unit,
                   executionOwnerUserId: recipient,
                   priority: priority.toUpperCase() as
@@ -162,6 +182,8 @@ function NewRequestForm({
               )
               .then((response) => {
                 setLeave(null);
+                setCorrection(null);
+                onOpenChange(false);
                 setTitle('');
                 setBody('');
                 key.current = null;
@@ -210,6 +232,7 @@ function NewRequestForm({
                     setSelectedBranchId(id);
                     setUnit('');
                     setRecipient('');
+                    setCorrection(null);
                     setLeave(
                       (current) =>
                         current && {
@@ -273,6 +296,7 @@ function NewRequestForm({
                   disabled={pending || uploading}
                   onClick={() => {
                     setLeave(null);
+                    setCorrection(null);
                     setTitle('درخواست مساعده');
                     setBody(
                       'با سلام، درخواست پرداخت مساعده دارم.\nمبلغ درخواستی:\nتاریخ مورد نیاز:\nعلت درخواست:\nنحوه بازپرداخت:',
@@ -286,6 +310,7 @@ function NewRequestForm({
                   variant="outline"
                   disabled={pending || uploading}
                   onClick={() => {
+                    setCorrection(null);
                     setLeave(
                       leave
                         ? null
@@ -307,6 +332,26 @@ function NewRequestForm({
                 >
                   مرخصی
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending || uploading}
+                  onClick={() => {
+                    setLeave(null);
+                    setCorrection({
+                      wrongDate: initialDate ?? '',
+                      wrongTime: '',
+                      actualDate: initialDate ?? '',
+                      actualTime: '',
+                    });
+                    setTitle('درخواست اصلاح تردد');
+                    setBody(
+                      'با سلام، لطفاً تردد ثبت‌شده را مطابق تاریخ و ساعت واقعی اصلاح کنید.',
+                    );
+                  }}
+                >
+                  اصلاح تردد
+                </Button>
               </span>
             </span>
             <Textarea
@@ -320,6 +365,51 @@ function NewRequestForm({
               onChange={(e) => setBody(e.target.value)}
             />
           </label>
+          {correction ? (
+            <fieldset className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
+              <legend className="px-2 font-semibold">اصلاح تردد</legend>
+              <label className="grid gap-2">
+                تاریخ اشتباه
+                <DatePicker
+                  value={correction.wrongDate}
+                  onChange={(wrongDate) =>
+                    setCorrection({ ...correction, wrongDate })
+                  }
+                />
+              </label>
+              <label className="grid gap-2">
+                ساعت اشتباه
+                <Input
+                  type="time"
+                  required
+                  value={correction.wrongTime}
+                  onChange={(e) =>
+                    setCorrection({ ...correction, wrongTime: e.target.value })
+                  }
+                />
+              </label>
+              <label className="grid gap-2">
+                تاریخ واقعی
+                <DatePicker
+                  value={correction.actualDate}
+                  onChange={(actualDate) =>
+                    setCorrection({ ...correction, actualDate })
+                  }
+                />
+              </label>
+              <label className="grid gap-2">
+                ساعت واقعی
+                <Input
+                  type="time"
+                  required
+                  value={correction.actualTime}
+                  onChange={(e) =>
+                    setCorrection({ ...correction, actualTime: e.target.value })
+                  }
+                />
+              </label>
+            </fieldset>
+          ) : null}
           {leave ? (
             <LeaveFields
               value={leave}

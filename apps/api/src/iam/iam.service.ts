@@ -2804,6 +2804,7 @@ export class IamService implements IamStepUpPort {
     } as const;
   }
   private permissionCodes(user: {
+    username: string;
     roles: Array<{
       role: {
         isActive: boolean;
@@ -2811,7 +2812,25 @@ export class IamService implements IamStepUpPort {
       };
     }>;
   }): IamPermissionCode[] {
-    return authenticatedPermissionCodes(user.roles);
+    const permissions = authenticatedPermissionCodes(user.roles);
+    if (['demo', 'nima'].includes(user.username.toLowerCase()))
+      return permissions;
+    const workspacePermissions = new Set([
+      'hr.read',
+      'hr.manage',
+      'hr.approve',
+      'hr.sensitive',
+      'hr.audit',
+      'hr.team',
+      'hr.self',
+    ]);
+    return [
+      ...permissions.filter(
+        (code) =>
+          !workspacePermissions.has(code) && !code.startsWith('ui.screen.hr.'),
+      ),
+      denyPermission('hr.home'),
+    ];
   }
   private loginResponse(user: {
     id: string;
