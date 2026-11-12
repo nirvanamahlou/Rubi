@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import type { MasterDataRecord, TourPackageInputV1 } from '@nora/contracts';
 import { Button, Input } from '@/components/ui';
 import { SearchableReference } from '@/modules/sales/components/searchable-reference';
@@ -14,6 +15,15 @@ export function TourDestinations({
   cities: readonly MasterDataRecord[];
   onChange: (value: TourPackageInputV1) => void;
 }) {
+  const [selectedCountries, setSelectedCountries] = useState<
+    Record<number, string>
+  >({});
+  const cityCountry = (cityId: string) =>
+    String(
+      cities.find((city) => city.id === cityId)?.attributes.countryId ?? '',
+    );
+  const countryAt = (index: number, cityId: string) =>
+    selectedCountries[index] ?? cityCountry(cityId);
   if (!value.details?.isCombined) return null;
   const stays = value.details.destinations ?? [
     { cityId: value.destinationId, nights: 1 },
@@ -50,22 +60,24 @@ export function TourDestinations({
         <strong>مبدأ</strong>
         <SearchableReference
           label="کشور مبدأ"
-          value={String(
-            cities.find((city) => city.id === value.originId)?.attributes
-              .countryId ?? '',
-          )}
+          value={countryAt(-1, value.originId)}
           options={countries}
           onChange={(countryId) => {
-            const city = cities.find(
-              (city) => city.attributes.countryId === countryId,
-            );
-            onChange({ ...value, originId: city?.id ?? '' });
+            setSelectedCountries((current) => ({
+              ...current,
+              [-1]: countryId,
+            }));
+            onChange({ ...value, originId: '' });
           }}
         />
         <SearchableReference
           label="شهر مبدأ"
           value={value.originId}
-          options={cities}
+          options={cities.filter(
+            (city) =>
+              cityCountry(city.id) === countryAt(-1, value.originId) &&
+              Boolean(countryAt(-1, value.originId)),
+          )}
           onChange={(originId) => onChange({ ...value, originId })}
         />
       </div>
@@ -77,21 +89,15 @@ export function TourDestinations({
           <strong>مقصد {index + 1}</strong>
           <SearchableReference
             label={`کشور مقصد ${index + 1}`}
-            value={String(
-              cities.find((c) => c.id === stay.cityId)?.attributes.countryId ??
-                '',
-            )}
+            value={countryAt(index, stay.cityId)}
             options={countries}
             onChange={(countryId) => {
-              const city = cities.find(
-                (c) =>
-                  c.attributes.countryId === countryId &&
-                  !stays.some((s) => s.cityId === c.id),
-              );
+              setSelectedCountries((current) => ({
+                ...current,
+                [index]: countryId,
+              }));
               save(
-                stays.map((s, i) =>
-                  i === index ? { ...s, cityId: city?.id ?? '' } : s,
-                ),
+                stays.map((s, i) => (i === index ? { ...s, cityId: '' } : s)),
               );
             }}
           />
@@ -99,7 +105,10 @@ export function TourDestinations({
             label={`شهر مقصد ${index + 1}`}
             value={stay.cityId}
             options={cities.filter(
-              (c) => !stays.some((s, i) => i !== index && s.cityId === c.id),
+              (c) =>
+                Boolean(countryAt(index, stay.cityId)) &&
+                cityCountry(c.id) === countryAt(index, stay.cityId) &&
+                !stays.some((s, i) => i !== index && s.cityId === c.id),
             )}
             onChange={(cityId) =>
               save(stays.map((s, i) => (i === index ? { ...s, cityId } : s)))
@@ -125,7 +134,19 @@ export function TourDestinations({
             type="button"
             variant="outline"
             disabled={stays.length <= 2}
-            onClick={() => save(stays.filter((_, i) => i !== index))}
+            onClick={() => {
+              setSelectedCountries((current) =>
+                Object.fromEntries(
+                  Object.entries(current)
+                    .filter(([key]) => Number(key) !== index)
+                    .map(([key, country]) => [
+                      Number(key) > index ? Number(key) - 1 : Number(key),
+                      country,
+                    ]),
+                ),
+              );
+              save(stays.filter((_, i) => i !== index));
+            }}
           >
             حذف مقصد
           </Button>

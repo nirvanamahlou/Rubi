@@ -12546,3 +12546,7 @@ PC-C / NORA-CONTRACT-UAT-1112: local acceptance complete; detailed results in do
 ## TOUR-HOTEL-FIRST-1112 — PC-A — IN_PROGRESS
 
 Reserve Sales contract tour picker order and active option visibility tests. Owner requests tour, eligible hotel, room count and occupancy before passenger rows and green develop merge. Preserve route, capacity and publication validation; no schema/dependency/deployment.
+
+## TOUR-COUNTRY-CITY-1112 — PC-A — IN_PROGRESS
+
+Reserve combined tour country/city filtering and focused regression coverage. Keep selected country separately from city so changing country clears city and restricts city choices; isolate each destination and reindex overrides on removal. No schema/dependency/deployment. User authorizes green develop merge.
