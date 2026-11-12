@@ -12430,6 +12430,10 @@ Reserve the leave policy edit command and form payload, plus a focused regressio
 
 Reserve single-day attendance status controls and scoped command, override preservation during recalculation, additive HR data contract and focused tests. Preserve bulk activation, original punches, authorization and closed-period checks.
 
+## MARKETING-DIRECTORY-PAGES-1111 — PC-B — READY_FOR_CI
+
+Reserve an additive Marketing directory page contract, producer and Web client, reusing scoped segment pagination. Keep existing unpaged asset selectors and mutations compatible.
+
 ## MARKETING-SEGMENT-PAGES-1111 — PC-B — READY_FOR_CI
 
 Reserve the additive Marketing segments page contract, read query, UI table, and scoped tests. The existing asset list stays compatible for selectors. No migration or dependency changes.

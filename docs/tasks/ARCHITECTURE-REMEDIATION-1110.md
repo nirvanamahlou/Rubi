@@ -35,6 +35,8 @@ Record exact tests, remaining work and delivery state; never equate a static
 architecture check with end-to-end behavior or claim the entire report resolved
 when only selected paths are addressed.
 
+The Marketing directory page adds a read contract for the Marketing API and Web. Existing asset consumers retain their contract.
+
 ## Implementation evidence
 
 - Travel and organization reports rank groups before producing display rows.
