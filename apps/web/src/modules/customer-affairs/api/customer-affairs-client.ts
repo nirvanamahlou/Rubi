@@ -201,6 +201,7 @@ export const customerAffairsApi = {
     input: {
       source: 'hr' | 'workbench';
       target: 'tasks' | 'finance';
+      amount?: string;
       recipientId?: string;
       message: string;
     },
