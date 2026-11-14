@@ -28,6 +28,10 @@ export class ContractArchiveController {
   ) {
     return this.scope.hidden(req.actor, search, page);
   }
+  @Post('visibility')
+  visibility(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.scope.applyVisibility(req.actor, body);
+  }
   @Post('restore')
   restore(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
     return this.scope.restore(req.actor, body);

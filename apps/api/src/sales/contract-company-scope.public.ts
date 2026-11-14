@@ -39,17 +39,18 @@ export class ContractCompanyScope {
   async where(
     actor: AuthenticatedActor,
     hidden = false,
+    field: 'hiddenAt' | 'reservationHiddenAt' | 'financeHiddenAt' = 'hiddenAt',
   ): Promise<Prisma.SalesContractWhereInput> {
     const legalEntityId = await this.selected(actor);
     return {
-      hiddenAt: hidden ? { not: null } : null,
+      [field]: hidden ? { not: null } : null,
       ...(legalEntityId ? { legalEntityId } : {}),
     };
   }
 
   async ids(actor: AuthenticatedActor) {
     const rows = await this.db.client.salesContract.findMany({
-      where: await this.where(actor),
+      where: await this.where(actor, false, 'reservationHiddenAt'),
       select: { id: true },
     });
     return rows.map(({ id }) => id);
@@ -58,7 +59,7 @@ export class ContractCompanyScope {
   /** Shared operational queue; issuer selection is not an authorization scope. */
   async reservationInboxIds(branchIds: readonly string[]) {
     const rows = await this.db.client.salesContract.findMany({
-      where: { hiddenAt: null, branchId: { in: [...branchIds] } },
+      where: { reservationHiddenAt: null, branchId: { in: [...branchIds] } },
       select: { id: true },
     });
     return rows.map(({ id }) => id);
@@ -66,7 +67,7 @@ export class ContractCompanyScope {
 
   async excludedReferences(actor: AuthenticatedActor) {
     const rows = await this.db.client.salesContract.findMany({
-      where: { NOT: await this.where(actor) },
+      where: { NOT: await this.where(actor, false, 'financeHiddenAt') },
       select: { id: true, contractNumber: true },
     });
     return {
@@ -126,7 +127,12 @@ export class ContractCompanyScope {
 
   async assertVisible(contractId: string, actor: AuthenticatedActor) {
     const row = await this.db.client.salesContract.findFirst({
-      where: { AND: [{ id: contractId }, await this.where(actor)] },
+      where: {
+        AND: [
+          { id: contractId },
+          await this.where(actor, false, 'financeHiddenAt'),
+        ],
+      },
       select: { id: true },
     });
     if (!row)
@@ -232,7 +238,11 @@ export class ContractCompanyScope {
         );
       await tx.salesContract.updateMany({
         where: { id: { in: unique } },
-        data: { hiddenAt: null },
+        data: {
+          hiddenAt: null,
+          reservationHiddenAt: null,
+          financeHiddenAt: null,
+        },
       });
       await tx.salesContractAuditEvent.createMany({
         data: rows.map((row) => ({
@@ -249,6 +259,45 @@ export class ContractCompanyScope {
         })),
       });
       return { restored: rows.length };
+    });
+  }
+
+  async applyVisibility(actor: AuthenticatedActor, body: unknown) {
+    this.authorizeArchive(actor, true);
+    const { before, sections, visible } = (body ?? {}) as Record<
+      string,
+      unknown
+    >;
+    if (
+      typeof before !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(before) ||
+      !Array.isArray(sections) ||
+      !sections.length ||
+      sections.some((s) => !['sales', 'reservations', 'finance'].includes(s)) ||
+      typeof visible !== 'boolean'
+    )
+      throw new BadRequestException('تاریخ و بخش‌ها را بررسی کنید.');
+    const date = new Date(before);
+    if (
+      !Number.isFinite(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== before
+    )
+      throw new BadRequestException('تاریخ نامعتبر است.');
+    const legalEntityId = await this.selected(actor, true);
+    const value = visible ? null : new Date();
+    return this.db.client.salesContract.updateMany({
+      where: {
+        legalEntityId,
+        branchId: { in: actor.branchIds },
+        departureDate: { lt: date },
+      },
+      data: {
+        ...(sections.includes('sales') && { hiddenAt: value }),
+        ...(sections.includes('reservations') && {
+          reservationHiddenAt: value,
+        }),
+        ...(sections.includes('finance') && { financeHiddenAt: value }),
+      },
     });
   }
 

@@ -60,13 +60,13 @@ describe('saved contract company and reversible archive', () => {
       'company-b-contract',
     ]);
     expect(t.tx.salesContract.findMany).toHaveBeenCalledWith({
-      where: { hiddenAt: null, branchId: { in: ['branch'] } },
+      where: { reservationHiddenAt: null, branchId: { in: ['branch'] } },
       select: { id: true },
     });
     expect(t.entities.current).not.toHaveBeenCalled();
     await t.scope.reservationInboxIds([]);
     expect(t.tx.salesContract.findMany).toHaveBeenLastCalledWith({
-      where: { hiddenAt: null, branchId: { in: [] } },
+      where: { reservationHiddenAt: null, branchId: { in: [] } },
       select: { id: true },
     });
   });
@@ -143,7 +143,11 @@ describe('saved contract company and reversible archive', () => {
     expect(t.tx.$queryRaw).toHaveBeenCalledOnce();
     expect(t.tx.salesContract.updateMany).toHaveBeenCalledWith({
       where: { id: { in: [id] } },
-      data: { hiddenAt: null },
+      data: {
+        hiddenAt: null,
+        reservationHiddenAt: null,
+        financeHiddenAt: null,
+      },
     });
     expect(t.tx.salesContractAuditEvent.createMany).toHaveBeenCalledWith({
       data: [

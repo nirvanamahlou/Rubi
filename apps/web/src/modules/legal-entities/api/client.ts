@@ -96,6 +96,11 @@ export const legalEntitiesApi = {
     request<ArchivedContracts>(
       `/contract-archive?${new URLSearchParams({ search, page: String(page) })}`,
     ),
+  setVisibility: (before: string, sections: string[], visible: boolean) =>
+    request<{ count: number }>('/contract-archive/visibility', {
+      method: 'POST',
+      body: JSON.stringify({ before, sections, visible }),
+    }),
   restoreContracts: (ids: string[]) =>
     request<{ restored: number }>('/contract-archive/restore', {
       method: 'POST',

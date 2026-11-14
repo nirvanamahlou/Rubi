@@ -86,7 +86,8 @@ export class FinancePartyReceipts {
     this.authorize(actor);
     const term = v.text(search, 80, true);
     if (term.length < 2) return [];
-    const scope = (await this.companyScope?.where(actor)) ?? {};
+    const scope =
+      (await this.companyScope?.where(actor, false, 'financeHiddenAt')) ?? {};
     return this.db.client.$transaction((tx) =>
       contractParties(tx, actor.branchIds, term, scope),
     );
@@ -95,7 +96,8 @@ export class FinancePartyReceipts {
     const branchId = v.uuid(branch)!,
       payerId = v.uuid(payer)!;
     this.authorize(actor, branchId);
-    const scope = (await this.companyScope?.where(actor)) ?? {};
+    const scope =
+      (await this.companyScope?.where(actor, false, 'financeHiddenAt')) ?? {};
     return this.db.client.$transaction(
       (tx) => partyContractBalance(tx, branchId, payerId, scope),
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
@@ -135,7 +137,7 @@ export class FinancePartyReceipts {
       throw new BadRequestException('مبلغ مثبت، ارز و نسخه معتبر لازم است.');
     input.amount = new Prisma.Decimal(input.amount).toString();
     const legalEntityId = await this.companyScope?.selected(actor, true);
-    const scope = legalEntityId ? { legalEntityId, hiddenAt: null } : {};
+    const scope = legalEntityId ? { legalEntityId, financeHiddenAt: null } : {};
     const fingerprint = createHash('sha256')
       .update(
         JSON.stringify({
