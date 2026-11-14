@@ -11,6 +11,7 @@ const select = {
       name: true,
       unit: true,
       position: true,
+      grade: true,
       deletedAt: true,
       jobTitle: { select: { values: true, deletedAt: true } },
     },
@@ -31,11 +32,17 @@ function directoryUser(user: Prisma.UserGetPayload<{ select: typeof select }>) {
         : null;
     return typeof value === 'string' ? value.trim() : '';
   };
+  const title = label(position ?? null, 1) || employee?.position.trim() || '';
+  const grade = employee?.grade.trim() || '';
+  const jobTitle =
+    grade && title !== grade && !title.startsWith(`${grade} `)
+      ? [grade, title].filter(Boolean).join(' ')
+      : title || grade;
   return {
     id: user.id,
     username: user.username,
     displayName: employee?.name.trim() || user.displayName,
-    jobTitle: label(position ?? null, 1) || employee?.position.trim() || '',
+    jobTitle,
     unit: label(unit ?? null, 0) || employee?.unit.trim() || '',
   };
 }

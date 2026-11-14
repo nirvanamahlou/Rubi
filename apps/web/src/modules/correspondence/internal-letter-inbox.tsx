@@ -119,18 +119,30 @@ export function InternalLetterInbox() {
             label: 'کل نامه‌های دریافتی',
             value: data?.kpis.total,
             Icon: Inbox,
+            tone: 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40',
           },
-          { label: 'خوانده‌نشده', value: data?.kpis.unread, Icon: MailOpen },
-          { label: 'تأیید', value: data?.kpis.approved, Icon: CircleCheck },
+          {
+            label: 'خوانده‌نشده',
+            value: data?.kpis.unread,
+            Icon: MailOpen,
+            tone: 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40',
+          },
+          {
+            label: 'تأیید',
+            value: data?.kpis.approved,
+            Icon: CircleCheck,
+            tone: 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40',
+          },
           {
             label: 'نیازمند اصلاح',
             value: data?.kpis.needsCorrection,
             Icon: FilePenLine,
+            tone: 'border-rose-200 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/40',
           },
-        ].map(({ label, value, Icon }) => (
+        ].map(({ label, value, Icon, tone }) => (
           <article
             key={label}
-            className="flex items-center justify-between rounded-2xl border bg-surface p-5 shadow-sm"
+            className={`flex items-center justify-between rounded-2xl border p-5 shadow-sm ${tone}`}
           >
             <div>
               <p className="text-sm text-muted-foreground">{label}</p>
