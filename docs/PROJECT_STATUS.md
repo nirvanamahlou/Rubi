@@ -1,3 +1,9 @@
+## PR-CI-EMPLOYER-REPORT-1114 — PC-C helper — COMPLETE
+
+All initial open Amin-tech11 Rubi PRs merged after every final-head check passed:1701(reporting/chart activation),1693(contract evidence/recovery) and1700(opt-in Sales SQL Agent).26 pre-merge check runs succeed; all five develop integration checks on ce8e3db606374d666d4adea2e60515a348758933 also succeed. Fresh open-author inventory is zero. Preserve the normal merge receipts7cd6ab058,63fd0c886 and ce8e3db60; no force-push, gate bypass or branch deletion.
+
+Replaced obsolete form-source checking with actual secure UUID/same-key retry coverage; fixed multi-turn Agent history serialization; preserved composer cancellation/version/evidence behavior and both Nora/Site Commerce catalogues during develop integration. Inherited HR changes received formatting only and existing translations were consumed unchanged. Historical closed PRs are superseded/already in develop, verified against full GitHub history. Employer report is chat text only and distinguishes helper-workstation development from earlier PC-C work. No production deployment, operational migration or real business-data write; Agent remains default-off pending approved Germany-route live/model/browser acceptance. Details: [PR-CI-EMPLOYER-REPORT-1114](tasks/PR-CI-EMPLOYER-REPORT-1114.md).
+
 ## NORA-DATA-AGENT-V1 — PC-C — SOURCE_VALIDATED / LIVE_GATE_PENDING
 
 Owner-approved Sales-first data Agent: planning, catalog discovery, model-authored
