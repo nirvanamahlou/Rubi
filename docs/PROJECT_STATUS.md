@@ -1,3 +1,8 @@
+## REPORT-DASHBOARD-ACTIVATION-1114 — PC-C helper — SOURCE_VALIDATED
+
+Owner assigns Reports/Dashboard implementation to PC-C and this helper computer; ownership clarification recorded. Base ea83ec5b3; branch codex/pc-c-report-dashboard-activation-1114. Live read-only scan:331 tables,4145 columns,753 FKs,165 populated tables. All21 native report source/XLSX probes pass; exact per-currency purchase reference matches after refreshing stale audit permissions/cohort and reading structured amounts rather than display labels.
+
+Activated three existing chart slots: finalized contract destination distribution(414 contracts/14 groups), accepted daily overtime(149 observations/13 dates), first-response daily mean(connected but empty; internal/Call Center requests excluded). Preserve passenger-count, appraisal and resolution-duration limitations. No new KPI or inferred profit/balance. Reporting191 tests, Dashboard Web23 tests, scoped lint, API/Web types and production builds pass; one existing opt-in skip per suite. No migration/dependency/business-data write/runtime mutation, merge or deployment. Implementation180c632f9 pushed; Draft PR1701 by Amin-tech11. Current-head hosted gates are tracked in that PR; explicit publication approval remains. See docs/tasks/REPORT-DASHBOARD-ACTIVATION-1114.md.
 ## LEDGER-FISCAL-ALLOCATION-1112 — PC-D
 
 Ledger fiscal allocation uses direct numeric year plus start/end dates, with Persian/Arabic digit normalization. Remove the new-year toggle and title input; add selected-row removal beside + with confirmation. Preserve fiscal-year definitions, command audit/replay/CAS, company/branch guards and all financial records; reject non-OPEN/referenced allocations and stale resurrection.76 isolated PostgreSQL checks, focused Web/i18n checks, API/Web TypeScript and scoped lint pass; API and Web production builds pass. No schema/dependency changes or deployment. Browser connection unavailable, so visual acceptance is not claimed. See docs/tasks/LEDGER-FISCAL-ALLOCATION-1112.md.
@@ -10028,3 +10033,6 @@ TOUR-COUNTRY-CITY-1112: Combined tour origin and destination city lists are scop
 CORRESPONDENCE-CARDS-1114 (PC-B): system/inbox cards have distinct light/dark colors; correspondence directory combines employee grade/job title; sender signature auto-fills and survives new-letter reset; compose actions share a flex row. Scoped API/Web ESLint passed. Correspondence suites could not collect because local @nora/contracts and @nora/database build outputs are missing. No deployment or migration.
 
 HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP methods/routes, including existing events. Raw audit records preserved. Focused formatter tests: 14 passed; scoped ESLint passed.
+
+
+DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.

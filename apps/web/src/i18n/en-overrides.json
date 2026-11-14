@@ -6188,12 +6188,12 @@
   "مشاهده اطلاعات": "View information",
   "بخش‌ها": "Sections",
   "پنهان کردن قراردادها": "Hide contracts",
-  "تاریخ و بخش‌ها را بررسی کنید.": "Check the date and selected sections.",
-  "تنظیم نمایش برای": "Visibility settings for",
-  "ثبت تغییرات ناموفق بود.": "Could not save the changes.",
-  "شروع سفر قبل از": "Trip starts before",
+  "تاریخ و بخش‌ها را بررسی کنید.": "Check the date and sections.",
+  "تنظیم نمایش برای": "Configure visibility for",
+  "ثبت تغییرات ناموفق بود.": "Could not save changes.",
+  "شروع سفر قبل از": "Travel start before",
   "قرارداد اعمال شد.": "contracts updated.",
-  "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden from Sales for the selected company. Restoring applies to all three sections.",
-  "نمایش قراردادها": "Show contracts",
+  "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden in Sales for the selected company. Restoring applies to all three sections.",
+  "نمایش قراردادها": "Contract visibility",
   "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company"
 }
