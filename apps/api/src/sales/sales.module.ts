@@ -1,4 +1,7 @@
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
+import { SiteCommerceController } from '../site-commerce/site-commerce.controller';
+import { SiteCommerceService } from '../site-commerce/site-commerce.service';
+import { SiteCommerceWriteGuard } from '../site-commerce/site-commerce-write.guard';
 import {
   SalesFloatingPurchases,
   SalesFloatingPurchasesController,
@@ -62,6 +65,7 @@ import { SalesAgentQueryService } from './assistant-agent/query.service';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    SiteCommerceController,
     SalesDocumentBrandingController,
     SalesInsuranceDocumentsController,
     SalesPurchaseDraftController,
@@ -75,6 +79,8 @@ import { SalesAgentQueryService } from './assistant-agent/query.service';
     SalesAgencyCustomerController,
   ],
   providers: [
+    SiteCommerceService,
+    SiteCommerceWriteGuard,
     SalesFloatingPurchases,
     FlightLoadService,
     SalesPaymentReceiptsService,
