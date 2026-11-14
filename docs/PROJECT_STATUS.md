@@ -1,3 +1,29 @@
+## NORA-DATA-AGENT-V1 — PC-C — SOURCE_VALIDATED / LIVE_GATE_PENDING
+
+Owner-approved Sales-first data Agent: planning, catalog discovery, model-authored
+read-only SQL, iterative tool results to Groq and cited responses. Native Sales
+own/branch/all, issuer-company/hidden and payment permissions are enforced by
+Sales-owned security-barrier views, restricted SQL credentials, AST validation
+and fresh context checks. V3 preserves legacy paths and approved chat layout.
+Mandatory Germany CONNECT egress has no direct fallback; consume the published
+e16229cf5 relay snapshot and additive v3 runtime/Nginx changes together. Default off.
+
+Service79, Web172 and targeted API/boundary68 tests pass; seven isolated PostgreSQL
+checks include the existing full-migration/native-IAM Assistant proof and new SQL
+isolation suite. Scoped lint, full API/Web typechecks, API build and Web production
+build (including enabled Agent client) pass; Compose config --quiet passes with
+synthetic SQL settings. Global English coverage fails for four unchanged HR labels
+inherited from develop; none are Nora labels. Base5a9c72ae7; origin/develop advanced
+to1d7241d31 during work, with peers preserved.
+
+No operational migration, local runtime replacement, production deployment or
+merge. Private Groq key is only in ignored .env.nora-agent.local. Direct PC-C
+request returned403; owner confirms authorized Germany SSH setup is on the
+unavailable other PC. Live30-case model evaluation and authenticated browser
+acceptance remain pending; no live quality certification. Handoff/configuration:
+[NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
+
 ## REPORT-DASHBOARD-ACTIVATION-1114 — PC-C helper — SOURCE_VALIDATED
 
 Owner assigns Reports/Dashboard implementation to PC-C and this helper computer; ownership clarification recorded. Base ea83ec5b3; branch codex/pc-c-report-dashboard-activation-1114. Live read-only scan:331 tables,4145 columns,753 FKs,165 populated tables. All21 native report source/XLSX probes pass; exact per-currency purchase reference matches after refreshing stale audit permissions/cohort and reading structured amounts rather than display labels.
@@ -10030,6 +10056,8 @@ TOUR-HOTEL-FIRST-1112: Tour selection now precedes hotel/room occupancy and iden
 
 TOUR-COUNTRY-CITY-1112: Combined tour origin and destination city lists are scoped to each selected country; changing country clears the previous city without auto-selecting another. Pending country selection survives the empty city, and removing a destination preserves neighboring country selections. Three focused route tests pass; quality/build CI gates authorized develop merge. No schema or production changes.
 
+NORA-DATA-AGENT-V1 publication — 2026-11-14: implementation452d7edc6 on origin/codex/pc-c-nora-data-agent-v1; Draft PR1700 https://github.com/nirvanamahlou/Rubi/pull/1700 to develop, author Amin-tech11 verified. Frozen source/shared leases released at handoff. Local automated evidence above; live Germany-path model/browser acceptance and hosted exact-head gates remain pending. No merge or runtime/operational database change.
+
 PC-C · 2026-11-12: Nora contract evidence, scoped reports and recovery — see [scope and validation](tasks/NORA-CONTRACT-EVIDENCE-1112.md). No production deployment.
 
 CORRESPONDENCE-CARDS-1114 (PC-B): system/inbox cards have distinct light/dark colors; correspondence directory combines employee grade/job title; sender signature auto-fills and survives new-letter reset; compose actions share a flex row. Scoped API/Web ESLint passed. Correspondence suites could not collect because local @nora/contracts and @nora/database build outputs are missing. No deployment or migration.
@@ -10038,3 +10066,5 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 
 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
+
+PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.

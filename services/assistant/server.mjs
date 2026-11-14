@@ -1,4 +1,6 @@
 import { conversationConfiguration } from './conversation-config.mjs';
+import { dataAgentConfiguration } from './agent-config.mjs';
+import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
 import { runPreparedAction } from './prepared-actions.mjs';
@@ -30,6 +32,7 @@ export function createAssistantServer({
   identityTimeoutMs = timeoutMs,
   now = () => new Date(),
   conversation,
+  agent,
 }) {
   const client = createErpClient({
     erpBaseUrl,
@@ -46,6 +49,13 @@ export function createAssistantServer({
     now,
   });
   const orchestrate = createOrchestrator({ ...conversation, now });
+  const dataAgent = createDataAgent({
+    ...agent,
+    erpBaseUrl: erpReportsBaseUrl,
+    fetcher,
+    now,
+    audit,
+  });
   const windows = new Map();
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -63,11 +73,16 @@ export function createAssistantServer({
       const correlationId = randomUUID();
       const started = Date.now();
       const deadline = new AbortController();
-      const timer = setTimeout(() => deadline.abort(), 10000);
+      const agentRequest = request.url === '/v3/assistant/conversation';
+      const timer = setTimeout(
+        () => deadline.abort(),
+        agentRequest ? 60000 : 10000,
+      );
       response.once('close', () => {
         if (!response.writableEnded) deadline.abort();
       });
-      const conversationRequest = request.url === '/v2/assistant/conversation';
+      const conversationRequest =
+        request.url === '/v2/assistant/conversation' || agentRequest;
       let actorId;
       let action;
       let optionsRequest = false;
@@ -170,6 +185,21 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
+        if (agentRequest) {
+          const message = await readMessage(
+            request,
+            deadline.signal,
+            validateDataAgentMessage,
+          );
+          const result = await dataAgent(message, {
+            cookie,
+            signal: deadline.signal,
+          });
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'SUCCESS';
+          send(200, result);
+          return;
+        }
         if (conversationRequest) {
           const message = await readMessage(request, deadline.signal);
           const result = await orchestrate(message, {
@@ -281,6 +311,7 @@ if (
 ) {
   const service = createAssistantServer({
     conversation: conversationConfiguration(),
+    agent: dataAgentConfiguration(),
     identityTimeoutMs: 5000,
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:
