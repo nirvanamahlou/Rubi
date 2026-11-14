@@ -12566,3 +12566,7 @@ Reserve system/inbox card colors, correspondence public job identity and outgoin
 ## HISTORY-ACTION-LABELS-1114 — PC-B — COMPLETED
 
 Reserve system history display formatter and focused tests. Preserve raw audit data. Standing owner authorization covers push/merge.
+
+## DEPLOY-FORMAT-1114 — PC-B — READY_FOR_CI
+
+COMPUTER_ID=PC-B; branch codex/pc-b-deploy-format-1114 from develop81b188ee2. Reserve whitespace-only Prisma schema formatting repair and own release notes after hosted quality gate failure. No model, migration, dependency or behavior changes. Owner authorizes all-changes production deployment without a fresh backup, with green gates and preserved runtime integrations.
