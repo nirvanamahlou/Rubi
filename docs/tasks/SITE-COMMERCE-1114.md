@@ -70,6 +70,13 @@ conflicts stop in `needs_review`; do not erase a payment or create another charg
 Refund/cancellation/instalment/agency changes are blocked on this new path until
 their own ERP protocol is implemented. Historical operations remain unchanged.
 
+Server activation uses `scripts/site-commerce/activate.py` with the exact tested
+revision and `SITE_COMMERCE_CI_APPROVED_REVISION`. The existing database-owner
+connection is passed in memory only to the one-off migration container. The live
+API and worker continue using `rubi_app`, whose default table/sequence privileges
+apply to the additive connector tables. Never grant migration privileges to the
+runtime role or place the maintenance connection in the live service env files.
+
 Rollback application images/config, not the additive tables or financial links.
 Disable the website flag to stop new sales; preserve credentials temporarily for
 reconciling pending operations. No destructive downgrade is automatic.

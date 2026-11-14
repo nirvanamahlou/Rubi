@@ -18,8 +18,8 @@ import urllib.request
 import yaml
 
 
-def run(*args, capture=False):
-    return subprocess.run(args, check=True, text=True, capture_output=capture).stdout
+def run(*args, capture=False, env=None):
+    return subprocess.run(args, check=True, text=True, capture_output=capture, env=env).stdout
 
 
 def fingerprint(path):
@@ -89,6 +89,9 @@ LABEL rubi.source-revision="{args.revision}"
         return
     if os.environ.get('SITE_COMMERCE_CI_APPROVED_REVISION') != args.revision:
         raise RuntimeError('Final-head CI approval required before activation')
+    migration_url = os.environ.get('SITE_COMMERCE_MIGRATION_DATABASE_URL')
+    if not migration_url:
+        raise RuntimeError('An explicit maintenance database connection is required for migrations')
     # Other ERP release tools use this same host-wide activation lock.
     activation_lock = Path('/opt/rubi/avina-deploy.lock').open('a')
     fcntl.flock(activation_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -126,7 +129,10 @@ LABEL rubi.source-revision="{args.revision}"
     os.replace(candidate, compose)
     try:
         run(*command, 'config', '--quiet')
-        run(*command, 'run', '--rm', '--no-deps', 'api', 'sh', '-c', 'cd packages/database && node node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma')
+        migration_env = {**os.environ, 'DATABASE_URL': migration_url}
+        # Only this one-off container receives the maintenance connection. Live
+        # API/worker services retain their restricted rubi_app connection.
+        run(*command, 'run', '--rm', '--no-deps', '-e', 'DATABASE_URL', 'api', 'sh', '-c', 'cd packages/database && node node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma', env=migration_env)
         canary = 'rubi-site-commerce-canary-' + args.revision[:12]
         run(*command, 'run', '-d', '--no-deps', '--name', canary, '-p', '127.0.0.1:4011:4000', 'api')
         try:
