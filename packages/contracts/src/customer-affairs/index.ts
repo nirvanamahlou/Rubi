@@ -270,6 +270,8 @@ export interface CustomerAffairsMarketingIntakeInputV1 {
 }
 
 export interface CustomerAffairsMarketingIntakeViewV1 {
+  conversionStatus?: 'LEAD' | 'ORDER' | 'SALE';
+  convertedAt?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   entryDate?: string | null;

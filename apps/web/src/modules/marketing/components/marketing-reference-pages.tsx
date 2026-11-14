@@ -42,7 +42,8 @@ import type {
   DocumentDetailV1,
   DocumentOptionsResponseV1,
 } from '@nora/contracts';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { marketingApi } from '../api/records-client';
 
 import { MarketingContentLibrary } from './marketing-content-library';
 import { MarketingPromotionsPanel } from './marketing-promotions-panel';
@@ -733,6 +734,64 @@ export function MarketingDashboardReference({
   const [endDate, setEndDate] = useState('');
   const [site, setSite] = useState('all');
   const [channel, setChannel] = useState('all');
+  const [intakes, setIntakes] = useState<
+    Awaited<ReturnType<typeof marketingApi.intakes>>['data'] | null
+  >(null);
+  const [intakeError, setIntakeError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void marketingApi
+      .intakes()
+      .then(({ data }) => {
+        if (active) setIntakes(data);
+      })
+      .catch(() => {
+        if (active) setIntakeError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const day = (value: string) =>
+    new Date(value).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tehran' });
+  const today = day(new Date().toISOString());
+  const from =
+    startDate || day(new Date(Date.now() - 29 * 86400000).toISOString());
+  const to = endDate || today;
+  const series = new Map<string, [number, number]>();
+  const inRange = (date: string) => date >= from && date <= to;
+  let leads = 0;
+  let customers = 0;
+  let orders = 0;
+  for (const item of intakes ?? []) {
+    const entered = day(item.entryDate ?? item.createdAt);
+    if (inRange(entered)) {
+      const counts = series.get(entered) ?? [0, 0];
+      counts[0]++;
+      series.set(entered, counts);
+      leads++;
+      if (item.conversionStatus === 'ORDER') orders++;
+    }
+    if (item.convertedAt) {
+      const converted = day(item.convertedAt);
+      if (inRange(converted)) {
+        const counts = series.get(converted) ?? [0, 0];
+        counts[1]++;
+        series.set(converted, counts);
+        customers++;
+      }
+    }
+  }
+  const days = [...series.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const peak = Math.max(1, ...days.flatMap(([, counts]) => counts));
+  const points = (index: 0 | 1) =>
+    days.map(([date, counts]) => {
+      const span = Math.max(86400000, Date.parse(to) - Date.parse(from));
+      const x = 20 + (660 * (Date.parse(date) - Date.parse(from))) / span;
+      return [x, 180 - (150 * counts[index]) / peak] as const;
+    });
+  const display = (value: number) =>
+    intakes ? value.toLocaleString('fa-IR') : '—';
   const topCampaigns: readonly PreviewRow[] = [];
   return (
     <section className="grid gap-5 text-right" dir="rtl">
@@ -802,44 +861,22 @@ export function MarketingDashboardReference({
           },
           {
             label: 'سرنخ جدید',
-            value: '—',
+            value: display(leads),
             icon: UsersRound,
             detail: '',
             tone: 'violet',
           },
           {
             label: 'مشتری جدید',
-            value: '—',
+            value: display(customers),
             icon: UserRound,
             detail: '',
             tone: 'emerald',
           },
-          {
-            label: 'فروش منتسب',
-            value: '—',
-            icon: BarChart3,
-            detail: '',
-            tone: 'emerald',
-          },
-          { label: 'نرخ تبدیل', value: '—', icon: Target, detail: '' },
-          {
-            label: 'CAC',
-            value: '—',
-            icon: CircleDollarSign,
-            detail: '',
-            tone: 'amber',
-          },
-          {
-            label: 'ROAS',
-            value: '—',
-            icon: Gauge,
-            detail: '',
-            tone: 'violet',
-          },
         ]}
       />
       <div className="grid gap-4 xl:grid-cols-3">
-        <Panel className="xl:col-span-2" title="روند ایجاد سرنخ و فروش منتسب">
+        <Panel className="xl:col-span-2" title="روند سرنخ و مشتری جدید">
           <div className="p-5">
             <div className="mb-4 flex flex-wrap items-center gap-5 text-xs font-bold">
               <span className="flex items-center gap-2">
@@ -854,11 +891,12 @@ export function MarketingDashboardReference({
                   aria-hidden="true"
                   className="size-2.5 rounded-full bg-emerald-500"
                 />
-                فروش منتسب
+                مشتری جدید
               </span>
             </div>
+            {intakeError ? <p role="status">دریافت روند انجام نشد.</p> : null}
             <svg
-              aria-label="روند ۳۰ روز اخیر؛ سرنخ جدید و فروش منتسب"
+              aria-label="روند بازه انتخابی؛ سرنخ جدید و مشتری جدید"
               className="h-52 w-full"
               role="img"
               viewBox="0 0 700 220"
@@ -879,6 +917,29 @@ export function MarketingDashboardReference({
                 className="fill-none stroke-border [stroke-width:1]"
                 d="M20 30H680M20 80H680M20 130H680M20 180H680"
               />
+              {([0, 1] as const).map((index) => (
+                <g key={index} fill={index === 0 ? '#3b82f6' : '#10b981'}>
+                  <polyline
+                    points={points(index)
+                      .map((point) => point.join(','))
+                      .join(' ')}
+                    fill="none"
+                    stroke="currentColor"
+                    className={
+                      index === 0 ? 'text-blue-500' : 'text-emerald-500'
+                    }
+                    strokeWidth="2"
+                  />
+                  {points(index).map(([x, y], point) => (
+                    <circle key={days[point]![0]} cx={x} cy={y} r="4">
+                      <title>
+                        {days[point]![0]} ·{' '}
+                        {days[point]![1][index].toLocaleString('fa-IR')}
+                      </title>
+                    </circle>
+                  ))}
+                </g>
+              ))}
             </svg>
           </div>
         </Panel>
@@ -887,9 +948,9 @@ export function MarketingDashboardReference({
             {[
               ['بازدید —', 'w-full'],
               ['مخاطب —', 'w-5/6'],
-              ['سرنخ —', 'w-2/3'],
-              ['سفارش —', 'w-1/2'],
-              ['فروش —', 'w-1/3'],
+              [`سرنخ ${display(leads)}`, 'w-2/3'],
+              [`سفارش ${display(orders)}`, 'w-1/2'],
+              [`مشتری جدید ${display(customers)}`, 'w-1/3'],
             ].map(([label, width], index) => (
               <div
                 className={cn(
@@ -909,15 +970,7 @@ export function MarketingDashboardReference({
         <div className="xl:col-span-2">
           <PreviewTable
             actions={false}
-            columns={[
-              'کمپین',
-              'کانال',
-              'هزینه',
-              'سرنخ',
-              'فروش',
-              'ROAS',
-              'وضعیت',
-            ]}
+            columns={['کمپین', 'کانال', 'هزینه', 'سرنخ', 'فروش', 'وضعیت']}
             onNotice={onNotice}
             onOpen={onOpen}
             exportable={false}

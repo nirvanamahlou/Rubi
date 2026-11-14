@@ -36,15 +36,16 @@ async function loadMetrics(section: Section): Promise<Metric[]> {
     const { data } = await marketingApi.intakes();
     return [
       ['همه سرنخ‌ها', data.length],
-      ['جدید', data.filter(({ status }) => status === 'NEW').length],
       [
-        'واجد شرایط',
-        data.filter(({ status }) => status === 'QUALIFIED').length,
+        'سرنخ',
+        data.filter((item) => (item.conversionStatus ?? 'LEAD') === 'LEAD')
+          .length,
       ],
       [
-        'دارای مسئول',
-        data.filter(({ assigneeUserId }) => assigneeUserId).length,
+        'سفارش',
+        data.filter((item) => item.conversionStatus === 'ORDER').length,
       ],
+      ['فروش', data.filter((item) => item.conversionStatus === 'SALE').length],
     ];
   }
 

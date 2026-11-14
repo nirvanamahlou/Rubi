@@ -1,3 +1,5 @@
+import { marketingLeadContacts } from '../customers/marketing-lead-contacts.public';
+import { marketingLeadOrders } from '../sales/marketing-lead-orders.public';
 import { createHash } from 'node:crypto';
 
 import {
@@ -129,7 +131,60 @@ export class CustomerAffairsMarketingIntakeService {
         where: { branchId: { in: actor.branchIds } },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       });
-    return { data: rows.map(present) };
+    const contacts = await marketingLeadContacts(
+      this.database,
+      rows.map((row) => row.phoneFingerprint),
+    );
+    const byPhone = new Map<string, Set<string>>();
+    for (const { valueFingerprint, customerId } of contacts) {
+      if (!valueFingerprint) continue;
+      const customers = byPhone.get(valueFingerprint) ?? new Set<string>();
+      customers.add(customerId);
+      byPhone.set(valueFingerprint, customers);
+    }
+    const customerIds = [...byPhone.values()]
+      .filter((ids) => ids.size === 1)
+      .flatMap((ids) => [...ids]);
+    const contracts = await marketingLeadOrders(
+      this.database,
+      actor.branchIds,
+      customerIds,
+    );
+    const byCustomer = new Map<string, typeof contracts>();
+    for (const contract of contracts) {
+      const key = `${contract.branchId}:${contract.customerId}`;
+      const entries = byCustomer.get(key) ?? [];
+      entries.push(contract);
+      byCustomer.set(key, entries);
+    }
+    return {
+      data: rows.map((row): CustomerAffairsMarketingIntakeViewV1 => {
+        const ids = byPhone.get(row.phoneFingerprint);
+        const customerId = ids?.size === 1 ? [...ids][0] : undefined;
+        const orders = customerId
+          ? (byCustomer.get(`${row.branchId}:${customerId}`) ?? []).filter(
+              (contract) =>
+                contract.createdAt >= (row.entryDate ?? row.createdAt),
+            )
+          : [];
+        const firstPayment = orders
+          .flatMap(({ payments }) =>
+            payments.flatMap(({ financeConfirmedAt }) =>
+              financeConfirmedAt ? [financeConfirmedAt.toISOString()] : [],
+            ),
+          )
+          .sort()[0];
+        return {
+          ...present(row),
+          conversionStatus: firstPayment
+            ? 'SALE'
+            : orders.length
+              ? 'ORDER'
+              : 'LEAD',
+          convertedAt: firstPayment ?? null,
+        };
+      }),
+    };
   }
 
   async create(
