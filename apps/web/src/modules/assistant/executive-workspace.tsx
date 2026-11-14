@@ -69,6 +69,9 @@ import {
 } from './model';
 import styles from './executive-workspace.module.css';
 import { conversationResponseSchema } from './conversation';
+import { agentResponseSchema } from './agent-response';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { useAccessActor } from '@/modules/iam/access-context';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -224,16 +227,42 @@ function selectedSalesContract() {
     .noraContractId;
 }
 
-export function AssistantComposer({
+type ComposerProps = {
+  t: Translate;
+  denied: boolean;
+  english?: boolean;
+  floating?: boolean;
+};
+export function AssistantComposer(props: ComposerProps) {
+  return process.env.NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED === 'true' ? (
+    <CompanyScopedAgentComposer {...props} />
+  ) : (
+    <AssistantComposerContent {...props} />
+  );
+}
+function CompanyScopedAgentComposer(props: ComposerProps) {
+  const { context } = useLegalEntityContext();
+  const actor = useAccessActor();
+  const key = JSON.stringify([
+    context,
+    actor?.userId,
+    actor?.branchIds,
+    actor?.permissions,
+  ]);
+  return <AssistantComposerContent key={key} {...props} agentMode />;
+}
+function AssistantComposerContent({
   t,
   denied,
   english = false,
   floating = false,
+  agentMode = false,
 }: {
   t: Translate;
   denied: boolean;
   english?: boolean;
   floating?: boolean;
+  agentMode?: boolean;
 }) {
   const inputId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
@@ -247,7 +276,12 @@ export function AssistantComposer({
 
   const [filterError, setFilterError] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ role: 'user' | 'assistant'; content: string; local?: boolean }>
+    Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      local?: boolean;
+      agent?: boolean;
+    }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const [actionResult, setActionResult] =
@@ -264,11 +298,15 @@ export function AssistantComposer({
   useEffect(() => {
     const resetRecord = () => {
       inspecting.current?.abort();
+      if (agentMode) {
+        pending.current?.abort();
+        setActionState(null);
+      }
       contractId.current = undefined;
       guideTopic.current = undefined;
       setMessages((previous) =>
-        previous.some((item) => item.local)
-          ? previous.filter((item) => !item.local)
+        previous.some((item) => item.local || item.agent)
+          ? previous.filter((item) => !item.local && !item.agent)
           : previous,
       );
     };
@@ -293,7 +331,7 @@ export function AssistantComposer({
       observer.disconnect();
       inspecting.current?.abort();
     };
-  }, [pathname]);
+  }, [pathname, agentMode]);
 
   const prompts: readonly [AssistantText, AssistantAction][] = [
     [c.quickDaily, 'daily-summary'],
@@ -397,7 +435,9 @@ export function AssistantComposer({
     pending.current = inspectionController;
     inspecting.current = inspectionController;
     setActionState('loading');
-    const inspection = await inspectContractQuestion(message, selectedContract);
+    const inspection = agentMode
+      ? undefined
+      : await inspectContractQuestion(message, selectedContract);
     if (inspecting.current === inspectionController) inspecting.current = null;
     if (
       inspectionController.signal.aborted ||
@@ -413,7 +453,7 @@ export function AssistantComposer({
       replyLocally(inspection.text);
       return;
     }
-    if (guide) {
+    if (guide && !agentMode) {
       guideTopic.current = guide.topicId;
       replyLocally(guide.text);
       return;
@@ -425,21 +465,36 @@ export function AssistantComposer({
     setActionState('loading');
     setChatError(null);
     try {
-      const response = await fetch('/api/assistant/v2/conversation', {
-        method: 'POST',
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          version: 1,
-          message,
-          history: messages
-            .filter((item) => !item.local)
-            .slice(-12)
-            .map((item) => ({ ...item, content: item.content.slice(0, 1000) })),
-        }),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        agentMode
+          ? '/api/assistant/v3/conversation'
+          : '/api/assistant/v2/conversation',
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            version: 1,
+            message,
+            ...(agentMode &&
+            selectedContract &&
+            /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(
+              selectedContract,
+            )
+              ? { context: { selectedContractId: selectedContract } }
+              : {}),
+            history: messages
+              .filter((item) => !item.local)
+              .slice(-12)
+              .map((item) => ({
+                ...item,
+                content: item.content.slice(0, 1000),
+              })),
+          }),
+          signal: controller.signal,
+        },
+      );
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           setMessages([]);
@@ -449,15 +504,46 @@ export function AssistantComposer({
           error?: { code?: string };
         } | null;
         throw new Error(
-          body?.error?.code === 'CONVERSATION_DISABLED'
+          ['CONVERSATION_DISABLED', 'AGENT_DISABLED'].includes(
+            body?.error?.code ?? '',
+          )
             ? 'disabled'
             : response.status === 429
               ? 'rate'
               : 'unavailable',
         );
       }
-      const result = conversationResponseSchema.parse(await response.json());
+      const body = await response.json();
       if (controller.signal.aborted) return;
+      if (agentMode) {
+        const result = agentResponseSchema.parse(body);
+        const sourceText = result.sources
+          .map(
+            (source) =>
+              `${source.sources.map((id) => 'nora_agent.' + id).join(', ')} — ${new Date(source.observedAt).toLocaleString(english ? 'en-GB' : 'fa-IR', { timeZone: 'Asia/Tehran' })}`,
+          )
+          .join('\n');
+        const answer = [
+          result.text,
+          sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
+          result.limitations.length
+            ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n');
+        setMessages((previous) =>
+          [
+            ...previous,
+            { role: 'user' as const, content: message, agent: true },
+            { role: 'assistant' as const, content: answer, agent: true },
+          ].slice(-12),
+        );
+        setDraft('');
+        setActionState(null);
+        return;
+      }
+      const result = conversationResponseSchema.parse(body);
       const answer =
         result.status === 'REPLY'
           ? result.text
@@ -598,6 +684,9 @@ export function AssistantComposer({
                   : c.conversationUnavailable,
             )}
           </p>
+        )}
+        {!denied && agentMode && actionState === 'loading' && (
+          <p role="status">{t(c.agentReading)}</p>
         )}
         {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
         {!denied && actionResult && 'filters' in actionResult && (

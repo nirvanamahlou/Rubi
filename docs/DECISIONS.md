@@ -1,3 +1,17 @@
+## Nora data Agent policy — 2026-11-14 — NORA-DATA-AGENT-V1
+
+The owner explicitly supersedes messages-only for opt-in Agent v3: Groq may
+receive authorized Sales result rows and analyze them. First scope is Sales and
+contracts; names/contract numbers are permitted, identity/contact/document/card
+fields and credentials are excluded. The AI authors SQL and iterates against
+Sales-owned curated reporting views; ERP enforces native row/column permissions,
+company visibility, read-only execution and resource budgets. This resolves the
+conflict with the older no-tool-results rule without transferring data ownership
+or granting cross-module table access. Germany SSH/CONNECT egress remains
+mandatory; the other PC owns the currently available tunnel configuration.
+No write tools, durable conversation store or production deployment are implied.
+See [NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
 ## Standalone insurance issuance — 2026-11-09
 
 The owner explicitly requests a complete new-applicant issuance form without a Sales contract. This supersedes the earlier contract-only prerequisite for this one insurance path. Reservations owns a standalone applicant value object, with real Branch/User FKs, row-bound AES-GCM encrypted identity/contact data and audited private reads. No placeholder Customer, Sales contract, allocation or Finance release is fabricated. Existing insurance policies retain their contract linkage; standalone policies instead link a real applicant record. A database constraint requires exactly one complete linkage shape. One existing issuance state machine handles both paths; fingerprints, leases and confirmed original PDFs remain authoritative. No real insurer-mode change is implied. Only vendor-catalogue durations may be selected or submitted, without silent duration/price rounding. The initial safe provider diagnostic remains visible through ambiguous-result reconciliation.

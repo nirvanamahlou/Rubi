@@ -1,3 +1,15 @@
+## Nora Agent Sales read views — 2026-11-14
+
+Migration20261114120000 adds the Sales-owned nora_agent schema with contracts,
+passengers, services, amounts and payments security-barrier views and restricted
+NOLOGIN owner/reader roles. No operational rows, keys or Prisma models change.
+Views retain native own/branch/all plus company/hidden predicates from a trusted
+transaction-local context; payments require the independent payment permission.
+Amounts have contract/currency grain and exclude refund/allocation accounting
+semantics. Sensitive identity/contact/documents, card and free-text metadata are
+not projected. Dedicated SQL credentials cannot read base tables. Details and
+provisioning: [NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
 ## Standalone insurance applicants — 2026-11-09
 
 Reservations owns ReservationInsuranceApplicant (real Branch/User FKs, UUID replay key, keyed request fingerprint, basic display name and AES-256-GCM encrypted full applicant value bound by AAD to applicant/branch IDs). ReservationInsuranceApplicantAccess audits authorized private reads with real applicant/User FKs and UTC time, without plaintext identity/contact snapshots. ReservationInsurancePolicy keeps existing contract/intake/customer FKs for contract issuance; they are nullable only when a real unique applicant FK replaces all three. A source CHECK enforces exactly one complete linkage shape; standalone uses the existing sandbox automatic state machine. No dummy Sales contract/CRM customer and no Finance release record is created. Additive migration20261109100000 preserves all existing rows and constraints; keep it on application rollback, with no data deletion or forced NOT NULL restoration. Worker/DTO/UI changes ship together. Original sanitized provider error stays in automation JSON and active lastError through outcome reconciliation; corrected attempts/revisions retain prior error provenance without storing upstream free text or identity values.

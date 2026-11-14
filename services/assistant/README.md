@@ -1,7 +1,23 @@
 # Independent assistant service
 
-Node 24 native HTTP service; no package installation, database access,
-user-content persistence, arbitrary URL/SQL execution or write tools.
+Node 24 native HTTP service; no database credentials, user-content persistence,
+arbitrary destination access or write tools. Opt-in Agent v3 authors curated
+read-only SQL and sends it to the Sales-owned ERP execution boundary.
+
+## Agent v3 — 2026-11-14
+
+POST /v3/assistant/conversation adds planning, source discovery, model-authored
+SQL, iterative results and cited natural-language answers. The owner explicitly
+permits authorized ERP results to reach Groq in this mode. The default remains
+disabled; v1/v2 remain compatible. Germany CONNECT egress is mandatory; there is
+no direct fallback. Native Sales row/company/payment access is rechecked during
+the run. No SQL credentials or raw IAM data reach the independent service/model.
+
+Configuration, limits, source meanings, migration, two-PC handoff and the pending
+Germany live-model acceptance gate are in
+[NORA-DATA-AGENT-V1](../../docs/tasks/NORA-DATA-AGENT-V1.md).
+The older rollout notes below are historical; their messages-only restriction
+still applies to v2, not to the explicitly enabled v3 policy.
 
 ## Current public contract
 

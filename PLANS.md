@@ -1,5 +1,15 @@
 # برنامه اجرای Nora
 
+## NORA-DATA-AGENT-V1 — PC-C
+
+- [x] Owner approves model-authored curated SQL, authorized result analysis by Groq and Sales-first delivery.
+- [x] Implement bounded multi-step Agent, Sales SQL views/permissions and additive v3 chat transport.
+- [x] Isolated PostgreSQL and automated service/API/Web verification.
+- [ ] Germany-path live30-case evaluation and authenticated browser acceptance on the authorized PC.
+- [ ] Separately approved environment migration/activation and final publication gates.
+
+Scope/contract and two-PC handoff: [NORA-DATA-AGENT-V1](docs/tasks/NORA-DATA-AGENT-V1.md).
+
 ## ASSISTANT-PHASE1-COMPLETION-1012
 
 - [x] Human permits separate contractual balances; Finance receivables deferred.

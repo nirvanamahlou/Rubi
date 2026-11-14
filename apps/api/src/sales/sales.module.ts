@@ -43,6 +43,8 @@ import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
+import { SalesAgentController } from './assistant-agent/controller';
+import { SalesAgentQueryService } from './assistant-agent/query.service';
 
 @Module({
   imports: [
@@ -68,6 +70,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     SalesPaymentReceiptsController,
     SalesController,
     SalesAssistantController,
+    SalesAgentController,
     SalesReferencesController,
     SalesAgencyCustomerController,
   ],
@@ -79,6 +82,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     SalesRepository,
     SalesPartyCorrectionService,
     SalesAssistantConfirmationService,
+    SalesAgentQueryService,
     SalesBuyerContactCrypto,
     SalesService,
     SalesProfitService,

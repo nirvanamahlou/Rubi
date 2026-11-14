@@ -1,3 +1,28 @@
+## NORA-DATA-AGENT-V1 — PC-C — SOURCE_VALIDATED / LIVE_GATE_PENDING
+
+Owner-approved Sales-first data Agent: planning, catalog discovery, model-authored
+read-only SQL, iterative tool results to Groq and cited responses. Native Sales
+own/branch/all, issuer-company/hidden and payment permissions are enforced by
+Sales-owned security-barrier views, restricted SQL credentials, AST validation
+and fresh context checks. V3 preserves legacy paths and approved chat layout.
+Mandatory Germany CONNECT egress has no direct fallback; consume the published
+e16229cf5 relay snapshot and additive v3 runtime/Nginx changes together. Default off.
+
+Service79, Web172 and targeted API/boundary68 tests pass; seven isolated PostgreSQL
+checks include the existing full-migration/native-IAM Assistant proof and new SQL
+isolation suite. Scoped lint, full API/Web typechecks, API build and Web production
+build (including enabled Agent client) pass; Compose config --quiet passes with
+synthetic SQL settings. Global English coverage fails for four unchanged HR labels
+inherited from develop; none are Nora labels. Base5a9c72ae7; origin/develop advanced
+to1d7241d31 during work, with peers preserved.
+
+No operational migration, local runtime replacement, production deployment or
+merge. Private Groq key is only in ignored .env.nora-agent.local. Direct PC-C
+request returned403; owner confirms authorized Germany SSH setup is on the
+unavailable other PC. Live30-case model evaluation and authenticated browser
+acceptance remain pending; no live quality certification. Handoff/configuration:
+[NORA-DATA-AGENT-V1](tasks/NORA-DATA-AGENT-V1.md).
+
 ## LEDGER-FISCAL-ALLOCATION-1112 — PC-D
 
 Ledger fiscal allocation uses direct numeric year plus start/end dates, with Persian/Arabic digit normalization. Remove the new-year toggle and title input; add selected-row removal beside + with confirmation. Preserve fiscal-year definitions, command audit/replay/CAS, company/branch guards and all financial records; reject non-OPEN/referenced allocations and stale resurrection.76 isolated PostgreSQL checks, focused Web/i18n checks, API/Web TypeScript and scoped lint pass; API and Web production builds pass. No schema/dependency changes or deployment. Browser connection unavailable, so visual acceptance is not claimed. See docs/tasks/LEDGER-FISCAL-ALLOCATION-1112.md.
