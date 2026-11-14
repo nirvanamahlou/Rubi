@@ -148,6 +148,8 @@
   font-weight: 700;
 }
 .orgChart {
+  width: max-content;
+  min-width: 100%;
   position: relative;
   isolation: isolate;
   display: grid;
@@ -177,6 +179,7 @@
   vector-effect: non-scaling-stroke;
 }
 .orgBranch {
+  flex: 0 0 auto;
   position: relative;
   z-index: 1;
   display: grid;
@@ -185,7 +188,7 @@
 }
 .orgLevel {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 52px;
 }
