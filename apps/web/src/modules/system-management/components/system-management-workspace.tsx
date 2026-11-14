@@ -1,6 +1,7 @@
 'use client';
 
 import Link from '@/i18n/link';
+import { activityActionLabel } from './activity-action-label';
 import { History, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -142,7 +143,7 @@ export function SystemManagementWorkspace() {
                         {sectionLabels[item.section] ?? item.section}
                       </td>
                       <td className="p-3">
-                        <bdi>{item.action}</bdi>
+                        {activityActionLabel(item.action)}
                       </td>
                       <td className="whitespace-nowrap p-3">
                         <time dateTime={item.createdAt}>
