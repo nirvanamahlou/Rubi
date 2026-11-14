@@ -42,7 +42,7 @@ const dateFormat = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
 });
 
 const cardClass =
-  'flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-5 text-start font-semibold shadow-sm hover:bg-muted';
+  'flex min-w-0 items-center gap-3 rounded-2xl border p-5 text-start font-semibold shadow-sm transition-colors';
 
 export function SystemManagementWorkspace() {
   const routeAllowed = useRouteAccess();
@@ -80,7 +80,10 @@ export function SystemManagementWorkspace() {
       <h1 className="text-2xl font-bold">مدیریت سیستم</h1>
       <div className="grid gap-3 sm:grid-cols-2">
         {routeAllowed('/system/users') && (
-          <Link className={cardClass} href="/system/users">
+          <Link
+            className={`${cardClass} border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 dark:hover:bg-blue-900/50`}
+            href="/system/users"
+          >
             <Users aria-hidden="true" className="size-5 text-primary" />
             مدیریت کاربران
           </Link>
@@ -88,7 +91,7 @@ export function SystemManagementWorkspace() {
         {canReadHistory && (
           <button
             type="button"
-            className={cardClass}
+            className={`${cardClass} border-violet-200 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/40 dark:hover:bg-violet-900/50`}
             aria-expanded={open}
             aria-controls="system-activity"
             onClick={() => {

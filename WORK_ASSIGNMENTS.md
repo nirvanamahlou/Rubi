@@ -12558,3 +12558,6 @@ Validation complete: 76 isolated PostgreSQL checks, focused Web/i18n checks, API
 Reserve combined tour country/city filtering and focused regression coverage. Keep selected country separately from city so changing country clears city and restricts city choices; isolate each destination and reindex overrides on removal. No schema/dependency/deployment. User authorizes green develop merge.
 
 LEDGER-FISCAL-ALLOCATION-1112 publication: owner explicitly authorizes PR1692 to develop and immediate merge without CI. Resolve only the append-only WORK_ASSIGNMENTS conflict, preserving both task entries. No production deployment.
+
+## CORRESPONDENCE-CARDS-1114 — PC-B — COMPLETED
+Reserve system/inbox card colors, correspondence public job identity and outgoing form alignment. No migration/dependencies. Owner authorizes push and develop merge.
