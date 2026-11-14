@@ -10030,6 +10030,8 @@ TOUR-HOTEL-FIRST-1112: Tour selection now precedes hotel/room occupancy and iden
 
 TOUR-COUNTRY-CITY-1112: Combined tour origin and destination city lists are scoped to each selected country; changing country clears the previous city without auto-selecting another. Pending country selection survives the empty city, and removing a destination preserves neighboring country selections. Three focused route tests pass; quality/build CI gates authorized develop merge. No schema or production changes.
 
+PC-C · 2026-11-12: Nora contract evidence, scoped reports and recovery — see [scope and validation](tasks/NORA-CONTRACT-EVIDENCE-1112.md). No production deployment.
+
 CORRESPONDENCE-CARDS-1114 (PC-B): system/inbox cards have distinct light/dark colors; correspondence directory combines employee grade/job title; sender signature auto-fills and survives new-letter reset; compose actions share a flex row. Scoped API/Web ESLint passed. Correspondence suites could not collect because local @nora/contracts and @nora/database build outputs are missing. No deployment or migration.
 
 HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP methods/routes, including existing events. Raw audit records preserved. Focused formatter tests: 14 passed; scoped ESLint passed.

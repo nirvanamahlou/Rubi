@@ -295,9 +295,37 @@ export const salesApi = {
     ),
   list: (query: SalesContractListQuery) =>
     request<SalesContractPage>(`/contracts?${queryString(query)}`),
+  submissionStatus: (key: string) =>
+    request<{
+      data: Pick<
+        SalesContractDetail,
+        'id' | 'contractNumber' | 'status' | 'reservationStatus'
+      > | null;
+    }>('/submissions/' + encodeURIComponent(key)),
+  documentReadiness: (id: string) =>
+    request<{
+      data: {
+        deliverable: boolean;
+        financeApproved: boolean;
+        tickets: number;
+        insured: boolean;
+        voucher: boolean;
+        supplier: string;
+        contractVersion: number;
+        receivedAt: string;
+        appliedVersion: number | null;
+      };
+    }>('/contracts/' + encodeURIComponent(id) + '/document-readiness'),
   contractAudit: (id: string) =>
     request<{
-      data: { action: string; outcome: string; occurredAt: string }[];
+      data: {
+        action: string;
+        outcome: string;
+        occurredAt: string;
+        actorUserId?: string;
+        beforeSnapshot?: unknown;
+        afterSnapshot?: unknown;
+      }[];
     }>('/contracts/' + encodeURIComponent(id) + '/audit'),
   readPurchaseContext: (id: string) =>
     request<{ data: ReservationIntakeV1 }>(
@@ -305,7 +333,12 @@ export const salesApi = {
     ),
   statusHistory: (id: string) =>
     request<{
-      data: { toStatus: string; changedAt: string; reason: string }[];
+      data: {
+        toStatus: string;
+        changedAt: string;
+        reason: string;
+        changedByUserId?: string;
+      }[];
     }>('/contracts/' + encodeURIComponent(id) + '/status-history'),
   financeSummary: (id: string) =>
     request<{ data: { balances: SalesBalance[] } }>(
