@@ -409,7 +409,7 @@ export class FinanceInboxService {
         title: item.title,
         partyDisplaySnapshot: item.employeeLabel,
         description: item.message,
-        amount: null,
+        amount: item.amount ?? null,
         settlement: null,
         status: hrStatus[item.status],
         hrReferral: { canRespond: item.canRespond, response: item.response },

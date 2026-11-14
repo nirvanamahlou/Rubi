@@ -2445,6 +2445,7 @@ export class CustomerAffairsService {
           version: row.version,
           code: row.trackingNumber,
           title: row.subject,
+          description: row.description,
           native: false,
         };
     } else if (source === 'hr') {
