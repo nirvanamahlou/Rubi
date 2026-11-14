@@ -45,9 +45,10 @@ import {
 import { ServiceParties } from './service-parties';
 import { HotelStayDates } from './hotel-stay-dates';
 import { AdditionalHotelStays } from './additional-hotel-stays';
-import { salesPassengerStepError } from '../model/sales-passenger-step';
+import { salesPassengerBlockers } from '../model/sales-passenger-step';
 
-import { browserRandomUuid } from '@/lib/browser-random-uuid';
+import { paymentReceiptsApi } from '../api/payment-receipts';
+import { submitOrRecover, type Attempt } from '../model/submission-recovery';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { HotelRoomCapacity } from './hotel-room-capacity';
 import { salesHotelRoomOptions } from '../model/sales-hotel-room-options';
@@ -394,7 +395,9 @@ export function SalesContractForm() {
     },
     [calendarRoute],
   );
-  const submission = useRef({ fingerprint: '', key: '' });
+  const submission = useRef<Attempt | null>(null);
+  const submitLock = useRef(false);
+
   const selectableHotelRoomTypes = useMemo(
     () =>
       salesHotelRoomOptions(
@@ -726,11 +729,12 @@ export function SalesContractForm() {
     ? salesHotelValidationError(state) || hotelCapacityError
     : null;
   const hotelGuestIds = salesHotelGuestIds(state);
-  const passengerStepError = salesPassengerStepError(
+  const passengerBlockers = salesPassengerBlockers(
     state,
     peopleDirty,
     step === 0 ? null : hotelCapacityError,
   );
+  const passengerStepError = passengerBlockers[0] ?? null;
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
     value: number,
@@ -794,16 +798,31 @@ export function SalesContractForm() {
           : {}),
     });
   };
-  const finalStepError = (() => {
-    if (step !== 1) return '';
-    if (hotelCapacityError) return hotelCapacityError;
-    try {
+  const finalBlockers = (() => {
+    if (step !== 1) return [];
+    const issues: string[] = hotelCapacityError ? [hotelCapacityError] : [];
+    const validate = (check: () => void) => {
+      try {
+        check();
+      } catch (error) {
+        issues.push(
+          error instanceof Error
+            ? error.message
+            : 'قیمت و پرداخت‌های قرارداد را بررسی کنید.',
+        );
+      }
+    };
+    validate(() => {
       const payload = salesPayload({
         ...(state.legacyContract ? state : pricedState),
         servicePricing: pricedState.servicePricing ?? {},
       });
-      validateSalesCurrencySelection(payload, references.currencies);
-      readPassengerHotelPrices(payload.services, payload.passengers);
+      validate(() =>
+        validateSalesCurrencySelection(payload, references.currencies),
+      );
+      validate(() =>
+        readPassengerHotelPrices(payload.services, payload.passengers),
+      );
       if (
         !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
@@ -811,38 +830,47 @@ export function SalesContractForm() {
         !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
       )
-        throw Error('قیمت پرواز هر مسافر را وارد کنید.');
-      validatePassengerFlightPrices(
-        payload.services,
-        payload.passengers,
-        payload.priceComponents,
+        issues.push('قیمت پرواز هر مسافر را وارد کنید.');
+      validate(() =>
+        validatePassengerFlightPrices(
+          payload.services,
+          payload.passengers,
+          payload.priceComponents,
+        ),
       );
-      validateSalesChequePayments(
-        payload.priceComponents,
-        payload.payments ?? [],
-        payload.paymentTerms,
+      validate(() =>
+        validateSalesChequePayments(
+          payload.priceComponents,
+          payload.payments ?? [],
+          payload.paymentTerms,
+        ),
       );
-      validatePassengerPackagePrices(
-        payload.passengers,
-        payload.paymentTerms
-          ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
-          : payload.priceComponents,
-        !state.legacyContract &&
-          (state.passengerTotalPricing ||
-            state.priceEntryMode === 'PASSENGER_TOTAL'),
+      validate(() =>
+        validatePassengerPackagePrices(
+          payload.passengers,
+          payload.paymentTerms
+            ? payload.priceComponents.filter(
+                (p) => p.title !== SALES_CHEQUE_FEE,
+              )
+            : payload.priceComponents,
+          !state.legacyContract &&
+            (state.passengerTotalPricing ||
+              state.priceEntryMode === 'PASSENGER_TOTAL'),
+        ),
       );
-      return payload.priceComponents.length > 0 ||
-        (payload.services.length > 0 &&
-          payload.services.every((service) => service.kind === 'TRANSFER') &&
-          !payload.payments?.length)
-        ? ''
-        : 'قیمت خدمات قرارداد را تکمیل کنید.';
-    } catch (reason) {
-      return reason instanceof Error
-        ? reason.message
-        : 'قیمت و پرداخت‌های قرارداد را بررسی کنید.';
-    }
+      if (
+        !payload.priceComponents.length &&
+        !(
+          payload.services.length &&
+          payload.services.every((s) => s.kind === 'TRANSFER') &&
+          !payload.payments?.length
+        )
+      )
+        issues.push('قیمت خدمات قرارداد را تکمیل کنید.');
+    });
+    return [...new Set(issues)];
   })();
+  const finalStepError = finalBlockers[0] ?? '';
   const canContinue = (() => {
     if (step === 0)
       return Boolean(
@@ -904,7 +932,8 @@ export function SalesContractForm() {
     return true;
   })();
   const submit = async () => {
-    if (step !== salesSteps.length - 1 || busy) return;
+    if (step !== salesSteps.length - 1 || busy || submitLock.current) return;
+    submitLock.current = true;
     setBusy(true);
     setSubmitPhase('');
     setError('');
@@ -919,14 +948,12 @@ export function SalesContractForm() {
           : payload.priceComponents,
         state.priceEntryMode === 'PASSENGER_TOTAL',
       );
-      const fingerprint = JSON.stringify(payload);
+
       validateSalesChequePayments(
         payload.priceComponents,
         payload.payments ?? [],
         payload.paymentTerms,
       );
-      if (submission.current.fingerprint !== fingerprint)
-        submission.current = { fingerprint, key: browserRandomUuid() };
       const options = receiptFiles.some(Boolean)
         ? (await documentsApi.options()).data
         : null;
@@ -935,14 +962,37 @@ export function SalesContractForm() {
           if (file) validatePaymentEvidenceFile(options, file);
       setSubmitPhase('creating');
       setCreatedNumber('');
-      const response = await salesApi.create(payload, submission.current.key);
+      const response = await submitOrRecover(
+        payload,
+        draftStorageKey,
+        submission,
+      );
       setCreatedNumber(response.data.contractNumber);
+      if (response.data.status === 'CANCELLED')
+        throw Error('قرارداد لغو شده است.');
       setSubmitPhase('confirming');
-      if (response.data.status !== 'SENT_TO_RESERVATIONS')
-        await salesApi.confirm(response.data.id, response.data.version);
+      if (
+        (!response.data.reservationStatus ||
+          response.data.reservationStatus === 'NOT_SENT') &&
+        response.data.status !== 'SENT_TO_RESERVATIONS'
+      )
+        await salesApi
+          .confirm(response.data.id, response.data.version)
+          .catch(async (error: unknown) => {
+            const fresh = await salesApi.detail(response.data.id);
+            if (
+              !fresh.data.reservationStatus ||
+              fresh.data.reservationStatus === 'NOT_SENT' ||
+              fresh.data.status === 'CANCELLED'
+            )
+              throw error;
+          });
       setSubmitPhase('sent');
-      if (draftStorageKey)
+      submission.current = null;
+      if (draftStorageKey) {
         globalThis.sessionStorage?.removeItem(draftStorageKey);
+        globalThis.sessionStorage?.removeItem(draftStorageKey + ':submission');
+      }
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
       setSavedContract(response.data);
@@ -970,11 +1020,39 @@ export function SalesContractForm() {
               paymentEvidenceForm(response.data, ids[i]!, options, file),
             );
           } catch (reason) {
-            setReceiptError(
+            let message =
               reason instanceof Error
                 ? reason.message
-                : 'ثبت مدرک پرداخت ناموفق بود.',
-            );
+                : 'ثبت مدرک پرداخت ناموفق بود.';
+            try {
+              for (let page = 1; ids[i]; page++) {
+                const list = await paymentReceiptsApi.list(
+                  response.data.id,
+                  ids[i]!,
+                  page,
+                );
+                if (
+                  list.data.some(
+                    (d) =>
+                      d.currentVersion.originalFileName === file.name &&
+                      d.currentVersion.sizeBytes === file.size,
+                  )
+                ) {
+                  message =
+                    'مدرکی با همین نام و اندازه ثبت شده است؛ پیش از بارگذاری دوباره، مدرک همان پرداخت را بررسی کنید.';
+                  break;
+                }
+                if (
+                  !list.data.length ||
+                  page !== list.meta.page ||
+                  page * list.meta.pageSize >= list.meta.total
+                )
+                  break;
+              }
+            } catch {
+              /* Keep the actual upload failure when evidence is unavailable. */
+            }
+            setReceiptError(message);
             break;
           }
         }
@@ -984,6 +1062,7 @@ export function SalesContractForm() {
         reason instanceof Error ? reason.message : 'ثبت قرارداد ناموفق بود.',
       );
     } finally {
+      submitLock.current = false;
       setBusy(false);
     }
   };
@@ -1361,7 +1440,17 @@ export function SalesContractForm() {
             data-nora-blockers={JSON.stringify(
               step === 0
                 ? [
-                    passengerStepError,
+                    ...passengerBlockers,
+                    ...(state.serviceKinds.includes('HOTEL')
+                      ? (state.hotel.rooms ?? []).flatMap((room, i) => [
+                          !room.roomTypeId && 'اتاق ' + (i + 1) + ' — نوع اتاق',
+                          ...room.childAges.flatMap((age, j) =>
+                            age === null
+                              ? ['اتاق ' + (i + 1) + ' — سن کودک ' + (j + 1)]
+                              : [],
+                          ),
+                        ])
+                      : []),
                     hotelStepError,
                     salesRoomPartyError(state),
                     (!state.originId || !state.originCountryId) &&
@@ -1413,7 +1502,7 @@ export function SalesContractForm() {
                               !state.packageSaleQuote)))) &&
                       'تاریخ و قیمت معتبر پکیج',
                   ].filter(Boolean)
-                : [finalStepError].filter(Boolean),
+                : finalBlockers,
             )}
             data-nora-stage={salesSteps[step]}
             data-nora-error={
@@ -1495,7 +1584,13 @@ export function SalesContractForm() {
               <>
                 {step === 0 ? (
                   <div className="grid gap-5">
-                    <h2 className="text-sm font-bold">مسیر سفر</h2>
+                    <h2
+                      tabIndex={-1}
+                      id="nora-contract-route"
+                      className="text-sm font-bold"
+                    >
+                      مسیر سفر
+                    </h2>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div
                         className="grid gap-3"
@@ -1580,7 +1675,13 @@ export function SalesContractForm() {
                 ) : null}
                 {step === 0 ? (
                   <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
-                    <h2 className="text-sm font-bold">خدمات قرارداد</h2>
+                    <h2
+                      tabIndex={-1}
+                      id="nora-contract-services"
+                      className="text-sm font-bold"
+                    >
+                      خدمات قرارداد
+                    </h2>
                     {state.tour ? (
                       <p className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
                         خدمات این قرارداد از پکیج تور انتخاب‌شده می‌آیند و بلیط،
@@ -2524,7 +2625,12 @@ export function SalesContractForm() {
           />
         ) : null}
         {step === 0 ? (
-          <section className="mt-5 grid gap-4" aria-label="تخصیص خدمات مسافران">
+          <section
+            className="mt-5 grid gap-4"
+            id="nora-contract-assignment"
+            tabIndex={-1}
+            aria-label="تخصیص خدمات مسافران"
+          >
             {state.serviceKinds.includes('VISA') ? (
               <fieldset className="grid gap-2 rounded-xl border p-4">
                 <legend>انتخاب متقاضیان ویزا</legend>
@@ -2677,7 +2783,11 @@ export function SalesContractForm() {
           </section>
         ) : null}
         {step === 1 ? (
-          <div className="grid gap-4 grid-cols-1">
+          <div
+            id="nora-contract-pricing"
+            tabIndex={-1}
+            className="grid gap-4 grid-cols-1"
+          >
             <div className="grid content-start gap-3">
               <ContractServiceSummary
                 state={state}

@@ -450,11 +450,22 @@ export class HrConnectionsService {
       target === 'tasks' ? validate.uuid(input.recipientId) : undefined;
     const note = validate.text(input.message, 'متن قابل اشتراک', 2000, true);
     const message = [source.description, note].filter(Boolean).join('\n\n');
-    if (!message || message.length > 4000) throw new BadRequestException('شرح درخواست معتبر نیست.');
-    const rawAmount = input.amount == null ? '' : validate.digits(validate.text(input.amount, 'مبلغ به ریال', 24, true));
-    if (rawAmount && (!/^\d{1,20}(\.\d{1,4})?$/.test(rawAmount) || Number(rawAmount) <= 0))
+    if (!message || message.length > 4000)
+      throw new BadRequestException('شرح درخواست معتبر نیست.');
+    const rawAmount =
+      input.amount == null
+        ? ''
+        : validate.digits(
+            validate.text(input.amount, 'مبلغ به ریال', 24, true),
+          );
+    if (
+      rawAmount &&
+      (!/^\d{1,20}(\.\d{1,4})?$/.test(rawAmount) || Number(rawAmount) <= 0)
+    )
       throw new BadRequestException('مبلغ به ریال معتبر نیست.');
-    const amount = rawAmount ? { amount: rawAmount, currencyCode: 'IRR' } : undefined;
+    const amount = rawAmount
+      ? { amount: rawAmount, currencyCode: 'IRR' }
+      : undefined;
     return this.command(
       actor,
       key,

@@ -4,6 +4,8 @@ function setup(approved = true) {
   const intake = {
     id: 'intake',
     branchId: 'branch',
+    contractVersion: 3,
+    ticketDocuments: [],
     snapshot: {
       serviceSelections: [
         { kind: 'FLIGHT', metadata: { purchaseSupplyType: 'FLOATING' } },
@@ -57,6 +59,21 @@ it('prepares defaults and persistent automatic ticket numbers only after Sales a
   expect(result.data.ticketDocuments[0]?.number).toBe('100001');
   expect(x.issueFloatingForDelivery).toHaveBeenCalledTimes(1);
 });
+it.each([true, false])(
+  'reads issuance evidence without creating files (delivery permission %s)',
+  async (approved) => {
+    const x = setup(approved);
+    const { data } = await x.controller.documentReadiness('contract', request);
+    expect(data).toMatchObject({
+      financeApproved: approved,
+      deliverable: approved,
+      tickets: 0,
+      contractVersion: 3,
+    });
+    expect(x.issueFloatingForDelivery).not.toHaveBeenCalled();
+    expect(x.floatingDocumentOutput).not.toHaveBeenCalled();
+  },
+);
 it.each(['finance', 'cancelled', 'sales'])(
   'does not issue documents when %s access is blocked',
   async (kind) => {

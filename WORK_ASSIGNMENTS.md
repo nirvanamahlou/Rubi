@@ -12561,6 +12561,8 @@ Validation complete: 76 isolated PostgreSQL checks, focused Web/i18n checks, API
 
 Reserve combined tour country/city filtering and focused regression coverage. Keep selected country separately from city so changing country clears city and restricts city choices; isolate each destination and reindex overrides on removal. No schema/dependency/deployment. User authorizes green develop merge.
 
+PC-C / NORA-CONTRACT-EVIDENCE-1112: reserve Nora scoped contract evidence, report and composer consumers, bounded Sales form diagnostics and deep-link wiring, regression tests and status notes on codex/pc-c-nora-contract-evidence-1112. Existing authorized reads only; no migration, dependency or production change.
+
 LEDGER-FISCAL-ALLOCATION-1112 publication: owner explicitly authorizes PR1692 to develop and immediate merge without CI. Resolve only the append-only WORK_ASSIGNMENTS conflict, preserving both task entries. No production deployment.
 
 ## CORRESPONDENCE-CARDS-1114 — PC-B — COMPLETED
@@ -12576,3 +12578,5 @@ Reserve system history display formatter and focused tests. Preserve raw audit d
 COMPUTER_ID=PC-B; branch codex/pc-b-deploy-format-1114 from develop81b188ee2. Reserve whitespace-only Prisma schema formatting repair and own release notes after hosted quality gate failure. No model, migration, dependency or behavior changes. Owner authorizes all-changes production deployment without a fresh backup, with green gates and preserved runtime integrations.
 
 DEPLOY-FORMAT-1114 follow-up reserves ten missing English labels and generated API/standalone catalogues required by the existing completeness gate. No feature or API behavior changes; preceding translation scopes are frozen.
+
+PR1693 / PR-CI-EMPLOYER-REPORT-1114: reserve only contract-uuid-fallback.spec.ts and submission-recovery.spec.ts, own Nora task note and this bounded entry. Replace stale implementation-shape checking with secure UUID plus same-key/payload retry behavior. Latest develop integrated without dropping peer notes; source remains unchanged. User authorizes merge only after all current-head checks pass. Additional formatting-only CI lease: apps/api/src/hr/hr-connections.service.ts, apps/web/src/modules/hr/hr-inbox-forward-dialog.tsx and hr-organization.tsx retain published HR behavior; Prettier whitespace only repairs the inherited push gate. No HR logic, access, schema or dependency change. Central-file conflict lease: apps/web/src/i18n/english-ui-catalog.ts retains both Nora contract and peer Site Commerce catalogues plus existing override precedence; no labels removed.
