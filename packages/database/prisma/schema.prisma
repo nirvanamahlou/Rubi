@@ -278,6 +278,8 @@ model RolePermission {
 }
 
 model Branch {
+  websitePublications           WebsitePublication[]
+  websiteOrders                 WebsiteOrder[]
   standaloneInsuranceApplicants ReservationInsuranceApplicant[]
   pettyCashFunds                ProcurementPettyFund[]
 
@@ -4023,6 +4025,7 @@ model SalesContractNumberCounter {
 }
 
 model SalesContract {
+  websiteOrder              WebsiteOrder?
   legalEntityId             String?                        @map("legal_entity_id") @db.Uuid
   legalEntity               LegalEntity?                   @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
   hiddenAt                  DateTime?                      @map("hidden_at") @db.Timestamptz(3)
@@ -8620,4 +8623,37 @@ model PackagePricingTourCombinationSource {
 
   @@index([draftId, publicationId])
   @@index([hotelRateId])
+}
+
+model WebsitePublication {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteCode   String   @db.VarChar(40)
+  branchId   String   @db.Uuid
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  kind       String   @db.VarChar(20)
+  resourceId String   @db.Uuid
+  enabled    Boolean  @default(false)
+  version    Int      @default(1)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([siteCode, branchId, kind, resourceId])
+  @@index([siteCode, branchId, updatedAt])
+  @@map("website_publications")
+}
+
+model WebsiteOrder {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteCode           String        @db.VarChar(40)
+  branchId           String        @db.Uuid
+  branch             Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  externalId         String        @db.VarChar(100)
+  fingerprint        String        @db.Char(64)
+  contractId         String        @unique @db.Uuid
+  contract           SalesContract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  paymentFingerprint String?       @db.Char(64)
+  paymentCommands    Json?
+  createdAt          DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@unique([siteCode, branchId, externalId])
+  @@map("website_orders")
 }

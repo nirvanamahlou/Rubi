@@ -180,6 +180,58 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 
 @Injectable()
 export class TicketPublicService {
+  /** Server-side commerce boundary. Never returns purchase costs or other branches. */
+  async websiteOffer(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.ticketPublishedOffer.findFirst({
+      where: {
+        id,
+        branchId: { in: [...branchIds] },
+        status: 'ACTIVE',
+        departureAt: { gt: new Date() },
+      },
+      include: {
+        saleRoutes: { select: routeSelect },
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          select: { quantity: true },
+        },
+        standaloneSalePrices: {
+          where: { salePriceTargetId: null },
+          include: {
+            salePriceTarget: true,
+            tiers: { orderBy: { tierIndex: 'asc' } },
+          },
+          orderBy: { revision: 'desc' },
+          take: 1,
+        },
+        outboundRoundTripSalePrices: {
+          include: { tiers: { orderBy: { tierIndex: 'asc' } } },
+          orderBy: { revision: 'desc' },
+        },
+        saleCommissions: {
+          include: { target: true },
+          orderBy: { revision: 'desc' },
+        },
+      },
+    });
+    if (!row) throw new BadRequestException('بلیت فعال سایت یافت نشد.');
+    const offer = this.offerView(row);
+    delete offer.targetedStandaloneSalePrices;
+    delete offer.baseStandaloneSalePrice;
+    delete offer.baseRoundTripSalePrices;
+    delete offer.saleCommissions;
+    offer.roundTripSalePrices = (offer.roundTripSalePrices ?? []).map(price => {
+      const visible = { ...price };
+      delete visible.baseAmount;
+      delete visible.baseTiers;
+      return visible;
+    });
+    return offer;
+  }
   /** Historical direct-sale commissions only; never substitutes current prices for contract history. */
   async reservationCommissions(
     offerIds: readonly string[],

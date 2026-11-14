@@ -1,4 +1,5 @@
 'use client';
+import { WebsitePublicationSwitch } from '@/modules/site-commerce/publication-switch';
 import { useEffect, useRef, useState } from 'react';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
@@ -185,6 +186,11 @@ export function PublishedOfferForm({
   }
   return (
     <form onSubmit={(event) => void submit(event)} className="space-y-4">
+      <WebsitePublicationSwitch
+        kind="ticket"
+        resourceId={offer.id}
+        disabled={readOnly || saving}
+      />
       {problem ? <Alert tone="error" title={problem} /> : null}
       {weekdayOffers ? (
         <p>تعداد پروازهای همین روز هفته در این لود: {weekdayOffers.length}</p>
