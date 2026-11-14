@@ -12566,3 +12566,7 @@ Reserve system/inbox card colors, correspondence public job identity and outgoin
 ## HISTORY-ACTION-LABELS-1114 — PC-B — COMPLETED
 
 Reserve system history display formatter and focused tests. Preserve raw audit data. Standing owner authorization covers push/merge.
+
+## PR-CI-EMPLOYER-REPORT-1114 — PC-C helper — IN_PROGRESS
+
+Owner explicitly authorizes reviewing every open Rubi PR authored by Amin-tech11, fixing CI/CD, waiting for all exact-head checks and merging green PRs to develop. Initial inventory: PR1693, PR1700 and PR1701. COMPUTER_ID=PC-C; coordination/report branch codex/pc-c-pr-ci-employer-report-1114 from origin/develop81b188ee2. Reserve bounded own WORK_ASSIGNMENTS/PROJECT_STATUS entries, docs/tasks/PR-CI-EMPLOYER-REPORT-1114.md and employer report evidence. Existing PR source fixes continue on their published task branches, with exact files reserved here before edits; preserve peers and all migrations/history. No force-push, gate weakening, production deployment or business-data writes. Nora Agent remains default-off with live Germany/model/browser acceptance still required after source merge. Final employer report attributes implementation to this E:/ERP device only where local reflog/task evidence supports it; reviewing/merging another PC's PR is identified separately.
