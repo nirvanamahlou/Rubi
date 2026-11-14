@@ -75,7 +75,7 @@ import {
 } from './model';
 import styles from './executive-workspace.module.css';
 import { conversationResponseSchema } from './conversation';
-import { agentResponseSchema } from './agent-response';
+import { agentResponseSchema, conversationHistory } from './agent-response';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useAccessActor } from '@/modules/iam/access-context';
 
@@ -512,13 +512,7 @@ function AssistantComposerContent({
             )
               ? { context: { selectedContractId: selectedContract } }
               : {}),
-            history: messages
-              .filter((item) => !item.local)
-              .slice(-12)
-              .map((item) => ({
-                ...item,
-                content: item.content.slice(0, 1000),
-              })),
+            history: conversationHistory(messages),
           }),
           signal: controller.signal,
         },

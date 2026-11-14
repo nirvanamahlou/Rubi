@@ -173,3 +173,7 @@ Acceptance requires at least27/30 supported outcomes, every monetary answer exac
 all authorization cases correct, and no sensitive-field leakage. Unsupported
 questions must explicitly clarify or disclose missing sources. Passing transport
 and synthetic-provider tests does not close this live-model/browser gate.
+
+## CI integration follow-up on 2026-11-14
+
+The owner explicitly authorizes merging all Amin-tech11 PRs after every current-head CI gate succeeds. Integrate develop7cd6ab058 and PR1693 branch47179793f in merge order1693 then1700; retain legacy contract evidence links, correction targets, version tracking and abort behavior alongside opt-in v3. Explicit role/content-only history serialization fixes a second-turn rejection caused by internal UI metadata leaking into the strict request shape. A new regression verifies bounded history, omission of local evidence/link targets and private UI flags.185 focused Web/English checks pass; existing HR translations are consumed from develop without changing HR behavior. Format only two surplus blank lines in this unit's reservation. Source merge still does not activate the Agent or apply its migration to an operational database. Mandatory Germany-route live30-case and authenticated browser acceptance remain open.

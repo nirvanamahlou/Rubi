@@ -1,4 +1,19 @@
 import { z } from 'zod';
+
+/** Local UI metadata is never part of the strict v2/v3 conversation request. */
+export function conversationHistory(
+  messages: readonly {
+    role: 'user' | 'assistant';
+    content: string;
+    local?: boolean;
+  }[],
+) {
+  return messages
+    .filter((item) => !item.local)
+    .slice(-12)
+    .map(({ role, content }) => ({ role, content: content.slice(0, 1000) }));
+}
+
 export const agentResponseSchema = z
   .object({
     version: z.literal(3),

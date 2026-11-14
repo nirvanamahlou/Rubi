@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agentResponseSchema } from './agent-response';
+import { agentResponseSchema, conversationHistory } from './agent-response';
 import { proxyAssistantConversation } from './proxy';
 const value = {
   version: 3,
@@ -18,6 +18,27 @@ const value = {
   requestId: '12345678-1234-4234-8234-123456789abc',
 };
 describe('v3 assistant consumer boundary', () => {
+  it('keeps multi-turn requests valid by removing agent flags and private local links from history', () => {
+    const messages = Array.from({ length: 14 }, (_, index) => ({
+      role: 'assistant' as const,
+      content: `${index}:` + 'x'.repeat(1100),
+      agent: true,
+      links: [{ href: '/sales?contract=private-reference' }],
+      targets: [{ id: 'private-field', label: 'local correction' }],
+    }));
+    const history = conversationHistory([
+      ...messages,
+      { role: 'user', content: 'local contract evidence', local: true },
+    ]);
+    expect(history).toHaveLength(12);
+    expect(history[0]?.content).toMatch(/^2:/);
+    for (const item of history) {
+      expect(Object.keys(item).sort()).toEqual(['content', 'role']);
+      expect(item.content).toHaveLength(1000);
+    }
+    expect(JSON.stringify(history)).not.toContain('private-reference');
+    expect(JSON.stringify(history)).not.toContain('local contract evidence');
+  });
   it('requires bounded source-backed answers and rejects private source names', () => {
     expect(agentResponseSchema.safeParse(value).success).toBe(true);
     expect(
