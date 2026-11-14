@@ -4028,8 +4028,8 @@ model SalesContract {
   websiteOrder              WebsiteOrder?
   legalEntityId             String?                        @map("legal_entity_id") @db.Uuid
   legalEntity               LegalEntity?                   @relation(fields: [legalEntityId], references: [id], onDelete: Restrict)
-  reservationHiddenAt       DateTime? @map("reservation_hidden_at") @db.Timestamptz(3)
-  financeHiddenAt           DateTime? @map("finance_hidden_at") @db.Timestamptz(3)
+  reservationHiddenAt       DateTime?                      @map("reservation_hidden_at") @db.Timestamptz(3)
+  financeHiddenAt           DateTime?                      @map("finance_hidden_at") @db.Timestamptz(3)
   hiddenAt                  DateTime?                      @map("hidden_at") @db.Timestamptz(3)
   insurancePolicies         ReservationInsurancePolicy[]
   financialWorkflows        AccountingWorkflow[]
