@@ -12560,7 +12560,9 @@ Reserve combined tour country/city filtering and focused regression coverage. Ke
 LEDGER-FISCAL-ALLOCATION-1112 publication: owner explicitly authorizes PR1692 to develop and immediate merge without CI. Resolve only the append-only WORK_ASSIGNMENTS conflict, preserving both task entries. No production deployment.
 
 ## CORRESPONDENCE-CARDS-1114 — PC-B — COMPLETED
+
 Reserve system/inbox card colors, correspondence public job identity and outgoing form alignment. No migration/dependencies. Owner authorizes push and develop merge.
 
 ## HISTORY-ACTION-LABELS-1114 — PC-B — COMPLETED
+
 Reserve system history display formatter and focused tests. Preserve raw audit data. Standing owner authorization covers push/merge.
