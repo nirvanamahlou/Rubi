@@ -31,6 +31,7 @@ export function HrInboxForwardDialog({
   const [users, setUsers] = useState<
     { id: string; displayName: string; username: string }[] | null
   >(null);
+  const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -62,6 +63,7 @@ export function HrInboxForwardDialog({
     setBusy(true);
     setError('');
     const input = {
+      ...(target === 'finance' && amount ? { amount } : {}),
       source: row.source,
       target,
       ...(target === 'tasks' ? { recipientId } : {}),
@@ -139,12 +141,15 @@ export function HrInboxForwardDialog({
               </NativeSearchSelect>
             </label>
           ) : null}
+          {target === 'finance' ? <label className="grid gap-2 text-sm">
+            مبلغ درخواست (ریال)
+            <input className="rounded-xl border bg-background p-3" inputMode="decimal" value={amount} disabled={busy} onChange={(e) => setAmount(e.target.value)} />
+          </label> : null}
           <label className="grid gap-2 text-sm">
-            متن قابل اشتراک
+            توضیح بازارسال
             <textarea
               className="min-h-24 rounded-xl border bg-background p-3"
               value={message}
-              required
               maxLength={2000}
               disabled={busy}
               onChange={(event) => setMessage(event.target.value)}
@@ -164,7 +169,7 @@ export function HrInboxForwardDialog({
             <Button
               type="submit"
               disabled={
-                busy || !message.trim() || (target === 'tasks' && !recipientId)
+                busy || (target === 'tasks' && !recipientId)
               }
             >
               بازارسال
