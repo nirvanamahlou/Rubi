@@ -8687,5 +8687,6 @@
   "مسافران هر دو مسیر باید یکسان باشند.": "Both flight directions must have the same passengers.",
   "نرخ مرجع پرواز تغییر کرده است.": "The reference flight fare has changed.",
   "وضعیت انتشار تغییر کرده است.": "The publication status has changed.",
-  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status."
+  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
+  "تاریخ و بخش‌ها را بررسی کنید.": "Check the date and selected sections."
 }
