@@ -24,7 +24,9 @@ export function buildHeadquartersChart(
   employees: readonly HrEmployeeDto[],
 ): OrganizationNode[] {
   const normalize = (value: string) =>
-    normalizeHrText(value).replace(/آ/g, 'ا').replace(/[\s‌]+/g, '');
+    normalizeHrText(value)
+      .replace(/آ/g, 'ا')
+      .replace(/[\s‌]+/g, '');
   const active = employees.filter((employee) => employee.status === 'فعال');
   const findEmployee = (name: string) => {
     const matches = active.filter((employee) =>
