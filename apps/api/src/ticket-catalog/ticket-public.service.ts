@@ -224,12 +224,14 @@ export class TicketPublicService {
     delete offer.baseStandaloneSalePrice;
     delete offer.baseRoundTripSalePrices;
     delete offer.saleCommissions;
-    offer.roundTripSalePrices = (offer.roundTripSalePrices ?? []).map(price => {
-      const visible = { ...price };
-      delete visible.baseAmount;
-      delete visible.baseTiers;
-      return visible;
-    });
+    offer.roundTripSalePrices = (offer.roundTripSalePrices ?? []).map(
+      (price) => {
+        const visible = { ...price };
+        delete visible.baseAmount;
+        delete visible.baseTiers;
+        return visible;
+      },
+    );
     return offer;
   }
   /** Historical direct-sale commissions only; never substitutes current prices for contract history. */
