@@ -60,6 +60,15 @@ def main():
         source.mkdir(exist_ok=True)
         with tarfile.open(archive) as bundle:
             bundle.extractall(source, filter='data')
+        previous_public = release / 'previous-public'
+        previous_public.mkdir(exist_ok=True)
+        run('docker', 'cp', 'rubi-production-web-1:/workspace/apps/web/public/.', str(previous_public))
+        # Keep server-only assets while tracked source files come from this revision.
+        for asset in previous_public.rglob('*'):
+            destination = source / 'apps/web/public' / asset.relative_to(previous_public)
+            if asset.is_file() and not destination.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(asset, destination)
         static = release / 'previous-static'
         static.mkdir(exist_ok=True)
         run('docker', 'cp', 'rubi-production-web-1:/workspace/apps/web/.next/static/.', str(static))
@@ -80,6 +89,9 @@ LABEL rubi.source-revision="{args.revision}"
         return
     if os.environ.get('SITE_COMMERCE_CI_APPROVED_REVISION') != args.revision:
         raise RuntimeError('Final-head CI approval required before activation')
+    # Other ERP release tools use this same host-wide activation lock.
+    activation_lock = Path('/opt/rubi/avina-deploy.lock').open('a')
+    fcntl.flock(activation_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     state = json.loads(manifest.read_text())
     if state['revision'] != args.revision or state['composeHash'] != fingerprint(compose):
         raise RuntimeError('Compose changed since preparation; coordinate instead of overwriting')
@@ -96,6 +108,13 @@ LABEL rubi.source-revision="{args.revision}"
     config = yaml.safe_load(compose.read_text())
     for name in ['api', 'web', 'worker']:
         config['services'][name]['image'] = state['image']
+    public_mounts = 0
+    for index, volume in enumerate(config['services']['web'].get('volumes', [])):
+        if isinstance(volume, str) and volume.split(':')[1:] == ['/workspace/apps/web/public', 'ro']:
+            config['services']['web']['volumes'][index] = str(release / 'release/apps/web/public') + ':/workspace/apps/web/public:ro'
+            public_mounts += 1
+    if public_mounts != 1:
+        raise RuntimeError('Expected one read-only public asset mount')
     extra = '/opt/rubi/private/site-commerce.env'
     if not Path(extra).exists():
         raise RuntimeError('Site binding environment file must exist before activation')
