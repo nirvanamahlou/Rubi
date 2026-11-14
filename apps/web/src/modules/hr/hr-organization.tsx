@@ -24,7 +24,7 @@ export function buildHeadquartersChart(
   employees: readonly HrEmployeeDto[],
 ): OrganizationNode[] {
   const normalize = (value: string) =>
-    normalizeHrText(value).replace(/[\s‌]+/g, '');
+    normalizeHrText(value).replace(/آ/g, 'ا').replace(/[\s‌]+/g, '');
   const active = employees.filter((employee) => employee.status === 'فعال');
   const findEmployee = (name: string) => {
     const matches = active.filter((employee) =>
@@ -123,7 +123,7 @@ export function buildHeadquartersChart(
   for (const employee of active) {
     if (
       assigned.has(employee.id) ||
-      normalize(employee.unit) !== normalize('فروش')
+      !normalize(employee.unit).split('/').includes(normalize('فروش'))
     )
       continue;
     nodes.push(employeeNode(employee, salesLead?.id ?? 'headquarters-فروش'));
