@@ -10028,3 +10028,6 @@ TOUR-COUNTRY-CITY-1112: Combined tour origin and destination city lists are scop
 CORRESPONDENCE-CARDS-1114 (PC-B): system/inbox cards have distinct light/dark colors; correspondence directory combines employee grade/job title; sender signature auto-fills and survives new-letter reset; compose actions share a flex row. Scoped API/Web ESLint passed. Correspondence suites could not collect because local @nora/contracts and @nora/database build outputs are missing. No deployment or migration.
 
 HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP methods/routes, including existing events. Raw audit records preserved. Focused formatter tests: 14 passed; scoped ESLint passed.
+
+
+DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
