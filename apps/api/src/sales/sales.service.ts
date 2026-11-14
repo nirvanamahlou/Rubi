@@ -1293,6 +1293,15 @@ export class SalesService {
     };
   }
 
+  /** Owner-authorized replay probe for a durable external link after a lost response. */
+  async createdByKey(key: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'sales.contracts.create')) throw new ForbiddenException();
+    const row = await this.repository.findByCreateKey(actor.userId, key);
+    if (!row) return null;
+    this.assertRead(row, actor);
+    return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
+  }
+
   async update(
     id: string,
     input: SalesContractCreateRequest & {
