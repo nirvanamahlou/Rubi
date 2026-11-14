@@ -6177,5 +6177,13 @@
   "نوع درخواست مبنا معتبر نیست.": "The original request type is invalid.",
   "دریافت آمار سرنخ‌ها انجام نشد.": "Could not load lead activity.",
   "روند سرنخ و مشتری جدید": "Lead and new customer trend",
-  "همه مخاطبان": "All contacts"
+  "همه مخاطبان": "All contacts",
+  "توضیح بازارسال": "Forwarding note",
+  "ثبت فعالیت": "Record activity",
+  "خروج از سامانه": "Sign out",
+  "دریافت خروجی": "Download export",
+  "شرح درخواست معتبر نیست.": "The request description is invalid.",
+  "مبلغ به ریال معتبر نیست.": "The amount in rials is invalid.",
+  "مبلغ درخواست (ریال)": "Requested amount (rials)",
+  "مشاهده اطلاعات": "View information"
 }
