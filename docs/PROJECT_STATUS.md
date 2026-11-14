@@ -1,3 +1,7 @@
+## ACCOUNT-TREE-LEVELS-1114 — PC-D
+
+Context creation follows root -> GROUP -> GENERAL -> SUBSIDIARY, using the exact clicked parent and preserving code prefixes. Subsidiary is a leaf. Show all book-owned detail types for independently selected levels four/five/six; mark inactive rows and preserve only their existing same-account/same-level choices. Seventeen focused Web/i18n tests and 77 isolated PostgreSQL tests pass; scoped lint, formatting, API/Web TypeScript and both production builds pass. No schema/dependency/operational-data changes or deployment. Browser acceptance unavailable because of computer-use kernel-assets initialization failure. See docs/tasks/ACCOUNT-TREE-LEVELS-1114.md.
+
 ## LEDGER-FISCAL-ALLOCATION-1112 — PC-D
 
 Ledger fiscal allocation uses direct numeric year plus start/end dates, with Persian/Arabic digit normalization. Remove the new-year toggle and title input; add selected-row removal beside + with confirmation. Preserve fiscal-year definitions, command audit/replay/CAS, company/branch guards and all financial records; reject non-OPEN/referenced allocations and stale resurrection.76 isolated PostgreSQL checks, focused Web/i18n checks, API/Web TypeScript and scoped lint pass; API and Web production builds pass. No schema/dependency changes or deployment. Browser connection unavailable, so visual acceptance is not claimed. See docs/tasks/LEDGER-FISCAL-ALLOCATION-1112.md.

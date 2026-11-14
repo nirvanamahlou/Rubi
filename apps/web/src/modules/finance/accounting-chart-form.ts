@@ -43,6 +43,21 @@ export type ChartDraft = {
   active: boolean;
   attributes: AccountingAttributes;
 };
+
+/** Creation is always relative to a tree node; a subsidiary is a leaf. */
+export function chartChildAction(parent?: AccountingAccountV1) {
+  if (parent && (!parent.active || parent.level === 'SUBSIDIARY')) return null;
+  return parent?.level === 'GROUP'
+    ? { level: 'GENERAL' as const, parentId: parent.id, label: 'حساب کل جدید' }
+    : parent?.level === 'GENERAL'
+      ? {
+          level: 'SUBSIDIARY' as const,
+          parentId: parent.id,
+          label: 'حساب معین جدید',
+        }
+      : { level: 'GROUP' as const, parentId: '', label: 'گروه حساب جدید' };
+}
+
 export const chartDetailLevels = [4, 5, 6] as const;
 export type ChartDetailLevel = (typeof chartDetailLevels)[number];
 export const chartDetailLevelTitles = {

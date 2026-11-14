@@ -3772,19 +3772,34 @@ export class AccountingService {
         }))
       )
         v.rule('حساب طرف مقابل معتبر نیست.');
+      const previousAccountAttrs = v.attributes(existing?.attributes);
       for (const n of [4, 5, 6]) {
         const ids = accountAttrs[`detail${n}TypeIds`];
+        const legacyId = accountAttrs[`detail${n}TypeId`];
+        const requestedIds = [
+          ...new Set([
+            ...(Array.isArray(ids) ? ids : []),
+            ...(legacyId ? [v.uuid(legacyId)!] : []),
+          ]),
+        ];
+        const oldIds = previousAccountAttrs[`detail${n}TypeIds`];
+        const oldLegacyId = previousAccountAttrs[`detail${n}TypeId`];
+        const retainedIds = [
+          ...(Array.isArray(oldIds) ? oldIds : []),
+          ...(oldLegacyId ? [String(oldLegacyId)] : []),
+        ];
         if (
-          Array.isArray(ids) &&
-          ids.length &&
+          requestedIds.length &&
           (await tx.accountingConfiguration.count({
             where: {
-              id: { in: [...new Set(ids)] },
+              id: { in: requestedIds },
               bookId,
               kind: 'detail-types',
-              active: true,
+              // Existing inactive references may be preserved, never newly assigned
+              // or copied to another detail level/account.
+              OR: [{ active: true }, { id: { in: retainedIds } }],
             },
-          })) !== new Set(ids).size
+          })) !== requestedIds.length
         )
           v.rule('نوع تفصیلی مجاز حساب معتبر نیست.');
       }
@@ -3798,19 +3813,6 @@ export class AccountingService {
         !['NONE', 'WARN', 'BLOCK'].includes(String(accountAttrs.natureControl))
       )
         v.invalid('کنترل ماهیت معتبر نیست.');
-      for (const n of [4, 5, 6])
-        if (
-          accountAttrs[`detail${n}TypeId`] &&
-          !(await tx.accountingConfiguration.findFirst({
-            where: {
-              id: v.uuid(accountAttrs[`detail${n}TypeId`])!,
-              bookId,
-              kind: 'detail-types',
-              active: true,
-            },
-          }))
-        )
-          v.rule('نوع تفصیلی مجاز حساب معتبر نیست.');
       const data = {
         bookId,
         parentId,

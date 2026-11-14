@@ -19,22 +19,20 @@ export function AccountingChartDetailLevels({
   level,
   onSelect,
   onChange,
+  disabled = false,
 }: {
   attributes: AccountingAttributes;
   types: AccountingSnapshotV1['configurations'];
   level: ChartDetailLevel | null;
   onSelect: (level: ChartDetailLevel) => void;
   onChange: (attributes: AccountingAttributes) => void;
+  disabled?: boolean;
 }) {
   const selected = level === null ? [] : detailTypeIds(attributes, level);
   const controlled =
     level === null ? [] : attributes[`detail${level}NatureTypeIds`];
   const choices = types
-    .filter(
-      (type) =>
-        type.kind === 'detail-types' &&
-        (type.active || selected.includes(type.id)),
-    )
+    .filter((type) => type.kind === 'detail-types')
     .sort((a, b) => a.title.localeCompare(b.title, 'fa'));
   return (
     <div className="grid min-h-64 gap-3 @min-[30rem]:grid-cols-[minmax(10rem,1fr)_2fr]">
@@ -57,6 +55,7 @@ export function AccountingChartDetailLevels({
                 <td className="px-2">
                   <input
                     type="checkbox"
+                    disabled={disabled}
                     aria-label={`فعال بودن ${chartDetailLevelTitles[item]}`}
                     checked={attributes[`detail${item}Required`] === true}
                     onDoubleClick={(event) => event.stopPropagation()}
@@ -123,7 +122,10 @@ export function AccountingChartDetailLevels({
                         type="checkbox"
                         aria-label={`انتخاب ${type.title} در ${chartDetailLevelTitles[level]}`}
                         checked={selected.includes(type.id)}
-                        disabled={!type.active && !selected.includes(type.id)}
+                        disabled={
+                          disabled ||
+                          (!type.active && !selected.includes(type.id))
+                        }
                         onChange={(event) =>
                           onChange(
                             changeDetailType(
@@ -141,7 +143,7 @@ export function AccountingChartDetailLevels({
                         <input
                           type="checkbox"
                           aria-label={`کنترل ماهیت ${type.title} در ${chartDetailLevelTitles[level]}`}
-                          disabled={!selected.includes(type.id)}
+                          disabled={disabled || !selected.includes(type.id)}
                           checked={
                             Array.isArray(controlled) &&
                             controlled.includes(type.id)
@@ -174,6 +176,11 @@ export function AccountingChartDetailLevels({
                         className="block cursor-pointer px-2 py-2"
                       >
                         {type.title}
+                        {!type.active && (
+                          <span className="ms-2 text-muted-foreground">
+                            (غیرفعال)
+                          </span>
+                        )}
                       </label>
                     </td>
                   </tr>

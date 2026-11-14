@@ -12566,3 +12566,9 @@ Reserve system/inbox card colors, correspondence public job identity and outgoin
 ## HISTORY-ACTION-LABELS-1114 — PC-B — COMPLETED
 
 Reserve system history display formatter and focused tests. Preserve raw audit data. Standing owner authorization covers push/merge.
+
+## ACCOUNT-TREE-LEVELS-1114 — PC-D — COMPLETED
+
+COMPUTER_ID=PC-D; codex/pc-d-account-tree-levels-1114 from PC-D-Integration, fast-forwarded to develop ea83ec5b3 to preserve published Accounting work. Existing owner delegation to PC-D/PC-B applies. Reserve Accounting chart tree/editor/form/detail-level components and models, scoped Web/API regression checks and additive translations, bounded own task/status notes. Implement root->GROUP->GENERAL->SUBSIDIARY context creation; subsidiary is a leaf. Preserve selected parent, numeric codes with leading zeros, existing accounts and saved per-level detail-type rules. Show the entire book's detail-type catalogue upon level selection/double-click, retaining inactive configured types without newly activating them. Prior Accounting source scopes are frozen; current PC-B chart-scroll branch affects HR only. No schema/migration/dependency/lockfile lease, operational data writes, production deployment, CI dispatch or PR/merge for this new task. Standing automatic commit/push applies only to this task branch.
+
+ACCOUNT-TREE-LEVELS-1114 validation: 17 focused Web/i18n checks, final tree SSR checks, 77 isolated PostgreSQL tests, API/Web typechecks and production builds, scoped lint and formatting pass. No operational data/runtime/schema changes. Browser kernel-assets initialization still blocks visual acceptance. Source scope frozen and released; commit/push task branch only, no PR/merge or production deployment.
