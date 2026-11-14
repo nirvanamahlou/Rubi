@@ -127,6 +127,21 @@ LABEL rubi.source-revision="{args.revision}"
     try:
         run(*command, 'config', '--quiet')
         run(*command, 'run', '--rm', '--no-deps', 'api', 'sh', '-c', 'cd packages/database && node node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma')
+        canary = 'rubi-site-commerce-canary-' + args.revision[:12]
+        run(*command, 'run', '-d', '--no-deps', '--name', canary, '-p', '127.0.0.1:4011:4000', 'api')
+        try:
+            for attempt in range(36):
+                try:
+                    with urllib.request.urlopen('http://127.0.0.1:4011/api/v1/health', timeout=5) as response:
+                        if response.status != 200:
+                            raise RuntimeError('Canary health check failed')
+                    break
+                except Exception:
+                    if attempt == 35:
+                        raise
+                    time.sleep(5)
+        finally:
+            run('docker', 'rm', '-f', canary)
         run(*command, 'up', '-d', '--no-deps', 'api', 'web', 'worker')
         for attempt in range(36):
             try:
