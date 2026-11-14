@@ -126,3 +126,9 @@ AGENTS.md. Preserve current release source overlays/environment/mounts, use the
 existing server deployment lock and backup/rollback process, and verify the three
 pages with the intended real account after activation. No database migration or
 backfill is required. Rollback restores the prior API release without data changes.
+
+Implementation commit: `180c632f961e83d80efa2ea4107e95e8c8ef34b7`. Published Draft PR:
+https://github.com/nirvanamahlou/Rubi/pull/1701, verified author `Amin-tech11`
+(id 211146168). Current-head hosted checks are tracked in that PR. Source is frozen
+for review; explicit merge/deploy approval is still required. PC-C should fetch
+this branch and preserve the native producer boundaries during release.
