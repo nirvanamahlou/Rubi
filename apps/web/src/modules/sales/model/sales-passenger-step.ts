@@ -12,18 +12,31 @@ export function salesPassengerStepError(
   peopleDirty: boolean,
   hotelCapacityError: string | null,
 ): string | null {
-  if (!state.customerId) return 'مشتری قرارداد را مشخص کنید.';
+  return (
+    salesPassengerBlockers(state, peopleDirty, hotelCapacityError)[0] ?? null
+  );
+}
+
+export function salesPassengerBlockers(
+  state: SalesFormState,
+  peopleDirty: boolean,
+  hotelCapacityError: string | null,
+): string[] {
+  const reasons: string[] = [];
+  if (!state.customerId) reasons.push('مشتری قرارداد را مشخص کنید.');
   if (state.legacyContract)
-    return peopleDirty ? 'اطلاعات مشتری را تأیید کنید.' : null;
-  if (!state.passengers.length) return 'حداقل یک مسافر اضافه کنید.';
+    return peopleDirty ? [...reasons, 'اطلاعات مشتری را تأیید کنید.'] : reasons;
+  if (!state.passengers.length) reasons.push('حداقل یک مسافر اضافه کنید.');
   if (peopleDirty)
-    return 'اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.';
+    reasons.push('اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.');
   if (salesTravelDate(state) && !salesPassengerCompositionMatches(state))
-    return 'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.';
+    reasons.push(
+      'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.',
+    );
   const guests = salesHotelGuestIds(state);
   if (state.serviceKinds.includes('HOTEL')) {
-    if (!guests.length) return 'حداقل یک مهمان برای هتل انتخاب کنید.';
-    if (hotelCapacityError) return hotelCapacityError;
+    if (!guests.length) reasons.push('حداقل یک مهمان برای هتل انتخاب کنید.');
+    if (hotelCapacityError) reasons.push(hotelCapacityError);
   }
   if (state.serviceKinds.includes('VISA')) {
     const selected = new Set(state.visaApplicantIds ?? []);
@@ -35,20 +48,29 @@ export function salesPassengerStepError(
       applicants.length !==
         state.visaComposition.adults + state.visaComposition.children
     )
-      return 'افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.';
+      reasons.push(
+        'افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.',
+      );
   }
   const hasSharedService = state.serviceKinds.some(
     (kind) => kind !== 'HOTEL' && kind !== 'VISA' && kind !== 'FLIGHT',
   );
-  const everyPassengerAssigned = state.passengers.every(
+  const unassigned = state.passengers.filter(
     ({ customerId }) =>
-      hasSharedService ||
-      salesPassengerFlightDirections(state, customerId).length > 0 ||
-      (state.serviceKinds.includes('HOTEL') && guests.includes(customerId)) ||
-      (state.serviceKinds.includes('VISA') &&
-        state.visaApplicantIds?.includes(customerId)),
+      !(
+        hasSharedService ||
+        salesPassengerFlightDirections(state, customerId).length > 0 ||
+        (state.serviceKinds.includes('HOTEL') && guests.includes(customerId)) ||
+        (state.serviceKinds.includes('VISA') &&
+          state.visaApplicantIds?.includes(customerId))
+      ),
   );
-  return everyPassengerAssigned
-    ? null
-    : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.';
+  if (unassigned.length)
+    reasons.push(
+      'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.',
+      ...unassigned.map(
+        (p) => 'تخصیص خدمات — ردیف مسافر ' + (state.passengers.indexOf(p) + 1),
+      ),
+    );
+  return reasons;
 }

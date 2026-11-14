@@ -1,7 +1,11 @@
 'use client';
 
+import { DatePicker } from '@/components/ui';
+import { legalEntitiesApi } from '@/modules/legal-entities/api/client';
+import { ContractArchive } from '@/modules/legal-entities/components/contract-archive';
 import Link from '@/i18n/link';
-import { History, Users } from 'lucide-react';
+import { activityActionLabel } from './activity-action-label';
+import { Folder, History, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
@@ -42,9 +46,34 @@ const dateFormat = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
 });
 
 const cardClass =
-  'flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-5 text-start font-semibold shadow-sm hover:bg-muted';
+  'flex min-w-0 items-center gap-3 rounded-2xl border p-5 text-start font-semibold shadow-sm transition-colors';
 
 export function SystemManagementWorkspace() {
+  const [content, setContent] = useState(false);
+  const [before, setBefore] = useState('');
+  const [sections, setSections] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  async function apply(visible: boolean) {
+    setBusy(true);
+    setNotice('');
+    try {
+      const { count } = await legalEntitiesApi.setVisibility(
+        before,
+        sections,
+        visible,
+      );
+      setNotice(
+        `تنظیم نمایش برای ${count.toLocaleString('fa-IR')} قرارداد اعمال شد.`,
+      );
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'ثبت تغییرات ناموفق بود.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   const routeAllowed = useRouteAccess();
   const permissions = useAccessPermissions();
   const canReadHistory = permissions?.includes('system.audit.read') ?? false;
@@ -78,9 +107,12 @@ export function SystemManagementWorkspace() {
   return (
     <section className="space-y-5" dir="rtl">
       <h1 className="text-2xl font-bold">مدیریت سیستم</h1>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         {routeAllowed('/system/users') && (
-          <Link className={cardClass} href="/system/users">
+          <Link
+            className={`${cardClass} border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 dark:hover:bg-blue-900/50`}
+            href="/system/users"
+          >
             <Users aria-hidden="true" className="size-5 text-primary" />
             مدیریت کاربران
           </Link>
@@ -88,7 +120,7 @@ export function SystemManagementWorkspace() {
         {canReadHistory && (
           <button
             type="button"
-            className={cardClass}
+            className={`${cardClass} border-violet-200 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/40 dark:hover:bg-violet-900/50`}
             aria-expanded={open}
             aria-controls="system-activity"
             onClick={() => {
@@ -100,7 +132,67 @@ export function SystemManagementWorkspace() {
             تاریخچه
           </button>
         )}
+        {permissions?.includes('system.settings.manage') && (
+          <button
+            type="button"
+            aria-expanded={content}
+            onClick={() => setContent(!content)}
+            className={`${cardClass} border-emerald-200 bg-emerald-50 dark:bg-emerald-950/40`}
+          >
+            <Folder className="size-5" />
+            محتوا
+          </button>
+        )}
       </div>
+      {content && permissions?.includes('system.settings.manage') && (
+        <section className="space-y-4 rounded-2xl border bg-card p-5">
+          <h2 className="font-semibold">نمایش قراردادهای شرکت انتخاب‌شده</h2>
+          <label className="block">
+            شروع سفر قبل از
+            <DatePicker
+              aria-label="شروع سفر قبل از"
+              value={before}
+              onChange={(value) => setBefore(value ?? '')}
+            />
+          </label>
+          <fieldset className="flex flex-wrap gap-4">
+            <legend>بخش‌ها</legend>
+            {Object.entries({
+              sales: 'فروش',
+              reservations: 'رزرواسیون',
+              finance: 'مالی',
+            }).map(([key, label]) => (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={sections.includes(key)}
+                  onChange={(e) =>
+                    setSections(
+                      e.target.checked
+                        ? [...sections, key]
+                        : sections.filter((x) => x !== key),
+                    )
+                  }
+                />{' '}
+                {label}
+              </label>
+            ))}
+          </fieldset>
+          <div className="flex gap-2">
+            {[false, true].map((visible) => (
+              <Button
+                key={String(visible)}
+                disabled={busy || !before || !sections.length}
+                onClick={() => void apply(visible)}
+              >
+                {visible ? 'نمایش قراردادها' : 'پنهان کردن قراردادها'}
+              </Button>
+            ))}
+          </div>
+          <p role="status">{notice}</p>
+          <ContractArchive />
+        </section>
+      )}
       {open && canReadHistory && (
         <section
           id="system-activity"
@@ -139,7 +231,7 @@ export function SystemManagementWorkspace() {
                         {sectionLabels[item.section] ?? item.section}
                       </td>
                       <td className="p-3">
-                        <bdi>{item.action}</bdi>
+                        {activityActionLabel(item.action)}
                       </td>
                       <td className="whitespace-nowrap p-3">
                         <time dateTime={item.createdAt}>

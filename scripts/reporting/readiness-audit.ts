@@ -9,7 +9,11 @@ import {
   nativeOperationalReport,
   OPERATIONAL_REPORTS,
 } from '../../apps/api/src/reporting/reporting-native-operational';
-import { nativeSalesReport } from '../../apps/api/src/reporting/reporting-native-sales';
+import {
+  nativeSalesReport,
+  NATIVE_SALES_REPORTS,
+} from '../../apps/api/src/reporting/reporting-native-sales';
+import { readSalesReportingEligibility } from '../../apps/api/src/sales/sales-reporting-eligibility.public';
 import { nativePaymentReport } from '../../apps/api/src/reporting/reporting-native-payments';
 import { ReportingExportService } from '../../apps/api/src/reporting/reporting-export.service';
 import type { LocalDocumentStorage } from '../../apps/api/src/documents/documents.storage';
@@ -35,7 +39,8 @@ async function main() {
             'ticket_catalog.read',
             'customers.read',
             'hr.read',
-            'documents.read',
+            'documents.list',
+            'customer_affairs.ticket.read',
             'documents.sales.read',
             'documents.reservations.read',
             'reporting.audit.read',
@@ -48,6 +53,9 @@ async function main() {
           timezone: 'Asia/Tehran' as const,
         };
         const client = tx as unknown as DatabaseClient;
+        // Share only the public eligibility cohort. Purchase versions, coverage
+        // and Decimal sums below remain an independently computed reference.
+        const eligible = await readSalesReportingEligibility(client, actor);
         const exporter = new ReportingExportService({} as LocalDocumentStorage);
         const purchaseReference = await tx.$queryRaw<
           { currencyCode: string; amount: string }[]
@@ -59,6 +67,7 @@ async function main() {
           FROM "ReservationServicePurchase" p JOIN "ReservationIntake" i ON i.id=p."intakeId"
           JOIN sales_contracts c ON c.id=i."contractId"
           WHERE c.confirmed_at IS NOT NULL AND c.status IN ('CONFIRMED','SENT_TO_RESERVATIONS','IN_PROGRESS','COMPLETED')
+            AND c.id IN (${eligible.length ? Prisma.join(eligible.map((id) => Prisma.sql`${id}::uuid`)) : Prisma.sql`NULL::uuid`})
             AND i."branchId" IN (${Prisma.join(actor.branchIds.map((id) => Prisma.sql`${id}::uuid`))})
         ) SELECT p."currencyCode",SUM(p.amount)::text AS amount FROM p
         WHERE NOT EXISTS(SELECT 1 FROM p n WHERE n."contractId"=p."contractId"
@@ -68,10 +77,7 @@ async function main() {
       `);
         const reports: Record<string, unknown>[] = [];
         for (const code of [
-          'sales_by_organization',
-          'sales_by_service_route',
-          'route_passengers',
-          'sales_contract_pipeline',
+          ...NATIVE_SALES_REPORTS,
           'payments_refunds',
           ...Object.keys(OPERATIONAL_REPORTS),
         ]) {
@@ -96,13 +102,21 @@ async function main() {
             if (code === 'purchase_by_supplier') {
               const totals = new Map<string, Prisma.Decimal>();
               for (const r of result.rows) {
-                const currency = String(r.sourceValues?.currencyCode ?? '');
-                totals.set(
-                  currency,
-                  (totals.get(currency) ?? new Prisma.Decimal(0)).add(
-                    String(r.sourceValues?.registeredAmount ?? '0'),
-                  ),
-                );
+                // Consolidated rows expose exact monetary values separately
+                // from the formatted multi-currency table label.
+                for (const amount of r.amountsByCurrency ?? [
+                  {
+                    currencyCode: String(r.sourceValues?.currencyCode ?? ''),
+                    amount: String(r.sourceValues?.registeredAmount ?? '0'),
+                  },
+                ]) {
+                  totals.set(
+                    amount.currencyCode,
+                    (
+                      totals.get(amount.currencyCode) ?? new Prisma.Decimal(0)
+                    ).add(amount.amount),
+                  );
+                }
               }
               referenceMatches =
                 totals.size === purchaseReference.length &&

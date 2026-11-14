@@ -2,8 +2,14 @@
 import { usePathname } from 'next/navigation';
 import { isContractReportQuestion, portfolioKind } from './contract-reports';
 import { contractAdvice } from './contract-advice';
-import { readContractFormHelp } from './contract-form-help';
-import { inspectContractQuestion } from './contract-inspection';
+import {
+  readContractFormHelp,
+  formCorrectionTargets,
+} from './contract-form-help';
+import {
+  inspectContractQuestion,
+  type ContractLink,
+} from './contract-inspection';
 import {
   normalizeContractQuestion,
   resolveContractGuide,
@@ -281,6 +287,8 @@ function AssistantComposerContent({
       content: string;
       local?: boolean;
       agent?: boolean;
+      links?: ContractLink[];
+      targets?: { id: string; label: string }[];
     }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -293,6 +301,7 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -302,6 +311,7 @@ function AssistantComposerContent({
         pending.current?.abort();
         setActionState(null);
       }
+      lastVersion.current = undefined;
       contractId.current = undefined;
       guideTopic.current = undefined;
       setMessages((previous) =>
@@ -376,12 +386,22 @@ function AssistantComposerContent({
   const submit = async () => {
     if (denied || !draft.trim() || actionState === 'loading') return;
     const message = draft.trim();
-    const replyLocally = (content: string) => {
+    const replyLocally = (
+      content: string,
+      links?: ContractLink[],
+      targets?: { id: string; label: string }[],
+    ) => {
       setMessages((previous) =>
         [
           ...previous,
           { role: 'user' as const, content: message, local: true },
-          { role: 'assistant' as const, content, local: true },
+          {
+            role: 'assistant' as const,
+            content,
+            local: true,
+            ...(links?.length ? { links } : {}),
+            ...(targets?.length ? { targets } : {}),
+          },
         ].slice(-12),
       );
       setChatError(null);
@@ -391,7 +411,7 @@ function AssistantComposerContent({
     };
     const formHelp = readContractFormHelp(message);
     if (formHelp) {
-      replyLocally(formHelp);
+      replyLocally(formHelp, undefined, formCorrectionTargets());
       return;
     }
     const selectionAtSubmit = selectedSalesContract();
@@ -437,7 +457,14 @@ function AssistantComposerContent({
     setActionState('loading');
     const inspection = agentMode
       ? undefined
-      : await inspectContractQuestion(message, selectedContract);
+      : await inspectContractQuestion(
+          message,
+          selectedContract,
+          contractId.current === selectedContract
+            ? lastVersion.current
+            : undefined,
+          inspectionController.signal,
+        );
     if (inspecting.current === inspectionController) inspecting.current = null;
     if (
       inspectionController.signal.aborted ||
@@ -448,9 +475,10 @@ function AssistantComposerContent({
     }
     setActionState(null);
     if (inspection) {
+      lastVersion.current = inspection.version;
       contractId.current = inspection.contractId;
       guideTopic.current = undefined;
-      replyLocally(inspection.text);
+      replyLocally(inspection.text, inspection.links);
       return;
     }
     if (guide && !agentMode) {
@@ -670,6 +698,37 @@ function AssistantComposerContent({
             {messages.map((item, index) => (
               <p key={index} data-role={item.role} dir="auto">
                 {item.content}
+                {item.local &&
+                  item.targets?.map((target) => (
+                    <button
+                      type="button"
+                      className="block underline"
+                      key={target.id}
+                      onClick={() => {
+                        const section = document.getElementById(target.id);
+                        section?.focus();
+                        section?.scrollIntoView({ block: 'center' });
+                      }}
+                    >
+                      {target.label}
+                    </button>
+                  ))}
+                {item.local &&
+                  item.links?.map((link) => (
+                    <a
+                      className="block underline"
+                      key={link.id}
+                      href={
+                        '/sales?' +
+                        new URLSearchParams({
+                          contract: link.contractNumber,
+                          record: link.id,
+                        })
+                      }
+                    >
+                      {link.contractNumber}
+                    </a>
+                  ))}
               </p>
             ))}
           </div>

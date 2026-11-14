@@ -55,6 +55,12 @@ export function contractInspectionText(data: SalesContractDetail): string {
       (balance) =>
         `ارز ${balance.currencyCode}، مبلغ ${balance.amount}، وصول تأییدشده ${balance.confirmedPaid}، در انتظار مالی ${balance.pendingFinance}، مانده ${balance.outstanding}`,
     ),
+    'شعبه: ' +
+      (data.branchId || 'ثبت نشده') +
+      '؛ فروشنده: ' +
+      (data.sellerName || data.ownerUserId || 'ثبت نشده'),
+    'مبنای گزارش: همین پرونده، تمام سوابق قابل مشاهده؛ زمان خواندن (تهران): ' +
+      new Date().toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' }),
     next,
     contractGuidePath([
       'فروش و ارتباط با مشتری',

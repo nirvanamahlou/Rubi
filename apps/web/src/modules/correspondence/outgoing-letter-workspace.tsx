@@ -58,31 +58,11 @@ export function OutgoingLetterWorkspace({
   const composeInternal = internal && !initialRecord;
   const [users, setUsers] = useState<CorrespondenceUser[]>([]);
   const [sender, setSender] = useState('');
+  const [senderSignature, setSenderSignature] = useState('');
   const [addressedUserId, setAddressedUserId] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const attachmentInput = useRef<HTMLInputElement>(null);
   const [directoryError, setDirectoryError] = useState('');
-  useEffect(() => {
-    if (!composeInternal) return;
-    let active = true;
-    void Promise.all([internalLetters.users(), internalLetters.currentUser()])
-      .then(([rows, me]) => {
-        if (!active) return;
-        setUsers(rows);
-        setSender(me.displayName);
-      })
-      .catch((cause: unknown) => {
-        if (active)
-          setDirectoryError(
-            cause instanceof Error
-              ? cause.message
-              : 'فهرست کاربران بارگذاری نشد.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [composeInternal]);
   const [letter, setLetter] = useState<Letter>(
     initialRecord?.letter ?? {
       company: companies[0].title,
@@ -100,6 +80,32 @@ export function OutgoingLetterWorkspace({
       template: initialTemplate,
     },
   );
+  useEffect(() => {
+    if (!composeInternal) return;
+    let active = true;
+    void Promise.all([internalLetters.users(), internalLetters.currentUser()])
+      .then(([rows, me]) => {
+        if (!active) return;
+        setUsers(rows);
+        setSender(me.displayName);
+        const signature = [me.displayName, me.jobTitle]
+          .filter(Boolean)
+          .join(' ـ ');
+        setSenderSignature(signature);
+        setLetter((current) => ({ ...current, signer: signature }));
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setDirectoryError(
+            cause instanceof Error
+              ? cause.message
+              : 'فهرست کاربران بارگذاری نشد.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [composeInternal]);
   const [preview, setPreview] = useState<string[]>([]);
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
@@ -480,47 +486,49 @@ export function OutgoingLetterWorkspace({
                 onChange={(event) => update('template', event.target.value)}
               />
             </details>
-            {!readOnly && (
-              <Button type="submit" disabled={busy || sent}>
-                <WandSparkles className="size-4" />
-                {busy ? 'در حال آماده‌سازی…' : 'تولید نامه'}
-              </Button>
-            )}
-            {!readOnly && !initialRecord && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => {
-                  requestKey.current = null;
-                  sendKey.current = null;
-                  setSent(false);
-                  setNotice('');
-                  setLetterDate(today());
-                  setAddressedUserId('');
-                  setAttachments([]);
-                  if (attachmentInput.current)
-                    attachmentInput.current.value = '';
-                  setLetter((current) => ({
-                    ...current,
-                    number: '',
-                    recipient: '',
-                    recipientTitle: '',
-                    sender: '',
-                    subject: '',
-                    text: '',
-                    signer: '',
-                    attachment: '',
-                  }));
-                  setPreview([]);
-                  setFiles([]);
-                  setBody('');
-                  setError('');
-                }}
-              >
-                نامه جدید
-              </Button>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {!readOnly && (
+                <Button type="submit" disabled={busy || sent}>
+                  <WandSparkles className="size-4" />
+                  {busy ? 'در حال آماده‌سازی…' : 'تولید نامه'}
+                </Button>
+              )}
+              {!readOnly && !initialRecord && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => {
+                    requestKey.current = null;
+                    sendKey.current = null;
+                    setSent(false);
+                    setNotice('');
+                    setLetterDate(today());
+                    setAddressedUserId('');
+                    setAttachments([]);
+                    if (attachmentInput.current)
+                      attachmentInput.current.value = '';
+                    setLetter((current) => ({
+                      ...current,
+                      number: '',
+                      recipient: '',
+                      recipientTitle: '',
+                      sender: '',
+                      subject: '',
+                      text: '',
+                      signer: composeInternal ? senderSignature : '',
+                      attachment: '',
+                    }));
+                    setPreview([]);
+                    setFiles([]);
+                    setBody('');
+                    setError('');
+                  }}
+                >
+                  نامه جدید
+                </Button>
+              )}
+            </div>
           </fieldset>
           {sent && (
             <Button

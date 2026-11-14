@@ -33,7 +33,7 @@ const receiptSelect = {
       branchId: true,
       customerId: true,
       legalEntityId: true,
-      hiddenAt: true,
+      financeHiddenAt: true,
       version: true,
       status: true,
       contractNumber: true,
@@ -46,7 +46,7 @@ const targetSelect = {
   branchId: true,
   customerId: true,
   legalEntityId: true,
-  hiddenAt: true,
+  financeHiddenAt: true,
   version: true,
   status: true,
   contractNumber: true,
@@ -103,7 +103,7 @@ export async function receiptAllocationTargets(
       branchId: source.contract.branchId,
       customerId: source.contract.customerId,
       legalEntityId: source.contract.legalEntityId,
-      hiddenAt: null,
+      financeHiddenAt: null,
       status: { not: 'CANCELLED' },
       ...(search
         ? { contractNumber: { contains: search, mode: 'insensitive' as const } }
@@ -227,8 +227,8 @@ export async function prepareReceiptAllocation(
   if (
     !original &&
     (target.status === 'CANCELLED' ||
-      target.hiddenAt != null ||
-      source.contract.hiddenAt != null ||
+      target.financeHiddenAt != null ||
+      source.contract.financeHiddenAt != null ||
       source.contract.legalEntityId !== target.legalEntityId ||
       source.contract.customerId !== target.customerId ||
       source.contract.customerId !== basisPartyId)
