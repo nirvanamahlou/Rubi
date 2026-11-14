@@ -260,7 +260,10 @@ export function paymentReferenceSearchQuery(
   return { search: reference.trim(), page: 1 };
 }
 
-export function SalesWorkspace() {
+export function SalesWorkspace({
+  initialContract = '',
+  initialRecord = '',
+}: { initialContract?: string; initialRecord?: string } = {}) {
   const contractsSearchPanel = useRef<HTMLElement>(null);
   const actor = useAccessActor();
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
@@ -274,9 +277,11 @@ export function SalesWorkspace() {
   );
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(
-    null,
+    initialRecord || null,
   );
-  const [query, setQuery] = useState<SalesContractListQuery>({});
+  const [query, setQuery] = useState<SalesContractListQuery>(
+    initialContract ? { search: initialContract } : {},
+  );
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -350,7 +355,10 @@ export function SalesWorkspace() {
   }, [load]);
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-5">
+    <div
+      data-nora-sales-filters={JSON.stringify(query)}
+      className="mx-auto grid w-full max-w-7xl gap-5"
+    >
       <header className="relative flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-l from-primary/10 via-surface to-surface p-6">
         <div>
           <h1 className="text-2xl font-black">داشبورد قراردادها</h1>

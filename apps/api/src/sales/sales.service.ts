@@ -1188,6 +1188,21 @@ export class SalesService {
       })),
     };
   }
+  async submissionStatus(key: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'sales.contracts.create')) throw new ForbiddenException();
+    const row = await this.repository.findByCreateKey(actor.userId, key);
+    if (!row) return { data: null };
+    this.assertRead(row, actor);
+    return {
+      data: {
+        id: row.id,
+        contractNumber: row.contractNumber,
+        status: row.status,
+        reservationStatus: row.reservationStatus,
+      },
+    };
+  }
+
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
@@ -1291,6 +1306,15 @@ export class SalesService {
       data: presentSalesContract(row, undefined, this.buyerCrypto),
       meta: { idempotentReplay: false },
     };
+  }
+
+  /** Owner-authorized replay probe for a durable external link after a lost response. */
+  async createdByKey(key: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'sales.contracts.create')) throw new ForbiddenException();
+    const row = await this.repository.findByCreateKey(actor.userId, key);
+    if (!row) return null;
+    this.assertRead(row, actor);
+    return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
   }
 
   async update(

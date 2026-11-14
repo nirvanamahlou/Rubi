@@ -141,10 +141,18 @@ export function HrInboxForwardDialog({
               </NativeSearchSelect>
             </label>
           ) : null}
-          {target === 'finance' ? <label className="grid gap-2 text-sm">
-            مبلغ درخواست (ریال)
-            <input className="rounded-xl border bg-background p-3" inputMode="decimal" value={amount} disabled={busy} onChange={(e) => setAmount(e.target.value)} />
-          </label> : null}
+          {target === 'finance' ? (
+            <label className="grid gap-2 text-sm">
+              مبلغ درخواست (ریال)
+              <input
+                className="rounded-xl border bg-background p-3"
+                inputMode="decimal"
+                value={amount}
+                disabled={busy}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+          ) : null}
           <label className="grid gap-2 text-sm">
             توضیح بازارسال
             <textarea
@@ -168,9 +176,7 @@ export function HrInboxForwardDialog({
           <div className="flex flex-wrap gap-2">
             <Button
               type="submit"
-              disabled={
-                busy || (target === 'tasks' && !recipientId)
-              }
+              disabled={busy || (target === 'tasks' && !recipientId)}
             >
               بازارسال
             </Button>

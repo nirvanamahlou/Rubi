@@ -48,6 +48,7 @@ describe('isolated ERP report runtime boundary', () => {
     ) as Array<{ name: string }>;
     expect(controllers.map((controller) => controller.name)).toEqual([
       'AssistantReadAccessController',
+      'SalesAgentController',
       'AssistantReadHealthController',
       'SalesAssistantController',
       'CustomerAffairsAssistantController',

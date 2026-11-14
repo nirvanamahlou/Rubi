@@ -80,6 +80,7 @@ async function proxyRead(
   fetcher: typeof fetch,
   filtered = false,
   message?: string,
+  agent = false,
 ): Promise<Response> {
   const headers: Record<string, string> = {
     'cache-control': 'private, no-store',
@@ -138,7 +139,10 @@ async function proxyRead(
       ...(message === undefined ? {} : { body: message }),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
+      signal: AbortSignal.any([
+        request.signal,
+        AbortSignal.timeout(agent ? 65000 : 12000),
+      ]),
     });
     const correlation = response.headers.get('x-request-id');
     if (
@@ -196,6 +200,7 @@ export async function proxyAssistantConversation(
   request: Request,
   configuredUrl: string | undefined,
   fetcher: typeof fetch = fetch,
+  agent = false,
 ) {
   const reject = (status: number) =>
     Response.json(
@@ -241,10 +246,11 @@ export async function proxyAssistantConversation(
     return await proxyRead(
       request,
       configuredUrl,
-      '/v2/assistant/conversation',
+      agent ? '/v3/assistant/conversation' : '/v2/assistant/conversation',
       fetcher,
       false,
       new TextDecoder('utf-8', { fatal: true }).decode(buffer),
+      agent,
     );
   } catch {
     return reject(400);

@@ -1,5 +1,10 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  agentSources: ['منابع پاسخ', 'Answer sources'],
+  agentLimitations: ['محدودیت‌های پاسخ', 'Answer limitations'],
+  agentPlanning: ['بررسی سؤال', 'Reviewing the question'],
+  agentReading: ['دریافت و بررسی داده', 'Retrieving and reviewing data'],
+  agentAnswering: ['آماده‌سازی پاسخ', 'Preparing the answer'],
   widgetOpen: ['بازکردن دستیار هوشمند', 'Open smart assistant'],
   widgetClose: ['بستن دستیار هوشمند', 'Close smart assistant'],
   widgetExpand: ['بزرگ‌کردن پنجره چت', 'Expand chat window'],

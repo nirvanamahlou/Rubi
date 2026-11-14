@@ -221,3 +221,29 @@ it('intersects supply selection with ownership scope before pagination', async (
     service.list({ supplyType: 'INVALID' } as never, actor),
   ).rejects.toThrow();
 });
+it('looks up a lost submission only for the authenticated creator and rechecks branch scope', async () => {
+  const key = 'same-key-on-two-accounts';
+  const findByCreateKey = vi.fn(async (owner: string) =>
+    owner === 'owner' ? row('saved') : null,
+  );
+  const service = new SalesService(
+    { findByCreateKey } as never,
+    {} as never,
+    {} as never,
+  );
+  const creator: AuthenticatedActor = {
+    ...actor,
+    permissions: [...actor.permissions, 'sales.contracts.create'],
+  };
+  await expect(service.submissionStatus(key, creator)).resolves.toMatchObject({
+    data: { id: 'saved' },
+  });
+  await expect(
+    service.submissionStatus(key, { ...creator, userId: 'other' }),
+  ).resolves.toEqual({ data: null });
+  expect(findByCreateKey).toHaveBeenCalledWith('other', key);
+  await expect(
+    service.submissionStatus(key, { ...creator, branchIds: [] }),
+  ).rejects.toThrow();
+  await expect(service.submissionStatus(key, actor)).rejects.toThrow();
+});
