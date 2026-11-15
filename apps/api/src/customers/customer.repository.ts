@@ -45,6 +45,7 @@ export interface CustomerRow {
   nationalIdAuthTag: string | null;
   nationalIdKeyVersion: number | null;
   nationalIdMasked: string | null;
+  passportNumberFingerprint?: string | null;
   passportNumberEncrypted?: string | null;
   passportNumberIv?: string | null;
   passportNumberAuthTag?: string | null;

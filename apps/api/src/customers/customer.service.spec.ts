@@ -1122,3 +1122,195 @@ it('derives bounded request-only customer entry capabilities for a contract-only
     service.salesEntryActor({ ...actor, permissions: [] }),
   ).toThrow();
 });
+
+describe('website passenger identity synchronization', () => {
+  const creator: AuthenticatedActor = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  };
+  const trace = 'site:nss:passenger-sync';
+  function fixture(existing: unknown = row) {
+    const repository = {
+      findRegistration: vi
+        .fn<(...args: unknown[]) => Promise<unknown>>()
+        .mockResolvedValue(existing),
+      update: vi
+        .fn<(...args: unknown[]) => Promise<unknown>>()
+        .mockResolvedValue({ ...row, version: 2, firstName: 'Updated' }),
+      create: vi
+        .fn<(...args: unknown[]) => Promise<unknown>>()
+        .mockResolvedValue(row),
+    };
+    return {
+      repository,
+      ...createService(repository as unknown as CustomerRepository),
+    };
+  }
+  it('updates supplied identity on the same national-ID profile using the audited versioned writer', async () => {
+    const { service, repository } = fixture();
+    const result = await service.syncWebsitePassenger(
+      {
+        ...mutation,
+        firstName: 'Updated',
+        lastName: 'Passenger',
+        birthDate: '1995-02-03',
+        displayName: 'Updated Passenger',
+        passportFirstName: 'UPDATED',
+        gender: 'F',
+        nationalityCode: 'IRN',
+        roles: ['passenger'],
+        acquaintanceMethodId: actor.branchIds[0]!,
+      },
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(result.data.id).toBe(row.id);
+    expect(repository.findRegistration).toHaveBeenCalledWith(
+      'n'.repeat(64),
+      actor.branchIds,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      row.id,
+      actor.branchIds,
+      {
+        firstName: 'Updated',
+        lastName: 'Passenger',
+        displayName: 'Updated Passenger',
+        birthDate: new Date('1995-02-03T00:00:00Z'),
+        passportFirstName: 'UPDATED',
+        gender: 'F',
+        nationalityCode: 'IRN',
+      },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+      trace,
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(creator.permissions).toEqual(['sales.contracts.create']);
+  });
+  it('preserves omitted fields and does not change identity keys, roles or branch', async () => {
+    const { service, repository } = fixture({
+      ...row,
+      passportFirstName: 'EXISTING',
+    });
+    const input = { ...mutation, firstName: 'Updated' };
+    delete input.birthDate;
+    await service.syncWebsitePassenger(
+      input,
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.update.mock.calls[0]?.[2]).toEqual({
+      firstName: 'Updated',
+    });
+  });
+  it('does not create another version or audit event for an identical retry', async () => {
+    const { service, repository } = fixture();
+    await service.syncWebsitePassenger(
+      mutation,
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+  it('encrypts a changed passport and preserves an identical protected passport', async () => {
+    const { service, repository } = fixture({
+      ...row,
+      passportNumberFingerprint: 'old',
+    });
+    await service.syncWebsitePassenger(
+      { ...mutation, passportNumber: 'T00000001' },
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.update.mock.calls[0]?.[2]).toMatchObject({
+      passportNumberEncrypted: 'encrypted-passport-number',
+    });
+    expect(repository.update.mock.calls[0]?.[2]).not.toHaveProperty(
+      'passportNumber',
+    );
+    const same = fixture({ ...row, passportNumberFingerprint: 'p'.repeat(64) });
+    await same.service.syncWebsitePassenger(
+      { ...mutation, passportNumber: 'T00000001' },
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(same.repository.update).not.toHaveBeenCalled();
+  });
+  it('creates a genuinely new profile through the native Sales creation path', async () => {
+    const { service, repository } = fixture(null);
+    await service.syncWebsitePassenger(
+      mutation,
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'PERSON',
+        nationalIdFingerprint: 'n'.repeat(64),
+      }),
+      actor.userId,
+      actor.branchIds[0],
+      trace,
+    );
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+  it('rechecks a concurrent update instead of overwriting a different version', async () => {
+    const { service, repository } = fixture();
+    repository.update.mockResolvedValueOnce(null);
+    repository.findRegistration
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce({ ...row, version: 3 });
+    await service.syncWebsitePassenger(
+      { ...mutation, firstName: 'Updated' },
+      creator,
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.update.mock.calls.map((call) => call[3])).toEqual([1, 3]);
+  });
+  it('rejects invalid dates and untrusted branch/permission before persistence', async () => {
+    const { service, repository } = fixture();
+    await expect(
+      service.syncWebsitePassenger(
+        { ...mutation, birthDate: '2030-01-01' },
+        creator,
+        actor.branchIds[0]!,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.syncWebsitePassenger(
+        mutation,
+        { ...creator, permissions: [] },
+        actor.branchIds[0]!,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.syncWebsitePassenger(mutation, creator, 'other-branch'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findRegistration).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+  it('restricts all lookups and writes to the configured branch even with wider membership', async () => {
+    const { service, repository } = fixture();
+    await service.syncWebsitePassenger(
+      { ...mutation, firstName: 'Updated' },
+      { ...creator, branchIds: ['another', ...actor.branchIds] },
+      actor.branchIds[0]!,
+      trace,
+    );
+    expect(repository.findRegistration).toHaveBeenCalledWith(
+      'n'.repeat(64),
+      actor.branchIds,
+    );
+    expect(repository.update.mock.calls[0]?.[1]).toEqual(actor.branchIds);
+  });
+});
