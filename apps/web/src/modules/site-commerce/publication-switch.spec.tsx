@@ -262,3 +262,90 @@ it('retains ticket resource identity and aborts the status read on unmount', asy
   cleanup();
   expect(signal.aborted).toBe(true);
 });
+
+it('pauses and resumes sales for the explicitly selected website without unpublishing', async () => {
+  await load(true, 9);
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({
+      data: { enabled: true, salesStopped: true, version: 10 },
+    }),
+  });
+  click('توقف فروش سایت');
+  await settle();
+  expect(render()).toContain('نمایش در سایت؛ فروش متوقف است');
+  expect(JSON.parse(fixture.fetch.mock.calls.at(-1)![1].body)).toEqual({
+    enabled: true,
+    salesStopped: true,
+    version: 9,
+  });
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({
+      data: { enabled: true, salesStopped: false, version: 11 },
+    }),
+  });
+  click('ادامه فروش');
+  await settle();
+  const html = render();
+  expect(html).toContain('منتشرشده در نیایش سیر');
+  expect(html).not.toContain('نمایش در سایت؛ فروش متوقف است');
+  expect(JSON.parse(fixture.fetch.mock.calls.at(-1)![1].body)).toEqual({
+    enabled: true,
+    salesStopped: false,
+    version: 10,
+  });
+});
+
+it('shows the actionable API branch or saved-rate error instead of hiding it behind a generic publication failure', async () => {
+  await load();
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  const message = 'بلیط در شعبه مجاز نیست.';
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    status: 403,
+    json: async () => ({ error: { message } }),
+  });
+  click('انتشار');
+  await settle();
+  const html = render();
+  expect(html).toContain(message);
+  expect(html).not.toContain('ثبت انتشار سایت ناموفق بود');
+  expect(html).toContain('role="dialog"');
+  expect(html).not.toContain('منتشرشده در نیایش سیر');
+});
+
+it('preserves a plain API validation explanation and safely falls back for a non-JSON failure', async () => {
+  await load();
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => ({ message: 'ابتدا درصد مقصد را ثبت کنید.' }),
+  });
+  click('انتشار');
+  await settle();
+  expect(render()).toContain('ابتدا درصد مقصد را ثبت کنید.');
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => {
+      throw new Error('not json');
+    },
+  });
+  click('انتشار');
+  await settle();
+  expect(render()).toContain('ثبت انتشار سایت ناموفق بود');
+});

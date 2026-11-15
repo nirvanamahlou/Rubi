@@ -26,5 +26,19 @@ export function expectedTicketSale(
   } catch {
     throw new BadRequestException('مبلغ نرخ مرجع بلیط معتبر نیست.');
   }
-  return { amount: quote.amount, currencyCode: quote.currencyCode };
+  const target = metadata?.catalogSalePriceTargetId;
+  if (
+    target !== undefined &&
+    target !== null &&
+    (typeof target !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        target,
+      ))
+  )
+    throw new BadRequestException('نرخ مرجع پرواز تغییر کرده است.');
+  return {
+    amount: quote.amount,
+    currencyCode: quote.currencyCode,
+    ...(typeof target === 'string' ? { salePriceTargetId: target } : {}),
+  };
 }

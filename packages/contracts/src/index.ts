@@ -68,3 +68,5 @@ export * from './finance/source-references';
 export * from './customers/dossier';
 
 export * from './finance/exchange-offices';
+
+export * from './travel/floating-tour';

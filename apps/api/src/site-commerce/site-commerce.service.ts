@@ -56,6 +56,17 @@ export class SiteCommerceService {
     return { ...actor, branchIds: [binding.branchId] };
   }
 
+  private async ticketTarget(site: string, branchId: string) {
+    const binding = await this.db.client.websiteCatalogDelivery.findUnique({
+      where: { siteCode: site },
+    });
+    if (binding?.branchId !== branchId || !binding.salePriceTargetId)
+      throw new BadRequestException(
+        'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
+      );
+    return binding.salePriceTargetId;
+  }
+
   async publication(
     site: string,
     kind: string,
@@ -64,13 +75,23 @@ export class SiteCommerceService {
   ) {
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
+    const binding = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}')[
+      site
+    ];
+    if (
+      site !== 'nss' ||
+      !['ticket', 'tour'].includes(kind) ||
+      !binding?.branchId ||
+      !actor.branchIds.includes(binding.branchId)
+    )
+      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
     return {
       data: await this.db.client.websitePublication.findFirst({
         where: {
           siteCode: site,
           kind,
           resourceId,
-          branchId: { in: actor.branchIds },
+          branchId: binding.branchId,
         },
       }),
     };
@@ -80,27 +101,38 @@ export class SiteCommerceService {
     site: string,
     kind: string,
     resourceId: string,
-    input: { enabled: boolean; version: number },
+    input: { enabled: boolean; salesStopped?: boolean; version: number },
     actor: AuthenticatedActor,
   ) {
     if (
       !['ticket', 'tour'].includes(kind) ||
       !['nss'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
-      !Number.isInteger(input.version)
+      !Number.isInteger(input.version) ||
+      (input.salesStopped !== undefined &&
+        typeof input.salesStopped !== 'boolean')
     )
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
-    const resource =
-      kind === 'ticket'
-        ? await this.tickets.websiteOffer(resourceId, actor.branchIds)
-        : await this.tours.pricingDeparture(resourceId, actor.branchIds);
+    const bindings = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+    const branchId = bindings[site]?.branchId as string | undefined;
+    if (!branchId || !actor.branchIds.includes(branchId))
+      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
+    if (kind === 'ticket') {
+      await this.tickets.documentSupply(resourceId, [branchId]);
+      if (input.enabled)
+        await this.tickets.websiteOffer(
+          resourceId,
+          [branchId],
+          await this.ticketTarget(site, branchId),
+        );
+    } else await this.tours.pricingDeparture(resourceId, [branchId]);
     const key = {
       siteCode: site,
       kind,
       resourceId,
-      branchId: resource.branchId,
+      branchId,
     };
     const row = await this.db.client.websitePublication.findUnique({
       where: { siteCode_branchId_kind_resourceId: key },
@@ -110,12 +142,20 @@ export class SiteCommerceService {
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
-          data: { ...key, enabled: input.enabled },
+          data: {
+            ...key,
+            enabled: input.enabled,
+            salesStopped: input.salesStopped ?? false,
+          },
         }),
       };
     const changed = await this.db.client.websitePublication.updateMany({
       where: { id: row.id, version: input.version },
-      data: { enabled: input.enabled, version: { increment: 1 } },
+      data: {
+        enabled: input.enabled,
+        salesStopped: input.salesStopped ?? row.salesStopped,
+        version: { increment: 1 },
+      },
     });
     if (!changed.count)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
@@ -126,8 +166,12 @@ export class SiteCommerceService {
     };
   }
 
-  private async flight(offerId: string, branchIds: readonly string[]) {
-    const offer = await this.tickets.websiteOffer(offerId, branchIds);
+  private async flight(
+    offerId: string,
+    branchIds: readonly string[],
+    targetId?: string,
+  ) {
+    const offer = await this.tickets.websiteOffer(offerId, branchIds, targetId);
     const [origin, destination, originAirport, destinationAirport] =
       await Promise.all([
         this.references.detail('cities', offer.originId),
@@ -175,6 +219,10 @@ export class SiteCommerceService {
     };
   }
 
+  async nextCatalogCapacityChange(branchId: string) {
+    return this.tickets.websiteNextCapacityChange([branchId]);
+  }
+
   async catalog(site: string, actor: AuthenticatedActor) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
@@ -201,7 +249,13 @@ export class SiteCommerceService {
       try {
         const product =
           row.kind === 'ticket'
-            ? { flight: await this.flight(row.resourceId, scoped.branchIds) }
+            ? {
+                flight: await this.flight(
+                  row.resourceId,
+                  scoped.branchIds,
+                  await this.ticketTarget(site, scoped.branchIds[0]!),
+                ),
+              }
             : {
                 tour: await this.websiteTour(row.resourceId, scoped),
                 rooms: (
@@ -230,6 +284,7 @@ export class SiteCommerceService {
           kind: row.kind,
           resourceId: row.resourceId,
           enabled: true,
+          salesStopped: row.salesStopped,
           version: row.version,
           ...product,
         });
@@ -293,7 +348,7 @@ export class SiteCommerceService {
           },
         },
       });
-      if (!published?.enabled)
+      if (!published?.enabled || published.salesStopped)
         throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
     }
     if (tourIds.length) {
@@ -327,7 +382,9 @@ export class SiteCommerceService {
         throw new BadRequestException('پرواز رفت را انتخاب کنید.');
       const offers = await Promise.all(
         selections.map((s) =>
-          this.tickets.websiteOffer(s.offerId, actor.branchIds),
+          this.ticketTarget(site, actor.branchIds[0]!).then((target) =>
+            this.tickets.websiteOffer(s.offerId, actor.branchIds, target),
+          ),
         ),
       );
       const seats = input.passengers.filter(
@@ -408,12 +465,17 @@ export class SiteCommerceService {
           branchId: scoped.branchIds[0]!,
           kind: 'ticket',
           enabled: true,
+          salesStopped: false,
         },
       });
       if (!product)
         throw new ForbiddenException('محصول برای سایت منتشر نشده است.');
       offers.push(
-        await this.tickets.websiteOffer(product.resourceId, scoped.branchIds),
+        await this.tickets.websiteOffer(
+          product.resourceId,
+          scoped.branchIds,
+          await this.ticketTarget(site, scoped.branchIds[0]!),
+        ),
       );
     }
     const seats = body.birthDates.filter(
@@ -449,6 +511,11 @@ export class SiteCommerceService {
       scoped,
     );
     if (!recovered) await this.assertPublished(site, input, scoped);
+    const ticketTargetId = input.services.some(
+      (s) => s.metadata?.tourDepartureId,
+    )
+      ? undefined
+      : await this.ticketTarget(site, scoped.branchIds[0]!);
     const created = await this.sales.create(
       {
         ...input,
@@ -456,6 +523,7 @@ export class SiteCommerceService {
           ...s,
           metadata: {
             ...s.metadata,
+            catalogSalePriceTargetId: ticketTargetId ?? null,
             sourceSite: site,
             externalOrderId: externalId,
           },
@@ -578,7 +646,45 @@ export class SiteCommerceService {
       );
     }
     const { data: current } = await this.sales.detail(row.contractId, scoped);
-    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status))
+    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status)) {
+      const tourIds = [
+        ...new Set(
+          current.servicesDetail
+            .map((s) => s.metadata?.tourDepartureId)
+            .filter((id): id is string => typeof id === 'string'),
+        ),
+      ];
+      if (!tourIds.length) {
+        const targetId = await this.ticketTarget(site, scoped.branchIds[0]!);
+        if (
+          current.servicesDetail.some(
+            (s) =>
+              s.kind === 'FLIGHT' &&
+              s.metadata?.catalogSalePriceTargetId !== targetId,
+          )
+        )
+          throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+      }
+      const resources = tourIds.length
+        ? tourIds.map((resourceId) => ({ kind: 'tour', resourceId }))
+        : current.ticketSelections.map((s) => ({
+            kind: 'ticket',
+            resourceId: s.offerId,
+          }));
+      for (const resource of resources) {
+        const publication = await this.db.client.websitePublication.findUnique({
+          where: {
+            siteCode_branchId_kind_resourceId: {
+              siteCode: site,
+              branchId: scoped.branchIds[0]!,
+              ...resource,
+            },
+          },
+        });
+        if (!publication?.enabled || publication.salesStopped)
+          throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+      }
+      // Native confirmation locks both offers and re-reads ERP allocations, holds and target fares.
       await this.sales.confirm(
         row.contractId,
         current.version,
@@ -586,6 +692,7 @@ export class SiteCommerceService {
         scoped,
         `site:${site}:${externalId}:confirm`,
       );
+    }
     return this.status(site, externalId, actor);
   }
 

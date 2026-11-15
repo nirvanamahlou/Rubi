@@ -202,21 +202,6 @@ export function TourDetailsForm({
             ])}
             onChange={(v) => patch('destinationAirportCode', v)}
           />
-          {!value.isCombined && (
-            <FormField label="مدت سفر (روز)">
-              <Input
-                aria-label="مدت سفر (روز)"
-                type="number"
-                min={1}
-                max={366}
-                step={1}
-                value={value.durationDays ?? ''}
-                onChange={(e) =>
-                  patch('durationDays', numberValue(e.target.value))
-                }
-              />
-            </FormField>
-          )}
           <FormField label="امتیاز تور از ۵">
             <Input
               aria-label="امتیاز تور از ۵"

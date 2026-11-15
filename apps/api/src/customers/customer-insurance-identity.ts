@@ -1,3 +1,4 @@
+import { SalesBuyerContactCrypto } from '../sales/sales-buyer-contact.crypto';
 import {
   Inject,
   forwardRef,
@@ -43,6 +44,8 @@ export class CustomerInsuranceIdentity {
     @Inject(CustomerRepository) private readonly repository: CustomerRepository,
     @Inject(forwardRef(() => SalesOperationalAmendmentService))
     private readonly sales: SalesOperationalAmendmentService,
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerContact: SalesBuyerContactCrypto,
   ) {}
   private async context(intakeId: string, customerId: string) {
     const source = await this.db.client.reservationIntake.findUnique({
@@ -184,6 +187,7 @@ export class CustomerInsuranceIdentity {
       ['phone', input.mobile],
       ['email', input.email.toLowerCase()],
     ] as const) {
+      if (!value) continue;
       const kind = type === 'phone' ? 'PHONE' : 'EMAIL';
       const protectedValue = this.contacts.protect(
         type,
@@ -245,24 +249,40 @@ export class CustomerInsuranceIdentity {
       intakeId,
       customerId,
     );
+    const payerId =
+      intake.contract.payerCustomerId ?? intake.contract.customerId;
     const payer =
-      customerId === intake.contract.customerId
+      customerId === payerId
         ? person
         : await this.db.client.customer.findUnique({
-            where: { id: intake.contract.customerId },
+            where: { id: payerId },
             include: { contacts: true },
           });
-    const contact = (kind: 'PHONE' | 'EMAIL') => {
-      const selected =
-        person.contacts.find((c) => c.type === kind && c.isPrimary) ??
-        person.contacts.find((c) => c.type === kind) ??
-        payer?.contacts.find((c) => c.type === kind);
-      return selected ? this.contacts.decrypt(selected)?.trim() : undefined;
+    const contact = (kind: 'PHONE' | 'EMAIL', source: typeof payer) => {
+      const candidates = (source?.contacts ?? []).filter(
+        (c) => c.type === kind,
+      );
+      candidates.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+      for (const candidate of candidates) {
+        const value = this.contacts.decrypt(candidate)?.trim();
+        if (value && (kind !== 'PHONE' || /^\+?[0-9]{10,15}$/.test(value)))
+          return value;
+      }
+      return undefined;
     };
     const passportNo = this.ids.decryptPassportNumber(person)?.trim();
     const nationalCode = this.ids.decrypt(person)?.trim();
-    const mobile = contact('PHONE');
-    const email = contact('EMAIL');
+    const ownMobile = contact('PHONE', person);
+    const buyerPhone = ownMobile
+      ? undefined
+      : this.buyerContact.decrypt(intake.contract.buyerContact)?.phone.trim();
+    const mobile =
+      ownMobile ||
+      (buyerPhone && /^\+?[0-9]{10,15}$/.test(buyerPhone)
+        ? buyerPhone
+        : undefined) ||
+      contact('PHONE', payer);
+    const email = contact('EMAIL', person);
     const isIranian = person.nationalityCode === 'IRN';
     if (
       !person.birthDate ||
@@ -272,13 +292,15 @@ export class CustomerInsuranceIdentity {
       !person.passportLastName ||
       !['M', 'F'].includes(person.gender ?? '') ||
       !passportNo ||
-      !mobile ||
-      !email ||
       (isIranian && !nationalCode) ||
       !person.nationalityCode
     )
       throw new BadRequestException(
         'اطلاعات هویتی، پاسپورت و تماس بیمه‌شده را تکمیل کنید.',
+      );
+    if (!mobile)
+      throw new BadRequestException(
+        'موبایل مسافر یا مشتری طرف حساب قرارداد را تکمیل کنید.',
       );
     await this.repository.auditSensitiveRead(
       person.id,
@@ -310,7 +332,7 @@ export class CustomerInsuranceIdentity {
         gender: person.gender === 'M' ? 1 : 2,
         birthDate: person.birthDate.toISOString(),
         mobile,
-        email,
+        email: email ?? '',
       },
       passportNo,
     };

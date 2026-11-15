@@ -1,4 +1,10 @@
 'use client';
+import type {
+  FloatingTourImportOptions,
+  FloatingTourImportPreview,
+  FloatingTourSaleSet,
+  TourPackageV1,
+} from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
@@ -69,7 +75,9 @@ async function request<T>(
     ...init,
     headers: {
       accept: 'application/json',
-      ...(init?.body ? { 'content-type': 'application/json' } : {}),
+      ...(init?.body && !(init.body instanceof FormData)
+        ? { 'content-type': 'application/json' }
+        : {}),
       ...init?.headers,
     },
   }).catch(() => {
@@ -113,6 +121,33 @@ function queryString(query: PackageListQueryV1) {
 }
 
 export const packagePricingApi = {
+  floatingTours: (active: LoginResponse) =>
+    request<{ data: TourPackageV1[] }>('/floating-tours', active),
+  floatingPrices: (id: string, active: LoginResponse) =>
+    request<FloatingTourSaleSet>(
+      `/floating-tours/${encodeURIComponent(id)}`,
+      active,
+    ),
+  floatingImport: (
+    id: string,
+    file: File,
+    options: FloatingTourImportOptions,
+    active: LoginResponse,
+    preview?: FloatingTourImportPreview,
+  ) => {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('options', JSON.stringify(options));
+    if (preview) {
+      body.append('expectedVersion', String(preview.expectedVersion));
+      body.append('digest', preview.digest);
+    }
+    return request<FloatingTourImportPreview | FloatingTourSaleSet>(
+      `/floating-tours/${encodeURIComponent(id)}/${preview ? 'commit' : 'preview'}`,
+      active,
+      { method: 'POST', body },
+    );
+  },
   tourBuyRates: (
     activeSession: LoginResponse,
   ): Promise<Record<string, string>> =>

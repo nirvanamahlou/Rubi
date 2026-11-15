@@ -10077,7 +10077,17 @@ DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility
 
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
+
+SITE-PUBLICATION-SYNC-1115 (PC-A): branch-scoped automatic future tour/ticket price publication, website-only pause/resume/remove and signed update-driven catalog delivery are implemented. Durable invalidation covers price, capacity, definition/reference changes and capacity-hold expiry; browser visits read the site's own database. Monotonic snapshots preserve removal under retries/out-of-order delivery; new paused orders are rejected before identity writes. Existing legacy website records retain their separate source identity.18 site tests,15 ERP tests, isolated PostgreSQL publication/branch/capacity/removal checks, scoped API lint and API/Web production builds passed. The two additive migrations preserve the first published migration and align the new Branch FK update rule separately. Production rollout and signed revision2 end-to-end acknowledgement are verified; three catalog visits generated no delivery, an explicit invalidation propagated, unsigned delivery was rejected, and both health endpoints pass. Hosted exact-head gates govern develop merge. No gateway activation or real purchase.
+
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
+
+
+## INSURANCE-EMAIL-OPTIONAL-1115 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-email-optional-1115 from develop64e76e24. User authorizes optional insured email and develop merge. Reserve Insurance passenger fields/guides, standalone completeness, shared draft validation and Customers insurance identity adapter with focused tests. Preserve provided-email format validation, existing contact data, authorization, identity/version/provider idempotency and all peer changes. No shared TypeScript shape, schema, migration, dependency, provider-mode, operational data or deployment change. Previous overlapping insurance fixes are committed on develop; bounded source lease releases on verified merge.
+
+INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation tests and scoped ESLint pass. Blank or omitted email normalizes to an empty value, supplied email remains format-validated, standalone form permits blank email, and Customer issuance lookup no longer requires email. Empty correction email neither creates a blank contact nor changes an existing primary email. Exact-head full hosted checks gate the user-authorized merge. No production deployment.
 
 TOUR-PUBLICATION-1115: Tour definitions expose Draft/Published in create/edit and overview. New UI definitions default Draft; omission on legacy definitions stays Published. Sales dropdown and server list omit Draft, while authenticated management and pricing remain available; direct contract selection rejects Draft. Optional status stays in existing definition JSON (no migration).56 targeted tests and API lint pass; hosted quality/build/tests gates precede authorized develop merge. No production deployment.
 
@@ -10086,3 +10096,18 @@ CHART-ACTIONS-1115: headquarters chart supports right-side edit/delete/move cont
 FINANCE-FISCAL-CONTEXT-1115 (PC-D): company-owned fiscal defaults, personal temporary year selection and header display are connected to ledger allocations, Accounting/Finance transactions, history, reports and exports. Prior-year open balances retain original year/date and exact per-currency amounts without copying financial facts. Native role/branch/issuer permissions and shared reference data remain. Additive defaults/FKs are validated only on isolated fixtures, with no historic backfill or operational data changes.561 API and292 Web regression checks, dedicated PostgreSQL fiscal cases, affected lint/typecheck and API/Web builds passed. Source is frozen on codex/pc-d-finance-fiscal-context-1115 for the owner's standing automatic commit/push; no new merge or deployment. See [scope, validation and limits](tasks/FINANCE-FISCAL-CONTEXT-1115.md).
 
 FINANCE-SOURCE-LINKS-1115 (PC-D): exact contract/journal references and readonly viewers are connected to Finance inbox, history, events, Accounting sources and exports. Sales receipt IDs and business contract numbers are distinct; real journal FKs take precedence over exact legacy source keys. Original contract commitment journals remain readable for carried receipts. Current-year lists/writes and native company/branch/archive permissions remain scoped. No operational data, role, schema, migration or dependency changes. Final54 API/PostgreSQL checks and11 Web/English checks pass; affected lint/typecheck and API/Web builds pass. Source frozen for standing automatic task-branch commit/push; no hosted CI dispatch, PR/merge or deployment. See [scope, contracts, validation and limits](tasks/FINANCE-SOURCE-LINKS-1115.md).
+
+INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.
+
+## TICKET-SITE-PRICE-TARGET-1115 — PC-A
+
+Ticket website publication now follows explicit saved destination pricing for Niyayesh Seir Sahar. Scoped implementation,42 API checks,18 site checks and the isolated migration proof passed; native atomic capacity reservation is preserved and target fare freshness is extended through final confirmation. Owner authorizes green develop merge and production deployment; see docs/tasks/TICKET-SITE-PRICE-TARGET-1115.md.
+
+SALES-MANAGER-CHART-1115: headquarters sales hierarchy recognizes spelling variants and sales job titles; salespeople report to Mahsa Alaei. Scoped ESLint passed.
+
+
+## TICKET-PUBLICATION-ERROR-1115 — PC-A
+
+Publication errors now expose the actionable API explanation instead of a generic failure. The live mismatch was the site's Niyayesh branch binding versus HQ ticket/destination ownership; owner explicitly confirms HQ belongs in the site scope. Protected runtime configuration and the dedicated principal's audited HQ membership now match that ownership, with role permissions, existing branch membership and all operational records preserved. Ten focused UI tests and scoped Web build pass; green hosted checks gate the UI merge/deployment.
+
+FINANCE-SOURCE-LINKS-1115 / PR1723 integration: owner explicitly authorizes develop PR/merge without CI on2026-11-15. Merge current develop into the task branch and preserve both sides of append-only conflicts in WORK_ASSIGNMENTS.md, docs/PROJECT_STATUS.md and docs/DATA_MODEL.md. Product source/schema/contracts merged automatically; no conflict-driven product changes or operational deployment. Previously recorded local validation remains the implementation evidence; CI is waived for this merge by the owner.

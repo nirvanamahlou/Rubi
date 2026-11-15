@@ -1,3 +1,4 @@
+import { websiteTargetOffer } from './website-target-offer';
 import { createHash, randomUUID } from 'node:crypto';
 import { restoreContractCapacity } from './restore-contract-capacity';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
@@ -181,7 +182,35 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 @Injectable()
 export class TicketPublicService {
   /** Server-side commerce boundary. Never returns purchase costs or other branches. */
-  async websiteOffer(id: string, branchIds: readonly string[]) {
+  async websiteNextCapacityChange(branchIds: readonly string[]) {
+    const row = await this.database.client.ticketOfferCapacityHold.aggregate({
+      where: {
+        branchId: { in: [...branchIds] },
+        status: 'ACTIVE',
+        expiresAt: { gt: new Date() },
+      },
+      _min: { expiresAt: true },
+    });
+    return row._min.expiresAt;
+  }
+
+  async websiteOffer(
+    id: string,
+    branchIds: readonly string[],
+    salePriceTargetId?: string,
+  ) {
+    if (
+      salePriceTargetId &&
+      !(await this.database.client.ticketSalePriceTarget.findFirst({
+        where: {
+          id: salePriceTargetId,
+          branchId: { in: [...branchIds] },
+          isActive: true,
+        },
+        select: { id: true },
+      }))
+    )
+      throw new BadRequestException('بلیت فعال سایت یافت نشد.');
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: {
         id,
@@ -219,7 +248,33 @@ export class TicketPublicService {
       },
     });
     if (!row) throw new BadRequestException('بلیت فعال سایت یافت نشد.');
-    const offer = this.offerView(row);
+    const offer = salePriceTargetId
+      ? websiteTargetOffer(this.offerView(row), salePriceTargetId)
+      : this.offerView(row);
+    if (
+      salePriceTargetId &&
+      !offer.standaloneSalePrice &&
+      !offer.roundTripSalePrices?.length
+    ) {
+      const incoming =
+        await this.database.client.ticketSaleCommissionRevision.findMany({
+          where: {
+            returnOfferId: id,
+            salePriceTargetId,
+            offer: {
+              branchId: { in: [...branchIds] },
+              status: 'ACTIVE',
+              departureAt: { gt: new Date() },
+            },
+          },
+          orderBy: { revision: 'desc' },
+        });
+      const latest = new Map<string, (typeof incoming)[number]>();
+      for (const rate of incoming)
+        if (!latest.has(rate.offerId)) latest.set(rate.offerId, rate);
+      if (![...latest.values()].some((rate) => rate.percent.lt(100)))
+        throw new BadRequestException('بلیت فعال سایت یافت نشد.');
+    }
     delete offer.targetedStandaloneSalePrices;
     delete offer.baseStandaloneSalePrice;
     delete offer.baseRoundTripSalePrices;
@@ -2299,7 +2354,10 @@ export class TicketPublicService {
     contractId: string,
     seatCount: number,
     expectedTicketTotals?: Readonly<
-      Record<string, { amount: string; currencyCode: string }>
+      Record<
+        string,
+        { amount: string; currencyCode: string; salePriceTargetId?: string }
+      >
     >,
     counts?: Readonly<Record<string, number>>,
     tourDepartureId?: string,
@@ -2407,7 +2465,13 @@ export class TicketPublicService {
           const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
           const offer = byId.get(selection.offerId);
           const replay = existingByDirection.get(selection.direction);
-          if (!offer) return true;
+          if (
+            !offer ||
+            (expectedTicketTotals?.[selection.serviceClientKey]
+              ?.salePriceTargetId &&
+              offer.departureAt <= new Date())
+          )
+            return true;
           if (replay)
             return (
               replay.status !== 'ACTIVE' ||
@@ -2470,6 +2534,8 @@ export class TicketPublicService {
           half?: 'OUTBOUND' | 'RETURN',
         ) => {
           if (!tiers.length) return;
+          if (commissionPercent?.eq(100))
+            throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
           const current = quoted(selection);
           if (!current)
             throw new ConflictException(
@@ -2497,12 +2563,20 @@ export class TicketPublicService {
             throw new ConflictException(
               'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
             );
-          const expectedUnits =
+          // Website checkout quotes at two decimals; split the outbound half down,
+          // then round the remaining half, exactly as websiteFlightQuotes does.
+          const targetQuote = current.salePriceTargetId !== undefined;
+          const firstHalf = targetQuote ? (units / 200n) * 100n : units / 2n;
+          const rawUnits =
             half === 'OUTBOUND'
-              ? units / 2n
+              ? firstHalf
               : half === 'RETURN'
-                ? units - units / 2n
+                ? units - firstHalf
                 : units;
+          const expectedUnits =
+            targetQuote && half !== 'OUTBOUND'
+              ? ((rawUnits + 50n) / 100n) * 100n
+              : rawUnits;
           if (
             current.currencyCode !== currencyCode ||
             moneyUnits(current.amount) !== expectedUnits
@@ -2511,6 +2585,20 @@ export class TicketPublicService {
               'قیمت صندلی‌ها تغییر کرده است؛ قیمت قرارداد را تازه کنید.',
             );
         };
+        const targets = new Set(
+          selections.map((s) => quoted(s)?.salePriceTargetId ?? null),
+        );
+        if (targets.size !== 1)
+          throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+        const salePriceTargetId = [...targets][0] ?? null;
+        if (
+          salePriceTargetId &&
+          !(await transaction.ticketSalePriceTarget.findFirst({
+            where: { id: salePriceTargetId, branchId, isActive: true },
+            select: { id: true },
+          }))
+        )
+          throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
         const pairPrice =
           outbound && returning
             ? await transaction.ticketOfferRoundTripSalePrice.findFirst({
@@ -2522,16 +2610,27 @@ export class TicketPublicService {
                 include: { tiers: { orderBy: { tierIndex: 'asc' } } },
               })
             : null;
-        if (pairPrice?.tiers.length && outbound && returning) {
-          const commission =
-            await transaction.ticketSaleCommissionRevision.findFirst({
-              where: {
-                offerId: outbound.id,
-                returnOfferId: returning.id,
-                salePriceTargetId: null,
-              },
-              orderBy: { revision: 'desc' },
-            });
+        const pairCommission =
+          pairPrice && outbound && returning
+            ? await transaction.ticketSaleCommissionRevision.findFirst({
+                where: {
+                  offerId: outbound.id,
+                  returnOfferId: returning.id,
+                  salePriceTargetId,
+                },
+                orderBy: { revision: 'desc' },
+              })
+            : null;
+        // A raw pair base is not a saved target fare. Match the public projection's
+        // standalone fallback when that destination has no visible paired rate.
+        if (
+          pairPrice &&
+          outbound &&
+          returning &&
+          (!salePriceTargetId ||
+            (pairCommission && pairCommission.percent.lt(100)))
+        ) {
+          const commission = pairCommission;
           const consumed = Math.max(
             ...[outbound, returning].map(
               (offer) =>
@@ -2547,14 +2646,23 @@ export class TicketPublicService {
           );
           for (const selection of selections)
             verify(
-              pairPrice.tiers,
+              pairPrice.tiers.length
+                ? pairPrice.tiers
+                : salePriceTargetId
+                  ? [
+                      {
+                        seatCount: Number.MAX_SAFE_INTEGER,
+                        amount: pairPrice.amount,
+                      },
+                    ]
+                  : [],
               pairPrice.currencyCode,
               commission?.percent,
               consumed,
               selection,
               selection.direction,
             );
-        } else if (!pairPrice) {
+        } else {
           for (const selection of selections) {
             const offer = byId.get(selection.offerId)!;
             const fare =
@@ -2563,16 +2671,22 @@ export class TicketPublicService {
                 orderBy: { revision: 'desc' },
                 include: { tiers: { orderBy: { tierIndex: 'asc' } } },
               });
-            if (!fare?.tiers.length) continue;
+            if (!fare) {
+              if (salePriceTargetId)
+                throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+              continue;
+            }
             const commission =
               await transaction.ticketSaleCommissionRevision.findFirst({
                 where: {
                   offerId: offer.id,
                   returnOfferId: null,
-                  salePriceTargetId: null,
+                  salePriceTargetId,
                 },
                 orderBy: { revision: 'desc' },
               });
+            if (salePriceTargetId && !commission)
+              throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
             const consumed =
               offer.capacityAllocations.reduce(
                 (sum, allocation) => sum + allocation.quantity,
@@ -2580,7 +2694,16 @@ export class TicketPublicService {
               ) +
               offer.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
             verify(
-              fare.tiers,
+              fare.tiers.length
+                ? fare.tiers
+                : salePriceTargetId
+                  ? [
+                      {
+                        seatCount: Number.MAX_SAFE_INTEGER,
+                        amount: fare.amount,
+                      },
+                    ]
+                  : [],
               fare.currencyCode,
               commission?.percent,
               consumed,

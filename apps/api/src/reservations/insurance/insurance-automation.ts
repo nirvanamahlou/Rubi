@@ -1,3 +1,4 @@
+import { insuranceContractTrip } from './contract-trip';
 import { TravisDiagnosticError } from '../../integrations/insurance/travis-sandbox.service';
 import {
   Inject,
@@ -14,7 +15,6 @@ import { createHash } from 'node:crypto';
 import {
   insurancePassengerIds,
   canViewRoute,
-  salesContractFlights,
   type AuthenticatedActor,
   type SalesReservationRequestV1,
 } from '@nora/contracts';
@@ -107,6 +107,7 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
       intake.snapshot as unknown as SalesReservationRequestV1,
       [intake.branchId],
     );
+    const trip = insuranceContractTrip(contract, snapshot);
     for (const customerId of insurancePassengerIds(snapshot, !manual)) {
       await this.db.client.reservationInsurancePolicy.upsert({
         where: {
@@ -125,8 +126,8 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           sandbox: true,
           destinationCode: '-',
           planCode: '-',
-          departureDate: intake.contract.departureDate,
-          durationDays: 1,
+          departureDate: new Date(trip.departureDate + 'T00:00:00Z'),
+          durationDays: trip.durationDays,
           automation: { phase: 'QUEUED' },
           nextAttemptAt: new Date(),
         },
@@ -289,40 +290,14 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
           ? p.providerPlanCode === row.planCode
           : p.masterPlanId === insurance?.referenceId,
       );
-      const departureDate = (
-        state.useDraft || !contract ? row.departureDate : contract.departureDate
-      )
-        .toISOString()
-        .slice(0, 10);
-      const lastDay =
-        [
-          contract?.returnNotBefore?.toISOString().slice(0, 10),
-          identity.snapshot?.hotelSelection?.checkOutDate?.slice(0, 10),
-          ...(identity.snapshot?.hotelSelection?.additionalStays ?? []).map(
-            (s) => s.checkOutDate.slice(0, 10),
-          ),
-          ...salesContractFlights(
-            identity.snapshot?.serviceSelections ?? [],
-            identity.snapshot?.ticketSelections ?? [],
-          )
-            .filter((f) => f.direction === 'RETURN')
-            .map((f) =>
-              new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'Asia/Tehran',
-              }).format(new Date(f.departureAt)),
-            ),
-        ]
-          .filter((d): d is string => Boolean(d))
-          .sort()
-          .at(-1) ?? departureDate;
-      const durationDays = state.useDraft
-        ? row.durationDays
-        : Math.max(
-            1,
-            Math.ceil(
-              (Date.parse(lastDay) - Date.parse(departureDate)) / 86400000,
-            ) + 1,
-          );
+      const trip =
+        !state.useDraft && contract
+          ? insuranceContractTrip(contract, identity.snapshot ?? undefined)
+          : {
+              departureDate: row.departureDate.toISOString().slice(0, 10),
+              durationDays: row.durationDays,
+            };
+      const { departureDate, durationDays } = trip;
       if (
         !country ||
         !plan ||
@@ -363,7 +338,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         planId: Number(plan.providerPlanCode),
         contractNo: id,
         passportNo: identity.passportNo,
-        person: identity.person,
+        person: {
+          ...identity.person,
+          email: identity.person.email?.trim() || 'Niyayeshseir@gmail.com',
+        },
       };
       const fingerprint = createHash('sha256')
         .update(JSON.stringify({ input, departureDate }))

@@ -33,11 +33,16 @@ it('requires Iranian identity, permits foreign national code omission, and conve
     onChange,
     disabled: false,
   });
-  const fields = editor.props.children[1].props.children[0];
+  const fields = editor.props.children[2].props.children[0];
   const national = fields.find(
     (field: { key: string }) => field.key === 'nationalCode',
   ).props.children[1];
   expect(national.props.required).toBe(true);
+  const email = fields.find((field: { key: string }) => field.key === 'email')
+    .props.children[1];
+  expect(email.props.required).toBe(false);
+  expect(email.props.type).toBe('email');
+  expect(renderToStaticMarkup(editor)).toContain('ایمیل بیمه‌شده (اختیاری)');
   const mobile = fields.find((field: { key: string }) => field.key === 'mobile')
     .props.children[1];
   mobile.props.onChange({ target: { value: '۰۹۱۲۳۴۵۶۷۸۹' } });
@@ -53,4 +58,32 @@ it('requires Iranian identity, permits foreign national code omission, and conve
     }),
   );
   expect(foreign).toContain('TUR');
+});
+
+it('makes mobile optional only for contract-linked insurance', () => {
+  const mobile = (required: boolean) =>
+    InsurancePassengerFields({
+      value: passenger,
+      onChange: vi.fn(),
+      disabled: false,
+      mobileRequired: required,
+    }).props.children[2].props.children[0].find(
+      (field: { key: string }) => field.key === 'mobile',
+    ).props.children[1];
+  expect(mobile(false).props.required).toBe(false);
+  expect(mobile(true).props.required).toBe(true);
+});
+
+it('does not prefill or display the provider default email in the passenger form', () => {
+  const editor = InsurancePassengerFields({
+    value: passenger,
+    onChange: vi.fn(),
+    disabled: false,
+    mobileRequired: false,
+  });
+  const email = editor.props.children[2].props.children[0].find(
+    (field: { key: string }) => field.key === 'email',
+  ).props.children[1];
+  expect(email.props.value).toBe('');
+  expect(renderToStaticMarkup(editor)).not.toContain('Niyayeshseir@gmail.com');
 });
