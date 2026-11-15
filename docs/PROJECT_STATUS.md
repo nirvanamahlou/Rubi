@@ -10098,3 +10098,5 @@ INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English la
 ## TICKET-SITE-PRICE-TARGET-1115 — PC-A
 
 Ticket website publication now follows explicit saved destination pricing for Niyayesh Seir Sahar. Scoped implementation,42 API checks,18 site checks and the isolated migration proof passed; native atomic capacity reservation is preserved and target fare freshness is extended through final confirmation. Owner authorizes green develop merge and production deployment; see docs/tasks/TICKET-SITE-PRICE-TARGET-1115.md.
+
+SALES-MANAGER-CHART-1115: headquarters sales hierarchy recognizes spelling variants and sales job titles; salespeople report to Mahsa Alaei. Scoped ESLint passed.

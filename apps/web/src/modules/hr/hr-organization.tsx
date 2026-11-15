@@ -25,6 +25,8 @@ export function buildHeadquartersChart(
   const normalize = (value: string) =>
     normalizeHrText(value)
       .replace(/آ/g, 'ا')
+      .replace(/ئ/g, 'ی')
+      .replace(/[\u064B-\u065F]/g, '')
       .replace(/[\s‌]+/g, '');
   const active = employees.filter((employee) => employee.status === 'فعال');
   const findEmployee = (name: string) => {
@@ -124,7 +126,21 @@ export function buildHeadquartersChart(
   for (const employee of active) {
     if (
       assigned.has(employee.id) ||
-      !normalize(employee.unit).split('/').includes(normalize('فروش'))
+      !(
+        normalize(employee.unit)
+          .split(/[/،,|>]/)
+          .some(
+            (unit) =>
+              unit === 'فروش' ||
+              unit === 'واحدفروش' ||
+              unit === 'دپارتمانفروش' ||
+              unit === 'تیمفروش' ||
+              unit === 'فروشنده',
+          ) ||
+        /^(فروشنده|کارشناسفروش|کارشناسارشدفروش|مشاورفروش|مدیرفروش)/.test(
+          normalize(employee.position),
+        )
+      )
     )
       continue;
     nodes.push(employeeNode(employee, salesLead?.id ?? 'headquarters-فروش'));
