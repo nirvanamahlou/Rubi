@@ -12,6 +12,13 @@ import { proxyAssistantConversation } from './proxy';
 describe('vetted Workbench guidance', () => {
   it('clarifies an unknown Workbench procedure instead of sending it to the Sales SQL agent', () => {
     expect(
+      resolveWorkbenchGuide('این گزینه کجاست؟', 'requests')?.clarification,
+    ).toBeTruthy();
+    for (const topic of workbenchGuideCatalog.topics)
+      expect(resolveWorkbenchGuide(topic.title)?.topic?.id, topic.title).toBe(
+        topic.id,
+      );
+    expect(
       resolveWorkbenchGuide('برای انجام این کار چطور اقدام کنم؟', 'requests')
         ?.clarification,
     ).toBeTruthy();

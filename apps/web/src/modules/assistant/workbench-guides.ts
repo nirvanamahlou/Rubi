@@ -46,7 +46,7 @@ export function resolveWorkbenchGuide(
       topic,
       score: Math.max(
         0,
-        ...topic.aliases.map((alias) =>
+        ...[topic.title, ...topic.aliases].map((alias) =>
           text.includes(normalize(alias))
             ? topic.id === 'home'
               ? 1
@@ -88,7 +88,7 @@ export function resolveWorkbenchGuide(
   if (
     tab &&
     catalog.topics.some((t) => t.tab === tab) &&
-    /چطور|چجور|چگونه|از کجا|راهنما/.test(text) &&
+    /چطور|چجور|چگونه|کجا|راهنما/.test(text) &&
     !/فروش|درآمد|قرارداد|مطالبات|مبلغ/.test(text)
   ) {
     return {
