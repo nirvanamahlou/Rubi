@@ -26,15 +26,13 @@ function fixture() {
     JSON.stringify({ nss: { userId: actor.userId, branchId: 'headquarters' } }),
   );
   const customers = {
-    syncWebsitePassenger: vi
-      .fn()
-      .mockResolvedValue({
-        data: {
-          id: 'person',
-          displayName: 'Synthetic Passenger',
-          nationalId: 'never-return',
-        },
-      }),
+    syncWebsitePassenger: vi.fn().mockResolvedValue({
+      data: {
+        id: 'person',
+        displayName: 'Synthetic Passenger',
+        nationalId: 'never-return',
+      },
+    }),
   };
   const controller = new SiteCommerceController(
     {} as SiteCommerceService,
