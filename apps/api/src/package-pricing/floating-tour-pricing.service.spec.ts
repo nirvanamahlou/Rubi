@@ -25,7 +25,14 @@ const definition = {
   transferReturn: false,
   visa: false,
 };
-const options = { nights: 7, mode: 'DATED' };
+// Match the browser payload: dated imports send an empty monthly selection.
+const options = {
+  nights: 7,
+  mode: 'DATED',
+  calendar: 'PERSIAN',
+  months: [],
+  combined: false,
+};
 const files = unzipSync(
   readFileSync('../web/public/templates/floating-tour-price.xlsx'),
 );

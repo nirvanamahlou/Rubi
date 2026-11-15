@@ -35,9 +35,8 @@ const optionsSchema = Joi.object({
   months: Joi.array()
     .items(Joi.number().integer().min(1).max(12))
     .unique()
-    .min(1)
     .max(12)
-    .when('mode', { is: 'MONTHLY', then: Joi.required() }),
+    .when('mode', { is: 'MONTHLY', then: Joi.array().min(1).required() }),
   combined: Joi.boolean(),
 });
 @Injectable()
