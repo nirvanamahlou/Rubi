@@ -1,4 +1,8 @@
 import { grossAccrualCovers } from '../accounting/accounting.workflows';
+import {
+  assertFinanceFiscalWrite,
+  currentFinanceFiscalRequest,
+} from '../fiscal-context/finance-fiscal-storage';
 import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
 import {
   lockReceiptFunds,
@@ -67,6 +71,16 @@ export class FinancePayrollService {
       include: { revisions: { orderBy: { version: 'asc' } } },
     });
     if (!row) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (
+      currentFinanceFiscalRequest() &&
+      row.fiscalPeriodId &&
+      (
+        await this.database.client.accountingPeriod.findUnique({
+          where: { id: row.fiscalPeriodId },
+        })
+      )?.bookId !== currentFinanceFiscalRequest()?.bookId
+    )
+      throw new NotFoundException('درخواست در شرکت فعال در دسترس نیست.');
     return {
       id: row.id,
       version: row.version,
@@ -159,6 +173,16 @@ export class FinancePayrollService {
         },
       });
     if (!initial) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (
+      currentFinanceFiscalRequest() &&
+      initial.fiscalPeriodId &&
+      (
+        await this.database.client.accountingPeriod.findUnique({
+          where: { id: initial.fiscalPeriodId },
+        })
+      )?.bookId !== currentFinanceFiscalRequest()?.bookId
+    )
+      throw new NotFoundException('درخواست در شرکت فعال در دسترس نیست.');
     if (initial.kind === PAYROLL_WORKSHEET_KIND && !initial.hrRecordId)
       throw new ConflictException('منبع درخواست مالی حقوق معتبر نیست.');
     if (
@@ -232,6 +256,10 @@ export class FinancePayrollService {
     }
     try {
       await this.database.client.$transaction(async (tx) => {
+        await assertFinanceFiscalWrite(
+          tx,
+          typeof input.transferAt === 'string' ? input.transferAt : new Date(),
+        );
         if (initial.kind === 'PAYROLL' && action === 'APPROVE')
           await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId"=${initial.branchId}::uuid AND active=true AND "allowsPosting"=true ORDER BY id FOR SHARE`;
         const grossCovered =
@@ -787,6 +815,7 @@ export class FinancePayrollService {
       .digest('hex');
     try {
       return await this.database.client.$transaction(async (tx) => {
+        const fiscalPeriod = await assertFinanceFiscalWrite(tx, new Date());
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`finance-create:${receipt?.id ?? id.toLowerCase()}`}, 0))::text`;
         const existing = await tx.financeOperationalRequest.findUnique({
           where: { id },
@@ -841,6 +870,7 @@ export class FinancePayrollService {
         }
         const row = await tx.financeOperationalRequest.create({
           data: {
+            ...(fiscalPeriod ? { fiscalPeriodId: fiscalPeriod.id } : {}),
             id,
             branchId,
             requesterId: actor.userId,
@@ -920,6 +950,7 @@ export class FinancePayrollService {
       .digest('hex');
     try {
       return await this.database.client.$transaction(async (tx) => {
+        const fiscalPeriod = await assertFinanceFiscalWrite(tx, new Date());
         const existing = await tx.financeOperationalRequest.findUnique({
           where: { hrRecordId: source.id },
         });
@@ -992,6 +1023,7 @@ export class FinancePayrollService {
         }
         const request = await tx.financeOperationalRequest.create({
           data: {
+            ...(fiscalPeriod ? { fiscalPeriodId: fiscalPeriod.id } : {}),
             id: source.id,
             branchId: source.branchId,
             requesterId: actor.userId,

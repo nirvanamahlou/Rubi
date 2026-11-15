@@ -1,4 +1,8 @@
 import { retainRankedRow } from '../common/retain-ranked-row';
+import {
+  currentFinanceFiscalRequest,
+  financeFiscalUtcRange,
+} from './fiscal-context/finance-fiscal-storage';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -74,13 +78,14 @@ function day(value: string | undefined) {
     parsed.toISOString().slice(0, 10) !== value
   )
     throw new BadRequestException('تاریخ فیلتر معتبر نیست.');
-  return Date.parse(value + 'T00:00:00+03:30');
+  return financeFiscalUtcRange(value, value).gte.getTime();
 }
 export function validateInboxQuery(
   query: FinanceInboxQueryV1,
   actor: AuthenticatedActor,
 ) {
   for (const key of [
+    'fiscalBucket',
     'approvalGroup',
     'category',
     'search',
@@ -103,6 +108,8 @@ export function validateInboxQuery(
   if (query.branchId && !actor.branchIds.includes(query.branchId))
     throw new ForbiddenException('شعبه خارج از دسترسی است.');
   if (
+    (query.fiscalBucket &&
+      !['CURRENT', 'CARRY_FORWARD'].includes(query.fiscalBucket)) ||
     (query.approvalGroup &&
       !['PENDING', 'APPROVED'].includes(query.approvalGroup)) ||
     (query.category && !['PURCHASE', 'RECEIPT'].includes(query.category)) ||
@@ -156,7 +163,7 @@ function inDays(
   return (
     Number.isFinite(stamp) &&
     (start === null || stamp >= start) &&
-    (end === null || stamp < end + 86400000)
+    (end === null || stamp < end)
   );
 }
 const normalized = (value: string) =>
@@ -170,9 +177,13 @@ function financeInboxPredicate(query: FinanceInboxQueryV1) {
   const min = query.minAmount ? decimalUnits(query.minAmount) : null;
   const max = query.maxAmount ? decimalUnits(query.maxAmount) : null;
   const createdFrom = day(query.fromDate);
-  const createdTo = day(query.toDate);
+  const createdTo = query.toDate
+    ? financeFiscalUtcRange(query.toDate, query.toDate).lt.getTime()
+    : null;
   const dueFrom = day(query.dueFrom);
-  const dueTo = day(query.dueTo);
+  const dueTo = query.dueTo
+    ? financeFiscalUtcRange(query.dueTo, query.dueTo).lt.getTime()
+    : null;
   const person = query.person && normalized(query.person);
   const search = query.search && normalized(query.search);
   return (item: FinanceInboxItemV1) => {
@@ -185,6 +196,8 @@ function financeInboxPredicate(query: FinanceInboxQueryV1) {
           ? isClosedFinanceItem(item)
           : item.status === query.status);
     return (
+      (!currentFinanceFiscalRequest() ||
+        item.fiscalBucket === (query.fiscalBucket ?? 'CURRENT')) &&
       status &&
       (!query.approvalGroup ||
         (query.approvalGroup === 'APPROVED') === isFinanceApproved(item)) &&

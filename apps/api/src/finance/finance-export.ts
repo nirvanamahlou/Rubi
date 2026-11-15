@@ -11,6 +11,7 @@ import type {
   FinanceHistoryItemV1,
 } from '@nora/contracts';
 import type { FinanceInboxService } from './finance-inbox.service';
+import { currentFinanceFiscalRequest } from './fiscal-context/finance-fiscal-storage';
 import {
   decimalText,
   decimalUnits,
@@ -79,11 +80,20 @@ export async function financeExportSnapshot(
     scope,
     generatedAt: new Date().toISOString(),
     preparedBy: actor.userId,
-    filterSnapshot: Object.fromEntries(
-      Object.entries(query).filter(
-        ([key]) => !['page', 'pageSize'].includes(key),
+    filterSnapshot: {
+      ...Object.fromEntries(
+        Object.entries(query).filter(
+          ([key]) => !['page', 'pageSize'].includes(key),
+        ),
       ),
-    ),
+      ...(currentFinanceFiscalRequest()
+        ? {
+            company: currentFinanceFiscalRequest()!.companySelection,
+            fiscalYear: currentFinanceFiscalRequest()!.period?.title ?? '',
+            fiscalPeriodId: currentFinanceFiscalRequest()!.period?.id ?? '',
+          }
+        : {}),
+    },
   };
   if (scope === 'INBOX') {
     const result = await inbox.list(actor, !!query.approvalGroup);
@@ -115,6 +125,9 @@ export async function financeExportSnapshot(
         column('ثبت (تهران)', 'DATE'),
         column('سررسید (تهران)', 'DATE'),
         column('توضیحات'),
+        column('سال مالی مبدأ'),
+        column('شماره قرارداد'),
+        column('شماره سند حسابداری'),
       ],
       rows: items.map((item) => [
         item.sourceReference,
@@ -122,7 +135,7 @@ export async function financeExportSnapshot(
         item.title,
         item.requesterDisplaySnapshot,
         item.partyDisplaySnapshot,
-        item.contractReference ?? item.sourceContextReference,
+        item.contractReference,
         item.branchReference,
         financeStatusNames[item.status] ?? item.status,
         item.amount?.currencyCode ?? null,
@@ -132,6 +145,16 @@ export async function financeExportSnapshot(
         item.createdAt,
         item.dueAt,
         item.description,
+        item.carryForward?.originalYearTitle ??
+          (item.carryForward
+            ? 'فاقد تخصیص سال مالی'
+            : (currentFinanceFiscalRequest()?.period?.title ?? null)),
+        item.references?.contracts.map((c) => c.number).join('، ') || null,
+        item.references?.journals
+          .map((j) =>
+            j.number === null ? 'بدون شماره قطعی' : String(j.number),
+          )
+          .join('، ') || null,
       ]),
       totals: totals(
         items.flatMap((item) => (item.amount ? [item.amount] : [])),
@@ -200,6 +223,8 @@ export async function financeExportSnapshot(
       column('نوبت'),
       column('جمع پرداخت تا این نوبت', 'DECIMAL'),
       column('مانده پس از این نوبت', 'DECIMAL'),
+      column('شماره قرارداد'),
+      column('شماره سند حسابداری'),
     ],
     rows: items.map((item) => [
       item.id,
@@ -216,6 +241,10 @@ export async function financeExportSnapshot(
       item.installment?.toString() ?? null,
       item.cumulativePaid,
       item.remainingAmount,
+      item.references?.contracts.map((c) => c.number).join('، ') || null,
+      item.references?.journals
+        .map((j) => (j.number === null ? 'بدون شماره قطعی' : String(j.number)))
+        .join('، ') || null,
     ]),
     totals:
       new Set(items.map((item) => item.direction)).size > 1

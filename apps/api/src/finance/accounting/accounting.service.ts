@@ -3,6 +3,8 @@ import {
   voidedSalesReceiptIds,
 } from '../../sales/sales-receipt-void.public';
 import { fiscalYearAttributes } from './accounting.fiscal-year';
+import { readAccountingJournal } from './accounting-journal-read';
+import { FinanceSourceReferences } from '../source-read/finance-source-references.service';
 import { listFilterAttributes } from './accounting-list-filter';
 import { trialBalanceTable } from './accounting.trial-balance';
 import { codingStandardAttributes } from './accounting.coding-standard';
@@ -69,6 +71,9 @@ import type {
 } from '@nora/contracts';
 import { DatabaseService } from '../../database/database.service';
 import { AccountingCompanyScope } from './accounting-company-scope';
+import { FinanceFiscalStorage } from '../fiscal-context/finance-fiscal-storage';
+import { accountingFiscalMetadataActions } from '../fiscal-context/accounting-fiscal-actions';
+import { assertAccountingFiscalCommand } from '../fiscal-context/accounting-fiscal-command';
 import { ContractCompanyScope } from '../../sales/contract-company-scope.public';
 import { MasterDataService } from '../../master-data/master-data.service';
 import { accountingCurrencies } from './accounting.currency-directory';
@@ -272,6 +277,12 @@ export class AccountingService {
     @Optional()
     @Inject(AccountingCompanyScope)
     private readonly ledgerCompanies?: AccountingCompanyScope,
+    @Optional()
+    @Inject(FinanceFiscalStorage)
+    private readonly fiscal?: FinanceFiscalStorage,
+    @Optional()
+    @Inject(FinanceSourceReferences)
+    private readonly sourceReferences?: FinanceSourceReferences,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -503,7 +514,13 @@ export class AccountingService {
           periods,
           accounts,
           details,
-          configurations,
+          configurations: configurations.filter(
+            (row) =>
+              row.kind !== 'posting-batches' ||
+              !this.fiscal?.current() ||
+              (row.attributes as Record<string, unknown>)?.periodId ===
+                this.fiscal.current()?.period?.id,
+          ),
           fxRates,
           accountGroups,
           detailGroups,
@@ -521,6 +538,13 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (this.fiscal?.current()) {
+      const period = this.fiscal.assertPeriod(bookId, query.periodId)!;
+      query =
+        query.from || query.to
+          ? this.fiscal.query(bookId, query)
+          : { ...query, periodId: period.id };
+    }
     await this.book(this.database.client, bookId, actor);
     const exporting = query.export === 'true';
     if (query.sourceKind && query.sourceKind !== 'revaluation')
@@ -811,6 +835,9 @@ export class AccountingService {
   ) {
     this.require(actor, 'finance.journal.read');
     const book = await this.book(this.database.client, bookId, actor);
+    const period = this.fiscal?.require(bookId);
+    const companyWhere =
+      (await this.companyScope?.eventSqlWhere(actor)) ?? Prisma.sql`true`;
     const rows = await this.database.client.$queryRaw<
       {
         kind: string;
@@ -826,7 +853,8 @@ export class AccountingService {
             WHEN EXISTS (SELECT 1 FROM accounting_journals r WHERE r."reversalOfId"=j.id AND r.status='POSTED') THEN 'REVERSED'
             ELSE j.status END AS state
         FROM finance_accounting_events e LEFT JOIN accounting_journals j ON j.id=e."journalId"
-        WHERE e."branchId"=${book.branchId}::uuid
+        WHERE e."branchId"=${book.branchId}::uuid AND (${companyWhere})
+          AND (${period ? Prisma.sql`(e."occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date AND (e."fiscalPeriodId" IS NULL OR e."fiscalPeriodId"=${period.id}::uuid)` : Prisma.sql`true`})
       ) SELECT kind,currency,state,COUNT(*)::int AS count,SUM(amount)::text AS amount FROM classified
       GROUP BY kind,currency,state ORDER BY currency,kind,state`;
     return { version: 1 as const, rows };
@@ -839,17 +867,28 @@ export class AccountingService {
   ): Promise<AccountingFinancialEventPageV1> {
     this.require(actor, 'finance.journal.read');
     const book = await this.book(this.database.client, bookId, actor);
+    const period = this.fiscal?.require(bookId);
+    const range = this.fiscal?.range(bookId);
+    const visibility: Prisma.FinanceAccountingEventWhereInput = {
+      branchId: book.branchId,
+      AND: [
+        (await this.companyScope?.eventWhere(actor)) ?? {},
+        ...(period
+          ? [{ OR: [{ fiscalPeriodId: null }, { fiscalPeriodId: period.id }] }]
+          : []),
+      ],
+      ...(range ? { occurredAt: range } : {}),
+    };
     const before = query.before
       ? await this.database.client.financeAccountingEvent.findFirst({
-          where: { id: v.uuid(query.before)!, branchId: book.branchId },
+          where: { ...visibility, id: v.uuid(query.before)! },
         })
       : null;
     if (query.before && !before)
       throw new NotFoundException('نشانگر رویداد در شعبه مجاز پیدا نشد.');
     const events = await this.database.client.financeAccountingEvent.findMany({
       where: {
-        AND: [(await this.companyScope?.eventWhere(actor)) ?? {}],
-        branchId: book.branchId,
+        ...visibility,
         ...(query.pending === 'true'
           ? {
               journalId: null,
@@ -883,9 +922,11 @@ export class AccountingService {
       },
     });
     const items = events.slice(0, 50);
+    const references = await this.sourceReferences?.events(items, actor);
     return {
       version: 1 as const,
-      items: items.map((e) => ({
+      items: items.map((e, index) => ({
+        ...(references ? { references: references[index] } : {}),
         id: e.id,
         source: e.source,
         ...(e.basisEventId
@@ -915,7 +956,11 @@ export class AccountingService {
   async workflows(bookId: string, actor: AuthenticatedActor) {
     this.require(actor, 'finance.journal.read');
     return this.database.client.$transaction(async (tx) =>
-      workflowList(tx, await this.book(tx, bookId, actor)),
+      workflowList(
+        tx,
+        await this.book(tx, bookId, actor),
+        this.fiscal?.range(bookId),
+      ),
     );
   }
   async workflowSources(
@@ -1008,7 +1053,15 @@ export class AccountingService {
     const hash = createHash('sha256')
       .update(
         JSON.stringify(
-          canonical({ action, payload: p, expectedVersion: c.expectedVersion }),
+          canonical({
+            action,
+            payload: p,
+            expectedVersion: c.expectedVersion,
+            ...(!accountingFiscalMetadataActions.has(action) &&
+            this.fiscal?.current()
+              ? { fiscalPeriodId: this.fiscal.require(bookId)?.id }
+              : {}),
+          }),
         ),
       )
       .digest('hex');
@@ -1079,6 +1132,14 @@ export class AccountingService {
     periodId: string,
   ) {
     return !!(
+      (await tx.financeAccountingEvent.findFirst({
+        where: { fiscalPeriodId: periodId },
+        select: { id: true },
+      })) ||
+      (await tx.financeOperationalRequest.findFirst({
+        where: { fiscalPeriodId: periodId },
+        select: { id: true },
+      })) ||
       (await tx.accountingJournal.findFirst({
         where: { bookId, periodId },
         select: { id: true },
@@ -1112,6 +1173,23 @@ export class AccountingService {
     financialSourceRebuild = false,
   ): Promise<unknown> {
     const bookId = book.id;
+    if (
+      !internal &&
+      this.fiscal?.current() &&
+      [
+        'journal-save',
+        'journal-document-save',
+        'journal-memorandum-save',
+      ].includes(action) &&
+      !p.periodId
+    )
+      p = { ...p, periodId: this.fiscal.require(bookId)!.id };
+    if (
+      !internal &&
+      this.fiscal?.current() &&
+      !accountingFiscalMetadataActions.has(action)
+    )
+      await assertAccountingFiscalCommand(tx, bookId, action, p, this.fiscal);
     if (
       [
         'standard-map',
@@ -2966,6 +3044,16 @@ export class AccountingService {
         where: { id: eventId, branchId: book.branchId },
       });
       if (!event) v.rule('رویداد مالی در این شعبه پیدا نشد.');
+      if (event.fiscalPeriodId) {
+        const bound = await tx.accountingPeriod.findFirst({
+          where: { id: event.fiscalPeriodId, bookId },
+        });
+        if (!bound) v.rule('رویداد مالی به سال یا دفتر دیگری اختصاص دارد.');
+        if (action === 'financial-event-journal')
+          this.fiscal?.assertPeriod(bookId, event.fiscalPeriodId);
+      }
+      if (action === 'financial-event-journal')
+        this.fiscal?.assertDate(event.occurredAt);
       await validateSalesContractAccountingSource(tx, event);
       if (isReceiptAllocation(event.kind)) {
         if (action === 'financial-rule-save')
@@ -3429,6 +3517,15 @@ export class AccountingService {
           v.rule('حد بالای تأیید باید بزرگ‌تر از حد پایین باشد.');
       }
 
+      if (
+        kind === 'fiscal-years' &&
+        existing &&
+        p.active === false &&
+        (await tx.accountingPeriod.count({
+          where: { bookId, fiscalYearId: existing.id, isDefault: true },
+        }))
+      )
+        v.rule('ابتدا سال مالی پیش‌فرض شرکت را تغییر دهید.');
       if (kind === 'fiscal-years')
         attributes = fiscalYearAttributes(
           attributes,
@@ -3593,6 +3690,39 @@ export class AccountingService {
       }
       return configuration;
     }
+    if (action === 'set-default-period') {
+      this.version(book.version, expected);
+      const id = v.uuid(p.id)!;
+      if (typeof p.isDefault !== 'boolean')
+        v.invalid('وضعیت پیش‌فرض سال مالی معتبر نیست.');
+      const period = await tx.accountingPeriod.findFirst({
+        where: {
+          id,
+          bookId,
+          fiscalYear: { kind: 'fiscal-years', active: true },
+        },
+      });
+      if (!period)
+        v.rule(
+          'سال مالی باید ابتدا با تاریخ شروع و پایان به دفتر شرکت تخصیص داده شود.',
+        );
+      if (!p.isDefault && !period.isDefault)
+        v.rule('این سال مالی پیش‌فرض شرکت نیست.');
+      await tx.accountingPeriod.updateMany({
+        where: { bookId, isDefault: true },
+        data: { isDefault: false, version: { increment: 1 } },
+      });
+      if (p.isDefault)
+        await tx.accountingPeriod.update({
+          where: { id },
+          data: { isDefault: true, version: { increment: 1 } },
+        });
+      await tx.accountingBook.update({
+        where: { id: bookId },
+        data: { version: { increment: 1 } },
+      });
+      return tx.accountingPeriod.findUniqueOrThrow({ where: { id } });
+    }
     if (action === 'delete-period') {
       const id = v.uuid(p.id)!;
       const allocation = await tx.accountingPeriod.findFirst({
@@ -3624,6 +3754,11 @@ export class AccountingService {
         throw cause;
       }
       // The year definition and the command's immutable audit snapshot remain.
+      if (allocation.isDefault)
+        await tx.accountingBook.update({
+          where: { id: bookId },
+          data: { version: { increment: 1 } },
+        });
       return { ...allocation, deleted: true };
     }
     if (action === 'save-period') {
@@ -6178,12 +6313,28 @@ export class AccountingService {
       ...result,
       items: result.items.map((item) => ({
         ...item,
-        accounting:
-          journals.find((j) => j.sourceKey === `${item.source}:${item.id}`) ??
-          null,
+        accounting: item.references
+          ? (item.references.journals.find((j) => j.bookId === bookId) ?? null)
+          : (journals.find(
+              (j) => j.sourceKey === `${item.source}:${item.id}`,
+            ) ?? null),
       })),
     };
   }
+  async readJournal(
+    bookId: string,
+    journalId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor);
+    await this.book(this.database.client, bookId, actor);
+    return readAccountingJournal(
+      this.database.client,
+      bookId,
+      v.uuid(journalId)!,
+    );
+  }
+
   async journalEvents(
     bookId: string,
     journalId: string,
@@ -6192,7 +6343,13 @@ export class AccountingService {
     this.require(actor);
     await this.book(this.database.client, bookId, actor);
     const journal = await this.database.client.accountingJournal.findFirst({
-      where: { id: v.uuid(journalId)!, bookId },
+      where: {
+        id: v.uuid(journalId)!,
+        bookId,
+        ...(this.fiscal?.current()
+          ? { periodId: this.fiscal.require(bookId)!.id }
+          : {}),
+      },
       select: { id: true, status: true },
     });
     if (!journal) throw new NotFoundException();
@@ -6228,6 +6385,7 @@ export class AccountingService {
     bookId: string,
     query: Record<string, string>,
   ) {
+    query = this.fiscal?.query(bookId, query) ?? query;
     const reference = query.to
       ? v.date(query.to)!
       : query.from
@@ -6265,6 +6423,7 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    query = this.fiscal?.query(bookId, query) ?? query;
     return this.database.client.$transaction(
       async (tx) => {
         await this.book(tx, bookId, actor);
@@ -6522,6 +6681,8 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind !== 'standard-mapping')
+      query = this.fiscal?.query(bookId, query) ?? query;
     if (kind === 'standard-mapping' || kind === 'standard-turnover')
       return this.database.client.$transaction(
         async (tx) => {
@@ -6785,15 +6946,17 @@ export class AccountingService {
           rows: rows.slice((page - 1) * pageSize, page * pageSize),
         });
         if (kind === 'comparative') {
+          this.fiscal?.assertPeriod(bookId, query.leftPeriodId);
+          this.fiscal?.assertPeriod(bookId, query.rightPeriodId);
           const left = await this.reportData(tx, bookId, {
-            periodId: query.leftPeriodId ?? '',
+            periodId: query.leftPeriodId ?? query.periodId ?? '',
             from: query.leftFrom ?? '',
             to: query.leftTo ?? '',
             activeOnly: query.activeOnly ?? '',
             groupId: query.groupId ?? '',
           });
           const right = await this.reportData(tx, bookId, {
-            periodId: query.rightPeriodId ?? '',
+            periodId: query.rightPeriodId ?? query.periodId ?? '',
             from: query.rightFrom ?? '',
             to: query.rightTo ?? '',
             activeOnly: query.activeOnly ?? '',
@@ -6989,6 +7152,7 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    query = this.fiscal?.query(bookId, query) ?? query;
     return this.database.client.$transaction(
       async (tx) => {
         await this.book(tx, bookId, actor);

@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
+import { AccountingFiscalDefault } from './accounting-fiscal-default';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import {
   Dialog,
@@ -213,6 +214,7 @@ export function AccountingLedgerEditor({
         deleteTarget.version,
       );
       if (result) {
+        if (deleteTarget.isDefault && book) setVersion(book.version + 1);
         setSelectedAllocationId('');
         setPeriod(null);
       }
@@ -412,6 +414,7 @@ export function AccountingLedgerEditor({
                   'تاریخ شروع',
                   'تاریخ پایان',
                   'سال',
+                  'پیش‌فرض شرکت',
                   '',
                 ].map((label) => (
                   <th key={label} className="border-e px-3 py-2 font-normal">
@@ -452,6 +455,17 @@ export function AccountingLedgerEditor({
                         {row.endDate}
                       </td>
                       <td className="p-3">{year?.code}</td>
+                      <td className="p-3">
+                        <AccountingFiscalDefault
+                          book={snapshot}
+                          yearId={row.fiscalYearId}
+                          busy={locked}
+                          run={run}
+                          onChanged={() =>
+                            setVersion(snapshot.book.version + 1)
+                          }
+                        />
+                      </td>
                       <td>
                         <Button
                           type="button"

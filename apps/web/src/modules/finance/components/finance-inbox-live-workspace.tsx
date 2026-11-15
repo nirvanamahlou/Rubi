@@ -1,6 +1,9 @@
 import { ReceiptVoidDialog } from './receipt-void-dialog';
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { FinanceReservationDetails } from './finance-reservation-details';
+import {
+  FinanceContractReadView,
+  FinanceSourceReferenceLinks,
+} from './finance-source-references';
 import {
   RECEIPT_FILE_ACCEPT,
   attachmentMimeType,
@@ -171,6 +174,9 @@ export function FinanceInboxLiveWorkspace() {
     error: string;
   } | null>(null);
   const [search, setSearch] = useState('');
+  const [fiscalBucket, setFiscalBucket] = useState<'CURRENT' | 'CARRY_FORWARD'>(
+    'CURRENT',
+  );
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
   const [category, setCategory] = useState<'ALL' | 'PURCHASE' | 'RECEIPT'>(
     'ALL',
@@ -196,6 +202,7 @@ export function FinanceInboxLiveWorkspace() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const filterKey = JSON.stringify({
+    fiscalBucket,
     approvalGroup,
     category,
     search,
@@ -264,6 +271,7 @@ export function FinanceInboxLiveWorkspace() {
   const [accountMaskedId, setAccountMaskedId] = useState('');
   const inboxQuery = useMemo<FinanceInboxQueryV1>(
     () => ({
+      fiscalBucket,
       approvalGroup,
       search,
       source: source === 'ALL' ? undefined : source,
@@ -280,6 +288,7 @@ export function FinanceInboxLiveWorkspace() {
       pageSize: 25,
     }),
     [
+      fiscalBucket,
       approvalGroup,
       search,
       source,
@@ -814,16 +823,12 @@ export function FinanceInboxLiveWorkspace() {
           className="max-h-[90dvh] max-w-5xl overflow-y-auto"
         >
           <DialogTitle>مشخصات کلی</DialogTitle>
-          {generalItem?.source === 'SALES' ? (
-            <ContractFinancialSummary id={generalItem.sourceContextReference} />
+          {generalItem?.references?.contracts.length ? (
+            generalItem.references.contracts.map((contract) => (
+              <FinanceContractReadView key={contract.id} id={contract.id} />
+            ))
           ) : (
-            generalItem && (
-              <FinanceReservationDetails
-                key={generalItem.id}
-                id={generalItem.sourceContextReference}
-                contractNumber={generalItem.contractReference!}
-              />
-            )
+            <p>ارتباط قابل مشاهده با قرارداد ثبت نشده است.</p>
           )}
         </DialogContent>
       </Dialog>
@@ -1278,6 +1283,31 @@ export function FinanceInboxLiveWorkspace() {
             <div>
               <h3 className="font-bold">فهرست درخواست‌ها</h3>
               <div
+                className="mt-3 flex gap-2"
+                role="group"
+                aria-label="سال مبدأ درخواست"
+              >
+                {(
+                  [
+                    ['CURRENT', 'سال مالی فعال'],
+                    ['CARRY_FORWARD', 'بدهی و طلب سنوات قبل'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={fiscalBucket === value ? 'primary' : 'outline'}
+                    aria-pressed={fiscalBucket === value}
+                    onClick={() => {
+                      setFiscalBucket(value);
+                      setSelectedId(null);
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <div
                 className="mt-3 flex flex-wrap gap-2"
                 role="group"
                 aria-label="وضعیت تأیید مالی"
@@ -1398,11 +1428,15 @@ export function FinanceInboxLiveWorkspace() {
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                  <bdi className="break-all">
-                    {item.contractReference
-                      ? `قرارداد ${item.contractReference}`
-                      : ''}
-                  </bdi>
+                  <FinanceSourceReferenceLinks references={item.references} />
+                  {!item.references?.contracts.length &&
+                  item.contractReference ? (
+                    <bdi className="break-all">
+                      {['SALES', 'RESERVATIONS'].includes(item.source)
+                        ? `قرارداد ${item.contractReference}`
+                        : item.contractReference}
+                    </bdi>
+                  ) : null}
                   <span>
                     {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
                   </span>
@@ -1499,6 +1533,49 @@ export function FinanceInboxLiveWorkspace() {
                   </p>
                 </div>
                 <div className="space-y-4 p-5">
+                  {selected.carryForward ? (
+                    <section
+                      className="rounded-md border border-border p-3"
+                      aria-label="مانده منتقل‌شده از سنوات قبل"
+                    >
+                      <strong>بدهی و طلب سنوات قبل</strong>
+                      <p>
+                        سال مبدأ:{' '}
+                        {selected.carryForward.originalYearTitle ??
+                          'فاقد تخصیص سال مالی'}{' '}
+                        — تاریخ مبدأ:{' '}
+                        {faDate(selected.carryForward.originalDate)}
+                      </p>
+                      <table className="mt-2 w-full text-sm">
+                        <thead>
+                          <tr>
+                            <th>ارز</th>
+                            <th>مبلغ اولیه</th>
+                            <th>مانده قابل تسویه</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selected.carryForward.balances.map(
+                            (balance, index) => (
+                              <tr key={index}>
+                                <td>{currencySymbol(balance.currencyCode)}</td>
+                                <td dir="ltr">
+                                  {formatSalesMoney(balance.originalAmount)}
+                                </td>
+                                <td dir="ltr">
+                                  {formatSalesMoney(balance.remainingAmount)}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        تسویه در سال مالی فعال ثبت و به همین درخواست متصل
+                        می‌شود.
+                      </p>
+                    </section>
+                  ) : null}
                   {selected.purchaseFx?.length ? (
                     <div className={styles.detailFx}>
                       <PurchaseFxSummary entries={selected.purchaseFx} />
@@ -1568,9 +1645,27 @@ export function FinanceInboxLiveWorkspace() {
                       id={selected.sourceContextReference}
                     />
                   )}
+                  <FinanceSourceReferenceLinks
+                    references={selected.references}
+                  />
                   <dl className={styles.detailFacts}>
                     {[
-                      ['قرارداد', selected.contractReference ?? '—'],
+                      [
+                        'قرارداد',
+                        selected.references?.contracts
+                          .map((c) => c.number)
+                          .join('، ') ||
+                          (['SALES', 'RESERVATIONS'].includes(selected.source)
+                            ? selected.contractReference
+                            : null) ||
+                          '—',
+                      ],
+                      [
+                        'مرجع ثبت‌شده',
+                        ['SALES', 'RESERVATIONS'].includes(selected.source)
+                          ? '—'
+                          : (selected.contractReference ?? '—'),
+                      ],
                       [
                         'طرف‌حساب / کارمند',
                         selected.partyDisplaySnapshot ?? '—',

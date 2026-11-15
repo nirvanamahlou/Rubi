@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { fiscalRequestHeaders } from '../fiscal-request-state';
 export function exportQueryString(query: FinanceExportQueryV1) {
   return new URLSearchParams(
     Object.entries(query)
@@ -22,11 +23,17 @@ export async function downloadFinanceExport(
   if (!base) throw new Error('نشانی API مالی تنظیم نشده است.');
   const path =
     format === 'pdf' ? '/finance/export/pdf?' : base + '/finance/export.xlsx?';
+  // Both the API download and the private PDF proxy use the same frozen visit.
+  const contextHeaders = fiscalRequestHeaders(
+    base + '/finance/export-data',
+    base,
+  );
   const get = () =>
     fetch(path + exportQueryString(query), {
       credentials: 'include',
       cache: 'no-store',
       redirect: 'error',
+      ...(contextHeaders ? { headers: contextHeaders } : {}),
     });
   let response = await get();
   if (response.status === 401 && (await refreshAuthenticatedSession(base)))

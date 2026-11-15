@@ -376,6 +376,18 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  references?: import('./source-references').FinanceSourceReferencesV1;
+  fiscalBucket?: 'CURRENT' | 'CARRY_FORWARD';
+  carryForward?: {
+    originalDate: string;
+    originalPeriodId: string | null;
+    originalYearTitle: string | null;
+    balances: readonly {
+      currencyCode: string;
+      originalAmount: string;
+      remainingAmount: string;
+    }[];
+  };
   /** Existing Sales declaration; optional for historical payments. */
   destinationAccountTitle?: string | null;
   /** Sales-declared destination; Finance must independently approve the receipt. */
@@ -717,6 +729,7 @@ export interface FinanceHistoryQueryV1 {
   requestId?: string;
 }
 export interface FinanceHistoryItemV1 {
+  references?: import('./source-references').FinanceSourceReferencesV1;
   id: string;
   source: FinanceHistorySourceV1;
   requestId: string;
@@ -740,6 +753,7 @@ export interface FinanceHistoryV1 {
 }
 
 export interface FinanceInboxQueryV1 {
+  fiscalBucket?: 'CURRENT' | 'CARRY_FORWARD' | undefined;
   /** Finance review grouping, applied before pagination and export. */
   approvalGroup?: 'PENDING' | 'APPROVED' | undefined;
   category?: 'PURCHASE' | 'RECEIPT' | undefined;
@@ -784,7 +798,11 @@ export interface FinanceExportSnapshotV1 {
   title: string;
   generatedAt: string;
   preparedBy: string;
-  filterSnapshot: FinanceExportQueryV1;
+  filterSnapshot: FinanceExportQueryV1 & {
+    company?: string;
+    fiscalYear?: string;
+    fiscalPeriodId?: string;
+  };
   columns: readonly { label: string; type: 'TEXT' | 'DECIMAL' | 'DATE' }[];
   rows: readonly (readonly (string | null)[])[];
   /** Currency totals are never combined or implicitly converted. */
@@ -809,3 +827,4 @@ export interface FinancePurchaseFxV1 {
 }
 
 export * from './receipt-allocation';
+export * from './fiscal-context';

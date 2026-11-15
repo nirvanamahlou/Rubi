@@ -23,6 +23,56 @@ function salesReceiptPages(findMany: ReturnType<typeof vi.fn>) {
 }
 
 describe('Sales Finance inbox projection', () => {
+  it('keeps receipt identity separate from its contract ID and business contract number', async () => {
+    const repository = {
+      confirmedFinancePayments: vi.fn().mockResolvedValue([
+        {
+          id: 'receipt',
+          contractId: 'contract',
+          contract: {
+            contractNumber: '00025',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+            customerId: 'customer',
+          },
+          financeConfirmedAt: new Date('2026-01-02T00:00:00Z'),
+          amount: { toString: () => '1.0001' },
+          currencyCode: 'IRR',
+          financeReceiptAccountId: null,
+          method: 'CASH',
+          financePaymentReference: '00088',
+        },
+      ]),
+    };
+    const service = new SalesService(
+      repository as unknown as SalesRepository,
+      {} as SalesCustomersPublicAdapter,
+      {} as SalesTicketAvailabilityPort,
+    );
+    const result = await service.financeReceiptHistory(
+      {
+        userId: 'user',
+        branchIds: ['branch'],
+        permissions: ['finance.read'],
+      } as AuthenticatedActor,
+      {},
+      25,
+      'contract',
+    );
+    expect(result[0]).toMatchObject({
+      id: 'receipt',
+      requestId: 'contract',
+      trackingNumber: '00025',
+      reference: '00088',
+      amount: '1.0001',
+    });
+    expect(repository.confirmedFinancePayments).toHaveBeenCalledWith(
+      ['branch'],
+      {},
+      25,
+      'contract',
+      {},
+    );
+  });
   it('queries pending and due scheduled receipts only in the requested branches', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const { repository } = salesReceiptPages(findMany);

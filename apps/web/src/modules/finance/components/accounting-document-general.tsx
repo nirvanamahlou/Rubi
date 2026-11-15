@@ -52,13 +52,24 @@ export function AccountingDocumentGeneral({
   canPost: boolean;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const period = book.periods.find(
-    (row) =>
-      row.status === 'OPEN' && row.startDate <= today && row.endDate >= today,
-  );
+  const period =
+    book.periods.length === 1
+      ? book.periods[0]
+      : book.periods.find(
+          (row) =>
+            row.status === 'OPEN' &&
+            row.startDate <= today &&
+            row.endDate >= today,
+        );
   const [step, setStep] = useState(0);
   const [fromDate, setFromDate] = useState(period?.startDate ?? '');
-  const [toDate, setToDate] = useState(period ? today : '');
+  const [toDate, setToDate] = useState(
+    period
+      ? today < period.startDate || today > period.endDate
+        ? period.endDate
+        : today
+      : '',
+  );
   const [filter, setFilter] = useState('date');
   const [method, setMethod] = useState('NONE');
   const [separateYearEnd, setSeparateYearEnd] = useState(false);

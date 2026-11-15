@@ -1,5 +1,6 @@
 /** Versioned read projection; source facts and amounts are never client-editable. */
 export interface AccountingFinancialEventV1 {
+  references?: import('./source-references').FinanceSourceReferencesV1;
   id: string;
   source: string;
   basisEventId?: string;
