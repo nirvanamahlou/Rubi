@@ -41,6 +41,19 @@ describe('vetted Workbench guidance', () => {
     );
   });
   it('distinguishes notifications from notes and request approval from submission', () => {
+    expect(resolveWorkbenchGuide('چطور مرخصی رو تایید کنم؟')?.topic?.id).toBe(
+      'request-status',
+    );
+    expect(
+      resolveWorkbenchGuide('جانشین مرخصی را چطور تایید کنم؟')?.topic?.id,
+    ).toBe('substitute');
+    expect(
+      resolveWorkbenchGuide('مرخصی رو چجوری ساعتی ثبت کنم؟')?.topic?.id,
+    ).toBe('leave-hourly');
+    expect(resolveWorkbenchGuide('مرخصی رو چجوری لغو کنم؟')?.topic?.id).toBe(
+      'request-delete',
+    );
+    expect(resolveWorkbenchGuide('مرخصی پیام')?.clarification).toBeTruthy();
     expect(
       resolveWorkbenchGuide('مرخصی و مساعده میخوام')?.clarification,
     ).toBeTruthy();

@@ -41,11 +41,28 @@ export function resolveWorkbenchGuide(
     const topic = catalog.topics.find((t) => t.id === previous);
     if (topic) return { topic, goal };
   }
+  // Extract only a public procedural intent; no employee details leave the browser.
+  const leaveIntent = /مرخصی/.test(text)
+    ? /جانشین/.test(text)
+      ? 'substitute'
+      : /لغو|حذف/.test(text)
+        ? 'request-delete'
+        : /تایید|تأیید|وضعیت|رد شده|ردشده/.test(text)
+          ? 'request-status'
+          : /استعلاجی/.test(text)
+            ? 'leave-medical'
+            : /ساعتی/.test(text)
+              ? 'leave-hourly'
+              : /روزانه/.test(text)
+                ? 'leave-daily'
+                : undefined
+    : undefined;
   const matches = catalog.topics
     .map((topic) => ({
       topic,
       score: Math.max(
         0,
+        leaveIntent === topic.id ? 80 : 0,
         ...[topic.title, ...topic.aliases].map((alias) =>
           text.includes(normalize(alias))
             ? topic.id === 'home'
@@ -59,19 +76,26 @@ export function resolveWorkbenchGuide(
     .sort((a, b) => b.score - a.score);
   if (matches.length) {
     const top = matches[0]!;
+    const matchedPhrase = [top.topic.title, ...top.topic.aliases]
+      .map(normalize)
+      .filter((phrase) => text.includes(phrase))
+      .sort((a, b) => b.length - a.length)[0];
     if (top.topic.id === 'home' && /قرارداد|رزرو|بیمه/.test(text))
       return undefined;
     const other = matches.find(
       (r) =>
         family(r.topic) !== family(top.topic) &&
         r.score > 1 &&
+        ![r.topic.title, ...r.topic.aliases].some((phrase) =>
+          matchedPhrase?.includes(normalize(phrase)),
+        ) &&
         !(
           r.topic.tab === 'requests' &&
           top.topic.tab === 'requests' &&
           [family(r.topic), family(top.topic)].includes('requests')
         ),
     );
-    if (other && / و |همچنین/.test(text))
+    if (other)
       return {
         goal,
         clarification: `درباره «${top.topic.title}» راهنمایی می‌خواهید یا «${other.topic.title}»؟`,
