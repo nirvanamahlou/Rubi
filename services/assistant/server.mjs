@@ -1,4 +1,9 @@
 import { conversationConfiguration } from './conversation-config.mjs';
+import {
+  createWorkbenchGuideSelector,
+  validateWorkbenchGuide,
+  workbenchGuideConfiguration,
+} from './workbench-guide.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
 import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
@@ -33,6 +38,7 @@ export function createAssistantServer({
   now = () => new Date(),
   conversation,
   agent,
+  workbenchGuide,
 }) {
   const client = createErpClient({
     erpBaseUrl,
@@ -57,6 +63,7 @@ export function createAssistantServer({
     audit,
   });
   const windows = new Map();
+  const selectWorkbenchGuide = createWorkbenchGuideSelector(workbenchGuide);
   let inFlight = 0;
   function withinLimit(key, limit) {
     const time = Date.now();
@@ -74,6 +81,7 @@ export function createAssistantServer({
       const started = Date.now();
       const deadline = new AbortController();
       const agentRequest = request.url === '/v3/assistant/conversation';
+      const guideRequest = request.url === '/v1/assistant/workbench-guide';
       const timer = setTimeout(
         () => deadline.abort(),
         agentRequest ? 60000 : 10000,
@@ -82,7 +90,9 @@ export function createAssistantServer({
         if (!response.writableEnded) deadline.abort();
       });
       const conversationRequest =
-        request.url === '/v2/assistant/conversation' || agentRequest;
+        request.url === '/v2/assistant/conversation' ||
+        agentRequest ||
+        guideRequest;
       let actorId;
       let action;
       let optionsRequest = false;
@@ -185,6 +195,18 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
+        if (guideRequest) {
+          const input = await readMessage(
+            request,
+            deadline.signal,
+            validateWorkbenchGuide,
+          );
+          const result = await selectWorkbenchGuide(input, deadline.signal);
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'SUCCESS';
+          send(200, result);
+          return;
+        }
         if (agentRequest) {
           const message = await readMessage(
             request,
@@ -312,6 +334,7 @@ if (
   const service = createAssistantServer({
     conversation: conversationConfiguration(),
     agent: dataAgentConfiguration(),
+    workbenchGuide: workbenchGuideConfiguration(),
     identityTimeoutMs: 5000,
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:

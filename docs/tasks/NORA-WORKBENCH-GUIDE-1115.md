@@ -1,0 +1,27 @@
+# Nora Workbench guidance — PC-C —2026-11-15
+
+## Contract and ownership
+
+Owner approved procedural help for the existing Workbench and the internal-catalog fallback during Groq quota/outage. Base develop fe0cd4fa9. Workbench, HR, documents and messaging source files are reference-only; no producer/UI/workflow, database, migration, dependency or permission changes. The independently pinned Sales30-case evaluation is not changed or certified by this work.
+
+The version1 catalog has30 topics across all11 real tabs. Topics carry actual navigation, prerequisites, steps, troubleshooting, limitations, next action, aliases and repository source references. Coverage includes home/notifications, request creation/recipient/status, daily/hourly/medical leave and substitution, attendance correction, advance requests, messages/search/replies/forwarding/reactions/templates/groups, documents, notes/checklists/folders/favorites/undo, calendar, activity, performance/leave balances, daily packages, feedback/anonymous attachments, account/password/sessions and linked procurement follow-ups. The table inventory in the approved plan is fully represented.
+
+Known limitations are explicit: procedural help does not read personal records or identify the actual reason for a rejection; submission is not approval/payment; performance commission and personal payable/receivable are not connected; the current calendar event form has a date, not an invented independent time field; reminder/callback and workflow deadlines are not the same. Feedback anonymity does not anonymize attachment contents. The generated instructions never request passwords or medical documents in chat.
+
+## Interfaces and data flow
+
+Canonical content: services/assistant/workbench-guides.json. The Web resolver reads the same catalog as the service validator. POST /api/assistant/workbench-guide is a bounded same-origin BFF to POST /v1/assistant/workbench-guide. Wire input is exactly {version:1,topicId,goal}; goal is steps, troubleshoot or follow-up. Output is {version:1,topicId,goal,selection:model|internal}. No arbitrary URL, SQL, employee ID, history, form value, file content or free-text question is accepted. The Web builds the displayed answer from its vetted catalog and ignores provider-authored prose.
+
+The native service checks authentication/rate limits before selection and revalidates the same actor afterwards. Groq receives only catalog identifiers/goals and one tool definition, workbench_guide. It selects that tool once; no SQL loop or domain read/write tools are offered. Malformed tools/content, provider400/403/429/5xx and transport failure fall back to the internal catalog. Organization429 starts a bounded Retry-After cooldown; no key rotation/retry loop. Session401/403 at the ERP boundary is never hidden by the fallback. The Web can still answer static known guidance when the independent service is absent; this grants no private data access.
+
+Use existing dataAgentConfiguration admission for the Germany CONNECT proxy, NODE_USE_ENV_PROXY and NO_PROXY checks. No relaxed proxy endpoint, TLS change or direct fallback is introduced. The normal service entrypoint configures the selector automatically when Agent runtime is enabled. A custom deployed runtime that invokes createAssistantServer must explicitly pass workbenchGuide: workbenchGuideConfiguration() from the new module. Without it, the service intentionally stays in internal mode; do not claim a live model selection merely because the guide renders.
+
+Composer guidance works independently of the SQL Agent build flag. Existing local guides and corporate SQL questions retain their routing. Personal topics use the Workbench resolver before contract form help; unrelated contract questions never become Workbench help. Topic memory is scoped to account/company/permissions and the current Workbench tab; remounting aborts owned pending requests, preventing obsolete delivery. No form scraping or Workbench DOM observer is added.
+
+## Validation and release gates
+
+Focused catalog/resolver tests cover every topic, source-file existence, ambiguous questions, follow-up, actual routes and financial/private-data limitations. Web transport tests cover outage fallback,401/403, cancellation and exact BFF Origin. Native service tests cover tool selection, strict identifiers, model/protocol failure,429 cooldown, unauthenticated access and mid-flight identity change. Existing contract guidance, SQL Agent and floating UI regressions remain in the full assistant suites.
+
+At first validation,101 service tests and223 Assistant Web tests passed. Focused service/Web ESLint and Web typecheck passed. Final build, browser validation and hosted exact-head CI results are appended after completion. These deterministic provider fixtures do not constitute live Groq selection acceptance; the shared Organization quota and separate Sales acceptance remain independent.
+
+No production service/configuration/business rows changed for this work item. Local browser checks use only the pre-existing nora_agent_test_browser_1115 synthetic database and owned ports3340/44328/44329. No real leave, feedback, message or document is submitted on production. Production release requires separate approval after exact-head CI and an additive private-service/BFF ingress check. Rollback is source/image rollback of this bounded guide addition; no schema rollback.

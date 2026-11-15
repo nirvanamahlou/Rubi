@@ -10133,3 +10133,7 @@ Owner explicitly authorizes synchronizing website-entered passenger identity to 
 HOURLY-LEAVE-DEADLINE-1115: hourly requests accepted through assigned workday end, including after absence; next-day backdating rejected. Legacy cutoff used when no schedule resolves. Scoped ESLint passed; test collection blocked by missing contracts build.
 
 OVERTIME-TIME-INPUT-1115: overtime-start uses native time input in contextual working-hours form. Scoped ESLint passed.
+
+### 2026-11-15 PC-C — Nora Workbench procedural guide
+
+Approved guide-only implementation on codex/pc-c-nora-workbench-guide-1115 from fe0cd4fa9:30 versioned topics/all11 tabs, read-only workbench_guide native-tool selection, strict identifier-only model payload, internal catalog fallback, authenticated/Origin-protected BFF and scope-safe Composer routing. Producer Workbench/HR/messaging/documents behavior and the pinned Sales SQL matrix are unchanged.101 service and223 Assistant Web tests, focused lint, Web typecheck and Agent-enabled production Web build pass; API build passes after building its existing config package. Native synthetic browser acceptance is in progress; no live Groq success or Production publication claimed. Details: docs/tasks/NORA-WORKBENCH-GUIDE-1115.md.

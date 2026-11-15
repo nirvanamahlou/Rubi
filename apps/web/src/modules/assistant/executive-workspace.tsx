@@ -1,5 +1,6 @@
 'use client';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
 import { isContractReportQuestion, portfolioKind } from './contract-reports';
 import { contractAdvice } from './contract-advice';
 import {
@@ -240,22 +241,31 @@ type ComposerProps = {
   floating?: boolean;
 };
 export function AssistantComposer(props: ComposerProps) {
-  return process.env.NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED === 'true' ? (
-    <CompanyScopedAgentComposer {...props} />
-  ) : (
-    <AssistantComposerContent {...props} />
+  return (
+    <CompanyScopedAgentComposer
+      {...props}
+      agentMode={process.env.NEXT_PUBLIC_ASSISTANT_AGENT_ENABLED === 'true'}
+    />
   );
 }
-function CompanyScopedAgentComposer(props: ComposerProps) {
+function CompanyScopedAgentComposer({
+  agentMode,
+  ...props
+}: ComposerProps & { agentMode: boolean }) {
   const { context } = useLegalEntityContext();
   const actor = useAccessActor();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const key = JSON.stringify([
     context,
     actor?.userId,
     actor?.branchIds,
     actor?.permissions,
+    pathname === '/workbench' ? (params.get('tab') ?? 'today') : null,
   ]);
-  return <AssistantComposerContent key={key} {...props} agentMode />;
+  return (
+    <AssistantComposerContent key={key} {...props} agentMode={agentMode} />
+  );
 }
 function AssistantComposerContent({
   t,
@@ -289,6 +299,7 @@ function AssistantComposerContent({
       agent?: boolean;
       links?: ContractLink[];
       targets?: { id: string; label: string }[];
+      guideLink?: { href: string; label: string };
     }>
   >([]);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -301,11 +312,18 @@ function AssistantComposerContent({
   const inspecting = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const workbenchTab =
+    pathname === '/workbench'
+      ? (searchParams.get('tab') ?? 'today')
+      : undefined;
+  const workbenchTopic = useRef<string | undefined>(undefined);
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
   useEffect(() => {
     const resetRecord = () => {
+      workbenchTopic.current = undefined;
       inspecting.current?.abort();
       if (agentMode) {
         pending.current?.abort();
@@ -390,6 +408,7 @@ function AssistantComposerContent({
       content: string,
       links?: ContractLink[],
       targets?: { id: string; label: string }[],
+      guideLink?: { href: string; label: string },
     ) => {
       setMessages((previous) =>
         [
@@ -401,6 +420,7 @@ function AssistantComposerContent({
             local: true,
             ...(links?.length ? { links } : {}),
             ...(targets?.length ? { targets } : {}),
+            ...(guideLink ? { guideLink } : {}),
           },
         ].slice(-12),
       );
@@ -409,6 +429,47 @@ function AssistantComposerContent({
       setActionState(null);
       setDraft('');
     };
+    const workbenchHelp = resolveWorkbenchGuide(
+      message,
+      workbenchTab,
+      workbenchTopic.current,
+    );
+    if (workbenchHelp) {
+      if ('clarification' in workbenchHelp) {
+        replyLocally(workbenchHelp.clarification);
+        return;
+      }
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setActionState('loading');
+      setChatError(null);
+      try {
+        const answer = await loadWorkbenchGuide(
+          workbenchHelp.topic,
+          workbenchHelp.goal,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          workbenchTopic.current = workbenchHelp.topic.id;
+          replyLocally(answer, undefined, undefined, {
+            label: workbenchHelp.topic.title,
+            href: workbenchHelp.topic.href,
+          });
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setMessages([]);
+          setActionState(
+            error instanceof Error && error.message === 'HTTP_403'
+              ? 'forbidden'
+              : 'unauthenticated',
+          );
+        }
+      }
+      return;
+    }
+    workbenchTopic.current = undefined;
     const formHelp = readContractFormHelp(message);
     if (formHelp) {
       replyLocally(formHelp, undefined, formCorrectionTargets());
@@ -698,6 +759,11 @@ function AssistantComposerContent({
             {messages.map((item, index) => (
               <p key={index} data-role={item.role} dir="auto">
                 {item.content}
+                {item.guideLink && (
+                  <Link className="block underline" href={item.guideLink.href}>
+                    {item.guideLink.label}
+                  </Link>
+                )}
                 {item.local &&
                   item.targets?.map((target) => (
                     <button
