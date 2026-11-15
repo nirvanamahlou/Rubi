@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import type { AccountingBookV1, AccountingSnapshotV1 } from '@nora/contracts';
 import Link from '@/i18n/link';
 import { AccountingFiscalDefault } from './accounting-fiscal-default';
+import { AccountingDate } from './accounting-date';
 import { AccountingButton as Button } from './accounting-operations';
 import { Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -1526,11 +1527,17 @@ export function AccountingBaseList({
                           </div>
                         )}
                       <span className="line-clamp-2">
-                        {type === 'boolean'
-                          ? record.values[field] === 'true'
-                            ? 'بله'
-                            : 'خیر'
-                          : record.values[field] || '—'}
+                        {type === 'boolean' ? (
+                          record.values[field] === 'true' ? (
+                            'بله'
+                          ) : (
+                            'خیر'
+                          )
+                        ) : type === 'date' && record.values[field] ? (
+                          <AccountingDate value={record.values[field]} />
+                        ) : (
+                          record.values[field] || '—'
+                        )}
                       </span>
                     </td>
                   ))}

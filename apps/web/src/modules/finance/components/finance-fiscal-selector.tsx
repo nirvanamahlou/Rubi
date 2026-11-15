@@ -22,20 +22,26 @@ export function FinanceFiscalSelector() {
           !!fiscal.error ||
           fiscal.data?.isAggregate
         }
-        value={fiscal.temporary ? (fiscal.period?.id ?? '') : ''}
-        onChange={(event) => fiscal.select(event.target.value)}
+        value={fiscal.period?.id ?? ''}
+        onChange={(event) =>
+          fiscal.select(
+            event.target.value === fiscal.data?.defaultPeriodId
+              ? ''
+              : event.target.value,
+          )
+        }
       >
-        <option value="">
-          {fiscal.error
-            ? 'دریافت ناموفق'
-            : fiscal.loading
-              ? 'در حال دریافت…'
-              : fiscal.data?.isAggregate
-                ? 'یک شرکت انتخاب کنید'
-                : (fiscal.data?.periods.find(
-                    (row) => row.id === fiscal.data?.defaultPeriodId,
-                  )?.title ?? 'تعریف نشده')}
-        </option>
+        {!fiscal.period && (
+          <option value="" disabled>
+            {fiscal.error
+              ? 'دریافت ناموفق'
+              : fiscal.loading
+                ? 'در حال دریافت…'
+                : fiscal.data?.isAggregate
+                  ? 'یک شرکت انتخاب کنید'
+                  : 'تعریف نشده'}
+          </option>
+        )}
         {fiscal.data?.periods.map((period) => (
           <option key={period.id} value={period.id}>
             {period.title}
