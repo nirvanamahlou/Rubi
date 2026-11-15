@@ -252,9 +252,15 @@ export async function GET(
           name: String(airline.attributes.englishName || airline.name),
           code: airline.code,
         };
-        const logo = await get(
+        let logo = await get(
           `/master-data/selections/${salesContractId ? 'sales' : 'reservations'}/airlines/${airline.id}/logo`,
         ).catch(() => null);
+        // Only the bound website principal can use this contract-scoped sanitized
+        // brand fallback; normal workflow logo delivery remains branch-scoped.
+        if (!logo?.ok && salesContractId)
+          logo = await get(
+            `/sales/contracts/${salesContractId}/travel-documents/airline-logo/${encodeURIComponent(carrierName)}`,
+          ).catch(() => null);
         if (!logo?.ok) return;
         const mime = logo.headers.get('content-type')?.split(';')[0];
         if (!mime || !['image/png', 'image/jpeg', 'image/webp'].includes(mime))

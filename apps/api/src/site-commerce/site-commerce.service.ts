@@ -1,3 +1,9 @@
+import { DocumentsService } from '../documents/documents.service';
+import {
+  attachAirlineLogos,
+  websiteAirlineLogo,
+  carrierKey,
+} from './airline-logos';
 import {
   BadRequestException,
   ConflictException,
@@ -5,6 +11,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type {
@@ -22,7 +29,7 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
-import { isFloatingSalesContract } from '@nora/contracts';
+import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { websiteFlightQuotes } from './ticket-quote';
 import {
@@ -49,6 +56,9 @@ export class SiteCommerceService {
     private readonly delivery: FinanceDeliveryService,
     @Inject(ReservationTicketDocumentsService)
     private readonly ticketDocuments: ReservationTicketDocumentsService,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -65,6 +75,44 @@ export class SiteCommerceService {
         'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
       );
     return binding.salePriceTargetId;
+  }
+
+  /** Read-only normalized branding for an already linked website contract. */
+  async ticketAirlineLogo(
+    contractId: string,
+    carrierName: string,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped('nss', actor);
+    if (
+      !this.documents ||
+      typeof carrierName !== 'string' ||
+      carrierName.length > 200 ||
+      !carrierKey(carrierName)
+    )
+      throw new NotFoundException();
+    const link = await this.db.client.websiteOrder.findFirst({
+      where: { siteCode: 'nss', branchId: scoped.branchIds[0]!, contractId },
+      select: { id: true },
+    });
+    if (!link) throw new NotFoundException();
+    const { data: contract } = await this.sales.detail(contractId, scoped);
+    if (
+      contract.status === 'CANCELLED' ||
+      !salesContractFlights(
+        contract.servicesDetail,
+        contract.ticketSelections,
+      ).some(
+        (flight) =>
+          carrierKey(flight.carrierNameSnapshot) === carrierKey(carrierName),
+      )
+    )
+      throw new NotFoundException();
+    const assets = await attachAirlineLogos([{ carrierName }], (name) =>
+      websiteAirlineLogo(name, scoped, this.references, this.documents!),
+    );
+    if (assets.length !== 1) throw new NotFoundException();
+    return Buffer.from(assets[0]!.dataBase64, 'base64');
   }
 
   async publication(
@@ -304,7 +352,31 @@ export class SiteCommerceService {
         });
       }
     }
-    return { version: 1, data };
+    if (!this.documents || site !== 'nss') return { version: 1, data };
+    const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
+    for (const product of data) {
+      if ('flight' in product && product.flight) flights.push(product.flight);
+      if ('tour' in product && product.tour) {
+        flights.push(product.tour.outbound);
+        if (product.tour.returning) flights.push(product.tour.returning);
+      }
+    }
+    // Reserve room for base64/URL overhead inside the existing four-MiB signed delivery.
+    const available = Math.floor(
+      Math.max(
+        0,
+        4 * 1024 * 1024 -
+          Buffer.byteLength(JSON.stringify({ version: 1, data })) -
+          128 * 1024,
+      ) * 0.7,
+    );
+    const airlineLogos = await attachAirlineLogos(
+      flights,
+      (name) =>
+        websiteAirlineLogo(name, scoped, this.references, this.documents!),
+      available,
+    );
+    return { version: 1, data, airlineLogos };
   }
 
   private async websiteTour(id: string, actor: AuthenticatedActor) {
