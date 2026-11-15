@@ -1,3 +1,7 @@
+## NORA-FINAL-CHOICE-1115 — PC-C — LOCAL_VERIFIED
+
+Owner requests compatible tool choice. Plan stage forces native tool; after an accepted plan, trusted orchestration permits auto choice and strictly shaped final JSON. No history substring can authorize final mode. Existing fresh-result references, role/scope rechecks and monetary boundaries remain enforced.21 targeted provider/orchestration tests pass. This fixes the forced-tool/final-output incompatibility only; full live matrix, guide-tool wiring and production activation remain pending.
+
 ## ACCOUNT-TREE-LEVELS-1114 — PC-D
 
 Context creation follows root -> GROUP -> GENERAL -> SUBSIDIARY, using the exact clicked parent and preserving code prefixes. Subsidiary is a leaf. Show all book-owned detail types for independently selected levels four/five/six; mark inactive rows and preserve only their existing same-account/same-level choices. Seventeen focused Web/i18n tests and 77 isolated PostgreSQL tests pass; scoped lint, formatting, API/Web TypeScript and both production builds pass. No schema/dependency/operational-data changes or deployment. Browser acceptance unavailable because of computer-use kernel-assets initialization failure. See docs/tasks/ACCOUNT-TREE-LEVELS-1114.md.

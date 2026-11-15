@@ -78,19 +78,93 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
   if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
   return {
-    async step(messages, { signal, remainingTokens = 40000 }) {
+    async step(
+      messages,
+      {
+        signal,
+        remainingTokens = 40000,
+        allowedTools,
+        allowFinalResponse = false,
+      },
+    ) {
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,
         reasoning_effort: 'low',
         max_completion_tokens: 2048,
         stream: false,
-        messages,
-        tools: AGENT_TOOLS,
-        tool_choice: 'required',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'The ONLY callable function is nora_step. All named operations such as set_plan and finish_answer are action values, NOT functions. For the final response call nora_step with action finish_answer and input containing status,text,resultIds,limitations. Never call json, commentary, finish_answer, or any other function. After receiving database result evidence, you may instead return ONLY a JSON object with exactly status,text,resultIds,limitations as the final response. Do not return Markdown or prose outside that JSON.',
+          },
+          ...messages.map((message) =>
+            message.tool_calls
+              ? {
+                  ...message,
+                  tool_calls: message.tool_calls.map((call) => ({
+                    ...call,
+                    function: {
+                      name: 'nora_step',
+                      arguments: JSON.stringify({
+                        action: call.function.name,
+                        input: JSON.parse(call.function.arguments),
+                      }),
+                    },
+                  })),
+                }
+              : message,
+          ),
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'nora_step',
+              description:
+                'Execute exactly one Nora protocol action. A final answer may use this action or the required final JSON shape when final responses are allowed. ' +
+                JSON.stringify(
+                  AGENT_TOOLS.filter(
+                    (t) =>
+                      !allowedTools || allowedTools.includes(t.function.name),
+                  ).map((t) => ({
+                    action: t.function.name,
+                    description: t.function.description,
+                  })),
+                ),
+              parameters: {
+                type: 'object',
+                properties: {
+                  action: {
+                    type: 'string',
+                    enum:
+                      allowedTools ?? AGENT_TOOLS.map((t) => t.function.name),
+                  },
+                  input: {
+                    type: 'object',
+                    properties: Object.assign(
+                      {},
+                      ...AGENT_TOOLS.map(
+                        (t) => t.function.parameters.properties,
+                      ),
+                    ),
+                    additionalProperties: false,
+                  },
+                },
+                required: ['action', 'input'],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: allowFinalResponse
+          ? 'auto'
+          : { type: 'function', function: { name: 'nora_step' } },
         parallel_tool_calls: false,
       });
-      if (Buffer.byteLength(body) > 256 * 1024)
+      const wireBody = body;
+      if (Buffer.byteLength(wireBody) > 256 * 1024)
         throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
       // UTF-8 bytes plus reserved completion/protocol allowance is a conservative
       // upper bound; do not start a provider call that can exhaust the run budget.
@@ -105,7 +179,7 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
               authorization: `Bearer ${apiKey}`,
               'content-type': 'application/json',
             },
-            body,
+            body: wireBody,
             redirect: 'error',
             cache: 'no-store',
             signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
@@ -121,6 +195,32 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
         const result = await boundedAgentJson(response, 65536);
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
+        if (result.choices?.length !== 1)
+          throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+        if (
+          choice?.finish_reason === 'stop' &&
+          typeof choice.message?.content === 'string'
+        ) {
+          if (!allowFinalResponse || calls?.length)
+            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+          const final = JSON.parse(choice.message.content);
+          if (
+            !final ||
+            Object.keys(final).sort().join(',') !==
+              'limitations,resultIds,status,text' ||
+            !['ANSWER', 'CLARIFY', 'REPLY'].includes(final.status)
+          )
+            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+          const tokens = result.usage?.total_tokens;
+          if (!Number.isSafeInteger(tokens) || tokens < 0)
+            throw new ServiceError(502, 'INVALID_AGENT_USAGE');
+          return {
+            id: 'final_' + crypto.randomUUID(),
+            name: 'finish_answer',
+            args: final,
+            tokens,
+          };
+        }
         if (
           result.choices?.length !== 1 ||
           choice.finish_reason !== 'tool_calls' ||
@@ -129,6 +229,22 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
         )
           throw new ServiceError(502, 'INVALID_AGENT_PLAN');
         const call = calls[0];
+        if (call.function?.name === 'nora_step') {
+          const dispatched = JSON.parse(call.function.arguments);
+          if (
+            !dispatched ||
+            Object.keys(dispatched).some(
+              (k) => !['action', 'input'].includes(k),
+            ) ||
+            !AGENT_TOOLS.some((t) => t.function.name === dispatched.action) ||
+            (allowedTools && !allowedTools.includes(dispatched.action))
+          )
+            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+          call.function = {
+            name: dispatched.action,
+            arguments: JSON.stringify(dispatched.input),
+          };
+        }
         if (
           call.type !== 'function' ||
           typeof call.id !== 'string' ||

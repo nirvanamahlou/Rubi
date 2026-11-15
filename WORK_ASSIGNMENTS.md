@@ -1,6 +1,6 @@
 ## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — ACTIVE
 
-Local Git identity Codex PC-C and existing PC-C assignments confirm this workstation identity. Independent branch codex/pc-c-nora-agent-live-acceptance-1114 from handoff0fb35cd02; implementation452d7edc6 and handoffcf50a30ce are ancestors. Reserve new synthetic acceptance harness/report and bounded Nora task/status notes. Prior source leases released at handoff. No migration/dependency/shared implementation changes reserved yet. Isolated local acceptance only; no production mutation, merge or deployment authorized. Preserve other workstation branch and live relay.
+Local Git identity Codex PC-C and existing PC-C assignments confirm this workstation identity. Independent branch codex/pc-c-nora-agent-live-acceptance-1114 from handoff0fb35cd02; implementation452d7edc6 and handoffcf50a30ce are ancestors. Reserve new synthetic acceptance harness/report and bounded Nora task/status notes. Prior source leases released at handoff. Live failure follow-up reserves services/assistant/agent-provider.mjs and data-agent.mjs plus their regressions: restrict offered tools by protocol stage; no budgets or authorization changes. No migration/dependency changes. Isolated local acceptance only; no production mutation, merge or deployment authorized. Preserve other workstation branch and live relay.
 
 ## REPORT-DASHBOARD-ACTIVATION-1114 — PC-C helper — READY_FOR_REVIEW
 

@@ -5,6 +5,113 @@ import { createAgentProvider } from './agent-provider.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
 
 const contextId = 'a'.repeat(64);
+test('final output mode is trusted orchestration state, not a resultId string in history', async () => {
+  const sent = [];
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async (_url, options) => {
+      sent.push(JSON.parse(options.body));
+      return Response.json({
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: JSON.stringify({
+                status: 'CLARIFY',
+                text: 'Synthetic clarification',
+                resultIds: [],
+                limitations: [],
+              }),
+            },
+          },
+        ],
+        usage: { total_tokens: 10 },
+      });
+    },
+  });
+  const signal = new AbortController().signal;
+  await assert.rejects(
+    provider.step([{ role: 'tool', content: '{"resultId":"untrusted"}' }], {
+      signal,
+    }),
+    /INVALID_AGENT_PLAN/,
+  );
+  assert.deepEqual(sent[0].tool_choice, {
+    type: 'function',
+    function: { name: 'nora_step' },
+  });
+  const result = await provider.step([], { signal, allowFinalResponse: true });
+  assert.equal(sent[1].tool_choice, 'auto');
+  assert.equal(result.args.status, 'CLARIFY');
+});
+test('provider offers only the current protocol stage tools', async () => {
+  let sent;
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async (_url, options) => {
+      sent = JSON.parse(options.body);
+      return Response.json({
+        choices: [
+          {
+            finish_reason: 'tool_calls',
+            message: {
+              tool_calls: [
+                {
+                  id: 'stage_1',
+                  type: 'function',
+                  function: {
+                    name: 'set_plan',
+                    arguments: '{"steps":["Synthetic"]}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        usage: { total_tokens: 10 },
+      });
+    },
+  });
+  await provider.step([{ role: 'user', content: 'Synthetic' }], {
+    signal: new AbortController().signal,
+    allowedTools: ['set_plan'],
+  });
+  assert.deepEqual(
+    sent.tools.map((tool) => tool.function.name),
+    ['nora_step'],
+  );
+  assert.deepEqual(sent.tools[0].function.parameters.properties.action.enum, [
+    'set_plan',
+  ]);
+});
+test('successful JSON final answer retains evidence validation by the agent', async () => {
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: JSON.stringify({
+                status: 'ANSWER',
+                text: 'Synthetic',
+                resultIds: [],
+                limitations: [],
+              }),
+            },
+          },
+        ],
+        usage: { total_tokens: 10 },
+      }),
+  });
+  const step = await provider.step(
+    [{ role: 'tool', content: '{"resultId":"synthetic"}' }],
+    { signal: new AbortController().signal, allowFinalResponse: true },
+  );
+  assert.equal(step.name, 'finish_answer');
+  assert.deepEqual(step.args.resultIds, []);
+});
 const resultId = '12345678-1234-1234-1234-123456789abc';
 const message = { version: 1, message: 'فروش این ماه چقدر بوده؟', history: [] };
 const signal = () => new AbortController().signal;
