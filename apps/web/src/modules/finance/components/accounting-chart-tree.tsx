@@ -1,5 +1,11 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import {
+  useRef,
+  useState,
+  type ReactNode,
+  type MouseEvent,
+  type KeyboardEvent,
+} from 'react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -8,23 +14,70 @@ import {
   Search,
 } from 'lucide-react';
 import type { AccountingAccountV1 } from '@nora/contracts';
+import { createPortal } from 'react-dom';
 import { normalizeFilterText } from '../accounting-list-filters';
+import { chartChildAction } from '../accounting-chart-form';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/overlays';
 import styles from './accounting-chart-tree.module.css';
 
 export function AccountingChartTree({
   accounts,
   selectedId,
   onSelect,
+  onCreateChild,
+  creationDisabled = false,
 }: {
   accounts: AccountingAccountV1[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onCreateChild?: (parentId: string) => void;
+  creationDisabled?: boolean;
 }) {
   const [expanded, setExpanded] = useState<string[]>(['root']);
   const [filters, setFilters] = useState({ code: '', title: '', level: '' });
   const [applied, setApplied] = useState<typeof filters | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [sort, setSort] = useState<'code' | 'title'>('code');
+  const [context, setContext] = useState<{
+    parentId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const contextSource = useRef<HTMLElement | null>(null);
+  const contextParent = accounts.find(
+    (account) => account.id === context?.parentId,
+  );
+  const contextAction = chartChildAction(contextParent);
+  const showContext = (
+    event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
+    parentId: string,
+  ) => {
+    if (!onCreateChild) return;
+    event.preventDefault();
+    event.stopPropagation();
+    contextSource.current = event.currentTarget.matches('button')
+      ? event.currentTarget
+      : event.currentTarget.querySelector<HTMLElement>(
+          '[aria-haspopup="menu"]',
+        );
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pointer =
+      'clientX' in event && (event.clientX !== 0 || event.clientY !== 0);
+    setContext({
+      parentId,
+      x: pointer ? event.clientX : rect.right,
+      y: pointer ? event.clientY : rect.bottom,
+    });
+  };
+  const contextKeys = (event: KeyboardEvent<HTMLElement>, parentId: string) => {
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
+      showContext(event, parentId);
+  };
   const toggle = (id: string) =>
     setExpanded((rows) =>
       rows.includes(id) ? rows.filter((row) => row !== id) : [...rows, id],
@@ -57,7 +110,11 @@ export function AccountingChartTree({
     const opened = expanded.includes(account.id);
     return (
       <li key={account.id}>
-        <div className={styles.row} data-selected={selectedId === account.id}>
+        <div
+          className={styles.row}
+          data-selected={selectedId === account.id}
+          onContextMenu={(event) => showContext(event, account.id)}
+        >
           <button
             type="button"
             disabled={!children.length}
@@ -75,10 +132,12 @@ export function AccountingChartTree({
           <button
             type="button"
             onClick={() => onSelect(account.id)}
+            onKeyDown={(event) => contextKeys(event, account.id)}
+            aria-haspopup={onCreateChild ? 'menu' : undefined}
             aria-pressed={selectedId === account.id}
             className={styles.account}
           >
-            {children.length ? (
+            {account.level !== 'SUBSIDIARY' ? (
               <Folder className="size-4 shrink-0" aria-hidden="true" />
             ) : (
               <FileText className="size-4 shrink-0" aria-hidden="true" />
@@ -166,7 +225,10 @@ export function AccountingChartTree({
         </form>
       )}
       <div className={styles.canvas}>
-        <div className={styles.root}>
+        <div
+          className={styles.root}
+          onContextMenu={(event) => showContext(event, '')}
+        >
           <button
             type="button"
             aria-label={
@@ -187,6 +249,8 @@ export function AccountingChartTree({
           <button
             type="button"
             onClick={() => onSelect('')}
+            onKeyDown={(event) => contextKeys(event, '')}
+            aria-haspopup={onCreateChild ? 'menu' : undefined}
             aria-pressed={!selectedId}
             className={styles.rootTitle}
           >
@@ -197,6 +261,46 @@ export function AccountingChartTree({
           <ul>{roots.map((account) => renderAccount(account))}</ul>
         )}
       </div>
+      <DropdownMenu
+        open={context !== null}
+        onOpenChange={(open) => {
+          if (!open) setContext(null);
+        }}
+        dir="rtl"
+      >
+        {context &&
+          createPortal(
+            <DropdownMenuTrigger
+              aria-hidden="true"
+              tabIndex={-1}
+              className="pointer-events-none fixed h-0 w-0 opacity-0"
+              style={{ left: context.x, top: context.y }}
+            />,
+            document.body,
+          )}
+        <DropdownMenuContent
+          aria-label="عملیات ساختار حساب"
+          align="start"
+          sideOffset={0}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            contextSource.current?.focus();
+          }}
+        >
+          <DropdownMenuItem
+            disabled={
+              creationDisabled ||
+              !contextAction ||
+              (!!context?.parentId && !contextParent)
+            }
+            onSelect={() => {
+              if (context && contextAction) onCreateChild?.(context.parentId);
+            }}
+          >
+            {contextAction?.label ?? 'ایجاد زیرمجموعه مجاز نیست'}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <div className={styles.results}>
         <p className="border-b border-border p-3 font-bold">نتایج جستجو</p>
         <table className="w-full text-right">

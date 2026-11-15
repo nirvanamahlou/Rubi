@@ -30,6 +30,7 @@ import {
   accountNatureOptions,
   accountTypeOptions,
   accountToDraft,
+  chartChildAction,
   chartPayload,
   descriptionRows,
   natureControlOptions,
@@ -39,6 +40,7 @@ import {
   type ChartDetailLevel,
 } from '../accounting-chart-form';
 import { accountingApi } from '../api/accounting-api';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 
 type Run = <T = unknown>(
   action: string,
@@ -109,6 +111,7 @@ export function AccountingChartEditor({
   busy: boolean;
 }) {
   const router = useRouter();
+  const permissions = useAccessPermissions();
   const [selectedId, setSelectedId] = useState('');
   const [draft, setDraft] = useState<ChartDraft | null>(null);
   const accounts = book?.accounts ?? [];
@@ -117,6 +120,12 @@ export function AccountingChartEditor({
   const [subTab, setSubTab] = useState<string>(subsidiaryTabs[0]);
   const [detailLevel, setDetailLevel] = useState<ChartDetailLevel | null>(null);
   const selected = accounts.find((account) => account.id === selectedId);
+  const treeSelectedId = selectedId || draft?.parentId || '';
+  const childAction = chartChildAction(
+    accounts.find((account) => account.id === treeSelectedId),
+  );
+  const creationDisabled =
+    busy || !book || !permissions?.includes('finance.account.manage');
   const parent = accounts.find((account) => account.id === draft?.parentId);
   const close = () =>
     router.push(
@@ -183,14 +192,13 @@ export function AccountingChartEditor({
       },
     });
   };
-  const createChild = () =>
-    selected?.level === 'GROUP'
-      ? reset('GENERAL', selected.id)
-      : selected?.level === 'GENERAL'
-        ? reset('SUBSIDIARY', selected.id)
-        : selected?.level === 'SUBSIDIARY'
-          ? reset('SUBSIDIARY', selected.parentId ?? '')
-          : reset('GROUP');
+  const createChild = (parentId = treeSelectedId) => {
+    if (creationDisabled) return;
+    const owner = accounts.find((account) => account.id === parentId);
+    if (parentId && !owner) return;
+    const action = chartChildAction(owner);
+    if (action) reset(action.level, action.parentId);
+  };
   const period = periods.find((item) => item.status === 'OPEN') ?? periods[0];
   const turnover = useQuery({
     queryKey: [
@@ -290,14 +298,10 @@ export function AccountingChartEditor({
       <AccountingButton
         aria-label="جدید"
         permission="finance.account.manage"
-        disabled={busy || !book}
-        onClick={createChild}
+        disabled={creationDisabled || !childAction}
+        onClick={() => createChild()}
       >
-        {selected?.level === 'GROUP'
-          ? 'حساب کل جدید'
-          : selected
-            ? 'حساب معین جدید'
-            : 'گروه حساب جدید'}
+        {childAction?.label ?? 'ایجاد زیرمجموعه مجاز نیست'}
       </AccountingButton>
       <AccountingDeleteButtons
         busy={busy || !book}
@@ -310,8 +314,10 @@ export function AccountingChartEditor({
       <div className="grid min-h-[40rem] items-start gap-3 @min-[30rem]:grid-cols-[14rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[18rem_minmax(0,1fr)]">
         <AccountingChartTree
           accounts={accounts}
-          selectedId={selectedId}
+          selectedId={treeSelectedId}
           onSelect={open}
+          onCreateChild={createChild}
+          creationDisabled={creationDisabled}
         />
         {draft && (
           <form
@@ -487,6 +493,7 @@ export function AccountingChartEditor({
                         attributes={draft.attributes}
                         types={book?.configurations ?? []}
                         level={detailLevel}
+                        disabled={creationDisabled}
                         onSelect={setDetailLevel}
                         onChange={(attributes) =>
                           setDraft((old) =>

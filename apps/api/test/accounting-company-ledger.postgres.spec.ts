@@ -5,7 +5,11 @@ import {
 import { randomUUID } from 'node:crypto';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
-import type { AuthenticatedActor } from '@nora/contracts';
+import type {
+  AuthenticatedActor,
+  AccountingAccountV1,
+  AccountingConfigurationV1,
+} from '@nora/contracts';
 import { AccountingService } from '../src/finance/accounting/accounting.service';
 import { AccountingCompanyScope } from '../src/finance/accounting/accounting-company-scope';
 import { AccountingCompletionService } from '../src/finance/accounting/accounting-completion.service';
@@ -479,6 +483,149 @@ describe.skipIf(!url)('company ledgers on isolated PostgreSQL', () => {
     expect(races.filter((result) => result.status === 'rejected')).toHaveLength(
       1,
     );
+  });
+  it('persists root/group/general/subsidiary hierarchy and independent detail levels, retaining only existing inactive choices', async () => {
+    const book = await db.accountingBook.findUniqueOrThrow({
+      where: { legalEntityId: companyA.id },
+    });
+    const types: AccountingConfigurationV1[] = [];
+    for (let i = 0; i < 3; i++)
+      types.push(
+        (await command(book.id, 'save-configuration', {
+          kind: 'detail-types',
+          code: `TREE-TYPE-${i}`,
+          title: `Synthetic chart type ${i}`,
+          attributes: { classificationNumberLength: '4' },
+        })) as AccountingConfigurationV1,
+      );
+    const group = (await command(book.id, 'save-account', {
+      level: 'GROUP',
+      code: '088',
+      title: 'Synthetic group',
+      nature: 'DEBIT',
+      permanent: true,
+    })) as AccountingAccountV1;
+    const general = (await command(book.id, 'save-account', {
+      level: 'GENERAL',
+      parentId: group.id,
+      code: '08801',
+      title: 'Synthetic general',
+      nature: 'DEBIT',
+      permanent: true,
+    })) as AccountingAccountV1;
+    const payload = {
+      level: 'SUBSIDIARY',
+      parentId: general.id,
+      code: '08801001',
+      title: 'Synthetic subsidiary',
+      nature: 'DEBIT',
+      permanent: true,
+      attributes: {
+        detailLevels: ['4', '5', '6'],
+        detail4Required: true,
+        detail4TypeIds: [types[0]!.id, types[1]!.id],
+        detail5TypeIds: [types[1]!.id],
+        detail6TypeId: types[2]!.id,
+      },
+    };
+    const subsidiary = (await command(
+      book.id,
+      'save-account',
+      payload,
+    )) as AccountingAccountV1;
+    let snapshot = await service.snapshot(book.id, actor);
+    expect(snapshot.accounts.find((row) => row.id === group.id)).toMatchObject({
+      code: '088',
+      level: 'GROUP',
+      parentId: null,
+    });
+    expect(
+      snapshot.accounts.find((row) => row.id === general.id),
+    ).toMatchObject({ code: '08801', level: 'GENERAL', parentId: group.id });
+    expect(
+      snapshot.accounts.find((row) => row.id === subsidiary.id),
+    ).toMatchObject({
+      code: payload.code,
+      parentId: general.id,
+      attributes: payload.attributes,
+    });
+    for (const invalid of [
+      { level: 'GROUP', parentId: group.id, code: '08802' },
+      { level: 'GENERAL', code: '089' },
+      { level: 'SUBSIDIARY', parentId: group.id, code: '08803' },
+      { level: 'GENERAL', parentId: general.id, code: '08801002' },
+      { level: 'SUBSIDIARY', parentId: subsidiary.id, code: '0880100101' },
+    ])
+      await expect(
+        command(book.id, 'save-account', {
+          ...invalid,
+          title: 'Invalid hierarchy',
+          nature: 'DEBIT',
+          permanent: true,
+        }),
+      ).rejects.toThrow();
+
+    // Synthetic catalogue deactivation: existing choices must survive an unrelated title edit.
+    await db.accountingConfiguration.updateMany({
+      where: { id: { in: [types[0]!.id, types[2]!.id] } },
+      data: { active: false },
+    });
+    const saved = (await command(
+      book.id,
+      'save-account',
+      { ...payload, id: subsidiary.id, title: 'Updated subsidiary' },
+      subsidiary.version,
+    )) as AccountingAccountV1;
+    expect(saved.attributes).toMatchObject(payload.attributes);
+    await expect(
+      command(
+        book.id,
+        'save-account',
+        {
+          ...payload,
+          id: subsidiary.id,
+          attributes: { ...payload.attributes, detail5TypeIds: [types[0]!.id] },
+        },
+        saved.version,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command(book.id, 'save-account', { ...payload, code: '08801002' }),
+    ).rejects.toThrow();
+
+    // Removing a choice only affects that level; migrating the old single-ID format remains compatible.
+    const attributes = {
+      ...payload.attributes,
+      detail4TypeIds: [types[1]!.id],
+      detail6TypeIds: [types[2]!.id],
+    };
+    const { detail6TypeId: _legacy, ...normalized } = attributes;
+    expect(_legacy).toBe(types[2]!.id);
+    await command(
+      book.id,
+      'save-account',
+      { ...payload, id: subsidiary.id, attributes: normalized },
+      saved.version,
+    );
+    snapshot = await service.snapshot(book.id, actor);
+    expect(
+      snapshot.accounts.find((row) => row.id === subsidiary.id)?.attributes,
+    ).toMatchObject({
+      detail4Required: true,
+      detail4TypeIds: [types[1]!.id],
+      detail5TypeIds: [types[1]!.id],
+      detail6TypeIds: [types[2]!.id],
+    });
+    expect(
+      snapshot.configurations.filter((row) =>
+        types.some((type) => type.id === row.id),
+      ),
+    ).toHaveLength(3);
+    expect(
+      await db.accountingAccount.count({
+        where: { bookId: book.id, code: { startsWith: '088' } },
+      }),
+    ).toBe(3);
   });
   it('preserves closed, cancelled-journal, moved-journal-history and general-document allocations', async () => {
     const book = await db.accountingBook.findUniqueOrThrow({

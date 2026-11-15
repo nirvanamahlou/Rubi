@@ -1,3 +1,7 @@
+## ACCOUNT-TREE-LEVELS-1114 — PC-D
+
+Context creation follows root -> GROUP -> GENERAL -> SUBSIDIARY, using the exact clicked parent and preserving code prefixes. Subsidiary is a leaf. Show all book-owned detail types for independently selected levels four/five/six; mark inactive rows and preserve only their existing same-account/same-level choices. Seventeen focused Web/i18n tests and 77 isolated PostgreSQL tests pass; scoped lint, formatting, API/Web TypeScript and both production builds pass. No schema/dependency/operational-data changes or deployment. Browser acceptance unavailable because of computer-use kernel-assets initialization failure. See docs/tasks/ACCOUNT-TREE-LEVELS-1114.md.
+
 ## NORA-DATA-AGENT-V1 — PC-C — SOURCE_VALIDATED / LIVE_GATE_PENDING
 
 Owner-approved Sales-first data Agent: planning, catalog discovery, model-authored
