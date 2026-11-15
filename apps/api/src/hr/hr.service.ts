@@ -3153,7 +3153,21 @@ export class HrService {
     if (!policy)
       throw new ConflictException('برای این نوع مرخصی سیاست فعال تعریف کنید.');
     assertHourlyLeaveDuration(leave, policy);
-    assertLeaveDeadline(leave, policy, new Date());
+    let workdayEnd: Date | undefined;
+    if (leave.mode === 'ساعتی') {
+      const schedules = await tx.hrRecord.findMany({
+        where: {
+          branchId: employee.branchId,
+          section: 'time',
+          tab: { in: ['shift', 'workingHours'] },
+          deletedAt: null,
+        },
+      });
+      workdayEnd =
+        this.attendanceView(schedules, employee.id, leave.from).shiftEnd ??
+        undefined;
+    }
+    assertLeaveDeadline(leave, policy, new Date(), workdayEnd);
     if (leave.substituteUserId) {
       if (
         leave.substituteUserId === employee.userId ||
