@@ -10,7 +10,9 @@ import {
   UseGuards,
   ForbiddenException,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { SiteCommerceService } from '../site-commerce/site-commerce.service';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { DocumentsService } from '../documents/documents.service';
@@ -28,7 +30,37 @@ export class SalesDocumentBrandingController {
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
+    @Optional()
+    @Inject(SiteCommerceService)
+    private readonly siteCommerce?: SiteCommerceService,
   ) {}
+  @Get('airline-logo/:carrier')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie')
+  @Header('X-Content-Type-Options', 'nosniff')
+  async airlineLogo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('carrier') carrier: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { data: contract } = await this.sales.detail(id, req.actor);
+    const intake = await this.travel.forContract(id, [contract.branchId]);
+    const release = await this.delivery.readCustomerContract(id);
+    if (
+      !release.approved ||
+      contract.status === 'CANCELLED' ||
+      intake.workflow.supplierStatus === 'CANCELLED'
+    )
+      throw new ForbiddenException();
+    if (!this.siteCommerce) throw new NotFoundException();
+    const bytes = await this.siteCommerce.ticketAirlineLogo(
+      id,
+      carrier,
+      req.actor,
+    );
+    return new StreamableFile(bytes, { type: 'image/png' });
+  }
+
   @Get('branding-logo')
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
