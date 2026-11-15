@@ -72,7 +72,8 @@ export const draftSchema = Joi.object({
     gender: Joi.string().valid('M', 'F').required(),
     mobile: Joi.string()
       .pattern(/^\+?[0-9]{10,15}$/)
-      .required(),
+      .allow('')
+      .default(''),
     email: Joi.string()
       .email({ tlds: { allow: false } })
       .max(160)

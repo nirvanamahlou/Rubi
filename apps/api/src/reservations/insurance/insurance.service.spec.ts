@@ -450,3 +450,33 @@ it('prepares manual candidates with the contract travel dates instead of a fixed
     data: [{ departureDate: '2027-02-20', durationDays: 8 }],
   });
 });
+
+it.each(['', undefined])(
+  'allows a contract passenger without a separate mobile (%s)',
+  (mobile) => {
+    const f = fixture();
+    const passenger = {
+      version: 1,
+      firstName: 'Test',
+      lastName: 'Person',
+      firstNameLatin: 'TEST',
+      lastNameLatin: 'PERSON',
+      nationalityCode: 'TUR',
+      nationalCode: '',
+      passportNo: 'SYNTHETIC123',
+      birthDate: '1990-01-01',
+      gender: 'M',
+      mobile,
+      email: '',
+    };
+    expect(
+      parseInsuranceDraft({ ...f.input, passenger }).passenger?.mobile,
+    ).toBe('');
+    expect(() =>
+      parseInsuranceDraft({
+        ...f.input,
+        passenger: { ...passenger, mobile: 'wrong' },
+      }),
+    ).toThrow();
+  },
+);
