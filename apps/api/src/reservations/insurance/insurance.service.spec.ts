@@ -89,12 +89,10 @@ function fixture() {
     client: {
       ...tx,
       salesContract: {
-        findFirst: vi
-          .fn()
-          .mockResolvedValue({
-            departureDate: new Date('2027-02-20'),
-            returnNotBefore: new Date('2027-02-27'),
-          }),
+        findFirst: vi.fn().mockResolvedValue({
+          departureDate: new Date('2027-02-20'),
+          returnNotBefore: new Date('2027-02-27'),
+        }),
       },
       reservationIntake: {
         findMany: vi
