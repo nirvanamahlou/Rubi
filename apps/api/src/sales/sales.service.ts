@@ -92,6 +92,12 @@ function has(actor: AuthenticatedActor, permission: string): boolean {
   return actor.permissions.includes(permission as never);
 }
 
+function assertCreateKey(key: string | undefined): asserts key is string {
+  if (!key?.trim())
+    throw new BadRequestException('Idempotency-Key الزامی است.');
+  if (Array.from(key).length > 160) throw new BadRequestException();
+}
+
 function branch(actor: AuthenticatedActor, requested?: string): string {
   const selected = requested ?? actor.branchIds[0];
   if (!selected || !actor.branchIds.includes(selected))
@@ -1190,6 +1196,7 @@ export class SalesService {
   }
   async submissionStatus(key: string, actor: AuthenticatedActor) {
     if (!has(actor, 'sales.contracts.create')) throw new ForbiddenException();
+    assertCreateKey(key);
     const row = await this.repository.findByCreateKey(actor.userId, key);
     if (!row) return { data: null };
     this.assertRead(row, actor);
@@ -1246,8 +1253,7 @@ export class SalesService {
   ) {
     if (!has(actor, 'sales.contracts.create'))
       throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
-    if (!idempotencyKey?.trim())
-      throw new BadRequestException('Idempotency-Key الزامی است.');
+    assertCreateKey(idempotencyKey);
     domainCall(() => validateSalesContract(input));
     const fingerprint = salesFingerprint(input);
     const existing = await this.repository.findByCreateKey(

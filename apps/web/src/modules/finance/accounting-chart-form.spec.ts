@@ -6,6 +6,7 @@ import {
   descriptionRows,
   changeDetailType,
   detailTypeIds,
+  chartChildAction,
 } from './accounting-chart-form';
 
 const account: AccountingAccountV1 = {
@@ -31,6 +32,38 @@ const account: AccountingAccountV1 = {
   },
 };
 describe('chart editor persistence', () => {
+  it('creates only the next legal level under the exact selected parent, with no child under a subsidiary', () => {
+    expect(chartChildAction()).toEqual({
+      level: 'GROUP',
+      parentId: '',
+      label: 'گروه حساب جدید',
+    });
+    expect(
+      chartChildAction({
+        ...account,
+        id: 'group',
+        level: 'GROUP',
+        code: '001',
+      }),
+    ).toEqual({ level: 'GENERAL', parentId: 'group', label: 'حساب کل جدید' });
+    expect(
+      chartChildAction({
+        ...account,
+        id: 'general',
+        level: 'GENERAL',
+        code: '00102',
+      }),
+    ).toEqual({
+      level: 'SUBSIDIARY',
+      parentId: 'general',
+      label: 'حساب معین جدید',
+    });
+    expect(chartChildAction(account)).toBeNull();
+    expect(
+      chartChildAction({ ...account, level: 'GROUP', active: false }),
+    ).toBeNull();
+    expect(account.code).toBe('111001');
+  });
   it('keeps choices independent across all three levels and persists the newly exposed level', () => {
     const original = {
       detailLevels: ['4'],

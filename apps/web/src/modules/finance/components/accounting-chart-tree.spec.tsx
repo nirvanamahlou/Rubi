@@ -14,7 +14,14 @@ vi.mock('react', async (original) => {
   };
 });
 const accounts = [
-  { id: 'group', parentId: null, code: '1', title: 'دارایی', level: 'GROUP' },
+  {
+    id: 'group',
+    parentId: null,
+    code: '1',
+    title: 'دارایی',
+    level: 'GROUP',
+    active: true,
+  },
   {
     id: 'general',
     parentId: 'group',
@@ -55,6 +62,7 @@ describe('restyled account tree', () => {
         accounts={accounts}
         selectedId="subsidiary"
         onSelect={vi.fn()}
+        onCreateChild={vi.fn()}
       />,
     );
     expect(html).toContain('وجوه نقد');
@@ -63,5 +71,10 @@ describe('restyled account tree', () => {
     expect(html.match(/<ul/g)).toHaveLength(3);
     expect(html).toContain('بستن شاخه دارایی');
     expect(html).toContain('data-selected="true"');
+    expect(
+      html.match(
+        /<button(?=[^>]*aria-haspopup="menu")(?=[^>]*aria-pressed=)[^>]*>/g,
+      ),
+    ).toHaveLength(4);
   });
 });

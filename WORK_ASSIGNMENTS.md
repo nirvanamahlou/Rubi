@@ -12589,6 +12589,14 @@ Reserve system/inbox card colors, correspondence public job identity and outgoin
 
 Reserve system history display formatter and focused tests. Preserve raw audit data. Standing owner authorization covers push/merge.
 
+## ACCOUNT-TREE-LEVELS-1114 — PC-D — COMPLETED
+
+COMPUTER_ID=PC-D; codex/pc-d-account-tree-levels-1114 from PC-D-Integration, fast-forwarded to develop ea83ec5b3 to preserve published Accounting work. Existing owner delegation to PC-D/PC-B applies. Reserve Accounting chart tree/editor/form/detail-level components and models, scoped Web/API regression checks and additive translations, bounded own task/status notes. Implement root->GROUP->GENERAL->SUBSIDIARY context creation; subsidiary is a leaf. Preserve selected parent, numeric codes with leading zeros, existing accounts and saved per-level detail-type rules. Show the entire book's detail-type catalogue upon level selection/double-click, retaining inactive configured types without newly activating them. Prior Accounting source scopes are frozen; current PC-B chart-scroll branch affects HR only. No schema/migration/dependency/lockfile lease, operational data writes, production deployment, CI dispatch or PR/merge for this new task. Standing automatic commit/push applies only to this task branch.
+
+ACCOUNT-TREE-LEVELS-1114 validation: 17 focused Web/i18n checks, final tree SSR checks, 77 isolated PostgreSQL tests, API/Web typechecks and production builds, scoped lint and formatting pass. No operational data/runtime/schema changes. Browser kernel-assets initialization still blocks visual acceptance. Source scope frozen and released; commit/push task branch only, no PR/merge or production deployment.
+
+ACCOUNT-TREE-LEVELS-1114 publication follow-up: owner explicitly authorizes hosted CI, PR to develop and merge only after every check passes. Integrate current develop81b188ee2 without rewriting history. Reserve only bounded CI repairs, merge-conflict resolution and own task/status notes; no operational runtime or production deployment.
+
 ## DEPLOY-FORMAT-1114 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-deploy-format-1114 from develop81b188ee2. Reserve whitespace-only Prisma schema formatting repair and own release notes after hosted quality gate failure. No model, migration, dependency or behavior changes. Owner authorizes all-changes production deployment without a fresh backup, with green gates and preserved runtime integrations.
@@ -12598,3 +12606,11 @@ DEPLOY-FORMAT-1114 follow-up reserves ten missing English labels and generated A
 PR1693 / PR-CI-EMPLOYER-REPORT-1114: reserve only contract-uuid-fallback.spec.ts and submission-recovery.spec.ts, own Nora task note and this bounded entry. Replace stale implementation-shape checking with secure UUID plus same-key/payload retry behavior. Latest develop integrated without dropping peer notes; source remains unchanged. User authorizes merge only after all current-head checks pass. Additional formatting-only CI lease: apps/api/src/hr/hr-connections.service.ts, apps/web/src/modules/hr/hr-inbox-forward-dialog.tsx and hr-organization.tsx retain published HR behavior; Prettier whitespace only repairs the inherited push gate. No HR logic, access, schema or dependency change. Central-file conflict lease: apps/web/src/i18n/english-ui-catalog.ts retains both Nora contract and peer Site Commerce catalogues plus existing override precedence; no labels removed.
 
 PR1700 / PR-CI-EMPLOYER-REPORT-1114 bounded integration fix: reserve executive-workspace.tsx and existing agent-response.ts/spec.ts to preserve both merged composer paths and serialize conversation history as role/content only. Internal local/agent/link metadata must not reach the strict service boundary; retain same-origin, context reset and abort guards. Source integration uses published PR1693 branch47179793f; merge order remains1693 before1700. No UI redesign, new schema/dependency or gate change.
+
+ACCOUNT-TREE-LEVELS-1114 CI integration: initial product commit c4defb869 passed all four push jobs. Integrated head837ee43b6 exposed the inherited two-line Prisma-format failure from develop81b188ee2. Consume published fix9be81a9a6 through current developce8e3db60, preserve both append-only status/task entries and all translation keys, and re-run exact-head hosted gates. Local Prisma format produces no schema diff. No independent model/migration/dependency edit or runtime deployment.
+
+PC-C / NORA-CONTRACT-RECOVERY-1115 reserves the Sales create and submission-status key validation, scoped HTTP and service regressions, and this status entry on codex/pc-c-nora-contract-recovery-key-1115. The producer accepts the same opaque key for both operations. Existing Sales Web is the consumer. No schema or dependency change.
+
+NORA-CONTRACT-RECOVERY-1115 integration: the merge of HR PR1707 into develop introduced constant-false JSX in the working-hours form. Reserve only its unreachable rendering branches and affected HR rendering assertions to preserve the merged behavior while restoring CI.
+
+The same integration reserves two missing HR labels in the English UI overrides, identified by the unmodified translation coverage gate.

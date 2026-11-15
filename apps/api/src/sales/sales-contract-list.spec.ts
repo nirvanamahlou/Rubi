@@ -242,6 +242,11 @@ it('looks up a lost submission only for the authenticated creator and rechecks b
     service.submissionStatus(key, { ...creator, userId: 'other' }),
   ).resolves.toEqual({ data: null });
   expect(findByCreateKey).toHaveBeenCalledWith('other', key);
+  findByCreateKey.mockClear();
+  for (const invalid of [' ', 'a'.repeat(161)]) {
+    await expect(service.submissionStatus(invalid, creator)).rejects.toThrow();
+  }
+  expect(findByCreateKey).not.toHaveBeenCalled();
   await expect(
     service.submissionStatus(key, { ...creator, branchIds: [] }),
   ).rejects.toThrow();
