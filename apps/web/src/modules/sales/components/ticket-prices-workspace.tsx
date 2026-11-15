@@ -1,4 +1,5 @@
 'use client';
+import { WebsitePublicationSwitch } from '@/modules/site-commerce/publication-switch';
 import {
   pricingCityCountries,
   pricingFlightDate,
@@ -1341,6 +1342,12 @@ export function TicketPricesWorkspace() {
                                   })}
                                 </div>
                               ))}
+                              <WebsitePublicationSwitch
+                                key={JSON.stringify(row.offer.saleCommissions)}
+                                kind="ticket"
+                                resourceId={row.offer.id}
+                                disabled={!!saving}
+                              />
                             </div>
                           ) : (
                             <p className="lg:col-span-2 text-sm text-muted-foreground">

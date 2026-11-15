@@ -10094,3 +10094,7 @@ TOUR-PUBLICATION-1115: Tour definitions expose Draft/Published in create/edit an
 CHART-ACTIONS-1115: headquarters chart supports right-side edit/delete/move controls with persisted display overrides. Delete hides a chart node and promotes direct children. No personnel deletion. Local chart tests could not collect due to missing contracts build output.
 
 INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.
+
+## TICKET-SITE-PRICE-TARGET-1115 — PC-A
+
+Ticket website publication now follows explicit saved destination pricing for Niyayesh Seir Sahar. Scoped implementation,42 API checks,18 site checks and the isolated migration proof passed; native atomic capacity reservation is preserved and target fare freshness is extended through final confirmation. Owner authorizes green develop merge and production deployment; see docs/tasks/TICKET-SITE-PRICE-TARGET-1115.md.
