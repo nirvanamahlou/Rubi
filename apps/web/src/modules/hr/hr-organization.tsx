@@ -18,7 +18,6 @@ import { normalizeHrText } from './hr-data-utils';
 import { HrLoading } from './hr-controls';
 
 const headquarters = 'دفتر مرکزی';
-const ignoreReadOnlyChartAction = () => {};
 
 export function buildHeadquartersChart(
   employees: readonly HrEmployeeDto[],
@@ -400,6 +399,83 @@ export function HrOrganization({
     () => manuallyPlacedOrganizationNodes(catalogNodes, data.records),
     [catalogNodes, data.records],
   );
+  const headquartersNodes = useMemo(() => {
+    const base = buildHeadquartersChart(data.employees);
+    const layouts = data.records.filter(
+      (r) => r.section === 'organization' && r.tab === 'chartLayout',
+    );
+    return base
+      .filter(
+        (n) =>
+          !layouts.some((r) => r.values[0] === n.id && r.values[4] === 'بله'),
+      )
+      .map((n) => {
+        const layout = layouts.find((r) => r.values[0] === n.id);
+        return {
+          ...n,
+          mutable: true,
+          name: layout?.values[1] || n.name,
+          offsetX: Number(layout?.values[2]) || 0,
+          offsetY: Number(layout?.values[3]) || 0,
+          parentId: base.some(
+            (p) =>
+              p.id === n.parentId &&
+              layouts.some(
+                (r) => r.values[0] === p.id && r.values[4] === 'بله',
+              ),
+          )
+            ? null
+            : n.parentId,
+        };
+      });
+  }, [data.employees, data.records]);
+  async function saveHeadquarters(
+    node: OrganizationNode,
+    changes: { name?: string; x?: number; y?: number; hidden?: boolean },
+  ) {
+    if (saveLock.current || !data.capabilities.write) return;
+    const record = data.records.find(
+      (r) => r.tab === 'chartLayout' && r.values[0] === node.id,
+    );
+    const branchId =
+      record?.branchId ||
+      data.employees.find((e) => e.id === node.id)?.branchId ||
+      data.branches[0]?.id;
+    if (!branchId) {
+      setError('شرکت مجاز یافت نشد.');
+      return;
+    }
+    saveLock.current = true;
+    setSaving(true);
+    setError('');
+    const values = [
+      node.id,
+      changes.name ?? node.name,
+      String(changes.x ?? node.offsetX ?? 0),
+      String(changes.y ?? node.offsetY ?? 0),
+      changes.hidden ? 'بله' : 'خیر',
+    ];
+    try {
+      if (record) await store.update(record, { values });
+      else
+        await store.create(
+          {
+            branchId,
+            section: 'organization',
+            tab: 'chartLayout',
+            values,
+            status: 'فعال',
+          },
+          crypto.randomUUID(),
+        );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'ذخیره تغییرات انجام نشد.');
+      throw e;
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
+    }
+  }
   const addNode = (kind: 'UNIT' | 'EMPLOYEE', node?: OrganizationNode) =>
     onForm(chartNodeFormTarget(kind, node, data.records, catalogNodes));
   return (
@@ -445,6 +521,11 @@ export function HrOrganization({
       />
       {view === 'headquarters' ? (
         <HrPanel title="چارت سازمانی دفتر مرکزی">
+          {error && (
+            <p role="alert" className={ui.error}>
+              {error}
+            </p>
+          )}
           {references.loading ? (
             <HrLoading label="در حال دریافت چارت…" />
           ) : references.error ? (
@@ -454,10 +535,26 @@ export function HrOrganization({
           ) : (
             <div className={`${styles.orgViewport} ${styles.radanChart}`}>
               <OrganizationChart
-                nodes={buildHeadquartersChart(data.employees)}
-                editable={false}
-                onEdit={ignoreReadOnlyChartAction}
-                onDelete={ignoreReadOnlyChartAction}
+                nodes={headquartersNodes}
+                editable={data.capabilities.write}
+                busy={saving}
+                confirmDelete={false}
+                onEdit={(node) => {
+                  const name = window.prompt('عنوان نمایشی', node.name)?.trim();
+                  if (name)
+                    void saveHeadquarters(node, { name }).catch(
+                      () => undefined,
+                    );
+                }}
+                onDelete={(node) => {
+                  if (window.confirm('این مورد از چارت حذف شود؟'))
+                    void saveHeadquarters(node, { hidden: true }).catch(
+                      () => undefined,
+                    );
+                }}
+                onPositionChange={(node, position) =>
+                  saveHeadquarters(node, position)
+                }
               />
             </div>
           )}

@@ -253,7 +253,7 @@
 .orgNodeActions {
   position: absolute;
   inset-block-start: 0;
-  inset-inline-end: calc(100% + 4px);
+  inset-inline-start: -40px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -422,4 +422,8 @@
 }
 .radanChart .orgNodeMeta {
   display: none;
+}
+
+.radanChart .orgBranch {
+  padding-inline: 44px;
 }
