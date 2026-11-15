@@ -12688,3 +12688,7 @@ TICKET-PUBLICATION-ERROR-1115 runtime scope repair: owner explicitly approved HQ
 TICKET-PUBLICATION-ERROR-1115 bounded CI lease: add three English translations for normalized Sales hierarchy lookup strings introduced by develop447d61b6d and synchronize the offline API/standalone catalogues. No HR source, hierarchy behavior or permissions change; this baseline translation repair is not included in the scoped production publication-component image.
 
 FINANCE-SOURCE-LINKS-1115 / PR1723 integration: owner explicitly authorizes develop PR/merge without CI on2026-11-15. Merge current develop into the task branch and preserve both sides of append-only conflicts in WORK_ASSIGNMENTS.md, docs/PROJECT_STATUS.md and docs/DATA_MODEL.md. Product source/schema/contracts merged automatically; no conflict-driven product changes or operational deployment. Previously recorded local validation remains the implementation evidence; CI is waived for this merge by the owner.
+
+## RELEASE-1115 — PC-B — IN_PROGRESS
+
+Reserve bounded release integration repair: replace inline source-reference type imports in two Contracts files with explicit type-only imports. Base develop ca7bc34b1; branch codex/pc-b-release-1115. Source-reference implementation lease is frozen after PR1723. No contract shape/schema/dependency changes. Owner authorizes all-changes production rollout without a fresh backup; preserve deployed overlays, assistant service, configuration and integrations.
