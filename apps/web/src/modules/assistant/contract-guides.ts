@@ -541,6 +541,7 @@ export function resolveContractGuide(
   onSalesPage: boolean,
   previousTopicId?: string,
   recordAlreadyRead = false,
+  dataAgentAvailable = false,
 ): ContractGuideReply | undefined {
   const question = normalizeContractQuestion(message);
   const explicitContract = /قرارداد|contract/i.test(question);
@@ -561,6 +562,9 @@ export function resolveContractGuide(
     /چقدر|چند تا|چنده|مانده|وضعیت/.test(question) &&
     !procedure
   ) {
+    // The data Agent can answer portfolio questions without a contract number.
+    // Keep the legacy clarification for callers without that reader.
+    if (dataAgentAvailable) return;
     return {
       topicId: 'record',
       text: [

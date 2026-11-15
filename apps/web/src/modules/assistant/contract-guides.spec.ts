@@ -3,6 +3,25 @@ import { contractGuideAnswer, resolveContractGuide } from './contract-guides';
 
 describe('ERP contract workflow help', () => {
   it.each([
+    'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو',
+    'چند ردیف در منبع contracts برای شرکت فعال قابل مشاهده است؟ همه وضعیت‌ها و همه تاریخ‌ها را حساب کن.',
+  ])(
+    'lets the data Agent answer aggregate questions without requiring a record: %s',
+    (question) => {
+      expect(resolveContractGuide(question, true)?.topicId).toBe('record');
+      expect(
+        resolveContractGuide(question, true, undefined, false, true),
+      ).toBeUndefined();
+    },
+  );
+  it('keeps canonical procedural help when the data Agent is available', () => {
+    const legacy = resolveContractGuide('چجور قرارداد بزنم؟', true);
+    expect(
+      resolveContractGuide('چجور قرارداد بزنم؟', true, undefined, false, true),
+    ).toEqual(legacy);
+    expect(legacy?.text).toContain('قرارداد جدید');
+  });
+  it.each([
     'چجور قرارداد بزنم؟',
     'چجوری قرارداد بزنم',
     'چطوری قرارداد ببندم؟',
