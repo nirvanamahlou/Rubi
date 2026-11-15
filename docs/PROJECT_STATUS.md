@@ -10085,3 +10085,5 @@ INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation te
 TOUR-PUBLICATION-1115: Tour definitions expose Draft/Published in create/edit and overview. New UI definitions default Draft; omission on legacy definitions stays Published. Sales dropdown and server list omit Draft, while authenticated management and pricing remain available; direct contract selection rejects Draft. Optional status stays in existing definition JSON (no migration).56 targeted tests and API lint pass; hosted quality/build/tests gates precede authorized develop merge. No production deployment.
 
 CHART-ACTIONS-1115: headquarters chart supports right-side edit/delete/move controls with persisted display overrides. Delete hides a chart node and promotes direct children. No personnel deletion. Local chart tests could not collect due to missing contracts build output.
+
+INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.

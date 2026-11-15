@@ -12624,3 +12624,5 @@ INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation te
 Reserve optional shared TourPackageInputV1 publicationStatus (DRAFT/PUBLISHED), JSON-definition validation, Sales list and direct-selection checks, Tour definition UI and tests. Legacy omission remains published; new UI definitions default draft. Producer Ticket Catalog, consumers Sales/Tour management. No migration/dependency/deployment. Owner authorizes develop merge after green CI.
 
 CHART-ACTIONS-1115 PC-B completed: headquarters chart display rename/hide/position stored as organization.chartLayout HR records. Scoped ESLint passed. Chart suite blocked by absent contracts build output. Owner authorizes push/merge.
+
+INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.
