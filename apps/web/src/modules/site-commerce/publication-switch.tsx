@@ -15,6 +15,23 @@ import {
   SelectItem,
 } from '@/components/ui';
 
+async function publicationError(response: Response, fallback: string) {
+  try {
+    const body = await response.json();
+    const message = body?.error?.message ?? body?.message;
+    if (typeof message === 'string' && message.trim()) return message;
+    if (Array.isArray(message)) {
+      const messages = message.filter(
+        (value): value is string => typeof value === 'string' && !!value.trim(),
+      );
+      if (messages.length) return messages.join('؛ ');
+    }
+  } catch {
+    // A proxy or interrupted response can return HTML or no body.
+  }
+  return fallback;
+}
+
 const publicationSites = [{ id: 'nss', name: 'نیایش سیر' }] as const;
 
 export function WebsitePublicationSwitch(
@@ -52,7 +69,10 @@ function PublicationSwitch({
       signal: abort.signal,
     })
       .then(async (response) => {
-        if (!response.ok) throw Error('وضعیت انتشار سایت دریافت نشد.');
+        if (!response.ok)
+          throw Error(
+            await publicationError(response, 'وضعیت انتشار سایت دریافت نشد.'),
+          );
         return response.json();
       })
       .then((result) => {
@@ -89,7 +109,12 @@ function PublicationSwitch({
         }),
       });
       if (!response.ok)
-        throw Error('ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.');
+        throw Error(
+          await publicationError(
+            response,
+            'ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.',
+          ),
+        );
       const result = await response.json();
       setState(result.data);
       setOpen(false);

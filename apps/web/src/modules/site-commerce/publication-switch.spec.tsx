@@ -304,3 +304,48 @@ it('pauses and resumes sales for the explicitly selected website without unpubli
     version: 10,
   });
 });
+
+it('shows the actionable API branch or saved-rate error instead of hiding it behind a generic publication failure', async () => {
+  await load();
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  const message = 'بلیط در شعبه مجاز نیست.';
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    status: 403,
+    json: async () => ({ error: { message } }),
+  });
+  click('انتشار');
+  await settle();
+  const html = render();
+  expect(html).toContain(message);
+  expect(html).not.toContain('ثبت انتشار سایت ناموفق بود');
+  expect(html).toContain('role="dialog"');
+  expect(html).not.toContain('منتشرشده در نیایش سیر');
+});
+
+it('preserves a plain API validation explanation and safely falls back for a non-JSON failure', async () => {
+  await load();
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => ({ message: 'ابتدا درصد مقصد را ثبت کنید.' }),
+  });
+  click('انتشار');
+  await settle();
+  expect(render()).toContain('ابتدا درصد مقصد را ثبت کنید.');
+  fixture.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => {
+      throw new Error('not json');
+    },
+  });
+  click('انتشار');
+  await settle();
+  expect(render()).toContain('ثبت انتشار سایت ناموفق بود');
+});

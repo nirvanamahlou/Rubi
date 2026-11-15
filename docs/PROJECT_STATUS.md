@@ -10100,3 +10100,8 @@ INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English la
 Ticket website publication now follows explicit saved destination pricing for Niyayesh Seir Sahar. Scoped implementation,42 API checks,18 site checks and the isolated migration proof passed; native atomic capacity reservation is preserved and target fare freshness is extended through final confirmation. Owner authorizes green develop merge and production deployment; see docs/tasks/TICKET-SITE-PRICE-TARGET-1115.md.
 
 SALES-MANAGER-CHART-1115: headquarters sales hierarchy recognizes spelling variants and sales job titles; salespeople report to Mahsa Alaei. Scoped ESLint passed.
+
+
+## TICKET-PUBLICATION-ERROR-1115 — PC-A
+
+Publication errors now expose the actionable API explanation instead of a generic failure. The live mismatch was the site's Niyayesh branch binding versus HQ ticket/destination ownership; owner explicitly confirms HQ belongs in the site scope. Protected runtime configuration and the dedicated principal's audited HQ membership now match that ownership, with role permissions, existing branch membership and all operational records preserved. Ten focused UI tests and scoped Web build pass; green hosted checks gate the UI merge/deployment.
