@@ -1,3 +1,7 @@
+## AMIN-STABLE-PRS-RELEASE-1115 — PC-C — DEPLOYED
+
+PR1693/1708 stable contract work published on runtime22f85a6e3; PR1701 retained in baseline. Preserve16 peer overlays including current website Prisma model. No migration or Agent v3 activation. API578/Web731 broad tests and API25/Web182 focused checks pass; build/types/canary, encrypted backup, healthy API/Web, authenticated Worker/AMI/recording timer and public login200 verified. See tasks/AMIN-STABLE-PRS-RELEASE-1115.md. Release reservation closed; no remaining source lock.
+
 ## REPORT-DASHBOARD-ACTIVATION-1114 — PC-C helper — SOURCE_VALIDATED
 
 Owner assigns Reports/Dashboard implementation to PC-C and this helper computer; ownership clarification recorded. Base ea83ec5b3; branch codex/pc-c-report-dashboard-activation-1114. Live read-only scan:331 tables,4145 columns,753 FKs,165 populated tables. All21 native report source/XLSX probes pass; exact per-currency purchase reference matches after refreshing stale audit permissions/cohort and reading structured amounts rather than display labels.
