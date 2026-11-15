@@ -45,6 +45,7 @@ const detailsSchema = Joi.object({
   refundRules: copy(),
   originAirportCode: Joi.string().pattern(/^[A-Z]{3}$/),
   destinationAirportCode: Joi.string().pattern(/^[A-Z]{3}$/),
+  isFloating: Joi.boolean(),
   isCombined: Joi.boolean(),
   destinations: Joi.array()
     .min(2)

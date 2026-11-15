@@ -67,3 +67,5 @@ export * from './upload-formats';
 export * from './customers/dossier';
 
 export * from './finance/exchange-offices';
+
+export * from './travel/floating-tour';

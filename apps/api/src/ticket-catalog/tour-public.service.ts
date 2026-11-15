@@ -399,6 +399,7 @@ export class TourPublicService {
           value.originId,
           value.destinationId,
           value.details?.destinations ?? null,
+          Boolean(value.details?.isFloating),
           [...value.hotelIds].sort(),
           value.insuranceId ?? null,
           value.transferOutbound,
@@ -407,6 +408,14 @@ export class TourPublicService {
           Boolean(value.cityTour),
           Boolean(value.tourGuide),
         ]);
+      if (
+        previous.details?.isFloating &&
+        core(previous) !== core(input) &&
+        (await tx.floatingTourSaleCatalog.count({ where: { packageId: id } }))
+      )
+        throw new ConflictException(
+          'این تور قیمت فروش ثبت‌شده دارد؛ برای تغییر مسیر یا خدمات، تور جدید تعریف کنید.',
+        );
       if (
         core(previous) !== core(input) &&
         (await tx.tourDeparture.count({ where: { packageId: id } }))
