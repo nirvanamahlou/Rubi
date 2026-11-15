@@ -1124,7 +1124,10 @@ it('derives bounded request-only customer entry capabilities for a contract-only
 });
 
 describe('website passenger identity synchronization', () => {
-  const creator: AuthenticatedActor = { ...actor, permissions: ['sales.contracts.create'] };
+  const creator: AuthenticatedActor = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  };
   const trace = 'site:nss:passenger-sync';
   function fixture(existing: unknown = row) {
     const repository = {
