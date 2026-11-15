@@ -35,6 +35,7 @@ const contract = {
 const reservations = { contractPurchaseContext: vi.fn(async () => null) };
 const finance = { recordedCostsForOffers: vi.fn(async () => []) };
 const sales = {
+  submissionStatus: vi.fn(async () => ({ data: null })),
   detailForProfit: vi.fn(
     async (_id: string, actor: { permissions: string[] }) => {
       if (!actor.permissions.includes('finance.read'))
@@ -139,4 +140,17 @@ it('returns authoritative contract totals to finance and rejects unauthenticated
     .expect(200);
   expect(result.body.data.balances).toEqual(contract.balances);
   expect(result.headers['cache-control']).toBe('private, no-store');
+});
+
+it('passes an opaque submission key to the authenticated recovery lookup', async () => {
+  const key = 'm91xn31-lan-fallback';
+  const response = await request(app.getHttpServer())
+    .get('/sales/submissions/' + key)
+    .set('Cookie', 'nora_access=allowed')
+    .expect(200);
+  expect(response.headers['cache-control']).toBe('private, no-store');
+  expect(sales.submissionStatus).toHaveBeenCalledWith(
+    key,
+    expect.objectContaining({ userId: 'actor' }),
+  );
 });
