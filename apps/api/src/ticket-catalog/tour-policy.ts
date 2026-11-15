@@ -45,6 +45,7 @@ const detailsSchema = Joi.object({
   refundRules: copy(),
   originAirportCode: Joi.string().pattern(/^[A-Z]{3}$/),
   destinationAirportCode: Joi.string().pattern(/^[A-Z]{3}$/),
+  isFloating: Joi.boolean(),
   isCombined: Joi.boolean(),
   destinations: Joi.array()
     .min(2)
@@ -55,7 +56,6 @@ const detailsSchema = Joi.object({
         nights: Joi.number().integer().min(1).max(365).required(),
       }),
     ),
-  durationDays: Joi.number().integer().min(1).max(366),
   rating: Joi.number().min(0).max(5),
   transport: Joi.string().valid('FLIGHT', 'TRAIN'),
   ticketIncluded: Joi.boolean(),
@@ -88,6 +88,7 @@ const detailsSchema = Joi.object({
     ),
 });
 const packageSchema = Joi.object({
+  publicationStatus: Joi.string().valid('DRAFT', 'PUBLISHED'),
   name: Joi.string().trim().min(1).max(160).required(),
   originId: id.allow('').default(''),
   destinationId: id.allow('').default(''),
@@ -124,6 +125,8 @@ function normalizeTourDefinition(input: unknown): unknown {
   const details = value.details;
   if (details && typeof details === 'object' && !Array.isArray(details)) {
     const fields = details as Record<string, unknown>;
+    // Older clients may send a package-wide duration; departures define their own dates.
+    delete fields.durationDays;
     clean(fields, [
       'summary',
       'description',
@@ -136,7 +139,6 @@ function normalizeTourDefinition(input: unknown): unknown {
       'airlineName',
       'imageDocumentId',
       'transport',
-      'durationDays',
       'rating',
     ]);
     if (Array.isArray(fields.itinerary))
@@ -175,7 +177,6 @@ export function validateTourPackage(input: unknown): TourPackageInputV1 {
       flightPrice: 'هزینه جداگانه پرواز و ارز',
       itinerary: 'برنامه سفر (ساعت HH:mm و مدت مثبت)',
       originAirportCode: 'کد سه‌حرفی فرودگاه مبدأ',
-      durationDays: 'مدت سفر (۱ تا ۳۶۶ روز)',
       rating: 'امتیاز تور (۰ تا ۵)',
       imageDocumentId: 'تصویر تور',
     };
@@ -203,8 +204,6 @@ export function validateTourPackage(input: unknown): TourPackageInputV1 {
     throw new BadRequestException(
       'مقصد اول، مقصدهای متفاوت و تعداد شب اقامت تور ترکیبی را بررسی کنید.',
     );
-  if (stays)
-    value.details!.durationDays = stays.reduce((n, s) => n + s.nights, 0) + 1;
   for (const key of ['basePrice', 'flightPrice'] as const) {
     const price = value.details?.[key];
     if (price?.currency !== 'IRT') continue;

@@ -184,6 +184,11 @@ export function TourOverview({
                   <header className="flex flex-wrap items-center justify-between gap-2 bg-primary/5 px-4 py-3">
                     <div>
                       <h4 className="font-bold">{pack.name}</h4>
+                      <span>
+                        {pack.publicationStatus === 'DRAFT'
+                          ? 'پیش‌نویس'
+                          : 'منتشرشده'}
+                      </span>
                       <p className="text-xs text-muted-foreground">
                         {city(pack.originId)} ←{' '}
                         {tourDestinationIds(pack).map(city).join(' ← ')}
@@ -356,6 +361,9 @@ export function TourOverview({
             >
               <div>
                 <h4 className="font-semibold">{item.name}</h4>
+                <span>
+                  {item.publicationStatus === 'DRAFT' ? 'پیش‌نویس' : 'منتشرشده'}
+                </span>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {city(item.originId)} ← {city(item.destinationId)}
                 </p>

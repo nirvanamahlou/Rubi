@@ -23,8 +23,8 @@ export function InsuranceInputGuide({
       <p>
         شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا
         ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره
-        کشور) و ایمیل معتبر مانند name@example.com وارد شود. اطلاعات ساختگی وارد
-        نکنید.
+        کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند
+        name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.
       </p>
       <p>
         کشور مقصد و طرح فعال را از فهرست بیمه انتخاب کنید. تاریخ سفر از تقویم و
@@ -55,10 +55,12 @@ export function InsurancePassengerFields({
   value,
   onChange,
   disabled,
+  mobileRequired = true,
 }: {
   value: InsurancePassengerInputV1;
   onChange: (value: InsurancePassengerInputV1) => void;
   disabled: boolean;
+  mobileRequired?: boolean;
 }) {
   const fields = [
     ['firstName', 'نام فارسی', ''],
@@ -69,18 +71,28 @@ export function InsurancePassengerFields({
     ['nationalCode', 'کد ملی ایرانی', '۱۰ رقم'],
     ['passportNo', 'شماره گذرنامه', 'A12345678'],
     ['mobile', 'موبایل بیمه‌شده', '09123456789'],
-    ['email', 'ایمیل بیمه‌شده', 'name@example.com'],
+    ['email', 'ایمیل بیمه‌شده (اختیاری)', 'name@example.com'],
   ] as const;
   return (
     <fieldset className={styles.card} disabled={disabled}>
       <legend>اطلاعات بیمه‌شده</legend>
+      {!mobileRequired && (
+        <p>
+          اگر موبایل مسافر خالی باشد، شماره مشتری طرف حساب قرارداد برای بیمه
+          ارسال می‌شود.
+        </p>
+      )}
       <div className={styles.fields}>
         {fields.map(([key, label, placeholder]) => (
           <label key={key}>
-            {label}
+            {key === 'mobile' && !mobileRequired
+              ? 'موبایل بیمه‌شده (اختیاری)'
+              : label}
             <Input
               required={
-                key !== 'nationalCode' || value.nationalityCode === 'IRN'
+                key !== 'email' &&
+                (key !== 'mobile' || mobileRequired) &&
+                (key !== 'nationalCode' || value.nationalityCode === 'IRN')
               }
               value={value[key]}
               placeholder={placeholder}

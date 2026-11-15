@@ -7,11 +7,15 @@ const overrides = require('../src/i18n/en-overrides.json');
 const accountingDocuments = require('../src/i18n/en-accounting-documents.json');
 const accountingPageKpis = require('../src/i18n/en-accounting-page-kpis.json');
 const integrations = require('../src/i18n/en-integrations.json');
+const siteCommerce = require('../src/i18n/en-site-commerce.json');
+const noraContracts = require('../src/i18n/en-nora-contract-evidence.json');
 const catalogue = {
   ...require('../src/i18n/en-catalog.json'),
   ...accountingDocuments,
   ...accountingPageKpis,
   ...integrations,
+  ...noraContracts,
+  ...siteCommerce,
   ...overrides,
 };
 const api = { ...accountingDocuments, ...overrides },

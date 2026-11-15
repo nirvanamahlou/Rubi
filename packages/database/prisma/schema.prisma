@@ -278,6 +278,7 @@ model RolePermission {
 }
 
 model Branch {
+  websiteCatalogDeliveries      WebsiteCatalogDelivery[]
   websitePublications           WebsitePublication[]
   websiteOrders                 WebsiteOrder[]
   standaloneInsuranceApplicants ReservationInsuranceApplicant[]
@@ -4337,16 +4338,17 @@ model SalesContractStatusHistory {
 
 // Published tour definitions and occurrences are immutable; revisions create new definitions.
 model TourPackage {
-  id              String          @id @default(uuid()) @db.Uuid
-  version         Int             @default(1)
-  branchId        String          @db.Uuid
-  name            String          @db.VarChar(160)
-  definition      Json
-  createdByUserId String          @db.Uuid
-  createKey       String          @db.VarChar(160)
-  fingerprint     String          @db.VarChar(64)
-  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
-  departures      TourDeparture[]
+  floatingSaleCatalog FloatingTourSaleCatalog?
+  id                  String                   @id @default(uuid()) @db.Uuid
+  version             Int                      @default(1)
+  branchId            String                   @db.Uuid
+  name                String                   @db.VarChar(160)
+  definition          Json
+  createdByUserId     String                   @db.Uuid
+  createKey           String                   @db.VarChar(160)
+  fingerprint         String                   @db.VarChar(64)
+  createdAt           DateTime                 @default(now()) @db.Timestamptz(3)
+  departures          TourDeparture[]
 
   @@unique([createdByUserId, createKey])
   @@index([branchId, createdAt])
@@ -4492,19 +4494,20 @@ model TicketOfferStandaloneSalePrice {
  * contract channel and let future external APIs consume an explicit price target.
  */
 model TicketSalePriceTarget {
-  commissions     TicketSaleCommissionRevision[]
-  id              String                           @id @default(uuid()) @db.Uuid
-  branchId        String                           @db.Uuid
-  name            String                           @db.VarChar(160)
-  code            String                           @db.VarChar(80)
-  isActive        Boolean                          @default(true)
-  version         Int                              @default(1)
-  createdByUserId String                           @db.Uuid
-  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime                         @updatedAt @db.Timestamptz(3)
-  branch          Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  createdBy       User                             @relation("TicketSalePriceTargetActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  prices          TicketOfferStandaloneSalePrice[]
+  websiteCatalogDeliveries WebsiteCatalogDelivery[]
+  commissions              TicketSaleCommissionRevision[]
+  id                       String                           @id @default(uuid()) @db.Uuid
+  branchId                 String                           @db.Uuid
+  name                     String                           @db.VarChar(160)
+  code                     String                           @db.VarChar(80)
+  isActive                 Boolean                          @default(true)
+  version                  Int                              @default(1)
+  createdByUserId          String                           @db.Uuid
+  createdAt                DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                         @updatedAt @db.Timestamptz(3)
+  branch                   Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy                User                             @relation("TicketSalePriceTargetActor", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  prices                   TicketOfferStandaloneSalePrice[]
 
   @@unique([branchId, code])
   @@index([branchId, isActive, name])
@@ -8628,15 +8631,16 @@ model PackagePricingTourCombinationSource {
 }
 
 model WebsitePublication {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  siteCode   String   @db.VarChar(40)
-  branchId   String   @db.Uuid
-  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  kind       String   @db.VarChar(20)
-  resourceId String   @db.Uuid
-  enabled    Boolean  @default(false)
-  version    Int      @default(1)
-  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+  salesStopped Boolean  @default(false)
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteCode     String   @db.VarChar(40)
+  branchId     String   @db.Uuid
+  branch       Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  kind         String   @db.VarChar(20)
+  resourceId   String   @db.Uuid
+  enabled      Boolean  @default(false)
+  version      Int      @default(1)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([siteCode, branchId, kind, resourceId])
   @@index([siteCode, branchId, updatedAt])
@@ -8658,4 +8662,45 @@ model WebsiteOrder {
 
   @@unique([siteCode, branchId, externalId])
   @@map("website_orders")
+}
+
+// Durable catalog invalidation; business writes and invalidation commit together.
+model WebsiteCatalogDelivery {
+  salePriceTargetId String?                @db.Uuid
+  salePriceTarget   TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
+  siteCode          String                 @id @db.VarChar(40)
+  branchId          String                 @db.Uuid
+  branch            Branch                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  revision          BigInt                 @default(1)
+  deliveredRevision BigInt                 @default(0)
+  deliveredAt       DateTime?              @db.Timestamptz(3)
+  nextRefreshAt     DateTime?              @db.Timestamptz(3)
+
+  @@map("website_catalog_deliveries")
+}
+
+// Immutable imports and a compare-and-swap current sales-only catalog.
+model FloatingTourSaleCatalog {
+  packageId String                   @id @db.Uuid
+  package   TourPackage              @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  branchId  String                   @db.Uuid
+  version   Int                      @default(1)
+  payload   Json
+  updatedAt DateTime                 @updatedAt @db.Timestamptz(3)
+  imports   FloatingTourSaleImport[]
+
+  @@index([branchId])
+}
+
+model FloatingTourSaleImport {
+  id          String                  @id @default(uuid()) @db.Uuid
+  packageId   String                  @db.Uuid
+  catalog     FloatingTourSaleCatalog @relation(fields: [packageId], references: [packageId], onDelete: Restrict)
+  version     Int
+  actorUserId String                  @db.Uuid
+  digest      String                  @db.VarChar(64)
+  payload     Json
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
+
+  @@unique([packageId, version])
 }

@@ -1,3 +1,4 @@
+import { insuranceContractTrip } from './contract-trip';
 import {
   BadRequestException,
   ConflictException,
@@ -71,11 +72,13 @@ export const draftSchema = Joi.object({
     gender: Joi.string().valid('M', 'F').required(),
     mobile: Joi.string()
       .pattern(/^\+?[0-9]{10,15}$/)
-      .required(),
+      .allow('')
+      .default(''),
     email: Joi.string()
       .email({ tlds: { allow: false } })
       .max(160)
-      .required(),
+      .allow('')
+      .default(''),
   }).optional(),
 });
 
@@ -210,6 +213,13 @@ export class ReservationInsuranceService {
     const data = [];
     for (const row of rows) {
       const intake = await this.workflow.detail(row.id, actor.branchIds, true);
+      const contract = await this.db.client.salesContract.findFirst({
+        where: { id: row.contractId, branchId: { in: [...actor.branchIds] } },
+        select: { departureDate: true, returnNotBefore: true },
+      });
+      const trip = contract
+        ? insuranceContractTrip(contract, intake.snapshot)
+        : null;
       const existing = await this.db.client.reservationInsurancePolicy.findMany(
         {
           where: { contractId: row.contractId },
@@ -228,6 +238,7 @@ export class ReservationInsuranceService {
           customerId,
           contractNumber: intake.snapshot.contractNumber,
           passengerName: customer.displayName,
+          ...(trip ?? {}),
         });
       }
     }

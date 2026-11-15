@@ -427,6 +427,13 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/sales/pricing/management',
   },
   {
+    id: 'sales.pricing.floating',
+    inheritFrom: 'sales.pricing.management',
+    group: 'sales',
+    title: 'پکیج‌های شناور',
+    route: '/sales/pricing/floating',
+  },
+  {
     id: 'sales.pricing.generator',
     group: 'sales',
     title: 'ساخت پکیج',

@@ -6,6 +6,10 @@ Owner confirms secondary Groq key belongs to the same organization. Official org
 
 Owner requests compatible tool choice. Plan stage forces native tool; after an accepted plan, trusted orchestration permits auto choice and strictly shaped final JSON. No history substring can authorize final mode. Existing fresh-result references, role/scope rechecks and monetary boundaries remain enforced.21 targeted provider/orchestration tests pass. This fixes the forced-tool/final-output incompatibility only; full live matrix, guide-tool wiring and production activation remain pending.
 
+## TOUR-SITE-PICKER-1115 — PC-A — READY_FOR_CI
+
+Replace immediate website publication checkbox with Publish to website, a destination selector containing only the currently supported Niayesh Seir site, and explicit confirmation. Opening/selecting/cancelling never sends a publication command; preserve nss resource identity, current CAS version, loading/read-only/in-flight guards, failure feedback and deliberate unpublishing.23 focused UI/i18n checks pass; scoped lint and full Web TypeScript/build and exact-head CI gate authorized develop merge. New captions and Niayesh brand translation are mirrored without removing other catalogue entries. No API/schema/dependency/data/deployment changes or real website publication.
+
 ## ACCOUNT-TREE-LEVELS-1114 — PC-D
 
 Context creation follows root -> GROUP -> GENERAL -> SUBSIDIARY, using the exact clicked parent and preserving code prefixes. Subsidiary is a leaf. Show all book-owned detail types for independently selected levels four/five/six; mark inactive rows and preserve only their existing same-account/same-level choices. Seventeen focused Web/i18n tests and 77 isolated PostgreSQL tests pass; scoped lint, formatting, API/Web TypeScript and both production builds pass. No schema/dependency/operational-data changes or deployment. Browser acceptance unavailable because of computer-use kernel-assets initialization failure. See docs/tasks/ACCOUNT-TREE-LEVELS-1114.md.
@@ -10081,8 +10085,30 @@ DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility
 
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
+
+SITE-PUBLICATION-SYNC-1115 (PC-A): branch-scoped automatic future tour/ticket price publication, website-only pause/resume/remove and signed update-driven catalog delivery are implemented. Durable invalidation covers price, capacity, definition/reference changes and capacity-hold expiry; browser visits read the site's own database. Monotonic snapshots preserve removal under retries/out-of-order delivery; new paused orders are rejected before identity writes. Existing legacy website records retain their separate source identity.18 site tests,15 ERP tests, isolated PostgreSQL publication/branch/capacity/removal checks, scoped API lint and API/Web production builds passed. The two additive migrations preserve the first published migration and align the new Branch FK update rule separately. Production rollout and signed revision2 end-to-end acknowledgement are verified; three catalog visits generated no delivery, an explicit invalidation propagated, unsigned delivery was rejected, and both health endpoints pass. Hosted exact-head gates govern develop merge. No gateway activation or real purchase.
+
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
 
 ## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — 2026-11-15
 
 V3 protocol/final-format and bounded repair/quota handling updated in the independent acceptance branch.96 service,75 API/PostgreSQL and176 Web checks pass; isolated native IAM/API/BFF checks24 pass, including exact100.0000 USD, native scopes/company/session and503 source failure. Germany-routed model calls are real; final-source30-case certification and financial/browser completion remain pending. Owner chose waiting for existing Groq quota. No production v3 activation/migration; separately published stable22f85a6e3 must remain preserved. See docs/tasks/NORA-LIVE-ACCEPTANCE-1115.md. Scope stays active for same-source synthetic acceptance and bounded repairs.
+
+
+## INSURANCE-EMAIL-OPTIONAL-1115 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-email-optional-1115 from develop64e76e24. User authorizes optional insured email and develop merge. Reserve Insurance passenger fields/guides, standalone completeness, shared draft validation and Customers insurance identity adapter with focused tests. Preserve provided-email format validation, existing contact data, authorization, identity/version/provider idempotency and all peer changes. No shared TypeScript shape, schema, migration, dependency, provider-mode, operational data or deployment change. Previous overlapping insurance fixes are committed on develop; bounded source lease releases on verified merge.
+
+INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation tests and scoped ESLint pass. Blank or omitted email normalizes to an empty value, supplied email remains format-validated, standalone form permits blank email, and Customer issuance lookup no longer requires email. Empty correction email neither creates a blank contact nor changes an existing primary email. Exact-head full hosted checks gate the user-authorized merge. No production deployment.
+
+TOUR-PUBLICATION-1115: Tour definitions expose Draft/Published in create/edit and overview. New UI definitions default Draft; omission on legacy definitions stays Published. Sales dropdown and server list omit Draft, while authenticated management and pricing remain available; direct contract selection rejects Draft. Optional status stays in existing definition JSON (no migration).56 targeted tests and API lint pass; hosted quality/build/tests gates precede authorized develop merge. No production deployment.
+
+CHART-ACTIONS-1115: headquarters chart supports right-side edit/delete/move controls with persisted display overrides. Delete hides a chart node and promotes direct children. No personnel deletion. Local chart tests could not collect due to missing contracts build output.
+
+INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.
+
+## TICKET-SITE-PRICE-TARGET-1115 — PC-A
+
+Ticket website publication now follows explicit saved destination pricing for Niyayesh Seir Sahar. Scoped implementation,42 API checks,18 site checks and the isolated migration proof passed; native atomic capacity reservation is preserved and target fare freshness is extended through final confirmation. Owner authorizes green develop merge and production deployment; see docs/tasks/TICKET-SITE-PRICE-TARGET-1115.md.
+
+SALES-MANAGER-CHART-1115: headquarters sales hierarchy recognizes spelling variants and sales job titles; salespeople report to Mahsa Alaei. Scoped ESLint passed.

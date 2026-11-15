@@ -37,7 +37,7 @@ import {
   InsuranceInputGuide,
 } from './passenger-fields';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { getPublicApiBaseUrl } from '@/lib/environment';
+import { InsurancePolicyPdfLink } from './policy-pdf-link';
 import { StandaloneInsuranceDraft } from './standalone-draft';
 
 const emptyFilter = {
@@ -480,20 +480,7 @@ export function InsurancePolicies({
                           <FilePenLine size={15} />
                           اصلاح
                         </Button>
-                        {row.standalone && row.status === 'ISSUED' && (
-                          <a
-                            href={
-                              getPublicApiBaseUrl() +
-                              '/reservations/insurance/standalone/' +
-                              row.id +
-                              '/pdf'
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            دانلود PDF بیمه‌نامه
-                          </a>
-                        )}
+                        <InsurancePolicyPdfLink policy={row} />
                         <Button
                           variant="outline"
                           onClick={() => void showHistory(row.id)}
@@ -709,8 +696,8 @@ export function InsuranceDraft({
     customerId: target.customerId ?? '',
     destinationCode: previous?.destinationCode ?? '',
     planCode: previous?.planCode ?? '',
-    departureDate: previous?.departureDate ?? '',
-    durationDays: previous?.durationDays ?? 7,
+    departureDate: target.departureDate ?? '',
+    durationDays: target.durationDays ?? 7,
     notes: previous?.notes ?? '',
     expectedVersion: previous?.version ?? 0,
   });
@@ -814,6 +801,7 @@ export function InsuranceDraft({
           <p>در حال دریافت اطلاعات بیمه‌شده…</p>
         ) : draft.passenger ? (
           <InsurancePassengerFields
+            mobileRequired={false}
             value={draft.passenger}
             disabled={busy}
             onChange={(passenger) =>

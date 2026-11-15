@@ -52,7 +52,7 @@ export class SiteCommerceController {
     @Param('site') site: string,
     @Param('kind') kind: string,
     @Param('resourceId', ParseUUIDPipe) id: string,
-    @Body() body: { enabled: boolean; version: number },
+    @Body() body: { enabled: boolean; salesStopped?: boolean; version: number },
     @Req() req: AuthenticatedRequest,
   ) {
     const result = await this.service.publish(site, kind, id, body, req.actor);
