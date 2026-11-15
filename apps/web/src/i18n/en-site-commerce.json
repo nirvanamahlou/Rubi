@@ -47,5 +47,7 @@
   "توقف فروش سایت": "Pause website sales",
   "حذف از سایت": "Remove from website",
   "قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت، محصول و رزروهای قبلی را حذف نمی‌کند.": "Published prices and details update when ERP changes. Removing a website listing preserves the product and prior bookings.",
-  "این شعبه به سایت نیایش سیر متصل نیست.": "This branch is not connected to the Niyayesh Seir website."
+  "این شعبه به سایت نیایش سیر متصل نیست.": "This branch is not connected to the Niyayesh Seir website.",
+  "برای انتشار، درصد مقصد «نیایش سیر سحر» را ثبت کنید؛ درصد ۱۰۰ یعنی عدم نمایش.": "To publish, save the percentage for Niyayesh Seir Sahar; 100 percent hides the fare.",
+  "ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.": "First save the Niyayesh Seir Sahar destination percentage in ticket pricing."
 }

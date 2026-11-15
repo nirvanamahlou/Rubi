@@ -125,6 +125,12 @@ function PublicationSwitch({
           نمایش در سایت؛ فروش متوقف است
         </p>
       ) : null}
+      {kind === 'ticket' ? (
+        <p className="text-xs text-muted-foreground">
+          برای انتشار، درصد مقصد «نیایش سیر سحر» را ثبت کنید؛ درصد ۱۰۰ یعنی عدم
+          نمایش.
+        </p>
+      ) : null}
       <p className="text-xs text-muted-foreground">
         قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت،
         محصول و رزروهای قبلی را حذف نمی‌کند.

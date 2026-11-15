@@ -56,6 +56,17 @@ export class SiteCommerceService {
     return { ...actor, branchIds: [binding.branchId] };
   }
 
+  private async ticketTarget(site: string, branchId: string) {
+    const binding = await this.db.client.websiteCatalogDelivery.findUnique({
+      where: { siteCode: site },
+    });
+    if (binding?.branchId !== branchId || !binding.salePriceTargetId)
+      throw new BadRequestException(
+        'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
+      );
+    return binding.salePriceTargetId;
+  }
+
   async publication(
     site: string,
     kind: string,
@@ -108,9 +119,15 @@ export class SiteCommerceService {
     const branchId = bindings[site]?.branchId as string | undefined;
     if (!branchId || !actor.branchIds.includes(branchId))
       throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
-    if (kind === 'ticket')
+    if (kind === 'ticket') {
       await this.tickets.documentSupply(resourceId, [branchId]);
-    else await this.tours.pricingDeparture(resourceId, [branchId]);
+      if (input.enabled)
+        await this.tickets.websiteOffer(
+          resourceId,
+          [branchId],
+          await this.ticketTarget(site, branchId),
+        );
+    } else await this.tours.pricingDeparture(resourceId, [branchId]);
     const key = {
       siteCode: site,
       kind,
@@ -149,8 +166,12 @@ export class SiteCommerceService {
     };
   }
 
-  private async flight(offerId: string, branchIds: readonly string[]) {
-    const offer = await this.tickets.websiteOffer(offerId, branchIds);
+  private async flight(
+    offerId: string,
+    branchIds: readonly string[],
+    targetId?: string,
+  ) {
+    const offer = await this.tickets.websiteOffer(offerId, branchIds, targetId);
     const [origin, destination, originAirport, destinationAirport] =
       await Promise.all([
         this.references.detail('cities', offer.originId),
@@ -228,7 +249,13 @@ export class SiteCommerceService {
       try {
         const product =
           row.kind === 'ticket'
-            ? { flight: await this.flight(row.resourceId, scoped.branchIds) }
+            ? {
+                flight: await this.flight(
+                  row.resourceId,
+                  scoped.branchIds,
+                  await this.ticketTarget(site, scoped.branchIds[0]!),
+                ),
+              }
             : {
                 tour: await this.websiteTour(row.resourceId, scoped),
                 rooms: (
@@ -355,7 +382,9 @@ export class SiteCommerceService {
         throw new BadRequestException('پرواز رفت را انتخاب کنید.');
       const offers = await Promise.all(
         selections.map((s) =>
-          this.tickets.websiteOffer(s.offerId, actor.branchIds),
+          this.ticketTarget(site, actor.branchIds[0]!).then((target) =>
+            this.tickets.websiteOffer(s.offerId, actor.branchIds, target),
+          ),
         ),
       );
       const seats = input.passengers.filter(
@@ -442,7 +471,11 @@ export class SiteCommerceService {
       if (!product)
         throw new ForbiddenException('محصول برای سایت منتشر نشده است.');
       offers.push(
-        await this.tickets.websiteOffer(product.resourceId, scoped.branchIds),
+        await this.tickets.websiteOffer(
+          product.resourceId,
+          scoped.branchIds,
+          await this.ticketTarget(site, scoped.branchIds[0]!),
+        ),
       );
     }
     const seats = body.birthDates.filter(
@@ -478,6 +511,11 @@ export class SiteCommerceService {
       scoped,
     );
     if (!recovered) await this.assertPublished(site, input, scoped);
+    const ticketTargetId = input.services.some(
+      (s) => s.metadata?.tourDepartureId,
+    )
+      ? undefined
+      : await this.ticketTarget(site, scoped.branchIds[0]!);
     const created = await this.sales.create(
       {
         ...input,
@@ -485,6 +523,7 @@ export class SiteCommerceService {
           ...s,
           metadata: {
             ...s.metadata,
+            catalogSalePriceTargetId: ticketTargetId ?? null,
             sourceSite: site,
             externalOrderId: externalId,
           },
@@ -607,7 +646,45 @@ export class SiteCommerceService {
       );
     }
     const { data: current } = await this.sales.detail(row.contractId, scoped);
-    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status))
+    if (['DRAFT', 'PENDING_CONFIRMATION'].includes(current.status)) {
+      const tourIds = [
+        ...new Set(
+          current.servicesDetail
+            .map((s) => s.metadata?.tourDepartureId)
+            .filter((id): id is string => typeof id === 'string'),
+        ),
+      ];
+      if (!tourIds.length) {
+        const targetId = await this.ticketTarget(site, scoped.branchIds[0]!);
+        if (
+          current.servicesDetail.some(
+            (s) =>
+              s.kind === 'FLIGHT' &&
+              s.metadata?.catalogSalePriceTargetId !== targetId,
+          )
+        )
+          throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+      }
+      const resources = tourIds.length
+        ? tourIds.map((resourceId) => ({ kind: 'tour', resourceId }))
+        : current.ticketSelections.map((s) => ({
+            kind: 'ticket',
+            resourceId: s.offerId,
+          }));
+      for (const resource of resources) {
+        const publication = await this.db.client.websitePublication.findUnique({
+          where: {
+            siteCode_branchId_kind_resourceId: {
+              siteCode: site,
+              branchId: scoped.branchIds[0]!,
+              ...resource,
+            },
+          },
+        });
+        if (!publication?.enabled || publication.salesStopped)
+          throw new ConflictException('این محصول برای سایت منتشر نشده است.');
+      }
+      // Native confirmation locks both offers and re-reads ERP allocations, holds and target fares.
       await this.sales.confirm(
         row.contractId,
         current.version,
@@ -615,6 +692,7 @@ export class SiteCommerceService {
         scoped,
         `site:${site}:${externalId}:confirm`,
       );
+    }
     return this.status(site, externalId, actor);
   }
 
