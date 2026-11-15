@@ -454,7 +454,7 @@ function parseDedicatedFloatingRows(
     const nights = [1, 2].map((n) => Number(fields[`nights_${n}`]?.value));
     if (
       nights.some((n) => !Number.isSafeInteger(n) || n < 1) ||
-      nights[0]! + nights[1] !== options.nights
+      nights[0]! + nights[1]! !== options.nights
     )
       return fail(
         `Row ${i + 1}: مجموع شب‌های دو هتل باید با تعداد شب بازه برابر باشد.`,
