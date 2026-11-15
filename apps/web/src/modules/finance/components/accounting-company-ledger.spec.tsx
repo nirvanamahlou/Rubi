@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import type { AccountingSnapshotV1 } from '@nora/contracts';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
@@ -30,6 +31,62 @@ describe('company ledger form and list', () => {
         <TooltipProvider>{node}</TooltipProvider>
       </QueryClientProvider>,
     );
+  it('renders allocated year dates in Persian while retaining the stored ISO values', () => {
+    const snapshot = {
+      book: {
+        id: 'book',
+        code: '1',
+        title: 'Company',
+        titleEn: null,
+        version: 1,
+        branchId: 'branch',
+        baseCurrency: 'IRR',
+        active: true,
+      },
+      configurations: [
+        {
+          id: 'year',
+          kind: 'fiscal-years',
+          code: '1405',
+          title: '1405',
+          active: true,
+          attributes: {},
+        },
+      ],
+      periods: [
+        {
+          id: 'period',
+          bookId: 'book',
+          fiscalYearId: 'year',
+          startDate: '2026-03-21',
+          endDate: '2027-03-20',
+          status: 'OPEN',
+          isDefault: true,
+          version: 1,
+        },
+      ],
+    } as unknown as AccountingSnapshotV1;
+    const html = wrap(
+      <AccountingLedgerEditor
+        snapshot={snapshot}
+        company={{
+          id: 'company',
+          code: 'NIYAYESH_SEIR_SAHAR',
+          title: 'Company',
+        }}
+        branches={[{ id: 'branch', name: 'Branch' }]}
+        busy={false}
+        run={vi.fn()}
+        refresh={vi.fn()}
+        onCreated={vi.fn()}
+      />,
+    );
+    expect(html).toContain('dateTime="2026-03-21"');
+    expect(html).toContain('dateTime="2027-03-20"');
+    expect(html).toContain('فروردین');
+    expect(html).toContain('اسفند');
+    expect(html).not.toContain('>2026-03-21<');
+  });
   it('shows canonical immutable title and removes branch and currency selectors', () => {
     const html = wrap(
       <AccountingLedgerEditor

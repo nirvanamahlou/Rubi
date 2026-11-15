@@ -18,6 +18,29 @@ vi.mock('@/modules/iam/access-context', () => ({
 vi.mock('next/navigation', () => ({ usePathname: () => '/finance/inbox' }));
 vi.mock('@/components/access-link', () => ({ default: 'a' }));
 describe('Finance year controls', () => {
+  it('renders the default period once, with its default marker on the actual selected option', () => {
+    const period = {
+      id: 'period-1405',
+      title: '1405',
+      isDefault: true,
+      yearActive: true,
+      status: 'OPEN',
+    };
+    state.value = {
+      active: true,
+      data: { periods: [period], defaultPeriodId: period.id },
+      period,
+      temporary: false,
+      loading: false,
+      writing: false,
+    };
+    const html = renderToStaticMarkup(<FinanceFiscalSelector />);
+    expect(html.match(/<option /g)).toHaveLength(1);
+    expect(html).toContain('value="period-1405" selected=""');
+    expect(html).toContain('1405 (پیش‌فرض)');
+    expect(html).not.toContain('value=""');
+    expect(html).not.toContain('بازگشت به پیش‌فرض');
+  });
   it('hides the header control outside permitted Finance routes and shows undefined explicitly', () => {
     state.value = { active: false };
     expect(renderToStaticMarkup(<FinanceFiscalSelector />)).toBe('');
