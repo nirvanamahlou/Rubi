@@ -859,7 +859,6 @@ export function TourWorkspace({
                           ['خدمات', pack.details.services],
                           ['شرایط اقساط', pack.details.installmentTerms],
                           ['قوانین استرداد', pack.details.refundRules],
-                          ['مدت سفر (روز)', pack.details.durationDays],
                           ['امتیاز', pack.details.rating],
                           ['مبدأ فرودگاهی', pack.details.originAirportCode],
                           ['فرودگاه مقصد', pack.details.destinationAirportCode],

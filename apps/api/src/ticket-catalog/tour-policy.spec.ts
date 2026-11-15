@@ -20,7 +20,7 @@ const departure = {
   returnOfferId: second,
 };
 describe('tour inputs', () => {
-  it('validates ordered combined destinations and derives total trip length without changing the caller', () => {
+  it('validates ordered combined destinations without imposing a package-wide duration', () => {
     const input = {
       ...pack,
       details: {
@@ -33,7 +33,7 @@ describe('tour inputs', () => {
       },
     };
     const before = JSON.stringify(input);
-    expect(validateTourPackage(input).details?.durationDays).toBe(8);
+    expect(validateTourPackage(input).details?.durationDays).toBeUndefined();
     expect(JSON.stringify(input)).toBe(before);
     for (const destinations of [
       [
@@ -130,7 +130,7 @@ describe('tour inputs', () => {
       services: 'هتل',
       installmentTerms: 'دو قسط',
       refundRules: 'طبق شرایط',
-      durationDays: 8,
+
       rating: 4.5,
       originAirportCode: 'IKA',
       transport: 'FLIGHT',
@@ -146,7 +146,7 @@ describe('tour inputs', () => {
   });
   it.each([
     { version: 2 },
-    { durationDays: -1 },
+
     { rating: 6 },
     { originAirportCode: 'IKAA' },
     { transport: 'BUS' },
@@ -221,4 +221,16 @@ it('accepts only supported publication states while preserving legacy omission',
   expect(() =>
     validateTourPackage({ name: 'Synthetic', publicationStatus: 'INVALID' }),
   ).toThrow();
+});
+
+it('ignores legacy fixed durations while preserving independently dated departures', () => {
+  for (const durationDays of [8, -1, '', 365]) {
+    const input = { ...pack, details: { version: 1, durationDays } };
+    expect(validateTourPackage(input).details).toEqual({ version: 1 });
+    expect(input.details.durationDays).toBe(durationDays);
+  }
+  expect(validateTourDeparture(departure).endsOn).toBe('2099-10-08');
+  expect(
+    validateTourDeparture({ ...departure, endsOn: '2099-10-15' }).endsOn,
+  ).toBe('2099-10-15');
 });
