@@ -6196,6 +6196,17 @@
   "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden in Sales for the selected company. Restoring applies to all three sections.",
   "نمایش قراردادها": "Contract visibility",
   "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company",
-  "شروع اضافه‌کاری": "Overtime start",
-  "مبلغ تشویق هر ساعت اضافه‌کاری (تومان)": "Reward per overtime hour (toman)"
+  "شروع اضافه‌کاری": "Overtime start time",
+  "مبلغ تشویق هر ساعت اضافه‌کاری (تومان)": "Overtime incentive per hour (Toman)",
+  "انتشار در سایت": "Publish to website",
+  "منتشرشده در نیایش سیر": "Published on Niayesh Seir",
+  "سایت مقصد": "Destination website",
+  "سایت را انتخاب کنید": "Select a website",
+  "لغو انتشار": "Unpublish",
+  "نیایش سیر": "Niayesh Seir",
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication.",
+  "پنهان": "Hidden",
+  "شناسه گره": "Node ID",
+  "مختصات افقی": "Horizontal position",
+  "مختصات عمودی": "Vertical position"
 }

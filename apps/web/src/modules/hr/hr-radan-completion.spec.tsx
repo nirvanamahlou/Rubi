@@ -168,6 +168,8 @@ it('renders approved working-hour controls and overtime start with stable stored
   expect(html).toContain('hr-time-workingHours-field-11');
   expect(html).not.toContain('type="checkbox"');
   expect(html).not.toContain('checked=""');
+  expect(html).toContain('تعریف ضرایب پیشفرض');
+  expect(html).toMatch(/<input[^>]*role="combobox"[^>]*value="خیر"/);
   expect(hrGroups.time!.find((g) => g.id === 'workingHours')?.label).toBe(
     'ساعت کار',
   );
