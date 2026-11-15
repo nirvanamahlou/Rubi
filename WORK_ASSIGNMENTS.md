@@ -12724,3 +12724,5 @@ HOURLY-LEAVE-DEADLINE-1115 PC-B completed. Resolve assigned office end for hourl
 OVERTIME-TIME-INPUT-1115 PC-B completed: contextual form recognizes overtime-start as time. Scoped ESLint passed. Owner authorizes push/merge.
 
 WEBSITE-TICKET-LOGO-1115 — PC-A — active: the owner's website-airline image approval and issued-ticket logo question cover the same sanitized pixels in native ticket HTML/PDF. Reserve Sales branding controller, Site Commerce purpose-specific read, native Web ticket PDF route and focused tests. No new dependency/migration lease; reuse approved image sanitizer. Preserve native contract scope, cancellation and finance-release gates and the live peer runtime overlay. No issuance/payment/financial approval used for validation.
+
+SITE-AIRLINE-LOGO-1115 CI integration repair: reserve one additive English label in apps/web/src/i18n/en-overrides.json for the concurrently merged hourly-leave deadline validation. Translation only; no HR behavior, schema or runtime grant changes.
