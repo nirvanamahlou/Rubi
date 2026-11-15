@@ -21,3 +21,7 @@ Validation: 17 focused Web/i18n tests and 77 PostgreSQL tests pass, including le
 The first concurrent validation exhausted Node's default 2 GiB heap and caused a PostgreSQL regression timeout with dependent failures. Re-running the complete 77-test set separately passed; subsequent type/build checks use a 4 GiB Node heap and run sequentially.
 
 Direct browser acceptance is unavailable: the computer-use connection fails while writing kernel assets. This implementation is compared with the supplied screenshots and tested in code; no live Rahkaran read or visual acceptance is claimed. No production deployment or PR/merge is authorized for this new task. Automatic task-branch commit and normal push follow the owner's standing preference.
+
+## Publication follow-up
+
+The owner subsequently authorizes hosted CI, PR to develop and merge only after all checks pass. Integrate current develop81b188ee2 by normal merge; task product sources are unchanged. No production deployment. Review preserves exact parent hierarchy, same-book/type validation, command authorization/version/audit guards and existing financial records.
