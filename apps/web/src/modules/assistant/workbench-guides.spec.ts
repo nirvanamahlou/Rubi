@@ -10,6 +10,15 @@ import {
 import { proxyAssistantConversation } from './proxy';
 
 describe('vetted Workbench guidance', () => {
+  it('clarifies an unknown Workbench procedure instead of sending it to the Sales SQL agent', () => {
+    expect(
+      resolveWorkbenchGuide('برای انجام این کار چطور اقدام کنم؟', 'requests')
+        ?.clarification,
+    ).toBeTruthy();
+    expect(
+      resolveWorkbenchGuide('فروش امروز چقدر است؟', 'requests'),
+    ).toBeUndefined();
+  });
   it('covers request deletion, note templates and calendar-native shortcuts without inventing workflows', () => {
     expect(resolveWorkbenchGuide('حذف درخواستم چطوره؟')?.topic?.id).toBe(
       'request-delete',

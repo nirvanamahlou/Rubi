@@ -85,6 +85,18 @@ export function resolveWorkbenchGuide(
     const topic = catalog.topics.find((t) => t.tab === tab);
     if (topic) return { topic, goal };
   }
+  if (
+    tab &&
+    catalog.topics.some((t) => t.tab === tab) &&
+    /چطور|چجور|چگونه|از کجا|راهنما/.test(text) &&
+    !/فروش|درآمد|قرارداد|مطالبات|مبلغ/.test(text)
+  ) {
+    return {
+      goal,
+      clarification:
+        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+    };
+  }
   return undefined;
 }
 
