@@ -160,9 +160,6 @@ export function FloatingTourPricingWorkspace() {
     };
   }, []);
   useEffect(() => {
-    setPreview(null);
-    setCatalog(null);
-    setPeriod('');
     if (!id || !session) return;
     let active = true;
     packagePricingApi
@@ -223,7 +220,9 @@ export function FloatingTourPricingWorkspace() {
             setId(e.target.value);
             setFile(null);
             setError('');
-            patch({ combined: !!selected?.details?.isCombined });
+            setCatalog(null);
+            setPeriod('');
+            patch({ combined: !!selected?.details?.isCombined, nights: 0 });
           }}
         >
           <option value="">انتخاب تور شناور</option>

@@ -418,11 +418,7 @@ export function TourWorkspace({
   };
   const repeatTour = (item: TourDepartureV1) => {
     if (mode === 'definition') {
-      router.push(
-        item.details?.isFloating
-          ? '/sales/pricing/floating?tour=' + encodeURIComponent(item.id)
-          : '/sales/pricing',
-      );
+      router.push('/sales/pricing');
       return;
     }
     selectTour(item.package);
