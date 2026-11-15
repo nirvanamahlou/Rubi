@@ -1,3 +1,5 @@
+import { DocumentsService } from '../documents/documents.service';
+import { attachAirlineLogos, websiteAirlineLogo } from './airline-logos';
 import {
   BadRequestException,
   ConflictException,
@@ -5,6 +7,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import type {
@@ -49,6 +52,9 @@ export class SiteCommerceService {
     private readonly delivery: FinanceDeliveryService,
     @Inject(ReservationTicketDocumentsService)
     private readonly ticketDocuments: ReservationTicketDocumentsService,
+    @Optional()
+    @Inject(DocumentsService)
+    private readonly documents?: DocumentsService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -304,7 +310,31 @@ export class SiteCommerceService {
         });
       }
     }
-    return { version: 1, data };
+    if (!this.documents || site !== 'nss') return { version: 1, data };
+    const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
+    for (const product of data) {
+      if ('flight' in product && product.flight) flights.push(product.flight);
+      if ('tour' in product && product.tour) {
+        flights.push(product.tour.outbound);
+        if (product.tour.returning) flights.push(product.tour.returning);
+      }
+    }
+    // Reserve room for base64/URL overhead inside the existing four-MiB signed delivery.
+    const available = Math.floor(
+      Math.max(
+        0,
+        4 * 1024 * 1024 -
+          Buffer.byteLength(JSON.stringify({ version: 1, data })) -
+          128 * 1024,
+      ) * 0.7,
+    );
+    const airlineLogos = await attachAirlineLogos(
+      flights,
+      (name) =>
+        websiteAirlineLogo(name, scoped, this.references, this.documents!),
+      available,
+    );
+    return { version: 1, data, airlineLogos };
   }
 
   private async websiteTour(id: string, actor: AuthenticatedActor) {

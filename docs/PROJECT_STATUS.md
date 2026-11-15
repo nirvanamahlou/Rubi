@@ -10129,3 +10129,7 @@ FINANCE-SOURCE-LINKS-1115 / PR1723 integration: owner explicitly authorizes deve
 ## SITE-PASSENGER-SYNC-1115 — PC-A
 
 Owner explicitly authorizes synchronizing website-entered passenger identity to the same-national-ID ERP profile. The configured-site people endpoint now consumes a Customers public method with supplied-field allowlisting, branch pinning, protected passport storage, bounded optimistic retries and native atomic audit. Manual lookup stays strict; general roles/status/ownership and all existing products/orders/payments are preserved.65 focused tests pass; full API build/typecheck and hosted gates precede authorized green develop merge and API-only rollout. No schema/dependency change. See docs/tasks/SITE-PASSENGER-SYNC-1115.md.
+
+## SITE-AIRLINE-LOGO-1115 — PC-A
+
+The owner explicitly authorizes only sanitized image pixels of published airline brand logos across the source branch. Site Commerce attaches bounded, metadata-free PNG assets to the existing signed catalog, with hash URLs served from the website's local accepted snapshot. No IAM membership or general document access changes. Source edits, archive/policy/version changes and deletions queue the NSS catalog revision.160 focused API checks and an isolated PostgreSQL invalidation proof pass; final API build and exact-head hosted checks gate the authorized develop merge/API rollout. The native ticket renderer already supports airline logos; website ticket output acceptance is tracked separately from catalog delivery. See docs/tasks/SITE-AIRLINE-LOGO-1115.md.
