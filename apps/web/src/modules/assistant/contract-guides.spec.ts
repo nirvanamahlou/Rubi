@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { contractGuideAnswer, resolveContractGuide } from './contract-guides';
+import { contractAdvice } from './contract-advice';
 
 describe('ERP contract workflow help', () => {
+  it('does not let nested multi-part advice intercept a live portfolio question', () => {
+    const question =
+      'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو؛ قراردادهای پنهان را حساب نکن. فقط تعداد دقیق و منبع را بده.';
+    expect(contractAdvice(question, true)).toContain('شماره کامل قرارداد');
+    expect(contractAdvice(question, true, true)).toBeUndefined();
+    expect(
+      resolveContractGuide(question, true, undefined, false, true),
+    ).toBeUndefined();
+  });
+  it('preserves multi-part procedural advice with the data Agent enabled', () => {
+    const question = 'چطور هتل را تغییر دهم؟ چطور رسید ثبت کنم؟';
+    const legacy = contractAdvice(question, true);
+    expect(legacy).toBeTruthy();
+    expect(contractAdvice(question, true, true)).toEqual(legacy);
+  });
   it.each([
     'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو',
     'چند ردیف در منبع contracts برای شرکت فعال قابل مشاهده است؟ همه وضعیت‌ها و همه تاریخ‌ها را حساب کن.',
