@@ -2,6 +2,78 @@ import { expect, it } from 'vitest';
 import type { DashboardSourceMetric } from '../common/dashboard-source';
 import { renderDashboardBreakdown } from './reporting-dashboard-breakdowns';
 
+it('activates first-response daily means without inventing unanswered days or resolution time', () => {
+  const result = renderDashboardBreakdown('support-time-trend', {
+    'first-response-time': {
+      kind: 'count',
+      calculation: 'mean',
+      unit: 'دقیقه',
+      aggregation: 'real response',
+      observations: [
+        { at: new Date('2026-11-01T21:00:00Z'), value: '10' },
+        { at: new Date('2026-11-01T22:00:00Z'), value: '30' },
+        { at: new Date('2026-11-04T10:00:00Z'), value: '80' },
+      ],
+    },
+  });
+  expect(result.visual).toMatchObject({
+    labels: ['2026-11-02', '2026-11-04'],
+    values: [20, 80],
+    unit: 'دقیقه',
+    missingMetrics: { 'resolution-time': 'MEASUREMENT_INPUTS_REQUIRED' },
+  });
+  expect(result.visual?.series).toEqual([
+    { label: 'میانگین زمان نخستین پاسخ', values: [20, 80] },
+  ]);
+});
+
+it('activates daily overtime in hours without substituting workdays or a performance score', () => {
+  const result = renderDashboardBreakdown('workforce-performance', {
+    'employee-overtime': {
+      kind: 'count',
+      unit: 'ساعت',
+      aggregation: 'accepted work',
+      observations: [
+        { at: new Date('2026-11-01'), value: '1.5' },
+        { at: new Date('2026-11-01'), value: '2.25' },
+      ],
+    },
+  });
+  expect(result.visual).toMatchObject({
+    labels: ['2026-11-01'],
+    values: [3.75],
+    unit: 'ساعت',
+    missingMetrics: { 'employee-performance': 'MEASUREMENT_INPUTS_REQUIRED' },
+  });
+  expect(
+    renderDashboardBreakdown('workforce-performance', {}).visual,
+  ).toBeUndefined();
+});
+
+it('counts final contracts by destination without multiplying by currency or exposing destination keys', () => {
+  const result = renderDashboardBreakdown('customer-destination-distribution', {
+    'finalized-sales-count': {
+      kind: 'count',
+      aggregation: 'one finalized contract',
+      observations: ['private-city-1', 'private-city-1', 'private-city-2'].map(
+        (key) => ({
+          at: new Date('2026-11-01'),
+          value: '1',
+          dimensions: { destination: 'Same city name' },
+          dimensionKeys: { destination: key },
+        }),
+      ),
+    },
+  });
+  expect(result.visual?.values).toEqual([2, 1]);
+  expect(result.visual?.labels).toEqual([
+    'Same city name · 1',
+    'Same city name · 2',
+  ]);
+  expect(JSON.stringify(result)).not.toContain('private-city');
+  expect(result.visual?.notice).toContain('شمار مسافران');
+});
+
 const money: DashboardSourceMetric = {
   kind: 'money',
   calculation: 'mean',

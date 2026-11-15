@@ -48,7 +48,7 @@ export function validateMessage(value) {
     history: value.history.map(({ role, content }) => ({ role, content })),
   };
 }
-export async function readMessage(request, signal) {
+export async function readMessage(request, signal, validate = validateMessage) {
   if (
     request.headers['content-type']?.split(';')[0].trim() !== 'application/json'
   )
@@ -75,7 +75,7 @@ export async function readMessage(request, signal) {
       try {
         done(
           null,
-          validateMessage(JSON.parse(Buffer.concat(chunks).toString('utf8'))),
+          validate(JSON.parse(Buffer.concat(chunks).toString('utf8'))),
         );
       } catch {
         done(new ServiceError(400, 'INVALID_MESSAGE'));

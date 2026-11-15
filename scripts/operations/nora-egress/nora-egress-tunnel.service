@@ -1,0 +1,15 @@
+[Unit]
+Description=Nora encrypted Groq egress tunnel
+After=network-online.target docker.service
+Wants=network-online.target
+[Service]
+ExecStart=/usr/bin/ssh -NT -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/opt/rubi/private/nora-egress/known_hosts -o IdentitiesOnly=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -i /opt/rubi/private/nora-egress/id_ed25519 -L 172.18.0.1:4310:127.0.0.1:4310 nora-tunnel@82.115.17.210
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+[Install]
+WantedBy=multi-user.target

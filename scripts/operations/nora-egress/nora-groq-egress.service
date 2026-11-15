@@ -1,0 +1,23 @@
+[Unit]
+Description=Nora fixed Groq TLS egress
+After=network-online.target
+Wants=network-online.target
+[Service]
+ExecStart=/usr/bin/python3 /opt/nora-egress/groq-connect.py
+Restart=on-failure
+RestartSec=3
+DynamicUser=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=96M
+TasksMax=24
+LimitNOFILE=128
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,9 @@ import { expect, it, vi } from 'vitest';
 import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 import { dashboardKpis, dashboardPages } from '../model/registry';
 import { DashboardWorkspace } from './dashboard-workspace';
+import type { DashboardProjectionSnapshot } from '../model/projection-client';
 const state = vi.hoisted(() => ({
+  page: 'executive-overview',
   data: {
     state: 'ready',
     message: '',
@@ -18,11 +20,11 @@ const state = vi.hoisted(() => ({
         missingMetrics: { 'gross-profit': 'APPROVED_MATCHED_COST_REQUIRED' },
       },
     },
-  },
+  } as unknown as DashboardProjectionSnapshot,
 }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
-  useSearchParams: () => new URLSearchParams({ page: 'executive-overview' }),
+  useSearchParams: () => new URLSearchParams({ page: state.page }),
   useRouter: () => ({ replace: vi.fn() }),
 }));
 vi.mock('@tanstack/react-query', () => ({
@@ -56,3 +58,49 @@ it('renders missing-input reasons on cards and partial charts while retaining a 
   expect(html).toContain('سود ناخالص · قابل محاسبه نیست');
   expect(html).toContain('aria-label="0"');
 });
+
+it.each([
+  [
+    'customer-behavior-analysis',
+    'customer-destination-distribution',
+    'تعداد قرارداد نهایی‌شده به تفکیک مقصد',
+    'تعداد',
+  ],
+  ['workforce-hr', 'workforce-performance', 'ساعت اضافه‌کاری ثبت‌شده', 'ساعت'],
+  [
+    'support-service-quality',
+    'support-time-trend',
+    'میانگین زمان نخستین پاسخ واقعی',
+    'دقیقه',
+  ],
+])(
+  'renders the activated chart on %s with its source units and limitations',
+  (page, id, notice, unit) => {
+    state.page = page;
+    state.data = {
+      state: 'ready',
+      message: '',
+      metadata: null,
+      metrics: {},
+      visuals: {
+        [id]: { labels: ['2026-11-01'], values: [2.5], unit, notice },
+      },
+    };
+    const permissions = [
+      ...new Set([
+        ...dashboardKpis.map((k) => k.permission),
+        ...dashboardPages.flatMap((p) =>
+          p.visualizations.map((v) => v.permission),
+        ),
+      ]),
+    ];
+    const html = renderToStaticMarkup(
+      <AccessPermissionsProvider value={permissions}>
+        <DashboardWorkspace />
+      </AccessPermissionsProvider>,
+    );
+    expect(html).toContain(notice);
+    expect(html).toContain(unit);
+    expect(html).toContain('2026-11-01');
+  },
+);

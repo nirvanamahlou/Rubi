@@ -14,6 +14,14 @@ import { SalesAssistantController } from '../sales/sales-assistant.controller';
 import { SalesAssistantConfirmationService } from '../sales/sales-assistant-confirmation.service';
 import { CustomerAffairsAssistantController } from '../customer-affairs/customer-affairs-assistant.controller';
 import { AssistantReadAccessController } from './assistant-read-access.controller';
+import { SalesAgentController } from '../sales/assistant-agent/controller';
+import { SalesAgentQueryService } from '../sales/assistant-agent/query.service';
+import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
+import {
+  DOCUMENT_TEMPLATE_POLICY_PORT,
+  FailClosedDocumentTemplatePolicyAdapter,
+} from '../legal-entities/document-template-policy.port';
 
 @Controller('health')
 class AssistantReadHealthController {
@@ -37,12 +45,21 @@ class AssistantReadHealthController {
   ],
   controllers: [
     AssistantReadAccessController,
+    SalesAgentController,
     AssistantReadHealthController,
     SalesAssistantController,
     CustomerAffairsAssistantController,
   ],
   providers: [
     AuthGuard,
+    SalesAgentQueryService,
+    ContractCompanyScope,
+    LegalEntitiesService,
+    FailClosedDocumentTemplatePolicyAdapter,
+    {
+      provide: DOCUMENT_TEMPLATE_POLICY_PORT,
+      useExisting: FailClosedDocumentTemplatePolicyAdapter,
+    },
     IamService,
     IamFinanceDirectory,
     MfaTotpService,

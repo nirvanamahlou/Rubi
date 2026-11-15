@@ -87,6 +87,60 @@ const filters = {
 };
 
 describe('native dashboard independent source composition', () => {
+  it('serves newly activated charts through the native endpoint composition, including chart-only requests', async () => {
+    const at = new Date('2026-10-15');
+    const source: DashboardSourceResult = {
+      source: 'fixture',
+      state: 'ready',
+      metrics: {
+        'finalized-sales-count': {
+          kind: 'count',
+          aggregation: 'contract',
+          observations: [
+            { at, value: '1', dimensions: { destination: 'City' } },
+          ],
+        },
+        'employee-overtime': {
+          kind: 'count',
+          unit: 'ساعت',
+          aggregation: 'attendance',
+          observations: [{ at, value: '2.5' }],
+        },
+        'first-response-time': {
+          kind: 'count',
+          calculation: 'mean',
+          unit: 'دقیقه',
+          aggregation: 'response',
+          observations: [
+            { at, value: '10' },
+            { at, value: '30' },
+          ],
+        },
+      },
+    };
+    const ids =
+      'customer-destination-distribution,workforce-performance,support-time-trend';
+    const result = await setup(source, absent(), absent()).native.load(
+      { kpiIds: '', visualIds: ids },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(result.metrics).toEqual({});
+    expect(result.visuals['customer-destination-distribution']?.values).toEqual(
+      [1],
+    );
+    expect(result.visuals['workforce-performance']?.values).toEqual([2.5]);
+    expect(result.visuals['support-time-trend']?.values).toEqual([20]);
+    const denied = await setup(absent(), absent(), absent()).native.load(
+      { kpiIds: '', visualIds: ids },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(denied.visuals).toEqual({});
+    expect(Object.keys(denied.unavailableVisuals ?? {})).toHaveLength(3);
+  });
   it('derives unconverted lead growth from comparable authorized periods and withholds a zero or missing baseline', async () => {
     const count = (n: number): DashboardSourceResult => ({
       source: 'leads',

@@ -25,3 +25,5 @@ Direct browser acceptance is unavailable: the computer-use connection fails whil
 ## Publication follow-up
 
 The owner subsequently authorizes hosted CI, PR to develop and merge only after all checks pass. Integrate current develop81b188ee2 by normal merge; task product sources are unchanged. No production deployment. Review preserves exact parent hierarchy, same-book/type validation, command authorization/version/audit guards and existing financial records.
+
+CI integration: c4defb869 passed all four push gates. Head837ee43b6 inherited the two-line Prisma formatting failure in develop81b188ee2. Normal merge of developce8e3db60 consumes published repair9be81a9a6 and peer changes intact; both task/status entries and every translation key are retained. Local Prisma formatting produces no schema delta. Product sources remain unchanged; new exact-head push and PR gates must pass before merge.

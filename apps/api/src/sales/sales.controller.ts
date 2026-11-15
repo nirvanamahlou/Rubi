@@ -91,6 +91,42 @@ export class SalesController {
     return this.partyCorrection.correct(id, input, request.actor);
   }
 
+  @Get('submissions/:key')
+  @Header('Cache-Control', 'private, no-store')
+  submission(
+    @Param('key', ParseUUIDPipe) key: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.submissionStatus(key, req.actor);
+  }
+
+  @Get('contracts/:id/document-readiness')
+  @Header('Cache-Control', 'private, no-store')
+  async documentReadiness(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { data: contract } = await this.service.detail(id, req.actor);
+    const authorization = await this.delivery.readCustomerContract(id);
+    const intake = await this.travel.forContract(id, [contract.branchId]);
+    return {
+      data: {
+        deliverable:
+          authorization.approved &&
+          contract.status !== 'CANCELLED' &&
+          intake.workflow.supplierStatus !== 'CANCELLED',
+        financeApproved: authorization.approved,
+        tickets: intake.ticketDocuments.length,
+        insured: intake.workflow.insuranceIssued,
+        voucher: intake.workflow.voucherIssued,
+        supplier: intake.workflow.supplierStatus,
+        contractVersion: intake.contractVersion,
+        receivedAt: intake.receivedAt,
+        appliedVersion: intake.workflow.appliedContractVersion ?? null,
+      },
+    };
+  }
+
   @Get('contracts/:id/travel-documents')
   @Header('Cache-Control', 'private, no-store')
   async travelDocuments(

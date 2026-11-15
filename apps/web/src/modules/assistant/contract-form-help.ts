@@ -5,6 +5,40 @@ import {
   resolveContractGuide,
 } from './contract-guides';
 
+export function formCorrectionTargets() {
+  const marker = document.querySelector<HTMLElement>('[data-nora-stage]');
+  if (!marker || marker.dataset.noraReady === 'true') return [];
+  let blockers: string;
+  try {
+    blockers = JSON.parse(marker.dataset.noraBlockers || '[]').join(' ');
+  } catch {
+    return [];
+  }
+  return [
+    {
+      id: 'nora-contract-route',
+      label: 'اصلاح مسیر',
+      pattern: /مبدأ|مقصد|مسیر/,
+    },
+    {
+      id: 'nora-contract-services',
+      label: 'اصلاح خدمات و اتاق‌ها',
+      pattern: /اتاق|بیمه|هتل|پرواز|خدمات|ویزا|پکیج/,
+    },
+    {
+      id: 'nora-contract-assignment',
+      label: 'اصلاح تخصیص مسافران',
+      pattern: /مسافر|مهمان|متقاضی/,
+    },
+    {
+      id: 'nora-contract-pricing',
+      label: 'اصلاح قیمت و پرداخت',
+      pattern: /.+/,
+    },
+  ]
+    .filter((t) => t.pattern.test(blockers) && document.getElementById(t.id))
+    .map(({ id, label }) => ({ id, label }));
+}
 export function readContractFormHelp(message: string): string | undefined {
   const question = normalizeContractQuestion(message);
   if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(question)) return;

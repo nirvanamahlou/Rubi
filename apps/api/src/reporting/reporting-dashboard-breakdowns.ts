@@ -14,6 +14,26 @@ type Breakdown = {
 };
 /** Explicit chart/measure lineage. Never infer a missing source from a chart title. */
 export const dashboardBreakdowns: Readonly<Record<string, Breakdown>> = {
+  'customer-destination-distribution': {
+    metrics: ['finalized-sales-count'],
+    dimension: 'destination',
+    notice:
+      'تعداد قرارداد نهایی‌شده به تفکیک مقصد؛ هر قرارداد یک‌بار شمرده می‌شود. شمار مسافران منبع مستقل می‌خواهد و از تعداد قرارداد حدس زده نمی‌شود.',
+  },
+  'support-time-trend': {
+    metrics: ['first-response-time'],
+    missingMetrics: ['resolution-time'],
+    dimension: 'date',
+    notice:
+      'میانگین زمان نخستین پاسخ واقعی به تفکیک روز پاسخ در زمان تهران؛ روز فاقد پاسخ صفر نیست. زمان حل تا انتشار منبع معتبر نمایش داده نمی‌شود.',
+  },
+  'workforce-performance': {
+    metrics: ['employee-overtime'],
+    missingMetrics: ['employee-performance'],
+    dimension: 'date',
+    notice:
+      'ساعت اضافه‌کاری ثبت‌شده در آخرین حضور معتبر هر کارمند و روز؛ امتیاز ارزیابی عملکرد تا اتصال منبع مصوب نمایش داده نمی‌شود.',
+  },
   'customer-service-distribution': {
     metrics: ['customer-service-usage'],
     dimension: 'service',
@@ -135,6 +155,7 @@ const labels: Readonly<Record<string, string>> = {
   'net-sales': 'فروش خالص',
   'discount-amount': 'تخفیف',
   'employee-finalized-sales-count': 'فروش نهایی',
+  'finalized-sales-count': 'قرارداد نهایی‌شده',
   'employee-sales-amount': 'فروش خالص',
   'employee-average-sale': 'میانگین فروش',
   'employee-contract-count': 'قرارداد ایجادشده',
@@ -150,6 +171,7 @@ const labels: Readonly<Record<string, string>> = {
   'document-incomplete': 'ناقص',
   'document-expired': 'منقضی',
   'support-ticket-count': 'درخواست پشتیبانی',
+  'first-response-time': 'میانگین زمان نخستین پاسخ',
 };
 const aggregate = (
   rows: readonly DashboardObservation[],
