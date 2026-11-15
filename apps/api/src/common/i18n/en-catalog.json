@@ -8699,5 +8699,6 @@
   "وضعیت انتشار تغییر کرده است.": "The publication status has changed.",
   "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
   "ایجاد زیرمجموعه مجاز نیست": "Child account creation is not available",
-  "عملیات ساختار حساب": "Account structure actions"
+  "عملیات ساختار حساب": "Account structure actions",
+  "این شعبه به سایت نیایش سیر متصل نیست.": "This branch is not connected to the Niyayesh Seir website."
 }

@@ -6195,5 +6195,7 @@
   "قرارداد اعمال شد.": "contracts updated.",
   "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden in Sales for the selected company. Restoring applies to all three sections.",
   "نمایش قراردادها": "Contract visibility",
-  "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company"
+  "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company",
+  "شروع اضافه‌کاری": "Overtime start",
+  "مبلغ تشویق هر ساعت اضافه‌کاری (تومان)": "Reward per overtime hour (toman)"
 }

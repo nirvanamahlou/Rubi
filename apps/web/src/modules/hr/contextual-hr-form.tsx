@@ -426,6 +426,7 @@ const deviceFormOrder = [
 ];
 
 const workingHoursLabels: Record<string, string> = {
+  'شروع اضافه‌کاری': 'شروع اضافه‌کاری',
   'نام ساعت کاری': 'نام ساعت کاری',
   توضیحات: 'توضیحات ساعت کاری',
   'ساعت شروع': 'زمان آغاز',
