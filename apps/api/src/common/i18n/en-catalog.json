@@ -8706,5 +8706,12 @@
   "سایت را انتخاب کنید": "Select a website",
   "لغو انتشار": "Unpublish",
   "نیایش سیر": "Niayesh Seir",
-  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication."
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication.",
+  "این مورد از چارت حذف شود؟": "Remove this item from the chart?",
+  "پنهان": "Hidden",
+  "ذخیره تغییرات انجام نشد.": "Could not save changes.",
+  "شرکت مجاز یافت نشد.": "No authorized company found.",
+  "شناسه گره": "Node ID",
+  "مختصات افقی": "Horizontal position",
+  "مختصات عمودی": "Vertical position"
 }

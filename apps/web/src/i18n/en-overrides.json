@@ -6204,5 +6204,12 @@
   "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden in Sales for the selected company. Restoring applies to all three sections.",
   "نمایش قراردادها": "Contract visibility",
   "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company",
-  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication."
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication.",
+  "این مورد از چارت حذف شود؟": "Remove this item from the chart?",
+  "پنهان": "Hidden",
+  "ذخیره تغییرات انجام نشد.": "Could not save changes.",
+  "شرکت مجاز یافت نشد.": "No authorized company found.",
+  "شناسه گره": "Node ID",
+  "مختصات افقی": "Horizontal position",
+  "مختصات عمودی": "Vertical position"
 }
