@@ -88,6 +88,7 @@ const detailsSchema = Joi.object({
     ),
 });
 const packageSchema = Joi.object({
+  publicationStatus: Joi.string().valid('DRAFT', 'PUBLISHED'),
   name: Joi.string().trim().min(1).max(160).required(),
   originId: id.allow('').default(''),
   destinationId: id.allow('').default(''),

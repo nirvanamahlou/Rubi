@@ -12610,3 +12610,7 @@ PC-C / NORA-CONTRACT-RECOVERY-1115 reserves the Sales create and submission-stat
 NORA-CONTRACT-RECOVERY-1115 integration: the merge of HR PR1707 into develop introduced constant-false JSX in the working-hours form. Reserve only its unreachable rendering branches and affected HR rendering assertions to preserve the merged behavior while restoring CI.
 
 The same integration reserves two missing HR labels in the English UI overrides, identified by the unmodified translation coverage gate.
+
+## TOUR-PUBLICATION-1115 — PC-A — IN_PROGRESS
+
+Reserve optional shared TourPackageInputV1 publicationStatus (DRAFT/PUBLISHED), JSON-definition validation, Sales list and direct-selection checks, Tour definition UI and tests. Legacy omission remains published; new UI definitions default draft. Producer Ticket Catalog, consumers Sales/Tour management. No migration/dependency/deployment. Owner authorizes develop merge after green CI.
