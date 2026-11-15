@@ -4838,6 +4838,8 @@ model FinanceBankAccountAudit {
 }
 
 model FinanceOperationalRequest {
+  fiscalPeriodId             String?                      @db.Uuid
+  fiscalPeriod               AccountingPeriod?            @relation(fields: [fiscalPeriodId], references: [id], onDelete: Restrict, map: "finance_requests_fiscal_period_fk")
   pettyFundId                String?                      @db.Uuid
   pettyFund                  FinanceOperationalRequest?   @relation("PettyFundRequests", fields: [pettyFundId], references: [id], onDelete: Restrict)
   pettyRequests              FinanceOperationalRequest[]  @relation("PettyFundRequests")
@@ -4877,6 +4879,7 @@ model FinanceOperationalRequest {
   reminders                  FinanceReminderDelivery[]
 
   @@unique([payrollEmployeeId, payrollPeriod])
+  @@index([fiscalPeriodId], map: "finance_requests_fiscal_period_idx")
   @@index([counterpartyOrganizationId, counterpartyRole, branchId, dueAt], map: "finance_partner_request_lookup")
   @@index([branchId, status, dueAt])
   @@index([refundReceiptId, status])
@@ -7295,20 +7298,23 @@ model AccountingConfiguration {
 }
 
 model AccountingPeriod {
-  statements       AccountingStatement[]
-  id               String                        @id @default(uuid()) @db.Uuid
-  bookId           String                        @db.Uuid
-  book             AccountingBook                @relation(fields: [bookId], references: [id], onDelete: Restrict)
-  fiscalYearId     String                        @db.Uuid
-  fiscalYear       AccountingConfiguration       @relation(fields: [fiscalYearId], references: [id], onDelete: Restrict)
-  startDate        String                        @db.VarChar(10)
-  endDate          String                        @db.VarChar(10)
-  status           String                        @default("OPEN") @db.VarChar(16)
-  version          Int                           @default(1)
-  journals         AccountingJournal[]
-  generalDocuments AccountingGeneralDocument[]
-  oldStateEvents   AccountingJournalStateEvent[] @relation("AccountingStateEventOldPeriod")
-  newStateEvents   AccountingJournalStateEvent[] @relation("AccountingStateEventNewPeriod")
+  financialRequests FinanceOperationalRequest[]
+  financialEvents   FinanceAccountingEvent[]
+  statements        AccountingStatement[]
+  id                String                        @id @default(uuid()) @db.Uuid
+  bookId            String                        @db.Uuid
+  book              AccountingBook                @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  fiscalYearId      String                        @db.Uuid
+  fiscalYear        AccountingConfiguration       @relation(fields: [fiscalYearId], references: [id], onDelete: Restrict)
+  startDate         String                        @db.VarChar(10)
+  endDate           String                        @db.VarChar(10)
+  status            String                        @default("OPEN") @db.VarChar(16)
+  isDefault         Boolean                       @default(false)
+  version           Int                           @default(1)
+  journals          AccountingJournal[]
+  generalDocuments  AccountingGeneralDocument[]
+  oldStateEvents    AccountingJournalStateEvent[] @relation("AccountingStateEventOldPeriod")
+  newStateEvents    AccountingJournalStateEvent[] @relation("AccountingStateEventNewPeriod")
 
   @@unique([bookId, fiscalYearId])
   @@unique([id, bookId])
@@ -7903,6 +7909,8 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
+  fiscalPeriodId      String?                   @db.Uuid
+  fiscalPeriod        AccountingPeriod?         @relation(fields: [fiscalPeriodId], references: [id], onDelete: Restrict, map: "finance_accounting_events_fiscal_period_fk")
   financialWorkflows  AccountingWorkflow[]
   basisEventId        String?                   @db.Uuid
   basisEvent          FinanceAccountingEvent?   @relation("ReceiptAllocationBasis", fields: [basisEventId], references: [id], onDelete: Restrict)
@@ -7937,6 +7945,7 @@ model FinanceAccountingEvent {
 
   @@index([basisEventId], map: "financial_event_basis_idx")
   @@index([branchId, journalId, createdAt])
+  @@index([fiscalPeriodId], map: "finance_accounting_events_fiscal_period_idx")
   @@map("finance_accounting_events")
 }
 

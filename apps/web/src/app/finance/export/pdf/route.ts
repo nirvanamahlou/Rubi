@@ -22,11 +22,22 @@ export async function GET(request: Request) {
       { status: 400, headers },
     );
   try {
+    const upstreamHeaders: Record<string, string> = {
+      cookie: request.headers.get('cookie') ?? '',
+      accept: 'application/json',
+    };
+    for (const key of [
+      'x-finance-company',
+      'x-finance-actor-id',
+      'x-finance-period-id',
+      'x-finance-period-version',
+      'x-finance-period-mode',
+    ]) {
+      const value = request.headers.get(key);
+      if (value) upstreamHeaders[key] = value;
+    }
     const response = await fetch(base + '/finance/export-data?' + query, {
-      headers: {
-        cookie: request.headers.get('cookie') ?? '',
-        accept: 'application/json',
-      },
+      headers: upstreamHeaders,
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(30000),

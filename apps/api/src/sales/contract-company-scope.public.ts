@@ -10,6 +10,7 @@ import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { contractIntakeReferences } from '../reservations/contract-references.public';
+import { currentFinanceFiscalRequest } from '../finance/fiscal-context/finance-fiscal-storage';
 
 /** Contract ownership is independent of user context and branch membership. */
 @Injectable()
@@ -21,7 +22,16 @@ export class ContractCompanyScope {
   ) {}
 
   async selected(actor: AuthenticatedActor, requireSingle = false) {
-    const { data } = await this.entities.current(actor);
+    const fiscal = currentFinanceFiscalRequest();
+    const data =
+      fiscal && fiscal.actorId === actor.userId
+        ? {
+            isAggregate: fiscal.isAggregate,
+            legalEntity: fiscal.issuerCompanyId
+              ? { id: fiscal.issuerCompanyId }
+              : null,
+          }
+        : (await this.entities.current(actor)).data;
     if (data.isAggregate) {
       if (!actor.permissions.includes('legal-entity.aggregate.read'))
         throw new ForbiddenException();
@@ -93,26 +103,34 @@ export class ContractCompanyScope {
     };
   }
 
-  async eventWhere(
-    actor: AuthenticatedActor,
-  ): Promise<Prisma.FinanceAccountingEventWhereInput> {
+  private async eventReferences(actor: AuthenticatedActor) {
     const excluded = await this.excludedReferences(actor);
     const intakes = await contractIntakeReferences(
       this.db.client,
       excluded.ids,
     );
     return {
+      requestIds: [
+        ...excluded.ids,
+        ...intakes.flatMap((row) => [
+          row.id,
+          row.requestId,
+          ...row.servicePurchases.map((purchase) => purchase.id),
+        ]),
+      ],
+      numbers: excluded.numbers,
+    };
+  }
+
+  async eventWhere(
+    actor: AuthenticatedActor,
+  ): Promise<Prisma.FinanceAccountingEventWhereInput> {
+    const excluded = await this.eventReferences(actor);
+    return {
       AND: [
         {
           requestId: {
-            notIn: [
-              ...excluded.ids,
-              ...intakes.flatMap((row) => [
-                row.id,
-                row.requestId,
-                ...row.servicePurchases.map((purchase) => purchase.id),
-              ]),
-            ],
+            notIn: excluded.requestIds,
           },
         },
         {
@@ -123,6 +141,12 @@ export class ContractCompanyScope {
         },
       ],
     };
+  }
+
+  /** Public read boundary for Finance aggregations with the fixed SQL alias e. */
+  async eventSqlWhere(actor: AuthenticatedActor): Promise<Prisma.Sql> {
+    const excluded = await this.eventReferences(actor);
+    return Prisma.sql`(${excluded.requestIds.length ? Prisma.sql`e."requestId" NOT IN (${Prisma.join(excluded.requestIds.map((id) => Prisma.sql`${id}::uuid`))})` : Prisma.sql`true`}) AND (${excluded.numbers.length ? Prisma.sql`e."trackingNumber" IS NULL OR e."trackingNumber" NOT IN (${Prisma.join(excluded.numbers)})` : Prisma.sql`true`})`;
   }
 
   async assertVisible(contractId: string, actor: AuthenticatedActor) {

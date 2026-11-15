@@ -11,6 +11,7 @@ import type {
   FinanceHistoryItemV1,
 } from '@nora/contracts';
 import type { FinanceInboxService } from './finance-inbox.service';
+import { currentFinanceFiscalRequest } from './fiscal-context/finance-fiscal-storage';
 import {
   decimalText,
   decimalUnits,
@@ -79,11 +80,20 @@ export async function financeExportSnapshot(
     scope,
     generatedAt: new Date().toISOString(),
     preparedBy: actor.userId,
-    filterSnapshot: Object.fromEntries(
-      Object.entries(query).filter(
-        ([key]) => !['page', 'pageSize'].includes(key),
+    filterSnapshot: {
+      ...Object.fromEntries(
+        Object.entries(query).filter(
+          ([key]) => !['page', 'pageSize'].includes(key),
+        ),
       ),
-    ),
+      ...(currentFinanceFiscalRequest()
+        ? {
+            company: currentFinanceFiscalRequest()!.companySelection,
+            fiscalYear: currentFinanceFiscalRequest()!.period?.title ?? '',
+            fiscalPeriodId: currentFinanceFiscalRequest()!.period?.id ?? '',
+          }
+        : {}),
+    },
   };
   if (scope === 'INBOX') {
     const result = await inbox.list(actor, !!query.approvalGroup);
@@ -115,6 +125,7 @@ export async function financeExportSnapshot(
         column('ثبت (تهران)', 'DATE'),
         column('سررسید (تهران)', 'DATE'),
         column('توضیحات'),
+        column('سال مالی مبدأ'),
       ],
       rows: items.map((item) => [
         item.sourceReference,
@@ -132,6 +143,10 @@ export async function financeExportSnapshot(
         item.createdAt,
         item.dueAt,
         item.description,
+        item.carryForward?.originalYearTitle ??
+          (item.carryForward
+            ? 'فاقد تخصیص سال مالی'
+            : (currentFinanceFiscalRequest()?.period?.title ?? null)),
       ]),
       totals: totals(
         items.flatMap((item) => (item.amount ? [item.amount] : [])),

@@ -105,6 +105,7 @@ export interface AccountingPeriodV1 {
   endDate: string;
   status: 'OPEN' | 'CLOSING' | 'CLOSED';
   version: number;
+  isDefault?: boolean;
 }
 export interface AccountingAccountV1 extends AccountingRecord {
   parentId: string | null;

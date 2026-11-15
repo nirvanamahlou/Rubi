@@ -17,6 +17,14 @@ import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { setupNotes } from './accounting.setup-notes';
 import { taxForm, taxValues } from './accounting-tax.validation';
 import * as v from './accounting.validation';
+import {
+  fiscalConfigWhere,
+  assertFiscalConfigDate,
+} from '../fiscal-context/finance-fiscal-config';
+import {
+  FinanceFiscalStorage,
+  assertFinanceFiscalWrite,
+} from '../fiscal-context/finance-fiscal-storage';
 
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -81,6 +89,19 @@ export class AccountingTaxService {
           where: { id, bookId, kind: `vat-${kind}` },
         });
         if (!row) throw new NotFoundException('رکورد مالیاتی پیدا نشد.');
+        if (kind === 'periods') {
+          const values = row.attributes as AccountingTaxValues;
+          await assertFinanceFiscalWrite(
+            tx,
+            String(values.dpkStartDate_MaskedTextBox),
+          );
+          assertFiscalConfigDate(
+            bookId,
+            values.dpkStartDate_MaskedTextBox,
+            true,
+          );
+          assertFiscalConfigDate(bookId, values.dpkEndDate_MaskedTextBox, true);
+        }
         if (row.version !== body.version)
           throw new ConflictException(
             'رکورد تغییر کرده است؛ دوباره بارگذاری کنید.',
@@ -139,6 +160,9 @@ export class AccountingTaxService {
       where: { id: bookId, branchId: { in: actor.branchIds } },
     });
     if (!book) throw new NotFoundException('دفتر حسابداری پیدا نشد.');
+    const scope = new FinanceFiscalStorage().current();
+    if (scope && scope.bookId !== bookId)
+      throw new NotFoundException('دفتر حسابداری در شرکت فعال در دسترس نیست.');
     return book;
   }
 
@@ -146,12 +170,24 @@ export class AccountingTaxService {
     taxForm(kind);
     await this.book(this.database.client, bookId, actor);
     const rows = await this.database.client.accountingConfiguration.findMany({
-      where: { bookId, kind: `vat-${kind}` },
+      where: {
+        bookId,
+        kind: `vat-${kind}`,
+        ...(kind === 'periods'
+          ? fiscalConfigWhere(bookId, 'dpkStartDate_MaskedTextBox')
+          : {}),
+      },
       orderBy: { createdAt: 'asc' },
       take: 1000,
     });
     const total = await this.database.client.accountingConfiguration.count({
-      where: { bookId, kind: `vat-${kind}` },
+      where: {
+        bookId,
+        kind: `vat-${kind}`,
+        ...(kind === 'periods'
+          ? fiscalConfigWhere(bookId, 'dpkStartDate_MaskedTextBox')
+          : {}),
+      },
     });
     return { items: rows.map(dto), truncated: total > rows.length };
   }
@@ -173,6 +209,10 @@ export class AccountingTaxService {
     const id = v.uuid(body.id, true);
     const key = v.uuid(body.key)!;
     const values = taxValues(kind, body.values);
+    if (kind === 'periods') {
+      assertFiscalConfigDate(bookId, values.dpkStartDate_MaskedTextBox, true);
+      assertFiscalConfigDate(bookId, values.dpkEndDate_MaskedTextBox, true);
+    }
     if (id && (!Number.isInteger(body.version) || Number(body.version) < 1))
       v.invalid('نسخه رکورد معتبر نیست.');
     const hash = createHash('sha256')
@@ -192,6 +232,11 @@ export class AccountingTaxService {
       return await this.database.client.$transaction(
         async (tx) => {
           const book = await this.book(tx, bookId, actor, true);
+          if (kind === 'periods')
+            await assertFinanceFiscalWrite(
+              tx,
+              String(values.dpkStartDate_MaskedTextBox),
+            );
           const prior = await tx.accountingCommand.findUnique({
             where: { bookId_key: { bookId, key } },
           });
@@ -209,6 +254,12 @@ export class AccountingTaxService {
             : null;
           if (id && !existing)
             throw new NotFoundException('رکورد مالیاتی پیدا نشد.');
+          if (kind === 'periods' && existing)
+            assertFiscalConfigDate(
+              bookId,
+              (existing.attributes as AccountingTaxValues)
+                .dpkStartDate_MaskedTextBox,
+            );
           if (existing && existing.version !== body.version)
             throw new ConflictException(
               'رکورد تغییر کرده است؛ دوباره بارگذاری کنید.',

@@ -395,9 +395,13 @@ export async function workflowSources(tx: Tx, book: Book, search: string) {
       payroll.gross.length > 100,
   };
 }
-export async function workflowList(tx: Tx, book: Book) {
+export async function workflowList(
+  tx: Tx,
+  book: Book,
+  occurredAt?: { gte: Date; lt: Date },
+) {
   const rows = await tx.accountingWorkflow.findMany({
-    where: { bookId: book.id },
+    where: { bookId: book.id, ...(occurredAt ? { occurredAt } : {}) },
     include: { journal: { select: { id: true, status: true, version: true } } },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 101,

@@ -55,6 +55,13 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
         ORDER BY e."attemptedAt" ASC NULLS FIRST, e.id ASC LIMIT 25`;
       for (const event of events) {
         try {
+          const period = event.fiscalPeriodId
+            ? await this.database.client.accountingPeriod.findUnique({
+                where: { id: event.fiscalPeriodId },
+              })
+            : null;
+          if (event.fiscalPeriodId && !period)
+            throw new Error('سال مالی رویداد در دسترس نیست.');
           if (isReceiptAllocation(event.kind)) {
             const basis = event.basisEventId
               ? await this.database.client.financeAccountingEvent.findUnique({
@@ -91,6 +98,7 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
                 kind: FINANCIAL_RULE_KIND,
                 active: true,
                 book: {
+                  ...(period ? { id: period.bookId } : {}),
                   branchId: event.branchId,
                   active: true,
                   allowsPosting: true,

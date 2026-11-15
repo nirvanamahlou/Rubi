@@ -1,5 +1,7 @@
 'use client';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
+import { useFinanceFiscalContext } from '../finance-fiscal-context';
+import { financeRouteNeedsYear } from './finance-fiscal-boundary';
 
 import { AccountingCodingStandard } from './accounting-coding-standard';
 import { AccountingStandardMapping } from './accounting-standard-mapping';
@@ -38,6 +40,7 @@ import {
 import { AccountingAccountGroups } from './accounting-account-groups';
 import { AccountingSubsidiaryMapping } from './accounting-subsidiary-mapping';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
+import { AccountingFiscalDefault } from './accounting-fiscal-default';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import {
@@ -268,6 +271,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
 }
 
 function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
+  const fiscal = useFinanceFiscalContext();
   const permissions = useAccessPermissions();
   const can = (p: string) => !!permissions?.includes(p);
   const queryClient = useQueryClient();
@@ -295,7 +299,22 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     queryFn: () => accountingApi.snapshot(bookId),
     enabled: !!bookId,
   });
-  const snapshot = snapshotQuery.data ?? null;
+  const fullSnapshot = snapshotQuery.data ?? null;
+  // Setup and explicit destination pickers retain the full calendar. Other screens
+  // receive the active source year, including their default filter/form values.
+  const snapshot =
+    fullSnapshot &&
+    fiscal?.active &&
+    financeRouteNeedsYear(pathname) &&
+    !pathname.includes('/year-end/') &&
+    !pathname.endsWith('/documents/move')
+      ? {
+          ...fullSnapshot,
+          periods: fullSnapshot.periods.filter(
+            (period) => period.id === fiscal.period?.id,
+          ),
+        }
+      : fullSnapshot;
   const loading = booksQuery.isPending || (!!bookId && snapshotQuery.isPending);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -335,6 +354,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['accounting'] }),
+      queryClient.invalidateQueries({ queryKey: ['finance-fiscal-context'] }),
       queryClient.invalidateQueries({
         queryKey: ['accounting-taxpayer-drafts', bookId],
       }),
@@ -1248,6 +1268,16 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
                     hidden={fiscalTab !== 'main'}
                     className="min-h-32 border bg-muted/20 p-3 [&>div>div:last-child]:sm:col-span-2"
                   >
+                    {editing && (
+                      <div className="mb-3">
+                        <AccountingFiscalDefault
+                          book={snapshot}
+                          yearId={editing.id}
+                          busy={busy}
+                          run={run}
+                        />
+                      </div>
+                    )}
                     <Fields
                       fields={recordFields.map((field) =>
                         field.key === 'description'

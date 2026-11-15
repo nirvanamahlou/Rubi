@@ -9,6 +9,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 import { AccountingCompanyScope } from './accounting-company-scope';
+import { FinanceFiscalStorage } from '../fiscal-context/finance-fiscal-storage';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import {
   journalBrowserAxes,
@@ -423,6 +424,9 @@ export class AccountingCompletionService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identity?: IamFinanceDirectory,
+    @Optional()
+    @Inject(FinanceFiscalStorage)
+    private readonly fiscal?: FinanceFiscalStorage,
   ) {}
 
   async journalBrowser(
@@ -587,6 +591,9 @@ export class AccountingCompletionService {
       Object.values(query).some((value) => typeof value !== 'string')
     )
       v.invalid('فیلتر گزارش معتبر نیست.');
+    query =
+      this.fiscal?.query(bookId, query as Record<string, string>) ?? query;
+    if (endPeriodId) this.fiscal?.assertPeriod(bookId, endPeriodId);
     const period = await tx.accountingPeriod.findFirst({
       where: { id: v.uuid(query.periodId)!, bookId },
     });

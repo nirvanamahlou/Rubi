@@ -10,12 +10,55 @@ import {
   exportQueryString,
 } from './finance-export-actions';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { setFiscalRequestHint } from '../fiscal-request-state';
 afterEach(() => {
+  setFiscalRequestHint(null);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.clearAllMocks();
 });
 describe('Finance output download integrity', () => {
+  it.each(['xlsx', 'pdf'] as const)(
+    'preserves the temporary fiscal year in %s downloads and authentication retries',
+    async (format) => {
+      vi.stubGlobal('window', {});
+      setFiscalRequestHint({
+        actorKey: 'actor',
+        companySelection: 'A',
+        mode: 'temporary',
+        period: {
+          id: 'year',
+          bookId: 'book',
+          fiscalYearId: 'definition',
+          startDate: '2026-03-21',
+          endDate: '2027-03-20',
+          title: '1405',
+          code: '1405',
+          status: 'OPEN',
+          yearActive: true,
+          version: 2,
+        },
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(Response.json({}, { status: 401 }))
+        .mockResolvedValueOnce(Response.json({}, { status: 403 }));
+      vi.stubGlobal('fetch', fetchMock);
+      vi.mocked(refreshAuthenticatedSession).mockImplementationOnce(
+        async () => {
+          setFiscalRequestHint(null);
+          return true as never;
+        },
+      );
+      await expect(downloadFinanceExport({}, format)).rejects.toThrow();
+      for (const call of fetchMock.mock.calls) {
+        const headers = new Headers(call[1].headers);
+        expect(headers.get('x-finance-period-id')).toBe('year');
+        expect(headers.get('x-finance-period-mode')).toBe('temporary');
+        expect(headers.get('x-finance-company')).toBe('A');
+      }
+    },
+  );
   it('encodes source filters safely and omits empty parameters', () => {
     expect(
       new URLSearchParams(exportQueryString({ category: 'PURCHASE' })).get(

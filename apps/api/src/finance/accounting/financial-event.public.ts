@@ -3,6 +3,7 @@ import { financialDate } from './accounting.financial-events';
 export { financialDate };
 import { createHash } from 'node:crypto';
 import { ConflictException } from '@nestjs/common';
+import { currentFinanceFiscalRequest } from '../fiscal-context/finance-fiscal-storage';
 import { Prisma } from '@nora/database';
 
 /** Owner modules call this public sink inside their own business transaction.
@@ -100,6 +101,38 @@ export async function recordFinancialEvent(
     );
   // Coordinate source capture with period closure without taking a journal-writing lock.
   await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId"=${input.branchId}::uuid AND active=true AND "allowsPosting"=true ORDER BY id FOR SHARE`;
+  const scope = currentFinanceFiscalRequest();
+  if (scope) {
+    if (!scope.period || !scope.bookId)
+      throw new ConflictException('ابتدا سال مالی شرکت را انتخاب کنید.');
+    if (input.actorId !== scope.actorId)
+      throw new ConflictException('کاربر فعال تغییر کرده است.');
+    await tx.$queryRaw`SELECT id FROM accounting_books WHERE id=${scope.bookId}::uuid FOR SHARE`;
+    const period = await tx.accountingPeriod.findFirst({
+      where: {
+        id: scope.period.id,
+        bookId: scope.bookId,
+        fiscalYear: { active: true, kind: 'fiscal-years' },
+      },
+    });
+    if (
+      !period ||
+      period.version !== scope.period.version ||
+      (scope.mode === 'default' && !period.isDefault)
+    )
+      throw new ConflictException(
+        'سال مالی فعال تغییر کرده است؛ صفحه را دوباره بارگذاری کنید.',
+      );
+    const date = financialDate(input.occurredAt);
+    if (
+      period.status !== 'OPEN' ||
+      date < period.startDate ||
+      date > period.endDate
+    )
+      throw new ConflictException(
+        'تاریخ دریافت یا پرداخت باید داخل سال مالی باز انتخاب‌شده باشد.',
+      );
+  }
   const cash =
     input.kind === 'CUSTOMER_RECEIPT' || input.kind.endsWith('_PAYMENT');
   const sourceKey = cash
@@ -122,7 +155,14 @@ export async function recordFinancialEvent(
     .update(JSON.stringify(Object.fromEntries(Object.entries(body).sort())))
     .digest('hex');
   await tx.financeAccountingEvent.createMany({
-    data: [{ ...body, sourceKey, fingerprint }],
+    data: [
+      {
+        ...body,
+        ...(scope ? { fiscalPeriodId: scope.period!.id } : {}),
+        sourceKey,
+        fingerprint,
+      },
+    ],
     skipDuplicates: true,
   });
   const saved = await tx.financeAccountingEvent.findUniqueOrThrow({
@@ -131,6 +171,14 @@ export async function recordFinancialEvent(
   if (saved.fingerprint !== fingerprint)
     throw new ConflictException(
       'رویداد مالی قبلاً با اطلاعات دیگری ثبت شده است.',
+    );
+  if (
+    scope &&
+    saved.fiscalPeriodId &&
+    saved.fiscalPeriodId !== scope.period?.id
+  )
+    throw new ConflictException(
+      'رویداد مالی قبلاً به سال مالی دیگری اختصاص یافته است.',
     );
   return saved.id;
 }

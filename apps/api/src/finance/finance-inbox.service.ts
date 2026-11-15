@@ -56,6 +56,8 @@ import { readFinanceInvoiceQueueStates } from './operations/finance-invoice-queu
 import type { FinanceHistoryQueryV1 } from '@nora/contracts';
 import { DecimalValue } from './finance.money';
 import { ContractCompanyScope } from '../sales/contract-company-scope.public';
+import { fiscalInboxItems } from './fiscal-context/finance-fiscal-inbox';
+import { currentFinanceFiscalRequest } from './fiscal-context/finance-fiscal-storage';
 
 import {
   compareFinanceQueueOrder,
@@ -281,7 +283,23 @@ export class FinanceInboxService {
       await this.database.client.financeOperationalRequest.findMany({
         where: {
           branchId: { in: actor.branchIds },
-          AND: [(await this.companyScope?.operationalWhere(actor)) ?? {}],
+          AND: [
+            (await this.companyScope?.operationalWhere(actor)) ?? {},
+            ...(currentFinanceFiscalRequest()
+              ? [
+                  {
+                    OR: [
+                      { fiscalPeriodId: null },
+                      {
+                        fiscalPeriod: {
+                          bookId: currentFinanceFiscalRequest()!.bookId ?? '',
+                        },
+                      },
+                    ],
+                  },
+                ]
+              : []),
+          ],
         },
         select: {
           id: true,
@@ -675,7 +693,7 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items,
+      items: fiscalInboxItems(items),
       sources: [
         ...sources,
         {

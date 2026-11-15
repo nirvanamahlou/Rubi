@@ -53,6 +53,14 @@ const storedSecretFields = (input: unknown): string[] => {
 };
 import { DatabaseService } from '../../database/database.service';
 import * as v from './accounting.validation';
+import {
+  fiscalConfigWhere,
+  assertFiscalConfigDate,
+} from '../fiscal-context/finance-fiscal-config';
+import {
+  FinanceFiscalStorage,
+  assertFinanceFiscalWrite,
+} from '../fiscal-context/finance-fiscal-storage';
 const kind = 'taxpayer-seller';
 const code = 'TAXPAYER-SELLER';
 const keys = [
@@ -155,6 +163,15 @@ export class AccountingTaxpayerService {
           }
           where.AND = clauses;
         }
+        if (kind === 'cancellations')
+          where.AND = [
+            ...(Array.isArray(where.AND)
+              ? where.AND
+              : where.AND
+                ? [where.AND]
+                : []),
+            fiscalConfigWhere(bookId, 'dpCancellationDate_MaskedTextBox'),
+          ];
         const rows = await tx.accountingConfiguration.findMany({
           where,
           orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
@@ -261,6 +278,20 @@ export class AccountingTaxpayerService {
             'پیش‌نویس تغییر کرده است؛ دوباره بارگذاری کنید.',
           );
         if (kind === 'cancellations') {
+          await assertFinanceFiscalWrite(
+            tx,
+            String(values.dpCancellationDate_MaskedTextBox),
+          );
+          assertFiscalConfigDate(
+            bookId,
+            values.dpCancellationDate_MaskedTextBox,
+            true,
+          );
+          if (current)
+            assertFiscalConfigDate(
+              bookId,
+              v.object(current.attributes).dpCancellationDate_MaskedTextBox,
+            );
           const reference = String(values.txtUniqueBillNumberRef);
           if (
             current &&
@@ -384,6 +415,9 @@ export class AccountingTaxpayerService {
       where: { id: bookId, branchId: { in: actor.branchIds } },
     });
     if (!book) throw new NotFoundException('دفتر حسابداری پیدا نشد.');
+    const scope = new FinanceFiscalStorage().current();
+    if (scope && scope.bookId !== bookId)
+      throw new NotFoundException('دفتر حسابداری در شرکت فعال در دسترس نیست.');
   }
   async seller(bookId: string, actor: AuthenticatedActor) {
     await this.scope(this.database.client, bookId, actor);
