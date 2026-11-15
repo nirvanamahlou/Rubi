@@ -1062,6 +1062,134 @@ export class CustomerService {
     }
   }
 
+  /** Website passenger entry: same national-ID profile, supplied identity fields only. */
+  async syncWebsitePassenger(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch: string,
+    traceId?: string,
+  ) {
+    const salesActor = this.salesEntryActor(actor);
+    const branch = branchOf(actor, requestedBranch);
+    const scoped = { ...salesActor, branchIds: [branch] };
+    if (input.kind !== 'person') throw new BadRequestException();
+    const passenger: CustomerMutationRequest = {
+      kind: 'person',
+      firstName: input.firstName,
+      lastName: input.lastName,
+      displayName: input.displayName,
+      roles: ['customer', 'passenger'],
+      ...Object.fromEntries(
+        (
+          [
+            'nationalId',
+            'birthDate',
+            'passportNumber',
+            'passportExpiryDate',
+            'passportFirstName',
+            'passportLastName',
+            'gender',
+            'nationalityCode',
+          ] as const
+        )
+          .filter((field) => input[field] !== undefined)
+          .map((field) => [field, input[field]]),
+      ),
+    };
+    const passport = passenger.passportNumber
+      ? this.nationalIdProtector.protectPassportNumber(passenger.passportNumber)
+      : undefined;
+    const prepared = prepareMutation(
+      passenger,
+      true,
+      undefined,
+      passport,
+      true,
+      true,
+    );
+    const allowed = new Set([
+      'firstName',
+      'lastName',
+      'displayName',
+      'birthDate',
+      'passportExpiryDate',
+      'passportFirstName',
+      'passportLastName',
+      'gender',
+      'nationalityCode',
+      ...Object.keys(passport ?? {}),
+    ]);
+    const patch = Object.fromEntries(
+      Object.entries(prepared).filter(([field]) => allowed.has(field)),
+    );
+    if (!passenger.nationalId)
+      return this.createForSales(passenger, scoped, branch, traceId);
+    const fingerprint = this.nationalIdProtector.protect(
+      passenger.nationalId,
+    ).nationalIdFingerprint;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const existing = await this.repository.findRegistration(fingerprint, [
+        branch,
+      ]);
+      if (!existing) {
+        try {
+          return await this.createForSales(passenger, scoped, branch, traceId);
+        } catch (error) {
+          const response =
+            error instanceof ConflictException ? error.getResponse() : null;
+          if (
+            attempt < 2 &&
+            typeof response === 'object' &&
+            response &&
+            'code' in response &&
+            response.code === 'CUSTOMER_NATIONAL_ID_EXISTS'
+          )
+            continue;
+          throw error;
+        }
+      }
+      const changes = Object.fromEntries(
+        Object.entries(patch).filter(([field, value]) => {
+          if (
+            field.startsWith('passportNumber') &&
+            passport &&
+            existing.passportNumberFingerprint ===
+              passport.passportNumberFingerprint
+          )
+            return false;
+          const previous = existing[field as keyof typeof existing];
+          return (
+            (previous instanceof Date ? previous.toISOString() : previous) !==
+            (value instanceof Date ? value.toISOString() : value)
+          );
+        }),
+      );
+      if (!Object.keys(changes).length)
+        return { data: { id: existing.id, displayName: existing.displayName } };
+      try {
+        const updated = await this.repository.update(
+          existing.id,
+          [branch],
+          changes,
+          existing.version,
+          actor.userId,
+          branch,
+          traceId,
+        );
+        if (updated)
+          return { data: { id: updated.id, displayName: updated.displayName } };
+      } catch (error) {
+        if (prismaCode(error) === 'P2002')
+          throw new ConflictException({
+            code: 'CUSTOMER_PASSPORT_NUMBER_EXISTS',
+            message: 'برای این شماره پاسپورت قبلاً پرونده ثبت شده است.',
+          });
+        throw error;
+      }
+    }
+    throw conflict();
+  }
+
   async registrationLookup(
     input: CustomerRegistrationLookupRequest,
     actor: AuthenticatedActor,

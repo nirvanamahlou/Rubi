@@ -1,0 +1,9 @@
+# SITE-PASSENGER-SYNC-1115
+
+Owner explicitly requests website passenger entry to update the same national-ID ERP profile instead of blocking on name or birth-date differences. This supersedes only the website people strict-match behavior. The existing endpoint and site payload remain compatible; manual registration lookup remains strict.
+
+Customers owns syncWebsitePassenger. The authenticated Site Commerce controller pins the configured site branch and returns only id/displayName. The method checks native Sales creation eligibility, validates person/travel identity, looks up an active unmerged person by national-ID fingerprint in exactly that branch and updates only supplied first/last/display names, birth date, passport names/number/expiry, gender and nationality. The lookup key, owner, status, roles, contacts, relationships and finance remain untouched. Omitted identity fields remain stored. Passport numbers use existing encrypted storage. New identities retain the native Sales creation path.
+
+Writes use the existing atomic version claim and privacy-safe Customer audit with a website sync trace; identical retries do not write another version. A concurrent version is reread within a bounded retry. Unique passport conflicts and invalid dates remain domain errors rather than being silently attached to another person. No general IAM permission or Customer update route is granted. No schema, migration or dependency change.
+
+Validation:65 focused Customers/Site Commerce tests pass, including eight new identity synchronization cases and two configured-site controller cases. Scoped lint, full API typecheck/build and hosted exact-head gates precede green develop merge and API-only rollout. Tests use synthetic data; no real passenger request is replayed and no operational contract/payment is created.
