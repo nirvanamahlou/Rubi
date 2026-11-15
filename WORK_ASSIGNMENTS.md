@@ -12618,3 +12618,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-insurance-email-optional-1115 from develop64
 INSURANCE-EMAIL-OPTIONAL-1115 bounded translation lease: three new optional-email labels in en-overrides.json only; preserve peer translations. No existing API/public labels changed.
 
 INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation tests and scoped ESLint pass. Blank or omitted email normalizes to an empty value, supplied email remains format-validated, standalone form permits blank email, and Customer issuance lookup no longer requires email. Empty correction email neither creates a blank contact nor changes an existing primary email. Exact-head full hosted checks gate the user-authorized merge. No production deployment.
+
+## TOUR-PUBLICATION-1115 — PC-A — IN_PROGRESS
+
+Reserve optional shared TourPackageInputV1 publicationStatus (DRAFT/PUBLISHED), JSON-definition validation, Sales list and direct-selection checks, Tour definition UI and tests. Legacy omission remains published; new UI definitions default draft. Producer Ticket Catalog, consumers Sales/Tour management. No migration/dependency/deployment. Owner authorizes develop merge after green CI.
+
+CHART-ACTIONS-1115 PC-B completed: headquarters chart display rename/hide/position stored as organization.chartLayout HR records. Scoped ESLint passed. Chart suite blocked by absent contracts build output. Owner authorizes push/merge.

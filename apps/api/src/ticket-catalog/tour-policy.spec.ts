@@ -208,3 +208,17 @@ it('round-trips optional package services and the selected insurance without cha
     validateTourPackage({ ...pack, tourGuide: 'invalid' }),
   ).toThrow();
 });
+
+it('accepts only supported publication states while preserving legacy omission', () => {
+  for (const publicationStatus of ['DRAFT', 'PUBLISHED'])
+    expect(
+      validateTourPackage({ name: 'Synthetic', publicationStatus })
+        .publicationStatus,
+    ).toBe(publicationStatus);
+  expect(
+    validateTourPackage({ name: 'Legacy' }).publicationStatus,
+  ).toBeUndefined();
+  expect(() =>
+    validateTourPackage({ name: 'Synthetic', publicationStatus: 'INVALID' }),
+  ).toThrow();
+});

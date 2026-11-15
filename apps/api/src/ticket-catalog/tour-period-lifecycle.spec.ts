@@ -172,3 +172,53 @@ it('keeps Sales choices active-only even for managers and authorizes explicit ma
     ),
   ).rejects.toThrow();
 });
+
+it('hides draft definitions from Sales but keeps them in management and rejects direct Sales submission', async () => {
+  const { service, tx } = fixture();
+  const offer = {
+    id: 'offer',
+    departureAt: new Date('2099-01-01T10:00:00Z'),
+    arrivalAt: new Date('2099-01-01T12:00:00Z'),
+    capacityAllocations: [],
+    status: 'ACTIVE',
+    totalCapacity: 10,
+  };
+  const period = (publicationStatus?: string) => ({
+    id: publicationStatus ?? 'legacy',
+    isActive: true,
+    package: {
+      id: 'pack',
+      definition: { name: 'Synthetic', publicationStatus },
+      createdAt: new Date(),
+    },
+    outboundOffer: offer,
+    returnOffer: null,
+    startsOn: new Date('2099-01-01'),
+    endsOn: new Date('2099-01-02'),
+  });
+  tx.tourDeparture.findMany.mockResolvedValue([
+    period('DRAFT'),
+    period('PUBLISHED'),
+    period(),
+  ] as never);
+  expect(
+    (await service.departures(actor as never)).data.map((r) => r.id),
+  ).toEqual(['PUBLISHED', 'legacy']);
+  expect((await service.departures(actor as never, true)).data).toHaveLength(3);
+  tx.tourDeparture.findFirst.mockResolvedValue(period('DRAFT') as never);
+  await expect(
+    service.assertSalesSelection(
+      {
+        services: [
+          {
+            kind: 'FLIGHT',
+            metadata: {
+              tourDepartureId: '00000000-0000-4000-8000-000000000042',
+            },
+          },
+        ],
+      } as never,
+      'branch',
+    ),
+  ).rejects.toThrow('فروش این نوبت متوقف شده است.');
+});

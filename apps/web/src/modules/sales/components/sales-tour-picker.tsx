@@ -221,6 +221,7 @@ export function salesTourOptions(
         (!route?.originId || row.package.originId === route.originId) &&
         (!route?.destinationId ||
           tourDestinationIds(row.package).includes(route.destinationId)) &&
+        row.package.publicationStatus !== 'DRAFT' &&
         row.isActive !== false &&
         row.isDeleted !== true &&
         row.outbound.status === 'ACTIVE' &&
