@@ -1,3 +1,7 @@
+## TOUR-SITE-PICKER-1115 — PC-A — READY_FOR_CI
+
+Replace immediate website publication checkbox with Publish to website, a destination selector containing only the currently supported Niayesh Seir site, and explicit confirmation. Opening/selecting/cancelling never sends a publication command; preserve nss resource identity, current CAS version, loading/read-only/in-flight guards, failure feedback and deliberate unpublishing.23 focused UI/i18n checks pass; scoped lint and full Web TypeScript/build and exact-head CI gate authorized develop merge. New captions and Niayesh brand translation are mirrored without removing other catalogue entries. No API/schema/dependency/data/deployment changes or real website publication.
+
 ## ACCOUNT-TREE-LEVELS-1114 — PC-D
 
 Context creation follows root -> GROUP -> GENERAL -> SUBSIDIARY, using the exact clicked parent and preserving code prefixes. Subsidiary is a leaf. Show all book-owned detail types for independently selected levels four/five/six; mark inactive rows and preserve only their existing same-account/same-level choices. Seventeen focused Web/i18n tests and 77 isolated PostgreSQL tests pass; scoped lint, formatting, API/Web TypeScript and both production builds pass. No schema/dependency/operational-data changes or deployment. Browser acceptance unavailable because of computer-use kernel-assets initialization failure. See docs/tasks/ACCOUNT-TREE-LEVELS-1114.md.

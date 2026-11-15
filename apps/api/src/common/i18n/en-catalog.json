@@ -8699,5 +8699,12 @@
   "وضعیت انتشار تغییر کرده است.": "The publication status has changed.",
   "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
   "ایجاد زیرمجموعه مجاز نیست": "Child account creation is not available",
-  "عملیات ساختار حساب": "Account structure actions"
+  "عملیات ساختار حساب": "Account structure actions",
+  "انتشار در سایت": "Publish to website",
+  "منتشرشده در نیایش سیر": "Published on Niayesh Seir",
+  "سایت مقصد": "Destination website",
+  "سایت را انتخاب کنید": "Select a website",
+  "لغو انتشار": "Unpublish",
+  "نیایش سیر": "Niayesh Seir",
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication."
 }
