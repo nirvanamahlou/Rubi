@@ -905,15 +905,6 @@ export function ContextualHrForm({
               context.presetValues?.[field.label] !== undefined;
             return (
               <Fragment key={field.id}>
-                {false &&
-                workingHours &&
-                ['ساعت شروع', 'ساعت قبل از شروع'].includes(field.label) ? (
-                  <h3 className={styles.fullWidth}>
-                    {field.label === 'ساعت شروع'
-                      ? 'ساعت کاری'
-                      : 'محدوده تردد پرسنل'}
-                  </h3>
-                ) : null}
                 <label
                   className={styles.fieldLabel}
                   htmlFor={inputId}
@@ -938,19 +929,7 @@ export function ContextualHrForm({
                       افزودن {field.label}
                     </button>
                   ) : null}
-                  {false &&
-                  workingHours &&
-                  field.label === 'تعریف ضرایب پیش‌فرض' ? (
-                    <input
-                      {...commonProps}
-                      type="checkbox"
-                      required={false}
-                      checked={derivedValues[field.id] === 'بله'}
-                      onChange={(event) =>
-                        update(field.id, event.target.checked ? 'بله' : 'خیر')
-                      }
-                    />
-                  ) : workingHours && field.label === 'رنگ' ? (
+                  {workingHours && field.label === 'رنگ' ? (
                     <input
                       {...commonProps}
                       type="color"
