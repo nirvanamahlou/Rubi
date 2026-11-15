@@ -8699,5 +8699,12 @@
   "وضعیت انتشار تغییر کرده است.": "The publication status has changed.",
   "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
   "ایجاد زیرمجموعه مجاز نیست": "Child account creation is not available",
-  "عملیات ساختار حساب": "Account structure actions"
+  "عملیات ساختار حساب": "Account structure actions",
+  "این مورد از چارت حذف شود؟": "Remove this item from the chart?",
+  "پنهان": "Hidden",
+  "ذخیره تغییرات انجام نشد.": "Could not save changes.",
+  "شرکت مجاز یافت نشد.": "No authorized company found.",
+  "شناسه گره": "Node ID",
+  "مختصات افقی": "Horizontal position",
+  "مختصات عمودی": "Vertical position"
 }
