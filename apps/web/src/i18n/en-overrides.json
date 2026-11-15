@@ -6272,6 +6272,9 @@
   "دانلود قالب ترکیبی": "Download combined template",
   "همهٔ بازه‌ها": "All periods",
   "انتخاب بازه": "Select period",
+  "موبایل بیمه‌شده (اختیاری)": "Insured mobile number (optional)",
+  "اگر موبایل مسافر خالی باشد، شماره مشتری طرف حساب قرارداد برای بیمه ارسال می‌شود.": "If the passenger mobile is blank, the contract buyer contact number is sent for insurance.",
+  "موبایل مسافر یا مشتری طرف حساب قرارداد را تکمیل کنید.": "Enter a mobile number for the passenger or the contract buyer.",
   "تیمفروش": "Sales team",
   "دپارتمانفروش": "Sales department",
   "واحدفروش": "Sales unit"

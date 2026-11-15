@@ -91,3 +91,16 @@ it('starts automatic issuance only after a standalone request commits and never 
   await expect(controller.create({}, { actor: {} } as never)).rejects.toThrow();
   expect(automation.requestImmediate).toHaveBeenCalledTimes(1);
 });
+
+it.each(['', undefined])(
+  'still requires a real mobile for standalone insurance (%s)',
+  (mobile) => {
+    const value = input();
+    expect(() =>
+      parseStandaloneInsurance({
+        ...value,
+        passenger: { ...value.passenger, mobile },
+      }),
+    ).toThrow();
+  },
+);

@@ -1,3 +1,4 @@
+import { SalesBuyerContactCrypto } from '../sales/sales-buyer-contact.crypto';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { CustomerDossierService } from './customer-dossier.service';
@@ -37,6 +38,7 @@ import { CustomerSelectionController } from './customer-selection.controller';
     CustomerService,
     CustomerDossierService,
     CustomerInsuranceIdentity,
+    SalesBuyerContactCrypto,
   ],
   exports: [CustomerService, CustomerInsuranceIdentity],
 })
