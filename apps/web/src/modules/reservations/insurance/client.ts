@@ -25,6 +25,8 @@ export interface InsuranceListResponse {
   }[];
 }
 export interface InsuranceCandidate {
+  departureDate?: string;
+  durationDays?: number;
   intakeId: string;
   branchId: string;
   customerId: string;

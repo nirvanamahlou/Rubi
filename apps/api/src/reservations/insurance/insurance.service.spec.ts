@@ -88,6 +88,17 @@ function fixture() {
   const db = {
     client: {
       ...tx,
+      salesContract: {
+        findFirst: vi.fn().mockResolvedValue({
+          departureDate: new Date('2027-02-20'),
+          returnNotBefore: new Date('2027-02-27'),
+        }),
+      },
+      reservationIntake: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ id: intakeId, contractId, branchId }]),
+      },
       $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(tx)),
     },
   };
@@ -431,4 +442,11 @@ it('identifies the invalid insurance field without echoing its private value', (
     expect((error as Error).message).toContain('ایمیل بیمه‌شده');
     expect((error as Error).message).not.toContain(invalidEmail);
   }
+});
+
+it('prepares manual candidates with the contract travel dates instead of a fixed week', async () => {
+  const f = fixture();
+  expect(await f.service.candidates('120000', f.actor)).toMatchObject({
+    data: [{ departureDate: '2027-02-20', durationDays: 8 }],
+  });
 });
