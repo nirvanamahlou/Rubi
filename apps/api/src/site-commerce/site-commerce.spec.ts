@@ -63,6 +63,7 @@ function draft(): SalesContractCreateRequest {
         referenceId: ids.offer,
         metadata: {
           direction: 'OUTBOUND',
+          catalogSalePriceTargetId: '00000000-0000-4000-8000-000000000010',
           catalogSaleQuoteVersion: 1,
           catalogSaleQuoteAmount: '123.45',
           catalogSaleQuoteCurrency: 'EUR',
@@ -124,6 +125,14 @@ function fixture() {
   let saved = false;
   const db = {
     client: {
+      websiteCatalogDelivery: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({
+            branchId: ids.branch,
+            salePriceTargetId: '00000000-0000-4000-8000-000000000010',
+          }),
+      },
       websitePublication: {
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
@@ -395,5 +404,55 @@ describe('durable website orders', () => {
     await expect(
       f.service.travelDocuments('nss', 'order-1', actor),
     ).resolves.toHaveProperty('data.ticketDocuments');
+  });
+});
+
+describe('website ticket destination', () => {
+  it('uses the bound destination and overwrites a browser-selected destination', async () => {
+    const f = fixture();
+    const request = draft();
+    request.services[0]!.metadata = {
+      ...request.services[0]!.metadata,
+      catalogSalePriceTargetId: 'other',
+    };
+    await f.service.draft('nss', 'bound-rate', request, actor);
+    expect(f.tickets.websiteOffer).toHaveBeenCalledWith(
+      ids.offer,
+      [ids.branch],
+      '00000000-0000-4000-8000-000000000010',
+    );
+    expect(
+      f.sales.create.mock.calls[0]?.[0].services[0].metadata
+        .catalogSalePriceTargetId,
+    ).toBe('00000000-0000-4000-8000-000000000010');
+  });
+  it('fails closed without a bound destination before creating a contract', async () => {
+    const f = fixture();
+    f.db.client.websiteCatalogDelivery.findUnique.mockResolvedValue(
+      null as never,
+    );
+    await expect(
+      f.service.draft('nss', 'unbound', draft(), actor),
+    ).rejects.toThrow();
+    expect(f.sales.create).not.toHaveBeenCalled();
+  });
+  it('keeps verified payment identity when the final native capacity reservation fails', async () => {
+    const f = fixture();
+    await f.service.draft('nss', 'sold-out', draft(), actor);
+    f.sales.confirm.mockRejectedValueOnce(new Error('capacity changed'));
+    const payment = {
+      method: 'ONLINE_GATEWAY',
+      paymentReference: 'synthetic-receipt',
+      amount: '123.45',
+      currencyCode: 'EUR',
+      version: 1,
+    } as never;
+    await expect(
+      f.service.paid('nss', 'sold-out', [payment], actor),
+    ).rejects.toThrow('capacity changed');
+    expect(f.link.paymentFingerprint).toBeTruthy();
+    expect(f.contract.status).not.toBe('CONFIRMED');
+    await f.service.paid('nss', 'sold-out', [payment], actor);
+    expect(f.sales.confirm).toHaveBeenCalledTimes(2);
   });
 });

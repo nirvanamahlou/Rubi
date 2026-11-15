@@ -1,0 +1,11 @@
+# TICKET-SITE-PRICE-TARGET-1115
+
+Owner-authorized PC-A implementation, develop merge after green checks and production deployment.
+
+Ticket website controls move from Definition/Capacity to Ticket Price Management. A committed commission save for the unique active Niyayesh Seir Sahar destination in the connected branch binds its persistent target ID and publishes the priced offer. A paired fare publishes both legs, with no direct standalone fallback on an unpriced return. Zero percent is valid; 100 percent hides that fare. Saving another destination or only a base fare cannot publish. Explicit re-save can resume publication; ordinary base-fare updates preserve manual unpublication. Tour publication retains its existing chooser.
+
+The additive migration removes the old base-ticket publication trigger, adds a restrictive sales-target FK to the catalog delivery binding and publishes through an AFTER INSERT commission trigger in the same transaction. Renaming the bound destination does not remap it. Command replay does not insert another commission and therefore cannot resurrect a manually removed ticket. Older migrations remain immutable.
+
+Site Commerce exposes only the saved destination fares, validates the same rates at quote/draft and stamps the trusted destination into native Sales metadata. Final native confirmation locks both offers, reads current allocations and unexpired holds, checks seat counts and current destination prices, then allocates atomically. No per-visit remote catalog fetch is introduced. Hidden/missing rates, stopped/unpublished products and stale prices cannot confirm. Verified payment identity/history survives a failed final reservation for recovery. Existing legacy website products remain; no gateway is activated.
+
+Validation: focused projection, direct/pair/tier commission, target reservation, roundtrip capacity and Site Commerce tests; separate disposable PostgreSQL proof in packages/database/tests/website-ticket-target.sql. The SQL proof must run only in a new empty disposable database, never production. It verifies branch isolation, target binding, pair publication, transaction rollback, zero/100, stable identity and no base-price resurrection. Full hosted checks, final release and runtime evidence are recorded below when completed.
