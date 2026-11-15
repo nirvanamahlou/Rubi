@@ -15,7 +15,7 @@ Verified locally:96 service tests,75 API/PostgreSQL/boundary tests,176 Assistant
 
 ## Native authenticated environment
 
-A dedicated loopback database `nora_agent_test_browser_1115` received all242 published migrations, including the Agent views. A unique read-only login inherits only `nora_agent_reader`; native API startup admission succeeded. No migration was applied to the operational Rubi database or production by this acceptance unit.
+A dedicated loopback database `nora_agent_test_browser_1115` received all246 published migrations after integrating develop33efad76b, including the Agent views. A unique read-only login inherits only `nora_agent_reader`; native API startup admission succeeded. No migration was applied to the operational Rubi database or production by this acceptance unit.
 
 Native IAM/API/BFF checks:24 successful checks, covering login, exact discounted100.0000 USD, read-only/private-table rejection, missing-session and invalid-Origin rejection, own/branch/all scopes, hidden contracts, payment permission, company changes, stale context and revoked sessions. A deterministic control provider with native IAM also confirmed mid-flight session revocation returns401 before any SQL executes; this is not a Groq-model test. Temporarily renaming the amounts view in this test database returned503 rather than zero; the view was restored and the financial reference rechecked.
 
@@ -36,3 +36,5 @@ The fixture now includes two companies/branches/owners, hidden/draft/cancelled c
 Complete the same-source30-case matrix, repair any remaining non-quota failures, manually verify financial/access outcomes and finish the authenticated browser matrix, including selected-contract/follow-up and negative transport cases. Only then may CI-approved changes be merged and v3 enabled under the deployment lock with reviewed backup/rollback.
 
 Production v3 configuration, database and services were not changed by this unit. The separately authorized stable release22f85a6e3 remains installed; preserve it and peer runtime overlays during future rollout. Local rollback stops only the owned test services/runner; keep synthetic receipts and identify test databases/logins by exact recorded names before cleanup. Do not drop shared NOLOGIN roles or operational records. Background evaluation must stop if the pinned source changes.
+
+Quota-paced runner started2026-11-15 at13:45 Tehran on the fixed source fingerprint c9c0ee075d96b365acd9935d6ea7de2f4c08cee74fc750e479c6a8aaf9e3bfb4. Initial eligible attempt14:45 Tehran. Local metadata: F:/DevData/Temp/nora-quota-acceptance-1115-134526/nora-live-acceptance-progress.json. It is waiting, not a passed matrix.
