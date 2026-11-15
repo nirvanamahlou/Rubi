@@ -126,12 +126,10 @@ function fixture() {
   const db = {
     client: {
       websiteCatalogDelivery: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValue({
-            branchId: ids.branch,
-            salePriceTargetId: '00000000-0000-4000-8000-000000000010',
-          }),
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: ids.branch,
+          salePriceTargetId: '00000000-0000-4000-8000-000000000010',
+        }),
       },
       websitePublication: {
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),

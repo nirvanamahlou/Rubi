@@ -39,13 +39,11 @@ function fixture() {
       findFirst: vi.fn().mockResolvedValue({ id: id(5) }),
     },
     ticketOfferStandaloneSalePrice: {
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          amount: new Prisma.Decimal(100),
-          currencyCode: 'IRR',
-          tiers: [],
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        amount: new Prisma.Decimal(100),
+        currencyCode: 'IRR',
+        tiers: [],
+      }),
     },
     ticketSaleCommissionRevision: {
       findFirst: vi.fn().mockResolvedValue({ percent: new Prisma.Decimal(4) }),
