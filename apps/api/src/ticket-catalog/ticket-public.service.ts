@@ -2610,18 +2610,27 @@ export class TicketPublicService {
                 include: { tiers: { orderBy: { tierIndex: 'asc' } } },
               })
             : null;
-        if (pairPrice && outbound && returning) {
-          const commission =
-            await transaction.ticketSaleCommissionRevision.findFirst({
-              where: {
-                offerId: outbound.id,
-                returnOfferId: returning.id,
-                salePriceTargetId,
-              },
-              orderBy: { revision: 'desc' },
-            });
-          if (salePriceTargetId && !commission)
-            throw new ConflictException('نرخ مرجع پرواز تغییر کرده است.');
+        const pairCommission =
+          pairPrice && outbound && returning
+            ? await transaction.ticketSaleCommissionRevision.findFirst({
+                where: {
+                  offerId: outbound.id,
+                  returnOfferId: returning.id,
+                  salePriceTargetId,
+                },
+                orderBy: { revision: 'desc' },
+              })
+            : null;
+        // A raw pair base is not a saved target fare. Match the public projection's
+        // standalone fallback when that destination has no visible paired rate.
+        if (
+          pairPrice &&
+          outbound &&
+          returning &&
+          (!salePriceTargetId ||
+            (pairCommission && pairCommission.percent.lt(100)))
+        ) {
+          const commission = pairCommission;
           const consumed = Math.max(
             ...[outbound, returning].map(
               (offer) =>
@@ -2653,7 +2662,7 @@ export class TicketPublicService {
               selection,
               selection.direction,
             );
-        } else if (!pairPrice) {
+        } else {
           for (const selection of selections) {
             const offer = byId.get(selection.offerId)!;
             const fare =

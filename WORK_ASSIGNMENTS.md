@@ -12645,6 +12645,8 @@ SITE-PUBLICATION-SYNC-1115 develop integration: preserve PR1711 website chooser/
 
 INSURANCE-EMAIL-OPTIONAL-1115 CI compatibility: reserve seven missing English labels in en-overrides.json introduced by the newly merged HR chart changes. Translation-only integration repair; no HR behavior, permissions or data changes.
 
-## TICKET-SITE-PRICE-TARGET-1115 — PC-A — IN_PROGRESS
+## TICKET-SITE-PRICE-TARGET-1115 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-ticket-site-price-target-1115 from develop6619bb9f9. Owner explicitly authorizes ticket publication through saved Niyayesh Seir Sahar sales-target commission, moving website controls from definition/capacity into ticket pricing, fresh ERP capacity verification before every confirmation, green develop merge and production deployment. Reserve scoped Ticket Catalog price/public projection/reservation guard, Site Commerce API/Web, Sales quote metadata/adapters and focused regressions/translations. Sole additive schema/migration lease: stable WebsiteCatalogDelivery-to-sales-target FK, replacing only base-ticket auto-publication with transaction-bound commission-save publication. Previous migration leases are frozen/released. No dependency changes. Producer Ticket Catalog target fares; consumers Site Commerce and native Sales final atomic reservation; direct/tour fares remain compatible. Keep legacy website products and verified-payment history; preserve update-driven signed delivery and existing website chooser for tours.
+
+TICKET-SITE-PRICE-TARGET-1115 validation:42 focused API and18 site tests plus the disposable PostgreSQL trigger proof passed. Extend paired-rate regression coverage for checkout rounding and separately saved standalone fallback; no direct-price fallback is permitted. Published migration is immutable; additive schema/migration lease is frozen/released. Source, exact-head hosted checks and final production rollout remain in this authorized unit.

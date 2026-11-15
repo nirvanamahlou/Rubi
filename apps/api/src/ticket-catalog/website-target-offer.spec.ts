@@ -3,7 +3,22 @@ import { Prisma } from '@nora/database';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { applySaleCommissions } from './ticket-sale-commissions';
 import { websiteTargetOffer } from './website-target-offer';
-const raw = {
+const raw: TicketOfferV1 = {
+  id: 'offer',
+  version: 1,
+  branchId: 'branch',
+  originId: 'origin',
+  destinationId: 'destination',
+  departureAt: '2099-01-01T08:00:00.000Z',
+  arrivalAt: '2099-01-01T10:00:00.000Z',
+  carrierName: 'Synthetic',
+  serviceNumber: 'S1',
+  cabinClassCode: 'ECONOMY',
+  totalCapacity: 3,
+  remainingCapacity: 3,
+  allocatedCapacity: 0,
+  reservedCapacity: 0,
+  status: 'ACTIVE',
   standaloneSalePrice: {
     revision: 1,
     amount: '100',
@@ -18,7 +33,7 @@ const raw = {
       currencyCode: 'IRR',
     },
   ],
-} as TicketOfferV1;
+};
 describe('website saved sales destination fares', () => {
   it('uses destination rates independently of direct-sale discounts, for one-way, pair and tiers', () => {
     const offer = applySaleCommissions(raw, [
