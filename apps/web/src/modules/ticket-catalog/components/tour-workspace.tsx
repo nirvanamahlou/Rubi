@@ -400,7 +400,11 @@ export function TourWorkspace({
   };
   const selectTour = (item: TourPackageV1) => {
     if (mode === 'definition') {
-      router.push('/sales/pricing');
+      router.push(
+        item.details?.isFloating
+          ? '/sales/pricing/floating?tour=' + encodeURIComponent(item.id)
+          : '/sales/pricing',
+      );
       return;
     }
     setSelected(item.id);
@@ -414,7 +418,11 @@ export function TourWorkspace({
   };
   const repeatTour = (item: TourDepartureV1) => {
     if (mode === 'definition') {
-      router.push('/sales/pricing');
+      router.push(
+        item.details?.isFloating
+          ? '/sales/pricing/floating?tour=' + encodeURIComponent(item.id)
+          : '/sales/pricing',
+      );
       return;
     }
     selectTour(item.package);
@@ -444,6 +452,23 @@ export function TourWorkspace({
           </div>
         ) : null}
         <div className="ms-auto flex flex-wrap items-center gap-2">
+          {mode === 'definition' && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || loading}
+              onClick={() => {
+                showEditor();
+                setDraft({
+                  ...emptyPackage,
+                  hotelIds: [],
+                  details: { version: 1, isFloating: true },
+                });
+              }}
+            >
+              تعریف تور شناور
+            </Button>
+          )}
           {mode === 'definition' ? (
             <Button
               className="order-last"
@@ -522,7 +547,11 @@ export function TourWorkspace({
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-bold">
-                {editing ? `ویرایش تور: ${editing.name}` : 'تعریف تور جدید'}
+                {editing
+                  ? `ویرایش تور: ${editing.name}`
+                  : draft.details?.isFloating
+                    ? 'تعریف تور شناور'
+                    : 'تعریف تور جدید'}
               </h3>
               <Button
                 variant="outline"
