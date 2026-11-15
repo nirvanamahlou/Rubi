@@ -6,6 +6,8 @@ Live browser follow-up lease: contract-guides.ts/spec.ts and the single resolveC
 
 Reserve the owned synthetic live-acceptance harness for fail-fast SQL startup admission and private query-attempt diagnostics; never hide infrastructure failures as model SQL syntax errors or spend model quota before checking the fixture. Do not weaken assertions or change the financial oracle.
 
+Post-PR1726 exact browser replay identified the remaining nested caller: contractAdvice split multi-part questions and called resolveContractGuide without the Agent capability. Reserve contract-advice.ts and the guide regression spec plus its Composer call to propagate that same optional capability. Preserve existing advice text and all legacy callers; no new routing classifier, API, permission or budget change.
+
 ## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — ACTIVE
 
 2026-11-15 follow-up: reserve data-agent-http.test.mjs test listener allocation only, retaining the real HTTP assertions; this Windows host allocates ephemeral ports below fetch's permitted range. Native browser acceptance uses nora_agent_test_browser_1115 on loopback only. Latest user explicitly authorizes eventual v3 production activation after successful full acceptance; no live v3 changes before that gate.

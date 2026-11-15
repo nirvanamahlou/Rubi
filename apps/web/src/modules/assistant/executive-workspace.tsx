@@ -441,7 +441,11 @@ function AssistantComposerContent({
     const advice =
       !liveReport &&
       !recordFollowup &&
-      contractAdvice(message, Boolean(pathname?.startsWith('/sales')));
+      contractAdvice(
+        message,
+        Boolean(pathname?.startsWith('/sales')),
+        agentMode,
+      );
     if (advice) {
       replyLocally(advice);
       return;

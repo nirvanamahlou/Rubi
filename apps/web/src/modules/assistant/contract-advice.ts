@@ -33,7 +33,11 @@ const cases: [RegExp, string][] = [
     'پیش‌نویس فرم به حساب و نشست مرورگر وابسته است. برای ادامه از همان تب و حساب استفاده کنید؛ برای قرارداد ثبت‌شده از شماره قرارداد استفاده کنید.',
   ],
 ];
-export function contractAdvice(message: string, sales: boolean) {
+export function contractAdvice(
+  message: string,
+  sales: boolean,
+  dataAgentAvailable = false,
+) {
   const q = normalizeContractQuestion(message);
   if (!sales && !/قرارداد/.test(q)) return;
   if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(q)) return;
@@ -56,7 +60,13 @@ export function contractAdvice(message: string, sales: boolean) {
   }
   if (parts.length > 1) {
     for (const part of parts) {
-      const guide = resolveContractGuide(part, true);
+      const guide = resolveContractGuide(
+        part,
+        true,
+        undefined,
+        false,
+        dataAgentAvailable,
+      );
       if (guide) extra.push(guide.text);
     }
   }
