@@ -47,6 +47,24 @@ it('requires full new identity and rejects contract/provider/status injection an
   invalid.passenger.birthDate = '2999-01-01';
   expect(() => parseStandaloneInsurance(invalid)).toThrow();
 });
+it.each(['', undefined])(
+  'accepts a standalone applicant without email (%s)',
+  (email) => {
+    const value = input();
+    expect(
+      parseStandaloneInsurance({
+        ...value,
+        passenger: { ...value.passenger, email },
+      }).passenger.email,
+    ).toBe('');
+    expect(() =>
+      parseStandaloneInsurance({
+        ...value,
+        passenger: { ...value.passenger, email: 'invalid' },
+      }),
+    ).toThrow();
+  },
+);
 it('starts automatic issuance only after a standalone request commits and never starts a rejected save', async () => {
   let commit: (value: unknown) => void = () => undefined;
   const service = {

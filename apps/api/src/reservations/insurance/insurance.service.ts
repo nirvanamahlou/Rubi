@@ -75,7 +75,8 @@ export const draftSchema = Joi.object({
     email: Joi.string()
       .email({ tlds: { allow: false } })
       .max(160)
-      .required(),
+      .allow('')
+      .default(''),
   }).optional(),
 });
 

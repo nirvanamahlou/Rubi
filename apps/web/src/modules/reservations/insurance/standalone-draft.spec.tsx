@@ -128,3 +128,13 @@ it('does not submit or silently round an unsupported duration', () => {
   expect(h.request).not.toHaveBeenCalled();
   expect(draft.durationDays).toBe(1);
 });
+it('submits a complete standalone request with an empty email', async () => {
+  const draft = completed();
+  draft.passenger.email = '';
+  h.request.mockResolvedValueOnce({ data: { id: 'policy' } });
+  StandaloneInsuranceDraft({ branches, saved }).props.onSubmit({
+    preventDefault: vi.fn(),
+  });
+  await vi.waitFor(() => expect(saved).toHaveBeenCalledOnce());
+  expect(JSON.parse(h.request.mock.calls[0]![1].body).passenger.email).toBe('');
+});
