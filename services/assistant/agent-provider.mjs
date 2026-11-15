@@ -24,7 +24,14 @@ export const AGENT_TOOLS = Object.freeze([
   tool(
     'set_plan',
     'First call: state a short operational plan, not private reasoning. Do not claim execution.',
-    { steps: strings },
+    {
+      steps: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 5,
+        items: { type: 'string', maxLength: 200 },
+      },
+    },
   ),
   tool(
     'catalog_search',
@@ -71,6 +78,7 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'));
   } finally {
     await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
 }
 
@@ -92,82 +100,28 @@ export function createAgentProvider({
         allowFinalResponse = false,
       },
     ) {
-      if (now() < unavailableUntil)
-        throw new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
+      if (now() < unavailableUntil) {
+        const error = new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
+        error.retryAfterMs = unavailableUntil - now();
+        throw error;
+      }
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,
         reasoning_effort: 'low',
         max_completion_tokens: 2048,
         stream: false,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'The ONLY callable function is nora_step. All named operations such as set_plan and finish_answer are action values, NOT functions. For the final response call nora_step with action finish_answer and input containing status,text,resultIds,limitations. Never call json, commentary, finish_answer, or any other function. After receiving database result evidence, you may instead return ONLY a JSON object with exactly status,text,resultIds,limitations as the final response. Do not return Markdown or prose outside that JSON.',
-          },
-          ...messages.map((message) =>
-            message.tool_calls
-              ? {
-                  ...message,
-                  tool_calls: message.tool_calls.map((call) => ({
-                    ...call,
-                    function: {
-                      name: 'nora_step',
-                      arguments: JSON.stringify({
-                        action: call.function.name,
-                        input: JSON.parse(call.function.arguments),
-                      }),
-                    },
-                  })),
-                }
-              : message,
-          ),
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'nora_step',
-              description:
-                'Execute exactly one Nora protocol action. A final answer may use this action or the required final JSON shape when final responses are allowed. ' +
-                JSON.stringify(
-                  AGENT_TOOLS.filter(
-                    (t) =>
-                      !allowedTools || allowedTools.includes(t.function.name),
-                  ).map((t) => ({
-                    action: t.function.name,
-                    description: t.function.description,
-                  })),
-                ),
-              parameters: {
-                type: 'object',
-                properties: {
-                  action: {
-                    type: 'string',
-                    enum:
-                      allowedTools ?? AGENT_TOOLS.map((t) => t.function.name),
-                  },
-                  input: {
-                    type: 'object',
-                    properties: Object.assign(
-                      {},
-                      ...AGENT_TOOLS.map(
-                        (t) => t.function.parameters.properties,
-                      ),
-                    ),
-                    additionalProperties: false,
-                  },
-                },
-                required: ['action', 'input'],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
+        messages,
+        tools: AGENT_TOOLS.filter(
+          (t) =>
+            (!allowedTools || allowedTools.includes(t.function.name)) &&
+            (!allowFinalResponse || t.function.name !== 'finish_answer'),
+        ),
         tool_choice: allowFinalResponse
           ? 'auto'
-          : { type: 'function', function: { name: 'nora_step' } },
+          : allowedTools?.length === 1
+            ? { type: 'function', function: { name: allowedTools[0] } }
+            : 'required',
         parallel_tool_calls: false,
       });
       const wireBody = body;
@@ -194,6 +148,22 @@ export function createAgentProvider({
         );
         if (!response.ok) {
           const status = response.status;
+          if (
+            status === 400 &&
+            response.headers.get('content-type')?.includes('application/json')
+          ) {
+            const rejected = await boundedAgentJson(response, 65536);
+            if (rejected?.error?.code === 'tool_use_failed') {
+              const error = new ServiceError(
+                503,
+                'AGENT_PROVIDER_TOOL_REJECTED',
+              );
+              // Charge a conservative upper bound even if rejected completion
+              // usage is unavailable. Never inspect/execute failed_generation.
+              error.tokenCharge = Buffer.byteLength(body) + 3072;
+              throw error;
+            }
+          }
           if (status === 429) {
             const header = response.headers.get('retry-after');
             const seconds =
@@ -206,7 +176,7 @@ export function createAgentProvider({
             unavailableUntil = now() + Math.min(wait, 86400) * 1000;
           }
           await response.body?.cancel();
-          throw new ServiceError(
+          const error = new ServiceError(
             status === 429 ? 429 : 503,
             status === 429
               ? 'AGENT_PROVIDER_RATE_LIMITED'
@@ -216,6 +186,8 @@ export function createAgentProvider({
                   ? 'AGENT_PROVIDER_REQUEST_REJECTED'
                   : 'AGENT_PROVIDER_UNAVAILABLE',
           );
+          if (status === 429) error.retryAfterMs = unavailableUntil - now();
+          throw error;
         }
         const result = await boundedAgentJson(response, 65536);
         const choice = result.choices?.[0];
@@ -254,22 +226,6 @@ export function createAgentProvider({
         )
           throw new ServiceError(502, 'INVALID_AGENT_PLAN');
         const call = calls[0];
-        if (call.function?.name === 'nora_step') {
-          const dispatched = JSON.parse(call.function.arguments);
-          if (
-            !dispatched ||
-            Object.keys(dispatched).some(
-              (k) => !['action', 'input'].includes(k),
-            ) ||
-            !AGENT_TOOLS.some((t) => t.function.name === dispatched.action) ||
-            (allowedTools && !allowedTools.includes(dispatched.action))
-          )
-            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
-          call.function = {
-            name: dispatched.action,
-            arguments: JSON.stringify(dispatched.input),
-          };
-        }
         if (
           call.type !== 'function' ||
           typeof call.id !== 'string' ||

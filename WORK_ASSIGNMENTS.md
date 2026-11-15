@@ -1,5 +1,9 @@
 ## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — ACTIVE
 
+2026-11-15 follow-up: reserve data-agent-http.test.mjs test listener allocation only, retaining the real HTTP assertions; this Windows host allocates ephemeral ports below fetch's permitted range. Native browser acceptance uses nora_agent_test_browser_1115 on loopback only. Latest user explicitly authorizes eventual v3 production activation after successful full acceptance; no live v3 changes before that gate.
+
+Bounded copy lease: apps/web/src/i18n/assistant-copy.ts rate-limit message only. Remove the misleading one-minute promise because the provider also enforces daily quotas; preserve layout and all guide content. Reserve scripts/operations/nora-agent/run-live-acceptance.mjs for serial synthetic tests with source fingerprinting, quota pacing and no deployment side effects.
+
 Local Git identity Codex PC-C and existing PC-C assignments confirm this workstation identity. Independent branch codex/pc-c-nora-agent-live-acceptance-1114 from handoff0fb35cd02; implementation452d7edc6 and handoffcf50a30ce are ancestors. Reserve new synthetic acceptance harness/report and bounded Nora task/status notes. Prior source leases released at handoff. Live failure follow-up reserves services/assistant/agent-provider.mjs and data-agent.mjs plus their regressions: restrict offered tools by protocol stage; no budgets or authorization changes. No migration/dependency changes. Isolated local acceptance only; no production mutation, merge or deployment authorized. Preserve other workstation branch and live relay.
 
 ## REPORT-DASHBOARD-ACTIVATION-1114 — PC-C helper — READY_FOR_REVIEW

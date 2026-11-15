@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createDataAgent, validateDataAgentMessage } from './data-agent.mjs';
 import { createAgentProvider } from './agent-provider.mjs';
 import { dataAgentConfiguration } from './agent-config.mjs';
+import { ServiceError } from './errors.mjs';
 
 const contextId = 'a'.repeat(64);
 test('final output mode is trusted orchestration state, not a resultId string in history', async () => {
@@ -33,15 +34,20 @@ test('final output mode is trusted orchestration state, not a resultId string in
   await assert.rejects(
     provider.step([{ role: 'tool', content: '{"resultId":"untrusted"}' }], {
       signal,
+      allowedTools: ['set_plan'],
     }),
     /INVALID_AGENT_PLAN/,
   );
   assert.deepEqual(sent[0].tool_choice, {
     type: 'function',
-    function: { name: 'nora_step' },
+    function: { name: 'set_plan' },
   });
   const result = await provider.step([], { signal, allowFinalResponse: true });
   assert.equal(sent[1].tool_choice, 'auto');
+  assert.equal(
+    sent[1].tools.some((t) => t.function.name === 'finish_answer'),
+    false,
+  );
   assert.equal(result.args.status, 'CLARIFY');
 });
 test('provider offers only the current protocol stage tools', async () => {
@@ -78,11 +84,14 @@ test('provider offers only the current protocol stage tools', async () => {
   });
   assert.deepEqual(
     sent.tools.map((tool) => tool.function.name),
-    ['nora_step'],
+    ['set_plan'],
   );
-  assert.deepEqual(sent.tools[0].function.parameters.properties.action.enum, [
-    'set_plan',
-  ]);
+  assert.deepEqual(sent.tools[0].function.parameters.required, ['steps']);
+  assert.equal(sent.tools[0].function.parameters.properties.steps.maxItems, 5);
+  assert.equal(
+    sent.tools[0].function.parameters.properties.steps.items.maxLength,
+    200,
+  );
 });
 test('successful JSON final answer retains evidence validation by the agent', async () => {
   const provider = createAgentProvider({
@@ -177,7 +186,9 @@ function harness(steps = [plan, describe, query, finish], override) {
     provider: {
       async step(messages) {
         payloads.push(structuredClone(messages));
-        return steps[index++];
+        const next = steps[index++];
+        if (next instanceof Error) throw next;
+        return next;
       },
     },
     fetcher: async (url, options) => {
@@ -190,6 +201,36 @@ function harness(steps = [plan, describe, query, finish], override) {
   });
   return { agent, calls, payloads, audits };
 }
+
+test('provider protocol repair is bounded, charged and never executed as evidence', async () => {
+  const rejection = () =>
+    Object.assign(new ServiceError(503, 'AGENT_PROVIDER_TOOL_REJECTED'), {
+      tokenCharge: 2000,
+    });
+  const h = harness([plan, describe, query, rejection(), finish]);
+  const response = await h.agent(message, {
+    cookie: 'nora_access=synthetic',
+    signal: signal(),
+  });
+  assert.equal(response.status, 'ANSWER');
+  assert.equal(h.payloads.length, 5);
+  assert.equal(h.calls.filter((c) => c.options.method === 'POST').length, 1);
+  await assert.rejects(
+    harness([rejection(), rejection()]).agent(message, {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    }),
+    /AGENT_PROVIDER_TOOL_REJECTED/,
+  );
+  const expensive = Object.assign(rejection(), { tokenCharge: 40001 });
+  await assert.rejects(
+    harness([expensive]).agent(message, {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    }),
+    /AGENT_TOKEN_BUDGET_EXCEEDED/,
+  );
+});
 test('agent plans, queries real tool output and transmits evidence to the model before grounded final answer', async () => {
   const h = harness();
   const response = await h.agent(message, {

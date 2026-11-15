@@ -3,6 +3,48 @@ import assert from 'node:assert/strict';
 import { createAgentProvider } from './agent-provider.mjs';
 
 const options = () => ({ signal: new AbortController().signal });
+
+test('JSON request rejection preserves classification after bounded body inspection', async () => {
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async () =>
+      Response.json(
+        { error: { code: 'invalid_request_error' } },
+        { status: 400 },
+      ),
+  });
+  await assert.rejects(
+    provider.step([], options()),
+    /AGENT_PROVIDER_REQUEST_REJECTED/,
+  );
+});
+
+test('tool rejection exposes only a bounded charge, never the failed generation', async () => {
+  let calls = 0;
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async () => {
+      calls++;
+      return Response.json(
+        {
+          error: {
+            code: 'tool_use_failed',
+            failed_generation: 'UNTRUSTED_SYNTHETIC_INSTRUCTION',
+          },
+        },
+        { status: 400 },
+      );
+    },
+  });
+  await assert.rejects(
+    provider.step([], options()),
+    (error) =>
+      error.message === 'AGENT_PROVIDER_TOOL_REJECTED' &&
+      Number.isSafeInteger(error.tokenCharge) &&
+      !JSON.stringify(error).includes('UNTRUSTED_SYNTHETIC_INSTRUCTION'),
+  );
+  assert.equal(calls, 1);
+});
 test('429 respects Retry-After, suppresses repeated calls, and permits a later request', async () => {
   let clock = 100000,
     calls = 0;
@@ -19,7 +61,9 @@ test('429 respects Retry-After, suppresses repeated calls, and permits a later r
   });
   await assert.rejects(
     provider.step([], options()),
-    /AGENT_PROVIDER_RATE_LIMITED/,
+    (error) =>
+      error.message === 'AGENT_PROVIDER_RATE_LIMITED' &&
+      error.retryAfterMs === 2000,
   );
   clock += 1999;
   await assert.rejects(
@@ -33,6 +77,29 @@ test('429 respects Retry-After, suppresses repeated calls, and permits a later r
     /AGENT_PROVIDER_RATE_LIMITED/,
   );
   assert.equal(calls, 2);
+});
+test('HTTP-date Retry-After is honored without another provider call', async () => {
+  let calls = 0;
+  const now = Date.parse('2026-11-15T10:00:00Z');
+  const provider = createAgentProvider({
+    apiKey: 'synthetic',
+    now: () => now,
+    fetcher: async () => {
+      calls++;
+      return new Response('{}', {
+        status: 429,
+        headers: { 'retry-after': new Date(now + 5000).toUTCString() },
+      });
+    },
+  });
+  for (let i = 0; i < 2; i++)
+    await assert.rejects(
+      provider.step([], options()),
+      (error) =>
+        error.message === 'AGENT_PROVIDER_RATE_LIMITED' &&
+        error.retryAfterMs === 5000,
+    );
+  assert.equal(calls, 1);
 });
 for (const header of [undefined, 'invalid', '-1'])
   test(`invalid/missing Retry-After uses bounded cooldown: ${header}`, async () => {

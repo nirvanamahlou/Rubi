@@ -432,8 +432,8 @@ export const assistantCopy = {
       'Your session is invalid. Sign in again.',
     ],
     'rate-limited': [
-      'تعداد درخواست‌ها زیاد است؛ یک دقیقه دیگر تلاش کنید.',
-      'Too many requests. Try again in one minute.',
+      'محدودیت مصرف سرویس فعال است؛ پس از آزادشدن سهمیه دوباره تلاش کنید.',
+      'The service usage limit is active. Try again after quota becomes available.',
     ],
   },
   reasons: {

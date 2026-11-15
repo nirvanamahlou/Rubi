@@ -10082,3 +10082,7 @@ DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
+
+## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — 2026-11-15
+
+V3 protocol/final-format and bounded repair/quota handling updated in the independent acceptance branch.96 service,75 API/PostgreSQL and176 Web checks pass; isolated native IAM/API/BFF checks24 pass, including exact100.0000 USD, native scopes/company/session and503 source failure. Germany-routed model calls are real; final-source30-case certification and financial/browser completion remain pending. Owner chose waiting for existing Groq quota. No production v3 activation/migration; separately published stable22f85a6e3 must remain preserved. See docs/tasks/NORA-LIVE-ACCEPTANCE-1115.md. Scope stays active for same-source synthetic acceptance and bounded repairs.
