@@ -10131,3 +10131,5 @@ FINANCE-SOURCE-LINKS-1115 / PR1723 integration: owner explicitly authorizes deve
 Owner explicitly authorizes synchronizing website-entered passenger identity to the same-national-ID ERP profile. The configured-site people endpoint now consumes a Customers public method with supplied-field allowlisting, branch pinning, protected passport storage, bounded optimistic retries and native atomic audit. Manual lookup stays strict; general roles/status/ownership and all existing products/orders/payments are preserved.65 focused tests pass; full API build/typecheck and hosted gates precede authorized green develop merge and API-only rollout. No schema/dependency change. See docs/tasks/SITE-PASSENGER-SYNC-1115.md.
 
 HOURLY-LEAVE-DEADLINE-1115: hourly requests accepted through assigned workday end, including after absence; next-day backdating rejected. Legacy cutoff used when no schedule resolves. Scoped ESLint passed; test collection blocked by missing contracts build.
+
+OVERTIME-TIME-INPUT-1115: overtime-start uses native time input in contextual working-hours form. Scoped ESLint passed.
