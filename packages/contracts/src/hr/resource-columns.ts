@@ -916,6 +916,13 @@ export const HR_RESOURCE_COLUMNS = {
     'تاریخ اثر',
     ...HR_BRANCH_REGISTRATION_COLUMNS,
   ],
+  'organization.chartLayout': [
+    'شناسه گره',
+    'عنوان نمایشی',
+    'مختصات افقی',
+    'مختصات عمودی',
+    'پنهان',
+  ],
   'organization.units': [
     'نام واحد',
     'سطح سازمانی',
