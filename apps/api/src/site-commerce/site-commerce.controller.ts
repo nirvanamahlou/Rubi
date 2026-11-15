@@ -87,32 +87,11 @@ export class SiteCommerceController {
     @Req() req: AuthenticatedRequest,
   ) {
     const binding = siteBinding(site, req.actor);
-    const scoped = this.customers.salesEntryActor({
-      ...req.actor,
-      branchIds: [binding.branchId],
-    });
-    if (body.nationalId) {
-      const existing = await this.customers.registrationLookup(
-        {
-          nationalId: body.nationalId,
-          firstName: body.firstName ?? '',
-          lastName: body.lastName ?? '',
-          ...(body.birthDate ? { birthDate: body.birthDate } : {}),
-        },
-        scoped,
-      );
-      if (existing.data)
-        return {
-          data: {
-            id: existing.data.id,
-            displayName: existing.data.displayName,
-          },
-        };
-    }
-    const result = await this.customers.createForSales(
+    const result = await this.customers.syncWebsitePassenger(
       body,
-      scoped,
+      { ...req.actor, branchIds: [binding.branchId] },
       binding.branchId,
+      `site:${site}:passenger-sync`,
     );
     return {
       data: { id: result.data.id, displayName: result.data.displayName },
