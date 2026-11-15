@@ -1,3 +1,7 @@
+## NORA-RATE-LIMIT-1115 — PC-C — LOCAL_VERIFIED
+
+Owner confirms secondary Groq key belongs to the same organization. Official organization-level limits mean key rotation cannot increase quota; no 429 key cycling added and no private key committed. Agent honors Retry-After through a per-provider cooldown (fallback60s), avoids automatic retries and classifies rate/access/request/upstream failures separately.31 focused Agent/Groq tests pass, including cooldown expiration and network failures. This is controlled failure handling, not a guarantee of provider availability or successful full live acceptance. Production unchanged.
+
 ## NORA-FINAL-CHOICE-1115 — PC-C — LOCAL_VERIFIED
 
 Owner requests compatible tool choice. Plan stage forces native tool; after an accepted plan, trusted orchestration permits auto choice and strictly shaped final JSON. No history substring can authorize final mode. Existing fresh-result references, role/scope rechecks and monetary boundaries remain enforced.21 targeted provider/orchestration tests pass. This fixes the forced-tool/final-output incompatibility only; full live matrix, guide-tool wiring and production activation remain pending.

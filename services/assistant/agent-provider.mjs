@@ -74,9 +74,14 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
   }
 }
 
-export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
+export function createAgentProvider({
+  apiKey,
+  fetcher = fetch,
+  now = Date.now,
+} = {}) {
   if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
+  let unavailableUntil = 0;
   return {
     async step(
       messages,
@@ -87,6 +92,8 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
         allowFinalResponse = false,
       },
     ) {
+      if (now() < unavailableUntil)
+        throw new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,
@@ -186,10 +193,28 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
           },
         );
         if (!response.ok) {
+          const status = response.status;
+          if (status === 429) {
+            const header = response.headers.get('retry-after');
+            const seconds =
+              header && /^\d+(?:\.\d+)?$/.test(header)
+                ? Number(header)
+                : header
+                  ? (Date.parse(header) - now()) / 1000
+                  : NaN;
+            const wait = Number.isFinite(seconds) && seconds > 0 ? seconds : 60;
+            unavailableUntil = now() + Math.min(wait, 86400) * 1000;
+          }
           await response.body?.cancel();
           throw new ServiceError(
-            response.status === 429 ? 429 : 503,
-            'AGENT_PROVIDER_UNAVAILABLE',
+            status === 429 ? 429 : 503,
+            status === 429
+              ? 'AGENT_PROVIDER_RATE_LIMITED'
+              : status === 401 || status === 403
+                ? 'AGENT_PROVIDER_ACCESS_DENIED'
+                : status === 400
+                  ? 'AGENT_PROVIDER_REQUEST_REJECTED'
+                  : 'AGENT_PROVIDER_UNAVAILABLE',
           );
         }
         const result = await boundedAgentJson(response, 65536);
