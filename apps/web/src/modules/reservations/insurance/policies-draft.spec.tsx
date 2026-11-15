@@ -114,3 +114,23 @@ it('does not submit a legacy unsupported duration or silently replace it', () =>
   expect(h.states[1]).toBe('مدت بیمه را از فهرست مجاز بیمه‌گر انتخاب کنید.');
   expect((h.states[4] as { durationDays: number }).durationDays).toBe(1);
 });
+
+it('initializes a new candidate with its contract period', () => {
+  h.states = [];
+  InsuranceDraft({
+    target: {
+      intakeId: 'intake',
+      customerId: 'person',
+      branchId: 'branch',
+      contractNumber: '120000',
+      passengerName: 'Test',
+      departureDate: '2027-02-20',
+      durationDays: 8,
+    },
+    saved,
+  });
+  expect(h.states[4]).toMatchObject({
+    departureDate: '2027-02-20',
+    durationDays: 8,
+  });
+});

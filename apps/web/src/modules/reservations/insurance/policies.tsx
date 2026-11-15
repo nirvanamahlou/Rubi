@@ -696,8 +696,8 @@ export function InsuranceDraft({
     customerId: target.customerId ?? '',
     destinationCode: previous?.destinationCode ?? '',
     planCode: previous?.planCode ?? '',
-    departureDate: previous?.departureDate ?? '',
-    durationDays: previous?.durationDays ?? 7,
+    departureDate: target.departureDate ?? '',
+    durationDays: target.durationDays ?? 7,
     notes: previous?.notes ?? '',
     expectedVersion: previous?.version ?? 0,
   });
