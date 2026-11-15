@@ -12698,3 +12698,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-site-passenger-sync-1115 from develop ca7bc3
 Reserve bounded release integration repair: replace inline source-reference type imports in two Contracts files with explicit type-only imports. Base develop ca7bc34b1; branch codex/pc-b-release-1115. Source-reference implementation lease is frozen after PR1723. No contract shape/schema/dependency changes. Owner authorizes all-changes production rollout without a fresh backup; preserve deployed overlays, assistant service, configuration and integrations.
 
 SITE-PASSENGER-SYNC-1115 validation:65 focused Customers/Site Commerce tests, scoped lint and full API typecheck/build pass. A real disposable PostgreSQL proof verifies same-ID identity update, immutable national-ID fingerprint/branch/roles, omitted-field preservation, encrypted passport storage, one privacy-safe atomic audit and an idempotent replay. The fixture is removed; no operational identity/contract/payment is used. A later coordinated release changed only line endings in the owned source; rebuild on that current runtime preserves its unrelated changes. Exact-head hosted gates remain mandatory before merge/API-only activation.
+
+## RELEASE-HR-REF-1115 — PC-B — READY_FOR_CI
+
+Reserve formatting-only repair of finance-source-references.spec.ts after develop e5890d02a quality failure. Owner authorizes latest production rollout without a fresh backup. No behavior, schema or dependency change; preserve existing source overlays and integration configuration.
