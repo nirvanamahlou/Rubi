@@ -11,3 +11,10 @@ Only current airline-attached document changes queue NSS invalidation. An additi
 Validation:160 focused API tests pass, including normalization, metadata removal, MIME/magic/size restrictions, limits, deduplication, exact carrier matching, policy refusal and version race. An isolated PostgreSQL proof validates seven logo revision events and no unrelated-channel/document invalidation. API build/typecheck and hosted exact-head CI remain the rollout gate. No ticket issuance/payment/contract mutation is used for acceptance.
 
 Runtime preservation: current production payment-state and settled-document-release overlays remain in the guarded runtime merge. Deploy only the API, preserving Web, Worker and protected site binding. Native ticket output already renders logoDataUrl, but its branch-limited source requires separate website-output verification; catalog delivery does not prove issued-file output.
+
+
+## Native issued-ticket rendering
+
+The website contract ticket renderer now falls back to a dedicated private Sales branding read when normal branch-scoped airline-logo delivery is denied. The fallback requires the exact configured NSS service principal, a linked website contract in the bound branch and an exact carrier on that contract. Native Sales detail authorization, financial document release and cancellation checks precede image delivery. It returns only the existing sanitized PNG projection. Ordinary users, unlinked/cancelled contracts and unrelated carriers cannot use it. No document source URL or IAM grant is added.
+
+33 focused API checks and39 native Web renderer checks pass, including cross-branch fallback embedding without a POST, release/cancellation denial and principal/contract/carrier scoping. Full affected builds and hosted gates precede the final API/Web activation. Validation does not issue or reissue a real ticket or approve financial delivery.

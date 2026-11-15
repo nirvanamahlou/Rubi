@@ -1,5 +1,9 @@
 import { DocumentsService } from '../documents/documents.service';
-import { attachAirlineLogos, websiteAirlineLogo } from './airline-logos';
+import {
+  attachAirlineLogos,
+  websiteAirlineLogo,
+  carrierKey,
+} from './airline-logos';
 import {
   BadRequestException,
   ConflictException,
@@ -25,7 +29,7 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import { ReservationTicketDocumentsService } from '../reservations/reservation-ticket-documents';
-import { isFloatingSalesContract } from '@nora/contracts';
+import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { websiteFlightQuotes } from './ticket-quote';
 import {
@@ -71,6 +75,44 @@ export class SiteCommerceService {
         'ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.',
       );
     return binding.salePriceTargetId;
+  }
+
+  /** Read-only normalized branding for an already linked website contract. */
+  async ticketAirlineLogo(
+    contractId: string,
+    carrierName: string,
+    actor: AuthenticatedActor,
+  ) {
+    const scoped = this.scoped('nss', actor);
+    if (
+      !this.documents ||
+      typeof carrierName !== 'string' ||
+      carrierName.length > 200 ||
+      !carrierKey(carrierName)
+    )
+      throw new NotFoundException();
+    const link = await this.db.client.websiteOrder.findFirst({
+      where: { siteCode: 'nss', branchId: scoped.branchIds[0]!, contractId },
+      select: { id: true },
+    });
+    if (!link) throw new NotFoundException();
+    const { data: contract } = await this.sales.detail(contractId, scoped);
+    if (
+      contract.status === 'CANCELLED' ||
+      !salesContractFlights(
+        contract.servicesDetail,
+        contract.ticketSelections,
+      ).some(
+        (flight) =>
+          carrierKey(flight.carrierNameSnapshot) === carrierKey(carrierName),
+      )
+    )
+      throw new NotFoundException();
+    const assets = await attachAirlineLogos([{ carrierName }], (name) =>
+      websiteAirlineLogo(name, scoped, this.references, this.documents!),
+    );
+    if (assets.length !== 1) throw new NotFoundException();
+    return Buffer.from(assets[0]!.dataBase64, 'base64');
   }
 
   async publication(

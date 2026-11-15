@@ -10137,3 +10137,5 @@ The owner explicitly authorizes only sanitized image pixels of published airline
 HOURLY-LEAVE-DEADLINE-1115: hourly requests accepted through assigned workday end, including after absence; next-day backdating rejected. Legacy cutoff used when no schedule resolves. Scoped ESLint passed; test collection blocked by missing contracts build.
 
 OVERTIME-TIME-INPUT-1115: overtime-start uses native time input in contextual working-hours form. Scoped ESLint passed.
+
+WEBSITE-TICKET-LOGO-1115 — PC-A: native website-contract HTML/PDF rendering now consumes the same sanitized brand pixels through an authenticated Sales endpoint. Exact site principal, linked contract, carrier membership, finance release and cancellation gates remain.33 API and39 renderer checks pass; full build and hosted gates gate rollout. No real issuance or payment used for validation.

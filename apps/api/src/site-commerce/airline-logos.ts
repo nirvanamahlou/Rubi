@@ -19,7 +19,7 @@ export type AirlineLogoAsset = {
   dataBase64: string;
 };
 type FlightLogo = { carrierName: string; carrierLogoUrl?: string };
-const carrierKey = (value: string) =>
+export const carrierKey = (value: string) =>
   value
     .normalize('NFKC')
     .toLowerCase()
