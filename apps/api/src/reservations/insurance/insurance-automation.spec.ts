@@ -194,6 +194,7 @@ function fixture() {
         nationalCode: 'SYNTHETIC',
         firstName: 'Test',
         mobile: '00000000000',
+        email: '',
       },
     })),
   };
@@ -639,4 +640,47 @@ it('binds sparse provider reconciliation to the exact successful creation receip
       planId: 76,
     }),
   );
+});
+
+it.each(['', '   ', 'passenger@example.invalid'])(
+  'uses a provider-only default email and preserves a supplied email (%s)',
+  async (email) => {
+    const f = fixture();
+    const identity = await f.identities.read();
+    identity.person.email = email;
+    f.identities.read.mockResolvedValue(identity);
+    await f.service.process('policy');
+    expect(f.provider.createPolicy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        person: expect.objectContaining({
+          email: email.trim() || 'Niyayeshseir@gmail.com',
+        }),
+      }),
+    );
+    expect(identity.person.email).toBe(email);
+  },
+);
+it('also supplies the provider-only default for a standalone applicant without email', async () => {
+  const f = fixture();
+  Object.assign(f.row, {
+    applicantId: 'applicant',
+    contractId: null,
+    intakeId: null,
+    customerId: null,
+    automation: { phase: 'QUEUED', useDraft: true },
+    destinationCode: '5',
+    planCode: '76',
+    departureDate: new Date('2027-01-01'),
+    durationDays: 7,
+  });
+  const person = f.applicantCrypto.open();
+  person.email = '';
+  f.applicantCrypto.open.mockReturnValue(person);
+  await f.service.process('policy');
+  expect(f.provider.createPolicy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      person: expect.objectContaining({ email: 'Niyayeshseir@gmail.com' }),
+    }),
+  );
+  expect(person.email).toBe('');
 });

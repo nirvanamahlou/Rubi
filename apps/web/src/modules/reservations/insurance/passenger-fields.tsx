@@ -55,10 +55,12 @@ export function InsurancePassengerFields({
   value,
   onChange,
   disabled,
+  mobileRequired = true,
 }: {
   value: InsurancePassengerInputV1;
   onChange: (value: InsurancePassengerInputV1) => void;
   disabled: boolean;
+  mobileRequired?: boolean;
 }) {
   const fields = [
     ['firstName', 'نام فارسی', ''],
@@ -74,13 +76,22 @@ export function InsurancePassengerFields({
   return (
     <fieldset className={styles.card} disabled={disabled}>
       <legend>اطلاعات بیمه‌شده</legend>
+      {!mobileRequired && (
+        <p>
+          اگر موبایل مسافر خالی باشد، شماره مشتری طرف حساب قرارداد برای بیمه
+          ارسال می‌شود.
+        </p>
+      )}
       <div className={styles.fields}>
         {fields.map(([key, label, placeholder]) => (
           <label key={key}>
-            {label}
+            {key === 'mobile' && !mobileRequired
+              ? 'موبایل بیمه‌شده (اختیاری)'
+              : label}
             <Input
               required={
                 key !== 'email' &&
+                (key !== 'mobile' || mobileRequired) &&
                 (key !== 'nationalCode' || value.nationalityCode === 'IRN')
               }
               value={value[key]}
