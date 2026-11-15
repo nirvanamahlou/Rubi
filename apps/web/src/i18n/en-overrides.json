@@ -6214,5 +6214,8 @@
   "مختصات عمودی": "Vertical position",
   "ایمیل بیمه‌شده (اختیاری)": "Insured email (optional)",
   "تلفن همراه مسافر لازم است؛ ایمیل اختیاری است و در صورت ورود باید معتبر باشد. در نبود تماس مسافر، تماس مشتری قرارداد استفاده می‌شود.": "A passenger mobile number is required. Email is optional and must be valid if provided. If passenger contact details are missing, the contract customer contact is used.",
-  "شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.": "Enter the passport number using uppercase Latin letters and digits without spaces, and a mobile number with 10 to 15 digits without spaces (Iran: 09123456789; international: include the country code). Email is optional; if provided, enter a valid email such as name@example.com. Do not enter fabricated details."
+  "شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.": "Enter the passport number using uppercase Latin letters and digits without spaces, and a mobile number with 10 to 15 digits without spaces (Iran: 09123456789; international: include the country code). Email is optional; if provided, enter a valid email such as name@example.com. Do not enter fabricated details.",
+  "تیمفروش": "Sales team",
+  "دپارتمانفروش": "Sales department",
+  "واحدفروش": "Sales unit"
 }
