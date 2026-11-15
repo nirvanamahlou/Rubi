@@ -64,7 +64,7 @@ function fixture() {
     decryptPassportNumber: vi.fn(() => 'SYNTHETIC-PASSPORT'),
   };
   const contacts = {
-    decrypt: vi.fn((c: { type: string; encryptedValue?: string }) =>
+    decrypt: vi.fn((c: { type: string; encryptedValue?: string }): string =>
       c.type === 'PHONE' ? '00000000000' : 'synthetic@example.invalid',
     ),
   };
