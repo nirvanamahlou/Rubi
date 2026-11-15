@@ -12633,5 +12633,4 @@ Reserve optional shared TourPackageInputV1 publicationStatus (DRAFT/PUBLISHED), 
 
 CHART-ACTIONS-1115 PC-B completed: headquarters chart display rename/hide/position stored as organization.chartLayout HR records. Scoped ESLint passed. Chart suite blocked by absent contracts build output. Owner authorizes push/merge.
 
-
 SITE-PUBLICATION-SYNC-1115 develop integration: preserve PR1711 website chooser/explicit confirmation and combine it with website-only pause/resume. Existing publication/unpublication bodies stay compatible; stopped transitions carry the additive field. Eight picker/state tests plus eight current HR regressions and three complete-translation checks pass together. Preserve concurrent tour naming, Sales and HR source work; only the bounded publication UI/translations are included in this targeted runtime layer.

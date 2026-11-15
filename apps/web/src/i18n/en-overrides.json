@@ -6208,5 +6208,8 @@
   "پنهان": "Hidden",
   "شناسه گره": "Node ID",
   "مختصات افقی": "Horizontal position",
-  "مختصات عمودی": "Vertical position"
+  "مختصات عمودی": "Vertical position",
+  "این مورد از چارت حذف شود؟": "Remove this item from the chart?",
+  "ذخیره تغییرات انجام نشد.": "Could not save the changes.",
+  "شرکت مجاز یافت نشد.": "No authorized company was found."
 }
