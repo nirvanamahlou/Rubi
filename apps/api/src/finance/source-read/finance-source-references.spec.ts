@@ -95,6 +95,25 @@ function fixture() {
   return { service, db, sales, event, journal };
 }
 describe('Exact Finance source references', () => {
+  it('keeps HR referrals in a mixed inbox without querying their display codes', async () => {
+    const { service, db } = fixture();
+    const payrollId = '61d19720-9738-4901-976c-723997181cad';
+    const items = [
+      { source: 'HR', kind: 'HR_REFERRAL', sourceReference: 'HR-LINK-ABC' },
+      { source: 'HR', kind: 'PAYROLL_REQUEST', sourceReference: payrollId },
+    ] as FinanceInboxItemV1[];
+    const result = await service.inbox(items, actor);
+    expect(result.map((row) => row.sourceReference)).toEqual(['HR-LINK-ABC', payrollId]);
+    expect(result[0]?.references).toEqual({ contracts: [], journals: [] });
+    expect(db.client.financeAccountingEvent.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ AND: expect.arrayContaining([
+        { OR: [{ source: 'OPERATIONAL', requestId: { in: [payrollId] } }] },
+      ]) }) }),
+    );
+    expect(db.client.financeOperationalRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { in: [payrollId] } }) }),
+    );
+  });
   it('retains the originating contract commitment journal when a prior-year receipt is awaiting settlement', async () => {
     const { service, db, journal } = fixture();
     db.client.accountingJournal.findMany.mockResolvedValue([

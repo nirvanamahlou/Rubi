@@ -242,7 +242,8 @@ export class FinanceSourceReferences {
   }
 
   async inbox(items: readonly FinanceInboxItemV1[], actor: AuthenticatedActor) {
-    const sources = items.map((item): Source => {
+    const linkedItems = items.filter((item) => item.kind !== 'HR_REFERRAL');
+    const sources = linkedItems.map((item): Source => {
       if (item.source === 'SALES')
         return {
           source: 'SALES',
@@ -272,7 +273,11 @@ export class FinanceSourceReferences {
       };
     });
     const refs = await this.resolve(sources, actor);
-    return items.map((item, i) => ({ ...item, references: refs[i]! }));
+    const byItem = new Map(linkedItems.map((item, i) => [item, refs[i]!]));
+    return items.map((item) => ({
+      ...item,
+      references: byItem.get(item) ?? { contracts: [], journals: [] },
+    }));
   }
 
   async history(
