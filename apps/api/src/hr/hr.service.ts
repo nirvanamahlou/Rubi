@@ -779,7 +779,10 @@ export class HrService {
     const amount = {
       overtimeAmountToman:
         includeOvertime && rates[6] && data?.overtimeMinutes != null
-          ? new Prisma.Decimal(rates[6]).mul(data.overtimeMinutes).toFixed(0)
+          ? new Prisma.Decimal(rates[6])
+              .mul(data.overtimeMinutes)
+              .div(60)
+              .toFixed(0)
           : null,
     };
     if (row.status === 'مرخصی') return { ...amount, dailyPenaltyToman: '0' };
@@ -6247,7 +6250,19 @@ export class HrService {
                   shiftStart,
                   shiftEnd,
                   Number(validate.digits(shiftValues?.[3] ?? '0')) || 0,
-                  validate.localClockToUtc(date, '17:30'),
+                  validate.localClockToUtc(
+                    date,
+                    (
+                      source.find(
+                        (r) =>
+                          r.tab === 'workingHours' &&
+                          r.status === 'فعال' &&
+                          (r.values as string[])[2] === shiftValues?.[1],
+                      )?.values as string[] | undefined
+                    )?.[9] ||
+                      shiftValues?.[2] ||
+                      '17:30',
+                  ),
                 )
               : null;
           const leave =

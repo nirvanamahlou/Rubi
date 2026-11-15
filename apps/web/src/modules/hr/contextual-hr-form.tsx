@@ -857,6 +857,12 @@ export function ContextualHrForm({
           {renderedFields.map(({ field, index }) => {
             if (context.hiddenLabels?.includes(field.label)) return null;
             if (
+              context.section === 'time' &&
+              context.tab === 'workingHours' &&
+              field.label === 'توضیحات'
+            )
+              return null;
+            if (
               context.section === 'development' &&
               context.tab === 'goals' &&
               /^(عنوان هدف|وزن|پیشرفت)$/.test(field.label)
@@ -899,7 +905,8 @@ export function ContextualHrForm({
               context.presetValues?.[field.label] !== undefined;
             return (
               <Fragment key={field.id}>
-                {workingHours &&
+                {false &&
+                workingHours &&
                 ['ساعت شروع', 'ساعت قبل از شروع'].includes(field.label) ? (
                   <h3 className={styles.fullWidth}>
                     {field.label === 'ساعت شروع'
@@ -931,7 +938,9 @@ export function ContextualHrForm({
                       افزودن {field.label}
                     </button>
                   ) : null}
-                  {workingHours && field.label === 'تعریف ضرایب پیش‌فرض' ? (
+                  {false &&
+                  workingHours &&
+                  field.label === 'تعریف ضرایب پیش‌فرض' ? (
                     <input
                       {...commonProps}
                       type="checkbox"
