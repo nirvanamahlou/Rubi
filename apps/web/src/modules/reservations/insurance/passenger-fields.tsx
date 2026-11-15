@@ -23,8 +23,8 @@ export function InsuranceInputGuide({
       <p>
         شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا
         ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره
-        کشور) و ایمیل معتبر مانند name@example.com وارد شود. اطلاعات ساختگی وارد
-        نکنید.
+        کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند
+        name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.
       </p>
       <p>
         کشور مقصد و طرح فعال را از فهرست بیمه انتخاب کنید. تاریخ سفر از تقویم و
@@ -69,7 +69,7 @@ export function InsurancePassengerFields({
     ['nationalCode', 'کد ملی ایرانی', '۱۰ رقم'],
     ['passportNo', 'شماره گذرنامه', 'A12345678'],
     ['mobile', 'موبایل بیمه‌شده', '09123456789'],
-    ['email', 'ایمیل بیمه‌شده', 'name@example.com'],
+    ['email', 'ایمیل بیمه‌شده (اختیاری)', 'name@example.com'],
   ] as const;
   return (
     <fieldset className={styles.card} disabled={disabled}>
@@ -80,7 +80,8 @@ export function InsurancePassengerFields({
             {label}
             <Input
               required={
-                key !== 'nationalCode' || value.nationalityCode === 'IRN'
+                key !== 'email' &&
+                (key !== 'nationalCode' || value.nationalityCode === 'IRN')
               }
               value={value[key]}
               placeholder={placeholder}

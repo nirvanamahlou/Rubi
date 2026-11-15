@@ -38,6 +38,11 @@ it('requires Iranian identity, permits foreign national code omission, and conve
     (field: { key: string }) => field.key === 'nationalCode',
   ).props.children[1];
   expect(national.props.required).toBe(true);
+  const email = fields.find((field: { key: string }) => field.key === 'email')
+    .props.children[1];
+  expect(email.props.required).toBe(false);
+  expect(email.props.type).toBe('email');
+  expect(renderToStaticMarkup(editor)).toContain('ایمیل بیمه‌شده (اختیاری)');
   const mobile = fields.find((field: { key: string }) => field.key === 'mobile')
     .props.children[1];
   mobile.props.onChange({ target: { value: '۰۹۱۲۳۴۵۶۷۸۹' } });

@@ -408,6 +408,17 @@ it.each([
   ).toThrow();
 });
 
+it.each(['', undefined])(
+  'accepts an optional correction email (%s) without inventing one',
+  (email) => {
+    const draft = parseInsuranceDraft({
+      ...fixture().input,
+      passenger: { ...passenger, email },
+    });
+    expect(draft.passenger?.email).toBe('');
+  },
+);
+
 it('identifies the invalid insurance field without echoing its private value', () => {
   const invalidEmail = 'synthetic-invalid-email';
   try {

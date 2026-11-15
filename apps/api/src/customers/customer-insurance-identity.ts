@@ -184,6 +184,7 @@ export class CustomerInsuranceIdentity {
       ['phone', input.mobile],
       ['email', input.email.toLowerCase()],
     ] as const) {
+      if (!value) continue;
       const kind = type === 'phone' ? 'PHONE' : 'EMAIL';
       const protectedValue = this.contacts.protect(
         type,
@@ -273,7 +274,6 @@ export class CustomerInsuranceIdentity {
       !['M', 'F'].includes(person.gender ?? '') ||
       !passportNo ||
       !mobile ||
-      !email ||
       (isIranian && !nationalCode) ||
       !person.nationalityCode
     )
@@ -310,7 +310,7 @@ export class CustomerInsuranceIdentity {
         gender: person.gender === 'M' ? 1 : 2,
         birthDate: person.birthDate.toISOString(),
         mobile,
-        email,
+        email: email ?? '',
       },
       passportNo,
     };

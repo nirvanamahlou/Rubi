@@ -10074,3 +10074,10 @@ DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
+
+
+## INSURANCE-EMAIL-OPTIONAL-1115 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-insurance-email-optional-1115 from develop64e76e24. User authorizes optional insured email and develop merge. Reserve Insurance passenger fields/guides, standalone completeness, shared draft validation and Customers insurance identity adapter with focused tests. Preserve provided-email format validation, existing contact data, authorization, identity/version/provider idempotency and all peer changes. No shared TypeScript shape, schema, migration, dependency, provider-mode, operational data or deployment change. Previous overlapping insurance fixes are committed on develop; bounded source lease releases on verified merge.
+
+INSURANCE-EMAIL-OPTIONAL-1115 validation:59 focused API and22 Web/translation tests and scoped ESLint pass. Blank or omitted email normalizes to an empty value, supplied email remains format-validated, standalone form permits blank email, and Customer issuance lookup no longer requires email. Empty correction email neither creates a blank contact nor changes an existing primary email. Exact-head full hosted checks gate the user-authorized merge. No production deployment.
