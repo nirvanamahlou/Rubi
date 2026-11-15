@@ -12614,3 +12614,5 @@ The same integration reserves two missing HR labels in the English UI overrides,
 ## TOUR-PUBLICATION-1115 — PC-A — IN_PROGRESS
 
 Reserve optional shared TourPackageInputV1 publicationStatus (DRAFT/PUBLISHED), JSON-definition validation, Sales list and direct-selection checks, Tour definition UI and tests. Legacy omission remains published; new UI definitions default draft. Producer Ticket Catalog, consumers Sales/Tour management. No migration/dependency/deployment. Owner authorizes develop merge after green CI.
+
+CHART-ACTIONS-1115 PC-B completed: headquarters chart display rename/hide/position stored as organization.chartLayout HR records. Scoped ESLint passed. Chart suite blocked by absent contracts build output. Owner authorizes push/merge.
