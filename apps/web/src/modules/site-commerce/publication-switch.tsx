@@ -34,7 +34,11 @@ function PublicationSwitch({
   resourceId: string;
   disabled?: boolean;
 }) {
-  const [state, setState] = useState<{ enabled: boolean; version: number }>();
+  const [state, setState] = useState<{
+    enabled: boolean;
+    salesStopped?: boolean;
+    version: number;
+  }>();
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
@@ -60,7 +64,7 @@ function PublicationSwitch({
       });
     return () => abort.abort();
   }, [path]);
-  async function change(enabled: boolean) {
+  async function change(enabled: boolean, salesStopped = false) {
     if (
       !state ||
       saving ||
@@ -78,7 +82,11 @@ function PublicationSwitch({
           'content-type': 'application/json',
           'x-nora-site-commerce': '1',
         },
-        body: JSON.stringify({ enabled, version: state.version }),
+        body: JSON.stringify({
+          enabled,
+          ...(salesStopped || state.salesStopped ? { salesStopped } : {}),
+          version: state.version,
+        }),
       });
       if (!response.ok)
         throw Error('ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.');
@@ -112,6 +120,15 @@ function PublicationSwitch({
           منتشرشده در نیایش سیر
         </p>
       ) : null}
+      {state?.enabled && state.salesStopped ? (
+        <p role="status" className="text-xs text-amber-700">
+          نمایش در سایت؛ فروش متوقف است
+        </p>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت،
+        محصول و رزروهای قبلی را حذف نمی‌کند.
+      </p>
       {error && !open ? (
         <p role="alert" className="text-sm text-red-600">
           {error}
@@ -155,7 +172,17 @@ function PublicationSwitch({
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            {state?.enabled ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled || !siteId || saving}
+                onClick={() => void change(true, !state.salesStopped)}
+              >
+                {state.salesStopped ? 'ادامه فروش' : 'توقف فروش سایت'}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"

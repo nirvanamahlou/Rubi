@@ -1,5 +1,6 @@
 import { SalesDocumentBrandingController } from './sales-document-branding.controller';
 import { SiteCommerceController } from '../site-commerce/site-commerce.controller';
+import { WebsiteCatalogDispatcher } from '../site-commerce/catalog-dispatcher';
 import { SiteCommerceService } from '../site-commerce/site-commerce.service';
 import { SiteCommerceWriteGuard } from '../site-commerce/site-commerce-write.guard';
 import {
@@ -46,8 +47,6 @@ import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
-import { SalesAgentController } from './assistant-agent/controller';
-import { SalesAgentQueryService } from './assistant-agent/query.service';
 
 @Module({
   imports: [
@@ -74,11 +73,11 @@ import { SalesAgentQueryService } from './assistant-agent/query.service';
     SalesPaymentReceiptsController,
     SalesController,
     SalesAssistantController,
-    SalesAgentController,
     SalesReferencesController,
     SalesAgencyCustomerController,
   ],
   providers: [
+    WebsiteCatalogDispatcher,
     SiteCommerceService,
     SiteCommerceWriteGuard,
     SalesFloatingPurchases,
@@ -88,7 +87,6 @@ import { SalesAgentQueryService } from './assistant-agent/query.service';
     SalesRepository,
     SalesPartyCorrectionService,
     SalesAssistantConfirmationService,
-    SalesAgentQueryService,
     SalesBuyerContactCrypto,
     SalesService,
     SalesProfitService,

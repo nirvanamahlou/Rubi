@@ -129,7 +129,7 @@ it('renders a write-only password input in the device form, not in table columns
   });
 });
 
-it('renders the working-hour controls and preserves stored defaults without spacer headings', () => {
+it('renders approved working-hour controls and overtime start with stable stored positions', () => {
   const definition = getHrResource('time', 'workingHours')!;
   const html = renderToStaticMarkup(
     <ContextualHrForm
@@ -154,6 +154,7 @@ it('renders the working-hour controls and preserves stored defaults without spac
   expect(html).not.toContain('>شناسه<');
   expect(html).not.toContain('>وضعیت<');
   for (const label of [
+    'شروع اضافه‌کاری',
     'زمان آغاز',
     'زمان پایان',
     'چند ساعت قبل از زمان آغاز',
@@ -164,6 +165,9 @@ it('renders the working-hour controls and preserves stored defaults without spac
   expect(html).toContain('value="#000000"');
   expect(html).not.toContain('توضیحات ساعت کاری');
   expect(html).not.toContain('محدوده تردد پرسنل');
+  expect(html).toContain('hr-time-workingHours-field-11');
+  expect(html).not.toContain('type="checkbox"');
+  expect(html).not.toContain('checked=""');
   expect(html).toContain('تعریف ضرایب پیشفرض');
   expect(html).toMatch(/<input[^>]*role="combobox"[^>]*value="خیر"/);
   expect(hrGroups.time!.find((g) => g.id === 'workingHours')?.label).toBe(

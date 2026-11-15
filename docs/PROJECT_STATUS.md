@@ -10077,6 +10077,9 @@ DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility
 
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
 
+
+SITE-PUBLICATION-SYNC-1115 (PC-A): branch-scoped automatic future tour/ticket price publication, website-only pause/resume/remove and signed update-driven catalog delivery are implemented. Durable invalidation covers price, capacity, definition/reference changes and capacity-hold expiry; browser visits read the site's own database. Monotonic snapshots preserve removal under retries/out-of-order delivery; new paused orders are rejected before identity writes. Existing legacy website records retain their separate source identity.18 site tests,15 ERP tests, isolated PostgreSQL publication/branch/capacity/removal checks, scoped API lint and API/Web production builds passed. The two additive migrations preserve the first published migration and align the new Branch FK update rule separately. Production rollout and signed revision2 end-to-end acknowledgement are verified; three catalog visits generated no delivery, an explicit invalidation propagated, unsigned delivery was rejected, and both health endpoints pass. Hosted exact-head gates govern develop merge. No gateway activation or real purchase.
+
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
 
 

@@ -278,6 +278,7 @@ model RolePermission {
 }
 
 model Branch {
+  websiteCatalogDeliveries      WebsiteCatalogDelivery[]
   websitePublications           WebsitePublication[]
   websiteOrders                 WebsiteOrder[]
   standaloneInsuranceApplicants ReservationInsuranceApplicant[]
@@ -8628,15 +8629,16 @@ model PackagePricingTourCombinationSource {
 }
 
 model WebsitePublication {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  siteCode   String   @db.VarChar(40)
-  branchId   String   @db.Uuid
-  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  kind       String   @db.VarChar(20)
-  resourceId String   @db.Uuid
-  enabled    Boolean  @default(false)
-  version    Int      @default(1)
-  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+  salesStopped Boolean  @default(false)
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siteCode     String   @db.VarChar(40)
+  branchId     String   @db.Uuid
+  branch       Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  kind         String   @db.VarChar(20)
+  resourceId   String   @db.Uuid
+  enabled      Boolean  @default(false)
+  version      Int      @default(1)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([siteCode, branchId, kind, resourceId])
   @@index([siteCode, branchId, updatedAt])
@@ -8658,4 +8660,17 @@ model WebsiteOrder {
 
   @@unique([siteCode, branchId, externalId])
   @@map("website_orders")
+}
+
+// Durable catalog invalidation; business writes and invalidation commit together.
+model WebsiteCatalogDelivery {
+  siteCode          String    @id @db.VarChar(40)
+  branchId          String    @db.Uuid
+  branch            Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  revision          BigInt    @default(1)
+  deliveredRevision BigInt    @default(0)
+  deliveredAt       DateTime? @db.Timestamptz(3)
+  nextRefreshAt     DateTime? @db.Timestamptz(3)
+
+  @@map("website_catalog_deliveries")
 }

@@ -64,13 +64,23 @@ export class SiteCommerceService {
   ) {
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
+    const binding = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}')[
+      site
+    ];
+    if (
+      site !== 'nss' ||
+      !['ticket', 'tour'].includes(kind) ||
+      !binding?.branchId ||
+      !actor.branchIds.includes(binding.branchId)
+    )
+      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
     return {
       data: await this.db.client.websitePublication.findFirst({
         where: {
           siteCode: site,
           kind,
           resourceId,
-          branchId: { in: actor.branchIds },
+          branchId: binding.branchId,
         },
       }),
     };
@@ -80,27 +90,32 @@ export class SiteCommerceService {
     site: string,
     kind: string,
     resourceId: string,
-    input: { enabled: boolean; version: number },
+    input: { enabled: boolean; salesStopped?: boolean; version: number },
     actor: AuthenticatedActor,
   ) {
     if (
       !['ticket', 'tour'].includes(kind) ||
       !['nss'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
-      !Number.isInteger(input.version)
+      !Number.isInteger(input.version) ||
+      (input.salesStopped !== undefined &&
+        typeof input.salesStopped !== 'boolean')
     )
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
-    const resource =
-      kind === 'ticket'
-        ? await this.tickets.websiteOffer(resourceId, actor.branchIds)
-        : await this.tours.pricingDeparture(resourceId, actor.branchIds);
+    const bindings = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+    const branchId = bindings[site]?.branchId as string | undefined;
+    if (!branchId || !actor.branchIds.includes(branchId))
+      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
+    if (kind === 'ticket')
+      await this.tickets.documentSupply(resourceId, [branchId]);
+    else await this.tours.pricingDeparture(resourceId, [branchId]);
     const key = {
       siteCode: site,
       kind,
       resourceId,
-      branchId: resource.branchId,
+      branchId,
     };
     const row = await this.db.client.websitePublication.findUnique({
       where: { siteCode_branchId_kind_resourceId: key },
@@ -110,12 +125,20 @@ export class SiteCommerceService {
     if (!row)
       return {
         data: await this.db.client.websitePublication.create({
-          data: { ...key, enabled: input.enabled },
+          data: {
+            ...key,
+            enabled: input.enabled,
+            salesStopped: input.salesStopped ?? false,
+          },
         }),
       };
     const changed = await this.db.client.websitePublication.updateMany({
       where: { id: row.id, version: input.version },
-      data: { enabled: input.enabled, version: { increment: 1 } },
+      data: {
+        enabled: input.enabled,
+        salesStopped: input.salesStopped ?? row.salesStopped,
+        version: { increment: 1 },
+      },
     });
     if (!changed.count)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
@@ -175,6 +198,10 @@ export class SiteCommerceService {
     };
   }
 
+  async nextCatalogCapacityChange(branchId: string) {
+    return this.tickets.websiteNextCapacityChange([branchId]);
+  }
+
   async catalog(site: string, actor: AuthenticatedActor) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
@@ -230,6 +257,7 @@ export class SiteCommerceService {
           kind: row.kind,
           resourceId: row.resourceId,
           enabled: true,
+          salesStopped: row.salesStopped,
           version: row.version,
           ...product,
         });
@@ -293,7 +321,7 @@ export class SiteCommerceService {
           },
         },
       });
-      if (!published?.enabled)
+      if (!published?.enabled || published.salesStopped)
         throw new ForbiddenException('این محصول برای سایت منتشر نشده است.');
     }
     if (tourIds.length) {
@@ -408,6 +436,7 @@ export class SiteCommerceService {
           branchId: scoped.branchIds[0]!,
           kind: 'ticket',
           enabled: true,
+          salesStopped: false,
         },
       });
       if (!product)

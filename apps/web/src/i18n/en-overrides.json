@@ -1,7 +1,10 @@
 {
-  "ایمیل بیمه‌شده (اختیاری)": "Insured email (optional)",
-  "تلفن همراه مسافر لازم است؛ ایمیل اختیاری است و در صورت ورود باید معتبر باشد. در نبود تماس مسافر، تماس مشتری قرارداد استفاده می‌شود.": "A passenger mobile number is required. Email is optional and must be valid if provided. If passenger contact details are missing, the contract customer contact is used.",
-  "شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.": "Enter the passport number using uppercase Latin letters and digits without spaces, and a mobile number with 10 to 15 digits without spaces (Iran: 09123456789; international: include the country code). Email is optional; if provided, enter a valid email such as name@example.com. Do not enter fabricated details.",
+  "انتشار در سایت": "Publish to website",
+  "منتشرشده در نیایش سیر": "Published on Niayesh Seir",
+  "سایت مقصد": "Destination website",
+  "سایت را انتخاب کنید": "Select a website",
+  "لغو انتشار": "Unpublish",
+  "نیایش سیر": "Niayesh Seir",
   "اگر در حال ایجاد قرارداد هستید، در مسیر قیمت و پرداخت ← برنامه پرداخت قرارداد ← رسید پرداخت (اختیاری)، فایل همان پرداخت را انتخاب کنید.": "When creating a contract, select that payment's file under Price and payment → Contract payment schedule → Payment receipt (optional).",
   "اندازه متن گفتگو": "Chat text size",
   "بالا چپ": "Top left",
@@ -6201,6 +6204,7 @@
   "قراردادهای پنهان‌شده در فروش برای شرکت انتخاب‌شده. بازگردانی در هر سه بخش اعمال می‌شود.": "Contracts hidden in Sales for the selected company. Restoring applies to all three sections.",
   "نمایش قراردادها": "Contract visibility",
   "نمایش قراردادهای شرکت انتخاب‌شده": "Contract visibility for the selected company",
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication.",
   "این مورد از چارت حذف شود؟": "Remove this item from the chart?",
   "پنهان": "Hidden",
   "ذخیره تغییرات انجام نشد.": "Could not save changes.",
@@ -6208,11 +6212,7 @@
   "شناسه گره": "Node ID",
   "مختصات افقی": "Horizontal position",
   "مختصات عمودی": "Vertical position",
-  "انتشار در سایت": "Publish to website",
-  "منتشرشده در نیایش سیر": "Published on Niayesh Seir",
-  "سایت مقصد": "Destination website",
-  "سایت را انتخاب کنید": "Select a website",
-  "لغو انتشار": "Unpublish",
-  "نیایش سیر": "Niayesh Seir",
-  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication."
+  "ایمیل بیمه‌شده (اختیاری)": "Insured email (optional)",
+  "تلفن همراه مسافر لازم است؛ ایمیل اختیاری است و در صورت ورود باید معتبر باشد. در نبود تماس مسافر، تماس مشتری قرارداد استفاده می‌شود.": "A passenger mobile number is required. Email is optional and must be valid if provided. If passenger contact details are missing, the contract customer contact is used.",
+  "شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.": "Enter the passport number using uppercase Latin letters and digits without spaces, and a mobile number with 10 to 15 digits without spaces (Iran: 09123456789; international: include the country code). Email is optional; if provided, enter a valid email such as name@example.com. Do not enter fabricated details."
 }

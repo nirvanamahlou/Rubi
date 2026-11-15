@@ -181,6 +181,18 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 @Injectable()
 export class TicketPublicService {
   /** Server-side commerce boundary. Never returns purchase costs or other branches. */
+  async websiteNextCapacityChange(branchIds: readonly string[]) {
+    const row = await this.database.client.ticketOfferCapacityHold.aggregate({
+      where: {
+        branchId: { in: [...branchIds] },
+        status: 'ACTIVE',
+        expiresAt: { gt: new Date() },
+      },
+      _min: { expiresAt: true },
+    });
+    return row._min.expiresAt;
+  }
+
   async websiteOffer(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: {

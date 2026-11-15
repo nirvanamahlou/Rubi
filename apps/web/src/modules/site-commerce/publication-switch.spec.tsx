@@ -262,3 +262,45 @@ it('retains ticket resource identity and aborts the status read on unmount', asy
   cleanup();
   expect(signal.aborted).toBe(true);
 });
+
+it('pauses and resumes sales for the explicitly selected website without unpublishing', async () => {
+  await load(true, 9);
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({
+      data: { enabled: true, salesStopped: true, version: 10 },
+    }),
+  });
+  click('توقف فروش سایت');
+  await settle();
+  expect(render()).toContain('نمایش در سایت؛ فروش متوقف است');
+  expect(JSON.parse(fixture.fetch.mock.calls.at(-1)![1].body)).toEqual({
+    enabled: true,
+    salesStopped: true,
+    version: 9,
+  });
+  click('انتشار در سایت');
+  render();
+  fixture.select!.onValueChange('nss');
+  render();
+  fixture.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({
+      data: { enabled: true, salesStopped: false, version: 11 },
+    }),
+  });
+  click('ادامه فروش');
+  await settle();
+  const html = render();
+  expect(html).toContain('منتشرشده در نیایش سیر');
+  expect(html).not.toContain('نمایش در سایت؛ فروش متوقف است');
+  expect(JSON.parse(fixture.fetch.mock.calls.at(-1)![1].body)).toEqual({
+    enabled: true,
+    salesStopped: false,
+    version: 10,
+  });
+});

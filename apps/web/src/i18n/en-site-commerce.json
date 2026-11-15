@@ -36,5 +36,16 @@
   "مسافران هر دو مسیر باید یکسان باشند.": "Both flight directions must have the same passengers.",
   "نرخ مرجع پرواز تغییر کرده است.": "The reference flight fare has changed.",
   "وضعیت انتشار تغییر کرده است.": "The publication status has changed.",
-  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status."
+  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
+  "سایت نیایش سیر": "Niyayesh Seir website",
+  "دریافت وضعیت…": "Loading status…",
+  "در سایت نمایش داده نمی‌شود": "Hidden from website",
+  "نمایش در سایت؛ فروش متوقف است": "Visible on website; sales paused",
+  "منتشر شده و قابل خرید": "Published and available to book",
+  "ادامه فروش": "Resume sales",
+  "انتشار در سایت": "Publish on website",
+  "توقف فروش سایت": "Pause website sales",
+  "حذف از سایت": "Remove from website",
+  "قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت، محصول و رزروهای قبلی را حذف نمی‌کند.": "Published prices and details update when ERP changes. Removing a website listing preserves the product and prior bookings.",
+  "این شعبه به سایت نیایش سیر متصل نیست.": "This branch is not connected to the Niyayesh Seir website."
 }
