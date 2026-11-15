@@ -87,6 +87,7 @@ export function assertLeaveDeadline(
   leave: WorkbenchLeaveInputV1,
   policy: NonNullable<ReturnType<typeof parseMonthlyLeavePolicy>>,
   now: Date,
+  workdayEnd?: Date,
 ) {
   const local = localClockParts(now);
   if (leave.mode === 'روزانه') {
@@ -95,19 +96,17 @@ export function assertLeaveDeadline(
       throw new BadRequestException(
         `درخواست مرخصی روزانه باید حداقل ${policy.noticeDays} روز قبل ثبت شود.`,
       );
-  } else if (
-    (Date.parse(leave.from) - Date.parse(local.date)) / 86400000 <
-    policy.hourlyNoticeDays
-  ) {
-    throw new BadRequestException('مهلت ثبت مرخصی ساعتی گذشته است.');
-  } else if (
-    leave.from < local.date ||
-    (leave.from === local.date &&
-      now.getTime() > Date.parse(`${local.date}T${policy.cutoff}:00+03:30`))
-  ) {
-    throw new BadRequestException(
-      `مهلت ثبت مرخصی ساعتی تا ساعت ${policy.cutoff} روز مرخصی است.`,
-    );
+  } else {
+    const deadline =
+      workdayEnd ?? new Date(`${leave.from}T${policy.cutoff}:00+03:30`);
+    if (
+      leave.from < local.date ||
+      (leave.from === local.date && now.getTime() > deadline.getTime())
+    ) {
+      throw new BadRequestException(
+        'مهلت ثبت مرخصی ساعتی تا پایان ساعت اداری همان روز است.',
+      );
+    }
   }
 }
 export function leaveMonth(date: string) {

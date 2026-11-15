@@ -49,7 +49,7 @@ describe('monthly leave policy', () => {
       leavePolicyValues(['old', 'استحقاقی', '30', 'خیر', '0', '1405']),
     ).toEqual(['استحقاقی', '', '', '1', '0', 'خیر', '0', '465']);
   });
-  it('uses integer days for both notice fields and retains legacy cutoff compatibility', () => {
+  it('allows hourly registration on the leave day despite legacy notice days', () => {
     const numeric = parseMonthlyLeavePolicy([
       'استحقاقی',
       '2',
@@ -68,7 +68,7 @@ describe('monthly leave policy', () => {
     };
     expect(() =>
       assertLeaveDeadline(hourly, numeric, new Date('2026-11-05T08:00:00Z')),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       assertLeaveDeadline(hourly, numeric, new Date('2026-11-04T08:00:00Z')),
     ).not.toThrow();
@@ -102,6 +102,27 @@ describe('monthly leave policy', () => {
     ).toThrow();
     expect(() =>
       assertLeaveDeadline(hourly, policy, new Date('2026-11-07T05:00:00Z')),
+    ).toThrow();
+  });
+  it('uses assigned office end even after leave ends and rejects the next day', () => {
+    const hourly = {
+      ...leave,
+      mode: 'ساعتی' as const,
+      startTime: '09:00',
+      endTime: '10:00',
+    };
+    const end = new Date('2026-11-06T13:30:00Z');
+    expect(() => assertLeaveDeadline(hourly, policy, end, end)).not.toThrow();
+    expect(() =>
+      assertLeaveDeadline(hourly, policy, new Date(end.getTime() + 1), end),
+    ).toThrow();
+    expect(() =>
+      assertLeaveDeadline(
+        hourly,
+        policy,
+        new Date('2026-11-06T20:30:00Z'),
+        end,
+      ),
     ).toThrow();
   });
   it('counts Jalali months separately and hourly quota independently from daily quota', () => {
