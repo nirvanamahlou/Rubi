@@ -660,6 +660,7 @@
   "مرخصی کارمند": "Employee leave",
   "مهلت ثبت روزانه (روز قبل)": "Daily leave notice (days before)",
   "مهلت ثبت ساعتی (ساعت روز مرخصی)": "Hourly leave deadline (time on leave date)",
+  "مهلت ثبت مرخصی ساعتی تا پایان ساعت اداری همان روز است.": "Hourly leave must be submitted by the end of office hours on the same day.",
   "مهلت ثبت مرخصی ساعتی تا ساعت": "Hourly leave may be submitted until",
   "نوع سند منابع انسانی تعریف نشده است.": "The HR document type has not been configured.",
   "نوع مرخصی *": "Leave type *",

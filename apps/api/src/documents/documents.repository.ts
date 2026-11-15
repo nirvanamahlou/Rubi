@@ -542,6 +542,32 @@ export class DocumentsRepository {
     });
   }
 
+  /** Owner-approved website branding projection; never a general document lookup. */
+  websiteAirlineLogoSource(documentId: string, airlineId: string) {
+    return this.database.client.document.findFirst({
+      where: {
+        id: documentId,
+        archiveStatus: 'ACTIVE',
+        confidentiality: 'INTERNAL',
+        deletedAt: null,
+        isIncomplete: false,
+        requiresStepUpVerification: false,
+        confidentialAccessCodeHash: null,
+        OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
+        documentType: { domain: 'BRAND' },
+        relations: {
+          some: {
+            relationType: 'PRIMARY_CASE',
+            sourceModule: 'master-data',
+            sourceEntityType: 'airlines',
+            sourceEntityId: airlineId,
+          },
+        },
+      },
+      select: { branchId: true, currentVersionId: true },
+    });
+  }
+
   findDetail(
     id: string,
     branchIds: readonly string[],

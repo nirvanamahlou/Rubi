@@ -1218,6 +1218,61 @@ export class DocumentsService {
     };
   }
 
+  /** Explicit owner-approved shared airline branding; no HTTP or general file access grant. */
+  async previewWebsiteAirlineLogo(
+    input: { documentId: string; airlineId: string },
+    actor: AuthenticatedActor,
+  ): Promise<DocumentFileDelivery> {
+    if (!canSelectForWorkflow(actor, 'sales')) throw new ForbiddenException();
+    const source = await this.repository.websiteAirlineLogoSource(
+      input.documentId,
+      input.airlineId,
+    );
+    if (!source?.currentVersionId) throw new ForbiddenException();
+    const result = await this.previewMasterDataLogo(
+      {
+        documentId: input.documentId,
+        resource: 'airlines',
+        recordId: input.airlineId,
+        workflow: 'sales',
+      },
+      { ...actor, branchIds: [source.branchId] },
+      {},
+    );
+    try {
+      const current = await this.repository.websiteAirlineLogoSource(
+        input.documentId,
+        input.airlineId,
+      );
+      if (
+        !current ||
+        current.currentVersionId !== source.currentVersionId ||
+        current.branchId !== source.branchId
+      )
+        throw new ConflictException();
+      await this.repository.appendAudit({
+        documentId: input.documentId,
+        versionId: source.currentVersionId,
+        actorUserId: actor.userId,
+        actorBranchId: source.branchId,
+        action: 'documents.airline.website.export',
+        outcome: 'SUCCESS',
+        reason: 'OWNER_APPROVED_WEBSITE_AIRLINE_BRAND',
+        ipSummary: '',
+        userAgentSummary: '',
+      });
+    } catch (error) {
+      result.stream.destroy();
+      throw error;
+    }
+    return {
+      stream: result.stream,
+      mimeType: result.mimeType,
+      sizeBytes: result.sizeBytes,
+      fileName: 'airline-logo',
+    };
+  }
+
   /** Reads only the active BRAND image attached to this exact Master Data row. */
   async previewMasterDataLogo(
     input: {

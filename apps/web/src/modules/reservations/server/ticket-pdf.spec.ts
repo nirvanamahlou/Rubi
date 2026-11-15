@@ -891,3 +891,52 @@ it.each([200, 403, 404])(
     expect(renderer).toHaveBeenCalledTimes(logoStatus === 403 ? 0 : 1);
   },
 );
+
+it('embeds the same sanitized airline PNG when a website contract cannot read a cross-branch workflow logo', async () => {
+  const contractId = '00000000-0000-4000-8000-000000000005';
+  const airlineId = '00000000-0000-4000-8000-000000000010';
+  const fetcher = vi.fn().mockImplementation(async (url: string) => {
+    if (url.endsWith(`/sales/contracts/${contractId}/travel-documents`))
+      return Response.json({ data: intake });
+    if (url.includes('/airlines?'))
+      return Response.json({
+        data: [
+          {
+            id: airlineId,
+            resource: 'airlines',
+            status: 'active',
+            name: 'TEST AIR',
+            code: 'TA',
+            attributes: {},
+          },
+        ],
+      });
+    if (url.endsWith(`/airlines/${airlineId}/logo`))
+      return new Response(null, { status: 403 });
+    if (url.endsWith('/airline-logo/TEST%20AIR'))
+      return new Response(Buffer.from('sanitized-png'), {
+        headers: { 'content-type': 'image/png' },
+      });
+    return Response.json({
+      data: { name: 'City', code: 'AYT', attributes: { englishName: 'CITY' } },
+    });
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(request(`?salesContractId=${contractId}`), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(200);
+  const html = renderer.mock.calls[0]?.[0] as string;
+  expect(html).toContain('class="airline-logo"');
+  expect(html).toContain(Buffer.from('sanitized-png').toString('base64'));
+  expect(
+    fetcher.mock.calls.filter(([url]) =>
+      String(url).includes('/airline-logo/'),
+    ),
+  ).toHaveLength(1);
+  expect(
+    fetcher.mock.calls.every(
+      ([, options]) => !options?.method || options.method === 'GET',
+    ),
+  ).toBe(true);
+});
