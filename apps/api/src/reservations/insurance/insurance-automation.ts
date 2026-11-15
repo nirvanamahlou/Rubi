@@ -338,7 +338,10 @@ export class InsuranceAutomation implements OnModuleInit, OnModuleDestroy {
         planId: Number(plan.providerPlanCode),
         contractNo: id,
         passportNo: identity.passportNo,
-        person: identity.person,
+        person: {
+          ...identity.person,
+          email: identity.person.email?.trim() || 'Niyayeshseir@gmail.com',
+        },
       };
       const fingerprint = createHash('sha256')
         .update(JSON.stringify({ input, departureDate }))

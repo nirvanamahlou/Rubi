@@ -801,6 +801,7 @@ export function InsuranceDraft({
           <p>در حال دریافت اطلاعات بیمه‌شده…</p>
         ) : draft.passenger ? (
           <InsurancePassengerFields
+            mobileRequired={false}
             value={draft.passenger}
             disabled={busy}
             onChange={(passenger) =>

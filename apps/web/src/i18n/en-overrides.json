@@ -6217,5 +6217,8 @@
   "شماره گذرنامه با حروف بزرگ انگلیسی و ارقام، بدون فاصله؛ موبایل با ۱۰ تا ۱۵ رقم بدون فاصله (ایران مانند 09123456789، بین‌المللی با پیش‌شماره کشور) وارد شود. ایمیل اختیاری است؛ در صورت ورود، ایمیل معتبر مانند name@example.com وارد کنید. اطلاعات ساختگی وارد نکنید.": "Enter the passport number using uppercase Latin letters and digits without spaces, and a mobile number with 10 to 15 digits without spaces (Iran: 09123456789; international: include the country code). Email is optional; if provided, enter a valid email such as name@example.com. Do not enter fabricated details.",
   "تیمفروش": "Sales team",
   "دپارتمانفروش": "Sales department",
-  "واحدفروش": "Sales unit"
+  "واحدفروش": "Sales unit",
+  "موبایل بیمه‌شده (اختیاری)": "Insured mobile number (optional)",
+  "اگر موبایل مسافر خالی باشد، شماره مشتری طرف حساب قرارداد برای بیمه ارسال می‌شود.": "If the passenger mobile is blank, the contract buyer contact number is sent for insurance.",
+  "موبایل مسافر یا مشتری طرف حساب قرارداد را تکمیل کنید.": "Enter a mobile number for the passenger or the contract buyer."
 }

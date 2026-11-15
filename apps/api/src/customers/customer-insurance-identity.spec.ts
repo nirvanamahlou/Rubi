@@ -1,3 +1,4 @@
+import type { SalesBuyerContactCrypto } from '../sales/sales-buyer-contact.crypto';
 import { expect, it, vi } from 'vitest';
 import { CustomerInsuranceIdentity } from './customer-insurance-identity';
 import type { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
@@ -14,6 +15,8 @@ function fixture() {
     contract: {
       ownerUserId: 'owner',
       customerId: 'person',
+      payerCustomerId: 'person',
+      buyerContact: null as unknown,
       status: 'SENT_TO_RESERVATIONS',
       branchId: 'branch',
     },
@@ -37,8 +40,8 @@ function fixture() {
     birthDate: new Date('1990-01-01'),
     nationalityCode: 'IRN',
     contacts: [
-      { type: 'PHONE', encryptedValue: 'phone' },
-      { type: 'EMAIL', encryptedValue: 'email' },
+      { type: 'PHONE', encryptedValue: 'phone', isPrimary: true },
+      { type: 'EMAIL', encryptedValue: 'email', isPrimary: true },
     ],
   };
   const db = {
@@ -48,7 +51,12 @@ function fixture() {
         findUnique: vi.fn(async () => intake),
         findFirst: vi.fn(async () => ({ id: 'intake' })),
       },
-      customer: { findUnique: vi.fn(async () => person) },
+      customer: {
+        findUnique: vi.fn(async (query: unknown) => {
+          void query;
+          return person;
+        }),
+      },
     },
   };
   const ids = {
@@ -56,20 +64,32 @@ function fixture() {
     decryptPassportNumber: vi.fn(() => 'SYNTHETIC-PASSPORT'),
   };
   const contacts = {
-    decrypt: vi.fn((c: { type: string }) =>
+    decrypt: vi.fn((c: { type: string; encryptedValue?: string }): string =>
       c.type === 'PHONE' ? '00000000000' : 'synthetic@example.invalid',
     ),
   };
   const repository = { auditSensitiveRead: vi.fn() };
   const sales = { currentExecution: vi.fn(async () => intake.snapshot) };
+  const buyerContact = { decrypt: vi.fn((): { phone: string } | null => null) };
   const service = new CustomerInsuranceIdentity(
     db as unknown as DatabaseService,
     ids as unknown as CustomerNationalIdProtector,
     contacts as unknown as CustomerContactCrypto,
     repository as unknown as CustomerRepository,
     sales as unknown as SalesOperationalAmendmentService,
+    buyerContact as unknown as SalesBuyerContactCrypto,
   );
-  return { intake, person, db, ids, contacts, repository, service, sales };
+  return {
+    intake,
+    person,
+    db,
+    ids,
+    contacts,
+    repository,
+    service,
+    sales,
+    buyerContact,
+  };
 }
 it('validates standalone national identity through the Customer public port without reading or changing a Customer', () => {
   const f = fixture();
@@ -138,12 +158,19 @@ it('does not decrypt unrelated people, cancelled contracts or superseded intake 
 it('requires actual contact details rather than manufacturing them for the provider', async () => {
   const f = fixture();
   f.person.contacts = [];
-  await expect(f.service.read('intake', 'person')).rejects.toThrow('تکمیل');
+  await expect(f.service.read('intake', 'person')).rejects.toThrow(
+    'موبایل مسافر یا مشتری طرف حساب',
+  );
 });
 
-it.each(['test@example.invalid', ''])(
-  'saves correction with encrypted identifiers, optional email (%s), optimistic concurrency, and metadata-only audit',
-  async (email) => {
+it.each([
+  ['test@example.invalid', '09123456789'],
+  ['', '09123456789'],
+  ['test@example.invalid', ''],
+  ['', ''],
+])(
+  'saves correction with encrypted identifiers, optional email/mobile (%s, %s), optimistic concurrency, and metadata-only audit',
+  async (email, mobile) => {
     const f = fixture();
     const protect = vi.fn(() => ({ nationalIdEncrypted: 'sealed-national' }));
     const protectPassportNumber = vi.fn(() => ({
@@ -173,8 +200,8 @@ it.each(['test@example.invalid', ''])(
       passportNo: 'A12345678',
       birthDate: '1990-01-01',
       gender: 'M' as const,
-      mobile: '09123456789',
-      email,
+      mobile: mobile!,
+      email: email!,
     };
     await f.service.saveCorrection(
       tx as never,
@@ -192,7 +219,21 @@ it.each(['test@example.invalid', ''])(
         }),
       }),
     );
-    expect(tx.customerContact.upsert).toHaveBeenCalledTimes(email ? 2 : 1);
+    expect(tx.customerContact.upsert).toHaveBeenCalledTimes(
+      (email ? 1 : 0) + (mobile ? 1 : 0),
+    );
+    if (!mobile) {
+      expect(protectContact).not.toHaveBeenCalledWith(
+        'phone',
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(tx.customerContact.upsert).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ type: 'PHONE' }),
+        }),
+      );
+    }
     if (!email) {
       expect(tx.customerContact.updateMany).not.toHaveBeenCalledWith(
         expect.objectContaining({
@@ -225,7 +266,9 @@ it.each(['test@example.invalid', ''])(
       expect(JSON.stringify(failure.getResponse())).not.toContain(
         input.nationalCode,
       );
-      expect(tx.customerContact.upsert).toHaveBeenCalledTimes(email ? 2 : 1);
+      expect(tx.customerContact.upsert).toHaveBeenCalledTimes(
+        (email ? 1 : 0) + (mobile ? 1 : 0),
+      );
     }
     const unexpected = new Error('database unavailable');
     tx.customer.updateMany.mockRejectedValueOnce(unexpected);
@@ -256,7 +299,9 @@ it.each(['test@example.invalid', ''])(
         'branch',
       ),
     ).rejects.toThrow();
-    expect(tx.customerContact.upsert).toHaveBeenCalledTimes(email ? 2 : 1);
+    expect(tx.customerContact.upsert).toHaveBeenCalledTimes(
+      (email ? 1 : 0) + (mobile ? 1 : 0),
+    );
   },
 );
 it('reads incomplete correction fields without requiring issuance-ready identity', async () => {
@@ -275,5 +320,57 @@ it('reads incomplete correction fields without requiring issuance-ready identity
     expect.any(String),
     undefined,
     expect.any(Array),
+  );
+});
+
+it('keeps the passenger mobile and never decrypts buyer contact when unnecessary', async () => {
+  const f = fixture();
+  expect((await f.service.read('intake', 'person')).person.mobile).toBe(
+    '00000000000',
+  );
+  expect(f.buyerContact.decrypt).not.toHaveBeenCalled();
+});
+it('uses the encrypted contract buyer mobile without copying it into the passenger profile', async () => {
+  const f = fixture();
+  f.person.contacts = f.person.contacts.filter((c) => c.type !== 'PHONE');
+  f.intake.contract.buyerContact = { encrypted: 'synthetic-envelope' };
+  f.buyerContact.decrypt.mockReturnValue({ phone: ' 09123456789 ' });
+  expect((await f.service.read('intake', 'person')).person.mobile).toBe(
+    '09123456789',
+  );
+  expect(f.buyerContact.decrypt).toHaveBeenCalledWith(
+    f.intake.contract.buyerContact,
+  );
+  expect(f.person.contacts.some((c) => c.type === 'PHONE')).toBe(false);
+});
+it('falls back to the current payer rather than an unrelated first passenger', async () => {
+  const f = fixture();
+  f.person.contacts = f.person.contacts.filter((c) => c.type !== 'PHONE');
+  f.intake.contract.payerCustomerId = 'payer';
+  const payer = {
+    ...f.person,
+    id: 'payer',
+    contacts: [
+      { type: 'PHONE', encryptedValue: 'payer-phone', isPrimary: true },
+    ],
+  };
+  f.db.client.customer.findUnique.mockImplementation(async (query) =>
+    (query as { where: { id: string } }).where.id === 'payer'
+      ? payer
+      : f.person,
+  );
+  f.contacts.decrypt.mockImplementation((c) =>
+    c.encryptedValue === 'payer-phone' ? '09123456789' : '',
+  );
+  expect((await f.service.read('intake', 'person')).person.mobile).toBe(
+    '09123456789',
+  );
+  expect(f.repository.auditSensitiveRead).toHaveBeenCalledWith(
+    'payer',
+    'owner',
+    'branch',
+    'insurance-provider-contact',
+    undefined,
+    ['contacts.value'],
   );
 });
