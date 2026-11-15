@@ -420,6 +420,81 @@ describe.skipIf(!url)('Finance fiscal context on isolated PostgreSQL', () => {
       }),
     );
   });
+  it('reads an exact historical journal without changing the active year, while normal lists and authorization remain scoped', async () => {
+    const selected = await current();
+    const account = await db.accountingAccount.create({
+      data: {
+        bookId,
+        code: '000999',
+        title: 'Synthetic exact account',
+        level: 'SUBSIDIARY',
+        nature: 'DEBIT',
+        attributes: {},
+      },
+    });
+    const journal = await db.accountingJournal.create({
+      data: {
+        bookId,
+        periodId: periods[0]!.id,
+        makerId: userId,
+        number: null,
+        documentDate: '2025-10-01',
+        description: 'Synthetic historical reference',
+        status: 'DRAFT',
+        attributes: { auxiliaryNumber: '00017' },
+        lines: {
+          create: [
+            {
+              position: 1,
+              accountId: account.id,
+              description: 'Historical line',
+              debit: '123.000000000000000001',
+              credit: '0',
+              attributes: {},
+            },
+          ],
+        },
+      },
+    });
+    await storage.run(selected, async () => {
+      expect(
+        await accounting.readJournal(bookId, journal.id, actor),
+      ).toMatchObject({
+        id: journal.id,
+        number: null,
+        periodTitle: '1404',
+        auxiliaryNumber: '00017',
+        debit: '123.000000000000000001',
+        credit: '0',
+        lines: [
+          {
+            account: { code: '000999' },
+            debit: '123.000000000000000001',
+            credit: '0',
+          },
+        ],
+      });
+      expect(
+        (await accounting.journals(bookId, { id: journal.id }, actor)).items,
+      ).toEqual([]);
+      expect(storage.require(bookId)?.id).toBe(selected.period!.id);
+      await expect(
+        accounting.readJournal(bookId, journal.id, {
+          ...actor,
+          branchIds: [randomUUID()],
+        }),
+      ).rejects.toThrow();
+      await expect(
+        accounting.readJournal(bookId, journal.id, {
+          ...actor,
+          permissions: ['finance.read'],
+        }),
+      ).rejects.toThrow();
+      await expect(
+        accounting.readJournal(randomUUID(), journal.id, actor),
+      ).rejects.toThrow();
+    });
+  });
   it('rejects stale calendar versions inside the write transaction and preserves empty defaults', async () => {
     const selected = await current();
     await db.accountingPeriod.update({

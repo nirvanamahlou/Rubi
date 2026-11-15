@@ -90,6 +90,19 @@ describe('financial source accounting screen', () => {
     const html = render([
       {
         ...event,
+        references: {
+          contracts: [{ id: 'source-contract', number: '00025' }],
+          journals: [
+            {
+              id: 'actual-journal',
+              bookId: 'actual-book',
+              periodId: 'old-year',
+              number: 17,
+              documentDate: '2025-10-01',
+              status: 'POSTED',
+            },
+          ],
+        },
         journal: {
           id: 'actual-journal',
           bookId: 'actual-book',
@@ -97,8 +110,9 @@ describe('financial source accounting screen', () => {
         },
       },
     ]);
-    expect(html).toContain('journalId=actual-journal');
-    expect(html).toContain('bookId=actual-book');
+    expect(html).toContain('aria-label="مشاهده سند 17"');
+    expect(html).toContain('aria-label="مشاهده قرارداد 00025"');
+    expect(html).not.toContain('/documents/list?');
     expect(html).toContain('ثبت نهایی');
     expect(html).not.toContain('تنظیم و ایجاد سند');
   });

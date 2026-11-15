@@ -13,7 +13,7 @@ import { accountingFinancialEventLabels as labels } from '@nora/contracts';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
-import Link from '@/i18n/link';
+import { FinanceSourceReferenceLinks } from './finance-source-references';
 import { AccountingButton as Button } from './accounting-operations';
 import { apiRequest, FinanceInboxApiError } from '../api/finance-inbox-api';
 
@@ -235,7 +235,12 @@ export function AccountingFinancialEvents({
                   <td className="p-2">
                     {event.amount} {event.currency}
                   </td>
-                  <td className="p-2">{event.reference || event.requestId}</td>
+                  <td className="p-2">
+                    {event.reference || '—'}
+                    <FinanceSourceReferenceLinks
+                      references={event.references}
+                    />
+                  </td>
                   <td className="p-2">
                     {event.journal
                       ? event.journal.status === 'POSTED'
@@ -248,11 +253,6 @@ export function AccountingFinancialEvents({
                   <td className="p-2">
                     {event.journal ? (
                       <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/finance/accounting/general-ledger/documents/list?bookId=${event.journal.bookId}&journalId=${event.journal.id}`}
-                        >
-                          مشاهده سند
-                        </Link>
                         {event.journal.status === 'DRAFT' &&
                         event.journal.bookId === book.book.id &&
                         event.journal.version ? (

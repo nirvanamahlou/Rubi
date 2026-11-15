@@ -376,6 +376,7 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  references?: import('./source-references').FinanceSourceReferencesV1;
   fiscalBucket?: 'CURRENT' | 'CARRY_FORWARD';
   carryForward?: {
     originalDate: string;
@@ -728,6 +729,7 @@ export interface FinanceHistoryQueryV1 {
   requestId?: string;
 }
 export interface FinanceHistoryItemV1 {
+  references?: import('./source-references').FinanceSourceReferencesV1;
   id: string;
   source: FinanceHistorySourceV1;
   requestId: string;

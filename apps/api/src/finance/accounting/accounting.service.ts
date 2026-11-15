@@ -3,6 +3,8 @@ import {
   voidedSalesReceiptIds,
 } from '../../sales/sales-receipt-void.public';
 import { fiscalYearAttributes } from './accounting.fiscal-year';
+import { readAccountingJournal } from './accounting-journal-read';
+import { FinanceSourceReferences } from '../source-read/finance-source-references.service';
 import { listFilterAttributes } from './accounting-list-filter';
 import { trialBalanceTable } from './accounting.trial-balance';
 import { codingStandardAttributes } from './accounting.coding-standard';
@@ -278,6 +280,9 @@ export class AccountingService {
     @Optional()
     @Inject(FinanceFiscalStorage)
     private readonly fiscal?: FinanceFiscalStorage,
+    @Optional()
+    @Inject(FinanceSourceReferences)
+    private readonly sourceReferences?: FinanceSourceReferences,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -917,9 +922,11 @@ export class AccountingService {
       },
     });
     const items = events.slice(0, 50);
+    const references = await this.sourceReferences?.events(items, actor);
     return {
       version: 1 as const,
-      items: items.map((e) => ({
+      items: items.map((e, index) => ({
+        ...(references ? { references: references[index] } : {}),
         id: e.id,
         source: e.source,
         ...(e.basisEventId
@@ -6306,12 +6313,28 @@ export class AccountingService {
       ...result,
       items: result.items.map((item) => ({
         ...item,
-        accounting:
-          journals.find((j) => j.sourceKey === `${item.source}:${item.id}`) ??
-          null,
+        accounting: item.references
+          ? (item.references.journals.find((j) => j.bookId === bookId) ?? null)
+          : (journals.find(
+              (j) => j.sourceKey === `${item.source}:${item.id}`,
+            ) ?? null),
       })),
     };
   }
+  async readJournal(
+    bookId: string,
+    journalId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor);
+    await this.book(this.database.client, bookId, actor);
+    return readAccountingJournal(
+      this.database.client,
+      bookId,
+      v.uuid(journalId)!,
+    );
+  }
+
   async journalEvents(
     bookId: string,
     journalId: string,

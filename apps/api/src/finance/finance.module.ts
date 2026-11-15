@@ -1,4 +1,7 @@
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
+import { SalesFinanceContractReadModule } from '../sales/finance-contract-read.public';
+import { FinanceSourceReferences } from './source-read/finance-source-references.service';
+import { FinanceSourceReadController } from './finance-source-read.controller';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FinanceFiscalStorageModule } from './fiscal-context/finance-fiscal-storage.module';
 import { FinanceFiscalContextService } from './fiscal-context/finance-fiscal-context.service';
@@ -44,6 +47,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
+    SalesFinanceContractReadModule,
     FinanceFiscalStorageModule,
     LegalEntitiesModule,
     BankAccountModule,
@@ -62,6 +66,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     AccountingCompletionModule,
   ],
   controllers: [
+    FinanceSourceReadController,
     FinanceFiscalContextController,
     FinancePartyReceiptsController,
     FinanceReceiptAllocationController,
@@ -73,6 +78,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinanceRequestsController,
   ],
   providers: [
+    FinanceSourceReferences,
     FinanceFiscalContextService,
     { provide: APP_INTERCEPTOR, useClass: FinanceFiscalInterceptor },
     FinancePartyReceipts,

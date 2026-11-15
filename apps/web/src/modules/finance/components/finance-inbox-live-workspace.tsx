@@ -1,6 +1,9 @@
 import { ReceiptVoidDialog } from './receipt-void-dialog';
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { FinanceReservationDetails } from './finance-reservation-details';
+import {
+  FinanceContractReadView,
+  FinanceSourceReferenceLinks,
+} from './finance-source-references';
 import {
   RECEIPT_FILE_ACCEPT,
   attachmentMimeType,
@@ -820,16 +823,12 @@ export function FinanceInboxLiveWorkspace() {
           className="max-h-[90dvh] max-w-5xl overflow-y-auto"
         >
           <DialogTitle>مشخصات کلی</DialogTitle>
-          {generalItem?.source === 'SALES' ? (
-            <ContractFinancialSummary id={generalItem.sourceContextReference} />
+          {generalItem?.references?.contracts.length ? (
+            generalItem.references.contracts.map((contract) => (
+              <FinanceContractReadView key={contract.id} id={contract.id} />
+            ))
           ) : (
-            generalItem && (
-              <FinanceReservationDetails
-                key={generalItem.id}
-                id={generalItem.sourceContextReference}
-                contractNumber={generalItem.contractReference!}
-              />
-            )
+            <p>ارتباط قابل مشاهده با قرارداد ثبت نشده است.</p>
           )}
         </DialogContent>
       </Dialog>
@@ -1429,11 +1428,15 @@ export function FinanceInboxLiveWorkspace() {
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                  <bdi className="break-all">
-                    {item.contractReference
-                      ? `قرارداد ${item.contractReference}`
-                      : ''}
-                  </bdi>
+                  <FinanceSourceReferenceLinks references={item.references} />
+                  {!item.references?.contracts.length &&
+                  item.contractReference ? (
+                    <bdi className="break-all">
+                      {['SALES', 'RESERVATIONS'].includes(item.source)
+                        ? `قرارداد ${item.contractReference}`
+                        : item.contractReference}
+                    </bdi>
+                  ) : null}
                   <span>
                     {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
                   </span>
@@ -1642,9 +1645,27 @@ export function FinanceInboxLiveWorkspace() {
                       id={selected.sourceContextReference}
                     />
                   )}
+                  <FinanceSourceReferenceLinks
+                    references={selected.references}
+                  />
                   <dl className={styles.detailFacts}>
                     {[
-                      ['قرارداد', selected.contractReference ?? '—'],
+                      [
+                        'قرارداد',
+                        selected.references?.contracts
+                          .map((c) => c.number)
+                          .join('، ') ||
+                          (['SALES', 'RESERVATIONS'].includes(selected.source)
+                            ? selected.contractReference
+                            : null) ||
+                          '—',
+                      ],
+                      [
+                        'مرجع ثبت‌شده',
+                        ['SALES', 'RESERVATIONS'].includes(selected.source)
+                          ? '—'
+                          : (selected.contractReference ?? '—'),
+                      ],
                       [
                         'طرف‌حساب / کارمند',
                         selected.partyDisplaySnapshot ?? '—',

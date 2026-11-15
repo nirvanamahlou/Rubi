@@ -1093,8 +1093,8 @@ export class SalesService {
     return rows.map((row) => ({
       id: row.id,
       source: 'SALES' as const,
-      requestId: row.id,
-      trackingNumber: row.contractId,
+      requestId: row.contractId,
+      trackingNumber: row.contract.contractNumber,
       trackingDate: financialDate(row.contract.createdAt),
       customerId: row.contract.customerId,
       direction: 'RECEIPT' as const,

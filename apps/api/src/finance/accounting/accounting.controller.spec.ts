@@ -18,6 +18,12 @@ import { ACCESS_COOKIE } from '../../iam/iam.constants';
 import type { AuthenticatedActor, IamPermissionCode } from '@nora/contracts';
 const books = vi.fn().mockResolvedValue({ books: [], branches: [] });
 const report = vi.fn().mockResolvedValue({ rows: [], debit: '0', credit: '0' });
+const readJournal = vi.fn().mockResolvedValue({
+  id: 'journal',
+  number: 17,
+  periodTitle: '1404',
+  lines: [],
+});
 describe('Accounting HTTP authentication and export permissions', () => {
   let app: INestApplication;
   beforeAll(async () => {
@@ -26,17 +32,20 @@ describe('Accounting HTTP authentication and export permissions', () => {
       providers: [
         AuthGuard,
         PermissionGuard,
-        { provide: AccountingService, useValue: { books, report } },
+        {
+          provide: AccountingService,
+          useValue: { books, report, readJournal },
+        },
         {
           provide: IamService,
           useValue: {
             authenticate: async (token: string) => {
-              if (!['read', 'export'].includes(token))
+              if (!['read', 'export', 'finance-only'].includes(token))
                 throw new UnauthorizedException();
               return {
                 permissions: [
                   'finance.read',
-                  'finance.journal.read',
+                  ...(token === 'finance-only' ? [] : ['finance.journal.read']),
                   ...(token === 'export' ? ['finance.export'] : []),
                 ],
                 branchIds: ['synthetic'],
@@ -74,6 +83,29 @@ describe('Accounting HTTP authentication and export permissions', () => {
       .set('Cookie', `${ACCESS_COOKIE}=read`)
       .expect(200);
     expect(books).toHaveBeenCalledWith(
+      expect.objectContaining({ branchIds: ['synthetic'] }),
+    );
+  });
+  it('requires journal.read for the exact readonly journal endpoint and never redirects to an editor', async () => {
+    const url = '/finance/accounting/books/book/journals/journal/read';
+    await request(app.getHttpServer()).get(url).expect(401);
+    await request(app.getHttpServer())
+      .get(url)
+      .set('Cookie', `${ACCESS_COOKIE}=finance-only`)
+      .expect(403);
+    const response = await request(app.getHttpServer())
+      .get(url)
+      .set('Cookie', `${ACCESS_COOKIE}=read`)
+      .expect(200);
+    expect(response.body).toMatchObject({
+      id: 'journal',
+      number: 17,
+      periodTitle: '1404',
+    });
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(readJournal).toHaveBeenCalledWith(
+      'book',
+      'journal',
       expect.objectContaining({ branchIds: ['synthetic'] }),
     );
   });
