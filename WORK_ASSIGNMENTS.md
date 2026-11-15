@@ -12714,3 +12714,5 @@ SITE-PASSENGER-SYNC-1115 validation:65 focused Customers/Site Commerce tests, sc
 Reserve formatting-only repair of finance-source-references.spec.ts after develop e5890d02a quality failure. Owner authorizes latest production rollout without a fresh backup. No behavior, schema or dependency change; preserve existing source overlays and integration configuration.
 
 HOURLY-LEAVE-DEADLINE-1115 PC-B completed. Resolve assigned office end for hourly submission, ignore legacy advance notice and reject prior Tehran dates. Scoped ESLint passed; tests blocked by missing contracts build. Owner authorizes push/merge.
+
+OVERTIME-TIME-INPUT-1115 PC-B completed: contextual form recognizes overtime-start as time. Scoped ESLint passed. Owner authorizes push/merge.

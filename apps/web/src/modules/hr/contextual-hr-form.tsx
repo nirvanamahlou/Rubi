@@ -270,7 +270,11 @@ const fieldType = (label: string): ContextualFieldType => {
     return 'file';
   if (label.includes('لینک')) return 'url';
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label)) return 'combobox';
-  if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
+  if (
+    label === 'شروع اضافه‌کاری' ||
+    /ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)
+  )
+    return 'time';
   if (
     /تاریخ|موعد|تولد|انقضا|مهلت|آخرین روز کاری/.test(label) &&
     !label.includes('بازه')
