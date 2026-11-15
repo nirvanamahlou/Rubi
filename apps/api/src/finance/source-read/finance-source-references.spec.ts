@@ -103,15 +103,24 @@ describe('Exact Finance source references', () => {
       { source: 'HR', kind: 'PAYROLL_REQUEST', sourceReference: payrollId },
     ] as FinanceInboxItemV1[];
     const result = await service.inbox(items, actor);
-    expect(result.map((row) => row.sourceReference)).toEqual(['HR-LINK-ABC', payrollId]);
+    expect(result.map((row) => row.sourceReference)).toEqual([
+      'HR-LINK-ABC',
+      payrollId,
+    ]);
     expect(result[0]?.references).toEqual({ contracts: [], journals: [] });
     expect(db.client.financeAccountingEvent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ AND: expect.arrayContaining([
-        { OR: [{ source: 'OPERATIONAL', requestId: { in: [payrollId] } }] },
-      ]) }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { OR: [{ source: 'OPERATIONAL', requestId: { in: [payrollId] } }] },
+          ]),
+        }),
+      }),
     );
     expect(db.client.financeOperationalRequest.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: { in: [payrollId] } }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: [payrollId] } }),
+      }),
     );
   });
   it('retains the originating contract commitment journal when a prior-year receipt is awaiting settlement', async () => {
