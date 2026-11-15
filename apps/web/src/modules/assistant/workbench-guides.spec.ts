@@ -10,6 +10,20 @@ import {
 import { proxyAssistantConversation } from './proxy';
 
 describe('vetted Workbench guidance', () => {
+  it('covers request deletion, note templates and calendar-native shortcuts without inventing workflows', () => {
+    expect(resolveWorkbenchGuide('حذف درخواستم چطوره؟')?.topic?.id).toBe(
+      'request-delete',
+    );
+    expect(
+      resolveWorkbenchGuide('قالب یادداشت را چطور انتخاب کنم؟')?.topic?.id,
+    ).toBe('note-templates');
+    expect(
+      resolveWorkbenchGuide('درخواست از تقویم چطور بزنم؟')?.topic?.id,
+    ).toBe('calendar-request');
+    expect(resolveWorkbenchGuide('تقویم هفتگی را باز کنم؟')?.topic?.id).toBe(
+      'calendar-views',
+    );
+  });
   it('distinguishes notifications from notes and request approval from submission', () => {
     expect(
       resolveWorkbenchGuide('مرخصی و مساعده میخوام')?.clarification,

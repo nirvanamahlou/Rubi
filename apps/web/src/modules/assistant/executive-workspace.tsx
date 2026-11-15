@@ -325,10 +325,8 @@ function AssistantComposerContent({
     const resetRecord = () => {
       workbenchTopic.current = undefined;
       inspecting.current?.abort();
-      if (agentMode) {
-        pending.current?.abort();
-        setActionState(null);
-      }
+      pending.current?.abort();
+      setActionState(null);
       lastVersion.current = undefined;
       contractId.current = undefined;
       guideTopic.current = undefined;
