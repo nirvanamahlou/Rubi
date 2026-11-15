@@ -24,7 +24,7 @@ The owner explicitly requested these definitions in all three companies. A read-
 
 The new third book uses native company ownership and code3. The academy continues to share its parent's book. All147 requested definitions were created through native commands. Existing Jahan accounts retain their IDs, fields, attributes, versions and timestamps. No subsidiary, journal, balance, financial default or fiscal allocation was created/edited by this import. The operator's company selection was restored, and the real UI was checked under each of the three companies; the final browser view is Niyayesh's populated chart.
 
-This is a bounded master-data operation, not an application deployment. New header/date code still requires separately authorized publication. No schema/migration/dependency changes, CI dispatch, PR or merge are part of the current authorization. Standing task-only commit/push applies.
+This is a bounded master-data operation, not an application deployment. No schema/migration/dependency changes were needed. After implementation commit06f4b76, the owner's latest explicit reply authorizes PR1734 and merge to develop after successful checks only. New header/date code still requires separately authorized application publication; no rollout is authorized or performed. Append-only status/assignment conflicts with current develop were resolved by retaining both task entries. Standing task-only commit/push applies.
 
 ## Validation
 
