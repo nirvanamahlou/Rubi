@@ -5918,6 +5918,8 @@
   "قیمت‌گذاری پکیج": "Package pricing",
   "کارها": "Tasks",
   "تنظیمات جریمه و تشویق": "Penalty and incentive settings",
+  "شروع اضافه‌کاری": "Overtime start time",
+  "مبلغ تشویق هر ساعت اضافه‌کاری (تومان)": "Overtime incentive per hour (Toman)",
   "مبلغ تشویق هر دقیقه اضافه‌کاری (تومان)": "Overtime incentive per minute (Toman)",
   "مبلغ جریمه هر دقیقه کسری کار (تومان)": "Work deficit penalty per minute (Toman)",
   "مبلغ اضافه‌کاری": "Overtime amount",
