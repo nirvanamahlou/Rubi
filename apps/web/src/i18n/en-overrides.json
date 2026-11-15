@@ -6207,5 +6207,12 @@
   "شرکت مجاز یافت نشد.": "No authorized company was found.",
   "شناسه گره": "Node ID",
   "مختصات افقی": "Horizontal position",
-  "مختصات عمودی": "Vertical position"
+  "مختصات عمودی": "Vertical position",
+  "انتشار در سایت": "Publish to website",
+  "منتشرشده در نیایش سیر": "Published on Niayesh Seir",
+  "سایت مقصد": "Destination website",
+  "سایت را انتخاب کنید": "Select a website",
+  "لغو انتشار": "Unpublish",
+  "نیایش سیر": "Niayesh Seir",
+  "سایت مقصد را انتخاب و انتشار را تأیید کنید.": "Choose the destination website and confirm publication."
 }
