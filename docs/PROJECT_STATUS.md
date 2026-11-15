@@ -10129,3 +10129,7 @@ FINANCE-SOURCE-LINKS-1115 / PR1723 integration: owner explicitly authorizes deve
 ## SITE-PASSENGER-SYNC-1115 — PC-A
 
 Owner explicitly authorizes synchronizing website-entered passenger identity to the same-national-ID ERP profile. The configured-site people endpoint now consumes a Customers public method with supplied-field allowlisting, branch pinning, protected passport storage, bounded optimistic retries and native atomic audit. Manual lookup stays strict; general roles/status/ownership and all existing products/orders/payments are preserved.65 focused tests pass; full API build/typecheck and hosted gates precede authorized green develop merge and API-only rollout. No schema/dependency change. See docs/tasks/SITE-PASSENGER-SYNC-1115.md.
+
+### 2026-11-15 PC-C Nora main publication verified
+
+PR1722, bounded follow-up1726 and Web routing fix1729 merged only after all exact-head CI checks succeeded and were published to the main ERP Nora/Web services. Exact multi-part browser replay now produces a real cited SQL count matching an independent read-only selected-company oracle; seven health/auth/Origin controls pass. No migration/business-row changes in this unit. Full30-case and financial-model acceptance remain open; fixed-source quota-paced synthetic execution resumed. See docs/tasks/NORA-V3-MAIN-RELEASE-1115.md. Source leases are frozen after merge; acceptance work remains active separately.
