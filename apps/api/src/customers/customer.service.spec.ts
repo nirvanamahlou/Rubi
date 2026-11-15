@@ -1124,7 +1124,7 @@ it('derives bounded request-only customer entry capabilities for a contract-only
 });
 
 describe('website passenger identity synchronization', () => {
-  const creator = { ...actor, permissions: ['sales.contracts.create'] };
+  const creator: AuthenticatedActor = { ...actor, permissions: ['sales.contracts.create'] };
   const trace = 'site:nss:passenger-sync';
   function fixture(existing: unknown = row) {
     const repository = {
@@ -1156,7 +1156,7 @@ describe('website passenger identity synchronization', () => {
         gender: 'F',
         nationalityCode: 'IRN',
         roles: ['passenger'],
-        acquaintanceMethodId: actor.branchIds[0],
+        acquaintanceMethodId: actor.branchIds[0]!,
       },
       creator,
       actor.branchIds[0]!,
@@ -1192,8 +1192,10 @@ describe('website passenger identity synchronization', () => {
       ...row,
       passportFirstName: 'EXISTING',
     });
+    const input = { ...mutation, firstName: 'Updated' };
+    delete input.birthDate;
     await service.syncWebsitePassenger(
-      { ...mutation, birthDate: undefined, firstName: 'Updated' },
+      input,
       creator,
       actor.branchIds[0]!,
       trace,

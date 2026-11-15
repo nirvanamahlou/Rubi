@@ -1075,8 +1075,8 @@ export class CustomerService {
     if (input.kind !== 'person') throw new BadRequestException();
     const passenger: CustomerMutationRequest = {
       kind: 'person',
-      firstName: input.firstName,
-      lastName: input.lastName,
+      firstName: input.firstName ?? null,
+      lastName: input.lastName ?? null,
       displayName: input.displayName,
       roles: ['customer', 'passenger'],
       ...Object.fromEntries(
