@@ -24,7 +24,14 @@ export const AGENT_TOOLS = Object.freeze([
   tool(
     'set_plan',
     'First call: state a short operational plan, not private reasoning. Do not claim execution.',
-    { steps: strings },
+    {
+      steps: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 5,
+        items: { type: 'string', maxLength: 200 },
+      },
+    },
   ),
   tool(
     'catalog_search',
@@ -71,14 +78,33 @@ export async function boundedAgentJson(response, limit = 256 * 1024) {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'));
   } finally {
     await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
 }
 
-export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
+export function createAgentProvider({
+  apiKey,
+  fetcher = fetch,
+  now = Date.now,
+} = {}) {
   if (typeof apiKey !== 'string' || !apiKey.trim() || /\s/.test(apiKey))
     throw new Error('AGENT_PROVIDER_KEY_REQUIRED');
+  let unavailableUntil = 0;
   return {
-    async step(messages, { signal, remainingTokens = 40000 }) {
+    async step(
+      messages,
+      {
+        signal,
+        remainingTokens = 40000,
+        allowedTools,
+        allowFinalResponse = false,
+      },
+    ) {
+      if (now() < unavailableUntil) {
+        const error = new ServiceError(429, 'AGENT_PROVIDER_RATE_LIMITED');
+        error.retryAfterMs = unavailableUntil - now();
+        throw error;
+      }
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,
@@ -86,11 +112,20 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
         max_completion_tokens: 2048,
         stream: false,
         messages,
-        tools: AGENT_TOOLS,
-        tool_choice: 'required',
+        tools: AGENT_TOOLS.filter(
+          (t) =>
+            (!allowedTools || allowedTools.includes(t.function.name)) &&
+            (!allowFinalResponse || t.function.name !== 'finish_answer'),
+        ),
+        tool_choice: allowFinalResponse
+          ? 'auto'
+          : allowedTools?.length === 1
+            ? { type: 'function', function: { name: allowedTools[0] } }
+            : 'required',
         parallel_tool_calls: false,
       });
-      if (Buffer.byteLength(body) > 256 * 1024)
+      const wireBody = body;
+      if (Buffer.byteLength(wireBody) > 256 * 1024)
         throw new ServiceError(503, 'AGENT_CONTEXT_BUDGET_EXCEEDED');
       // UTF-8 bytes plus reserved completion/protocol allowance is a conservative
       // upper bound; do not start a provider call that can exhaust the run budget.
@@ -105,22 +140,84 @@ export function createAgentProvider({ apiKey, fetcher = fetch } = {}) {
               authorization: `Bearer ${apiKey}`,
               'content-type': 'application/json',
             },
-            body,
+            body: wireBody,
             redirect: 'error',
             cache: 'no-store',
             signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
           },
         );
         if (!response.ok) {
+          const status = response.status;
+          if (
+            status === 400 &&
+            response.headers.get('content-type')?.includes('application/json')
+          ) {
+            const rejected = await boundedAgentJson(response, 65536);
+            if (rejected?.error?.code === 'tool_use_failed') {
+              const error = new ServiceError(
+                503,
+                'AGENT_PROVIDER_TOOL_REJECTED',
+              );
+              // Charge a conservative upper bound even if rejected completion
+              // usage is unavailable. Never inspect/execute failed_generation.
+              error.tokenCharge = Buffer.byteLength(body) + 3072;
+              throw error;
+            }
+          }
+          if (status === 429) {
+            const header = response.headers.get('retry-after');
+            const seconds =
+              header && /^\d+(?:\.\d+)?$/.test(header)
+                ? Number(header)
+                : header
+                  ? (Date.parse(header) - now()) / 1000
+                  : NaN;
+            const wait = Number.isFinite(seconds) && seconds > 0 ? seconds : 60;
+            unavailableUntil = now() + Math.min(wait, 86400) * 1000;
+          }
           await response.body?.cancel();
-          throw new ServiceError(
-            response.status === 429 ? 429 : 503,
-            'AGENT_PROVIDER_UNAVAILABLE',
+          const error = new ServiceError(
+            status === 429 ? 429 : 503,
+            status === 429
+              ? 'AGENT_PROVIDER_RATE_LIMITED'
+              : status === 401 || status === 403
+                ? 'AGENT_PROVIDER_ACCESS_DENIED'
+                : status === 400
+                  ? 'AGENT_PROVIDER_REQUEST_REJECTED'
+                  : 'AGENT_PROVIDER_UNAVAILABLE',
           );
+          if (status === 429) error.retryAfterMs = unavailableUntil - now();
+          throw error;
         }
         const result = await boundedAgentJson(response, 65536);
         const choice = result.choices?.[0];
         const calls = choice?.message?.tool_calls;
+        if (result.choices?.length !== 1)
+          throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+        if (
+          choice?.finish_reason === 'stop' &&
+          typeof choice.message?.content === 'string'
+        ) {
+          if (!allowFinalResponse || calls?.length)
+            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+          const final = JSON.parse(choice.message.content);
+          if (
+            !final ||
+            Object.keys(final).sort().join(',') !==
+              'limitations,resultIds,status,text' ||
+            !['ANSWER', 'CLARIFY', 'REPLY'].includes(final.status)
+          )
+            throw new ServiceError(502, 'INVALID_AGENT_PLAN');
+          const tokens = result.usage?.total_tokens;
+          if (!Number.isSafeInteger(tokens) || tokens < 0)
+            throw new ServiceError(502, 'INVALID_AGENT_USAGE');
+          return {
+            id: 'final_' + crypto.randomUUID(),
+            name: 'finish_answer',
+            args: final,
+            tokens,
+          };
+        }
         if (
           result.choices?.length !== 1 ||
           choice.finish_reason !== 'tool_calls' ||

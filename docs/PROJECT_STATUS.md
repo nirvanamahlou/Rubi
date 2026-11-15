@@ -1,3 +1,11 @@
+## NORA-RATE-LIMIT-1115 — PC-C — LOCAL_VERIFIED
+
+Owner confirms secondary Groq key belongs to the same organization. Official organization-level limits mean key rotation cannot increase quota; no 429 key cycling added and no private key committed. Agent honors Retry-After through a per-provider cooldown (fallback60s), avoids automatic retries and classifies rate/access/request/upstream failures separately.31 focused Agent/Groq tests pass, including cooldown expiration and network failures. This is controlled failure handling, not a guarantee of provider availability or successful full live acceptance. Production unchanged.
+
+## NORA-FINAL-CHOICE-1115 — PC-C — LOCAL_VERIFIED
+
+Owner requests compatible tool choice. Plan stage forces native tool; after an accepted plan, trusted orchestration permits auto choice and strictly shaped final JSON. No history substring can authorize final mode. Existing fresh-result references, role/scope rechecks and monetary boundaries remain enforced.21 targeted provider/orchestration tests pass. This fixes the forced-tool/final-output incompatibility only; full live matrix, guide-tool wiring and production activation remain pending.
+
 ## TOUR-SITE-PICKER-1115 — PC-A — READY_FOR_CI
 
 Replace immediate website publication checkbox with Publish to website, a destination selector containing only the currently supported Niayesh Seir site, and explicit confirmation. Opening/selecting/cancelling never sends a publication command; preserve nss resource identity, current CAS version, loading/read-only/in-flight guards, failure feedback and deliberate unpublishing.23 focused UI/i18n checks pass; scoped lint and full Web TypeScript/build and exact-head CI gate authorized develop merge. New captions and Niayesh brand translation are mirrored without removing other catalogue entries. No API/schema/dependency/data/deployment changes or real website publication.
@@ -10081,6 +10089,10 @@ PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 toget
 SITE-PUBLICATION-SYNC-1115 (PC-A): branch-scoped automatic future tour/ticket price publication, website-only pause/resume/remove and signed update-driven catalog delivery are implemented. Durable invalidation covers price, capacity, definition/reference changes and capacity-hold expiry; browser visits read the site's own database. Monotonic snapshots preserve removal under retries/out-of-order delivery; new paused orders are rejected before identity writes. Existing legacy website records retain their separate source identity.18 site tests,15 ERP tests, isolated PostgreSQL publication/branch/capacity/removal checks, scoped API lint and API/Web production builds passed. The two additive migrations preserve the first published migration and align the new Branch FK update rule separately. Production rollout and signed revision2 end-to-end acknowledgement are verified; three catalog visits generated no delivery, an explicit invalidation propagated, unsigned delivery was rejected, and both health endpoints pass. Hosted exact-head gates govern develop merge. No gateway activation or real purchase.
 
 PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.
+
+## NORA-DATA-AGENT-LIVE-ACCEPTANCE-1114 — PC-C — 2026-11-15
+
+V3 protocol/final-format and bounded repair/quota handling updated in the independent acceptance branch.96 service,75 API/PostgreSQL and176 Web checks pass; isolated native IAM/API/BFF checks24 pass, including exact100.0000 USD, native scopes/company/session and503 source failure. Germany-routed model calls are real; final-source30-case certification and financial/browser completion remain pending. Owner chose waiting for existing Groq quota. No production v3 activation/migration; separately published stable22f85a6e3 must remain preserved. See docs/tasks/NORA-LIVE-ACCEPTANCE-1115.md. Scope stays active for same-source synthetic acceptance and bounded repairs.
 
 
 ## INSURANCE-EMAIL-OPTIONAL-1115 — PC-A — READY_FOR_CI

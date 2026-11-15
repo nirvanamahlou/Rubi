@@ -1,14 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { randomInt } from 'node:crypto';
 import { createAssistantServer } from './server.mjs';
 
 async function listen(server) {
   for (let i = 0; i < 10; i++) {
-    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const port = server.address().port;
-    if (port > 10080) return `http://127.0.0.1:${port}`;
-    await new Promise((resolve) => server.close(resolve));
+    const port = randomInt(11000, 60000);
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(port, '127.0.0.1', () => {
+          server.removeListener('error', reject);
+          resolve();
+        });
+      });
+      return `http://127.0.0.1:${port}`;
+    } catch (error) {
+      if (error.code !== 'EADDRINUSE' && error.code !== 'EACCES') throw error;
+    }
   }
   throw new Error('TEST_PORT_UNAVAILABLE');
 }
