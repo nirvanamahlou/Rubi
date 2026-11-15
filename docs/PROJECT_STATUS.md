@@ -10072,3 +10072,5 @@ HISTORY-ACTION-LABELS-1114: history shows Persian action labels instead of HTTP 
 DEPLOY-FORMAT-1114: repair Prisma alignment only for section contract visibility fields. Prisma format/validate and diff checks pass. Hosted quality, tests, build and migrations gate final publication; owner requests deployment without a fresh backup.
 
 PR1700 CI integration on2026-11-14: preserve PR1693 legacy evidence and v3 together, fix second-turn history to send role/content only, and retain abort/version/permission guards.185 focused Web/English checks pass; four earlier HR translation failures are resolved by consuming develop. User authorizes green develop merge; no Agent activation or operational migration. Live Germany/model/browser gates remain open.
+
+PC-C · 2026-11-15 · Nora contract recovery accepts opaque creation keys through the authenticated HTTP route. Creation and lookup validate the same 160-character database limit. Creator and branch scope still apply. No migration or production deployment.

@@ -93,10 +93,7 @@ export class SalesController {
 
   @Get('submissions/:key')
   @Header('Cache-Control', 'private, no-store')
-  submission(
-    @Param('key', ParseUUIDPipe) key: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  submission(@Param('key') key: string, @Req() req: AuthenticatedRequest) {
     return this.service.submissionStatus(key, req.actor);
   }
 

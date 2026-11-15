@@ -12604,3 +12604,9 @@ PR1693 / PR-CI-EMPLOYER-REPORT-1114: reserve only contract-uuid-fallback.spec.ts
 PR1700 / PR-CI-EMPLOYER-REPORT-1114 bounded integration fix: reserve executive-workspace.tsx and existing agent-response.ts/spec.ts to preserve both merged composer paths and serialize conversation history as role/content only. Internal local/agent/link metadata must not reach the strict service boundary; retain same-origin, context reset and abort guards. Source integration uses published PR1693 branch47179793f; merge order remains1693 before1700. No UI redesign, new schema/dependency or gate change.
 
 ACCOUNT-TREE-LEVELS-1114 CI integration: initial product commit c4defb869 passed all four push jobs. Integrated head837ee43b6 exposed the inherited two-line Prisma-format failure from develop81b188ee2. Consume published fix9be81a9a6 through current developce8e3db60, preserve both append-only status/task entries and all translation keys, and re-run exact-head hosted gates. Local Prisma format produces no schema diff. No independent model/migration/dependency edit or runtime deployment.
+
+PC-C / NORA-CONTRACT-RECOVERY-1115 reserves the Sales create and submission-status key validation, scoped HTTP and service regressions, and this status entry on codex/pc-c-nora-contract-recovery-key-1115. The producer accepts the same opaque key for both operations. Existing Sales Web is the consumer. No schema or dependency change.
+
+NORA-CONTRACT-RECOVERY-1115 integration: the merge of HR PR1707 into develop introduced constant-false JSX in the working-hours form. Reserve only its unreachable rendering branches and affected HR rendering assertions to preserve the merged behavior while restoring CI.
+
+The same integration reserves two missing HR labels in the English UI overrides, identified by the unmodified translation coverage gate.
