@@ -196,6 +196,8 @@ export class TourPublicService {
       throw new BadRequestException('نوبت تور در شعبه قرارداد یافت نشد.');
     if (row.isActive === false || row.isDeleted === true)
       throw new ConflictException('فروش این نوبت متوقف شده است.');
+    if (packageView(row.package).publicationStatus === 'DRAFT')
+      throw new ConflictException('فروش این نوبت متوقف شده است.');
     const tour = departureView(row);
     if (
       meta.tourDepartureVersion !== tour.version ||
@@ -286,7 +288,14 @@ export class TourPublicService {
       orderBy: { startsOn: 'asc' },
       take: 200,
     });
-    return { version: 1 as const, data: rows.map(departureView) };
+    return {
+      version: 1 as const,
+      data: rows
+        .map(departureView)
+        .filter(
+          (row) => management || row.package.publicationStatus !== 'DRAFT',
+        ),
+    };
   }
   /** Public pricing boundary; the consumer authorizes its own permission and branches. */
   async pricingDepartures(branchIds: readonly string[]) {

@@ -48,6 +48,7 @@ import {
 } from './tour-departure-tickets';
 
 const emptyPackage: TourPackageInputV1 = {
+  publicationStatus: 'DRAFT',
   name: '',
   originId: '',
   destinationId: '',
@@ -377,6 +378,7 @@ export function TourWorkspace({
       item
         ? {
             name: item.name,
+            publicationStatus: item.publicationStatus ?? 'PUBLISHED',
             originId: item.originId,
             destinationId: item.destinationId,
             hotelIds: [...item.hotelIds],
@@ -543,6 +545,23 @@ export function TourWorkspace({
               disabled={busy}
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
             >
+              <FormField label="وضعیت انتشار">
+                <select
+                  aria-label="وضعیت انتشار"
+                  className="h-9 rounded-lg border bg-surface px-3"
+                  value={draft.publicationStatus ?? 'PUBLISHED'}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      publicationStatus: event.target.value as
+                        'DRAFT' | 'PUBLISHED',
+                    })
+                  }
+                >
+                  <option value="DRAFT">پیش‌نویس</option>
+                  <option value="PUBLISHED">منتشرشده</option>
+                </select>
+              </FormField>
               <FormField id="tour-name" label="عنوان تور" required>
                 <Input
                   id="tour-name"

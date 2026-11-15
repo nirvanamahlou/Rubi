@@ -2,6 +2,8 @@ import type { TicketOfferV1 } from './index';
 
 /** Ticket Catalog owns this bundle; capacity always belongs to its ticket offers. */
 export interface TourPackageInputV1 {
+  /** Omitted on legacy definitions means published. */
+  publicationStatus?: 'DRAFT' | 'PUBLISHED';
   name: string;
   /** Empty until the draft route is selected; required before departure creation. */
   originId: string;
