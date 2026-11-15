@@ -348,6 +348,17 @@ describe('durable website orders', () => {
     ).rejects.toThrow();
     expect(f.sales.create).not.toHaveBeenCalled();
   });
+  it('blocks new orders when website-only sales are stopped', async () => {
+    const f = fixture();
+    f.db.client.websitePublication.findUnique.mockResolvedValue({
+      enabled: true,
+      salesStopped: true,
+    });
+    await expect(
+      f.service.draft('nss', 'order-1', draft(), actor),
+    ).rejects.toThrow();
+    expect(f.sales.create).not.toHaveBeenCalled();
+  });
   it('does not expose an unrelated order, even with the right site account', async () => {
     const f = fixture();
     await expect(f.service.status('nss', 'missing', actor)).rejects.toThrow();

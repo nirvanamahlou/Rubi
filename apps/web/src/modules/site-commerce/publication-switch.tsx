@@ -20,7 +20,11 @@ function PublicationSwitch({
   resourceId: string;
   disabled?: boolean;
 }) {
-  const [state, setState] = useState<{ enabled: boolean; version: number }>();
+  const [state, setState] = useState<{
+    enabled: boolean;
+    salesStopped?: boolean;
+    version: number;
+  }>();
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const path = `${getPublicApiBaseUrl()}/sales/site-commerce/v1/nss/publications/${kind}/${resourceId}`;
@@ -44,7 +48,7 @@ function PublicationSwitch({
       });
     return () => abort.abort();
   }, [path]);
-  async function change(enabled: boolean) {
+  async function change(enabled: boolean, salesStopped = false) {
     if (!state || saving) return;
     setSaving(true);
     setError('');
@@ -56,7 +60,7 @@ function PublicationSwitch({
           'content-type': 'application/json',
           'x-nora-site-commerce': '1',
         },
-        body: JSON.stringify({ enabled, version: state.version }),
+        body: JSON.stringify({ enabled, salesStopped, version: state.version }),
       });
       if (!response.ok)
         throw Error('ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.');
@@ -70,18 +74,50 @@ function PublicationSwitch({
   }
   return (
     <div className="space-y-1 rounded-lg border p-3">
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={state?.enabled ?? false}
-          disabled={disabled || !state || saving}
-          onChange={(e) => void change(e.target.checked)}
-        />
-        انتشار در سایت نیایش
-      </label>
+      <p className="text-sm font-medium">سایت نیایش سیر</p>
+      <p role="status" className="text-xs">
+        {!state
+          ? 'دریافت وضعیت…'
+          : !state.enabled
+            ? 'در سایت نمایش داده نمی‌شود'
+            : state.salesStopped
+              ? 'نمایش در سایت؛ فروش متوقف است'
+              : 'منتشر شده و قابل خرید'}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={
+            disabled ||
+            !state ||
+            saving ||
+            (state.enabled && !state.salesStopped)
+          }
+          onClick={() => void change(true)}
+          className="rounded-md border px-3 py-2 text-xs"
+        >
+          {state?.salesStopped ? 'ادامه فروش' : 'انتشار در سایت'}
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !state?.enabled || state.salesStopped || saving}
+          onClick={() => void change(true, true)}
+          className="rounded-md border px-3 py-2 text-xs"
+        >
+          توقف فروش سایت
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !state?.enabled || saving}
+          onClick={() => void change(false)}
+          className="rounded-md border px-3 py-2 text-xs text-red-600"
+        >
+          حذف از سایت
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground">
-        فروش این محصول در سایت، قرارداد را از ERP دریافت می‌کند. محصولات قدیمی
-        سایت تغییر نمی‌کنند.
+        قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت،
+        محصول و رزروهای قبلی را حذف نمی‌کند.
       </p>
       {error ? (
         <p role="alert" className="text-sm text-red-600">
