@@ -421,6 +421,8 @@ function AssistantComposerContent({
       pathname === '/sales' ||
         Boolean(pathname?.startsWith('/sales/contracts/')),
       guideTopic.current,
+      false,
+      agentMode,
     );
     const recordFollowup =
       selectedContract &&

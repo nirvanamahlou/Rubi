@@ -210,6 +210,13 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
     process.env.ASSISTANT_AGENT_ENABLED = 'true';
     reader = new Client({ connectionString: address.toString() });
     await reader.connect();
+    await service.onModuleInit();
+    const admitted = await service.query(
+      'SELECT count(*) AS total FROM contracts',
+      scope,
+      ['contracts'],
+    );
+    expect(admitted.rows).toEqual([{ total: '3' }]);
   }, 30000);
 
   afterAll(async () => {
@@ -392,6 +399,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         tokens = 0,
         rejectedTokenReserve = 0;
       const provider = providerRuntime.liveProvider();
+      const queryAttempts: Array<{ sql: string; error?: string }> = [];
       const agent = runtime.createDataAgent({
         enabled: true,
         erpBaseUrl: 'http://127.0.0.1:44319/api/v1',
@@ -427,16 +435,31 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
               ],
             });
           queries++;
+          const querySql = JSON.parse(options.body!).sql as string;
           try {
             const r = await service.query(
-              JSON.parse(options.body!).sql,
+              querySql,
               selected,
               allowedSources(selected.payments),
             );
             results.push(r);
+            queryAttempts.push({ sql: querySql });
             return Response.json({ ...r, contextId });
-          } catch {
-            return Response.json({}, { status: 400 });
+          } catch (error) {
+            const message = (error as Error).message ?? 'QUERY_REJECTED';
+            const code = (error as { code?: string }).code;
+            queryAttempts.push({
+              sql: querySql,
+              error:
+                code ??
+                (message.startsWith('AGENT_') ? message : 'QUERY_REJECTED'),
+            });
+            return Response.json(
+              {},
+              {
+                status: message.startsWith('AGENT_DATABASE') ? 503 : 400,
+              },
+            );
           }
         },
       });
@@ -464,6 +487,7 @@ describe.skipIf(!enabled)('isolated PostgreSQL model SQL boundary', () => {
         scope: selected,
         oracle,
         independentOracle,
+        queryAttempts,
         testDatabase: database,
         response,
         error,
