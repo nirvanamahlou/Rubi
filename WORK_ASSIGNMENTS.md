@@ -1,3 +1,5 @@
+PR1743 final integration: all eight20369568b checks passed, then develop advanced to79e83ca2a through1747/1751/1752. Preserve both sides of the two documentation append conflicts and all incoming owner-authored code; no routing runtime conflict or new product edit. Require final exact-head hosted checks before merge.
+
 ## NORA-QUESTION-ROUTING-1116 — PC-C — READY_FOR_CI
 
 All eight6117de262 hosted checks passed, then develop advanced through PC-B PR1749 before merge. Reconcile only the overlapping leave access test fixtures: keep PC-B's same-department/office/self-exclusion test, retain our exact query/out-of-branch/missing-employee assertions and add the original self-only admission case explicitly. Preserve all incoming1749 HTTP-boundary/translation repairs. No HR product change. New final-head hosted checks required; original green head was not merged through the conflict.
@@ -15,6 +17,22 @@ Owner explicitly authorizes resolving PR1743 conflicts and merging after all fin
 Bounded additive i18n lease: nine new Assistant routing/clarification/prompt literals in apps/web/src/i18n/en-overrides.json; preserve all peer entries and coverage gates. Existing PC-A translation work is merged at this base. No API catalogue/producer behavior changes.
 
 Owner approves the shared intent/follow-up routing plan. PC-C verified by local Git identity; independent branch codex/pc-c-nora-question-routing-1116 from develop b5d7798ef. Reserve Assistant-only normalization/intent router, contract/workbench guide matching, Composer integration, focused regressions and own docs. Preserve the uncommitted count-breakdown worktree unchanged; this unit carries none of its API/service/table edits. Prior1733/1735 source leases are delivered. No active peer overlap found on these leaf files. No public API/schema, dependency, migration, production change or new HR data access. Guide selection remains identifier-only; data follow-ups use existing authenticated v3/native reader with fresh evidence, scope reset and stale-response cancellation preserved. Mixed questions must read data then append grounded instructions, never substitute guide text for failed data.
+RESERVATION-FORM-SEND-ACCESS-1116 CI integration: consume the exact two-file leave override compile repair validated by44 tests on the template branch. Bounded optional DTO Boolean and missing optional IAM injection only; preserve existing authorization and all other domain behavior. Required by the shared develop build failure.
+
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
+FLOATING-MERGED-TEMPLATE-1116 integration test lease: align hr-leave-access.spec.ts fixture with the merged departmentSubstitutes reader; no employee/unit yields no substitute, and eligible colleagues must match unit and organization branch. Retain internal-directory rejection, HR-managed access and branch-denial assertions. Test-only repair for two baseline-identical failures; no HR runtime/policy change.
+
+FLOATING-MERGED-TEMPLATE-1116 integration Web compile lease: remove the undefined overrideSubstitute shorthand from ordinary substitute replies in customer-affairs-client.ts and cover ordinary versus explicit HR override payloads in its existing spec. HR-MANAGER-OVERRIDE-1116 is completed; preserve HR override/authorization and existing three-argument substitute API. Required by exact-head CI TypeScript failure.
+
+FLOATING-MERGED-TEMPLATE-1116 integration translation lease: add only seven missing English labels from the newly merged HR leave/chart UI to en-overrides and existing derived mirrors. Preserve original text and all peer behavior; required by the existing English completeness gate.
+
+FLOATING-MERGED-TEMPLATE-1116 CI integration repair: reserve only the already-merged ReferralResponseDto optional overrideSubstitute Boolean and missing optional IamService constructor injection/guard in CustomerAffairsService. CI on develop57f2f758e fails these unresolved existing references. Preserve the existing Nima-only substitute override, native HR permissions and payload validation; no new HR policy or data changes. Existing IAM module import/export is reused. This bounded compatibility repair is necessary for the authorized green merge.
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-floating-merged-template-1116. Owner authorizes a visible template download and Excel vertical-merged shared prices across all stays of a combined tour, counted once, and develop merge. Reserve floating importer/service/controller, new template builder, floating Web workspace and focused tests plus bounded English overrides and own status entries. Preserve old dedicated/pair templates, native branch/read/write/CAS/digest and money safeguards. No schema, migration, dependency, operational data or deployment changes. No competing active writer in these leaf paths found.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
@@ -12808,6 +12826,22 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
+
+SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destination tiles, restrained status colours and improved site-management layout; presentation-only scope, preserve publication CAS/manual save and explicit refresh. No API, migration or dependencies.
+
+SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.
+
+SITE-TILES-1116 bounded integration build repair: upstream HR-MANAGER-OVERRIDE-1116 is completed but refers to an uninjected IAM service and a missing validated ReferralResponseDto flag. Reserve only constructor injection/optional deny-safe guard and optional boolean validation; preserve named-user authorization and explicit confirmation policy, no business/API permission expansion.
+
+SITE-TILES-1116 integration build repair: remove undefined overrideSubstitute shorthand only from substitute self-review request; keep HR-manager review flag/confirmation unchanged.
+
+REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+SITE-TILES-1116 merged-base compatibility: complete three new request progress translations from REQUEST-PROGRESS-1116; retain its source and full task records unchanged.
+
+SITE-TILES-1116 merged-base regression lease: update hr-leave-access.spec.ts fixture with the employee unit/company lookup required by completed REQUEST-PROGRESS-1116. Keep branch/account denial tests, assert the scoped employee queries and exclude self/out-of-unit candidates; test-only, no HR product change.
+
+SITE-TILES-1116 user refinement: checkbox selection saves immediately with existing site/branch CAS; remove tile save action, rollback on errors, block repeated toggles while busy. Expanded tour presentation editing retains its own save, and checkbox saves preserve unsaved presentation drafts. Targeted state-transition regressions required.
 
 ## RELEASE-1116 — PC-B — IN_PROGRESS
 

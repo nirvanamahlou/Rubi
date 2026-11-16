@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import type {
   AuthenticatedActor,
   BranchReference,
@@ -91,7 +92,7 @@ export function WebsiteDestination({
       });
     return () => abort.abort();
   }, [path, branchId]);
-  async function save() {
+  async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy) return;
     setBusy(true);
     setError('');
@@ -104,10 +105,20 @@ export function WebsiteDestination({
           'x-nora-site-commerce': '1',
         },
         body: JSON.stringify({
-          enabled: selected,
+          enabled,
           version: stored.version,
           branchId,
-          ...(kind === 'tour' ? { presentation } : {}),
+          ...(kind === 'tour'
+            ? {
+                presentation: selectionOnly
+                  ? (stored.presentation ?? {
+                      title: '',
+                      description: '',
+                      commissionPercent: '0',
+                    })
+                  : presentation,
+              }
+            : {}),
         }),
       });
       const result = await response.json();
@@ -117,6 +128,7 @@ export function WebsiteDestination({
         );
       setStored(result.data);
     } catch (cause) {
+      if (selectionOnly) setSelected(stored.enabled);
       setError(
         cause instanceof Error ? cause.message : 'ثبت انتشار ناموفق بود.',
       );
@@ -124,54 +136,66 @@ export function WebsiteDestination({
       setBusy(false);
     }
   }
+  const unchanged =
+    !stored ||
+    (stored.enabled === selected &&
+      JSON.stringify(
+        stored.presentation ?? {
+          title: '',
+          description: '',
+          commissionPercent: '0',
+        },
+      ) === JSON.stringify(presentation));
+  const status = !site.connected
+    ? 'در انتظار اتصال'
+    : stored?.enabled
+      ? 'انتشار فعال'
+      : 'منتشر نشده';
   return (
-    <div className="min-w-0 rounded-xl border border-border p-3 text-sm">
-      <label className="flex items-center gap-2">
+    <div
+      aria-busy={busy}
+      className={`min-w-0 rounded-xl border p-2.5 text-sm transition-colors focus-within:ring-2 focus-within:ring-primary/30 ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface hover:border-primary/30'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`}
+    >
+      <label className="flex min-h-6 cursor-pointer items-center gap-2 font-semibold text-primary">
         <input
           type="checkbox"
+          className="h-4 w-4 shrink-0 accent-primary"
           checked={selected}
           disabled={!stored || busy}
-          onChange={(e) => setSelected(e.target.checked)}
+          onChange={async (e) => {
+            if (!stored || busy) return;
+            const enabled = e.target.checked;
+            setSelected(enabled);
+            await save(enabled, true);
+          }}
         />
-        {site.name}
+        <span className="min-w-0 break-words leading-5">{site.name}</span>
       </label>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {site.connected
-          ? stored?.enabled
-            ? 'انتشار فعال'
-            : 'منتشر نشده'
-          : 'در انتظار اتصال'}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        className="mt-2"
-        disabled={
-          !stored ||
-          busy ||
-          (stored.enabled === selected &&
-            JSON.stringify(
-              stored.presentation ?? {
-                title: '',
-                description: '',
-                commissionPercent: '0',
-              },
-            ) === JSON.stringify(presentation))
-        }
-        onClick={() => void save()}
-      >
-        {busy ? 'در حال ثبت…' : 'ذخیره'}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        disabled={!stored || busy}
-        onClick={() => setEditing((v) => !v)}
-      >
-        ویرایش
-      </Button>
+      <div className="mt-1 flex min-h-7 items-center justify-between gap-1">
+        <span className="flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-muted-foreground">
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${!site.connected ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+          />
+          {busy ? 'در حال ثبت…' : status}
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-7 min-h-0 w-7 shrink-0 p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            aria-label="ویرایش"
+            title="ویرایش"
+            aria-expanded={editing}
+            disabled={!stored || busy}
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
       {editing ? (
-        <div className="mt-3 grid gap-2">
+        <div className="mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3">
           {kind === 'tour' ? (
             <>
               <label>
@@ -220,6 +244,20 @@ export function WebsiteDestination({
           ) : (
             children
           )}
+          {kind === 'tour' ? (
+            <div className="sm:col-span-3">
+              {' '}
+              <Button
+                type="button"
+                variant="primary"
+                className="h-8 min-h-0 px-3 py-0 text-xs"
+                disabled={unchanged || busy}
+                onClick={() => void save()}
+              >
+                {busy ? 'در حال ثبت…' : 'ذخیره'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {error ? (
@@ -538,15 +576,20 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                 .map((row) => (
                   <article
                     key={`${revision}:${branchId}:${row.kind}:${row.id}`}
-                    className="grid gap-4 rounded-2xl border border-border bg-surface p-4 xl:grid-cols-[minmax(12rem,1fr)_3fr]"
+                    className="grid gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm"
                   >
                     <div className="min-w-0 break-words">
-                      <h2 className="font-bold">{row.title}</h2>
-                      <p className="text-sm leading-7" dir="auto">
+                      <h2 className="text-sm font-bold leading-6 text-primary">
+                        {row.title}
+                      </h2>
+                      <p
+                        className="mt-1 text-xs leading-6 text-muted-foreground"
+                        dir="auto"
+                      >
                         {row.detail}
                       </p>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
                       {websiteDestinations.map((site) => (
                         <WebsiteDestination
                           key={site.code}
