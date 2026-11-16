@@ -12786,3 +12786,5 @@ SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three
 SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destination tiles, restrained status colours and improved site-management layout; presentation-only scope, preserve publication CAS/manual save and explicit refresh. No API, migration or dependencies.
 
 SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.
+
+SITE-TILES-1116 bounded integration build repair: upstream HR-MANAGER-OVERRIDE-1116 is completed but refers to an uninjected IAM service and a missing validated ReferralResponseDto flag. Reserve only constructor injection/optional deny-safe guard and optional boolean validation; preserve named-user authorization and explicit confirmation policy, no business/API permission expansion.

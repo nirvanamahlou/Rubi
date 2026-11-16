@@ -12,6 +12,7 @@ import {
 } from './workbench-hr-request.domain';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { HrDirectoryService } from '../hr/hr-directory.service';
+import { IamService } from '../iam/iam.service';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createdDateFilter } from './customer-affairs-date-filter';
@@ -276,6 +277,7 @@ export class CustomerAffairsService {
     @Optional()
     @Inject(HrConnectionsService)
     private readonly hrConnections?: HrConnectionsService,
+    @Optional() @Inject(IamService) private readonly iam?: IamService,
   ) {}
 
   async dashboard(
@@ -2676,7 +2678,7 @@ export class CustomerAffairsService {
             e.outcome === 'APPROVED',
         )
       ) {
-        if (!(await this.iam.isNimaNaderi(actor.userId)))
+        if (!(await this.iam?.isNimaNaderi(actor.userId)))
           throw new ConflictException(
             'ابتدا جانشین باید درخواست را تأیید کند.',
           );
