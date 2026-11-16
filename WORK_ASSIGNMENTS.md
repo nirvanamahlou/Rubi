@@ -1,6 +1,7 @@
 ## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
 
 Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
+
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
 Owner refinement: example table is not a prescribed layout. Reopen the same PR1742 scope for a module-independent calculation-explanation policy, model-authored text/table selection, bounded final-answer explanation admission/repair, SQL AST calculation metadata and corresponding tests/docs. Remove deterministic count prose replacement, retain native authorized count evidence and safe rendering. Reserve assistant SQL policy/query result metadata and Groq planner prompt only; no new domain access, business-panel changes, dependencies, migration or Production change. Previous head d9d7b459e passed all10 hosted checks; that result does not validate the forthcoming head.
