@@ -36,7 +36,10 @@ export function buildHeadquartersChart(
     return matches.length === 1 ? matches[0] : undefined;
   };
   const ceo = findEmployee('دانیال الطافی');
-  const salesLead = findEmployee('مهسا اعلایی');
+  const salesLead =
+    findEmployee('مهسا علایی شمس آباد') ??
+    findEmployee('مهسا علایی') ??
+    findEmployee('مهسا اعلایی');
   const node = (
     id: string,
     name: string,
@@ -312,7 +315,9 @@ export function buildLiveOrganizationNodes(
       manager: [
         normalizeHrText(employee.name)
           .replace(/[آئ]/g, (c) => (c === 'آ' ? 'ا' : 'ی'))
-          .replace(/[\s‌]/g, '') === 'مهسااعلایی'
+          .replace(/[\s‌]/g, '')
+          .replace('مهسااعلایی', 'مهساعلایی')
+          .startsWith('مهساعلایی')
           ? 'مدیر فروش'
           : employee.position,
         employee.personnelCode,

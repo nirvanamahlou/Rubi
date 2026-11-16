@@ -153,6 +153,7 @@ export class WorkbenchLeaveDto {
   @IsOptional() @IsString() @MaxLength(160) substitute?: string;
 }
 export class WorkbenchReviewDto {
+  @IsOptional() @IsBoolean() overrideSubstitute?: boolean;
   @IsIn(['APPROVED', 'REJECTED', 'NEEDS_REVISION']) status!:
     'APPROVED' | 'REJECTED' | 'NEEDS_REVISION';
   @IsInt() @Min(1) version!: number;

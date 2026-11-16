@@ -1,8 +1,8 @@
 'use client';
 
-import { ClipboardCheck, PackageCheck } from 'lucide-react';
+import { PackageCheck } from 'lucide-react';
 import Link from '@/components/access-link';
-import { Badge, Card, EmptyState, Skeleton } from '@/components/ui';
+import { Badge, Card, Skeleton } from '@/components/ui';
 import { workbenchDate } from './model';
 import { workbenchPersonalApi } from './workbench-personal-api';
 import { useEffect, useState } from 'react';
@@ -47,14 +47,7 @@ export function WorkbenchProcurementFollowUps() {
         <p className="mt-1">{error}</p>
       </Card>
     );
-  if (!items.length)
-    return (
-      <EmptyState
-        icon={ClipboardCheck}
-        title="درخواستی به شما تخصیص داده نشده است"
-        description="درخواست‌هایی که به شما سپرده شوند، اینجا نمایش داده می‌شوند."
-      />
-    );
+  if (!items.length) return null;
 
   return (
     <section
