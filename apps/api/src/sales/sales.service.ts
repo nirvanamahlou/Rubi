@@ -484,6 +484,22 @@ function summary(detail: SalesContractDetail): SalesContractSummary {
 
 @Injectable()
 export class SalesService {
+  /** Minimal status facts for exact website-owned links supplied by Site Commerce. */
+  async cancelledWebsiteContracts(
+    contractIds: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !actor.branchIds.length
+    )
+      throw new ForbiddenException();
+    const ids = [...new Set(contractIds)];
+    if (ids.length > 10000) throw new BadRequestException();
+    if (!ids.length) return [];
+    return this.repository.cancelledWebsiteContracts(ids, actor.branchIds);
+  }
+
   constructor(
     @Inject(SalesRepository) private readonly repository: SalesRepository,
     @Inject(SalesCustomersPublicAdapter)
