@@ -12,6 +12,13 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { PageHeader, Alert, Skeleton } from '@/components/ui/surfaces';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { listReferences } from '@/modules/ticket-catalog/api/references';
+import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
+import {
+  filterTicketRows,
+  ticketPriceRows,
+  ticketCabinLabel,
+} from '@/modules/sales/model/ticket-price-rows';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
 import { integrationsApi } from '../api/client';
 import {
@@ -235,9 +242,17 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
   const [search, setSearch] = useState('');
+  const [cities, setCities] = useState<Record<string, string>>({});
+  const [originId, setOriginId] = useState('');
+  const [destinationId, setDestinationId] = useState('');
+  const [tripType, setTripType] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const canManage = actor.permissions.includes('ticket_catalog.manage');
+  const branchScope = JSON.stringify([...actor.branchIds].sort());
   useEffect(() => {
     let active = true;
+    const allowedBranchIds = JSON.parse(branchScope) as string[];
     if (!canManage) return;
     void Promise.resolve().then(() => {
       if (active) {
@@ -246,6 +261,22 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       }
     });
     void Promise.all([
+      (async () => {
+        const rows: { id: string; name: string }[] = [];
+        for (let page = 1; page <= 100; page++) {
+          const result = await listReferences(
+            'cities',
+            '',
+            page,
+            undefined,
+            {},
+            'sales',
+          );
+          rows.push(...result.data);
+          if (page * result.meta.pageSize >= result.meta.total) break;
+        }
+        return rows;
+      })(),
       integrationsApi.branches(),
       toursApi.departures(true),
       toursApi.managedOffers(),
@@ -259,10 +290,20 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       }),
     ])
       .then(
-        ([branchResult, tourResult, ticketResult, targetResult, published]) => {
+        ([
+          cityResult,
+          branchResult,
+          tourResult,
+          ticketResult,
+          targetResult,
+          published,
+        ]) => {
           if (!active) return;
           const allowed = branchResult.filter((row) =>
-            actor.branchIds.includes(row.id),
+            allowedBranchIds.includes(row.id),
+          );
+          setCities(
+            Object.fromEntries(cityResult.map((row) => [row.id, row.name])),
           );
           setBranches(allowed);
           setBranchId((current) =>
@@ -286,7 +327,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
     return () => {
       active = false;
     };
-  }, [actor, canManage, revision]);
+  }, [branchScope, canManage, revision]);
   if (!canManage)
     return (
       <Alert
@@ -294,6 +335,15 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
         description="مجوز مدیریت بلیط و تور برای انتشار سایت لازم است."
       />
     );
+  const flightLabel = (offer: TicketOfferV1) =>
+    `${cities[offer.originId] ?? offer.originId} → ${cities[offer.destinationId] ?? offer.destinationId} · ${offer.carrierName} · ${offer.serviceNumber} · ${ticketCabinLabel(offer.cabinClassCode)}`;
+  const eligible = new Set(
+    filterTicketRows(
+      ticketPriceRows(publishableTickets(tickets, branchId)),
+      { originId, destinationId, tripType, query: search, from, to },
+      flightLabel,
+    ).map((row) => row.offer.id),
+  );
   const resources =
     tab === 'tours'
       ? publishableTours(tours, branchId)
@@ -304,12 +354,25 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             detail: `${row.startsOn} — ${row.endsOn}`,
             kind: 'tour' as const,
           }))
-      : publishableTickets(tickets, branchId).map((row) => ({
-          id: row.id,
-          title: `${row.carrierName} · ${row.serviceNumber}`,
-          detail: row.departureAt.slice(0, 10),
-          kind: 'ticket' as const,
-        }));
+      : publishableTickets(tickets, branchId)
+          .filter((row) => eligible.has(row.id))
+          .map((row) => ({
+            id: row.id,
+            title: flightLabel(row),
+            detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
+              row.baseRoundTripSalePrices ??
+              row.roundTripSalePrices ??
+              []
+            )
+              .map((price) => {
+                const returning = tickets.find(
+                  (ticket) => ticket.id === price.returnOfferId,
+                );
+                return `رفت‌وبرگشت: ${price.baseAmount ?? price.amount} ${price.currencyCode}${returning ? ` · ${flightLabel(returning)} · ${new Date(returning.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })}` : ''}`;
+              })
+              .join(' / ')}`,
+            kind: 'ticket' as const,
+          }));
   return (
     <div className="grid gap-4" dir="rtl">
       <PageHeader title="مدیریت سایت" />
@@ -366,6 +429,75 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
               دریافت اطلاعات
             </Button>
           </div>
+          {tab === 'tickets' ? (
+            <div className="grid gap-2 rounded-xl border border-border p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+              {(
+                [
+                  {
+                    label: 'مبدأ',
+                    value: originId,
+                    change: setOriginId,
+                    field: 'originId',
+                  },
+                  {
+                    label: 'مقصد',
+                    value: destinationId,
+                    change: setDestinationId,
+                    field: 'destinationId',
+                  },
+                ] as const
+              ).map((filter) => (
+                <label key={filter.field}>
+                  {filter.label}
+                  <NativeSearchSelect
+                    value={filter.value}
+                    onChange={(e) => filter.change(e.target.value)}
+                  >
+                    <option value="">همه</option>
+                    {[...new Set(tickets.map((row) => row[filter.field]))].map(
+                      (id) => (
+                        <option key={id} value={id}>
+                          {cities[id] ?? id}
+                        </option>
+                      ),
+                    )}
+                  </NativeSearchSelect>
+                </label>
+              ))}
+              <label>
+                نوع بلیط
+                <NativeSearchSelect
+                  value={tripType}
+                  onChange={(e) => setTripType(e.target.value)}
+                >
+                  <option value="">همه</option>
+                  <option value="ONEWAY">یک‌طرفه</option>
+                  <option value="ROUNDTRIP">رفت‌وبرگشت</option>
+                </NativeSearchSelect>
+              </label>
+              <label>
+                از تاریخ
+                <SalesDatePicker value={from} onChange={setFrom} />
+              </label>
+              <label>
+                تا تاریخ
+                <SalesDatePicker value={to} onChange={setTo} />
+              </label>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOriginId('');
+                  setDestinationId('');
+                  setTripType('');
+                  setFrom('');
+                  setTo('');
+                  setSearch('');
+                }}
+              >
+                پاک‌کردن فیلترها
+              </Button>
+            </div>
+          ) : null}
           {tab === 'tours' ? (
             <NativeSearchSelect
               aria-label="انتخاب تور"
@@ -399,7 +531,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             <div className="grid gap-4">
               {resources
                 .filter((row) =>
-                  `${row.title} ${row.detail}`
+                  (tab === 'tickets' ? search : `${row.title} ${row.detail}`)
                     .toLocaleLowerCase()
                     .includes(search.toLocaleLowerCase()),
                 )
@@ -410,7 +542,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                   >
                     <div className="min-w-0 break-words">
                       <h2 className="font-bold">{row.title}</h2>
-                      <p className="text-sm" dir="ltr">
+                      <p className="text-sm leading-7" dir="auto">
                         {row.detail}
                       </p>
                     </div>

@@ -10168,3 +10168,5 @@ ORG-CHART-ZOOM-1116: chart zoom controls and scale-aware connector/drag coordina
 LEAVE-MANAGER-ROUTING-1116: Elناz to Roya; sales staff to Mahsa; Mahshid to Asal; Nima to Altafi; remaining staff to HR. Existing manager approval forwards to HR. Missing/ambiguous recipient blocks leave submission. Request templates show selected state. Scoped ESLint passed; tests could not collect due to missing contracts build.
 
 LEAD-TITLE-1116: lead creation uses one title field, removes surname input and requirement. Scoped ESLint passed.
+
+SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
