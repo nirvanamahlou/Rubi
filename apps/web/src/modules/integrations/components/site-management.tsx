@@ -594,7 +594,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                     <option value="">همه شهرها</option>
                     {[
                       ...new Set(
-                        tourGroups.flatMap((group) => group.destinationIds),
+                        tourGroups
+                          .flatMap((group) => group.destinationIds)
+                          .filter(Boolean),
                       ),
                     ].map((city) => (
                       <option key={city} value={city}>
@@ -680,7 +682,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                             <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
                               {websiteDestinations.map((site) => (
                                 <WebsiteDestination
-                                  key={site.code}
+                                  key={`${revision}:${site.code}`}
                                   site={site}
                                   kind={period.kind}
                                   resourceId={period.resourceId}
