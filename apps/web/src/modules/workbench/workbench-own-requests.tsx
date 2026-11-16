@@ -449,6 +449,48 @@ export function WorkbenchOwnRequests() {
                     </dd>
                   </div>
                 </dl>
+                {selected.leave && (
+                  <ol
+                    aria-label="روند درخواست مرخصی"
+                    className="mt-6 flex w-full items-start"
+                    dir="rtl"
+                  >
+                    {[
+                      'اعلام درخواست',
+                      'تأیید مدیر واحد',
+                      'تأیید منابع انسانی',
+                      'تأیید',
+                    ].map((label, index) => {
+                      const done = [
+                        true,
+                        selected.progress?.managerApproved ?? false,
+                        selected.progress?.hrApproved ?? false,
+                        selected.progress?.completed ?? false,
+                      ];
+                      return (
+                        <li
+                          key={label}
+                          className="relative flex min-w-0 flex-1 flex-col items-center gap-2 text-center text-xs"
+                        >
+                          {index < 3 && (
+                            <span
+                              aria-hidden="true"
+                              className={`absolute top-2 right-1/2 h-0.5 w-full ${done[index] && done[index + 1] ? 'bg-emerald-500' : 'bg-border'}`}
+                            />
+                          )}
+                          <span
+                            aria-hidden="true"
+                            className={`relative z-10 size-4 rounded-full border-2 ${done[index] ? 'border-emerald-600 bg-emerald-500' : 'border-muted-foreground bg-background'}`}
+                          />
+                          <span>{label}</span>
+                          <span className="sr-only">
+                            {done[index] ? 'انجام‌شده' : 'در انتظار'}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
               </div>
             </div>
           ) : null}

@@ -4,7 +4,7 @@ import type { DatabaseClient } from '@nora/database';
  * Only the latest intake and its latest workflow count; REOPEN supersedes CANCEL.
  */
 export async function readReservationReportingCancellations(
-  client: DatabaseClient,
+  client: Pick<DatabaseClient, 'reservationIntake'>,
   authorizedContractIds: readonly string[],
 ): Promise<Map<string, Date>> {
   if (!authorizedContractIds.length) return new Map();

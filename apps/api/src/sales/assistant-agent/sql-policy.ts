@@ -91,6 +91,7 @@ export function validateAgentSql(
   const statements = parse(sql);
   if (statements.length !== 1) throw new Error('READ_ONLY_SQL_REQUIRED');
   const used = new Set<AgentSource>();
+  const calculationOperations = new Set<string>();
   let nodes = 0;
   function walk(value: unknown, ctes: Set<string>): void {
     if (++nodes > 2500) throw new Error('SQL_TOO_COMPLEX');
@@ -101,6 +102,31 @@ export function validateAgentSql(
     }
     const node = value as Record<string, unknown>;
     const type = node.type;
+    if (
+      type === 'binary' &&
+      ['+', '-', '*', '/', '%'].includes(String(node.op))
+    )
+      calculationOperations.add('arithmetic');
+    if (type === 'call') {
+      const name = String(
+        (node.function as { name?: string })?.name,
+      ).toLowerCase();
+      if (
+        [
+          'count',
+          'sum',
+          'avg',
+          'min',
+          'max',
+          'round',
+          'abs',
+          'length',
+          'date_part',
+          'date_trunc',
+        ].includes(name)
+      )
+        calculationOperations.add(name);
+    }
     if (type === 'with') {
       const names = new Set(ctes);
       for (const binding of node.bind as Array<{
@@ -269,5 +295,14 @@ export function validateAgentSql(
     }
     checkMoney(root);
   }
-  return { sql: toSql.statement(root), sources: [...used] };
+  if (used.has('amounts') || used.has('payments'))
+    calculationOperations.add('monetary_source');
+  return {
+    sql: toSql.statement(root),
+    sources: [...used],
+    calculation: {
+      required: calculationOperations.size > 0,
+      operations: [...calculationOperations].sort(),
+    },
+  };
 }

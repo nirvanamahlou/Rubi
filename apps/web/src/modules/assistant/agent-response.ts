@@ -25,6 +25,7 @@ export const agentResponseSchema = z
         z
           .object({
             resultId: z.string().uuid(),
+            kind: z.literal('panel-count-breakdown').optional(),
             sources: z
               .array(
                 z.enum([

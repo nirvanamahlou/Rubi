@@ -1,4 +1,5 @@
 import { ServiceError } from './errors.mjs';
+import { CALCULATION_POLICY } from './calculation-policy.mjs';
 
 const tool = (
   name,
@@ -21,6 +22,11 @@ const tool = (
 const text = { type: 'string' };
 const strings = { type: 'array', items: text };
 export const AGENT_TOOLS = Object.freeze([
+  tool(
+    'contract_count_breakdown',
+    'Read all-time contract counts for the current authorized company/scope, excluding hidden records and custom list filters. Disjoint populations: panel_non_cancelled excludes Sales and latest Reservations cancellations; sales_cancelled includes all Sales cancellations; reservation_cancelled_only includes latest Reservations cancellations not already cancelled in Sales. total = panel_non_cancelled + sales_cancelled + reservation_cancelled_only. active_panel = panel_non_cancelled - completed_non_cancelled. Use this evidence and these actual formulas for total/active counts and panel discrepancies; choose prose or table yourself.',
+    {},
+  ),
   tool(
     'set_plan',
     'First call: state a short operational plan, not private reasoning. Do not claim execution.',
@@ -56,7 +62,9 @@ export const AGENT_TOOLS = Object.freeze([
       text,
       resultIds: strings,
       limitations: strings,
+      calculationExplanation: { type: ['string', 'null'], maxLength: 4000 },
     },
+    ['status', 'text', 'resultIds', 'limitations'],
   ),
 ]);
 
@@ -111,7 +119,10 @@ export function createAgentProvider({
         reasoning_effort: 'low',
         max_completion_tokens: 2048,
         stream: false,
-        messages,
+        messages: [
+          { role: 'system', content: CALCULATION_POLICY },
+          ...messages,
+        ],
         tools: AGENT_TOOLS.filter(
           (t) =>
             (!allowedTools || allowedTools.includes(t.function.name)) &&
@@ -203,8 +214,10 @@ export function createAgentProvider({
           const final = JSON.parse(choice.message.content);
           if (
             !final ||
-            Object.keys(final).sort().join(',') !==
-              'limitations,resultIds,status,text' ||
+            ![
+              'limitations,resultIds,status,text',
+              'calculationExplanation,limitations,resultIds,status,text',
+            ].includes(Object.keys(final).sort().join(',')) ||
             !['ANSWER', 'CLARIFY', 'REPLY'].includes(final.status)
           )
             throw new ServiceError(502, 'INVALID_AGENT_PLAN');

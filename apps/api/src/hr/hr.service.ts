@@ -3004,6 +3004,33 @@ export class HrService {
       });
     }
   }
+  private async departmentSubstitutes(
+    branchId: string,
+    userId: string,
+    tx?: Tx,
+  ) {
+    const client = tx ?? this.database.client;
+    const employee = await client.hrEmployee.findFirst({
+      where: { branchId, userId, status: 'فعال', deletedAt: null },
+      select: { unit: true, organizationBranchId: true },
+    });
+    if (!employee?.unit.trim()) return [];
+    const colleagues = await client.hrEmployee.findMany({
+      where: {
+        branchId,
+        unit: employee.unit,
+        organizationBranchId: employee.organizationBranchId,
+        status: 'فعال',
+        deletedAt: null,
+        userId: { not: null },
+      },
+      select: { userId: true },
+    });
+    const ids = new Set(colleagues.map((row) => row.userId));
+    return (await this.iam.leaveSubstituteUsers(branchId, tx)).filter(
+      (user) => user.id !== userId && ids.has(user.id),
+    );
+  }
   async leaveOptions(branchId: string, actor: AuthenticatedActor) {
     this.branch(actor, branchId);
     const users = await this.iam.leaveSubstituteUsers(branchId);
@@ -3012,7 +3039,7 @@ export class HrService {
       !this.has(actor, 'hr.manage')
     )
       throw new ForbiddenException();
-    return { users };
+    return { users: await this.departmentSubstitutes(branchId, actor.userId) };
   }
   async uploadLeaveEvidence(
     branchId: string,
@@ -3171,9 +3198,13 @@ export class HrService {
     if (leave.substituteUserId) {
       if (
         leave.substituteUserId === employee.userId ||
-        !(await this.iam.leaveSubstituteUsers(employee.branchId, tx)).some(
-          (u) => u.id === leave.substituteUserId,
-        )
+        !(
+          await this.departmentSubstitutes(
+            employee.branchId,
+            employee.userId!,
+            tx,
+          )
+        ).some((u) => u.id === leave.substituteUserId)
       )
         throw new BadRequestException(
           'جانشین باید کاربر فعال دیگری در شعبه باشد.',

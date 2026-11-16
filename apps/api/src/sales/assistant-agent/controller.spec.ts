@@ -5,6 +5,7 @@ import type { ContractCompanyScope } from '../contract-company-scope.public';
 import type { IamService } from '../../iam/iam.service';
 import type { AuthenticatedRequest } from '../../iam/iam.types';
 import type { SalesAgentQueryService } from './query.service';
+import type { DatabaseService } from '../../database/database.service';
 
 const actor = {
   userId: 'synthetic-user',
@@ -20,17 +21,23 @@ function setup() {
   const queries = {
     query: vi.fn().mockResolvedValue({ version: 1, rows: [] }),
   };
+  const database = {
+    client: {
+      $transaction: vi.fn().mockResolvedValue({ version: 1, rows: [] }),
+    },
+  };
   const controller = new SalesAgentController(
     companies as unknown as ContractCompanyScope,
     queries as unknown as SalesAgentQueryService,
     iam as unknown as IamService,
+    database as unknown as DatabaseService,
   );
   const request = {
     actor,
     headers: { cookie: 'nora_access=synthetic' },
   } as unknown as AuthenticatedRequest;
   process.env.ASSISTANT_AGENT_ENABLED = 'true';
-  return { current, companies, iam, queries, controller, request };
+  return { current, companies, iam, queries, database, controller, request };
 }
 const original = process.env.ASSISTANT_AGENT_ENABLED;
 afterEach(() => {
@@ -38,6 +45,34 @@ afterEach(() => {
   else process.env.ASSISTANT_AGENT_ENABLED = original;
 });
 describe('Sales public agent source authorization', () => {
+  it('rejects count scope injection, stale scope and revocation before result release', async () => {
+    const h = setup();
+    const { contextId } = await h.controller.catalog(h.request);
+    await expect(
+      h.controller.countBreakdown(h.request, { contextId, companyId: 'other' }),
+    ).rejects.toThrow('INVALID_QUERY');
+    await expect(
+      h.controller.countBreakdown(h.request, { contextId: 'stale' }),
+    ).rejects.toThrow('AGENT_CONTEXT_CHANGED');
+    expect(h.database.client.$transaction).not.toHaveBeenCalled();
+    h.database.client.$transaction.mockImplementation(async () => {
+      h.companies.selected.mockResolvedValue('other');
+      return { version: 1, rows: [] };
+    });
+    await expect(
+      h.controller.countBreakdown(h.request, { contextId }),
+    ).rejects.toThrow('AGENT_CONTEXT_CHANGED');
+  });
+  it('returns a controlled unavailable response, never zero, on count reader failure', async () => {
+    const h = setup();
+    const { contextId } = await h.controller.catalog(h.request);
+    h.database.client.$transaction.mockRejectedValue(
+      new Error('private driver detail'),
+    );
+    await expect(
+      h.controller.countBreakdown(h.request, { contextId }),
+    ).rejects.toThrow('AGENT_SOURCE_UNAVAILABLE');
+  });
   it('hides payment sources without payment permission and refuses absent Sales access', async () => {
     const h = setup();
     h.current.permissions = ['sales.contracts.read.own'];

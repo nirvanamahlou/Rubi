@@ -6,6 +6,21 @@ read-only SQL and sends it to the Sales-owned ERP execution boundary.
 
 ## Agent v3 — 2026-11-14
 
+Every answer-authoring model entry point shares the module-independent calculation-explanation
+policy. Groq chooses text or table; derived answers require a user-facing method
+summary from current evidence, with at most one bounded formatting repair.
+Future tools must reuse the same policy and mark calculated evidence. See
+[calculation explanation contract](../../docs/assistant/CALCULATION-EXPLANATION-CONTRACT.md).
+
+Contract count reconciliation adds the fixed native `contract_count_breakdown`
+tool. It reads authorized all-time panel/cancellation populations through the
+Sales-owned `assistant-agent/count-breakdown` boundary; model SQL permissions do
+not change. Model-authored explanations distinguish the default list,
+active KPI, Sales cancellations and latest Reservations-only cancellations.
+Custom list filters are explicitly excluded from this tool's coverage. API read
+boundary, service and Web must ship together; see
+[NORA-COUNT-BREAKDOWN-1116](../../docs/tasks/NORA-COUNT-BREAKDOWN-1116.md).
+
 POST /v3/assistant/conversation adds planning, source discovery, model-authored
 SQL, iterative results and cited natural-language answers. The owner explicitly
 permits authorized ERP results to reach Groq in this mode. The default remains
