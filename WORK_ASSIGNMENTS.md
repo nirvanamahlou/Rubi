@@ -12782,3 +12782,7 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
+
+SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destination tiles, restrained status colours and improved site-management layout; presentation-only scope, preserve publication CAS/manual save and explicit refresh. No API, migration or dependencies.
+
+SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.

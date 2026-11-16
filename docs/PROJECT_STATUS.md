@@ -10171,3 +10171,5 @@ LEAD-TITLE-1116: lead creation uses one title field, removes surname input and r
 
 HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
+
+SITE-TILES-1116: compact two/four-column named destinations, saved status dot, selected highlight, icon edit, hidden unchanged save, full-width explicit editor and denser resource headings. Publication and refresh behavior preserved; validation pending.
