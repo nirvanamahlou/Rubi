@@ -16,6 +16,8 @@ export function websiteTargetOffer(
             ...offer.baseStandaloneSalePrice,
             revision: oneWay.revision,
             amount: oneWay.amount,
+            childAmount: oneWay.childAmount,
+            infantAmount: oneWay.infantAmount,
             currencyCode: oneWay.currencyCode,
             tiers: oneWay.tiers,
           }
@@ -28,6 +30,8 @@ export function websiteTargetOffer(
               {
                 ...price,
                 amount: rate.amount,
+                childAmount: rate.childAmount,
+                infantAmount: rate.infantAmount,
                 currencyCode: rate.currencyCode,
                 tiers: rate.tiers,
               },

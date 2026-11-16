@@ -49,5 +49,12 @@
   "قیمت و اطلاعاتِ منتشرشده با تغییر در ERP به‌روز می‌شود. حذف از سایت، محصول و رزروهای قبلی را حذف نمی‌کند.": "Published prices and details update when ERP changes. Removing a website listing preserves the product and prior bookings.",
   "این شعبه به سایت نیایش سیر متصل نیست.": "This branch is not connected to the Niyayesh Seir website.",
   "برای انتشار، درصد مقصد «نیایش سیر سحر» را ثبت کنید؛ درصد ۱۰۰ یعنی عدم نمایش.": "To publish, save the percentage for Niyayesh Seir Sahar; 100 percent hides the fare.",
-  "ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.": "First save the Niyayesh Seir Sahar destination percentage in ticket pricing."
+  "ابتدا درصد مقصد «نیایش سیر سحر» را در مدیریت قیمت بلیط ثبت کنید.": "First save the Niyayesh Seir Sahar destination percentage in ticket pricing.",
+  "ارز هر سه گروه یکسان است. خالی: کودک برابر بزرگسال؛ نوزاد بدون هزینه. صفر: رایگان.": "All three groups use the same currency. Blank: children use the adult fare and infants are free. Zero: free.",
+  "ترکیب مسافران تغییر کرده است.": "The passenger composition has changed.",
+  "ترکیب مسافران معتبر نیست.": "The passenger composition is invalid.",
+  "قیمت بزرگسال کل رفت‌وبرگشت": "Adult fare for the complete round trip",
+  "قیمت بزرگسال یک‌طرفه": "Adult one-way fare",
+  "قیمت کودک (۲ تا کمتر از ۱۲)": "Child fare (2 to under 12)",
+  "قیمت نوزاد (کمتر از ۲)": "Infant fare (under 2)"
 }

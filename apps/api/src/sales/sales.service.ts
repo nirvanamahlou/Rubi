@@ -2007,7 +2007,29 @@ export class SalesService {
                   )
                   .map((service) => [
                     service.clientKey,
-                    expectedTicketSale(service.pricing?.[0], service.metadata),
+                    {
+                      ...expectedTicketSale(
+                        service.pricing?.[0],
+                        service.metadata,
+                      ),
+                      passengerCounts: {
+                        adults: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'ADT' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                        children: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'CHD' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                        infants: presented.passengersDetail.filter(
+                          (p) =>
+                            p.ageCategory === 'INF' &&
+                            p.serviceClientKeys.includes(service.clientKey),
+                        ).length,
+                      },
+                    },
                   ]),
               ),
           Object.fromEntries(
