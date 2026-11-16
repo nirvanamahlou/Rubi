@@ -68,6 +68,7 @@
   justify-content: space-between;
   gap: 0.125rem;
 }
+.destinationHeader,
 .destinationHeader label {
   display: flex;
   flex-wrap: nowrap;
@@ -169,4 +170,8 @@
   font-size: 0.625rem;
   line-height: 1.6;
   color: var(--muted-foreground);
+}
+
+.destination[data-editing='true'] {
+  grid-column: 1 / -1;
 }

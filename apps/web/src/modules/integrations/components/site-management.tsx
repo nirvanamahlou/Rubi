@@ -182,6 +182,7 @@ export function WebsiteDestination({
     <div
       aria-busy={busy}
       data-selected={selected}
+      data-editing={editing}
       className={
         compact
           ? styles.destination
@@ -243,7 +244,13 @@ export function WebsiteDestination({
         </div>
       </div>
       {editing ? (
-        <div className="mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3">
+        <div
+          className={
+            compact
+              ? 'mt-2 grid gap-3 border-t border-primary/10 pt-3'
+              : 'mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3'
+          }
+        >
           {kind === 'tour' ? (
             <>
               <label>
