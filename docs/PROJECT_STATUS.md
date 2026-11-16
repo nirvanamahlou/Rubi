@@ -10170,3 +10170,4 @@ LEAVE-MANAGER-ROUTING-1116: Elناz to Roya; sales staff to Mahsa; Mahshid to As
 LEAD-TITLE-1116: lead creation uses one title field, removes surname input and requirement. Scoped ESLint passed.
 
 HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.
+SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
