@@ -148,7 +148,10 @@ describe('live organization chart nodes', () => {
         onPositionChange={async () => undefined}
       />,
     );
-    expect(html).not.toContain('<button');
+    expect(html.match(/<button\b/g)).toHaveLength(3);
+    for (const label of ['بزرگ‌نمایی', 'کوچک‌نمایی', 'بازگشت به اندازه اصلی'])
+      expect(html).toContain(`aria-label="${label}"`);
+    expect(html).not.toMatch(/aria-label="(?:افزودن|ویرایش|حذف|جابه‌جایی)/);
     expect(html).toContain('همکار');
   });
   it('keeps system roots immutable and skips deleted/missing employee nodes', () => {

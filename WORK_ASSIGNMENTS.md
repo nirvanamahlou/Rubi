@@ -12748,6 +12748,8 @@ CI follow-up lease: append only the11 newly introduced Workbench guide scaffoldi
 
 ## SITE-CANCELLATION-1116 — PC-A — ACTIVE
 
+Bounded CI integration test reservation: organization-chart-live.spec.tsx read-only assertion permits the three newly merged viewport zoom/reset controls while explicitly rejecting every mutation/movement control. No HR production source, layout, permission or behavior changes; ORG-CHART-ZOOM-1116 source lease is completed.
+
 Bounded CI integration lease: add two missing English HR chart labels in en-overrides.json and its API/standalone mirrors; preserve all existing entries and do not change HR behavior.
 
 COMPUTER_ID=PC-A; branch codex/pc-a-site-cancellation-1116 from develop b6fff7d2a. User explicitly requests general ERP cancellation propagation to website history while preserving payment facts, and standing authorization covers green develop merge/scoped rollout. Reserve Site Commerce signed catalogue cancellation projection, bounded public Sales read port/repository projection, tests/docs. Sole additive migration lease: transaction-bound revision invalidation on linked contract cancellation and already-cancelled website-link insertion; no schema/dependency or business-row rewrite. Earlier logo migration/dependency leases completed/released by PR1730. Consumer site chat2 explicitly owns receiver/payment-preserving sync/status/history UI and deployment; no site edits here. Additive contract: cancelledOrders:[{externalId,contractId}], exact site+branch link only, latest signed revision only; no customer/payment/passenger fields. No polling on visits, no upstream cancellation/payment writes, and no real cancellation for tests.
