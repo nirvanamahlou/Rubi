@@ -250,8 +250,7 @@ function seedIntakes() {
     ],
     '',
     '',
-    'نام',
-    'آزمایشی',
+    'عنوان آزمایشی',
     '2026-11-03',
     'WEBSITE',
     'none',
@@ -332,10 +331,7 @@ describe('audience presentation and canonical mutations', () => {
       ) => void
     )({ target: { value: '09123456789' } });
     tree = intake();
-    for (const [id, value] of [
-      ['intake-first-name', 'نام'],
-      ['intake-last-name', 'آزمایشی'],
-    ]) {
+    for (const [id, value] of [['intake-first-name', 'عنوان آزمایشی']]) {
       (find(tree, 'id', id!).props.onChange as (event: unknown) => void)({
         target: { value },
       });
@@ -343,7 +339,7 @@ describe('audience presentation and canonical mutations', () => {
     (find(tree, 'id', 'intake-date').props.onChange as (value: string) => void)(
       '2026-11-03',
     );
-    state.values[11] = 'WEBSITE';
+    state.values[10] = 'WEBSITE';
     tree = intake();
     await (
       find(tree, 'aria-label', 'ذخیره سرنخ جدید').props
@@ -351,8 +347,7 @@ describe('audience presentation and canonical mutations', () => {
     )();
     expect(state.createIntake).toHaveBeenCalledWith(
       {
-        firstName: 'نام',
-        lastName: 'آزمایشی',
+        firstName: 'عنوان آزمایشی',
         entryDate: '2026-11-02T20:30:00.000Z',
         phone: '09123456789',
         sourceCategory: 'WEBSITE',
@@ -363,7 +358,7 @@ describe('audience presentation and canonical mutations', () => {
       },
       'branch-1',
     );
-    expect(state.values[16]).toBe(false);
+    expect(state.values[15]).toBe(false);
   });
   it('scores with original rule IDs and displayed CAS version', async () => {
     seedIntakes();
@@ -397,15 +392,15 @@ describe('audience presentation and canonical mutations', () => {
   it('keeps the intake dialog open with server errors and allows correction', async () => {
     seedIntakes();
     state.values[7] = '09123456789';
-    state.values[16] = true;
+    state.values[15] = true;
     state.createIntake.mockRejectedValueOnce(new Error('ثبت مجاز نیست'));
     await (
       find(intake(), 'aria-label', 'ذخیره سرنخ جدید').props
         .onClick as () => Promise<void>
     )();
-    expect(state.values[16]).toBe(true);
-    expect(state.values[21]).toBe('ثبت مجاز نیست');
-    expect(state.values[20]).toBe(false);
+    expect(state.values[15]).toBe(true);
+    expect(state.values[20]).toBe('ثبت مجاز نیست');
+    expect(state.values[19]).toBe(false);
   });
   it('retains segment status, additional rules and CAS on editor save', async () => {
     const segment = {
