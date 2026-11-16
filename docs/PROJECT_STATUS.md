@@ -5259,6 +5259,10 @@ Individual agreed package totals per passenger/currency are persisted with exact
 HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
 
 
+## RESERVATION-MAIL-WAKEUP-1116 — PC-A — READY_FOR_CI
+
+Post-commit asynchronous mail wake eliminates the next five-second poll wait; coalesces concurrent wakes and drains due rows serially. Recovery interval/claims/retry/UNKNOWN/off switch and form/PDF UI are preserved.48 synthetic tests and scoped lint pass; typecheck/build and exact-head hosted gates pending. No actual email; API-only rollout requires an empty sendable queue, encrypted backup, deploy lock and Worker namespace rebind. See tasks/RESERVATION-MAIL-WAKEUP-1116.md.
+
 ## RESERVATION-MAIL-ORIGIN-1116 — PC-A — READY_FOR_CI
 
 Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
