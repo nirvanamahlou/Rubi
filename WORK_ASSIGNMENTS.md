@@ -3,6 +3,8 @@ RESERVATION-FORM-SEND-ACCESS-1116 CI integration: consume the exact two-file lea
 ## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
 
 Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
+FLOATING-MERGED-TEMPLATE-1116 integration translation lease: add only seven missing English labels from the newly merged HR leave/chart UI to en-overrides and existing derived mirrors. Preserve original text and all peer behavior; required by the existing English completeness gate.
+
 FLOATING-MERGED-TEMPLATE-1116 CI integration repair: reserve only the already-merged ReferralResponseDto optional overrideSubstitute Boolean and missing optional IamService constructor injection/guard in CustomerAffairsService. CI on develop57f2f758e fails these unresolved existing references. Preserve the existing Nima-only substitute override, native HR permissions and payload validation; no new HR policy or data changes. Existing IAM module import/export is reused. This bounded compatibility repair is necessary for the authorized green merge.
 
 ## FLOATING-MERGED-TEMPLATE-1116 — PC-A — ACTIVE
