@@ -1622,7 +1622,10 @@ export class CustomerAffairsService {
           reason: input.responseSummary,
           version: 1,
           beforeSnapshot: json({ status: current.status }),
-          afterSnapshot: json({ status: input.status }),
+          afterSnapshot: json({
+            status: input.status,
+            overrideSubstitute: input.overrideSubstitute === true,
+          }),
         },
       });
       return updated;
@@ -2527,7 +2530,7 @@ export class CustomerAffairsService {
 
   async reviewHrWorkbenchRequest(
     id: string,
-    input: { version: number; status: string },
+    input: { version: number; status: string; overrideSubstitute?: boolean },
     actor: AuthenticatedActor,
   ) {
     const result = await this.repository.transaction(async (tx) => {
@@ -2672,8 +2675,14 @@ export class CustomerAffairsService {
             e.summary === leave.substituteUserId &&
             e.outcome === 'APPROVED',
         )
-      )
-        throw new ConflictException('ابتدا جانشین باید درخواست را تأیید کند.');
+      ) {
+        if (!(await this.iam.isNimaNaderi(actor.userId)))
+          throw new ConflictException(
+            'ابتدا جانشین باید درخواست را تأیید کند.',
+          );
+        if (input.overrideSubstitute !== true)
+          throw new ConflictException('SUBSTITUTE_CONFIRM_REQUIRED');
+      }
       if (input.status === 'APPROVED' && leave) {
         validateWorkbenchLeave(leave);
         await this.hr!.approveWorkbenchLeave(
@@ -2719,7 +2728,10 @@ export class CustomerAffairsService {
           action: 'HR_REVIEW',
           version: row.version + 1,
           beforeSnapshot: json({ status: row.status }),
-          afterSnapshot: json({ status: input.status }),
+          afterSnapshot: json({
+            status: input.status,
+            overrideSubstitute: input.overrideSubstitute === true,
+          }),
         },
       });
       await this.notifications.createWithinTransaction(tx, {
@@ -2746,7 +2758,7 @@ export class CustomerAffairsService {
   }
   async reviewLeaveSubstitute(
     id: string,
-    input: { version: number; status: string },
+    input: { version: number; status: string; overrideSubstitute?: boolean },
     actor: AuthenticatedActor,
   ) {
     if (!['APPROVED', 'REJECTED'].includes(input.status))

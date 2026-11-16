@@ -175,12 +175,17 @@ export const customerAffairsApi = {
   reviewLeaveSubstitute: (id: string, version: number, status: string) =>
     request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
       method: 'PATCH',
-      body: JSON.stringify({ version, status }),
+      body: JSON.stringify({ version, status, overrideSubstitute }),
     }),
-  reviewHrWorkbenchRequest: (id: string, version: number, status: string) =>
+  reviewHrWorkbenchRequest: (
+    id: string,
+    version: number,
+    status: string,
+    overrideSubstitute = false,
+  ) =>
     request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      body: JSON.stringify({ version, status }),
+      body: JSON.stringify({ version, status, overrideSubstitute }),
     }),
   removeHrWorkbenchRequest: (id: string) =>
     request(`/workbench/hr-requests/${encodeURIComponent(id)}`, {
