@@ -24,5 +24,7 @@ window.RUBI_ENGLISH_UI = {"محدوده مرور اسناد بیش از حد ب�
   "ثبت کمیسیون": "Save commission",
   "رفت‌وبرگشت ·": "Round trip ·",
   "نوع قیمت": "Fare type",
-  "همه تورها": "All tours"
+  "همه تورها": "All tours",
+  "بازگشت به اندازه اصلی": "Reset zoom",
+  "بزرگ‌نمایی چارت": "Chart zoom"
 };
