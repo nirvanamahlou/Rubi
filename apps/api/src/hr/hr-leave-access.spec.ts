@@ -12,16 +12,17 @@ function setup(users: Array<{ id: string }>) {
   const directory = { leaveSubstituteUsers: vi.fn().mockResolvedValue(users) };
   const documents = { uploadLeaveEvidence: vi.fn() };
   const employees = {
-    findFirst: vi
-      .fn()
-      .mockResolvedValue({
-        unit: 'synthetic-unit',
-        organizationBranchId: 'synthetic-company',
-      }),
-    findMany: vi
-      .fn()
-      .mockResolvedValue([{ userId: actor.userId }, { userId: 'same-unit' }]),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
   };
+  employees.findFirst.mockResolvedValue({
+    unit: 'synthetic-unit',
+    organizationBranchId: 'synthetic-company',
+  });
+  employees.findMany.mockResolvedValue([
+    { userId: actor.userId },
+    { userId: 'same-unit' },
+  ]);
   return {
     service: new HrService(
       { client: { hrEmployee: employees } } as never,
