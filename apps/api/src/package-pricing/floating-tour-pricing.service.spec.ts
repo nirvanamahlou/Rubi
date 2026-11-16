@@ -210,6 +210,21 @@ it('lists floating definitions for site managers and projects only the selected 
   ).rejects.toThrow();
   await expect(f.service.websiteCandidates(actor)).rejects.toThrow();
 });
+it('downloads a blank template using native read and branch scope without writing prices', async () => {
+  const f = fixture();
+  const bytes = await f.service.template('tour', {
+    ...actor,
+    permissions: ['package_pricing.read'],
+  });
+  expect(unzipSync(bytes)['xl/workbook.xml']).toBeDefined();
+  expect(f.client.floatingTourSaleCatalog.create).not.toHaveBeenCalled();
+  await expect(
+    f.service.template('tour', { ...actor, permissions: [] }),
+  ).rejects.toThrow();
+  await expect(
+    f.service.template('tour', { ...actor, branchIds: ['other'] }),
+  ).rejects.toThrow();
+});
 it('preview does not mutate data; commit stores sales-only data and an immutable import audit', async () => {
   const f = fixture(),
     bytes = workbook();
