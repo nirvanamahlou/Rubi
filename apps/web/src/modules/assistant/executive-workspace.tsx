@@ -81,6 +81,7 @@ import {
 import styles from './executive-workspace.module.css';
 import { conversationResponseSchema } from './conversation';
 import { agentResponseSchema, conversationHistory } from './agent-response';
+import { routeAssistantQuestion, type AnswerContext } from './question-routing';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { useAccessActor } from '@/modules/iam/access-context';
 
@@ -317,21 +318,29 @@ function AssistantComposerContent({
   const lastVersion = useRef<number | undefined>(undefined);
   const contractId = useRef<string | undefined>(undefined);
   const guideTopic = useRef<string | undefined>(undefined);
+  const previousAnswer = useRef<AnswerContext | undefined>(undefined);
+  useEffect(() => {
+    if (denied) previousAnswer.current = undefined;
+  }, [denied]);
   useEffect(() => {
     const resetRecord = () => {
-      workbenchTopic.current = undefined;
       inspecting.current?.abort();
       pending.current?.abort();
       setActionState(null);
       lastVersion.current = undefined;
       contractId.current = undefined;
-      guideTopic.current = undefined;
     };
     resetRecord();
     let selection = selectedSalesContract();
     const observer = new MutationObserver(() => {
       const current = selectedSalesContract();
       if (current !== selection) {
+        if (
+          current &&
+          previousAnswer.current?.contractId &&
+          previousAnswer.current.contractId !== current
+        )
+          previousAnswer.current = undefined;
         selection = current;
         resetRecord();
       }
@@ -393,12 +402,25 @@ function AssistantComposerContent({
   const submit = async () => {
     if (denied || !draft.trim() || actionState === 'loading') return;
     const message = draft.trim();
+    const decision = routeAssistantQuestion(
+      message,
+      previousAnswer.current,
+      Boolean(pathname?.startsWith('/sales')),
+    );
+    const guideQuestion = decision.guideQuestion ?? message;
+    const guidanceAllowed = decision.kind === 'guide';
     const replyLocally = (
       content: string,
       links?: ContractLink[],
       targets?: { id: string; label: string }[],
       guideLink?: { href: string; label: string },
+      answerContext?: AnswerContext,
     ) => {
+      if (answerContext)
+        previousAnswer.current = {
+          ...answerContext,
+          question: answerContext.question.slice(0, 1000),
+        };
       setMessages((previous) =>
         appendChatExchange(previous, [
           { role: 'user' as const, content: message, local: true },
@@ -417,11 +439,18 @@ function AssistantComposerContent({
       setActionState(null);
       setDraft('');
     };
-    const workbenchHelp = resolveWorkbenchGuide(
-      message,
-      workbenchTab,
-      workbenchTopic.current,
-    );
+    if (decision.kind === 'clarify') {
+      replyLocally(decision.clarification!);
+      return;
+    }
+    const workbenchHelp =
+      guidanceAllowed &&
+      decision.domain !== 'sales' &&
+      resolveWorkbenchGuide(
+        guideQuestion,
+        workbenchTab,
+        workbenchTopic.current,
+      );
     if (workbenchHelp) {
       if ('clarification' in workbenchHelp) {
         replyLocally(workbenchHelp.clarification);
@@ -440,14 +469,26 @@ function AssistantComposerContent({
         );
         if (!controller.signal.aborted) {
           workbenchTopic.current = workbenchHelp.topic.id;
-          replyLocally(answer, undefined, undefined, {
-            label: workbenchHelp.topic.title,
-            href: workbenchHelp.topic.href,
-          });
+          replyLocally(
+            answer,
+            undefined,
+            undefined,
+            {
+              label: workbenchHelp.topic.title,
+              href: workbenchHelp.topic.href,
+            },
+            {
+              kind: 'guide',
+              domain: 'workbench',
+              question: guideQuestion,
+              topicId: workbenchHelp.topic.id,
+            },
+          );
         }
       } catch (error) {
         if (!controller.signal.aborted) {
           setMessages([]);
+          previousAnswer.current = undefined;
           setActionState(
             error instanceof Error && error.message === 'HTTP_403'
               ? 'forbidden'
@@ -457,52 +498,82 @@ function AssistantComposerContent({
       }
       return;
     }
-    workbenchTopic.current = undefined;
-    const formHelp = readContractFormHelp(message);
+    if (guidanceAllowed && decision.domain === 'workbench') {
+      replyLocally(
+        'راهنمای کدام بخش میزکار من را می‌خواهید: درخواست‌ها و مرخصی، پیام‌ها، فایل‌ها، یادداشت‌ها، تقویم، عملکرد یا حساب و تنظیمات؟',
+      );
+      return;
+    }
+    const formHelp = guidanceAllowed && readContractFormHelp(guideQuestion);
     if (formHelp) {
-      replyLocally(formHelp, undefined, formCorrectionTargets());
+      replyLocally(formHelp, undefined, formCorrectionTargets(), undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+      });
       return;
     }
     const selectionAtSubmit = selectedSalesContract();
-    const selectedContract = selectionAtSubmit ?? contractId.current;
-    const guide = resolveContractGuide(
-      message,
-      pathname === '/sales' ||
-        Boolean(pathname?.startsWith('/sales/contracts/')),
-      guideTopic.current,
-      false,
-      agentMode,
-    );
+    const selectedContract =
+      selectionAtSubmit ??
+      contractId.current ??
+      (decision.kind === 'follow-up'
+        ? previousAnswer.current?.contractId
+        : undefined);
+    const guide =
+      guidanceAllowed || decision.kind === 'data-with-guide'
+        ? resolveContractGuide(
+            guideQuestion,
+            pathname === '/sales' ||
+              Boolean(pathname?.startsWith('/sales/contracts/')),
+            guideTopic.current,
+            guidanceAllowed && Boolean(selectedContract),
+            agentMode,
+          )
+        : undefined;
     const recordFollowup =
+      !guidanceAllowed &&
       selectedContract &&
       /حالا|همین|این قرارداد|اصلاحش|وضعیتش|بعدش/.test(
         normalizeContractQuestion(message),
       );
     const liveReport =
-      /قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
+      !guidanceAllowed &&
+      (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(
         normalizeContractQuestion(message),
       ) ||
-      portfolioKind(message) ||
-      /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
-        normalizeContractQuestion(message),
-      ) ||
-      (selectedContract && isContractReportQuestion(message));
+        portfolioKind(message) ||
+        /قرارداد(?:\s*های)?\s+(?:مشتری|به نام)/.test(
+          normalizeContractQuestion(message),
+        ) ||
+        (selectedContract && isContractReportQuestion(message)));
     const advice =
+      guidanceAllowed &&
       !liveReport &&
       !recordFollowup &&
       contractAdvice(
-        message,
+        guideQuestion,
         Boolean(pathname?.startsWith('/sales')),
         agentMode,
       );
     if (advice) {
-      replyLocally(advice);
+      replyLocally(advice, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide?.topicId,
+      });
       return;
     }
-    if (guide && !recordFollowup && !liveReport) {
+    if (guidanceAllowed && guide && !recordFollowup && !liveReport) {
       guideTopic.current = guide.topicId;
       if (guide.topicId === 'create') contractId.current = undefined;
-      replyLocally(guide.text);
+      replyLocally(guide.text, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide.topicId,
+      });
       return;
     }
     pending.current?.abort();
@@ -513,7 +584,7 @@ function AssistantComposerContent({
     const inspection = agentMode
       ? undefined
       : await inspectContractQuestion(
-          message,
+          decision.dataMessage,
           selectedContract,
           contractId.current === selectedContract
             ? lastVersion.current
@@ -533,12 +604,33 @@ function AssistantComposerContent({
       lastVersion.current = inspection.version;
       contractId.current = inspection.contractId;
       guideTopic.current = undefined;
-      replyLocally(inspection.text, inspection.links);
+      replyLocally(
+        inspection.text +
+          (decision.kind === 'data-with-guide' && guide && inspection.contractId
+            ? '\n\n' + guide.text
+            : ''),
+        inspection.links,
+        undefined,
+        undefined,
+        inspection.contractId
+          ? {
+              kind: 'data',
+              domain: 'sales',
+              question: message,
+              contractId: inspection.contractId,
+            }
+          : undefined,
+      );
       return;
     }
-    if (guide && !agentMode) {
+    if (guidanceAllowed && guide && !agentMode) {
       guideTopic.current = guide.topicId;
-      replyLocally(guide.text);
+      replyLocally(guide.text, undefined, undefined, undefined, {
+        kind: 'guide',
+        domain: 'sales',
+        question: guideQuestion,
+        topicId: guide.topicId,
+      });
       return;
     }
     pending.current?.abort();
@@ -559,7 +651,7 @@ function AssistantComposerContent({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             version: 1,
-            message,
+            message: decision.dataMessage,
             ...(agentMode &&
             selectedContract &&
             /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(
@@ -575,6 +667,7 @@ function AssistantComposerContent({
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           setMessages([]);
+          previousAnswer.current = undefined;
           setActionResult(null);
         }
         const body = (await response.json().catch(() => null)) as {
@@ -602,6 +695,11 @@ function AssistantComposerContent({
           .join('\n');
         const answer = [
           result.text,
+          result.status === 'ANSWER' &&
+          decision.kind === 'data-with-guide' &&
+          guide
+            ? guide.text
+            : '',
           sourceText ? `${t(c.agentSources)}:\n${sourceText}` : '',
           result.limitations.length
             ? `${t(c.agentLimitations)}:\n${result.limitations.join('\n')}`
@@ -609,6 +707,17 @@ function AssistantComposerContent({
         ]
           .filter(Boolean)
           .join('\n\n');
+        if (result.status === 'ANSWER')
+          previousAnswer.current = {
+            kind: 'data',
+            domain: 'sales',
+            question:
+              decision.kind === 'follow-up'
+                ? (previousAnswer.current?.question ?? message)
+                : message,
+            contractId: selectedContract,
+            resultIds: result.sources.map((source) => source.resultId),
+          };
         setMessages((previous) =>
           appendChatExchange(previous, [
             { role: 'user' as const, content: message, agent: true },
@@ -621,11 +730,16 @@ function AssistantComposerContent({
       }
       const result = conversationResponseSchema.parse(body);
       const answer =
-        result.status === 'REPLY'
+        (result.status === 'REPLY'
           ? result.text
           : result.status === 'CLARIFY'
             ? t(c.conversationClarification[result.field])
-            : t(c.conversationEvidence);
+            : t(c.conversationEvidence)) +
+        (result.status === 'ANSWER' &&
+        decision.kind === 'data-with-guide' &&
+        guide
+          ? '\n\n' + guide.text
+          : '');
       // ERP evidence is rendered separately and never enters model history.
       setMessages((previous) =>
         appendChatExchange(previous, [
@@ -633,7 +747,15 @@ function AssistantComposerContent({
           { role: 'assistant' as const, content: answer },
         ]),
       );
-      if (result.status === 'ANSWER') setActionResult(result.evidence);
+      if (result.status === 'ANSWER') {
+        setActionResult(result.evidence);
+        previousAnswer.current = {
+          kind: 'data',
+          domain: 'sales',
+          question: message,
+          contractId: selectedContract,
+        };
+      }
       setDraft('');
       setActionState(null);
     } catch (error) {

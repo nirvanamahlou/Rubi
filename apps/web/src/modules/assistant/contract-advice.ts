@@ -2,6 +2,7 @@ import {
   normalizeContractQuestion,
   resolveContractGuide,
 } from './contract-guides';
+import { matchesQuestion } from './question-text';
 
 const cases: [RegExp, string][] = [
   [
@@ -42,7 +43,7 @@ export function contractAdvice(
   if (!sales && !/قرارداد/.test(q)) return;
   if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(q)) return;
   const extra = cases
-    .filter(([pattern]) => pattern.test(q))
+    .filter(([pattern]) => matchesQuestion(q, pattern))
     .map(([, answer]) => answer);
   const parts = message
     .split(/(?:[؟?؛;\n]+|\s+و\s+(?=چطور|چگونه|چرا|از کجا|آیا|اگر))/u)

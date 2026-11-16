@@ -1,4 +1,12 @@
 {
+  "$1از کجا": "$1where",
+  "برای بررسی پاسخ قبلی، شواهد تازه از ابزار مجاز بخوان. سابقه اثبات صحت عدد یا علت نیست؛ اگر قابل تأیید نیست یا تغییر کرده، صریح اعلام کن.": "Check the previous answer using fresh evidence from authorized tools. History does not prove a number or cause; explicitly state if it cannot be verified or has changed.",
+  "پرسش فعلی:": "Current question:",
+  "چطور اطلاعات قرارداد را اصلاح کنم؟": "How do I correct contract details?",
+  "راهنمای انجام کار می‌خواهید یا بررسی اطلاعات واقعی؟ موضوع یا بخش موردنظر را مشخص کنید.": "Do you want procedural guidance or a review of actual data? Specify the topic or section.",
+  "سؤال مرتبط قبلی:": "Previous related question:",
+  "قرارداد:": "Contract:",
+  "منظورتان کدام پاسخ، عدد یا پرونده است؟ سؤال یا موضوع مرتبط را مشخص کنید تا همان مورد را بررسی کنم.": "Which answer, number or record do you mean? Specify the related question or topic so I can check it.",
   "آ": "A",
   "عنوان، تلفن، تاریخ و منبع ورود را وارد کنید.": "Enter the title, phone number, date and source.",
   "مدیر یا گیرنده منابع انسانی برای درخواست مرخصی به‌صورت یکتا تعریف نشده است.": "A unique manager or HR recipient has not been configured for leave requests.",

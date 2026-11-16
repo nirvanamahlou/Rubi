@@ -1,3 +1,7 @@
+## NORA-QUESTION-ROUTING-1116 — PC-C — verification
+
+Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
+
 SITE-MANAGEMENT-RELEASE-1116 final verification repair: reserve only Marketing intake test fixtures updated for the already-merged single-title form and four missing label catalogue entries. No Marketing/HR behavior change. Preserve source policy and all gate coverage.
 
 SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
