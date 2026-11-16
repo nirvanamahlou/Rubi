@@ -9,6 +9,9 @@ const f = vi.hoisted(() => ({
   effects: [] as (() => unknown)[],
   fetch: vi.fn(),
   didEffect: false,
+  kind: 'tour' as 'tour' | 'floating-tour',
+  periodKey: '',
+  canPublish: true,
   compact: false,
   saving: { current: false },
 }));
@@ -41,7 +44,9 @@ function tree() {
   f.cursor = 0;
   return WebsiteDestination({
     site: websiteDestinations[1],
-    kind: f.compact ? 'ticket' : 'tour',
+    kind: f.compact ? 'ticket' : f.kind,
+    periodKey: f.periodKey,
+    canPublish: f.canPublish,
     resourceId: 'resource',
     branchId: 'branch',
     compact: f.compact,
@@ -67,6 +72,9 @@ beforeEach(() => {
   f.cursor = 0;
   f.effects = [];
   f.didEffect = false;
+  f.kind = 'tour';
+  f.periodKey = '';
+  f.canPublish = true;
   f.compact = false;
   f.saving = { current: false };
   f.fetch.mockReset();
@@ -151,6 +159,36 @@ it('blocks repeat toggles while a selection is being saved', async () => {
   expect(
     nodes(tree()).find((node) => node.props.type === 'checkbox')!.props.checked,
   ).toBe(true);
+});
+it('saves the selected floating period only and does not enable unpriced periods', async () => {
+  f.kind = 'floating-tour';
+  f.periodKey = 'dated:2026-11-20:7';
+  await load();
+  expect(f.fetch.mock.calls[0]![0]).toContain(
+    'periodKey=dated%3A2026-11-20%3A7',
+  );
+  const check = nodes(tree()).find((n) => n.props.type === 'checkbox')!;
+  f.fetch.mockResolvedValueOnce(ok(true));
+  await (check.props.onChange as (e: unknown) => Promise<void>)({
+    target: { checked: true },
+  });
+  expect(JSON.parse(f.fetch.mock.calls[1]![1].body)).toMatchObject({
+    periodKey: f.periodKey,
+    enabled: true,
+  });
+  f.canPublish = false;
+  f.fetch.mockResolvedValueOnce(ok(false));
+  await (
+    nodes(tree()).find((n) => n.props.type === 'checkbox')!.props.onChange as (
+      e: unknown,
+    ) => Promise<void>
+  )({ target: { checked: false } });
+  const unpriced = nodes(tree()).find((n) => n.props.type === 'checkbox')!;
+  expect(unpriced.props.disabled).toBe(true);
+  await (unpriced.props.onChange as (e: unknown) => Promise<void>)({
+    target: { checked: true },
+  });
+  expect(f.fetch).toHaveBeenCalledTimes(3);
 });
 
 it('saves a ticket checkbox immediately without a Save button, uses returned versions, and keeps pencil editing', async () => {

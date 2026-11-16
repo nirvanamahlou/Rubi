@@ -583,9 +583,14 @@ export function DatePicker({
                             : 'text-muted-foreground/45',
                           day.isToday &&
                             !selected &&
+                            !marked &&
                             'border border-primary font-bold text-primary',
+                          marked &&
+                            'bg-red-50 font-bold text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900',
                           selected &&
-                            'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
+                            (marked
+                              ? 'bg-red-600 font-bold text-white shadow-sm hover:bg-red-700 dark:bg-red-600 dark:text-white dark:hover:bg-red-700'
+                              : 'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90'),
                         )}
                         key={day.isoDate}
                         disabled={!available}

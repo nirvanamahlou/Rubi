@@ -48,3 +48,20 @@ export interface FloatingTourImportPreview {
   options: FloatingTourImportOptions;
   warnings: string[];
 }
+
+export interface FloatingTourWebsiteCandidate {
+  id: string;
+  branchId: string;
+  name: string;
+  destinationId: string;
+  destinationIds: string[];
+  canPublish: boolean;
+  periods: FloatingTourWebsitePeriod[];
+}
+export interface FloatingTourWebsitePeriod {
+  key: string;
+  startsOn: string | null;
+  endsOn: string | null;
+  nights: number;
+  monthly: { calendar: 'PERSIAN' | 'GREGORIAN'; months: number[] } | null;
+}
