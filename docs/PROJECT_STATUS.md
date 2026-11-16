@@ -10168,3 +10168,5 @@ ORG-CHART-ZOOM-1116: chart zoom controls and scale-aware connector/drag coordina
 LEAVE-MANAGER-ROUTING-1116: Elناz to Roya; sales staff to Mahsa; Mahshid to Asal; Nima to Altafi; remaining staff to HR. Existing manager approval forwards to HR. Missing/ambiguous recipient blocks leave submission. Request templates show selected state. Scoped ESLint passed; tests could not collect due to missing contracts build.
 
 LEAD-TITLE-1116: lead creation uses one title field, removes surname input and requirement. Scoped ESLint passed.
+
+HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.

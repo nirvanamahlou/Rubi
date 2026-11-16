@@ -12777,3 +12777,5 @@ LEAVE-MANAGER-ROUTING-1116 PC-B completed: named leave manager routing, server e
 NORA-CHAT-NAVIGATION-1116 CI integration lease: origin/develop13baa77e2 introduced read-only chart zoom controls; baseline-identical HR source/test and missing two English labels fail the full suite. ORG-CHART-ZOOM-1116 is recorded completed by PC-B. Reserve only organization-chart-live.spec.tsx read-only node assertions (retain mutation/movement denial, allow view-only zoom) and two additive en-overrides labels. No HR product-source, schema, permission or workflow edits. Current merged PC-A translations preserved; no active overlap. Do not suppress English inventory or skip tests.
 
 LEAD-TITLE-1116 PC-B completed: remove surname from lead creation, rename name to title and submit existing optional-name API. Scoped ESLint passed. Owner authorizes merge.
+
+HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sales lead; aggregate company create label; Nima-only explicit substitute override with confirmation and audit flag. Scoped API/Web ESLint passed. Owner authorizes merge.

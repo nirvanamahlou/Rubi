@@ -1,4 +1,5 @@
 'use client';
+import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { HrAttendanceActivationForm } from './hr-attendance-activation-form';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -389,7 +390,11 @@ function AccessibleHrSection({
                   }
                 >
                   <Plus size={15} />
-                  {source.action}
+                  {source.section === 'organization' &&
+                  source.tab === 'branches' &&
+                  legalEntityContext?.isAggregate
+                    ? 'ثبت شرکت'
+                    : source.action}
                 </HrButton>
               </>
             ) : null}
@@ -992,6 +997,7 @@ function AccessibleHrSection({
 export function HrUnifiedSection(
   props: Omit<Parameters<typeof AccessibleHrSection>[0], 'permittedGroups'>,
 ) {
+  const { context: legalEntityContext } = useLegalEntityContext();
   const allowed = useRouteAccess();
   const section = props.section;
   const fallback: HrGroup[] = [
