@@ -22,6 +22,11 @@ const text = { type: 'string' };
 const strings = { type: 'array', items: text };
 export const AGENT_TOOLS = Object.freeze([
   tool(
+    'contract_count_breakdown',
+    'Read an all-time contract count reconciliation for the current authorized company/scope: native panel non-cancelled, Sales-cancelled, latest Reservations-only cancelled, completed, active card and total. No custom list filters. Use for total/active contract counts and discrepancies with the panel.',
+    {},
+  ),
+  tool(
     'set_plan',
     'First call: state a short operational plan, not private reasoning. Do not claim execution.',
     {
