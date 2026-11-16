@@ -197,6 +197,53 @@ export class IamWorkbenchRequestDirectory {
     };
   }
 
+  async leaveRoute(actor: AuthenticatedActor, branchId: string) {
+    const account = await this.database.client.user.findFirst({
+      where: { id: actor.userId, status: 'ACTIVE' },
+      select: { displayName: true },
+    });
+    const normalize = (name: string) =>
+      name
+        .normalize('NFKC')
+        .replace(/[آأإ]/g, 'ا')
+        .replace(/[يىئ]/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/[\s‌]/g, '');
+    const name = normalize(account?.displayName ?? '');
+    const routes: [string[], string][] = [
+      [['الناز'], 'رویابهزادنیا'],
+      [['بهناز', 'ناهید', 'اتنا', 'شیدا', 'شهرزاد'], 'مهسااعلایی'],
+      [['مهشید'], 'عسلشهبازی'],
+      [['نیمانادری'], 'دانیالالطافی'],
+    ];
+    const manager = routes.find(([names]) =>
+      names.some((n) => name.startsWith(n)),
+    )?.[1];
+    const options = await this.options(actor, branchId);
+    const candidates = options.units.flatMap((unit) =>
+      unit.users
+        .filter(
+          (user) =>
+            user.id !== actor.userId &&
+            (manager
+              ? normalize(user.displayName).startsWith(manager)
+              : /منابعانسانی|سرمایهانسانی/.test(normalize(unit.name)) &&
+                normalize(user.displayName).startsWith('نیمانادری')),
+        )
+        .map((user) => ({ unitId: unit.id, recipientId: user.id })),
+    );
+    const unique = [
+      ...new Map(
+        candidates.map((route) => [route.recipientId, route]),
+      ).values(),
+    ];
+    if (unique.length !== 1)
+      throw new BadRequestException(
+        'مدیر یا گیرنده منابع انسانی برای درخواست مرخصی به‌صورت یکتا تعریف نشده است.',
+      );
+    return unique[0]!;
+  }
+
   async resolve(
     tx: Prisma.TransactionClient,
     actor: AuthenticatedActor,
