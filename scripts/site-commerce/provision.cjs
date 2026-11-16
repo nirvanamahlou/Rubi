@@ -10,7 +10,7 @@ const site = process.env.SITE_COMMERCE_SITE_CODE ?? 'nss';
 if (!['nss', 'jahan-bastan'].includes(site)) throw Error('Unknown sales site');
 const isJahan = site === 'jahan-bastan';
 const username = isJahan ? 'jahan-bastan-site-sales' : 'nss-site-sales';
-const displayName = isJahan ? '��?� ��� ������' : '��?� �?�?�';
+const displayName = isJahan ? 'سایت جهان باستان' : 'سایت نیایش';
 const codes = [
   'sales.contracts.create',
   'sales.contracts.read.own',
@@ -101,7 +101,7 @@ async function main() {
       const role = await tx.role.create({
         data: {
           code: roleCode,
-          name: `����� ��� ${displayName}`,
+          name: `اتصال فروش ${displayName}`,
           permissions: {
             create: permissions.map((p) => ({ permissionId: p.id })),
           },
