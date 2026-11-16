@@ -12746,7 +12746,7 @@ SITE-AIRLINE-LOGO-1115 CI integration repair: reserve one additive English label
 
 CI follow-up lease: append only the11 newly introduced Workbench guide scaffolding/clarification translations to apps/web/src/i18n/en-overrides.json. The previous PC-A translation scope is merged/frozen; current PC-D fiscal-display branch does not change this file. Preserve all other keys and the English completeness gate; no inventory/assertion suppression.
 
-## NORA-CHAT-NAVIGATION-1116 — PC-C — ACTIVE
+## NORA-CHAT-NAVIGATION-1116 — PC-C — COMPLETE
 
 Owner requests preserving Nora messages/draft across internal ERP routes and tabs until full browser refresh. Reserve assistant Composer scope/context reset, new scoped-session helper and regressions; own task/status notes. Prior guide1733 source lease is complete (release receipt7f7ce04d9); no active peer overlap. Preserve account/company/permission isolation and abort stale in-flight work on context change. Keep bounded provider history separate from displayed transcript; no storage persistence, dependencies, migration or producer workflows. Base develop b6fff7d2a; scoped release follows existing owner authorization for this deployed guide fix.
 ORG-CHART-ZOOM-1116 PC-B completed. Zoom 30-200 percent, reset, scale-aware connectors and drag offsets. Scoped ESLint passed. Owner authorizes push/merge.
