@@ -3,10 +3,11 @@ import { ServiceError } from './errors.mjs';
 import { validateMessage } from './orchestrator.mjs';
 import { configuredErpOrigin } from './erp-client.mjs';
 import { boundedAgentJson } from './agent-provider.mjs';
+import { validCountBreakdown } from './contract-count-breakdown.mjs';
 import {
-  validCountBreakdown,
-  countBreakdownText,
-} from './contract-count-breakdown.mjs';
+  calculationMetadataValid,
+  explainedAnswerText,
+} from './calculation-policy.mjs';
 
 const shape = (value, keys) =>
   value &&
@@ -69,6 +70,7 @@ export function createDataAgent({
     let evidenceBytes = 0;
     let plan;
     let protocolRepairs = 0;
+    let explanationRepairs = 0;
     const evidence = new Map();
     const described = new Set();
     const callIds = new Set();
@@ -143,7 +145,7 @@ export function createDataAgent({
     )
       fail('INVALID_AGENT_CATALOG');
     const finalProtocol =
-      'For the final response return ONLY a JSON object with exactly status,text,resultIds,limitations as assistant content; do not call a final-answer function. Final schema: status must be exactly ANSWER, CLARIFY or REPLY (never success). ANSWER covers every data-derived finding, including zero or no matching record, and requires current resultIds. CLARIFY asks for material ambiguity; REPLY explains unsupported scope. text is a nonempty string of at most 6000 characters; resultIds is an array of strings; limitations is an array of strings, never a single string. Example: {"status":"CLARIFY","text":"Which calendar?","resultIds":[],"limitations":[]}. Use exactly those four keys and no prose or wrapper. Never call tools named commentary, final or analysis. Use actual resultIds and limitations in the final JSON; do not invent results, columns or IDs. ';
+      'For the final response return ONLY a JSON object with status,text,resultIds,limitations and optional calculationExplanation as assistant content; do not call a final-answer function. Final schema: status must be exactly ANSWER, CLARIFY or REPLY (never success). ANSWER covers every data-derived finding, including zero or no matching record, and requires current resultIds. CLARIFY asks for material ambiguity; REPLY explains unsupported scope. text is a nonempty string of at most 6000 characters; resultIds is an array of strings; limitations is an array of strings, never a single string. Example: {"status":"CLARIFY","text":"Which calendar?","resultIds":[],"limitations":[]}. Use those four keys plus calculationExplanation for calculated answers; no other keys or wrapper. calculationExplanation is a string of at most 4000 characters explaining the result from current evidence in your chosen prose/table layout; combined displayed text must fit 6000 characters. It is mandatory when a cited tool marks calculation.required=true. A non-calculated reply may omit it or set it to null. Never call tools named commentary, final or analysis. Use actual resultIds and limitations in the final JSON; do not invent results, columns or IDs. ';
     const messages = [
       {
         role: 'system',
@@ -204,7 +206,7 @@ export function createDataAgent({
           messages.push({
             role: 'system',
             content: plan
-              ? 'The last call was rejected by the provider. Use only the listed tools for further evidence, or return the final four-key JSON as assistant content, not a JSON/commentary function call. No previous failed output was executed.'
+              ? 'The last call was rejected by the provider. Use only the listed tools for further evidence, or return the final JSON (including calculationExplanation for calculated results) as assistant content, not a JSON/commentary function call. No previous failed output was executed.'
               : 'The last call was rejected. This turn ONLY call set_plan with 1 to 5 brief steps, each <=200 characters. Ask clarifying questions only after the plan has been accepted.',
           });
           continue;
@@ -272,6 +274,11 @@ export function createDataAgent({
           )
             fail('INVALID_AGENT_SOURCE');
           if (
+            output.calculation !== undefined &&
+            !calculationMetadataValid(output.calculation)
+          )
+            fail('INVALID_AGENT_SOURCE');
+          if (
             !Array.isArray(output.rows) ||
             output.rows.length > 200 ||
             !Array.isArray(output.sources) ||
@@ -294,9 +301,10 @@ export function createDataAgent({
             sources: output.sources,
             observedAt: output.observedAt,
             truncated: output.truncated,
+            calculationRequired:
+              countRead || output.calculation?.required === true,
             ...(countRead
               ? {
-                  countBreakdown: output.rows[0],
                   kind: 'panel-count-breakdown',
                 }
               : {}),
@@ -322,6 +330,16 @@ export function createDataAgent({
             sources: output.sources,
             observedAt: output.observedAt,
             truncated: output.truncated,
+            ...(output.calculation
+              ? { calculation: output.calculation }
+              : countRead
+                ? {
+                    calculation: {
+                      required: true,
+                      operations: ['count', 'sum', 'arithmetic'],
+                    },
+                  }
+                : {}),
           };
         } catch (error) {
           if (error instanceof ServiceError && error.status === 400)
@@ -333,7 +351,15 @@ export function createDataAgent({
         }
       } else if (step.name === 'finish_answer') {
         if (
-          !shape(args, ['status', 'text', 'resultIds', 'limitations']) ||
+          !shape(args, [
+            'status',
+            'text',
+            'resultIds',
+            'limitations',
+            ...(args && Object.hasOwn(args, 'calculationExplanation')
+              ? ['calculationExplanation']
+              : []),
+          ]) ||
           !['ANSWER', 'CLARIFY', 'REPLY'].includes(args.status) ||
           typeof args.text !== 'string' ||
           !args.text.trim() ||
@@ -347,6 +373,28 @@ export function createDataAgent({
         if (args.status === 'ANSWER' && !args.resultIds.length)
           fail('AGENT_EVIDENCE_REQUIRED');
         const selected = args.resultIds.map((id) => evidence.get(id));
+        let text;
+        try {
+          text = explainedAnswerText(
+            args,
+            selected.some((item) => item.calculationRequired),
+          );
+        } catch (error) {
+          if (
+            !(error instanceof ServiceError) ||
+            !error.message.includes('CALCULATION_EXPLANATION') ||
+            explanationRepairs++ >= 1
+          )
+            throw error;
+          messages.push({
+            role: 'system',
+            content:
+              'The final response was not released: ' +
+              error.message +
+              '. Return the final JSON again with a concise calculationExplanation grounded in the already cited evidence. Choose prose or table yourself. Include applicable source/grain, actual filters/period, formula/operands, units and limitations. This is a public calculation summary, not private reasoning. Do not re-run SQL merely to repair formatting. Keep combined text and explanation within 6000 characters.',
+          });
+          continue;
+        }
         const limitations = [
           ...new Set([
             ...args.limitations,
@@ -361,25 +409,11 @@ export function createDataAgent({
         return {
           version: 3,
           status: args.status,
-          text:
-            args.status === 'ANSWER' &&
-            selected.some((item) => item.countBreakdown)
-              ? [
-                  ...(selected.some((item) => !item.countBreakdown)
-                    ? [args.text.trim()]
-                    : []),
-                  ...selected
-                    .filter((item) => item.countBreakdown)
-                    .map((item) =>
-                      countBreakdownText(
-                        item.countBreakdown,
-                        !/[\u0600-\u06ff]/u.test(request.message),
-                      ),
-                    ),
-                ].join('\n\n')
-              : args.text.trim(),
+          text,
           plan,
-          sources: selected.map(({ countBreakdown: _counts, ...item }) => item),
+          sources: selected.map(
+            ({ calculationRequired: _required, ...item }) => item,
+          ),
           limitations,
           requestId,
         };

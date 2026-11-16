@@ -1,7 +1,9 @@
 # Nora contract count reconciliation
 
-Owner asks for an inspectable calculation rather than an unexplained number. The
-example numbers are not constants or fixtures in the implementation.
+Owner asks for an inspectable calculation rather than an unexplained number.
+The example table is illustrative, not a prescribed response layout. The shared
+rule now covers every Nora module and future tools; see the
+[calculation explanation contract](../assistant/CALCULATION-EXPLANATION-CONTRACT.md).
 
 ## Definition and boundary
 
@@ -33,10 +35,15 @@ timeouts and source failure produce a controlled unavailable error, never zero.
 Groq is instructed to select it for all-time counts, active counts and panel
 discrepancies. It consumes the same query/turn/context budgets. Counts are checked
 for safe nonnegative integers, disjoint sum and active/completed reconciliation.
-Fresh resultId references and context checks remain mandatory. A count-only
-answer uses a deterministic Persian table/formula built from that evidence,
-not model-authored numbers. Mixed-source answers retain their other explanation
-and attach the same authoritative table. Source metadata contains no raw rows.
+Fresh resultId references and context checks remain mandatory. Groq authors the
+answer and calculation explanation, choosing prose/table/formula freely; the
+previous deterministic count formatter has been removed. SQL AST and monetary
+sources mark computed evidence, independently of source/module names. A computed
+answer missing its explanation gets one bounded formatting repair without
+rerunning SQL; repeated failure is not delivered as an unexplained number.
+Source metadata contains no raw rows or internal calculation flags. Explainable
+format admission is not a proof of business correctness; tool arithmetic and
+semantic acceptance remain independent checks.
 
 The existing chat safely renders pipe tables using React text nodes, with RTL
 and horizontal overflow. HTML is never interpreted. Existing chat bubble styles,
@@ -45,10 +52,12 @@ Count/evidence follow-ups no longer get intercepted by procedural contract help.
 
 ## Validation / release
 
-Service tests104 pass; all235 Assistant Web tests pass.21 focused API/recursive module
-boundary tests pass, and the wider Agent/read-boundary set passes68 tests with36
-environment-gated skips. Scoped API/Web lint passes, including the final
-count/cancellation follow-up and source-kind schema regressions.
+After refinement,110 service tests,235 Assistant Web tests and81 API/boundary
+tests pass (36 gated skips). The previous head also passed all10 hosted gates.
+Those hosted results do not apply to the refined head until its checks run.
+Scoped API/Web lint passes, including count/cancellation follow-up and source-kind
+schema regressions. No live Groq or browser acceptance of this new final-protocol
+field is claimed.
 
 Local full API types/build are blocked by the old linked dependency artifacts:
 missing sharp and the generated WebsitePublication.presentation field. Local

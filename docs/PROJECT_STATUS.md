@@ -8,12 +8,14 @@ User authorizes latest develop Avina deployment with all data preserved. Reserve
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
-Added an authorized all-time contract count reconciliation with disjoint native
-Sales/Reservations cancellation populations, active/completed distinction and a
-deterministic Persian calculation table from current evidence. Curated model SQL
-privileges are unchanged; count follow-ups stay in analytics.104 service and235
-Assistant Web tests and21 focused API/boundary checks pass. Clean hosted types/build
-remain required; local linked dependencies/build-root limitations are documented. No Production change
+Added authorized all-time contract count reconciliation with disjoint native
+Sales/Reservations cancellation populations and active/completed distinction.
+Owner clarified that the table was only an example: a shared cross-module policy
+now lets Groq choose prose/table while requiring a public method explanation for
+calculated evidence, with one bounded repair. SQL AST/monetary source metadata
+and future-tool rules preserve this convention without expanding data access.
+110 service,235 Web and81 API/boundary tests pass; prior head's all10 hosted
+gates passed, with fresh refined-head CI required. No Production change
 or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
 
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI

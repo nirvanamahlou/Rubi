@@ -47,6 +47,10 @@ export async function readContractCountBreakdown(
         observedAt: new Date().toISOString(),
         sources: ['contracts'],
         truncated: false,
+        calculation: {
+          required: true,
+          operations: ['count', 'sum', 'arithmetic'],
+        },
         columns: [
           'panel_non_cancelled',
           'sales_cancelled',
