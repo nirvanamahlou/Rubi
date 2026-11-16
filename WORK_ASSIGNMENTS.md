@@ -1,3 +1,5 @@
+RESERVATION-FORM-SEND-ACCESS-1116 CI integration: consume the exact two-file leave override compile repair validated by44 tests on the template branch. Bounded optional DTO Boolean and missing optional IAM injection only; preserve existing authorization and all other domain behavior. Required by the shared develop build failure.
+
 ## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
 
 Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
