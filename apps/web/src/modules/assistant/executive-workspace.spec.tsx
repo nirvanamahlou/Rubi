@@ -14,6 +14,7 @@ import {
   PersonalFollowUps,
 } from './executive-workspace';
 import { AccessPermissionsProvider } from '@/modules/iam/access-context';
+import { LegalEntityProvider } from '@/modules/legal-entities/components/legal-entity-context';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/assistant',
@@ -52,7 +53,9 @@ const snapshot: ExecutiveSnapshot = {
 describe('executive reference coverage and evidence states', () => {
   it('keeps prepared requests in the compact chat without manual filters', () => {
     const html = renderToStaticMarkup(
-      <AssistantComposer t={(text) => text[0]} denied={false} floating />,
+      <LegalEntityProvider>
+        <AssistantComposer t={(text) => text[0]} denied={false} floating />
+      </LegalEntityProvider>,
     );
     for (const label of [
       assistantCopy.quickDaily,

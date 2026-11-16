@@ -201,6 +201,7 @@ export async function proxyAssistantConversation(
   configuredUrl: string | undefined,
   fetcher: typeof fetch = fetch,
   agent = false,
+  workbenchGuide = false,
 ) {
   const reject = (status: number) =>
     Response.json(
@@ -246,7 +247,11 @@ export async function proxyAssistantConversation(
     return await proxyRead(
       request,
       configuredUrl,
-      agent ? '/v3/assistant/conversation' : '/v2/assistant/conversation',
+      workbenchGuide
+        ? '/v1/assistant/workbench-guide'
+        : agent
+          ? '/v3/assistant/conversation'
+          : '/v2/assistant/conversation',
       fetcher,
       false,
       new TextDecoder('utf-8', { fatal: true }).decode(buffer),

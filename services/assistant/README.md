@@ -127,3 +127,7 @@ A Groq adapter is available only through explicit trusted test injection; server
 ## Live messages-only opt-in — 2026-10-20
 
 The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. REPLY returns plain general conversation; ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
+
+## Workbench procedural guidance —2026-11-15
+
+The additive POST /v1/assistant/workbench-guide accepts only version1/topicId/goal and returns a validated tool selection; it does not read Workbench records. The canonical static guide catalog is also rendered by the Web, including the approved internal fallback when Groq is unavailable. Native IAM and request limits still apply. A custom runtime must pass workbenchGuide: workbenchGuideConfiguration() from workbench-guide.mjs to createAssistantServer to enable model selection; without that configuration it stays internal. The configuration reuses Germany-only egress admission. No employee message, document, medical information or free-text question is sent to Groq by this tool. See ../../docs/tasks/NORA-WORKBENCH-GUIDE-1115.md for coverage, acceptance and rollout boundaries.

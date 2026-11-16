@@ -10140,4 +10140,9 @@ HOURLY-LEAVE-DEADLINE-1115: hourly requests accepted through assigned workday en
 
 OVERTIME-TIME-INPUT-1115: overtime-start uses native time input in contextual working-hours form. Scoped ESLint passed.
 
+### 2026-11-15 PC-C — Nora Workbench procedural guide
+
+Approved guide-only implementation on codex/pc-c-nora-workbench-guide-1115 from fe0cd4fa9:30 versioned topics/all11 tabs, read-only workbench_guide native-tool selection, strict identifier-only model payload, internal catalog fallback, authenticated/Origin-protected BFF and scope-safe Composer routing. Producer Workbench/HR/messaging/documents behavior and the pinned Sales SQL matrix are unchanged.101 service and223 Assistant Web tests, focused lint, Web typecheck and Agent-enabled production Web build pass; API build passes after building its existing config package. Native synthetic browser acceptance is in progress; no live Groq success or Production publication claimed. Details: docs/tasks/NORA-WORKBENCH-GUIDE-1115.md.
+
+NORA-WORKBENCH-GUIDE-1115 update:34 topics/all11 tabs; PR1733 open. Native synthetic IAM/service acceptance14 checks passed, including rejection of missing session/private-field/unknown-topic requests. Final local regressions101 service/225 Web; browser acceptance is explicitly incomplete after automatic execution review blocked local Next startup. Live provider selection and Production publication are not claimed. No producer workflow, migration or pinned Sales matrix source change.
 WEBSITE-TICKET-LOGO-1115 — PC-A: native website-contract HTML/PDF rendering now consumes the same sanitized brand pixels through an authenticated Sales endpoint. Exact site principal, linked contract, carrier membership, finance release and cancellation gates remain.33 API and39 renderer checks pass; full build and hosted gates gate rollout. No real issuance or payment used for validation.
