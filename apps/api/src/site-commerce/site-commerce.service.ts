@@ -1,3 +1,4 @@
+import { commerceSites, isDeliverySite } from './commerce-sites';
 import { ageCounts } from '../ticket-catalog/ticket-age-fares';
 import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
@@ -36,6 +37,7 @@ import { salesContractFlights, isFloatingSalesContract } from '@nora/contracts';
 import { passengerAgeCategory } from '../sales/sales.domain';
 import { websiteFlightQuotes } from './ticket-quote';
 import {
+  actorSite,
   assertWebsiteDraft,
   externalOrderId,
   siteBinding,
@@ -88,7 +90,9 @@ export class SiteCommerceService {
     carrierName: string,
     actor: AuthenticatedActor,
   ) {
-    const scoped = this.scoped('nss', actor);
+    const site = actorSite(actor);
+    if (!isDeliverySite(site)) throw new ForbiddenException();
+    const scoped = this.scoped(site, actor);
     if (
       !this.documents ||
       typeof carrierName !== 'string' ||
@@ -97,7 +101,7 @@ export class SiteCommerceService {
     )
       throw new NotFoundException();
     const link = await this.db.client.websiteOrder.findFirst({
-      where: { siteCode: 'nss', branchId: scoped.branchIds[0]!, contractId },
+      where: { siteCode: site, branchId: scoped.branchIds[0]!, contractId },
       select: { id: true },
     });
     if (!link) throw new NotFoundException();
@@ -141,7 +145,7 @@ export class SiteCommerceService {
       !branchId ||
       !actor.branchIds.includes(branchId) ||
       (bound && bound !== branchId) ||
-      (site === 'nss' && !bound)
+      (isDeliverySite(site) && !bound)
     )
       throw new ForbiddenException('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
     return branchId;
@@ -199,7 +203,9 @@ export class SiteCommerceService {
         await this.tickets.websiteOffer(
           resourceId,
           [branchId],
-          site === 'nss' ? await this.ticketTarget(site, branchId) : undefined,
+          isDeliverySite(site)
+            ? await this.ticketTarget(site, branchId)
+            : undefined,
         );
     } else if (kind === 'floating-tour') {
       await this.floatingProduct(
@@ -482,7 +488,7 @@ export class SiteCommerceService {
       }
     }
     const cancelledOrders = await this.cancelledOrders(site, scoped);
-    if (!this.documents || site !== 'nss')
+    if (!this.documents || !isDeliverySite(site))
       return { version: 1, data, cancelledOrders };
     const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
     for (const product of data) {
@@ -508,6 +514,7 @@ export class SiteCommerceService {
       (name) =>
         websiteAirlineLogo(name, scoped, this.references, this.documents!),
       available,
+      commerceSites[site].origin,
     );
     return { version: 1, data, airlineLogos, cancelledOrders };
   }
