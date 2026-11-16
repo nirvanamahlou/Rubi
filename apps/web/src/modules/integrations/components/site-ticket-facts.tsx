@@ -29,9 +29,11 @@ function Leg({
         <bdi>{pricingFlightDate(offer, cityCountries, true)}</bdi>
       </time>
       <small>
-        رسیدن: <bdi>{time.format(new Date(offer.arrivalAt))}</bdi> · ظرفیت کلاس:{' '}
-        {offer.totalCapacity.toLocaleString('fa-IR')} · مانده:{' '}
-        {offer.remainingCapacity.toLocaleString('fa-IR')}
+        <span>ساعت رسیدن</span>:{' '}
+        <bdi>{time.format(new Date(offer.arrivalAt))}</bdi>
+        {' · '}
+        <span>ظرفیت کلاس:</span> {offer.totalCapacity.toLocaleString('fa-IR')} ·
+        مانده: {offer.remainingCapacity.toLocaleString('fa-IR')}
       </small>
     </div>
   );
