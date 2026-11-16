@@ -1,3 +1,5 @@
+FLOATING-MERGED-TEMPLATE-1116 integration test lease: align hr-leave-access.spec.ts fixture with the merged departmentSubstitutes reader; no employee/unit yields no substitute, and eligible colleagues must match unit and organization branch. Retain internal-directory rejection, HR-managed access and branch-denial assertions. Test-only repair for two baseline-identical failures; no HR runtime/policy change.
+
 FLOATING-MERGED-TEMPLATE-1116 integration Web compile lease: remove the undefined overrideSubstitute shorthand from ordinary substitute replies in customer-affairs-client.ts and cover ordinary versus explicit HR override payloads in its existing spec. HR-MANAGER-OVERRIDE-1116 is completed; preserve HR override/authorization and existing three-argument substitute API. Required by exact-head CI TypeScript failure.
 
 FLOATING-MERGED-TEMPLATE-1116 integration translation lease: add only seven missing English labels from the newly merged HR leave/chart UI to en-overrides and existing derived mirrors. Preserve original text and all peer behavior; required by the existing English completeness gate.
