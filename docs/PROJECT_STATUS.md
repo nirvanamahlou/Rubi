@@ -10219,3 +10219,5 @@ HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch act
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
 
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
+
+FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ticket-pricing base card; immutable standalone/pair revisions, net target projections and birthday-derived website/native final quote guards. Legacy null semantics and financial history preserved.57 focused API checks and isolated PostgreSQL18 migration proof passed; final Web/hosted gates precede release.

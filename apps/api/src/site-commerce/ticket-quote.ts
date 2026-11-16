@@ -1,3 +1,7 @@
+import {
+  ageFareTotal,
+  type AgeCounts,
+} from '../ticket-catalog/ticket-age-fares';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import {
@@ -41,7 +45,14 @@ export function websiteFlightQuotes(
   outbound: TicketOfferV1,
   returning: TicketOfferV1 | undefined,
   seats: number,
+  counts?: AgeCounts,
 ) {
+  const totalFor = (fare: TicketStandaloneSalePriceV1, consumed: number) =>
+    counts
+      ? ageFareTotal(fare, counts, consumed)
+      : websiteFareTotal(fare, seats, consumed);
+  if (counts && counts.adults + counts.children !== seats)
+    throw new ConflictException('ترکیب مسافران معتبر نیست.');
   const offers = [outbound, ...(returning ? [returning] : [])];
   if (offers.some((o) => o.remainingCapacity < seats))
     throw new ConflictException('ظرفیت بلیت کافی نیست.');
@@ -56,7 +67,7 @@ export function websiteFlightQuotes(
         (o) => (o.allocatedCapacity ?? 0) + (o.reservedCapacity ?? 0),
       ),
     );
-    const total = websiteFareTotal(pair, seats, consumed);
+    const total = totalFor(pair, consumed);
     const first = total.div(2).toDecimalPlaces(2, Prisma.Decimal.ROUND_DOWN);
     return [
       { amount: first.toFixed(2), currencyCode: pair.currencyCode },
@@ -67,9 +78,8 @@ export function websiteFlightQuotes(
     if (!offer.standaloneSalePrice)
       throw new ConflictException('قیمت فروش بلیت منتشر نشده است.');
     return {
-      amount: websiteFareTotal(
+      amount: totalFor(
         offer.standaloneSalePrice,
-        seats,
         (offer.allocatedCapacity ?? 0) + (offer.reservedCapacity ?? 0),
       ).toFixed(2),
       currencyCode: offer.standaloneSalePrice.currencyCode,

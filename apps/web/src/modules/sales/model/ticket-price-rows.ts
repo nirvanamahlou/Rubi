@@ -13,6 +13,8 @@ export type TicketPriceRow = {
   returnOfferId: string | null;
   base?:
     | {
+        childAmount?: string | null | undefined;
+        infantAmount?: string | null | undefined;
         amount: string;
         currencyCode: string;
         revision: number;
@@ -78,6 +80,8 @@ export function ticketPriceRows(
         returning: offers.find((o) => o.id === price.returnOfferId),
         base: {
           amount: price.baseAmount ?? price.amount,
+          childAmount: price.childAmount,
+          infantAmount: price.infantAmount,
           currencyCode: price.currencyCode,
           revision: price.revision,
           tiers: price.baseTiers ?? price.tiers,

@@ -64,6 +64,8 @@ import {
 import { ticketPriceExportRows } from '../model/ticket-prices-export';
 import targetStyles from './ticket-price-targets.module.css';
 type Draft = {
+  childAmount?: string | null | undefined;
+  infantAmount?: string | null | undefined;
   amount: string;
   currencyCode: string;
   tiers?: TicketSalePriceTierV1[] | undefined;
@@ -353,6 +355,8 @@ export function TicketPricesWorkspace() {
             row.id,
             {
               amount: row.base?.amount ?? '',
+              childAmount: row.base?.childAmount ?? null,
+              infantAmount: row.base?.infantAmount ?? null,
               tiers: row.base?.tiers?.map((tier) => ({ ...tier })),
               currencyCode:
                 row.base?.currencyCode ?? currencyRows[0]?.code ?? 'IRR',
@@ -426,6 +430,7 @@ export function TicketPricesWorkspace() {
       [row.id]: {
         amount: current[row.id]?.amount ?? '',
         currencyCode: current[row.id]?.currencyCode ?? 'IRR',
+        ...current[row.id],
         ...patch,
       },
     }));
@@ -621,6 +626,8 @@ export function TicketPricesWorkspace() {
     setReturnId(row.returnOfferId ?? '');
     setPairDraft({
       amount: row.base?.amount ?? '',
+      childAmount: row.base?.childAmount ?? null,
+      infantAmount: row.base?.infantAmount ?? null,
       tiers: row.base?.tiers?.map((tier) => ({ ...tier })),
       currencyCode: row.base?.currencyCode ?? 'IRR',
     });
@@ -1141,8 +1148,8 @@ export function TicketPricesWorkspace() {
                             <FormField
                               label={
                                 row.returnOfferId
-                                  ? 'قیمت پایه کل رفت‌وبرگشت'
-                                  : 'قیمت پایه یک‌طرفه'
+                                  ? 'قیمت بزرگسال کل رفت‌وبرگشت'
+                                  : 'قیمت بزرگسال یک‌طرفه'
                               }
                             >
                               <MoneyInput
@@ -1174,6 +1181,34 @@ export function TicketPricesWorkspace() {
                                 }
                               />
                             </FormField>
+                            <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2">
+                              <FormField label="قیمت کودک (۲ تا کمتر از ۱۲)">
+                                <MoneyInput
+                                  className="h-8 min-w-0 rounded-lg px-2 text-xs"
+                                  value={draft.childAmount ?? ''}
+                                  onValueChange={(childAmount) =>
+                                    updateDraft(row, {
+                                      childAmount: childAmount || null,
+                                    })
+                                  }
+                                />
+                              </FormField>
+                              <FormField label="قیمت نوزاد (کمتر از ۲)">
+                                <MoneyInput
+                                  className="h-8 min-w-0 rounded-lg px-2 text-xs"
+                                  value={draft.infantAmount ?? ''}
+                                  onValueChange={(infantAmount) =>
+                                    updateDraft(row, {
+                                      infantAmount: infantAmount || null,
+                                    })
+                                  }
+                                />
+                              </FormField>
+                              <p className="col-span-2 text-[10px] leading-5 text-muted-foreground">
+                                ارز هر سه گروه یکسان است. خالی: کودک برابر
+                                بزرگسال؛ نوزاد بدون هزینه. صفر: رایگان.
+                              </p>
+                            </div>
                             <Button
                               size="sm"
                               className="col-span-2 min-h-8"

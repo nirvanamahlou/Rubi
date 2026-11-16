@@ -1,3 +1,4 @@
+import { ageCounts } from '../ticket-catalog/ticket-age-fares';
 import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
 import {
@@ -624,7 +625,16 @@ export class SiteCommerceService {
       const seats = input.passengers.filter(
         (p) => passengerAgeCategory(p.birthDate, input.departureDate) !== 'INF',
       ).length;
-      const quotes = websiteFlightQuotes(offers[0]!, offers[1], seats);
+      const quotes = websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        seats,
+        ageCounts(
+          input.passengers.map((p) =>
+            passengerAgeCategory(p.birthDate, input.departureDate),
+          ),
+        ),
+      );
       for (const [index, selection] of selections.entries()) {
         const offer = offers[index]!,
           price = quotes[index]!;
@@ -716,7 +726,18 @@ export class SiteCommerceService {
       (d) =>
         passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)) !== 'INF',
     ).length;
-    return { data: websiteFlightQuotes(offers[0]!, offers[1], seats) };
+    return {
+      data: websiteFlightQuotes(
+        offers[0]!,
+        offers[1],
+        seats,
+        ageCounts(
+          body.birthDates.map((d) =>
+            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
+          ),
+        ),
+      ),
+    };
   }
 
   async draft(

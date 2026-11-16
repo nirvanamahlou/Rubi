@@ -12880,3 +12880,7 @@ RELEASE-1116 coordinated integration: include the newly merged leave progress an
 RELEASE-1116 translation follow-up adds three missing leave progress labels introduced by PR1750. Preserve existing catalogues and all translation coverage assertions.
 
 RELEASE-1116 test compatibility: supply the employee/department fixture now required by PR1750, retain self-service/branch rejection checks, and assert same-department/office filtering and self exclusion. Test-only source change; product behavior is unchanged.
+
+## FLIGHT-AGE-FARES-1116 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; codex/pc-a-flight-age-fares-1116 from develop cc82273e7. Owner requests adult/child/infant prices in existing ticket pricing card and site search composition. Reserve additive childAmount/infantAmount fields on immutable standalone and paired fare revisions, their optional contracts, commission projections, Ticket Catalog atomic quote guard, Sales trusted passenger-count adapter, Site Commerce quote producer and pricing UI. Sole scoped additive migration lease for these four nullable columns; prior completed leases released. No dependency changes. Null retains legacy adult/child seat fares and zero infant fare; explicit zero is supported. Coordinate Site Commerce service hunks with chat2 payment owner; no payment mutation or real purchase tests. Standing user approval covers green develop merge and guarded release.
