@@ -1,6 +1,10 @@
 'use client';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
+import {
+  assistantConversationScopeKey,
+  appendChatExchange,
+} from './chat-session';
 import { isContractReportQuestion, portfolioKind } from './contract-reports';
 import { contractAdvice } from './contract-advice';
 import {
@@ -254,15 +258,7 @@ function CompanyScopedAgentComposer({
 }: ComposerProps & { agentMode: boolean }) {
   const { context } = useLegalEntityContext();
   const actor = useAccessActor();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const key = JSON.stringify([
-    context,
-    actor?.userId,
-    actor?.branchIds,
-    actor?.permissions,
-    pathname === '/workbench' ? (params.get('tab') ?? 'today') : null,
-  ]);
+  const key = assistantConversationScopeKey(context, actor);
   return (
     <AssistantComposerContent key={key} {...props} agentMode={agentMode} />
   );
@@ -330,11 +326,6 @@ function AssistantComposerContent({
       lastVersion.current = undefined;
       contractId.current = undefined;
       guideTopic.current = undefined;
-      setMessages((previous) =>
-        previous.some((item) => item.local || item.agent)
-          ? previous.filter((item) => !item.local && !item.agent)
-          : previous,
-      );
     };
     resetRecord();
     let selection = selectedSalesContract();
@@ -357,7 +348,7 @@ function AssistantComposerContent({
       observer.disconnect();
       inspecting.current?.abort();
     };
-  }, [pathname, agentMode]);
+  }, [pathname, workbenchTab, agentMode]);
 
   const prompts: readonly [AssistantText, AssistantAction][] = [
     [c.quickDaily, 'daily-summary'],
@@ -409,8 +400,7 @@ function AssistantComposerContent({
       guideLink?: { href: string; label: string },
     ) => {
       setMessages((previous) =>
-        [
-          ...previous,
+        appendChatExchange(previous, [
           { role: 'user' as const, content: message, local: true },
           {
             role: 'assistant' as const,
@@ -420,7 +410,7 @@ function AssistantComposerContent({
             ...(targets?.length ? { targets } : {}),
             ...(guideLink ? { guideLink } : {}),
           },
-        ].slice(-12),
+        ]),
       );
       setChatError(null);
       setActionResult(null);
@@ -620,11 +610,10 @@ function AssistantComposerContent({
           .filter(Boolean)
           .join('\n\n');
         setMessages((previous) =>
-          [
-            ...previous,
+          appendChatExchange(previous, [
             { role: 'user' as const, content: message, agent: true },
             { role: 'assistant' as const, content: answer, agent: true },
-          ].slice(-12),
+          ]),
         );
         setDraft('');
         setActionState(null);
@@ -639,11 +628,10 @@ function AssistantComposerContent({
             : t(c.conversationEvidence);
       // ERP evidence is rendered separately and never enters model history.
       setMessages((previous) =>
-        [
-          ...previous,
+        appendChatExchange(previous, [
           { role: 'user' as const, content: message },
           { role: 'assistant' as const, content: answer },
-        ].slice(-12),
+        ]),
       );
       if (result.status === 'ANSWER') setActionResult(result.evidence);
       setDraft('');
