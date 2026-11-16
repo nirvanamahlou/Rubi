@@ -1,5 +1,7 @@
 ## NORA-QUESTION-ROUTING-1116 — PC-C — READY_FOR_CI
 
+All eight6117de262 hosted checks passed, then develop advanced through PC-B PR1749 before merge. Reconcile only the overlapping leave access test fixtures: keep PC-B's same-department/office/self-exclusion test, retain our exact query/out-of-branch/missing-employee assertions and add the original self-only admission case explicitly. Preserve all incoming1749 HTTP-boundary/translation repairs. No HR product change. New final-head hosted checks required; original green head was not merged through the conflict.
+
 Final CI inherited-fixture repair: both full-suite jobs fail only hr-leave-access.spec.ts because REQUEST-PROGRESS-1116 added departmentSubstitutes but the old fixture supplies no database client and expects the applicant as their own substitute. Reserve that test file only: provide synthetic active employee/unit/company peers, assert applicant/cross-unit exclusion and preserve denial/out-of-branch assertions. HrService remains byte-identical to develop; no rule, permission or gate relaxation. Previous clean build/type/lint/PostgreSQL checks apply to18c376aa1; new exact-head checks must pass again before merge.
 
 PR1743 CI dependency consumption: the merged develop57f2f758e has baseline-identical Customer Affairs API build failures (missing IAM injection and unrelated ReferralResponseDto.overrideSubstitute) plus an undefined substitute client payload. PC-B already published the exact repairs in1e55e8621 and47a965cfa on codex/pc-b-release-1116. Consume only those committed service/test/client diffs into this independent integration branch; preserve PC-B's active original branch and current develop HR behavior, and do not take its generated-catalogue deletions. No independent override-policy redesign, new grant, migration or deployment. Source-owner repair provenance retained here.
@@ -12807,4 +12809,15 @@ SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
 
+## RELEASE-1116 — PC-B — IN_PROGRESS
+
+Reserve bounded Customer Affairs release integration repair: wire the existing IAM identity check for the approved substitute override, remove override metadata from unrelated referral responses, add focused regressions and four missing English labels plus generated mirrors. Predecessor HR-MANAGER-OVERRIDE-1116 is completed. No new permissions, schema, dependency or financial mutations. Owner authorizes all-changes production rollout without a fresh backup.
+
+RELEASE-1116 follow-up reserves the mistakenly added override payload in the ordinary substitute-response client. Remove it there while preserving the explicit HR approval payload. Align confirmation English with the existing live translation.
 REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+RELEASE-1116 coordinated integration: include the newly merged leave progress and Nora calculation changes. Reserve the Assistant Read HTTP method boundary and focused regressions to admit only the newly authorized count-breakdown read command; native authentication and read-only DB remain enforced. Deploy read-boundary API, assistant source and Web together.
+
+RELEASE-1116 translation follow-up adds three missing leave progress labels introduced by PR1750. Preserve existing catalogues and all translation coverage assertions.
+
+RELEASE-1116 test compatibility: supply the employee/department fixture now required by PR1750, retain self-service/branch rejection checks, and assert same-department/office filtering and self exclusion. Test-only source change; product behavior is unchanged.

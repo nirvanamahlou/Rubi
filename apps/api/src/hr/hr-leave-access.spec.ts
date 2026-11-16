@@ -16,16 +16,17 @@ function setup(users: Array<{ id: string }>) {
     findMany: vi.fn(),
   };
   employees.findFirst.mockResolvedValue({
-    unit: 'synthetic-unit',
-    organizationBranchId: 'synthetic-company',
+    unit: 'Sales',
+    organizationBranchId: 'office',
   });
   employees.findMany.mockResolvedValue([
     { userId: actor.userId },
     { userId: 'same-unit' },
   ]);
+  const database = { client: { hrEmployee: employees } };
   return {
     service: new HrService(
-      { client: { hrEmployee: employees } } as never,
+      database as never,
       directory as never,
       documents as never,
       {} as never,
@@ -33,9 +34,42 @@ function setup(users: Array<{ id: string }>) {
     directory,
     documents,
     employees,
+    database,
   };
 }
 describe('leave self-service account boundary', () => {
+  it('admits a self-service account but returns no candidates when only the applicant is in the directory', async () => {
+    const { service } = setup([{ id: actor.userId }]);
+    await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
+      users: [],
+    });
+  });
+  it('offers only other active colleagues returned for the same department and office', async () => {
+    const { service, database } = setup([
+      { id: actor.userId },
+      { id: 'colleague' },
+      { id: 'outside' },
+    ]);
+    database.client.hrEmployee.findMany.mockResolvedValue([
+      { userId: actor.userId },
+      { userId: 'colleague' },
+    ]);
+    await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
+      users: [{ id: 'colleague' }],
+    });
+    expect(database.client.hrEmployee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: branch,
+          unit: 'Sales',
+          organizationBranchId: 'office',
+          status: 'فعال',
+          deletedAt: null,
+        }),
+      }),
+    );
+  });
+
   it('allows an active internal branch account without HR administration grants', async () => {
     const { service, employees } = setup([
       { id: actor.userId },
@@ -57,8 +91,8 @@ describe('leave self-service account boundary', () => {
     expect(employees.findMany).toHaveBeenCalledWith({
       where: {
         branchId: branch,
-        unit: 'synthetic-unit',
-        organizationBranchId: 'synthetic-company',
+        unit: 'Sales',
+        organizationBranchId: 'office',
         status: 'فعال',
         deletedAt: null,
         userId: { not: null },
