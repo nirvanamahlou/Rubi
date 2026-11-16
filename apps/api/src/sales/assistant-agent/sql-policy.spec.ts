@@ -3,6 +3,32 @@ import { validateAgentSql } from './sql-policy';
 import { allowedSources } from './catalog';
 const sources = allowedSources(true);
 
+describe('calculation evidence metadata', () => {
+  it.each([
+    ['SELECT count(*) AS total FROM contracts', ['count']],
+    [
+      'SELECT count(*) * 100 / nullif(count(*),0) AS ratio FROM contracts',
+      ['arithmetic', 'count'],
+    ],
+    [
+      'SELECT currency_code,sum(amount) AS total FROM amounts GROUP BY currency_code',
+      ['monetary_source', 'sum'],
+    ],
+    [
+      "SELECT id FROM contracts WHERE customer_name='sum(amount)' /* count(*) */",
+      [],
+    ],
+  ])(
+    'marks actual AST operations without matching strings/comments: %s',
+    (sql, operations) => {
+      expect(validateAgentSql(sql, sources).calculation).toEqual({
+        required: operations.length > 0,
+        operations,
+      });
+    },
+  );
+});
+
 describe('model-authored SQL policy', () => {
   it.each([
     'SELECT id, contract_number FROM contracts LIMIT 10',

@@ -6,6 +6,18 @@ SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification an
 
 User authorizes latest develop Avina deployment with all data preserved. Reserve release-only artifacts and a bounded post-merge verification repair: two missing organization-chart zoom translations and read-only regression distinguishes view controls from mutation controls. No HR behavior change; chart owner source untouched. Source-only PR then all green gates, encrypted verified backup, existing overlays/env/mounts and data services retained; additive website migration only after inventory. Shared host lock required.
 
+## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
+
+Added authorized all-time contract count reconciliation with disjoint native
+Sales/Reservations cancellation populations and active/completed distinction.
+Owner clarified that the table was only an example: a shared cross-module policy
+now lets Groq choose prose/table while requiring a public method explanation for
+calculated evidence, with one bounded repair. SQL AST/monetary source metadata
+and future-tool rules preserve this convention without expanding data access.
+110 service,235 Web and81 API/boundary tests pass; prior head's all10 hosted
+gates passed, with fresh refined-head CI required. No Production change
+or migration. Details: [NORA-COUNT-BREAKDOWN-1116](tasks/NORA-COUNT-BREAKDOWN-1116.md).
+
 ## SITE-MANAGEMENT-1116 — PC-A — READY_FOR_CI
 
 Base b6fff7d2a; reserve Integrations two-entry workspace and new site-publication manager, site-commerce publication branch/site policy and tests, TourOverview/TicketPrices referral controls and bounded i18n labels. User authorizes selectable destinations for published tours/priced tickets, disconnected-site intent retained without claiming delivery, hotels placeholder, all old Integrations under monitoring and green develop merge. Reuse WebsitePublication/CAS and public catalogue APIs; optional branchId is backward compatible, scoped to actor and existing nss binding. Per-site tour title, description and commission metadata use a nullable presentation field; explicit selection replaces prior auto-publication triggers, existing selections preserved. Native ticket commission commands retain target/base/CAS validation. Package-owned candidates filter draft prices out. No dependency/operational-data/deployment changes. 26 focused Web checks and30 API checks pass; scoped API/Web lint passes. Full Web types and clean hosted production/API checks remain final gates. Tour commission is exported per-site alongside the canonical price, not added to passenger fares; title/description override only the site projection. Native ticket commission updates the existing target prices. Prior connector scopes delivered; no active overlapping writer found.
@@ -10171,3 +10183,5 @@ LEAD-TITLE-1116: lead creation uses one title field, removes surname input and r
 
 HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
+
+REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
