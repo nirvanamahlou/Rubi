@@ -1624,10 +1624,7 @@ export class CustomerAffairsService {
           reason: input.responseSummary,
           version: 1,
           beforeSnapshot: json({ status: current.status }),
-          afterSnapshot: json({
-            status: input.status,
-            overrideSubstitute: input.overrideSubstitute === true,
-          }),
+          afterSnapshot: json({ status: input.status }),
         },
       });
       return updated;

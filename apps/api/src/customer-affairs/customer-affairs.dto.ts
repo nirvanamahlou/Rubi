@@ -272,7 +272,6 @@ export class ReferralDto {
 }
 
 export class ReferralResponseDto {
-  @IsOptional() @IsBoolean() overrideSubstitute?: boolean;
   @IsIn(['IN_PROGRESS', 'DONE', 'CANCELLED']) status!: string;
   @IsString() @Length(3, 1000) responseSummary!: string;
 }

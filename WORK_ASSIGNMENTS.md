@@ -12806,3 +12806,16 @@ SITE-TILES-1116 merged-base compatibility: complete three new request progress t
 SITE-TILES-1116 merged-base regression lease: update hr-leave-access.spec.ts fixture with the employee unit/company lookup required by completed REQUEST-PROGRESS-1116. Keep branch/account denial tests, assert the scoped employee queries and exclude self/out-of-unit candidates; test-only, no HR product change.
 
 SITE-TILES-1116 user refinement: checkbox selection saves immediately with existing site/branch CAS; remove tile save action, rollback on errors, block repeated toggles while busy. Expanded tour presentation editing retains its own save, and checkbox saves preserve unsaved presentation drafts. Targeted state-transition regressions required.
+
+## RELEASE-1116 — PC-B — IN_PROGRESS
+
+Reserve bounded Customer Affairs release integration repair: wire the existing IAM identity check for the approved substitute override, remove override metadata from unrelated referral responses, add focused regressions and four missing English labels plus generated mirrors. Predecessor HR-MANAGER-OVERRIDE-1116 is completed. No new permissions, schema, dependency or financial mutations. Owner authorizes all-changes production rollout without a fresh backup.
+
+RELEASE-1116 follow-up reserves the mistakenly added override payload in the ordinary substitute-response client. Remove it there while preserving the explicit HR approval payload. Align confirmation English with the existing live translation.
+REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+RELEASE-1116 coordinated integration: include the newly merged leave progress and Nora calculation changes. Reserve the Assistant Read HTTP method boundary and focused regressions to admit only the newly authorized count-breakdown read command; native authentication and read-only DB remain enforced. Deploy read-boundary API, assistant source and Web together.
+
+RELEASE-1116 translation follow-up adds three missing leave progress labels introduced by PR1750. Preserve existing catalogues and all translation coverage assertions.
+
+RELEASE-1116 test compatibility: supply the employee/department fixture now required by PR1750, retain self-service/branch rejection checks, and assert same-department/office filtering and self exclusion. Test-only source change; product behavior is unchanged.
