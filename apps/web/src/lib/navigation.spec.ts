@@ -199,6 +199,21 @@ describe('CRM navigation', () => {
     ]);
   });
 
+  it('links floating packages to package management and Sales instead of an unavailable breadcrumb', () => {
+    expect(getNavigationBreadcrumbs('/sales/pricing/floating')).toEqual([
+      { href: '/sales', title: 'قرارداد' },
+      { href: '/sales/pricing', title: 'مدیریت پکیج' },
+      { href: '/sales/pricing/floating', title: 'پکیج‌های شناور' },
+    ]);
+    expect(getNavigationItem('/sales/pricing/floating')?.href).toBe('/sales');
+    expect(isNavigationItemActive('/sales', '/sales/pricing/floating')).toBe(
+      true,
+    );
+    expect(
+      isNavigationItemActive('/reservations', '/sales/pricing/floating'),
+    ).toBe(false);
+  });
+
   it('does not create disallowed standalone sections', () => {
     const titles = navigationItems.map((item) => item.title).join(' ');
     expect(titles).not.toContain('جست‌وجو و فروش آنلاین');

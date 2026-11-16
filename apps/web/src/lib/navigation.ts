@@ -195,6 +195,10 @@ export const navigationAliases = {
     parentHref: '/sales',
     title: 'مدیریت پکیج',
   },
+  '/sales/pricing/floating': {
+    parentHref: '/sales',
+    title: 'پکیج‌های شناور',
+  },
   '/sales/tours': {
     parentHref: '/sales',
     title: 'تعریف تور و خدمات',
@@ -305,6 +309,16 @@ export function getNavigationBreadcrumbs(
     const parent = navigationItems.find(
       (item) => item.href === alias.parentHref,
     );
+    if (pathname === '/sales/pricing/floating') {
+      return [
+        ...(parent ? [{ href: parent.href, title: parent.title }] : []),
+        {
+          href: salesPricingSubsection.href,
+          title: salesPricingSubsection.title,
+        },
+        { href: pathname, title: alias.title },
+      ];
+    }
     if (parent?.title === alias.title) {
       return [{ href: pathname, title: alias.title }];
     }
