@@ -17,11 +17,17 @@ const offer: TicketOfferV1 = {
   remainingCapacity: 0,
   totalCapacity: 61,
   baseStandaloneSalePrice: {
+    revision: 1,
     amount: '9007199254740993.1250',
     currencyCode: 'IRR',
   },
   baseRoundTripSalePrices: [
-    { returnOfferId: 'return', amount: '500.2500', currencyCode: 'USD' },
+    {
+      returnOfferId: 'return',
+      amount: '500.2500',
+      currencyCode: 'USD',
+      revision: 1,
+    },
   ],
 };
 it('shows compact flight facts with a separate route and defined return leg, keeping Tehran time and zero remaining seats', () => {
