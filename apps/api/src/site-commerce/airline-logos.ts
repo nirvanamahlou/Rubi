@@ -77,6 +77,7 @@ export async function attachAirlineLogos(
   flights: FlightLogo[],
   load: (name: string) => Promise<DocumentFileDelivery | undefined>,
   totalByteLimit = AIRLINE_LOGO_LIMITS.totalBytes,
+  origin = 'https://niyayeshseir.ir',
 ): Promise<AirlineLogoAsset[]> {
   const assets = new Map<string, AirlineLogoAsset>();
   const urls = new Map<string, string | null>();
@@ -158,7 +159,7 @@ export async function attachAirlineLogos(
         });
         bytes += png.length;
       }
-      const url = 'https://niyayeshseir.ir/api/v1/erp/airline-logos/' + sha256;
+      const url = origin + '/api/v1/erp/airline-logos/' + sha256;
       flight.carrierLogoUrl = url;
       urls.set(key, url);
     } catch {

@@ -21,11 +21,7 @@ export function stableFingerprint(value: unknown): string {
     .digest('hex');
 }
 
-export function siteBinding(
-  site: string,
-  actor: AuthenticatedActor,
-  raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
-) {
+function readBindings(raw: string) {
   let bindings: Record<string, { userId: string; branchId: string }>;
   try {
     bindings = JSON.parse(raw);
@@ -34,10 +30,31 @@ export function siteBinding(
   }
   if (!bindings || typeof bindings !== 'object' || Array.isArray(bindings))
     throw new ForbiddenException('اتصال سایت تنظیم نشده است.');
+  return bindings;
+}
+
+export function actorSite(actor: AuthenticatedActor) {
+  const bindings = readBindings(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+  const matches = Object.keys(bindings).filter(
+    (site) => bindings[site]?.userId === actor.userId,
+  );
+  if (matches.length !== 1) throw new ForbiddenException();
+  return matches[0]!;
+}
+
+export function siteBinding(
+  site: string,
+  actor: AuthenticatedActor,
+  raw = process.env.SITE_COMMERCE_BINDINGS ?? '{}',
+) {
+  const bindings = readBindings(raw);
   const binding = Object.hasOwn(bindings, site) ? bindings[site] : undefined;
   if (
     !binding ||
     binding.userId !== actor.userId ||
+    Object.entries(bindings).some(
+      ([code, other]) => code !== site && other?.userId === binding.userId,
+    ) ||
     !actor.branchIds.includes(binding.branchId)
   )
     throw new ForbiddenException('اتصال سایت مجاز نیست.');

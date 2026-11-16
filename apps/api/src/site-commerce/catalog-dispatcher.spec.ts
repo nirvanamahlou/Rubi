@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebsiteCatalogDispatcher } from './catalog-dispatcher';
 
@@ -18,7 +19,7 @@ function fixture(revision = 2n, deliveredRevision = 1n) {
   const table = {
     upsert: vi.fn(),
     findUniqueOrThrow: vi.fn().mockResolvedValue(state),
-    updateMany: vi.fn(),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
   };
   const commerce = {
     nextCatalogCapacityChange: vi.fn().mockResolvedValue(null),
@@ -78,9 +79,81 @@ describe('update-driven website catalog delivery', () => {
     f.fetcher.mockRejectedValue(Error('offline'));
     try {
       await f.tick();
-      expect(f.table.updateMany).not.toHaveBeenCalled();
+      expect(f.table.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ siteCode: 'nss' }),
+          data: { lastError: 'delivery_failed' },
+        }),
+      );
+      expect(
+        f.table.updateMany.mock.calls.some(
+          ([change]) => 'deliveredRevision' in change.data,
+        ),
+      ).toBe(false);
     } finally {
       f.sender.onModuleDestroy();
     }
   });
+});
+
+it('acknowledges NSS while the other receiver is still pending', async () => {
+  const f = fixture();
+  vi.stubEnv(
+    'SITE_COMMERCE_BINDINGS',
+    JSON.stringify({
+      nss: { branchId: 'branch', userId: 'service' },
+      'jahan-bastan': { branchId: 'branch', userId: 'jahan-service' },
+    }),
+  );
+  vi.stubEnv(
+    'JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET',
+    'synthetic-jahan-only-secret-000000001',
+  );
+  let release!: () => void;
+  const offline = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  f.fetcher.mockImplementation(async (url: string) => {
+    if (url.startsWith('https://jahanbastan.ir/')) {
+      await offline;
+      throw Error('offline');
+    }
+    return { ok: true, json: async () => ({ accepted: true, revision: 2 }) };
+  });
+  const sender = f.sender as unknown as { tick(site: string): Promise<void> };
+  const pending = sender.tick('jahan-bastan');
+  try {
+    await sender.tick('nss');
+    expect(f.table.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ siteCode: 'nss' }),
+        data: expect.objectContaining({ deliveredRevision: 2n }),
+      }),
+    );
+  } finally {
+    release();
+    await pending;
+    f.sender.onModuleDestroy();
+  }
+  for (const [url, request] of f.fetcher.mock.calls) {
+    const body = JSON.parse(request.body);
+    const jahan = body.site === 'jahan-bastan';
+    expect(new URL(url).origin).toBe(
+      jahan ? 'https://jahanbastan.ir' : 'https://niyayeshseir.ir',
+    );
+    const secret = jahan
+      ? process.env.JAHAN_BASTAN_CATALOG_WEBHOOK_SECRET!
+      : process.env.NSS_CATALOG_WEBHOOK_SECRET!;
+    expect(request.headers['x-erp-signature']).toBe(
+      createHmac('sha256', secret)
+        .update(request.headers['x-erp-timestamp'] + '.' + request.body)
+        .digest('hex'),
+    );
+  }
+  expect(f.table.updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({ siteCode: 'jahan-bastan' }),
+      data: { lastError: 'delivery_failed' },
+    }),
+  );
 });
