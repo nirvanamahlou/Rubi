@@ -717,6 +717,12 @@ Combined tours hide both legacy top route fields; regular tours retain them. One
 
 The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
 
+## FLOATING-PRICING-BREADCRUMB-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-floating-breadcrumb-1116 from latest develop dabf4e80c. Owner requests removal of the incorrect unavailable breadcrumb above Floating Packages and develop merge. Reserve bounded central navigation.ts alias/breadcrumb logic and its regression spec only; no active overlapping owner found (Nora navigation task owns assistant state, not central breadcrumbs). Include own task/status notes before the stable FAMILY-ROOM-CHILD-1029 section. Preserve route access, sidebar permission rules and pricing behavior. No API, schema, dependency, translations, data writes or deployment. Source reservation releases after verified merge.
+
+FLOATING-PRICING-BREADCRUMB-1116 validation:25 navigation and Floating Pricing tests pass; scoped ESLint passes. The exact route now has a localized title and linked Sales/Package Management parents, while Sales active navigation and other aliases remain unchanged. Full exact-head hosted checks gate the owner-authorized merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
