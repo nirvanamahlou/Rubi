@@ -153,6 +153,63 @@ function fixture() {
   return { service, client, pricing, imports, getState: () => state };
 }
 beforeEach(() => vi.clearAllMocks());
+it('lists floating definitions for site managers and projects only the selected sale period', async () => {
+  const f = fixture();
+  for (const date of ['2026-08-01', '2026-08-08']) {
+    const bytes = workbook(date);
+    const p = await f.service.preview('tour', bytes, options, actor);
+    await f.service.commit(
+      'tour',
+      bytes,
+      options,
+      p.expectedVersion,
+      p.digest,
+      actor,
+    );
+  }
+  f.client.tourPackage.findMany.mockResolvedValueOnce([
+    {
+      id: 'tour',
+      branchId: 'branch',
+      version: 1,
+      definition,
+      floatingSaleCatalog: { payload: f.getState()!.payload },
+    },
+  ] as never);
+  const candidates = await f.service.websiteCandidates({
+    ...actor,
+    permissions: ['ticket_catalog.manage'],
+  });
+  expect(candidates.data[0]).toMatchObject({
+    id: 'tour',
+    canPublish: true,
+    destinationIds: ['city'],
+    periods: [{ key: 'dated:2026-08-01:7' }, { key: 'dated:2026-08-08:7' }],
+  });
+  expect(f.client.tourPackage.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: {
+        branchId: { in: ['branch'] },
+        definition: { path: ['details', 'isFloating'], equals: true },
+      },
+    }),
+  );
+  const product = await f.service.websiteProduct(
+    'tour',
+    ['branch'],
+    'dated:2026-08-01:7',
+  );
+  expect(product.dated).toHaveLength(1);
+  expect(product.dated[0]).not.toHaveProperty('commission');
+  expect(product.dated[0]).not.toHaveProperty('sourceRows');
+  await expect(
+    f.service.websiteProduct('tour', ['other'], 'dated:2026-08-01:7'),
+  ).rejects.toThrow();
+  await expect(
+    f.service.websiteProduct('tour', ['branch'], 'dated:2026-08-15:7'),
+  ).rejects.toThrow();
+  await expect(f.service.websiteCandidates(actor)).rejects.toThrow();
+});
 it('preview does not mutate data; commit stores sales-only data and an immutable import audit', async () => {
   const f = fixture(),
     bytes = workbook();
@@ -232,6 +289,16 @@ it('monthly import replaces only the monthly set without inventing a year', asyn
   expect(current.monthly?.months).toEqual([10]);
   expect(current.monthly?.rows[0]?.startsOn).toBeNull();
   expect(current.monthly).not.toHaveProperty('year');
+  const product = await f.service.websiteProduct(
+    'tour',
+    ['branch'],
+    'monthly:PERSIAN:10:7',
+  );
+  expect(product.dated).toEqual([]);
+  expect(product.monthly?.months).toEqual([10]);
+  await expect(
+    f.service.websiteProduct('tour', ['branch'], 'monthly:PERSIAN:8-9:7'),
+  ).rejects.toThrow();
 });
 it('rejects unauthorized branches, missing permissions and stale previews or changed FX', async () => {
   const f = fixture(),

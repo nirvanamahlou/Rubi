@@ -9,6 +9,9 @@ const f = vi.hoisted(() => ({
   effects: [] as (() => unknown)[],
   fetch: vi.fn(),
   didEffect: false,
+  kind: 'tour' as 'tour' | 'floating-tour',
+  periodKey: '',
+  canPublish: true,
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -38,7 +41,9 @@ function tree() {
   f.cursor = 0;
   return WebsiteDestination({
     site: websiteDestinations[1],
-    kind: 'tour',
+    kind: f.kind,
+    periodKey: f.periodKey,
+    canPublish: f.canPublish,
     resourceId: 'resource',
     branchId: 'branch',
   });
@@ -70,6 +75,9 @@ beforeEach(() => {
   f.cursor = 0;
   f.effects = [];
   f.didEffect = false;
+  f.kind = 'tour';
+  f.periodKey = '';
+  f.canPublish = true;
   f.fetch.mockReset();
 });
 async function load() {
@@ -113,4 +121,23 @@ it('retains input and exposes save failure instead of claiming delivery', async 
   await new Promise((r) => setTimeout(r, 0));
   expect(nodes(tree()).some((n) => n.props.role === 'alert')).toBe(true);
   expect(button('ذخیره').disabled).toBe(false);
+});
+it('saves the selected floating period only and does not enable unpriced periods', async () => {
+  f.kind = 'floating-tour';
+  f.periodKey = 'dated:2026-11-20:7';
+  await load();
+  expect(f.fetch.mock.calls[0]![0]).toContain(
+    'periodKey=dated%3A2026-11-20%3A7',
+  );
+  const check = nodes(tree()).find((n) => n.props.type === 'checkbox')!;
+  (check.props.onChange as (e: unknown) => void)({ target: { checked: true } });
+  f.fetch.mockResolvedValueOnce(ok(true));
+  await (button('ذخیره').onClick as () => Promise<void>)();
+  expect(JSON.parse(f.fetch.mock.calls[1]![1].body)).toMatchObject({
+    periodKey: f.periodKey,
+    enabled: true,
+  });
+  f.canPublish = false;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(button('ذخیره').disabled).toBe(true);
 });

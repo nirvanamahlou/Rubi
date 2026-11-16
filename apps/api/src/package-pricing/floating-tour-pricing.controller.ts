@@ -37,6 +37,12 @@ export class FloatingTourPricingController {
   list(@Req() req: AuthenticatedRequest) {
     return this.pricing.list(req.actor);
   }
+  @Get('website-candidates')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('ticket_catalog.manage')
+  websiteCandidates(@Req() req: AuthenticatedRequest) {
+    return this.pricing.websiteCandidates(req.actor);
+  }
   @Get(':id')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('package_pricing.read')

@@ -24,6 +24,7 @@ import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
+import { FloatingTourPricingService } from '../package-pricing/floating-tour-pricing.service';
 import { SalesService } from '../sales/sales.service';
 import { SalesOutputService } from '../sales/sales-output.service';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -60,6 +61,8 @@ export class SiteCommerceService {
     @Optional()
     @Inject(DocumentsService)
     private readonly documents?: DocumentsService,
+    @Inject(FloatingTourPricingService)
+    private readonly floating?: FloatingTourPricingService,
   ) {}
 
   private scoped(site: string, actor: AuthenticatedActor) {
@@ -149,12 +152,15 @@ export class SiteCommerceService {
     resourceId: string,
     actor: AuthenticatedActor,
     branch?: string,
+    requestedPeriod = '',
   ) {
     const branchId = this.publicationBranch(site, actor, branch);
-    if (!['ticket', 'tour'].includes(kind)) throw new BadRequestException();
+    if (!['ticket', 'tour', 'floating-tour'].includes(kind))
+      throw new BadRequestException();
+    const periodKey = this.publicationPeriod(kind, requestedPeriod);
     return {
       data: await this.db.client.websitePublication.findFirst({
-        where: { siteCode: site, kind, resourceId, branchId },
+        where: { siteCode: site, kind, resourceId, branchId, periodKey },
       }),
     };
   }
@@ -169,11 +175,12 @@ export class SiteCommerceService {
       version: number;
       branchId?: string;
       presentation?: unknown;
+      periodKey?: string;
     },
     actor: AuthenticatedActor,
   ) {
     if (
-      !['ticket', 'tour'].includes(kind) ||
+      !['ticket', 'tour', 'floating-tour'].includes(kind) ||
       !['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
       !Number.isInteger(input.version) ||
@@ -184,6 +191,7 @@ export class SiteCommerceService {
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
     const branchId = this.publicationBranch(site, actor, input.branchId);
+    const periodKey = this.publicationPeriod(kind, input.periodKey ?? '');
     if (kind === 'ticket') {
       await this.tickets.documentSupply(resourceId, [branchId]);
       if (input.enabled)
@@ -192,6 +200,13 @@ export class SiteCommerceService {
           [branchId],
           site === 'nss' ? await this.ticketTarget(site, branchId) : undefined,
         );
+    } else if (kind === 'floating-tour') {
+      await this.floatingProduct(
+        resourceId,
+        [branchId],
+        periodKey,
+        input.enabled,
+      );
     } else {
       await this.tours.pricingDeparture(resourceId, [branchId]);
       if (
@@ -209,16 +224,17 @@ export class SiteCommerceService {
       input.presentation === undefined
         ? undefined
         : websitePresentation(input.presentation);
-    if (presentation && kind !== 'tour')
+    if (presentation && kind === 'ticket')
       throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     const key = {
       siteCode: site,
       kind,
       resourceId,
       branchId,
+      periodKey,
     };
     const row = await this.db.client.websitePublication.findUnique({
-      where: { siteCode_branchId_kind_resourceId: key },
+      where: { siteCode_branchId_kind_resourceId_periodKey: key },
     });
     if ((row?.version ?? 0) !== input.version)
       throw new ConflictException('وضعیت انتشار تغییر کرده است.');
@@ -346,6 +362,7 @@ export class SiteCommerceService {
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
@@ -361,24 +378,36 @@ export class SiteCommerceService {
                   await this.ticketTarget(site, scoped.branchIds[0]!),
                 ),
               }
-            : {
-                tour: await this.websiteTour(row.resourceId, scoped),
-                rooms: (
-                  await this.packages.saleCatalog(
+            : row.kind === 'floating-tour'
+              ? {
+                  floatingTour: await this.floatingProduct(
                     row.resourceId,
-                    scoped,
-                    scoped.branchIds[0],
-                  )
-                ).data,
-              };
+                    scoped.branchIds,
+                    row.periodKey,
+                  ),
+                }
+              : {
+                  tour: await this.websiteTour(row.resourceId, scoped),
+                  rooms: (
+                    await this.packages.saleCatalog(
+                      row.resourceId,
+                      scoped,
+                      scoped.branchIds[0],
+                    )
+                  ).data,
+                };
         if (
           'tour' in product &&
+          product.tour &&
           (product.tour.isActive === false || product.tour.isDeleted === true)
         ) {
           data.push({
             id: row.id,
             kind: row.kind,
             resourceId: row.resourceId,
+            ...(row.kind === 'floating-tour'
+              ? { periodKey: row.periodKey }
+              : {}),
             enabled: false,
             version: row.version,
           });
@@ -400,10 +429,24 @@ export class SiteCommerceService {
             },
           };
         }
+        if (presentation && 'floatingTour' in product && product.floatingTour) {
+          product.floatingTour.package = {
+            ...product.floatingTour.package,
+            ...(presentation.title ? { name: presentation.title } : {}),
+            details: {
+              ...product.floatingTour.package.details,
+              version: 1,
+              ...(presentation.description
+                ? { description: presentation.description }
+                : {}),
+            },
+          };
+        }
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
           salesStopped: row.salesStopped,
           version: row.version,
@@ -421,6 +464,7 @@ export class SiteCommerceService {
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
+          ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: false,
           version: row.version,
         });
@@ -468,6 +512,35 @@ export class SiteCommerceService {
     };
   }
 
+  private floatingProduct(
+    id: string,
+    branchIds: string[],
+    periodKey: string,
+    requirePrices = true,
+  ) {
+    if (!this.floating) throw new Error('Floating tour pricing is unavailable');
+    return this.floating.websiteProduct(
+      id,
+      branchIds,
+      periodKey,
+      requirePrices,
+    );
+  }
+
+  private publicationPeriod(kind: string, key: string) {
+    if (
+      typeof key !== 'string' ||
+      key.length > 100 ||
+      (kind !== 'floating-tour' && key !== '') ||
+      (kind === 'floating-tour' &&
+        !/^(dated:\d{4}-\d{2}-\d{2}:\d{1,3}|monthly:(PERSIAN|GREGORIAN):\d{1,2}(?:-\d{1,2}){0,11}:\d{1,3})$/.test(
+          key,
+        ))
+    )
+      throw new BadRequestException('انتشار سایت معتبر نیست.');
+    return key;
+  }
+
   private async assertPublished(
     site: string,
     input: SalesContractCreateRequest,
@@ -491,7 +564,8 @@ export class SiteCommerceService {
     for (const resource of resources) {
       const published = await this.db.client.websitePublication.findUnique({
         where: {
-          siteCode_branchId_kind_resourceId: {
+          siteCode_branchId_kind_resourceId_periodKey: {
+            periodKey: '',
             siteCode: site,
             branchId: actor.branchIds[0]!,
             ...resource,
@@ -824,7 +898,8 @@ export class SiteCommerceService {
       for (const resource of resources) {
         const publication = await this.db.client.websitePublication.findUnique({
           where: {
-            siteCode_branchId_kind_resourceId: {
+            siteCode_branchId_kind_resourceId_periodKey: {
+              periodKey: '',
               siteCode: site,
               branchId: scoped.branchIds[0]!,
               ...resource,

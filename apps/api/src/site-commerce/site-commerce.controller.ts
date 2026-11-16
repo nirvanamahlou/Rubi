@@ -46,8 +46,16 @@ export class SiteCommerceController {
     @Param('resourceId', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
     @Query('branchId') branchId?: string,
+    @Query('periodKey') periodKey?: string,
   ) {
-    return this.service.publication(site, kind, id, req.actor, branchId);
+    return this.service.publication(
+      site,
+      kind,
+      id,
+      req.actor,
+      branchId,
+      periodKey,
+    );
   }
   @Post('publications/:kind/:resourceId')
   async publish(
@@ -61,6 +69,7 @@ export class SiteCommerceController {
       version: number;
       branchId?: string;
       presentation?: unknown;
+      periodKey?: string;
     },
     @Req() req: AuthenticatedRequest,
   ) {

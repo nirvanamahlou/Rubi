@@ -6,6 +6,7 @@ import type {
   TicketOfferV1,
   TourDepartureV1,
   TicketSalePriceTargetV1,
+  FloatingTourWebsiteCandidate,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -23,9 +24,12 @@ import { toursApi } from '@/modules/ticket-catalog/api/tours';
 import { integrationsApi } from '../api/client';
 import {
   publishableTickets,
-  publishableTours,
   websiteDestinations,
 } from '../site-publication-model';
+import {
+  websiteTourGroups,
+  filterWebsiteTourGroups,
+} from '../site-tour-groups';
 
 type Presentation = {
   title: string;
@@ -43,12 +47,16 @@ export function WebsiteDestination({
   resourceId,
   branchId,
   children,
+  canPublish = true,
+  periodKey = '',
 }: {
   site: (typeof websiteDestinations)[number];
-  kind: 'tour' | 'ticket';
+  kind: 'tour' | 'ticket' | 'floating-tour';
   resourceId: string;
   branchId: string;
   children?: React.ReactNode;
+  canPublish?: boolean;
+  periodKey?: string;
 }) {
   const [stored, setStored] = useState<Publication>();
   const [selected, setSelected] = useState(false);
@@ -63,11 +71,14 @@ export function WebsiteDestination({
   const path = `${getPublicApiBaseUrl()}/sales/site-commerce/v1/${site.code}/publications/${kind}/${resourceId}`;
   useEffect(() => {
     const abort = new AbortController();
-    void localizedFetch(`${path}?branchId=${encodeURIComponent(branchId)}`, {
-      credentials: 'include',
-      cache: 'no-store',
-      signal: abort.signal,
-    })
+    void localizedFetch(
+      `${path}?${new URLSearchParams({ branchId, ...(periodKey ? { periodKey } : {}) })}`,
+      {
+        credentials: 'include',
+        cache: 'no-store',
+        signal: abort.signal,
+      },
+    )
       .then(async (response) => {
         if (!response.ok) throw Error('وضعیت انتشار دریافت نشد.');
         return response.json();
@@ -90,7 +101,7 @@ export function WebsiteDestination({
         if (!abort.signal.aborted) setError(cause.message);
       });
     return () => abort.abort();
-  }, [path, branchId]);
+  }, [path, branchId, periodKey]);
   async function save() {
     if (!stored || busy) return;
     setBusy(true);
@@ -107,7 +118,8 @@ export function WebsiteDestination({
           enabled: selected,
           version: stored.version,
           branchId,
-          ...(kind === 'tour' ? { presentation } : {}),
+          ...(kind === 'floating-tour' ? { periodKey } : {}),
+          ...(kind !== 'ticket' ? { presentation } : {}),
         }),
       });
       const result = await response.json();
@@ -130,7 +142,7 @@ export function WebsiteDestination({
         <input
           type="checkbox"
           checked={selected}
-          disabled={!stored || busy}
+          disabled={!stored || busy || (!canPublish && !selected)}
           onChange={(e) => setSelected(e.target.checked)}
         />
         {site.name}
@@ -149,6 +161,7 @@ export function WebsiteDestination({
         disabled={
           !stored ||
           busy ||
+          (selected && !canPublish) ||
           (stored.enabled === selected &&
             JSON.stringify(
               stored.presentation ?? {
@@ -172,7 +185,7 @@ export function WebsiteDestination({
       </Button>
       {editing ? (
         <div className="mt-3 grid gap-2">
-          {kind === 'tour' ? (
+          {kind !== 'ticket' ? (
             <>
               <label>
                 عنوان سایت
@@ -237,6 +250,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
   const [targets, setTargets] = useState<TicketSalePriceTargetV1[]>([]);
   const [tourId, setTourId] = useState('');
   const [tours, setTours] = useState<TourDepartureV1[]>([]);
+  const [floatingTours, setFloatingTours] = useState<
+    FloatingTourWebsiteCandidate[]
+  >([]);
   const [tickets, setTickets] = useState<TicketOfferV1[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -288,6 +304,18 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
         if (!response.ok) throw Error('پکیج‌های منتشرشده دریافت نشد.');
         return response.json() as Promise<{ data: string[] }>;
       }),
+      localizedFetch(
+        `${getPublicApiBaseUrl()}/sales/pricing/floating-tours/website-candidates`,
+        {
+          credentials: 'include',
+          cache: 'no-store',
+        },
+      ).then(async (response) => {
+        if (!response.ok) throw Error('تورهای شناور دریافت نشد.');
+        return response.json() as Promise<{
+          data: FloatingTourWebsiteCandidate[];
+        }>;
+      }),
     ])
       .then(
         ([
@@ -297,6 +325,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           ticketResult,
           targetResult,
           published,
+          floating,
         ]) => {
           if (!active) return;
           const allowed = branchResult.filter((row) =>
@@ -316,6 +345,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           );
           setTargets(targetResult.data);
           setTickets(ticketResult.data);
+          setFloatingTours(floating.data);
         },
       )
       .catch((cause) => {
@@ -344,35 +374,34 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       flightLabel,
     ).map((row) => row.offer.id),
   );
-  const resources =
-    tab === 'tours'
-      ? publishableTours(tours, branchId)
-          .filter((row) => !tourId || row.packageId === tourId)
-          .map((row) => ({
-            id: row.id,
-            title: row.package.name,
-            detail: `${row.startsOn} — ${row.endsOn}`,
-            kind: 'tour' as const,
-          }))
-      : publishableTickets(tickets, branchId)
-          .filter((row) => eligible.has(row.id))
-          .map((row) => ({
-            id: row.id,
-            title: flightLabel(row),
-            detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
-              row.baseRoundTripSalePrices ??
-              row.roundTripSalePrices ??
-              []
-            )
-              .map((price) => {
-                const returning = tickets.find(
-                  (ticket) => ticket.id === price.returnOfferId,
-                );
-                return `رفت‌وبرگشت: ${price.baseAmount ?? price.amount} ${price.currencyCode}${returning ? ` · ${flightLabel(returning)} · ${new Date(returning.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })}` : ''}`;
-              })
-              .join(' / ')}`,
-            kind: 'ticket' as const,
-          }));
+  const tourGroups = websiteTourGroups(tours, floatingTours, branchId);
+  const visibleTours = filterWebsiteTourGroups(tourGroups, {
+    tourId,
+    cityId: destinationId,
+    from,
+    to,
+    query: search,
+  });
+  const resources = publishableTickets(tickets, branchId)
+    .filter((row) => eligible.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      title: flightLabel(row),
+      detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
+        row.baseRoundTripSalePrices ??
+        row.roundTripSalePrices ??
+        []
+      )
+        .map((price) => {
+          const returning = tickets.find(
+            (ticket) => ticket.id === price.returnOfferId,
+          );
+          return `رفت‌وبرگشت: ${price.baseAmount ?? price.amount} ${price.currencyCode}${returning ? ` · ${flightLabel(returning)} · ${new Date(returning.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })}` : ''}`;
+        })
+        .join(' / ')}`,
+      kind: 'ticket' as const,
+      canPublish: true,
+    }));
   return (
     <div className="grid gap-4" dir="rtl">
       <PageHeader title="مدیریت سایت" />
@@ -406,7 +435,11 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             <NativeSearchSelect
               aria-label="شعبه مجاز"
               value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                setTourId('');
+                setDestinationId('');
+              }}
             >
               {branches.map((row) => (
                 <option key={row.id} value={row.id}>
@@ -499,25 +532,69 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             </div>
           ) : null}
           {tab === 'tours' ? (
-            <NativeSearchSelect
-              aria-label="انتخاب تور"
-              value={tourId}
-              onChange={(e) => setTourId(e.target.value)}
-            >
-              <option value="">همه تورها</option>
-              {[
-                ...new Map(
-                  publishableTours(tours, branchId).map((row) => [
-                    row.packageId,
-                    row.package,
-                  ]),
-                ).values(),
-              ].map((pack) => (
-                <option key={pack.id} value={pack.id}>
-                  {pack.name}
-                </option>
-              ))}
-            </NativeSearchSelect>
+            <>
+              <NativeSearchSelect
+                aria-label="انتخاب تور"
+                value={tourId}
+                onChange={(e) => setTourId(e.target.value)}
+              >
+                <option value="">همه تورها</option>
+                {tourGroups.map((pack) => (
+                  <option key={pack.id} value={pack.id}>
+                    {pack.name}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+              <div className="grid gap-3 sm:grid-cols-4">
+                <label>
+                  شهر مقصد
+                  <NativeSearchSelect
+                    aria-label="شهر مقصد تور"
+                    value={destinationId}
+                    onChange={(event) => setDestinationId(event.target.value)}
+                  >
+                    <option value="">همه شهرها</option>
+                    {[
+                      ...new Set(
+                        tourGroups.flatMap((group) => group.destinationIds),
+                      ),
+                    ].map((city) => (
+                      <option key={city} value={city}>
+                        {cities[city] ?? city}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
+                <label>
+                  از تاریخ
+                  <SalesDatePicker
+                    aria-label="تور از تاریخ"
+                    value={from}
+                    onChange={setFrom}
+                  />
+                </label>
+                <label>
+                  تا تاریخ
+                  <SalesDatePicker
+                    aria-label="تور تا تاریخ"
+                    value={to}
+                    onChange={setTo}
+                  />
+                </label>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setTourId('');
+                    setDestinationId('');
+                    setFrom('');
+                    setTo('');
+                    setSearch('');
+                  }}
+                >
+                  پاک‌کردن فیلترها
+                </Button>
+              </div>
+            </>
           ) : null}
           <p className="text-sm text-muted-foreground">
             انتخاب سایت‌های متصل‌نشده ذخیره می‌شود؛ ارسال پس از اتصال فعال خواهد
@@ -529,47 +606,106 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             <Skeleton className="h-48" />
           ) : (
             <div className="grid gap-4">
-              {resources
-                .filter((row) =>
-                  (tab === 'tickets' ? search : `${row.title} ${row.detail}`)
-                    .toLocaleLowerCase()
-                    .includes(search.toLocaleLowerCase()),
-                )
-                .map((row) => (
-                  <article
-                    key={`${revision}:${branchId}:${row.kind}:${row.id}`}
-                    className="grid gap-4 rounded-2xl border border-border bg-surface p-4 xl:grid-cols-[minmax(12rem,1fr)_3fr]"
-                  >
-                    <div className="min-w-0 break-words">
-                      <h2 className="font-bold">{row.title}</h2>
-                      <p className="text-sm leading-7" dir="auto">
-                        {row.detail}
-                      </p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                      {websiteDestinations.map((site) => (
-                        <WebsiteDestination
-                          key={site.code}
-                          site={site}
-                          kind={row.kind}
-                          resourceId={row.id}
-                          branchId={branchId}
-                        >
-                          {row.kind === 'ticket' ? (
-                            <TicketSiteCommission
-                              offer={tickets.find(
-                                (offer) => offer.id === row.id,
-                              )!}
+              {tab === 'tours'
+                ? visibleTours.map((group) => (
+                    <details
+                      key={branchId + ':' + group.id}
+                      className="rounded-2xl border border-border bg-surface p-4"
+                    >
+                      <summary className="cursor-pointer font-bold">
+                        {group.name} · {group.periods.length}
+                      </summary>
+                      <div className="mt-4 grid gap-3">
+                        {!group.periods.length ? (
+                          <p>ابتدا قیمت فروش پکیج شناور را ثبت کنید.</p>
+                        ) : null}
+                        {group.periods.map((period) => (
+                          <div
+                            key={period.resourceId + ':' + period.key}
+                            className="grid gap-3 rounded-xl border p-3 xl:grid-cols-[minmax(12rem,1fr)_3fr]"
+                          >
+                            <p className="text-sm leading-7" dir="auto">
+                              {period.kind === 'floating-tour'
+                                ? 'تور شناور · '
+                                : ''}
+                              {period.monthly
+                                ? [
+                                    'ویژه ماه',
+                                    period.monthly.calendar === 'PERSIAN'
+                                      ? 'شمسی'
+                                      : 'میلادی',
+                                    period.monthly.months.join(', '),
+                                    period.nights,
+                                  ].join(' · ')
+                                : period.startsOn + ' — ' + period.endsOn}
+                            </p>
+                            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                              {websiteDestinations.map((site) => (
+                                <WebsiteDestination
+                                  key={site.code}
+                                  site={site}
+                                  kind={period.kind}
+                                  resourceId={period.resourceId}
+                                  periodKey={period.key}
+                                  branchId={branchId}
+                                  canPublish={period.canPublish}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  ))
+                : null}
+              {tab === 'tickets'
+                ? resources
+                    .filter((row) =>
+                      (tab === 'tickets'
+                        ? search
+                        : `${row.title} ${row.detail}`
+                      )
+                        .toLocaleLowerCase()
+                        .includes(search.toLocaleLowerCase()),
+                    )
+                    .map((row) => (
+                      <article
+                        key={`${revision}:${branchId}:${row.kind}:${row.id}`}
+                        className="grid gap-4 rounded-2xl border border-border bg-surface p-4 xl:grid-cols-[minmax(12rem,1fr)_3fr]"
+                      >
+                        <div className="min-w-0 break-words">
+                          <h2 className="font-bold">{row.title}</h2>
+                          <p className="text-sm leading-7" dir="auto">
+                            {row.detail}
+                          </p>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                          {websiteDestinations.map((site) => (
+                            <WebsiteDestination
+                              key={site.code}
                               site={site}
-                              targets={targets}
-                            />
-                          ) : null}
-                        </WebsiteDestination>
-                      ))}
-                    </div>
-                  </article>
-                ))}
-              {resources.length === 0 ? (
+                              kind={row.kind}
+                              resourceId={row.id}
+                              branchId={branchId}
+                              canPublish={row.canPublish}
+                            >
+                              {row.kind === 'ticket' ? (
+                                <TicketSiteCommission
+                                  offer={tickets.find(
+                                    (offer) => offer.id === row.id,
+                                  )!}
+                                  site={site}
+                                  targets={targets}
+                                />
+                              ) : null}
+                            </WebsiteDestination>
+                          ))}
+                        </div>
+                      </article>
+                    ))
+                : null}
+              {(tab === 'tours' ? visibleTours.length : resources.length) ===
+              0 ? (
                 <p>مورد قابل انتشار وجود ندارد.</p>
               ) : null}
             </div>
