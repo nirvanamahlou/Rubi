@@ -132,6 +132,7 @@ function fixture() {
         }),
       },
       websitePublication: {
+        findFirst: vi.fn(),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -453,4 +454,95 @@ describe('website ticket destination', () => {
     await f.service.paid('nss', 'sold-out', [payment], actor);
     expect(f.sales.confirm).toHaveBeenCalledTimes(2);
   });
+});
+
+it('isolates concurrent quotes, contracts and documents for two sites sharing HQ inventory', async () => {
+  const f = fixture();
+  const sites = ['nss', 'jahan-bastan'] as const;
+  const records = sites.map((site, i) => ({
+    site,
+    actor: { ...actor, userId: 'site-user-' + i },
+    target: 'target-' + i,
+    amount: i ? '213.00' : '105.00',
+    order: 'order-' + i,
+    contract: 'contract-' + i,
+  }));
+  vi.stubEnv(
+    'SITE_COMMERCE_BINDINGS',
+    JSON.stringify(
+      Object.fromEntries(
+        records.map((r) => [
+          r.site,
+          { userId: r.actor.userId, branchId: ids.branch },
+        ]),
+      ),
+    ),
+  );
+  const { client } = f.db;
+  client.websiteCatalogDelivery.findUnique.mockImplementation(
+    async ({ where }) => ({
+      branchId: ids.branch,
+      salePriceTargetId: records.find((r) => r.site === where.siteCode)!.target,
+    }),
+  );
+  client.websitePublication.findFirst.mockImplementation(async ({ where }) =>
+    where.branchId === ids.branch &&
+    where.id === 'publication-' + where.siteCode
+      ? { resourceId: ids.offer }
+      : null,
+  );
+  f.tickets.websiteOffer.mockImplementation(
+    async (offerId, branches, targetId) => {
+      expect([offerId, branches]).toEqual([ids.offer, [ids.branch]]);
+      return {
+        ...flight,
+        standaloneSalePrice: {
+          ...flight.standaloneSalePrice,
+          amount: records.find((r) => r.target === targetId)!.amount,
+        },
+      };
+    },
+  );
+  client.websiteOrder.findUnique.mockImplementation(async ({ where }) => {
+    const { siteCode, branchId, externalId } =
+      where.siteCode_branchId_externalId;
+    const record = records.find(
+      (r) =>
+        r.site === siteCode &&
+        r.order === externalId &&
+        branchId === ids.branch,
+    );
+    return record ? { ...f.link, contractId: record.contract } : null;
+  });
+  f.delivery.readCustomerContract.mockResolvedValue({ approved: true });
+  await Promise.all(
+    records.map(async (r, i) => {
+      const other = records[1 - i]!;
+      const quote = await f.service.flightQuote(
+        r.site,
+        {
+          productIds: ['publication-' + r.site],
+          birthDates: ['2000-01-01'],
+        },
+        r.actor,
+      );
+      expect(quote.data[0]?.amount).toBe(r.amount);
+      await f.service.contractOutput(r.site, r.order, r.actor);
+      await expect(
+        f.service.travelDocuments(r.site, r.order, r.actor),
+      ).resolves.toHaveProperty('data.ticketDocuments');
+      expect(f.delivery.readCustomerContract).toHaveBeenCalledWith(r.contract);
+      expect(f.output.prepare).toHaveBeenCalledWith(r.contract, r.actor);
+      await expect(
+        f.service.contractOutput(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(r.site, other.order, r.actor),
+      ).rejects.toThrow();
+      await expect(
+        f.service.travelDocuments(other.site, other.order, r.actor),
+      ).rejects.toThrow();
+    }),
+  );
+  expect(f.delivery.readCustomerContract).toHaveBeenCalledTimes(2);
 });

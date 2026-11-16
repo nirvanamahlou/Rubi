@@ -40,7 +40,10 @@ const actor = {
 function setup() {
   vi.stubEnv(
     'SITE_COMMERCE_BINDINGS',
-    JSON.stringify({ nss: { branchId: 'branch-a' } }),
+    JSON.stringify({
+      nss: { branchId: 'branch-a' },
+      'jahan-bastan': { branchId: 'branch-a', userId: 'jahan-service' },
+    }),
   );
   const publication = {
     findMany: vi.fn().mockResolvedValue([]),
