@@ -243,6 +243,9 @@ describe('ticket price workspace', () => {
     expect(html.match(/کپی درصد برای این مقصد/g)).toHaveLength(4);
     expect(html).toContain('9,700,000 IRR');
     expect(html).toContain('24,000,000 IRR');
+    expect(html.indexOf('aria-label="قیمت مقصدهای فروش"')).toBeLessThan(
+      html.indexOf('ثبت قیمت پایه'),
+    );
     expect(html).toContain('value="3"');
     expect(html).toContain('value="4"');
     expect(html).toContain('بلیط برگشت');

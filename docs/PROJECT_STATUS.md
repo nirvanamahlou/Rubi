@@ -1,5 +1,7 @@
 ## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — READY_FOR_CI
 
+FLIGHT-PRICE-LAYOUT-1116: base-price save refreshes offer facts without unmounting the list or clearing unrelated drafts; destination groups sit beneath flight details and grow without an inner height limit. Success feedback stays in the save button. 22 targeted regressions, scoped ESLint and formatting pass; hosted checks gate merge.
+
 Native-identity private quota exemption for two owner-selected accounts;122 service tests pass. Other accounts, data authorization, SQL bounds and actual Groq limits preserved. Nora-only rollout pending hosted gates. No migration/API/Web change. See [task](tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md).
 
 ## TICKET-BULK-PUBLICATION-1116 — PC-A
