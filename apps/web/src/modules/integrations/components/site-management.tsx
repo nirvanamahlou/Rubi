@@ -74,10 +74,10 @@ export function WebsiteDestination({
   children?: React.ReactNode;
   compact?: boolean;
 }) {
-  const saving = useRef(false);
   const [stored, setStored] = useState<Publication>();
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [presentation, setPresentation] = useState<Presentation>({
@@ -116,7 +116,7 @@ export function WebsiteDestination({
       });
     return () => abort.abort();
   }, [path, branchId]);
-  async function save(enabled = selected) {
+  async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy || saving.current) return;
     saving.current = true;
     setBusy(true);
@@ -133,7 +133,17 @@ export function WebsiteDestination({
           enabled,
           version: stored.version,
           branchId,
-          ...(kind === 'tour' ? { presentation } : {}),
+          ...(kind === 'tour'
+            ? {
+                presentation: selectionOnly
+                  ? (stored.presentation ?? {
+                      title: '',
+                      description: '',
+                      commissionPercent: '0',
+                    })
+                  : presentation,
+              }
+            : {}),
         }),
       });
       const result = await response.json();
@@ -142,9 +152,9 @@ export function WebsiteDestination({
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
         );
       setStored(result.data);
-      if (compact) setSelected(result.data.enabled);
+      if (selectionOnly) setSelected(result.data.enabled);
     } catch (cause) {
-      if (compact) setSelected(stored.enabled);
+      if (selectionOnly) setSelected(stored.enabled);
       setError(
         cause instanceof Error ? cause.message : 'ثبت انتشار ناموفق بود.',
       );
@@ -153,91 +163,87 @@ export function WebsiteDestination({
       setBusy(false);
     }
   }
+  const unchanged =
+    !stored ||
+    (stored.enabled === selected &&
+      JSON.stringify(
+        stored.presentation ?? {
+          title: '',
+          description: '',
+          commissionPercent: '0',
+        },
+      ) === JSON.stringify(presentation));
+  const status = !site.connected
+    ? 'در انتظار اتصال'
+    : stored?.enabled
+      ? 'انتشار فعال'
+      : 'منتشر نشده';
   return (
     <div
+      aria-busy={busy}
+      data-selected={selected}
       className={
         compact
           ? styles.destination
-          : 'min-w-0 rounded-xl border border-border p-3 text-sm'
+          : `min-w-0 rounded-xl border p-2.5 text-sm transition-colors ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`
       }
-      data-selected={selected}
-      aria-busy={busy}
     >
-      <div className={compact ? styles.destinationHeader : undefined}>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={selected}
-            disabled={!stored || busy}
-            onChange={(e) => {
-              const enabled = e.target.checked;
-              setSelected(enabled);
-              if (compact) void save(enabled);
-            }}
+      <label
+        className={
+          compact
+            ? styles.destinationHeader
+            : 'flex min-h-6 cursor-pointer items-center gap-2 font-semibold text-primary'
+        }
+      >
+        <input
+          type="checkbox"
+          className="h-4 w-4 shrink-0 accent-primary"
+          checked={selected}
+          disabled={!stored || busy}
+          onChange={async (e) => {
+            if (!stored || busy) return;
+            const enabled = e.target.checked;
+            setSelected(enabled);
+            await save(enabled, true);
+          }}
+        />
+        <span className="min-w-0 break-words leading-5">{site.name}</span>
+      </label>
+      <div
+        className={
+          compact
+            ? styles.destinationStatus
+            : 'mt-1 flex min-h-7 items-center justify-between gap-1'
+        }
+      >
+        <span className="flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-muted-foreground">
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${!site.connected ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
           />
-          {site.name}
-        </label>
-      </div>
-      <div className={compact ? styles.destinationStatus : undefined}>
-        <p
-          className={
-            compact ? styles.statusText : 'mt-2 text-xs text-muted-foreground'
-          }
-        >
-          {site.connected
-            ? stored?.enabled
-              ? 'انتشار فعال'
-              : 'منتشر نشده'
-            : 'در انتظار اتصال'}
-        </p>
-        {compact ? (
+          {busy ? 'در حال ثبت…' : status}
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             type="button"
             variant="ghost"
-            className={styles.editButton}
-            aria-label={`ویرایش ${site.name}`}
-            title="ویرایش"
-            disabled={!stored || busy}
-            onClick={() => setEditing((v) => !v)}
-          >
-            <Pencil size={14} aria-hidden="true" />
-          </Button>
-        ) : null}
-      </div>
-      {!compact ? (
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-2"
-            disabled={
-              !stored ||
-              busy ||
-              (stored.enabled === selected &&
-                JSON.stringify(
-                  stored.presentation ?? {
-                    title: '',
-                    description: '',
-                    commissionPercent: '0',
-                  },
-                ) === JSON.stringify(presentation))
+            className={
+              compact
+                ? styles.editButton
+                : 'h-7 min-h-0 w-7 shrink-0 p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary'
             }
-            onClick={() => void save()}
-          >
-            {busy ? 'در حال ثبت…' : 'ذخیره'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
+            aria-label={compact ? `ویرایش ${site.name}` : 'ویرایش'}
+            title="ویرایش"
+            aria-expanded={editing}
             disabled={!stored || busy}
             onClick={() => setEditing((v) => !v)}
           >
-            ویرایش
+            <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
           </Button>
         </div>
-      ) : null}
+      </div>
       {editing ? (
-        <div className="mt-3 grid gap-2">
+        <div className="mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3">
           {kind === 'tour' ? (
             <>
               <label>
@@ -286,6 +292,20 @@ export function WebsiteDestination({
           ) : (
             children
           )}
+          {kind === 'tour' ? (
+            <div className="sm:col-span-3">
+              {' '}
+              <Button
+                type="button"
+                variant="primary"
+                className="h-8 min-h-0 px-3 py-0 text-xs"
+                disabled={unchanged || busy}
+                onClick={() => void save()}
+              >
+                {busy ? 'در حال ثبت…' : 'ذخیره'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {error ? (

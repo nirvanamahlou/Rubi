@@ -38,7 +38,12 @@ const digits = (s: string) =>
         : '٠١٢٣٤٥٦٧٨٩'.indexOf(x),
     ),
   );
-export type FloatingCell = { value: string; format: string; numeric: boolean };
+export type FloatingCell = {
+  value: string;
+  format: string;
+  numeric: boolean;
+  mergedRows?: { first: number; last: number };
+};
 export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
   if (!bytes.length || bytes.length > 5 * 1024 * 1024)
     return fail('فایل اکسل معتبر نیست یا از محدودیت مجاز عبور کرده است.');
@@ -109,12 +114,14 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
         : ''),
   );
   const rows: FloatingCell[][] = [];
-  for (const row of strFromU8(files[path]!).matchAll(
-    /<row\b[^>]*>([\s\S]*?)<\/row>/g,
-  )) {
-    if (rows.length >= 2001) return fail('حداکثر ۲۰۰۰ ردیف قیمت مجاز است.');
+  const sheet = strFromU8(files[path]!);
+  for (const row of sheet.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/g)) {
+    const rowNumber = Number(attr(row[1]!, 'r') || rows.length + 1);
+    if (!Number.isSafeInteger(rowNumber) || rowNumber < 1 || rowNumber > 2001)
+      return fail('حداکثر ۲۰۰۰ ردیف قیمت مجاز است.');
+    if (rows[rowNumber - 1]) return fail('ساختار XLSX قابل خواندن نیست.');
     const cells: FloatingCell[] = [];
-    for (const cell of row[1]!.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
+    for (const cell of row[2]!.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
       const address = /^[A-Z]+/.exec(attr(cell[1]!, 'r'))?.[0];
       if (!address) return fail('ساختار XLSX قابل خواندن نیست.');
       const column =
@@ -140,9 +147,37 @@ export function readFloatingWorkbook(bytes: Uint8Array): FloatingCell[][] {
         numeric: !type || type === 'n',
       };
     }
-    rows.push(cells);
+    rows[rowNumber - 1] = cells;
   }
-  return rows;
+  const occupied = new Set<string>();
+  for (const merge of sheet.matchAll(/<mergeCell\b([^>]*)\/?\s*>/g)) {
+    const range = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(attr(merge[1]!, 'ref'));
+    if (!range) return fail('ساختار XLSX قابل خواندن نیست.');
+    if (range[1] !== range[3]) continue;
+    const column =
+      [...range[1]!].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
+    const first = Number(range[2]),
+      last = Number(range[4]);
+    if (column > 50 || first < 2 || last <= first || last > rows.length)
+      return fail('محدوده ادغام سلول‌ها معتبر نیست.');
+    const anchor = rows[first - 1]?.[column] ?? {
+      value: '',
+      format: '',
+      numeric: false,
+    };
+    for (let number = first; number <= last; number++) {
+      const key = `${column}:${number}`;
+      if (
+        occupied.has(key) ||
+        (number !== first && rows[number - 1]?.[column]?.value)
+      )
+        return fail('محدوده ادغام سلول‌ها معتبر نیست.');
+      occupied.add(key);
+      rows[number - 1] ??= [];
+      rows[number - 1]![column] = { ...anchor, mergedRows: { first, last } };
+    }
+  }
+  return Array.from({ length: rows.length }, (_, index) => rows[index] ?? []);
 }
 export function floatingMoney(cell?: FloatingCell): FloatingTourMoney[] {
   if (!cell?.value.trim()) return [];
@@ -312,6 +347,26 @@ export function parseFloatingRows(
     if (!headers.includes(h)) return fail(`Missing Excel column: ${h}`);
   if (new Set(headers.filter(Boolean)).size !== headers.filter(Boolean).length)
     return fail('ستون تکراری در فایل مجاز نیست.');
+  if (
+    options.combined &&
+    workbook
+      .slice(1)
+      .some((row) =>
+        ['dbl', 'sgl', 'extra', 'chd w bed', 'child no bed', 'infant'].some(
+          (key) =>
+            row[headers.indexOf(key)]?.value &&
+            row[headers.indexOf(key)]?.mergedRows,
+        ),
+      )
+  )
+    return parseMergedFloatingRows(
+      workbook,
+      headers,
+      options,
+      tour,
+      hotels,
+      previous,
+    );
   const rows: FloatingTourSaleRow[] = [];
   const duplicate = new Set<string>();
   for (let index = 1; index < workbook.length; index++) {
@@ -414,6 +469,95 @@ export function parseFloatingRows(
     });
   }
   return combined;
+}
+
+/** Excel's actual price merge defines the package, independently of row count. */
+function parseMergedFloatingRows(
+  workbook: FloatingCell[][],
+  headers: string[],
+  options: FloatingTourImportOptions,
+  tour: TourPackageInputV1,
+  hotels: FloatingHotelReference[],
+  previous: FloatingTourSaleRow[],
+): FloatingTourSaleRow[] {
+  const definitions = tour.details?.destinations ?? [];
+  if (
+    !tour.details?.isCombined ||
+    definitions.length < 2 ||
+    definitions.reduce((sum, stop) => sum + stop.nights, 0) !== options.nights
+  )
+    return fail('مقصدها و مجموع شب‌های تور ترکیبی را بررسی کنید.');
+  const result: FloatingTourSaleRow[] = [];
+  const identities = new Set<string>();
+  const priceColumns = [
+    'dbl',
+    'sgl',
+    'extra',
+    'chd w bed',
+    'child no bed',
+    'infant',
+  ].map((key) => headers.indexOf(key));
+  for (let index = 1; index < workbook.length; index++) {
+    const source = workbook[index]!;
+    if (!source.some((cell) => cell?.value)) continue;
+    const ranges = priceColumns
+      .map((column) =>
+        source[column]?.value ? source[column]?.mergedRows : undefined,
+      )
+      .filter((range) => range !== undefined);
+    const range = ranges[0];
+    if (
+      !range ||
+      range.first !== index + 1 ||
+      range.last - range.first + 1 !== definitions.length ||
+      ranges.some(
+        (other) => other.first !== range.first || other.last !== range.last,
+      )
+    )
+      return fail(
+        `Row ${index + 1}: ادغام قیمت‌ها باید تمام اقامت‌های همین ترکیب را پوشش دهد.`,
+      );
+    const members = parseFloatingRows(
+      [workbook[0]!, ...workbook.slice(index, range.last)],
+      { ...options, combined: false },
+      tour,
+      hotels,
+      previous,
+    );
+    const first = members[0]!;
+    if (
+      members.length !== definitions.length ||
+      members.some(
+        (row, stop) =>
+          row.startsOn !== first.startsOn ||
+          row.stays[0]!.cityId !== definitions[stop]!.cityId ||
+          JSON.stringify(row.prices) !== JSON.stringify(first.prices) ||
+          JSON.stringify(row.commission) !== JSON.stringify(first.commission),
+      )
+    )
+      return fail(
+        `Row ${index + 1}: ترتیب مقصدها و قیمت مشترک تور ترکیبی را بررسی کنید.`,
+      );
+    const stays = members.map((row, stop) => ({
+      ...row.stays[0]!,
+      nights: definitions[stop]!.nights,
+    }));
+    const key = JSON.stringify([
+      first.startsOn,
+      stays.map((stay) => [stay.hotelId, floatingHotelKey(stay.room)]),
+    ]);
+    if (identities.has(key))
+      return fail(`Row ${index + 1}: ترکیب هتل و اتاق تکراری است.`);
+    identities.add(key);
+    result.push({
+      ...first,
+      stays,
+      sourceRows: members.map((_, stop) => index + stop + 1),
+    });
+    index = range.last - 1;
+  }
+  if (!result.length) return fail('فایل قیمت خالی است.');
+  return result;
 }
 
 /** Explicit two-hotel template: one package row, one price, separate hotel nights. */

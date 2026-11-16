@@ -1,4 +1,15 @@
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A
+
+Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
+FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A
+
+Floating tour pricing now exposes a styled template download. Combined templates contain one row per destination and actual vertically merged shared-price/date cells. Import preserves Excel merge boundaries and physical source rows, validates every itinerary stay and counts each common price/commission/flight once. Three-stay and separate equal-price combination round trips pass, including malformed/overlapping merge rejection and branch-scoped read-only template access. Legacy templates remain compatible. No schema/migration/dependency/data/deployment change. Local contracts build,22 API and5 Web/i18n checks plus affected lint pass; full hosted quality/build/tests/migration gates precede the user-authorized develop merge.
+
 SITE-MANAGEMENT-RELEASE-1116 final verification repair: reserve only Marketing intake test fixtures updated for the already-merged single-title form and four missing label catalogue entries. No Marketing/HR behavior change. Preserve source policy and all gate coverage.
+
+SITE-TILES-1116: compact two/four-column named destinations, saved status dot, selected highlight, icon edit, hidden unchanged save, full-width explicit editor and denser resource headings. Checkbox selection now saves immediately with CAS and failure rollback; expanded tour presentation retains explicit save. Stable refresh preserved. Nine targeted publication/model/translation checks pass; hosted checks pending.
 
 SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
 
@@ -10196,5 +10207,6 @@ LEAD-TITLE-1116: lead creation uses one title field, removes surname input and r
 
 HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
+
 
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
