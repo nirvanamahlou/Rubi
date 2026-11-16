@@ -10148,3 +10148,5 @@ NORA-WORKBENCH-GUIDE-1115 update:34 topics/all11 tabs; PR1733 open. Native synth
 WEBSITE-TICKET-LOGO-1115 — PC-A: native website-contract HTML/PDF rendering now consumes the same sanitized brand pixels through an authenticated Sales endpoint. Exact site principal, linked contract, carrier membership, finance release and cancellation gates remain.33 API and39 renderer checks pass; full build and hosted gates gate rollout. No real issuance or payment used for validation.
 
 SITE-CANCELLATION-1116 (PC-A): reserve update-driven, signed cancellation projection for exact website contract links. Native Sales status is authoritative; site cancellation preserves all payment facts and remains visible in customer history. Atomic revision trigger and bounded public Sales read are implemented; targeted/isolated tests and full API build plus hosted gates precede authorized merge/activation. Consumer site chat2 owns its receiver/UI and publication. See tasks/SITE-CANCELLATION-1116.md.
+
+ORG-CHART-ZOOM-1116: chart zoom controls and scale-aware connector/drag coordinates. Scoped ESLint passed; live browser acceptance pending.
