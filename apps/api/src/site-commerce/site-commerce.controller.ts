@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -44,15 +45,23 @@ export class SiteCommerceController {
     @Param('kind') kind: string,
     @Param('resourceId', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
+    @Query('branchId') branchId?: string,
   ) {
-    return this.service.publication(site, kind, id, req.actor);
+    return this.service.publication(site, kind, id, req.actor, branchId);
   }
   @Post('publications/:kind/:resourceId')
   async publish(
     @Param('site') site: string,
     @Param('kind') kind: string,
     @Param('resourceId', ParseUUIDPipe) id: string,
-    @Body() body: { enabled: boolean; salesStopped?: boolean; version: number },
+    @Body()
+    body: {
+      enabled: boolean;
+      salesStopped?: boolean;
+      version: number;
+      branchId?: string;
+      presentation?: unknown;
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     const result = await this.service.publish(site, kind, id, body, req.actor);

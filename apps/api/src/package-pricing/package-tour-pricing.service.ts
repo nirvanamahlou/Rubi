@@ -275,6 +275,34 @@ export class PackageTourPricingService {
     }
   }
 
+  async websitePublicationCandidates(actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    const rows = await this.database.client.packagePricingTourDraft.findMany({
+      where: {
+        branchId: { in: [...actor.branchIds] },
+        publications: { some: {} },
+        tour: { isActive: true, isDeleted: false },
+      },
+      select: {
+        tourDepartureId: true,
+        tour: { select: { version: true } },
+        publications: { select: { tourVersion: true } },
+      },
+    });
+    return {
+      data: [
+        ...new Set(
+          rows
+            .filter((row) =>
+              row.publications.some((p) => p.tourVersion === row.tour.version),
+            )
+            .map((row) => row.tourDepartureId),
+        ),
+      ],
+    };
+  }
+
   async saleCatalog(
     tourId: string,
     actor: AuthenticatedActor,

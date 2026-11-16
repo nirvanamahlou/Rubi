@@ -1,3 +1,7 @@
+## Website publication presentation — 2026-11-16
+
+WebsitePublication gains nullable presentation JSON (title, description, commissionPercent), CAS-versioned with destination selection. Canonical package prices and descriptions remain unchanged. Prior automatic publication triggers are removed; existing selections and operational data are preserved. Disconnected destinations store intent only; catalog consumption retains authenticated site binding.
+
 ## Nora Agent Sales read views — 2026-11-14
 
 Migration20261114120000 adds the Sales-owned nora_agent schema with contracts,

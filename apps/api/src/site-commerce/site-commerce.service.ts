@@ -1,3 +1,4 @@
+import { websitePresentation } from './publication-presentation';
 import { DocumentsService } from '../documents/documents.service';
 import {
   attachAirlineLogos,
@@ -115,32 +116,45 @@ export class SiteCommerceService {
     return Buffer.from(assets[0]!.dataBase64, 'base64');
   }
 
+  private publicationBranch(
+    site: string,
+    actor: AuthenticatedActor,
+    requested?: string,
+  ) {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    if (!['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site))
+      throw new BadRequestException('انتشار سایت معتبر نیست.');
+    let bindings: Record<string, { branchId?: string }> = {};
+    try {
+      bindings = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
+    } catch {
+      throw new ForbiddenException();
+    }
+    const bound = bindings?.[site]?.branchId;
+    const branchId = requested ?? bound;
+    if (
+      !branchId ||
+      !actor.branchIds.includes(branchId) ||
+      (bound && bound !== branchId) ||
+      (site === 'nss' && !bound)
+    )
+      throw new ForbiddenException('این شعبه به سایت انتخاب‌شده دسترسی ندارد.');
+    return branchId;
+  }
+
   async publication(
     site: string,
     kind: string,
     resourceId: string,
     actor: AuthenticatedActor,
+    branch?: string,
   ) {
-    if (!actor.permissions.includes('ticket_catalog.manage'))
-      throw new ForbiddenException();
-    const binding = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}')[
-      site
-    ];
-    if (
-      site !== 'nss' ||
-      !['ticket', 'tour'].includes(kind) ||
-      !binding?.branchId ||
-      !actor.branchIds.includes(binding.branchId)
-    )
-      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
+    const branchId = this.publicationBranch(site, actor, branch);
+    if (!['ticket', 'tour'].includes(kind)) throw new BadRequestException();
     return {
       data: await this.db.client.websitePublication.findFirst({
-        where: {
-          siteCode: site,
-          kind,
-          resourceId,
-          branchId: binding.branchId,
-        },
+        where: { siteCode: site, kind, resourceId, branchId },
       }),
     };
   }
@@ -149,12 +163,18 @@ export class SiteCommerceService {
     site: string,
     kind: string,
     resourceId: string,
-    input: { enabled: boolean; salesStopped?: boolean; version: number },
+    input: {
+      enabled: boolean;
+      salesStopped?: boolean;
+      version: number;
+      branchId?: string;
+      presentation?: unknown;
+    },
     actor: AuthenticatedActor,
   ) {
     if (
       !['ticket', 'tour'].includes(kind) ||
-      !['nss'].includes(site) ||
+      !['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy'].includes(site) ||
       typeof input?.enabled !== 'boolean' ||
       !Number.isInteger(input.version) ||
       (input.salesStopped !== undefined &&
@@ -163,19 +183,34 @@ export class SiteCommerceService {
       throw new BadRequestException('انتشار سایت معتبر نیست.');
     if (!actor.permissions.includes('ticket_catalog.manage'))
       throw new ForbiddenException();
-    const bindings = JSON.parse(process.env.SITE_COMMERCE_BINDINGS ?? '{}');
-    const branchId = bindings[site]?.branchId as string | undefined;
-    if (!branchId || !actor.branchIds.includes(branchId))
-      throw new ForbiddenException('این شعبه به سایت نیایش سیر متصل نیست.');
+    const branchId = this.publicationBranch(site, actor, input.branchId);
     if (kind === 'ticket') {
       await this.tickets.documentSupply(resourceId, [branchId]);
       if (input.enabled)
         await this.tickets.websiteOffer(
           resourceId,
           [branchId],
-          await this.ticketTarget(site, branchId),
+          site === 'nss' ? await this.ticketTarget(site, branchId) : undefined,
         );
-    } else await this.tours.pricingDeparture(resourceId, [branchId]);
+    } else {
+      await this.tours.pricingDeparture(resourceId, [branchId]);
+      if (
+        input.enabled &&
+        !(
+          await this.packages.websitePublicationCandidates({
+            ...actor,
+            branchIds: [branchId],
+          })
+        ).data.includes(resourceId)
+      )
+        throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
+    }
+    const presentation =
+      input.presentation === undefined
+        ? undefined
+        : websitePresentation(input.presentation);
+    if (presentation && kind !== 'tour')
+      throw new BadRequestException('تنظیمات نمایش سایت معتبر نیست.');
     const key = {
       siteCode: site,
       kind,
@@ -192,6 +227,7 @@ export class SiteCommerceService {
         data: await this.db.client.websitePublication.create({
           data: {
             ...key,
+            ...(presentation ? { presentation } : {}),
             enabled: input.enabled,
             salesStopped: input.salesStopped ?? false,
           },
@@ -201,6 +237,7 @@ export class SiteCommerceService {
       where: { id: row.id, version: input.version },
       data: {
         enabled: input.enabled,
+        ...(presentation ? { presentation } : {}),
         salesStopped: input.salesStopped ?? row.salesStopped,
         version: { increment: 1 },
       },
@@ -347,6 +384,22 @@ export class SiteCommerceService {
           });
           continue;
         }
+        const presentation = row.presentation
+          ? websitePresentation(row.presentation)
+          : undefined;
+        if (presentation && 'tour' in product && product.tour) {
+          product.tour.package = {
+            ...product.tour.package,
+            ...(presentation.title ? { name: presentation.title } : {}),
+            details: {
+              ...product.tour.package.details,
+              version: 1,
+              ...(presentation.description
+                ? { description: presentation.description }
+                : {}),
+            },
+          };
+        }
         data.push({
           id: row.id,
           kind: row.kind,
@@ -355,6 +408,7 @@ export class SiteCommerceService {
           salesStopped: row.salesStopped,
           version: row.version,
           ...product,
+          ...(presentation ? { presentation } : {}),
         });
       } catch (error) {
         // Preserve explicit tombstones, but never hide infrastructure failure as deletion.
