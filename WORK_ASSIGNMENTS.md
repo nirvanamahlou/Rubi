@@ -12804,3 +12804,5 @@ REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by 
 SITE-TILES-1116 merged-base compatibility: complete three new request progress translations from REQUEST-PROGRESS-1116; retain its source and full task records unchanged.
 
 SITE-TILES-1116 merged-base regression lease: update hr-leave-access.spec.ts fixture with the employee unit/company lookup required by completed REQUEST-PROGRESS-1116. Keep branch/account denial tests, assert the scoped employee queries and exclude self/out-of-unit candidates; test-only, no HR product change.
+
+SITE-TILES-1116 user refinement: checkbox selection saves immediately with existing site/branch CAS; remove tile save action, rollback on errors, block repeated toggles while busy. Expanded tour presentation editing retains its own save, and checkbox saves preserve unsaved presentation drafts. Targeted state-transition regressions required.

@@ -92,7 +92,7 @@ export function WebsiteDestination({
       });
     return () => abort.abort();
   }, [path, branchId]);
-  async function save() {
+  async function save(enabled = selected, selectionOnly = false) {
     if (!stored || busy) return;
     setBusy(true);
     setError('');
@@ -105,10 +105,20 @@ export function WebsiteDestination({
           'x-nora-site-commerce': '1',
         },
         body: JSON.stringify({
-          enabled: selected,
+          enabled,
           version: stored.version,
           branchId,
-          ...(kind === 'tour' ? { presentation } : {}),
+          ...(kind === 'tour'
+            ? {
+                presentation: selectionOnly
+                  ? (stored.presentation ?? {
+                      title: '',
+                      description: '',
+                      commissionPercent: '0',
+                    })
+                  : presentation,
+              }
+            : {}),
         }),
       });
       const result = await response.json();
@@ -118,6 +128,7 @@ export function WebsiteDestination({
         );
       setStored(result.data);
     } catch (cause) {
+      if (selectionOnly) setSelected(stored.enabled);
       setError(
         cause instanceof Error ? cause.message : 'ثبت انتشار ناموفق بود.',
       );
@@ -142,6 +153,7 @@ export function WebsiteDestination({
       : 'منتشر نشده';
   return (
     <div
+      aria-busy={busy}
       className={`min-w-0 rounded-xl border p-2.5 text-sm transition-colors focus-within:ring-2 focus-within:ring-primary/30 ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface hover:border-primary/30'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`}
     >
       <label className="flex min-h-6 cursor-pointer items-center gap-2 font-semibold text-primary">
@@ -150,7 +162,12 @@ export function WebsiteDestination({
           className="h-4 w-4 shrink-0 accent-primary"
           checked={selected}
           disabled={!stored || busy}
-          onChange={(e) => setSelected(e.target.checked)}
+          onChange={async (e) => {
+            if (!stored || busy) return;
+            const enabled = e.target.checked;
+            setSelected(enabled);
+            await save(enabled, true);
+          }}
         />
         <span className="min-w-0 break-words leading-5">{site.name}</span>
       </label>
@@ -160,18 +177,9 @@ export function WebsiteDestination({
             aria-hidden="true"
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${!site.connected ? 'bg-amber-500' : stored?.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
           />
-          {status}
+          {busy ? 'در حال ثبت…' : status}
         </span>
         <div className="flex shrink-0 items-center gap-1">
-          <Button
-            type="button"
-            variant="primary"
-            className={`h-7 min-h-0 px-2 py-0 text-[10px] ${unchanged && !busy ? 'hidden' : ''}`}
-            disabled={unchanged || busy}
-            onClick={() => void save()}
-          >
-            {busy ? 'در حال ثبت…' : 'ذخیره'}
-          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -236,6 +244,20 @@ export function WebsiteDestination({
           ) : (
             children
           )}
+          {kind === 'tour' ? (
+            <div className="sm:col-span-3">
+              {' '}
+              <Button
+                type="button"
+                variant="primary"
+                className="h-8 min-h-0 px-3 py-0 text-xs"
+                disabled={unchanged || busy}
+                onClick={() => void save()}
+              >
+                {busy ? 'در حال ثبت…' : 'ذخیره'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {error ? (
