@@ -11,23 +11,60 @@ const actor: AuthenticatedActor = {
 function setup(users: Array<{ id: string }>) {
   const directory = { leaveSubstituteUsers: vi.fn().mockResolvedValue(users) };
   const documents = { uploadLeaveEvidence: vi.fn() };
+  const employee = {
+    findFirst: vi
+      .fn()
+      .mockResolvedValue({
+        unit: 'SYNTHETIC UNIT',
+        organizationBranchId: branch,
+      }),
+    findMany: vi
+      .fn()
+      .mockResolvedValue([{ userId: actor.userId }, { userId: 'colleague' }]),
+  };
   return {
     service: new HrService(
-      {} as never,
+      { client: { hrEmployee: employee } } as never,
       directory as never,
       documents as never,
       {} as never,
     ),
     directory,
     documents,
+    employee,
   };
 }
 describe('leave self-service account boundary', () => {
   it('allows an active internal branch account without HR administration grants', async () => {
-    const { service } = setup([{ id: actor.userId }]);
+    const { service, employee } = setup([
+      { id: actor.userId },
+      { id: 'colleague' },
+      { id: 'other-department' },
+    ]);
     await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
-      users: [{ id: actor.userId }],
+      users: [{ id: 'colleague' }],
     });
+    expect(employee.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: branch,
+          userId: actor.userId,
+          status: 'فعال',
+          deletedAt: null,
+        }),
+      }),
+    );
+    expect(employee.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: branch,
+          unit: 'SYNTHETIC UNIT',
+          organizationBranchId: branch,
+          status: 'فعال',
+          deletedAt: null,
+        }),
+      }),
+    );
   });
   it('denies directory and evidence upload to an account outside the internal directory', async () => {
     const { service, documents } = setup([]);
