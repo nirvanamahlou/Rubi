@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import type {
   AuthenticatedActor,
+  MasterDataRecord,
   BranchReference,
   TicketOfferV1,
   TourDepartureV1,
@@ -20,12 +22,32 @@ import {
   ticketCabinLabel,
 } from '@/modules/sales/model/ticket-price-rows';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
+import { pricingCityCountries } from '@/modules/sales/model/ticket-pricing-display';
 import { integrationsApi } from '../api/client';
+import { SiteTicketFacts } from './site-ticket-facts';
+import styles from './site-management.module.css';
 import {
   publishableTickets,
   publishableTours,
   websiteDestinations,
 } from '../site-publication-model';
+
+async function siteReferences(resource: 'cities' | 'countries') {
+  const rows: MasterDataRecord[] = [];
+  for (let page = 1; page <= 100; page++) {
+    const result = await listReferences(
+      resource,
+      '',
+      page,
+      undefined,
+      {},
+      'ticket-catalog',
+    );
+    rows.push(...result.data);
+    if (page * result.meta.pageSize >= result.meta.total) break;
+  }
+  return rows;
+}
 
 type Presentation = {
   title: string;
@@ -43,13 +65,16 @@ export function WebsiteDestination({
   resourceId,
   branchId,
   children,
+  compact = false,
 }: {
   site: (typeof websiteDestinations)[number];
   kind: 'tour' | 'ticket';
   resourceId: string;
   branchId: string;
   children?: React.ReactNode;
+  compact?: boolean;
 }) {
+  const saving = useRef(false);
   const [stored, setStored] = useState<Publication>();
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -91,8 +116,9 @@ export function WebsiteDestination({
       });
     return () => abort.abort();
   }, [path, branchId]);
-  async function save() {
-    if (!stored || busy) return;
+  async function save(enabled = selected) {
+    if (!stored || busy || saving.current) return;
+    saving.current = true;
     setBusy(true);
     setError('');
     try {
@@ -104,7 +130,7 @@ export function WebsiteDestination({
           'x-nora-site-commerce': '1',
         },
         body: JSON.stringify({
-          enabled: selected,
+          enabled,
           version: stored.version,
           branchId,
           ...(kind === 'tour' ? { presentation } : {}),
@@ -116,60 +142,100 @@ export function WebsiteDestination({
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
         );
       setStored(result.data);
+      if (compact) setSelected(result.data.enabled);
     } catch (cause) {
+      if (compact) setSelected(stored.enabled);
       setError(
         cause instanceof Error ? cause.message : 'ثبت انتشار ناموفق بود.',
       );
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
   return (
-    <div className="min-w-0 rounded-xl border border-border p-3 text-sm">
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={selected}
-          disabled={!stored || busy}
-          onChange={(e) => setSelected(e.target.checked)}
-        />
-        {site.name}
-      </label>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {site.connected
-          ? stored?.enabled
-            ? 'انتشار فعال'
-            : 'منتشر نشده'
-          : 'در انتظار اتصال'}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        className="mt-2"
-        disabled={
-          !stored ||
-          busy ||
-          (stored.enabled === selected &&
-            JSON.stringify(
-              stored.presentation ?? {
-                title: '',
-                description: '',
-                commissionPercent: '0',
-              },
-            ) === JSON.stringify(presentation))
-        }
-        onClick={() => void save()}
-      >
-        {busy ? 'در حال ثبت…' : 'ذخیره'}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        disabled={!stored || busy}
-        onClick={() => setEditing((v) => !v)}
-      >
-        ویرایش
-      </Button>
+    <div
+      className={
+        compact
+          ? styles.destination
+          : 'min-w-0 rounded-xl border border-border p-3 text-sm'
+      }
+      data-selected={selected}
+      aria-busy={busy}
+    >
+      <div className={compact ? styles.destinationHeader : undefined}>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={selected}
+            disabled={!stored || busy}
+            onChange={(e) => {
+              const enabled = e.target.checked;
+              setSelected(enabled);
+              if (compact) void save(enabled);
+            }}
+          />
+          {site.name}
+        </label>
+      </div>
+      <div className={compact ? styles.destinationStatus : undefined}>
+        <p
+          className={
+            compact ? styles.statusText : 'mt-2 text-xs text-muted-foreground'
+          }
+        >
+          {site.connected
+            ? stored?.enabled
+              ? 'انتشار فعال'
+              : 'منتشر نشده'
+            : 'در انتظار اتصال'}
+        </p>
+        {compact ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className={styles.editButton}
+            aria-label={`ویرایش ${site.name}`}
+            title="ویرایش"
+            disabled={!stored || busy}
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Pencil size={14} aria-hidden="true" />
+          </Button>
+        ) : null}
+      </div>
+      {!compact ? (
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-2"
+            disabled={
+              !stored ||
+              busy ||
+              (stored.enabled === selected &&
+                JSON.stringify(
+                  stored.presentation ?? {
+                    title: '',
+                    description: '',
+                    commissionPercent: '0',
+                  },
+                ) === JSON.stringify(presentation))
+            }
+            onClick={() => void save()}
+          >
+            {busy ? 'در حال ثبت…' : 'ذخیره'}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={!stored || busy}
+            onClick={() => setEditing((v) => !v)}
+          >
+            ویرایش
+          </Button>
+        </div>
+      ) : null}
       {editing ? (
         <div className="mt-3 grid gap-2">
           {kind === 'tour' ? (
@@ -243,6 +309,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
   const [revision, setRevision] = useState(0);
   const [search, setSearch] = useState('');
   const [cities, setCities] = useState<Record<string, string>>({});
+  const [cityCountries, setCityCountries] = useState<Record<string, string>>(
+    {},
+  );
   const [originId, setOriginId] = useState('');
   const [destinationId, setDestinationId] = useState('');
   const [tripType, setTripType] = useState('');
@@ -262,20 +331,11 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
     });
     void Promise.all([
       (async () => {
-        const rows: { id: string; name: string }[] = [];
-        for (let page = 1; page <= 100; page++) {
-          const result = await listReferences(
-            'cities',
-            '',
-            page,
-            undefined,
-            {},
-            'sales',
-          );
-          rows.push(...result.data);
-          if (page * result.meta.pageSize >= result.meta.total) break;
-        }
-        return rows;
+        const [cities, countries] = await Promise.all([
+          siteReferences('cities'),
+          siteReferences('countries'),
+        ]);
+        return { cities, countries };
       })(),
       integrationsApi.branches(),
       toursApi.departures(true),
@@ -303,7 +363,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             allowedBranchIds.includes(row.id),
           );
           setCities(
-            Object.fromEntries(cityResult.map((row) => [row.id, row.name])),
+            Object.fromEntries(
+              cityResult.cities.map((row) => [row.id, row.name]),
+            ),
+          );
+          setCityCountries(
+            pricingCityCountries(cityResult.cities, cityResult.countries),
           );
           setBranches(allowed);
           setBranchId((current) =>
@@ -359,6 +424,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           .map((row) => ({
             id: row.id,
             title: flightLabel(row),
+            offer: row,
             detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
               row.baseRoundTripSalePrices ??
               row.roundTripSalePrices ??
@@ -430,7 +496,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             </Button>
           </div>
           {tab === 'tickets' ? (
-            <div className="grid gap-2 rounded-xl border border-border p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+            <div className={styles.filters}>
               {(
                 [
                   {
@@ -528,7 +594,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           ) : loading ? (
             <Skeleton className="h-48" />
           ) : (
-            <div className="grid gap-4">
+            <div
+              className={tab === 'tickets' ? styles.ticketGrid : 'grid gap-4'}
+            >
               {resources
                 .filter((row) =>
                   (tab === 'tickets' ? search : `${row.title} ${row.detail}`)
@@ -538,34 +606,60 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                 .map((row) => (
                   <article
                     key={`${revision}:${branchId}:${row.kind}:${row.id}`}
-                    className="grid gap-4 rounded-2xl border border-border bg-surface p-4 xl:grid-cols-[minmax(12rem,1fr)_3fr]"
+                    className={styles.resource}
                   >
-                    <div className="min-w-0 break-words">
-                      <h2 className="font-bold">{row.title}</h2>
-                      <p className="text-sm leading-7" dir="auto">
-                        {row.detail}
-                      </p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                      {websiteDestinations.map((site) => (
-                        <WebsiteDestination
-                          key={site.code}
-                          site={site}
-                          kind={row.kind}
-                          resourceId={row.id}
-                          branchId={branchId}
-                        >
-                          {row.kind === 'ticket' ? (
-                            <TicketSiteCommission
-                              offer={tickets.find(
-                                (offer) => offer.id === row.id,
-                              )!}
-                              site={site}
-                              targets={targets}
-                            />
-                          ) : null}
-                        </WebsiteDestination>
-                      ))}
+                    <div
+                      className={
+                        row.kind === 'ticket'
+                          ? styles.resourceHeader
+                          : 'grid gap-4'
+                      }
+                    >
+                      <div className="min-w-0 break-words">
+                        {row.kind === 'ticket' ? (
+                          <SiteTicketFacts
+                            offer={row.offer}
+                            tickets={tickets}
+                            cities={cities}
+                            cityCountries={cityCountries}
+                          />
+                        ) : (
+                          <h2 className={styles.title}>{row.title}</h2>
+                        )}
+                        {row.kind === 'tour' ? (
+                          <p className="text-sm leading-7" dir="auto">
+                            {row.detail}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div
+                        className={
+                          row.kind === 'ticket'
+                            ? styles.destinations
+                            : 'grid gap-2 sm:grid-cols-2 xl:grid-cols-4'
+                        }
+                      >
+                        {websiteDestinations.map((site) => (
+                          <WebsiteDestination
+                            key={site.code}
+                            site={site}
+                            kind={row.kind}
+                            resourceId={row.id}
+                            branchId={branchId}
+                            compact={row.kind === 'ticket'}
+                          >
+                            {row.kind === 'ticket' ? (
+                              <TicketSiteCommission
+                                offer={tickets.find(
+                                  (offer) => offer.id === row.id,
+                                )!}
+                                site={site}
+                                targets={targets}
+                              />
+                            ) : null}
+                          </WebsiteDestination>
+                        ))}
+                      </div>
                     </div>
                   </article>
                 ))}
