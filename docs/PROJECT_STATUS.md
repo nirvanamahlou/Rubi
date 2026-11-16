@@ -1,3 +1,6 @@
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A
+
+Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
 FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
 
 ## FLOATING-MERGED-TEMPLATE-1116 — PC-A
