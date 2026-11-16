@@ -18,6 +18,20 @@ const value = {
   requestId: '12345678-1234-4234-8234-123456789abc',
 };
 describe('v3 assistant consumer boundary', () => {
+  it('distinguishes native panel reconciliation evidence from the curated SQL view', () => {
+    expect(
+      agentResponseSchema.parse({
+        ...value,
+        sources: [{ ...value.sources[0], kind: 'panel-count-breakdown' }],
+      }).sources[0]?.kind,
+    ).toBe('panel-count-breakdown');
+    expect(
+      agentResponseSchema.safeParse({
+        ...value,
+        sources: [{ ...value.sources[0], kind: 'arbitrary' }],
+      }).success,
+    ).toBe(false);
+  });
   it('keeps multi-turn requests valid by removing agent flags and private local links from history', () => {
     const messages = Array.from({ length: 14 }, (_, index) => ({
       role: 'assistant' as const,

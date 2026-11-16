@@ -1544,6 +1544,13 @@ export class IamService implements IamStepUpPort {
     return role;
   }
 
+  async isNimaNaderi(userId: string) {
+    const user = await this.database.client.user.findFirst({
+      where: { id: userId, status: 'ACTIVE', username: 'nima' },
+      select: { id: true },
+    });
+    return Boolean(user);
+  }
   async activityActorNames(ids: string[]) {
     const users = await this.database.client.user.findMany({
       where: { id: { in: ids } },

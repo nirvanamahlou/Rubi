@@ -208,11 +208,12 @@ export class IamWorkbenchRequestDirectory {
         .replace(/[آأإ]/g, 'ا')
         .replace(/[يىئ]/g, 'ی')
         .replace(/ك/g, 'ک')
-        .replace(/[\s‌]/g, '');
+        .replace(/[\s‌]/g, '')
+        .replace('مهسااعلایی', 'مهساعلایی');
     const name = normalize(account?.displayName ?? '');
     const routes: [string[], string][] = [
       [['الناز'], 'رویابهزادنیا'],
-      [['بهناز', 'ناهید', 'اتنا', 'شیدا', 'شهرزاد'], 'مهسااعلایی'],
+      [['بهناز', 'ناهید', 'اتنا', 'شیدا', 'شهرزاد'], 'مهساعلایی'],
       [['مهشید'], 'عسلشهبازی'],
       [['نیمانادری'], 'دانیالالطافی'],
     ];

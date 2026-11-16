@@ -142,7 +142,7 @@ export function HrInbox({
           item.description.startsWith('اصلاح تردد\n'))),
   );
   const visibleItems = items.filter((item) => !item.code.startsWith('WB-'));
-  const onReview = async () => {
+  const onReview = async (overrideSubstitute = false): Promise<void> => {
     if (!review) return;
     setBusy(true);
     setError('');
@@ -151,11 +151,25 @@ export function HrInbox({
         review.id,
         review.version,
         decision,
+        overrideSubstitute,
       );
       setReview(null);
       setRevision((n) => n + 1);
       await store.mutated();
     } catch (cause) {
+      if (
+        cause instanceof Error &&
+        cause.message.includes('SUBSTITUTE_CONFIRM_REQUIRED')
+      ) {
+        if (
+          window.confirm(
+            'جانشین تأیید نکرده است. آیا مطمئن هستید مرخصی را تأیید می‌کنید؟',
+          )
+        ) {
+          await onReview(true);
+        }
+        return;
+      }
       setError(cause instanceof Error ? cause.message : 'ثبت نتیجه انجام نشد.');
     } finally {
       setBusy(false);
