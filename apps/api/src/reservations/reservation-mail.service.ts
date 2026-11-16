@@ -50,7 +50,7 @@ export class ReservationMailService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
   private wakeRequested = false;
-  private wakeTask?: ReturnType<typeof setImmediate>;
+  private wakeTask: ReturnType<typeof setImmediate> | undefined;
   private stopping = false;
   private readonly logger = new Logger(ReservationMailService.name);
   constructor(
