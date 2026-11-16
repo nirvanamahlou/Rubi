@@ -12779,3 +12779,5 @@ NORA-CHAT-NAVIGATION-1116 CI integration lease: origin/develop13baa77e2 introduc
 LEAD-TITLE-1116 PC-B completed: remove surname from lead creation, rename name to title and submit existing optional-name API. Scoped ESLint passed. Owner authorizes merge.
 
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
+
+SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
