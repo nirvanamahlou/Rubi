@@ -10241,3 +10241,7 @@ SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-r
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
 
 FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ticket-pricing base card; immutable standalone/pair revisions, net target projections and birthday-derived website/native final quote guards. Legacy null semantics and financial history preserved.57 focused API checks and isolated PostgreSQL18 migration proof passed; final Web/hosted gates precede release.
+
+## 2026-11-16 — NORA-TOKEN-EFFICIENCY-1116
+
+PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.

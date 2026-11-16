@@ -1,5 +1,6 @@
 import { ServiceError } from './errors.mjs';
 import { CALCULATION_POLICY } from './calculation-policy.mjs';
+import { compactMessages, usageCounters } from './token-efficiency.mjs';
 
 const tool = (
   name,
@@ -68,6 +69,15 @@ export const AGENT_TOOLS = Object.freeze([
   ),
 ]);
 
+// A real, advertised final-stage transport tool; never recover rejected generations.
+const finalAnswer = AGENT_TOOLS.find(
+  (entry) => entry.function.name === 'finish_answer',
+);
+const finalJsonTool = {
+  ...finalAnswer,
+  function: { ...finalAnswer.function, name: 'json' },
+};
+
 export async function boundedAgentJson(response, limit = 256 * 1024) {
   if (!response.headers.get('content-type')?.includes('application/json'))
     throw new ServiceError(502, 'INVALID_AGENT_RESPONSE');
@@ -106,6 +116,7 @@ export function createAgentProvider({
         remainingTokens = 40000,
         allowedTools,
         allowFinalResponse = false,
+        currentResultIds,
       },
     ) {
       if (now() < unavailableUntil) {
@@ -113,6 +124,47 @@ export function createAgentProvider({
         error.retryAfterMs = unavailableUntil - now();
         throw error;
       }
+      if (
+        currentResultIds !== undefined &&
+        (!Array.isArray(currentResultIds) ||
+          currentResultIds.length > 6 ||
+          currentResultIds.some(
+            (id) => typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id),
+          ))
+      )
+        throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
+      const tools = AGENT_TOOLS.filter(
+        (t) =>
+          (!allowedTools || allowedTools.includes(t.function.name)) &&
+          (!allowFinalResponse || t.function.name !== 'finish_answer'),
+      );
+      if (
+        allowFinalResponse &&
+        (!allowedTools || allowedTools.includes('finish_answer'))
+      )
+        tools.push(
+          currentResultIds === undefined
+            ? finalJsonTool
+            : {
+                ...finalJsonTool,
+                function: {
+                  ...finalJsonTool.function,
+                  parameters: {
+                    ...finalJsonTool.function.parameters,
+                    properties: {
+                      ...finalJsonTool.function.parameters.properties,
+                      resultIds: {
+                        type: 'array',
+                        maxItems: currentResultIds.length,
+                        items: currentResultIds.length
+                          ? { type: 'string', enum: [...currentResultIds] }
+                          : { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+        );
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,
@@ -121,13 +173,9 @@ export function createAgentProvider({
         stream: false,
         messages: [
           { role: 'system', content: CALCULATION_POLICY },
-          ...messages,
+          ...compactMessages(messages),
         ],
-        tools: AGENT_TOOLS.filter(
-          (t) =>
-            (!allowedTools || allowedTools.includes(t.function.name)) &&
-            (!allowFinalResponse || t.function.name !== 'finish_answer'),
-        ),
+        tools,
         tool_choice: allowFinalResponse
           ? 'auto'
           : allowedTools?.length === 1
@@ -229,6 +277,7 @@ export function createAgentProvider({
             name: 'finish_answer',
             args: final,
             tokens,
+            usage: usageCounters(result.usage),
           };
         }
         if (
@@ -243,9 +292,7 @@ export function createAgentProvider({
           call.type !== 'function' ||
           typeof call.id !== 'string' ||
           !/^[a-zA-Z0-9_-]{1,128}$/.test(call.id) ||
-          !AGENT_TOOLS.some(
-            (entry) => entry.function.name === call.function?.name,
-          ) ||
+          !tools.some((entry) => entry.function.name === call.function?.name) ||
           typeof call.function.arguments !== 'string' ||
           Buffer.byteLength(call.function.arguments) > 16000
         )
@@ -255,7 +302,10 @@ export function createAgentProvider({
           throw new ServiceError(502, 'INVALID_AGENT_USAGE');
         return {
           id: call.id,
-          name: call.function.name,
+          name:
+            call.function.name === 'json'
+              ? 'finish_answer'
+              : call.function.name,
           args: JSON.parse(call.function.arguments),
           tokens,
         };
