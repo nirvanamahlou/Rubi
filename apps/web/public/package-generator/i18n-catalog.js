@@ -26,5 +26,9 @@ window.RUBI_ENGLISH_UI = {"محدوده مرور اسناد بیش از حد ب�
   "نوع قیمت": "Fare type",
   "همه تورها": "All tours",
   "بازگشت به اندازه اصلی": "Reset zoom",
-  "بزرگ‌نمایی چارت": "Chart zoom"
+  "بزرگ‌نمایی چارت": "Chart zoom",
+  "آ": "A",
+  "عنوان، تلفن، تاریخ و منبع ورود را وارد کنید.": "Enter a title, phone, date and source.",
+  "مدیر یا گیرنده منابع انسانی برای درخواست مرخصی به‌صورت یکتا تعریف نشده است.": "A unique manager or HR recipient for leave requests has not been configured.",
+  "مهسااعلایی": "Mahsa Alaei"
 };
