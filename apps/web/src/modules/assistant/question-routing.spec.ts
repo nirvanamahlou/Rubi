@@ -22,6 +22,12 @@ const guide: AnswerContext = {
 };
 
 describe('shared intent arbitration before every guide', () => {
+  it('applies lexical boundaries to evidence keywords as well as guide aliases', () => {
+    expect(routeAssistantQuestion('نامنبع', undefined, true).kind).toBe(
+      'conversation',
+    );
+    expect(routeAssistantQuestion('منبعش؟', data, true).kind).toBe('follow-up');
+  });
   it('preserves explicit date ranges and hyphenated identifiers for existing native readers', () => {
     expect(normalizeQuestion('قرارداد AB-12 از ۲۰۲۶/۱۱/۰۱ تا ۲۰۲۶-۱۱-۰۳')).toBe(
       'قرارداد ab-12 از 2026/11/01 تا 2026-11-03',
