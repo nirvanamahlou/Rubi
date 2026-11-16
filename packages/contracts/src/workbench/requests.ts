@@ -33,6 +33,11 @@ export interface WorkbenchRequestOptionsV1 {
 }
 
 export interface WorkbenchRequestItemV1 {
+  progress?: {
+    managerApproved: boolean;
+    hrApproved: boolean;
+    completed: boolean;
+  };
   id: string;
   trackingNumber: string;
   subject: string;

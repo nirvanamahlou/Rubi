@@ -6376,5 +6376,8 @@
   "انتشار در سایت نیایش": "Publish on the Niyayesh website",
   "ثبت انتشار سایت ناموفق بود؛ وضعیت را دوباره دریافت کنید.": "Could not save the website publication; reload its status.",
   "فروش این محصول در سایت، قرارداد را از ERP دریافت می‌کند. محصولات قدیمی سایت تغییر نمی‌کنند.": "Website sales of this product receive their contract from ERP. Existing website products remain unchanged.",
-  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status."
+  "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
+  "اعلام درخواست": "Request submitted",
+  "تأیید مدیر واحد": "Unit manager approval",
+  "روند درخواست مرخصی": "Leave request progress"
 }
