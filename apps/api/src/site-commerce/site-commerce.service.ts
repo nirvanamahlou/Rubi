@@ -344,10 +344,18 @@ export class SiteCommerceService {
     return links.filter((link) => cancelled.has(link.contractId));
   }
 
-  async catalog(site: string, actor: AuthenticatedActor) {
+  async catalog(
+    site: string,
+    actor: AuthenticatedActor,
+    includeFloating = false,
+  ) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
-      where: { siteCode: site, branchId: scoped.branchIds[0]! },
+      where: {
+        siteCode: site,
+        branchId: scoped.branchIds[0]!,
+        ...(!includeFloating ? { kind: { in: ['ticket', 'tour'] } } : {}),
+      },
       orderBy: { id: 'asc' },
       take: 501,
     });
@@ -357,6 +365,8 @@ export class SiteCommerceService {
       );
     const data = [];
     for (const row of rows) {
+      // Legacy sites must explicitly opt into the additive floating-tour product contract.
+      if (row.kind === 'floating-tour' && !includeFloating) continue;
       if (!row.enabled) {
         data.push({
           id: row.id,

@@ -165,7 +165,8 @@ describe('website destination management', () => {
       'SITE_COMMERCE_BINDINGS',
       JSON.stringify({ nss: { branchId: 'branch-a', userId: 'site' } }),
     );
-    const result = await f.service.catalog('nss', siteActor);
+    expect((await f.service.catalog('nss', siteActor)).data).toEqual([]);
+    const result = await f.service.catalog('nss', siteActor, true);
     expect(result.data[0]).toMatchObject({
       kind: 'floating-tour',
       periodKey: row.periodKey,
@@ -177,7 +178,9 @@ describe('website destination management', () => {
     f.floating.websiteProduct.mockRejectedValueOnce(
       new BadRequestException('removed'),
     );
-    expect((await f.service.catalog('nss', siteActor)).data[0]).toMatchObject({
+    expect(
+      (await f.service.catalog('nss', siteActor, true)).data[0],
+    ).toMatchObject({
       enabled: false,
       periodKey: row.periodKey,
     });

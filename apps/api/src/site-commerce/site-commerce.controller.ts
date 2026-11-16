@@ -86,8 +86,12 @@ export class SiteCommerceController {
   }
   @Get('catalog')
   @Header('Cache-Control', 'private, no-store')
-  catalog(@Param('site') site: string, @Req() req: AuthenticatedRequest) {
-    return this.service.catalog(site, req.actor);
+  catalog(
+    @Param('site') site: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('floatingTours') floatingTours?: string,
+  ) {
+    return this.service.catalog(site, req.actor, floatingTours === 'true');
   }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')
