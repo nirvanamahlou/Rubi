@@ -18,7 +18,10 @@ const actor = {
   branchIds: ['branch'],
   permissions: ['hr.manage', 'hr.approve'],
 } as unknown as AuthenticatedActor;
-function setup(status = 'NEW') {
+function setup(
+  status = 'NEW',
+  iam?: ConstructorParameters<typeof CustomerAffairsService>[11],
+) {
   const row = {
     id: 'request',
     version: 1,
@@ -61,10 +64,51 @@ function setup(status = 'NEW') {
     undefined,
     undefined,
     hr as never,
+    undefined,
+    iam,
   );
   return { service, tx, row, hr, notifications, directory };
 }
 describe('HR Workbench review', () => {
+  it('requires both authoritative identity and explicit confirmation for the delivered substitute override', async () => {
+    const identity = { isNimaNaderi: vi.fn().mockResolvedValue(false) };
+    const f = setup('NEW', identity as never);
+    f.row.timeline[0]!.summary = JSON.stringify({
+      ...leave,
+      substituteUserId: 'substitute',
+    });
+    await expect(
+      f.service.reviewHrWorkbenchRequest(
+        'request',
+        { version: 1, status: 'APPROVED', overrideSubstitute: true },
+        actor,
+      ),
+    ).rejects.toThrow('جانشین');
+    expect(f.hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+    identity.isNimaNaderi.mockResolvedValue(true);
+    await expect(
+      f.service.reviewHrWorkbenchRequest(
+        'request',
+        { version: 1, status: 'APPROVED' },
+        actor,
+      ),
+    ).rejects.toThrow('SUBSTITUTE_CONFIRM_REQUIRED');
+    expect(f.hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+    await f.service.reviewHrWorkbenchRequest(
+      'request',
+      { version: 1, status: 'APPROVED', overrideSubstitute: true },
+      actor,
+    );
+    expect(identity.isNimaNaderi).toHaveBeenCalledWith(actor.userId);
+    expect(f.hr.approveWorkbenchLeave).toHaveBeenCalledOnce();
+    expect(f.tx.customerAffairsAuditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          afterSnapshot: { status: 'APPROVED', overrideSubstitute: true },
+        }),
+      }),
+    );
+  });
   it('does not let HR approve before the selected substitute consents', async () => {
     const { service, row, hr } = setup();
     row.timeline[0]!.summary = JSON.stringify({
