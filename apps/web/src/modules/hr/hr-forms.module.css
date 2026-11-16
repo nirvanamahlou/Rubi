@@ -427,3 +427,35 @@
 .radanChart .orgBranch {
   padding-inline: 44px;
 }
+
+.orgZoomControls {
+  position: sticky;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.orgZoomControls button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  background: var(--surface);
+}
+.orgZoomControls button:disabled {
+  opacity: 0.4;
+}
+.orgZoomControls output {
+  min-width: 52px;
+  text-align: center;
+}
