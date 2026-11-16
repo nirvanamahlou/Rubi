@@ -333,8 +333,24 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const origin = new URL(request.url).origin;
-  if (request.headers.get('origin') !== origin)
+  const requestUrl = new URL(request.url);
+  const origin = request.headers.get('origin');
+  let sameOrigin = false;
+  try {
+    const browserOrigin = new URL(origin ?? '');
+    // TLS terminates at the reverse proxy; Next can receive an HTTP URL.
+    // Host must still match the browser's public origin, never forwarded input.
+    sameOrigin =
+      browserOrigin.origin === origin &&
+      (browserOrigin.origin === requestUrl.origin ||
+        (requestUrl.protocol === 'http:' &&
+          browserOrigin.protocol === 'https:' &&
+          browserOrigin.host ===
+            (request.headers.get('host') ?? requestUrl.host)));
+  } catch {
+    sameOrigin = false;
+  }
+  if (!sameOrigin || !origin)
     return fail('دسترسی به این عملیات مجاز نیست.', 403);
   const secret = process.env.RESERVATION_PDF_MAIL_SECRET;
   if (!secret || secret.length < 32)
