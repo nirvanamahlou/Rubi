@@ -81,6 +81,7 @@ function AccessibleHrSection({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
+  const { context: legalEntityContext } = useLegalEntityContext();
   const groups = permittedGroups;
   const first = resolveHrGroup(
     groups,
@@ -997,7 +998,6 @@ function AccessibleHrSection({
 export function HrUnifiedSection(
   props: Omit<Parameters<typeof AccessibleHrSection>[0], 'permittedGroups'>,
 ) {
-  const { context: legalEntityContext } = useLegalEntityContext();
   const allowed = useRouteAccess();
   const section = props.section;
   const fallback: HrGroup[] = [
