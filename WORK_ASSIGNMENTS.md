@@ -1,3 +1,7 @@
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-floating-merged-template-1116. Owner authorizes a visible template download and Excel vertical-merged shared prices across all stays of a combined tour, counted once, and develop merge. Reserve floating importer/service/controller, new template builder, floating Web workspace and focused tests plus bounded English overrides and own status entries. Preserve old dedicated/pair templates, native branch/read/write/CAS/digest and money safeguards. No schema, migration, dependency, operational data or deployment changes. No competing active writer in these leaf paths found.
+
 SITE-MANAGEMENT-RELEASE-1116 final verification repair: reserve only Marketing intake test fixtures updated for the already-merged single-title form and four missing label catalogue entries. No Marketing/HR behavior change. Preserve source policy and all gate coverage.
 
 SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
