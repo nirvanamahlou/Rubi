@@ -10187,3 +10187,5 @@ SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-r
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
 
 CALL-CENTER-TODAY-FILTER-STYLE-1116: exclude shared combobox options from generic dialog button styling so direction, outcome and destination options retain the contact-filter selected, hover and spacing styles. Source change only.
+
+CALL-CENTER-TODAY-FILTER-STYLE-1116: today's dialog initially focuses its title so the first combobox does not automatically open.
