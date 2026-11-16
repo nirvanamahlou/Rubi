@@ -12782,3 +12782,7 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
+
+## RELEASE-1116 — PC-B — IN_PROGRESS
+
+Reserve bounded Customer Affairs release integration repair: wire the existing IAM identity check for the approved substitute override, remove override metadata from unrelated referral responses, add focused regressions and four missing English labels plus generated mirrors. Predecessor HR-MANAGER-OVERRIDE-1116 is completed. No new permissions, schema, dependency or financial mutations. Owner authorizes all-changes production rollout without a fresh backup.

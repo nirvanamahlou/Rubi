@@ -6325,5 +6325,9 @@
   "آ": "A",
   "عنوان، تلفن، تاریخ و منبع ورود را وارد کنید.": "Enter a title, phone, date and source.",
   "مدیر یا گیرنده منابع انسانی برای درخواست مرخصی به‌صورت یکتا تعریف نشده است.": "A unique manager or HR recipient for leave requests has not been configured.",
-  "مهسااعلایی": "Mahsa Alaei"
+  "مهسااعلایی": "Mahsa Alaei",
+  "جانشین تأیید نکرده است. آیا مطمئن هستید مرخصی را تأیید می‌کنید؟": "The substitute has not approved. Are you sure you want to approve this leave?",
+  "مهسا علایی": "Mahsa Alaei",
+  "مهسا علایی شمس آباد": "Mahsa Alaei Shamsabad",
+  "مهساعلایی": "Mahsa Alaei"
 }
