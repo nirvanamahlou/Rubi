@@ -12,8 +12,8 @@ import {
 } from './workbench-hr-request.domain';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { HrDirectoryService } from '../hr/hr-directory.service';
-import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { IamService } from '../iam/iam.service';
+import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createdDateFilter } from './customer-affairs-date-filter';
 import {

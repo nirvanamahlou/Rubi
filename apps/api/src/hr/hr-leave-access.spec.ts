@@ -11,58 +11,62 @@ const actor: AuthenticatedActor = {
 function setup(users: Array<{ id: string }>) {
   const directory = { leaveSubstituteUsers: vi.fn().mockResolvedValue(users) };
   const documents = { uploadLeaveEvidence: vi.fn() };
-  const employee = {
-    findFirst: vi.fn().mockResolvedValue({
-      unit: 'SYNTHETIC UNIT',
-      organizationBranchId: branch,
-    }),
-    findMany: vi
-      .fn()
-      .mockResolvedValue([{ userId: actor.userId }, { userId: 'colleague' }]),
+  const database = {
+    client: {
+      hrEmployee: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ unit: 'Sales', organizationBranchId: 'office' }),
+        findMany: vi
+          .fn()
+          .mockResolvedValue(users.map((user) => ({ userId: user.id }))),
+      },
+    },
   };
   return {
     service: new HrService(
-      { client: { hrEmployee: employee } } as never,
+      database as never,
       directory as never,
       documents as never,
       {} as never,
     ),
     directory,
     documents,
-    employee,
+    database,
   };
 }
 describe('leave self-service account boundary', () => {
-  it('allows an active internal branch account without HR administration grants', async () => {
-    const { service, employee } = setup([
+  it('offers only other active colleagues returned for the same department and office', async () => {
+    const { service, database } = setup([
       { id: actor.userId },
       { id: 'colleague' },
-      { id: 'other-department' },
+      { id: 'outside' },
+    ]);
+    database.client.hrEmployee.findMany.mockResolvedValue([
+      { userId: actor.userId },
+      { userId: 'colleague' },
     ]);
     await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
       users: [{ id: 'colleague' }],
     });
-    expect(employee.findFirst).toHaveBeenCalledWith(
+    expect(database.client.hrEmployee.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           branchId: branch,
-          userId: actor.userId,
+          unit: 'Sales',
+          organizationBranchId: 'office',
           status: 'فعال',
           deletedAt: null,
         }),
       }),
     );
-    expect(employee.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          branchId: branch,
-          unit: 'SYNTHETIC UNIT',
-          organizationBranchId: branch,
-          status: 'فعال',
-          deletedAt: null,
-        }),
-      }),
-    );
+  });
+
+  it('allows an active internal branch account without HR administration grants', async () => {
+    const { service } = setup([{ id: actor.userId }]);
+    await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
+      users: [],
+    });
   });
   it('denies directory and evidence upload to an account outside the internal directory', async () => {
     const { service, documents } = setup([]);

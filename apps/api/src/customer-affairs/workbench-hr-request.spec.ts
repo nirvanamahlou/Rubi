@@ -18,10 +18,7 @@ const actor = {
   branchIds: ['branch'],
   permissions: ['hr.manage', 'hr.approve'],
 } as unknown as AuthenticatedActor;
-function setup(
-  status = 'NEW',
-  iam?: ConstructorParameters<typeof CustomerAffairsService>[11],
-) {
+function setup(status = 'NEW', overrideEligible = false) {
   const row = {
     id: 'request',
     version: 1,
@@ -53,6 +50,7 @@ function setup(
       .fn()
       .mockResolvedValue(['hr-reviewer']),
   };
+  const iam = { isNimaNaderi: vi.fn().mockResolvedValue(overrideEligible) };
   const service = new CustomerAffairsService(
     repository as never,
     {} as never,
@@ -65,50 +63,62 @@ function setup(
     undefined,
     hr as never,
     undefined,
-    iam,
+    iam as never,
   );
-  return { service, tx, row, hr, notifications, directory };
+  return { service, tx, row, hr, notifications, directory, iam };
 }
 describe('HR Workbench review', () => {
-  it('requires both authoritative identity and explicit confirmation for the delivered substitute override', async () => {
-    const identity = { isNimaNaderi: vi.fn().mockResolvedValue(false) };
-    const f = setup('NEW', identity as never);
-    f.row.timeline[0]!.summary = JSON.stringify({
+  it('requires explicit confirmation before an eligible reviewer overrides missing substitute approval', async () => {
+    const { service, row, hr, iam } = setup('NEW', true);
+    row.timeline[0]!.summary = JSON.stringify({
       ...leave,
       substituteUserId: 'substitute',
     });
     await expect(
-      f.service.reviewHrWorkbenchRequest(
-        'request',
-        { version: 1, status: 'APPROVED', overrideSubstitute: true },
-        actor,
-      ),
-    ).rejects.toThrow('جانشین');
-    expect(f.hr.approveWorkbenchLeave).not.toHaveBeenCalled();
-    identity.isNimaNaderi.mockResolvedValue(true);
-    await expect(
-      f.service.reviewHrWorkbenchRequest(
+      service.reviewHrWorkbenchRequest(
         'request',
         { version: 1, status: 'APPROVED' },
         actor,
       ),
     ).rejects.toThrow('SUBSTITUTE_CONFIRM_REQUIRED');
-    expect(f.hr.approveWorkbenchLeave).not.toHaveBeenCalled();
-    await f.service.reviewHrWorkbenchRequest(
+    expect(iam.isNimaNaderi).toHaveBeenCalledWith(actor.userId);
+    expect(hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+  });
+  it('records a confirmed eligible override in the existing HR audit', async () => {
+    const { service, row, tx, hr } = setup('NEW', true);
+    row.timeline[0]!.summary = JSON.stringify({
+      ...leave,
+      substituteUserId: 'substitute',
+    });
+    await service.reviewHrWorkbenchRequest(
       'request',
       { version: 1, status: 'APPROVED', overrideSubstitute: true },
       actor,
     );
-    expect(identity.isNimaNaderi).toHaveBeenCalledWith(actor.userId);
-    expect(f.hr.approveWorkbenchLeave).toHaveBeenCalledOnce();
-    expect(f.tx.customerAffairsAuditEvent.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          afterSnapshot: { status: 'APPROVED', overrideSubstitute: true },
-        }),
+    expect(hr.approveWorkbenchLeave).toHaveBeenCalledOnce();
+    expect(tx.customerAffairsAuditEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'HR_REVIEW',
+        afterSnapshot: { status: 'APPROVED', overrideSubstitute: true },
       }),
-    );
+    });
   });
+  it('rejects an override flag from an ineligible reviewer', async () => {
+    const { service, row, hr } = setup();
+    row.timeline[0]!.summary = JSON.stringify({
+      ...leave,
+      substituteUserId: 'substitute',
+    });
+    await expect(
+      service.reviewHrWorkbenchRequest(
+        'request',
+        { version: 1, status: 'APPROVED', overrideSubstitute: true },
+        actor,
+      ),
+    ).rejects.toThrow('جانشین');
+    expect(hr.approveWorkbenchLeave).not.toHaveBeenCalled();
+  });
+
   it('does not let HR approve before the selected substitute consents', async () => {
     const { service, row, hr } = setup();
     row.timeline[0]!.summary = JSON.stringify({

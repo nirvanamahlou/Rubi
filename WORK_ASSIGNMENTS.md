@@ -12800,4 +12800,17 @@ CI integration repair: inherited merged/frozen HR-MANAGER-OVERRIDE-1116/PR1745 b
 English completeness follow-up: full suite passes5214 Web cases and fails only four untranslated labels from merged PR1745. Reserve four additive en-overrides entries and generated API/standalone mirrors; preserve every peer key/value and the existing inventory gate. Previous same-owner translation scope is merged/frozen. No HR behavior/source or translation-policy changes; mirrors are not part of the bounded live Web origin overlay.
 
 Integrated PR1750 follow-up: reserve only hr-leave-access.spec.ts fixture/assertions for the delivered same-department substitute filter. Supply the native employee projection in the test; retain internal-account authorization, self/other-department exclusion and HR-managed branch denial. No HrService product changes or live HR overlay. Also retain the three incoming request-progress translations already validated locally.
+
+## RELEASE-1116 — PC-B — IN_PROGRESS
+
+Reserve bounded Customer Affairs release integration repair: wire the existing IAM identity check for the approved substitute override, remove override metadata from unrelated referral responses, add focused regressions and four missing English labels plus generated mirrors. Predecessor HR-MANAGER-OVERRIDE-1116 is completed. No new permissions, schema, dependency or financial mutations. Owner authorizes all-changes production rollout without a fresh backup.
+
+RELEASE-1116 follow-up reserves the mistakenly added override payload in the ordinary substitute-response client. Remove it there while preserving the explicit HR approval payload. Align confirmation English with the existing live translation.
+
 REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+RELEASE-1116 coordinated integration: include the newly merged leave progress and Nora calculation changes. Reserve the Assistant Read HTTP method boundary and focused regressions to admit only the newly authorized count-breakdown read command; native authentication and read-only DB remain enforced. Deploy read-boundary API, assistant source and Web together.
+
+RELEASE-1116 translation follow-up adds three missing leave progress labels introduced by PR1750. Preserve existing catalogues and all translation coverage assertions.
+
+RELEASE-1116 test compatibility: supply the employee/department fixture now required by PR1750, retain self-service/branch rejection checks, and assert same-department/office filtering and self exclusion. Test-only source change; product behavior is unchanged.
