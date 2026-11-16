@@ -26,6 +26,7 @@ function fixture() {
   const mail = {
     prepare: vi.fn().mockResolvedValue({ id: 'queued' }),
     enqueue: vi.fn(),
+    wake: vi.fn(),
   };
   type D = ConstructorParameters<typeof TravelWorkflowService>;
   const service = new TravelWorkflowService(
@@ -129,4 +130,58 @@ it('does not enqueue stale requests and propagates queue failures to rollback th
       f.actor,
     ),
   ).rejects.toThrow('QUEUE_FAILED');
+});
+
+it('wakes only after the outbox transaction has committed', async () => {
+  const f = fixture();
+  let commit!: () => void;
+  const committed = new Promise<void>((resolve) => {
+    commit = resolve;
+  });
+  let inserted!: () => void;
+  const stored = new Promise<void>((resolve) => {
+    inserted = resolve;
+  });
+  f.transaction.mockImplementation(async (cb) => {
+    const result = await cb(f.tx);
+    inserted();
+    await committed;
+    return result;
+  });
+  const update = f.service.update(
+    'intake',
+    { action: 'REQUEST_SUPPLIER', expectedVersion: 0, note: '' },
+    f.actor,
+  );
+  await stored;
+  expect(f.mail.enqueue).toHaveBeenCalledOnce();
+  expect(f.mail.wake).not.toHaveBeenCalled();
+  commit();
+  await update;
+  expect(f.mail.wake).toHaveBeenCalledOnce();
+});
+it('never wakes when commit fails after the outbox insert', async () => {
+  const f = fixture();
+  f.transaction.mockImplementation(async (cb) => {
+    await cb(f.tx);
+    throw new Error('COMMIT_FAILED');
+  });
+  await expect(
+    f.service.update(
+      'intake',
+      { action: 'REQUEST_SUPPLIER', expectedVersion: 0, note: '' },
+      f.actor,
+    ),
+  ).rejects.toThrow('COMMIT_FAILED');
+  expect(f.mail.enqueue).toHaveBeenCalledOnce();
+  expect(f.mail.wake).not.toHaveBeenCalled();
+});
+it('does not wake the mail dispatcher for a normal saved form', async () => {
+  const f = fixture();
+  await f.service.update(
+    'intake',
+    { action: 'NOTE', expectedVersion: 0, note: 'saved only' },
+    f.actor,
+  );
+  expect(f.mail.wake).not.toHaveBeenCalled();
 });

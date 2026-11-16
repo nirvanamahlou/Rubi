@@ -49,6 +49,9 @@ type ClaimedMail = {
 export class ReservationMailService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private wakeRequested = false;
+  private wakeTask: ReturnType<typeof setImmediate> | undefined;
+  private stopping = false;
   private readonly logger = new Logger(ReservationMailService.name);
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
@@ -181,15 +184,35 @@ export class ReservationMailService implements OnModuleInit, OnModuleDestroy {
       VALUES (${prepared.id}::uuid, ${revisionId}::uuid, ${prepared.contactId}::uuid, ${prepared.envelope})`);
   }
 
+  /** Schedule work after commit without holding the HTTP request or opening SMTP in the transaction. */
+  wake() {
+    if (this.stopping || process.env.RESERVATION_MAIL_ENABLED !== 'true')
+      return;
+    this.wakeRequested = true;
+    if (this.running || this.wakeTask) return;
+    this.wakeTask = setImmediate(() => {
+      this.wakeTask = undefined;
+      if (this.stopping || this.running) return;
+      this.wakeRequested = false;
+      void this.sweep();
+    });
+    this.wakeTask.unref();
+  }
+
   onModuleInit() {
+    this.stopping = false;
     if (process.env.RESERVATION_MAIL_ENABLED !== 'true') return;
     this.timer = setInterval(() => {
-      void this.sweep();
+      this.wake();
     }, 5000);
     this.timer.unref();
-    void this.sweep();
+    this.wake();
   }
   onModuleDestroy() {
+    this.stopping = true;
+    this.wakeRequested = false;
+    if (this.wakeTask) clearImmediate(this.wakeTask);
+    this.wakeTask = undefined;
     if (this.timer) clearInterval(this.timer);
   }
 
@@ -267,12 +290,15 @@ export class ReservationMailService implements OnModuleInit, OnModuleDestroy {
           WHERE "id"=${row.id}::uuid AND "status"='SENDING'`);
         if (changed && status !== 'RETRY') await this.notice(tx, row, status);
       });
+      // Continue with the next due row without another five-second polling gap.
+      this.wakeRequested = true;
     } catch {
       this.logger.warn(
         'Reservation mail dispatch unavailable; durable records retained.',
       );
     } finally {
       this.running = false;
+      if (this.wakeRequested) this.wake();
     }
   }
 
