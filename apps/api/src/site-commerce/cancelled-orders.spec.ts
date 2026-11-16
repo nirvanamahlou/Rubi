@@ -77,10 +77,9 @@ it('Sales public read is bounded and permission-scoped without mutations', async
   const repository = {
     cancelledWebsiteContracts: vi.fn().mockResolvedValue([{ id: 'c' }]),
   };
-  const service = Object.assign(
-    Object.create(SalesService.prototype),
-    { repository },
-  );
+  const service = Object.assign(Object.create(SalesService.prototype), {
+    repository,
+  });
   expect(await service.cancelledWebsiteContracts(['c', 'c'], actor)).toEqual([
     { id: 'c' },
   ]);
@@ -95,10 +94,9 @@ it('Sales public read is bounded and permission-scoped without mutations', async
 });
 it('repository returns only IDs for cancelled contracts in the supplied branch and link set', async () => {
   const findMany = vi.fn().mockResolvedValue([]);
-  const repository = Object.assign(
-    Object.create(SalesRepository.prototype),
-    { database: { client: { salesContract: { findMany } } } },
-  );
+  const repository = Object.assign(Object.create(SalesRepository.prototype), {
+    database: { client: { salesContract: { findMany } } },
+  });
   await repository.cancelledWebsiteContracts(['linked'], ['hq']);
   expect(findMany).toHaveBeenCalledWith({
     where: {
