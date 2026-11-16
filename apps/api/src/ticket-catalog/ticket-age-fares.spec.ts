@@ -150,18 +150,16 @@ it.each(['standalone', 'paired'] as const)(
       $queryRaw: vi.fn(),
       ticketPublishedOffer: {
         findFirst: vi.fn().mockResolvedValue(out),
-        findMany: vi
-          .fn()
-          .mockResolvedValue([
-            out,
-            {
-              ...out,
-              id: back,
-              originId: 'b',
-              destinationId: 'a',
-              departureAt: new Date('2099-01-04T10:00:00Z'),
-            },
-          ]),
+        findMany: vi.fn().mockResolvedValue([
+          out,
+          {
+            ...out,
+            id: back,
+            originId: 'b',
+            destinationId: 'a',
+            departureAt: new Date('2099-01-04T10:00:00Z'),
+          },
+        ]),
       },
       ticketOfferStandaloneSalePrice: rates,
       ticketOfferRoundTripSalePrice: rates,
@@ -222,24 +220,22 @@ it('rechecks changed child fares before allocation, then reserves two seats for 
   const tx = {
     $queryRaw: vi.fn(),
     ticketPublishedOffer: {
-      findMany: vi
-        .fn()
-        .mockResolvedValue([
-          {
-            id,
-            branchId: branch,
-            originId: origin,
-            destinationId: dest,
-            departureAt: new Date(dep),
-            arrivalAt: new Date(arr),
-            cabinClassCode: 'ECONOMY',
-            carrierName: 'Carrier',
-            serviceNumber: '123',
-            totalCapacity: 35,
-            capacityAllocations: [{ quantity: 20 }],
-            capacityHolds: [],
-          },
-        ]),
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id,
+          branchId: branch,
+          originId: origin,
+          destinationId: dest,
+          departureAt: new Date(dep),
+          arrivalAt: new Date(arr),
+          cabinClassCode: 'ECONOMY',
+          carrierName: 'Carrier',
+          serviceNumber: '123',
+          totalCapacity: 35,
+          capacityAllocations: [{ quantity: 20 }],
+          capacityHolds: [],
+        },
+      ]),
     },
     ticketOfferCapacityAllocation: {
       findMany: vi.fn().mockResolvedValue([]),
