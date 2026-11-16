@@ -12750,4 +12750,12 @@ SITE-AIRLINE-LOGO-1115 CI integration repair: reserve one additive English label
 
 CI follow-up lease: append only the11 newly introduced Workbench guide scaffolding/clarification translations to apps/web/src/i18n/en-overrides.json. The previous PC-A translation scope is merged/frozen; current PC-D fiscal-display branch does not change this file. Preserve all other keys and the English completeness gate; no inventory/assertion suppression.
 
+## NORA-CHAT-NAVIGATION-1116 — PC-C — ACTIVE
+
+Owner requests preserving Nora messages/draft across internal ERP routes and tabs until full browser refresh. Reserve assistant Composer scope/context reset, new scoped-session helper and regressions; own task/status notes. Prior guide1733 source lease is complete (release receipt7f7ce04d9); no active peer overlap. Preserve account/company/permission isolation and abort stale in-flight work on context change. Keep bounded provider history separate from displayed transcript; no storage persistence, dependencies, migration or producer workflows. Base develop b6fff7d2a; scoped release follows existing owner authorization for this deployed guide fix.
 ORG-CHART-ZOOM-1116 PC-B completed. Zoom 30-200 percent, reset, scale-aware connectors and drag offsets. Scoped ESLint passed. Owner authorizes push/merge.
+
+LEAVE-MANAGER-ROUTING-1116 PC-B completed: named leave manager routing, server enforcement, auto-filled recipient, selected request styles and sales manager chart title. Scoped API/Web ESLint passed. Two existing suites blocked by missing local contracts build. Owner authorizes push/merge.
+NORA-CHAT-NAVIGATION-1116 CI integration lease: origin/develop13baa77e2 introduced read-only chart zoom controls; baseline-identical HR source/test and missing two English labels fail the full suite. ORG-CHART-ZOOM-1116 is recorded completed by PC-B. Reserve only organization-chart-live.spec.tsx read-only node assertions (retain mutation/movement denial, allow view-only zoom) and two additive en-overrides labels. No HR product-source, schema, permission or workflow edits. Current merged PC-A translations preserved; no active overlap. Do not suppress English inventory or skip tests.
+
+LEAD-TITLE-1116 PC-B completed: remove surname from lead creation, rename name to title and submit existing optional-name API. Scoped ESLint passed. Owner authorizes merge.

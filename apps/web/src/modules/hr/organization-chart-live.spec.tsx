@@ -148,11 +148,17 @@ describe('live organization chart nodes', () => {
         onPositionChange={async () => undefined}
       />,
     );
-    expect(html).not.toContain('aria-label="ویرایش ');
-    expect(html).not.toContain('aria-label="حذف ');
-    expect(html).not.toContain('aria-label="افزودن ');
-    expect(html).not.toContain('draggable="true"');
-    expect(html).toContain('بازگشت به اندازه اصلی');
+    // View-only zoom remains available; editing and movement stay absent on nodes.
+    const nodeMarkup = html.match(/<article\b[\s\S]*?<\/article>/g) ?? [];
+    expect(nodeMarkup).toHaveLength(3);
+    for (const node of nodeMarkup) {
+      expect(node).not.toContain('<button');
+      expect(node).not.toContain('tabindex=');
+      expect(node).not.toContain('draggable=');
+    }
+    expect(html).toContain('aria-label="بزرگ‌نمایی"');
+    expect(html).toContain('aria-label="کوچک‌نمایی"');
+    expect(html).toContain('aria-label="بازگشت به اندازه اصلی"');
     expect(html).toContain('همکار');
   });
   it('keeps system roots immutable and skips deleted/missing employee nodes', () => {
