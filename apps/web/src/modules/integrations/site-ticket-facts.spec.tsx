@@ -2,8 +2,11 @@ import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { SiteTicketFacts } from './components/site-ticket-facts';
-const offer = {
+const offer: TicketOfferV1 = {
   id: 'outbound',
+  version: 1,
+  branchId: 'synthetic-branch',
+  status: 'ACTIVE',
   originId: 'origin',
   destinationId: 'destination',
   carrierName: 'Synthetic Air',
@@ -20,7 +23,7 @@ const offer = {
   baseRoundTripSalePrices: [
     { returnOfferId: 'return', amount: '500.2500', currencyCode: 'USD' },
   ],
-} as TicketOfferV1;
+};
 it('shows compact flight facts with a separate route and defined return leg, keeping Tehran time and zero remaining seats', () => {
   const returning = {
     ...offer,
