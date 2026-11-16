@@ -1,3 +1,7 @@
+## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
+
+Actual Germany-routed Groq30-case run on disposable local SQL fixtures found an obsolete count transport, missing clarification on nonunique names and unadvertised final json calls. Bounded harness/prompt/provider repairs implemented;119 service regressions and native scope preflight pass. Final same-source model matrix still running; no production change. See tasks/NORA-LIVE-MATRIX-1116.md.
+
 ## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
 
 New independent synthetic runner removes the initial hour and all successful-case
