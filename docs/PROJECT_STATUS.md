@@ -1,3 +1,5 @@
+SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
+
 ## SITE-MANAGEMENT-RELEASE-1116 — PC-A
 
 User authorizes latest develop Avina deployment with all data preserved. Reserve release-only artifacts and a bounded post-merge verification repair: two missing organization-chart zoom translations and read-only regression distinguishes view controls from mutation controls. No HR behavior change; chart owner source untouched. Source-only PR then all green gates, encrypted verified backup, existing overlays/env/mounts and data services retained; additive website migration only after inventory. Shared host lock required.

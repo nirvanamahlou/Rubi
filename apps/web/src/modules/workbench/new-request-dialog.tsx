@@ -53,8 +53,8 @@ function NewRequestForm({
   const [requestKind, setRequestKind] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [unit, setUnit] = useState('');
-  const [recipient, setRecipient] = useState('');
+  const [manualUnit, setUnit] = useState('');
+  const [manualRecipient, setRecipient] = useState('');
   const [optionsVersion, setOptionsVersion] = useState(0);
   const [options, setOptions] = useState<{
     branchId: string;
@@ -66,6 +66,12 @@ function NewRequestForm({
   } | null>(null);
   const optionsMatch =
     options?.branchId === branchId && options?.version === optionsVersion;
+  const unit =
+    leave && optionsMatch ? (options?.leaveRoute?.unitId ?? '') : manualUnit;
+  const recipient =
+    leave && optionsMatch
+      ? (options?.leaveRoute?.recipientId ?? '')
+      : manualRecipient;
   const units = optionsMatch ? options!.units : [];
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
@@ -114,12 +120,6 @@ function NewRequestForm({
       active = false;
     };
   }, [open, branchId, optionsVersion]);
-  useEffect(() => {
-    if (!leave || !optionsMatch) return;
-    const route = options?.leaveRoute;
-    setUnit(route?.unitId ?? '');
-    setRecipient(route?.recipientId ?? '');
-  }, [Boolean(leave), optionsMatch, options?.leaveRoute]);
   return (
     <Dialog
       open={open}
@@ -301,7 +301,7 @@ ${body.trim()}`
               <span className="ms-auto flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
-                  variant={requestKind === 'advance' ? 'default' : 'outline'}
+                  variant={requestKind === 'advance' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'advance'}
                   disabled={pending || uploading}
                   onClick={() => {
@@ -318,7 +318,7 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant={requestKind === 'leave' ? 'default' : 'outline'}
+                  variant={requestKind === 'leave' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'leave'}
                   disabled={pending || uploading}
                   onClick={() => {
@@ -347,7 +347,7 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant={requestKind === 'correction' ? 'default' : 'outline'}
+                  variant={requestKind === 'correction' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'correction'}
                   disabled={pending || uploading}
                   onClick={() => {
