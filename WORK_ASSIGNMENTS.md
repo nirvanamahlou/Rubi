@@ -12788,3 +12788,5 @@ SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destinatio
 SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.
 
 SITE-TILES-1116 bounded integration build repair: upstream HR-MANAGER-OVERRIDE-1116 is completed but refers to an uninjected IAM service and a missing validated ReferralResponseDto flag. Reserve only constructor injection/optional deny-safe guard and optional boolean validation; preserve named-user authorization and explicit confirmation policy, no business/API permission expansion.
+
+SITE-TILES-1116 integration build repair: remove undefined overrideSubstitute shorthand only from substitute self-review request; keep HR-manager review flag/confirmation unchanged.

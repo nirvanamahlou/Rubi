@@ -175,7 +175,7 @@ export const customerAffairsApi = {
   reviewLeaveSubstitute: (id: string, version: number, status: string) =>
     request(`/workbench/requests/${encodeURIComponent(id)}/substitute`, {
       method: 'PATCH',
-      body: JSON.stringify({ version, status, overrideSubstitute }),
+      body: JSON.stringify({ version, status }),
     }),
   reviewHrWorkbenchRequest: (
     id: string,
