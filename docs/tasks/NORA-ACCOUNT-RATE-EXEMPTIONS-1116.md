@@ -1,0 +1,11 @@
+# NORA-ACCOUNT-RATE-EXEMPTIONS-1116
+
+The owner requested removal of application request-consumption limits for demo and danial (Daniyal Altafi). Native IAM account identity was verified read-only. Private runtime configuration stores immutable UUIDs; actual IDs and environment secrets are not committed.
+
+`ASSISTANT_RATE_LIMIT_EXEMPT_USER_IDS` is an operator-only comma-separated UUID allowlist (maximum16). Invalid configuration fails startup. Authentication precedes admission; only native authenticated IDs can match. Exempt identities bypass the12/min user counter,60/min shared-IP counter and ordinary8-request concurrency pool. They neither exhaust nor occupy ordinary-user capacity. Other identities retain those limits. Caller-supplied names/headers cannot grant an exemption.
+
+Authentication, authorization/revalidation, selected company/branch/ownership, SQL AST/reader restrictions, body/row/token/statement/request bounds and actual Groq Organization limits remain enforced. This is not unlimited model capacity or data access. No IAM update, migration, dependency, API or Web change.
+
+Validation: all122 service tests passed, including130 conversation requests across two synthetic identities, ordinary-user/IP isolation, concurrent saturation, missing authentication, spoofed headers, source denial and preservation of provider429. These are native HTTP tests with injected synthetic IAM/provider, not live production account/browser tests.
+
+Rollout: prepare an immutable copy of current mounted Nora source; replace only server.mjs and add request-quota.mjs after baseline comparison. Preserve runtime wiring, image, secrets, Germany relay, network and container restrictions. Under the shared host deployment lock, back up private environment/container metadata, configure exactly the two verified IDs and replace Nora only. Candidate health must pass; failure restores the previous container. Main Web/API/worker/read boundary/database must remain unchanged. Keep the previous container stopped for explicit rollback. Production activation and hosted CI results will be recorded after execution.

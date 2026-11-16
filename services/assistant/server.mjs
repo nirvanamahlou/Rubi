@@ -23,6 +23,7 @@ import {
 } from './authorization.mjs';
 import { createToolExecutor } from './tool-executor.mjs';
 import { recordRequestAudit } from './audit.mjs';
+import { requestQuotaExemptions, validateQuotaExemptions } from './request-quota.mjs';
 export { accessCookie } from './authorization.mjs';
 export { configuredErpOrigin } from './erp-client.mjs';
 export { personalFollowUps } from './personal-source.mjs';
@@ -39,7 +40,9 @@ export function createAssistantServer({
   conversation,
   agent,
   workbenchGuide,
+  rateLimitExemptUserIds = requestQuotaExemptions(),
 }) {
+  const exemptUsers = new Set(validateQuotaExemptions(rateLimitExemptUserIds));
   const client = createErpClient({
     erpBaseUrl,
     erpReportsBaseUrl,
@@ -182,19 +185,21 @@ export function createAssistantServer({
           !conversationRequest
         )
           throw new ServiceError(404, 'NOT_FOUND');
-        if (
-          inFlight >= 8 ||
-          !withinLimit(`ip:${request.socket.remoteAddress}`, 60)
-        )
-          throw new ServiceError(429, 'RATE_LIMITED');
-        inFlight++;
-        counted = true;
         const cookie = accessCookie(request.headers.cookie);
         if (!cookie) throw new ServiceError(401, 'UNAUTHENTICATED');
         const actor = await authenticate(cookie, deadline.signal);
         actorId = actor.userId;
-        if (!withinLimit(`user:${actorId}`, 12))
-          throw new ServiceError(429, 'RATE_LIMITED');
+        // Identify the account through native IAM before applying its quota.
+        // Exempt activity neither consumes shared IP counters nor occupies the
+        // ordinary-user concurrency pool. Data permissions are unaffected.
+        if (!exemptUsers.has(actorId.toLowerCase())) {
+          if (inFlight >= 8 ||
+            !withinLimit(`ip:${request.socket.remoteAddress}`, 60) ||
+            !withinLimit(`user:${actorId}`, 12))
+            throw new ServiceError(429, 'RATE_LIMITED');
+          inFlight++;
+          counted = true;
+        }
         if (guideRequest) {
           const input = await readMessage(
             request,

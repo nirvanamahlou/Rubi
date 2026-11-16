@@ -1,3 +1,7 @@
+## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — READY_FOR_CI
+
+Native-identity private quota exemption for two owner-selected accounts;122 service tests pass. Other accounts, data authorization, SQL bounds and actual Groq limits preserved. Nora-only rollout pending hosted gates. No migration/API/Web change. See [task](tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md).
+
 ## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
 
 New independent synthetic runner removes the initial hour and all successful-case

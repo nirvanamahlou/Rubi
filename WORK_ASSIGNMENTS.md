@@ -1,3 +1,7 @@
+## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — ACTIVE
+
+Owner explicitly requests unlimited application request quota for existing demo and danial (Daniyal Altafi), subject to real provider limits. PC-C verified; branch codex/pc-c-nora-account-rate-exemptions-1116 from develop6204acc28. Reserve assistant server admission, new private-config UUID allowlist/parser/tests, server HTTP regressions, README/task/status notes and bounded Nora-only runtime/config activation with backup/CAS/rollback after verification. Exemption uses native authenticated immutable user IDs resolved read-only from IAM, never names/headers/client selectors. Bypass application per-user/shared-IP request counters and ordinary-user concurrency slots only for these identities. Retain all authentication/data/SQL/body/deadline/provider constraints and other users' policy. No IAM grants, account/data writes, migration/dependency or main API/Web deployment. Existing1114 model/provider lease untouched;1733/server guide wiring is merged/frozen. Do not commit actual user IDs or any key/config secret. Preserve peer runtime changes and host deployment lock.
+
 PR1743 final integration: all eight20369568b checks passed, then develop advanced to79e83ca2a through1747/1751/1752. Preserve both sides of the two documentation append conflicts and all incoming owner-authored code; no routing runtime conflict or new product edit. Require final exact-head hosted checks before merge.
 
 ## NORA-QUESTION-ROUTING-1116 — PC-C — READY_FOR_CI
