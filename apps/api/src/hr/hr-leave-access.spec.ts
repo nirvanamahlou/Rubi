@@ -14,12 +14,10 @@ function setup(users: Array<{ id: string }>) {
   const database = {
     client: {
       hrEmployee: {
-        findFirst: vi
-          .fn()
-          .mockResolvedValue({
-            unit: 'Sales',
-            organizationBranchId: 'company',
-          }),
+        findFirst: vi.fn().mockResolvedValue({
+          unit: 'Sales',
+          organizationBranchId: 'company',
+        }),
         findMany: vi
           .fn()
           .mockResolvedValue(users.map((user) => ({ userId: user.id }))),
