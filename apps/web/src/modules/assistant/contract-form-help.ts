@@ -4,6 +4,7 @@ import {
   normalizeContractQuestion,
   resolveContractGuide,
 } from './contract-guides';
+import { matchesQuestion } from './question-text';
 
 export function formCorrectionTargets() {
   const marker = document.querySelector<HTMLElement>('[data-nora-stage]');
@@ -45,7 +46,7 @@ export function readContractFormHelp(message: string): string | undefined {
   const saved = document.querySelector<HTMLElement>('[data-nora-saved]');
   if (
     saved?.dataset.noraSaved &&
-    /ثبت|ارسال|رسید|مدرک|بعد|حالا/.test(question)
+    matchesQuestion(question, /ثبت|ارسال|رسید|مدرک|بعد|حالا/)
   ) {
     return (
       'قرارداد ' +
