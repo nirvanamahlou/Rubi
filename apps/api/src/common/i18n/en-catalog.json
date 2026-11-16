@@ -8907,5 +8907,21 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "· از قبل فعال:": "· Already enabled:",
+  "· توقف فروش:": "· Sales stopped:",
+  "· ناموفق:": "· Failed:",
+  "از قبل فعال": "Already enabled",
+  "انتخاب سایت معتبر نیست.": "Invalid website selection.",
+  "انتشار گروهی بلیط‌ها": "Bulk ticket publication",
+  "انتشارهای قبلی و توقف فروش حفظ می‌شوند؛ سایت‌های دیگر تغییری نمی‌کنند.": "Existing publications and stopped sales are preserved; other websites stay unchanged.",
+  "بررسی انتشار گروهی": "Review bulk publication",
+  "بلیت ·": "tickets ·",
+  "بلیت‌های مطابق فیلتر:": "Tickets matching the filters:",
+  "به‌علت خطای دسترسی اجرا نشد.": "Not processed because access was denied.",
+  "تأیید و انتشار گروهی": "Confirm and publish selection",
+  "توقف فروش حفظ شد": "Sales stop preserved",
+  "جزئیات نتیجهٔ انتشار": "Publication result details",
+  "مبدأ، مقصد، نوع بلیط و بازهٔ تاریخ را در فیلترهای بالا مشخص کنید؛ سپس سایت‌ها را انتخاب کنید.": "Set the origin, destination, trip type and date range above, then select websites.",
+  "مشاهده بلیت‌های انتخاب‌شده": "View selected tickets"
 }
