@@ -1,3 +1,7 @@
+## AMIN-UNPUBLISHED-RELEASE-1116 — PC-C — DONE
+
+Owner-authorized publication complete. All171 Amin-tech11 PRs merged to develop inventoried:169 already in deployed baseline,1743/1746 now published to Web. Full Web build/types,353 regressions, isolated canary, verified encrypted backup and public health/assets/Worker/AMI checks passed. Other services and live peer overlays preserved; no migration or production fixture. See tasks/AMIN-UNPUBLISHED-RELEASE-1116.md.
+
 ## NORA-QUESTION-ROUTING-1116 — PC-C — verification
 
 Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
