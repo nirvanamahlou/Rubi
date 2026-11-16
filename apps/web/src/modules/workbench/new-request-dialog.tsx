@@ -69,6 +69,12 @@ function NewRequestForm({
   } | null>(null);
   const optionsMatch =
     options?.branchId === branchId && options?.version === optionsVersion;
+  const unit =
+    leave && optionsMatch ? (options?.leaveRoute?.unitId ?? '') : manualUnit;
+  const recipient =
+    leave && optionsMatch
+      ? (options?.leaveRoute?.recipientId ?? '')
+      : manualRecipient;
   const units = optionsMatch ? options!.units : [];
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';

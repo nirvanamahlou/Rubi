@@ -250,7 +250,7 @@ function seedIntakes() {
     ],
     '',
     '',
-    'نام آزمایشی',
+    'عنوان آزمایشی',
     '2026-11-03',
     'WEBSITE',
     'none',
@@ -331,9 +331,7 @@ describe('audience presentation and canonical mutations', () => {
       ) => void
     )({ target: { value: '09123456789' } });
     tree = intake();
-    for (const [id, value] of [
-      ['intake-first-name', 'نام آزمایشی'],
-    ]) {
+    for (const [id, value] of [['intake-first-name', 'عنوان آزمایشی']]) {
       (find(tree, 'id', id!).props.onChange as (event: unknown) => void)({
         target: { value },
       });
@@ -349,7 +347,7 @@ describe('audience presentation and canonical mutations', () => {
     )();
     expect(state.createIntake).toHaveBeenCalledWith(
       {
-        firstName: 'نام آزمایشی',
+        firstName: 'عنوان آزمایشی',
         entryDate: '2026-11-02T20:30:00.000Z',
         phone: '09123456789',
         sourceCategory: 'WEBSITE',
