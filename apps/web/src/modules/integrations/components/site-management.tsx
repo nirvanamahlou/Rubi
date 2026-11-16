@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pencil } from 'lucide-react';
 import type {
   AuthenticatedActor,
+  MasterDataRecord,
   BranchReference,
   TicketOfferV1,
   TourDepartureV1,
@@ -21,12 +22,32 @@ import {
   ticketCabinLabel,
 } from '@/modules/sales/model/ticket-price-rows';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
+import { pricingCityCountries } from '@/modules/sales/model/ticket-pricing-display';
 import { integrationsApi } from '../api/client';
+import { SiteTicketFacts } from './site-ticket-facts';
+import styles from './site-management.module.css';
 import {
   publishableTickets,
   publishableTours,
   websiteDestinations,
 } from '../site-publication-model';
+
+async function siteReferences(resource: 'cities' | 'countries') {
+  const rows: MasterDataRecord[] = [];
+  for (let page = 1; page <= 100; page++) {
+    const result = await listReferences(
+      resource,
+      '',
+      page,
+      undefined,
+      {},
+      'ticket-catalog',
+    );
+    rows.push(...result.data);
+    if (page * result.meta.pageSize >= result.meta.total) break;
+  }
+  return rows;
+}
 
 type Presentation = {
   title: string;
@@ -44,16 +65,19 @@ export function WebsiteDestination({
   resourceId,
   branchId,
   children,
+  compact = false,
 }: {
   site: (typeof websiteDestinations)[number];
   kind: 'tour' | 'ticket';
   resourceId: string;
   branchId: string;
   children?: React.ReactNode;
+  compact?: boolean;
 }) {
   const [stored, setStored] = useState<Publication>();
   const [selected, setSelected] = useState(false);
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [presentation, setPresentation] = useState<Presentation>({
@@ -93,7 +117,8 @@ export function WebsiteDestination({
     return () => abort.abort();
   }, [path, branchId]);
   async function save(enabled = selected, selectionOnly = false) {
-    if (!stored || busy) return;
+    if (!stored || busy || saving.current) return;
+    saving.current = true;
     setBusy(true);
     setError('');
     try {
@@ -127,12 +152,14 @@ export function WebsiteDestination({
           result.error?.message ?? result.message ?? 'ثبت انتشار ناموفق بود.',
         );
       setStored(result.data);
+      if (selectionOnly) setSelected(result.data.enabled);
     } catch (cause) {
       if (selectionOnly) setSelected(stored.enabled);
       setError(
         cause instanceof Error ? cause.message : 'ثبت انتشار ناموفق بود.',
       );
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
@@ -154,9 +181,21 @@ export function WebsiteDestination({
   return (
     <div
       aria-busy={busy}
-      className={`min-w-0 rounded-xl border p-2.5 text-sm transition-colors focus-within:ring-2 focus-within:ring-primary/30 ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface hover:border-primary/30'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`}
+      data-selected={selected}
+      data-editing={editing}
+      className={
+        compact
+          ? styles.destination
+          : `min-w-0 rounded-xl border p-2.5 text-sm transition-colors ${selected ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface'} ${editing ? 'col-span-2 sm:col-span-4' : ''}`
+      }
     >
-      <label className="flex min-h-6 cursor-pointer items-center gap-2 font-semibold text-primary">
+      <label
+        className={
+          compact
+            ? styles.destinationHeader
+            : 'flex min-h-6 cursor-pointer items-center gap-2 font-semibold text-primary'
+        }
+      >
         <input
           type="checkbox"
           className="h-4 w-4 shrink-0 accent-primary"
@@ -171,7 +210,13 @@ export function WebsiteDestination({
         />
         <span className="min-w-0 break-words leading-5">{site.name}</span>
       </label>
-      <div className="mt-1 flex min-h-7 items-center justify-between gap-1">
+      <div
+        className={
+          compact
+            ? styles.destinationStatus
+            : 'mt-1 flex min-h-7 items-center justify-between gap-1'
+        }
+      >
         <span className="flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-muted-foreground">
           <span
             aria-hidden="true"
@@ -183,8 +228,12 @@ export function WebsiteDestination({
           <Button
             type="button"
             variant="ghost"
-            className="h-7 min-h-0 w-7 shrink-0 p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-            aria-label="ویرایش"
+            className={
+              compact
+                ? styles.editButton
+                : 'h-7 min-h-0 w-7 shrink-0 p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary'
+            }
+            aria-label={compact ? `ویرایش ${site.name}` : 'ویرایش'}
             title="ویرایش"
             aria-expanded={editing}
             disabled={!stored || busy}
@@ -195,7 +244,13 @@ export function WebsiteDestination({
         </div>
       </div>
       {editing ? (
-        <div className="mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3">
+        <div
+          className={
+            compact
+              ? 'mt-2 grid gap-3 border-t border-primary/10 pt-3'
+              : 'mt-2 grid gap-3 border-t border-primary/10 pt-3 sm:grid-cols-3'
+          }
+        >
           {kind === 'tour' ? (
             <>
               <label>
@@ -281,6 +336,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
   const [revision, setRevision] = useState(0);
   const [search, setSearch] = useState('');
   const [cities, setCities] = useState<Record<string, string>>({});
+  const [cityCountries, setCityCountries] = useState<Record<string, string>>(
+    {},
+  );
   const [originId, setOriginId] = useState('');
   const [destinationId, setDestinationId] = useState('');
   const [tripType, setTripType] = useState('');
@@ -300,20 +358,11 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
     });
     void Promise.all([
       (async () => {
-        const rows: { id: string; name: string }[] = [];
-        for (let page = 1; page <= 100; page++) {
-          const result = await listReferences(
-            'cities',
-            '',
-            page,
-            undefined,
-            {},
-            'sales',
-          );
-          rows.push(...result.data);
-          if (page * result.meta.pageSize >= result.meta.total) break;
-        }
-        return rows;
+        const [cities, countries] = await Promise.all([
+          siteReferences('cities'),
+          siteReferences('countries'),
+        ]);
+        return { cities, countries };
       })(),
       integrationsApi.branches(),
       toursApi.departures(true),
@@ -341,7 +390,12 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             allowedBranchIds.includes(row.id),
           );
           setCities(
-            Object.fromEntries(cityResult.map((row) => [row.id, row.name])),
+            Object.fromEntries(
+              cityResult.cities.map((row) => [row.id, row.name]),
+            ),
+          );
+          setCityCountries(
+            pricingCityCountries(cityResult.cities, cityResult.countries),
           );
           setBranches(allowed);
           setBranchId((current) =>
@@ -397,6 +451,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           .map((row) => ({
             id: row.id,
             title: flightLabel(row),
+            offer: row,
             detail: `${new Date(row.departureAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} — ${new Date(row.arrivalAt).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })} · مانده: ${row.remainingCapacity} · ظرفیت: ${row.totalCapacity} · ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice) ? `یک‌طرفه: ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.amount} ${(row.baseStandaloneSalePrice ?? row.standaloneSalePrice)!.currencyCode}` : ''} ${(
               row.baseRoundTripSalePrices ??
               row.roundTripSalePrices ??
@@ -468,7 +523,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
             </Button>
           </div>
           {tab === 'tickets' ? (
-            <div className="grid gap-2 rounded-xl border border-border p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+            <div className={styles.filters}>
               {(
                 [
                   {
@@ -566,7 +621,9 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           ) : loading ? (
             <Skeleton className="h-48" />
           ) : (
-            <div className="grid gap-4">
+            <div
+              className={tab === 'tickets' ? styles.ticketGrid : 'grid gap-4'}
+            >
               {resources
                 .filter((row) =>
                   (tab === 'tickets' ? search : `${row.title} ${row.detail}`)
@@ -576,39 +633,60 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                 .map((row) => (
                   <article
                     key={`${revision}:${branchId}:${row.kind}:${row.id}`}
-                    className="grid gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm"
+                    className={styles.resource}
                   >
-                    <div className="min-w-0 break-words">
-                      <h2 className="text-sm font-bold leading-6 text-primary">
-                        {row.title}
-                      </h2>
-                      <p
-                        className="mt-1 text-xs leading-6 text-muted-foreground"
-                        dir="auto"
+                    <div
+                      className={
+                        row.kind === 'ticket'
+                          ? styles.resourceHeader
+                          : 'grid gap-4'
+                      }
+                    >
+                      <div className="min-w-0 break-words">
+                        {row.kind === 'ticket' ? (
+                          <SiteTicketFacts
+                            offer={row.offer}
+                            tickets={tickets}
+                            cities={cities}
+                            cityCountries={cityCountries}
+                          />
+                        ) : (
+                          <h2 className={styles.title}>{row.title}</h2>
+                        )}
+                        {row.kind === 'tour' ? (
+                          <p className="text-sm leading-7" dir="auto">
+                            {row.detail}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div
+                        className={
+                          row.kind === 'ticket'
+                            ? styles.destinations
+                            : 'grid gap-2 sm:grid-cols-2 xl:grid-cols-4'
+                        }
                       >
-                        {row.detail}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
-                      {websiteDestinations.map((site) => (
-                        <WebsiteDestination
-                          key={site.code}
-                          site={site}
-                          kind={row.kind}
-                          resourceId={row.id}
-                          branchId={branchId}
-                        >
-                          {row.kind === 'ticket' ? (
-                            <TicketSiteCommission
-                              offer={tickets.find(
-                                (offer) => offer.id === row.id,
-                              )!}
-                              site={site}
-                              targets={targets}
-                            />
-                          ) : null}
-                        </WebsiteDestination>
-                      ))}
+                        {websiteDestinations.map((site) => (
+                          <WebsiteDestination
+                            key={site.code}
+                            site={site}
+                            kind={row.kind}
+                            resourceId={row.id}
+                            branchId={branchId}
+                            compact={row.kind === 'ticket'}
+                          >
+                            {row.kind === 'ticket' ? (
+                              <TicketSiteCommission
+                                offer={tickets.find(
+                                  (offer) => offer.id === row.id,
+                                )!}
+                                site={site}
+                                targets={targets}
+                              />
+                            ) : null}
+                          </WebsiteDestination>
+                        ))}
+                      </div>
                     </div>
                   </article>
                 ))}
