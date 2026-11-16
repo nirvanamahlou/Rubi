@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 import type {
   FloatingTourImportOptions,
   FloatingTourImportPreview,
@@ -271,7 +272,7 @@ export function FloatingTourPricingWorkspace() {
                   disabled={busy || !canManage}
                   onChange={(e) => patch({ combined: e.target.checked })}
                 />
-                تور ترکیبی، دو ردیف پشت‌سرهم
+                تور ترکیبی با قیمت مشترک اقامت‌ها
               </label>
             </div>
             {options.mode === 'MONTHLY' && (
@@ -311,20 +312,21 @@ export function FloatingTourPricingWorkspace() {
               </>
             )}
             <a
-              className="underline"
-              href="/templates/floating-tour-price.xlsx"
+              className="inline-flex w-fit items-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 hover:bg-blue-50"
+              href={
+                options.combined && getPublicApiBaseUrl()
+                  ? `${getPublicApiBaseUrl()}/sales/pricing/floating-tours/${encodeURIComponent(id)}/template`
+                  : '/templates/floating-tour-price.xlsx'
+              }
               download
             >
               دانلود قالب قیمت تور
             </a>
             {options.combined && (
-              <a
-                className="underline"
-                href="/templates/floating-tour-combined.xlsx"
-                download
-              >
-                دانلود قالب ترکیبی
-              </a>
+              <p className="text-sm text-slate-600">
+                قیمت مشترک را در سلول ادغام‌شده وارد کنید؛ هر ردیف یک اقامت از
+                همان ترکیب است.
+              </p>
             )}
             <Input
               aria-label="فایل قیمت تور"

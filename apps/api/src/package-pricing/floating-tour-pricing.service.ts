@@ -20,6 +20,7 @@ import {
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { PackageTourPricingService } from './package-tour-pricing.service';
+import { buildFloatingTourTemplate } from './floating-tour-template';
 import {
   parseFloatingRows,
   readFloatingWorkbook,
@@ -103,6 +104,11 @@ export class FloatingTourPricingService {
         }
       : { version: 0, dated: [], monthly: null };
   }
+  async template(id: string, actor: AuthenticatedActor) {
+    this.authorize(actor);
+    const { definition } = await this.definition(id, actor);
+    return buildFloatingTourTemplate(definition);
+  }
   async preview(
     id: string,
     bytes: Uint8Array,
@@ -119,7 +125,7 @@ export class FloatingTourPricingService {
       throw new BadRequestException('مسیر تور را تکمیل کنید.');
     if (definition.details?.isCombined && !options.combined)
       throw new BadRequestException(
-        'برای تور ترکیبی، ورود جفت‌ردیفی را انتخاب کنید.',
+        'برای تور ترکیبی، قیمت مشترک اقامت‌ها را انتخاب کنید.',
       );
     const current = await this.get(id, actor);
     const cities = options.combined

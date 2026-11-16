@@ -3,6 +3,11 @@ RESERVATION-FORM-SEND-ACCESS-1116 CI integration: consume the exact two-file lea
 ## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
 
 Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
+FLOATING-MERGED-TEMPLATE-1116 CI integration repair: reserve only the already-merged ReferralResponseDto optional overrideSubstitute Boolean and missing optional IamService constructor injection/guard in CustomerAffairsService. CI on develop57f2f758e fails these unresolved existing references. Preserve the existing Nima-only substitute override, native HR permissions and payload validation; no new HR policy or data changes. Existing IAM module import/export is reused. This bounded compatibility repair is necessary for the authorized green merge.
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-floating-merged-template-1116. Owner authorizes a visible template download and Excel vertical-merged shared prices across all stays of a combined tour, counted once, and develop merge. Reserve floating importer/service/controller, new template builder, floating Web workspace and focused tests plus bounded English overrides and own status entries. Preserve old dedicated/pair templates, native branch/read/write/CAS/digest and money safeguards. No schema, migration, dependency, operational data or deployment changes. No competing active writer in these leaf paths found.
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
