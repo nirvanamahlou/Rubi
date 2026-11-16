@@ -535,6 +535,17 @@ const followup =
 const outsideSales =
   /مرخصی|حضور و غیاب|حقوق کارکنان|کال سنتر|آب و هوا|گزارش فروش/;
 
+export function isContractCountQuestion(message: string) {
+  const question = normalizeContractQuestion(message);
+  return (
+    /قرارداد|contract/i.test(question) &&
+    /تعداد|شمارش|عدد|اختلاف|محاسبه/.test(question) &&
+    !/(?:چطور|چجور|چگونه|نحوه|راهنمای).*(?:ثبت|ایجاد|اصلاح|تغییر|انتخاب|وارد|بزن)/.test(
+      question,
+    )
+  );
+}
+
 /** Return grounded instructions for the current Sales workflow; unknown topics get a local clarification. */
 export function resolveContractGuide(
   message: string,
@@ -548,6 +559,9 @@ export function resolveContractGuide(
   const continuing = Boolean(previousTopicId && followup.test(question));
   if (!onSalesPage && !explicitContract && !continuing) return;
   if (outsideSales.test(question) && !explicitContract) return;
+
+  // Count/evidence follow-ups are analytics, even when they contain "why/where".
+  if (dataAgentAvailable && isContractCountQuestion(question)) return;
 
   // A concrete record question belongs to the authorized reader, including follow-ups.
   if (!recordAlreadyRead && /قرارداد\s*(?:شماره\s*)?[A-Za-z0-9]/.test(question))
