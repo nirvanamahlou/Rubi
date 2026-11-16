@@ -10,7 +10,7 @@ const site = process.env.SITE_COMMERCE_SITE_CODE ?? 'nss';
 if (!['nss', 'jahan-bastan'].includes(site)) throw Error('Unknown sales site');
 const isJahan = site === 'jahan-bastan';
 const username = isJahan ? 'jahan-bastan-site-sales' : 'nss-site-sales';
-const displayName = isJahan ? 'سایت جهان باستان' : 'سایت نیایش';
+const displayName = isJahan ? '��?� ��� ������' : '��?� �?�?�';
 const codes = [
   'sales.contracts.create',
   'sales.contracts.read.own',
@@ -61,11 +61,19 @@ async function main() {
     throw Error('Explicit active branch and issuer required');
   const memberships = [{ branchId, isPrimary: true }];
   if (isJahan) {
-    const jahanBranch = branches.find((branch) => branch.code === 'JAHAN_BASTAN');
+    const jahanBranch = branches.find(
+      (branch) => branch.code === 'JAHAN_BASTAN',
+    );
     const primary = branches.find((branch) => branch.id === branchId);
     const issuer = issuers.find((entity) => entity.id === legalEntityId);
-    if (primary?.code !== 'HQ' || issuer?.code !== 'JAHAN_BASTAN' || !jahanBranch)
-      throw Error('Jahan Bastan requires HQ inventory, its branch and its own issuer');
+    if (
+      primary?.code !== 'HQ' ||
+      issuer?.code !== 'JAHAN_BASTAN' ||
+      !jahanBranch
+    )
+      throw Error(
+        'Jahan Bastan requires HQ inventory, its branch and its own issuer',
+      );
     memberships.push({ branchId: jahanBranch.id, isPrimary: false });
   }
   if (existing || permissions.length !== codes.length)
@@ -93,7 +101,7 @@ async function main() {
       const role = await tx.role.create({
         data: {
           code: roleCode,
-          name: `اتصال فروش ${displayName}`,
+          name: `����� ��� ${displayName}`,
           permissions: {
             create: permissions.map((p) => ({ permissionId: p.id })),
           },
