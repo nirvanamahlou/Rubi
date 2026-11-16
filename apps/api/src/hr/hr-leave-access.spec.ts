@@ -8,25 +8,63 @@ const actor: AuthenticatedActor = {
   branchIds: [branch],
   permissions: [],
 };
-function setup(users: Array<{ id: string }>) {
+function setup(
+  users: Array<{ id: string }>,
+  colleagueIds = users.map((user) => user.id),
+) {
+  const employees = {
+    findFirst: vi
+      .fn()
+      .mockResolvedValue({
+        unit: 'Operations',
+        organizationBranchId: 'company',
+      }),
+    findMany: vi
+      .fn()
+      .mockResolvedValue(colleagueIds.map((userId) => ({ userId }))),
+  };
   const directory = { leaveSubstituteUsers: vi.fn().mockResolvedValue(users) };
   const documents = { uploadLeaveEvidence: vi.fn() };
   return {
     service: new HrService(
-      {} as never,
+      { client: { hrEmployee: employees } } as never,
       directory as never,
       documents as never,
       {} as never,
     ),
     directory,
     documents,
+    employees,
   };
 }
 describe('leave self-service account boundary', () => {
   it('allows an active internal branch account without HR administration grants', async () => {
-    const { service } = setup([{ id: actor.userId }]);
+    const { service, employees } = setup(
+      [{ id: actor.userId }, { id: 'colleague' }, { id: 'outside' }],
+      [actor.userId, 'colleague'],
+    );
     await expect(service.leaveOptions(branch, actor)).resolves.toEqual({
-      users: [{ id: actor.userId }],
+      users: [{ id: 'colleague' }],
+    });
+    expect(employees.findFirst).toHaveBeenCalledWith({
+      where: {
+        branchId: branch,
+        userId: actor.userId,
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { unit: true, organizationBranchId: true },
+    });
+    expect(employees.findMany).toHaveBeenCalledWith({
+      where: {
+        branchId: branch,
+        unit: 'Operations',
+        organizationBranchId: 'company',
+        status: 'فعال',
+        deletedAt: null,
+        userId: { not: null },
+      },
+      select: { userId: true },
     });
   });
   it('denies directory and evidence upload to an account outside the internal directory', async () => {
