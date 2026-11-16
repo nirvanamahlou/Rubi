@@ -97,7 +97,12 @@ export class SiteCommerceController {
   @Header('Cache-Control', 'private, no-store')
   flightQuote(
     @Param('site') site: string,
-    @Body() body: { productIds: string[]; birthDates: string[] },
+    @Body()
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.flightQuote(site, body, req.actor);

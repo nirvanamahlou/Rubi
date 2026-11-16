@@ -132,6 +132,7 @@ function fixture() {
         }),
       },
       websitePublication: {
+        findFirst: vi.fn().mockResolvedValue({ resourceId: ids.offer }),
         findUnique: vi.fn().mockResolvedValue({ enabled: true }),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -452,5 +453,82 @@ describe('website ticket destination', () => {
     expect(f.contract.status).not.toBe('CONFIRMED');
     await f.service.paid('nss', 'sold-out', [payment], actor);
     expect(f.sales.confirm).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('website age quote preview and exact birthday checks', () => {
+  const publishedFare = {
+    ...flight,
+    standaloneSalePrice: {
+      revision: 1,
+      amount: '100',
+      childAmount: '40',
+      infantAmount: '10',
+      currencyCode: 'IRR',
+    },
+  };
+  it('previews declared groups without creating people, contracts or payments', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        passengerCounts: { adults: 1, children: 1, infants: 1 },
+      },
+      actor,
+    );
+    expect(result.data[0]).toMatchObject({
+      amount: '150.00',
+      currencyCode: 'IRR',
+      pricingBreakdown: {
+        version: 1,
+        totalAmount: '150.00',
+        passengers: [
+          { category: 'ADT', amount: '100.00' },
+          { category: 'CHD', amount: '40.00' },
+          { category: 'INF', amount: '10.00' },
+        ],
+      },
+    });
+    expect(f.sales.create).not.toHaveBeenCalled();
+    expect(f.sales.addPayment).not.toHaveBeenCalled();
+    expect(f.db.client.websiteOrder.upsert).not.toHaveBeenCalled();
+  });
+  it('uses real birth dates at exact two/twelve-year boundaries', async () => {
+    const f = fixture();
+    f.tickets.websiteOffer.mockResolvedValue(publishedFare);
+    const result = await f.service.flightQuote(
+      'nss',
+      {
+        productIds: ['publication'],
+        birthDates: ['2018-01-01', '2018-01-02', '2028-01-01', '2028-01-02'],
+      },
+      actor,
+    );
+    expect(result.data[0]?.amount).toBe('190.00');
+    expect(
+      result.data[0]?.pricingBreakdown?.passengers.map((p) => p.category),
+    ).toEqual(['ADT', 'CHD', 'CHD', 'INF']);
+  });
+  it.each([
+    { passengerCounts: { adults: 1.5, children: 0, infants: 0 } },
+    { passengerCounts: { adults: 0, children: 0, infants: 1 } },
+    { passengerCounts: { adults: 30, children: 1, infants: 0 } },
+    { passengerCounts: { adults: 1, children: -1, infants: 0 } },
+    {
+      passengerCounts: { adults: 1, children: 0, infants: 0 },
+      birthDates: ['2000-01-01'],
+    },
+  ])('rejects malformed or ambiguous preview %#', async (input) => {
+    const f = fixture();
+    await expect(
+      f.service.flightQuote(
+        'nss',
+        { productIds: ['publication'], ...input },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(f.tickets.websiteOffer).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,9 @@
+## AGE-PRICE-BREAKDOWN-1116 — PC-A — ACTIVE
+
+COMPUTER_ID=PC-A; branch codex/pc-a-age-price-breakdown-1116 from origin/develop0c81e9962. Owner asks to verify child/infant age pricing and show each group/per-passenger cost on the same website page. Prior FLIGHT-AGE-FARES-1116 producer owner explicitly released quote scope in coordination on2026-11-16. Reserve apps/api/src/ticket-catalog/ticket-age-fares.ts (additive bounded display helper only), apps/api/src/site-commerce/ticket-quote.ts, site-commerce.service.ts and focused tests. No price policy, native reservation arithmetic, payment, schema/migration, dependency/lockfile changes. Site consumer owned by this task; other site chats notified.
+
+Shared read-only Site Commerce v1 additive compatibility: existing birthDates quote requests remain valid; optional mutually-exclusive passengerCounts supports explicit provisional composition preview without fabricated DOB. Existing per-leg amount/currencyCode unchanged. Optional version1 pricingBreakdown contains authoritative per-passenger rounded amounts; round-trip bundle metadata covers the full pair once. Native draft still derives ages from real DOB and validates exact quote independently. Bounds, branch/publication/sale-stop/100percent-hide controls remain. Producer ERP Site Commerce; consumer Niyayesh website capacity/quote API and passenger page. No new storage or cross-module table access. Standing owner publication approval and all green CI gates required before develop merge/release.
+
 ## NORA-ACCOUNT-RATE-EXEMPTIONS-1116 — PC-C — READY_FOR_CI
 
 FLIGHT-PRICE-LAYOUT-1116: base-price save refreshes offer facts without unmounting the list or clearing unrelated drafts; destination groups sit beneath flight details and grow without an inner height limit. Success feedback stays in the save button. 22 targeted regressions, scoped ESLint and formatting pass; hosted checks gate merge.

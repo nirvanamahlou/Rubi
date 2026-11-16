@@ -682,21 +682,44 @@ export class SiteCommerceService {
 
   async flightQuote(
     site: string,
-    body: { productIds: string[]; birthDates: string[] },
+    body: {
+      productIds: string[];
+      birthDates?: string[];
+      passengerCounts?: { adults: number; children: number; infants: number };
+    },
     actor: AuthenticatedActor,
   ) {
     const scoped = this.scoped(site, actor);
+    const dates = Array.isArray(body?.birthDates) ? body.birthDates : null;
+    const preview = body?.passengerCounts;
+    const validDates =
+      dates &&
+      dates.length >= 1 &&
+      dates.length <= 30 &&
+      dates.every(
+        (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+      );
+    const validPreview =
+      preview &&
+      typeof preview === 'object' &&
+      !Array.isArray(preview) &&
+      Object.keys(preview).length === 3 &&
+      (['adults', 'children', 'infants'] as const).every(
+        (key) => Number.isSafeInteger(preview[key]) && preview[key] >= 0,
+      ) &&
+      preview.adults + preview.children >= 1 &&
+      preview.adults + preview.children + preview.infants <= 30;
     if (
       !body ||
       !Array.isArray(body.productIds) ||
       body.productIds.length < 1 ||
       body.productIds.length > 2 ||
-      !Array.isArray(body.birthDates) ||
-      !body.birthDates.length ||
-      body.birthDates.length > 30 ||
-      body.birthDates.some(
-        (d) => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d),
-      )
+      body.productIds.some(
+        (id) => typeof id !== 'string' || !id || id.length > 80,
+      ) ||
+      new Set(body.productIds).size !== body.productIds.length ||
+      (body.birthDates !== undefined && body.passengerCounts !== undefined) ||
+      !(validDates || validPreview)
     )
       throw new BadRequestException('استعلام بلیت معتبر نیست.');
     const offers: Awaited<ReturnType<TicketPublicService['websiteOffer']>>[] =
@@ -722,20 +745,20 @@ export class SiteCommerceService {
         ),
       );
     }
-    const seats = body.birthDates.filter(
-      (d) =>
-        passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)) !== 'INF',
-    ).length;
+    const counts = dates
+      ? ageCounts(
+          dates.map((d) =>
+            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
+          ),
+        )
+      : preview!;
     return {
       data: websiteFlightQuotes(
         offers[0]!,
         offers[1],
-        seats,
-        ageCounts(
-          body.birthDates.map((d) =>
-            passengerAgeCategory(d, offers[0]!.departureAt.slice(0, 10)),
-          ),
-        ),
+        counts.adults + counts.children,
+        counts,
+        true,
       ),
     };
   }

@@ -66,3 +66,37 @@ export function ageFareTotal(
     );
   return total;
 }
+
+/** Bounded presentation only: every increment comes from the existing quote policy. */
+export function ageFareBreakdown(
+  fare: Parameters<typeof ageFareTotal>[0],
+  counts: AgeCounts,
+  consumed: number,
+) {
+  const total = ageFareTotal(fare, counts, consumed);
+  if (counts.adults + counts.children + counts.infants > 30)
+    throw new ConflictException('ترکیب مسافران معتبر نیست.');
+  const prefix: AgeCounts = { adults: 0, children: 0, infants: 0 };
+  let previous = new Prisma.Decimal(0);
+  const passengers: { category: 'ADT' | 'CHD' | 'INF'; amount: string }[] = [];
+  for (const [key, category] of [
+    ['adults', 'ADT'],
+    ['children', 'CHD'],
+    ['infants', 'INF'],
+  ] as const) {
+    for (let index = 0; index < counts[key]; index++) {
+      prefix[key]++;
+      const cumulative = new Prisma.Decimal(
+        ageFareTotal(fare, prefix, consumed).toFixed(2),
+      );
+      const amount = cumulative.sub(previous);
+      if (amount.lt(0))
+        throw new ConflictException('قیمت فروش بلیت منتشر نشده است.');
+      passengers.push({ category, amount: amount.toFixed(2) });
+      previous = cumulative;
+    }
+  }
+  if (!previous.eq(total.toFixed(2)))
+    throw new ConflictException('قیمت فروش بلیت منتشر نشده است.');
+  return { totalAmount: total.toFixed(2), passengers };
+}
