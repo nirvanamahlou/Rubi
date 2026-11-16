@@ -10152,3 +10152,5 @@ NORA-WORKBENCH-GUIDE-1115 update:34 topics/all11 tabs; PR1733 open. Native synth
 WEBSITE-TICKET-LOGO-1115 — PC-A: native website-contract HTML/PDF rendering now consumes the same sanitized brand pixels through an authenticated Sales endpoint. Exact site principal, linked contract, carrier membership, finance release and cancellation gates remain.33 API and39 renderer checks pass; full build and hosted gates gate rollout. No real issuance or payment used for validation.
 
 ORG-CHART-ZOOM-1116: chart zoom controls and scale-aware connector/drag coordinates. Scoped ESLint passed; live browser acceptance pending.
+
+LEAVE-MANAGER-ROUTING-1116: Elناz to Roya; sales staff to Mahsa; Mahshid to Asal; Nima to Altafi; remaining staff to HR. Existing manager approval forwards to HR. Missing/ambiguous recipient blocks leave submission. Request templates show selected state. Scoped ESLint passed; tests could not collect due to missing contracts build.

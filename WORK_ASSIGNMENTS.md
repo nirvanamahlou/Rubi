@@ -12747,3 +12747,5 @@ SITE-AIRLINE-LOGO-1115 CI integration repair: reserve one additive English label
 CI follow-up lease: append only the11 newly introduced Workbench guide scaffolding/clarification translations to apps/web/src/i18n/en-overrides.json. The previous PC-A translation scope is merged/frozen; current PC-D fiscal-display branch does not change this file. Preserve all other keys and the English completeness gate; no inventory/assertion suppression.
 
 ORG-CHART-ZOOM-1116 PC-B completed. Zoom 30-200 percent, reset, scale-aware connectors and drag offsets. Scoped ESLint passed. Owner authorizes push/merge.
+
+LEAVE-MANAGER-ROUTING-1116 PC-B completed: named leave manager routing, server enforcement, auto-filled recipient, selected request styles and sales manager chart title. Scoped API/Web ESLint passed. Two existing suites blocked by missing local contracts build. Owner authorizes push/merge.

@@ -2244,6 +2244,15 @@ export class CustomerAffairsService {
     traceId?: string,
   ) {
     const branchId = branchScope(actor, requestedBranch);
+    if (input.leave) {
+      const route = await this.requestDirectory!.leaveRoute(actor, branchId);
+      input = {
+        ...input,
+        organizationUnitId: route.unitId,
+        executionOwnerUserId: route.recipientId,
+      };
+    }
+
     if (!input.organizationUnitId || !input.executionOwnerUserId)
       throw new BadRequestException('واحد مقصد و کاربر گیرنده را انتخاب کنید.');
     if (input.subject.trim().length < 3 || input.description.trim().length < 3)
@@ -2303,6 +2312,10 @@ export class CustomerAffairsService {
           actor,
           branchScope(actor, requestedBranch),
         )),
+        leaveRoute: await this.requestDirectory!.leaveRoute(
+          actor,
+          branchScope(actor, requestedBranch),
+        ).catch(() => undefined),
         substituteUsers: this.hr
           ? (
               await this.hr.leaveOptions(
