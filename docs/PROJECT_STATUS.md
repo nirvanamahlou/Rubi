@@ -1,3 +1,7 @@
+## AMIN-TOOLS-PUBLICATION-1754-1116 — PC-C — DONE
+
+Fresh inventory172 merged Amin-tech11 PRs:171 application merges already covered by current live source; remaining1754 is an operations-tooling artifact, now installed separately.9 CI checks, exact archive/source hashes, syntax and116 network-isolated service tests passed. All nine live service states and Compose unchanged; public health passes. No application restart, DB/config change or live Groq run. See tasks/AMIN-TOOLS-PUBLICATION-1754-1116.md.
+
 ## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
 
 New independent synthetic runner removes the initial hour and all successful-case

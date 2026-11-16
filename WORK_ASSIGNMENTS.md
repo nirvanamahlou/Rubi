@@ -1,3 +1,9 @@
+## AMIN-TOOLS-PUBLICATION-1754-1116 — PC-C — DONE
+
+Exact operational source published after9 final-head CI checks, archive/every-file verification, syntax and116 network-isolated mocked service tests. All nine live service identities/images/env/mounts and Compose unchanged; public HTTPS health passes. No live Groq runner, DB fixture or service restart. Receipt docs/tasks/AMIN-TOOLS-PUBLICATION-1754-1116.md.
+
+Owner repeats authorization to publish all Amin-tech11 merged develop PRs. Fresh complete inventory172 PRs: current production cc82273e7 plus prior1743/1746 covers171; only1754 is new, containing acceptance tooling/docs/test only, no application runtime change. Reserve own release inventory/operational artifact and documentation. Publish exact merged7616a8fbc operational source to a new versioned server directory under shared avina-deploy.lock; verify9 final-head CI checks, archive/source hashes and network-isolated fake-clock tests. Do not run the live synthetic/Groq runner, alter the earlier1114 run, restart services or change DB/env/mounts/credentials. Base db1132c09; branch codex/pc-c-amin-tools-publication-1116.
+
 PR1743 final integration: all eight20369568b checks passed, then develop advanced to79e83ca2a through1747/1751/1752. Preserve both sides of the two documentation append conflicts and all incoming owner-authored code; no routing runtime conflict or new product edit. Require final exact-head hosted checks before merge.
 
 ## NORA-QUESTION-ROUTING-1116 — PC-C — READY_FOR_CI
