@@ -704,6 +704,12 @@ COMPUTER_ID=PC-A; branch codex/pc-a-site-ticket-layout-1116 from latest origin/d
 
 SITE-TICKET-LAYOUT-1116 validation:10 focused publication/auto-save/facts tests and scoped ESLint pass. Reuse the ticket-pricing date/cabin rules with read-only country/city references; retain outbound/return IDs and offer-level publication scope. Synthetic desktop/mobile preview inspection; no real publication or server deployment. Full exact-head gates required for the authorized merge.
 
+## FLOATING-PRICING-BREADCRUMB-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-floating-breadcrumb-1116 from latest develop dabf4e80c. Owner requests removal of the incorrect unavailable breadcrumb above Floating Packages and develop merge. Reserve bounded central navigation.ts alias/breadcrumb logic and its regression spec only; no active overlapping owner found (Nora navigation task owns assistant state, not central breadcrumbs). Include own task/status notes before the stable FAMILY-ROOM-CHILD-1029 section. Preserve route access, sidebar permission rules and pricing behavior. No API, schema, dependency, translations, data writes or deployment. Source reservation releases after verified merge.
+
+FLOATING-PRICING-BREADCRUMB-1116 validation:25 navigation and Floating Pricing tests pass; scoped ESLint passes. The exact route now has a localized title and linked Sales/Package Management parents, while Sales active navigation and other aliases remain unchanged. Full exact-head hosted checks gate the owner-authorized merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
