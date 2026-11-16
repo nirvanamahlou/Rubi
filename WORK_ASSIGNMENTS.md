@@ -12725,6 +12725,8 @@ Reserve formatting-only repair of finance-source-references.spec.ts after develo
 
 ## SITE-CANCELLATION-1116 — PC-A — ACTIVE
 
+Bounded build compatibility reservation: use the existing primary Button variant for three selected request-kind buttons in new-request-dialog.tsx; no handler, routing, permission or workflow changes from the completed leave-manager feature.
+
 Bounded CI integration test reservation: organization-chart-live.spec.tsx read-only assertion permits the three newly merged viewport zoom/reset controls while explicitly rejecting every mutation/movement control. No HR production source, layout, permission or behavior changes; ORG-CHART-ZOOM-1116 source lease is completed.
 
 Bounded CI integration lease: cover missing English labels introduced by concurrent HR/chart/lead changes in en-overrides.json and API/standalone mirrors; preserve existing entries, deduplicate merged override keys and do not change business behavior.

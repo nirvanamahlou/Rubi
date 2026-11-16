@@ -301,7 +301,7 @@ ${body.trim()}`
               <span className="ms-auto flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
-                  variant={requestKind === 'advance' ? 'default' : 'outline'}
+                  variant={requestKind === 'advance' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'advance'}
                   disabled={pending || uploading}
                   onClick={() => {
@@ -318,7 +318,7 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant={requestKind === 'leave' ? 'default' : 'outline'}
+                  variant={requestKind === 'leave' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'leave'}
                   disabled={pending || uploading}
                   onClick={() => {
@@ -347,7 +347,7 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant={requestKind === 'correction' ? 'default' : 'outline'}
+                  variant={requestKind === 'correction' ? 'primary' : 'outline'}
                   aria-pressed={requestKind === 'correction'}
                   disabled={pending || uploading}
                   onClick={() => {
