@@ -1,3 +1,15 @@
+## TICKET-BULK-PUBLICATION-1116 — PC-A
+
+Integrations ticket management adds a bulk publication review using the selected authorized branch, route, one-way/round-trip, search and inclusive Tehran departure dates. Only active priced matching offers are grouped once; missing/unpriced returns are excluded. Website selection and review/cancel perform no writes. Explicit confirmation runs sequential existing publication reads/CAS commands, preserves enabled/stopped publications and metadata, refreshes tiles and reports per-site partial failures without retries. Disconnected websites retain pending intent rather than claimed delivery. Branch/site/permission/source validation, activity audit and durable catalogue delivery remain native; no API/schema/migration/dependency/operational data or deployment change. Focused interaction/model and regression validation precede exact-head full CI and the user-authorized develop merge.
+## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
+
+New independent synthetic runner removes the initial hour and all successful-case
+pacing based on assumed daily quota. Healthy30 scenarios run serially without
+sleeps; actual429 retry timing alone delays another attempt. Native Agent and
+SQL/access limits, oracles and the active legacy runner remain unchanged.6 new
+runner tests and all116 service tests pass; no live Groq charge, migration or
+Production change. See [NORA-ACCEPTANCE-PACING-1116](tasks/NORA-ACCEPTANCE-PACING-1116.md).
+
 ## NORA-QUESTION-ROUTING-1116 — PC-C — verification
 
 Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
@@ -5258,6 +5270,10 @@ Individual agreed package totals per passenger/currency are persisted with exact
 
 HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
 
+
+## RESERVATION-MAIL-WAKEUP-1116 — PC-A — READY_FOR_CI
+
+Post-commit asynchronous mail wake eliminates the next five-second poll wait; coalesces concurrent wakes and drains due rows serially. Recovery interval/claims/retry/UNKNOWN/off switch and form/PDF UI are preserved.48 synthetic tests and scoped lint pass; typecheck/build and exact-head hosted gates pending. No actual email; API-only rollout requires an empty sendable queue, encrypted backup, deploy lock and Worker namespace rebind. See tasks/RESERVATION-MAIL-WAKEUP-1116.md.
 
 ## RESERVATION-MAIL-ORIGIN-1116 — PC-A — READY_FOR_CI
 

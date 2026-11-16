@@ -17,15 +17,13 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { listReferences } from '@/modules/ticket-catalog/api/references';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
-import {
-  filterTicketRows,
-  ticketPriceRows,
-  ticketCabinLabel,
-} from '@/modules/sales/model/ticket-price-rows';
+import { ticketCabinLabel } from '@/modules/sales/model/ticket-price-rows';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
 import { pricingCityCountries } from '@/modules/sales/model/ticket-pricing-display';
 import { integrationsApi } from '../api/client';
 import { SiteTicketFacts } from './site-ticket-facts';
+import { TicketBulkPublication } from './ticket-bulk-publication';
+import { matchingPublicationTickets } from '../ticket-bulk-publication';
 import styles from './site-management.module.css';
 import {
   publishableTickets,
@@ -360,6 +358,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
   const [tripType, setTripType] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
   const canManage = actor.permissions.includes('ticket_catalog.manage');
   const branchScope = JSON.stringify([...actor.branchIds].sort());
   useEffect(() => {
@@ -459,12 +458,21 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
     );
   const flightLabel = (offer: TicketOfferV1) =>
     `${cities[offer.originId] ?? offer.originId} → ${cities[offer.destinationId] ?? offer.destinationId} · ${offer.carrierName} · ${offer.serviceNumber} · ${ticketCabinLabel(offer.cabinClassCode)}`;
+  const ticketFilters = {
+    originId,
+    destinationId,
+    tripType,
+    query: search,
+    from,
+    to,
+  };
   const eligible = new Set(
-    filterTicketRows(
-      ticketPriceRows(publishableTickets(tickets, branchId)),
-      { originId, destinationId, tripType, query: search, from, to },
+    matchingPublicationTickets(
+      tickets,
+      branchId,
+      ticketFilters,
       flightLabel,
-    ).map((row) => row.offer.id),
+    ).map((offer) => offer.id),
   );
   const tourGroups = websiteTourGroups(tours, floatingTours, branchId);
   const visibleTours = filterWebsiteTourGroups(tourGroups, {
@@ -496,7 +504,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
       canPublish: true,
     }));
   return (
-    <div className="grid gap-4" dir="rtl">
+    <fieldset disabled={bulkBusy} className="grid min-w-0 gap-4" dir="rtl">
       <PageHeader title="مدیریت سایت" />
       <nav aria-label="مدیریت سایت" className="flex flex-wrap gap-2">
         {(
@@ -623,6 +631,19 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
                 پاک‌کردن فیلترها
               </Button>
             </div>
+          ) : null}
+          {tab === 'tickets' ? (
+            <TicketBulkPublication
+              branchId={branchId}
+              filters={ticketFilters}
+              tickets={resources.map((row) => ({
+                id: row.id,
+                title: `${row.title} · ${row.detail}`,
+              }))}
+              loading={loading || Boolean(error)}
+              onBusy={setBulkBusy}
+              onComplete={() => setRevision((value) => value + 1)}
+            />
           ) : null}
           {tab === 'tours' ? (
             <>
@@ -825,7 +846,7 @@ export function SiteManagement({ actor }: { actor: AuthenticatedActor }) {
           )}
         </>
       )}
-    </div>
+    </fieldset>
   );
 }
 
