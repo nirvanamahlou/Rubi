@@ -1,4 +1,4 @@
-## NORA-LIVE-MATRIX-1116 — PC-C — ACTIVE
+## NORA-LIVE-MATRIX-1116 — PC-C — MODEL_GATE_PENDING_TPD
 
 Citation repair lease: a real final json call invented/truncated its resultId; the existing engine correctly rejected it. Extend the same internal provider option with trusted current evidence IDs and constrain only the per-request final tool schema to their enum (or an empty array before evidence). Never replace invented IDs, parse failed generations, trust history, share schemas across users or relax final evidence checks. Add cross-request isolation and empty-evidence regressions.
 

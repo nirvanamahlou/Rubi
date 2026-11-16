@@ -1,6 +1,6 @@
-## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
+## NORA-LIVE-MATRIX-1116 — PC-C — MODEL_GATE_PENDING_TPD
 
-Actual Germany-routed Groq30-case run on disposable local SQL fixtures found an obsolete count transport, missing clarification on nonunique names and unadvertised final json calls. Bounded harness/prompt/provider repairs implemented;119 service regressions and native scope preflight pass. Final same-source model matrix still running; no production change. See tasks/NORA-LIVE-MATRIX-1116.md.
+Actual Germany-routed acceptance repaired obsolete count transport, ambiguous-selection instructions and final JSON/citation compatibility.120 service tests, native scope preflight and all10 exact-head hosted gates pass on Draft PR1761. Only four actual model cases plus one injected-outage control are certified on the tested fingerprint;25 cases remain unverified because of real Groq TPD. All62 recorded test databases/logins cleaned; no active retry or production change. Detailed report is on the independent report branch; full30-case acceptance is not claimed. See tasks/NORA-LIVE-MATRIX-1116.md.
 
 ## TICKET-BULK-PUBLICATION-1116 — PC-A
 
