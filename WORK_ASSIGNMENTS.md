@@ -12792,3 +12792,5 @@ SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
 
 REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+CALL-CENTER-TODAY-FILTER-STYLE-1116 — PC-C: reserve only without-outcome-dialog.module.css button selector scope and own status notes on codex/pc-c-call-center-today-filter-style-1116. User authorizes matching today KPI filter option appearance to existing contact filters. Shared combobox owns option visuals and selection. No API, dependency or migration change.
