@@ -12782,3 +12782,7 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
+
+## RESERVATION-MAIL-ORIGIN-1116 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-mail-origin-1116 from develop@dabf4e80c. Owner reports the production Send to broker action fails with an access alert and requests repair for their PDF acceptance. Reserve reservation PDF POST origin validation, new module-local origin helper, focused mail-route tests and own task/status notes. Verified production handler rejects the public HTTPS origin against its internal container URL before any API permission check. Use an explicit server-only RESERVATION_MAIL_WEB_ORIGIN; never trust caller-supplied forwarded headers or remove CSRF/authentication checks. Preserve existing form appearance, PDF content/history and enabled owner-operated SMTP test. Bounded Web-only production repair after exact-head checks, using the then-current image with peer overlays, protected configuration, deployment lock, encrypted backup and rollback. No API/IAM grants, schema/dependency, operational-record mutation or agent-submitted email.
