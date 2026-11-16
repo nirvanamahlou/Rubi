@@ -59,10 +59,15 @@ async function main() {
     !issuers.some((e) => e.id === legalEntityId)
   )
     throw Error('Explicit active branch and issuer required');
-  if (isJahan && (
-    !branches.some((b) => b.id === branchId && b.code === 'JAHAN_BASTAN') ||
-    !issuers.some((e) => e.id === legalEntityId && e.code === 'JAHAN_BASTAN')
-  )) throw Error('Jahan Bastan requires its own branch and issuer');
+  const memberships = [{ branchId, isPrimary: true }];
+  if (isJahan) {
+    const jahanBranch = branches.find((branch) => branch.code === 'JAHAN_BASTAN');
+    const primary = branches.find((branch) => branch.id === branchId);
+    const issuer = issuers.find((entity) => entity.id === legalEntityId);
+    if (primary?.code !== 'HQ' || issuer?.code !== 'JAHAN_BASTAN' || !jahanBranch)
+      throw Error('Jahan Bastan requires HQ inventory, its branch and its own issuer');
+    memberships.push({ branchId: jahanBranch.id, isPrimary: false });
+  }
   if (existing || permissions.length !== codes.length)
     throw Error(
       'Existing identity or missing permissions; no modification performed',
@@ -100,7 +105,7 @@ async function main() {
           displayName,
           passwordHash,
           roles: { create: [{ roleId: role.id }] },
-          branches: { create: [{ branchId, isPrimary: true }] },
+          branches: { create: memberships },
         },
         select: { id: true },
       });
@@ -118,6 +123,7 @@ async function main() {
             userId: user.id,
             branchId,
             legalEntityId,
+            branchMemberships: memberships,
             provisioner: 'server-root',
             permissions: codes,
           },
