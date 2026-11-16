@@ -308,6 +308,26 @@ export class SiteCommerceService {
     return this.tickets.websiteNextCapacityChange([branchId]);
   }
 
+  async cancelledOrders(site: string, actor: AuthenticatedActor) {
+    const scoped = this.scoped(site, actor);
+    const links = await this.db.client.websiteOrder.findMany({
+      where: { siteCode: site, branchId: scoped.branchIds[0]! },
+      select: { externalId: true, contractId: true },
+      orderBy: { id: 'asc' },
+      take: 10001,
+    });
+    if (links.length > 10000) throw new BadRequestException();
+    const cancelled = new Set(
+      (
+        await this.sales.cancelledWebsiteContracts(
+          links.map((link) => link.contractId),
+          scoped,
+        )
+      ).map((row) => row.id),
+    );
+    return links.filter((link) => cancelled.has(link.contractId));
+  }
+
   async catalog(site: string, actor: AuthenticatedActor) {
     const scoped = this.scoped(site, actor);
     const rows = await this.db.client.websitePublication.findMany({
@@ -406,7 +426,9 @@ export class SiteCommerceService {
         });
       }
     }
-    if (!this.documents || site !== 'nss') return { version: 1, data };
+    const cancelledOrders = await this.cancelledOrders(site, scoped);
+    if (!this.documents || site !== 'nss')
+      return { version: 1, data, cancelledOrders };
     const flights: { carrierName: string; carrierLogoUrl?: string }[] = [];
     for (const product of data) {
       if ('flight' in product && product.flight) flights.push(product.flight);
@@ -420,7 +442,9 @@ export class SiteCommerceService {
       Math.max(
         0,
         4 * 1024 * 1024 -
-          Buffer.byteLength(JSON.stringify({ version: 1, data })) -
+          Buffer.byteLength(
+            JSON.stringify({ version: 1, data, cancelledOrders }),
+          ) -
           128 * 1024,
       ) * 0.7,
     );
@@ -430,7 +454,7 @@ export class SiteCommerceService {
         websiteAirlineLogo(name, scoped, this.references, this.documents!),
       available,
     );
-    return { version: 1, data, airlineLogos };
+    return { version: 1, data, airlineLogos, cancelledOrders };
   }
 
   private async websiteTour(id: string, actor: AuthenticatedActor) {

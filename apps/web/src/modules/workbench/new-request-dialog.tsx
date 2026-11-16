@@ -17,7 +17,10 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { RequestRecipientFields } from './request-recipient-fields';
+import {
+  RequestRecipientFields,
+  requestRecipientSelection,
+} from './request-recipient-fields';
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 
 type NewRequestDialogProps = {
@@ -66,15 +69,15 @@ function NewRequestForm({
   } | null>(null);
   const optionsMatch =
     options?.branchId === branchId && options?.version === optionsVersion;
-  const unit =
-    leave && optionsMatch ? (options?.leaveRoute?.unitId ?? '') : manualUnit;
-  const recipient =
-    leave && optionsMatch
-      ? (options?.leaveRoute?.recipientId ?? '')
-      : manualRecipient;
   const units = optionsMatch ? options!.units : [];
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
+  const { unitId: unit, recipientId: recipient } = requestRecipientSelection(
+    leave !== null,
+    optionsMatch,
+    options?.leaveRoute,
+    { unitId: manualUnit, recipientId: manualRecipient },
+  );
   const [priority, setPriority] = useState('normal');
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
