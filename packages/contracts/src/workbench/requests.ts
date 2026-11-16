@@ -22,6 +22,7 @@ export interface WorkbenchRequestInputV1 {
 }
 
 export interface WorkbenchRequestOptionsV1 {
+  leaveRoute?: { unitId: string; recipientId: string };
   substituteUsers?:
     Array<{ id: string; displayName: string; username: string }> | undefined;
   units: Array<{

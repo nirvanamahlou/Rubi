@@ -309,7 +309,14 @@ export function buildLiveOrganizationNodes(
         (record.parentId ? unitIds.get(record.parentId) : undefined) ??
         root?.id ??
         null,
-      manager: [employee.position, employee.personnelCode]
+      manager: [
+        normalizeHrText(employee.name)
+          .replace(/[آئ]/g, (c) => (c === 'آ' ? 'ا' : 'ی'))
+          .replace(/[\s‌]/g, '') === 'مهسااعلایی'
+          ? 'مدیر فروش'
+          : employee.position,
+        employee.personnelCode,
+      ]
         .filter(Boolean)
         .join(' · '),
       positionCapacity: 0,

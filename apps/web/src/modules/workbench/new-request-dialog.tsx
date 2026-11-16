@@ -50,6 +50,7 @@ function NewRequestForm({
     actualDate: string;
     actualTime: string;
   } | null>(null);
+  const [requestKind, setRequestKind] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [unit, setUnit] = useState('');
@@ -60,6 +61,7 @@ function NewRequestForm({
     version: number;
     units: WorkbenchRequestOptionsV1['units'];
     substituteUsers?: LeaveUser[] | undefined;
+    leaveRoute?: WorkbenchRequestOptionsV1['leaveRoute'];
     error: string;
   } | null>(null);
   const optionsMatch =
@@ -88,6 +90,7 @@ function NewRequestForm({
             branchId,
             version: optionsVersion,
             units: data.units,
+            leaveRoute: data.leaveRoute,
             substituteUsers: data.substituteUsers,
             error: '',
           });
@@ -111,6 +114,12 @@ function NewRequestForm({
       active = false;
     };
   }, [open, branchId, optionsVersion]);
+  useEffect(() => {
+    if (!leave || !optionsMatch) return;
+    const route = options?.leaveRoute;
+    setUnit(route?.unitId ?? '');
+    setRecipient(route?.recipientId ?? '');
+  }, [Boolean(leave), optionsMatch, options?.leaveRoute]);
   return (
     <Dialog
       open={open}
@@ -255,7 +264,7 @@ ${body.trim()}`
               units={units}
               unitId={unit}
               recipientId={recipient}
-              disabled={pending || optionsLoading}
+              disabled={pending || optionsLoading || !!leave}
               onUnitChange={setUnit}
               onRecipientChange={setRecipient}
             />
@@ -292,9 +301,11 @@ ${body.trim()}`
               <span className="ms-auto flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'advance' ? 'default' : 'outline'}
+                  aria-pressed={requestKind === 'advance'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setRequestKind('advance');
                     setLeave(null);
                     setCorrection(null);
                     setTitle('درخواست مساعده');
@@ -307,9 +318,11 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'leave' ? 'default' : 'outline'}
+                  aria-pressed={requestKind === 'leave'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setRequestKind(leave ? '' : 'leave');
                     setCorrection(null);
                     setLeave(
                       leave
@@ -334,9 +347,11 @@ ${body.trim()}`
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={requestKind === 'correction' ? 'default' : 'outline'}
+                  aria-pressed={requestKind === 'correction'}
                   disabled={pending || uploading}
                   onClick={() => {
+                    setRequestKind('correction');
                     setLeave(null);
                     setCorrection({
                       wrongDate: initialDate ?? '',
