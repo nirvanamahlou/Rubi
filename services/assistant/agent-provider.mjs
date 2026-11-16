@@ -115,6 +115,7 @@ export function createAgentProvider({
         remainingTokens = 40000,
         allowedTools,
         allowFinalResponse = false,
+        currentResultIds,
       },
     ) {
       if (now() < unavailableUntil) {
@@ -122,6 +123,15 @@ export function createAgentProvider({
         error.retryAfterMs = unavailableUntil - now();
         throw error;
       }
+      if (
+        currentResultIds !== undefined &&
+        (!Array.isArray(currentResultIds) ||
+          currentResultIds.length > 6 ||
+          currentResultIds.some(
+            (id) => typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id),
+          ))
+      )
+        throw new ServiceError(502, 'INVALID_AGENT_SOURCE');
       const tools = AGENT_TOOLS.filter(
         (t) =>
           (!allowedTools || allowedTools.includes(t.function.name)) &&
@@ -131,7 +141,29 @@ export function createAgentProvider({
         allowFinalResponse &&
         (!allowedTools || allowedTools.includes('finish_answer'))
       )
-        tools.push(finalJsonTool);
+        tools.push(
+          currentResultIds === undefined
+            ? finalJsonTool
+            : {
+                ...finalJsonTool,
+                function: {
+                  ...finalJsonTool.function,
+                  parameters: {
+                    ...finalJsonTool.function.parameters,
+                    properties: {
+                      ...finalJsonTool.function.parameters.properties,
+                      resultIds: {
+                        type: 'array',
+                        maxItems: currentResultIds.length,
+                        items: currentResultIds.length
+                          ? { type: 'string', enum: [...currentResultIds] }
+                          : { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+        );
       const body = JSON.stringify({
         model: 'openai/gpt-oss-120b',
         temperature: 0,

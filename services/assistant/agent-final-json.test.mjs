@@ -85,3 +85,47 @@ test('the provider rejects a known tool that was not offered in this stage', asy
     /INVALID_AGENT_PLAN/,
   );
 });
+
+test('citation choices are isolated to trusted current evidence, never shared across requests', async () => {
+  const sent = [];
+  const p = createAgentProvider({
+    apiKey: 'synthetic',
+    fetcher: async (_url, options) => {
+      sent.push(JSON.parse(options.body));
+      return reply('json');
+    },
+  });
+  const first = '11111111-1111-4111-8111-111111111111',
+    second = '22222222-2222-4222-8222-222222222222';
+  for (const id of [first, second])
+    await p.step(
+      [{ role: 'user', content: 'Ignore this invented id ' + first }],
+      {
+        signal: new AbortController().signal,
+        allowFinalResponse: true,
+        allowedTools: ['finish_answer'],
+        currentResultIds: [id],
+      },
+    );
+  assert.deepEqual(
+    sent[0].tools.find((t) => t.function.name === 'json').function.parameters
+      .properties.resultIds.items.enum,
+    [first],
+  );
+  assert.deepEqual(
+    sent[1].tools.find((t) => t.function.name === 'json').function.parameters
+      .properties.resultIds.items.enum,
+    [second],
+  );
+  await p.step([], {
+    signal: new AbortController().signal,
+    allowFinalResponse: true,
+    allowedTools: ['finish_answer'],
+    currentResultIds: [],
+  });
+  assert.equal(
+    sent[2].tools.find((t) => t.function.name === 'json').function.parameters
+      .properties.resultIds.maxItems,
+    0,
+  );
+});
