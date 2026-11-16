@@ -12,12 +12,10 @@ function setup(users: Array<{ id: string }>) {
   const directory = { leaveSubstituteUsers: vi.fn().mockResolvedValue(users) };
   const documents = { uploadLeaveEvidence: vi.fn() };
   const employee = {
-    findFirst: vi
-      .fn()
-      .mockResolvedValue({
-        unit: 'SYNTHETIC UNIT',
-        organizationBranchId: branch,
-      }),
+    findFirst: vi.fn().mockResolvedValue({
+      unit: 'SYNTHETIC UNIT',
+      organizationBranchId: branch,
+    }),
     findMany: vi
       .fn()
       .mockResolvedValue([{ userId: actor.userId }, { userId: 'colleague' }]),
