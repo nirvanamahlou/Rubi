@@ -146,3 +146,7 @@ The default remains disabled. The owner has approved Groq for message/session te
 ## Workbench procedural guidance —2026-11-15
 
 The additive POST /v1/assistant/workbench-guide accepts only version1/topicId/goal and returns a validated tool selection; it does not read Workbench records. The canonical static guide catalog is also rendered by the Web, including the approved internal fallback when Groq is unavailable. Native IAM and request limits still apply. A custom runtime must pass workbenchGuide: workbenchGuideConfiguration() from workbench-guide.mjs to createAssistantServer to enable model selection; without that configuration it stays internal. The configuration reuses Germany-only egress admission. No employee message, document, medical information or free-text question is sent to Groq by this tool. See ../../docs/tasks/NORA-WORKBENCH-GUIDE-1115.md for coverage, acceptance and rollout boundaries.
+
+## Operator request quota exemptions —2026-11-16
+
+ASSISTANT_RATE_LIMIT_EXEMPT_USER_IDS accepts a private comma-separated immutable native IAM UUID allowlist. Matched authenticated accounts bypass application user/IP request quotas and the ordinary concurrency pool; other users retain existing limits. No client username/header grants exemption. Data permissions, SQL safety and provider limits remain enforced. Invalid configuration fails startup. See ../../docs/tasks/NORA-ACCOUNT-RATE-EXEMPTIONS-1116.md.
