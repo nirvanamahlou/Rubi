@@ -1,5 +1,6 @@
 import { reservationHasTransfer } from '@nora/contracts';
 import { createHash, createHmac } from 'node:crypto';
+import { reservationMailOrigin } from '@/modules/reservations/server/reservation-mail-origin';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
@@ -333,25 +334,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const requestUrl = new URL(request.url);
-  const origin = request.headers.get('origin');
-  let sameOrigin = false;
-  try {
-    const browserOrigin = new URL(origin ?? '');
-    // TLS terminates at the reverse proxy; Next can receive an HTTP URL.
-    // Host must still match the browser's public origin, never forwarded input.
-    sameOrigin =
-      browserOrigin.origin === origin &&
-      (browserOrigin.origin === requestUrl.origin ||
-        (requestUrl.protocol === 'http:' &&
-          browserOrigin.protocol === 'https:' &&
-          browserOrigin.host ===
-            (request.headers.get('host') ?? requestUrl.host)));
-  } catch {
-    sameOrigin = false;
-  }
-  if (!sameOrigin || !origin)
-    return fail('دسترسی به این عملیات مجاز نیست.', 403);
+  const origin = reservationMailOrigin(request);
+  if (!origin) return fail('دسترسی به این عملیات مجاز نیست.', 403);
   const secret = process.env.RESERVATION_PDF_MAIL_SECRET;
   if (!secret || secret.length < 32)
     return fail('اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.', 503);

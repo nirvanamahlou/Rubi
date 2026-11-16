@@ -69,6 +69,7 @@ function request(
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv('RESERVATION_MAIL_WEB_ORIGIN', '');
   vi.stubEnv('RESERVATION_PDF_MAIL_SECRET', secret);
   vi.stubGlobal('fetch', mock.fetch);
   mock.render.mockResolvedValue(bytes);
@@ -81,6 +82,62 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+});
+it('accepts the configured HTTPS browser origin behind an internal HTTP reverse proxy', async () => {
+  vi.stubEnv('RESERVATION_MAIL_WEB_ORIGIN', 'https://erp.example.test');
+  const proxied = new Request(
+    `http://0.0.0.0:3000/reservations/requests/${id}/pdf`,
+    {
+      method: 'POST',
+      headers: {
+        origin: 'https://erp.example.test',
+        cookie: 'synthetic-session',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ expectedVersion: 5 }),
+    },
+  );
+  const response = await POST(proxied, { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(200);
+  expect(mock.render).toHaveBeenCalledOnce();
+  expect(
+    mock.fetch.mock.calls.filter((call) => call[1]?.method === 'POST'),
+  ).toHaveLength(1);
+});
+it.each(['https://other.test', 'http://erp.example.test', 'null', ''])(
+  'rejects foreign or missing browser origin %s even with forged forwarding headers',
+  async (origin) => {
+    vi.stubEnv('RESERVATION_MAIL_WEB_ORIGIN', 'https://erp.example.test');
+    const headers = new Headers({
+      'x-forwarded-host': 'erp.example.test',
+      'x-forwarded-proto': 'https',
+    });
+    if (origin) headers.set('origin', origin);
+    const response = await POST(
+      new Request(`http://0.0.0.0:3000/reservations/requests/${id}/pdf`, {
+        method: 'POST',
+        headers,
+        body: '{}',
+      }),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(403);
+    expect(mock.render).not.toHaveBeenCalled();
+    expect(mock.fetch).not.toHaveBeenCalled();
+  },
+);
+it.each([
+  'not a URL',
+  'https://erp.example.test/path',
+  'https://erp.example.test?x=1',
+  'https://user:password@erp.example.test',
+  'http://erp.example.test',
+])('fails closed for invalid configured origin %s', async (configured) => {
+  vi.stubEnv('RESERVATION_MAIL_WEB_ORIGIN', configured);
+  const response = await POST(request(), { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(403);
+  expect(mock.render).not.toHaveBeenCalled();
+  expect(mock.fetch).not.toHaveBeenCalled();
 });
 it('renders the saved current NOTICE and submits only signed PDF bytes, never browser content', async () => {
   const response = await POST(

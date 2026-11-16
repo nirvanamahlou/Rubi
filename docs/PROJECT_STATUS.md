@@ -5242,6 +5242,13 @@ Individual agreed package totals per passenger/currency are persisted with exact
 
 HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
 
+
+## RESERVATION-MAIL-ORIGIN-1116 — PC-A — READY_FOR_CI
+
+Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
+
+Production supplier PDF POST rejects public HTTPS Origin against the internal container URL before API authorization. Synthetic invalid-command probe on the real handler reproduces400 for internal origin versus403 for public origin, without auth/PDF/queue/email. New module-local validation uses explicit private RESERVATION_MAIL_WEB_ORIGIN and never trusts forwarded headers.65 mail-route/PDF/price-save checks pass; preserve all authorization, HMAC, saved snapshots, form/PDF appearance and enabled owner test. Web-only repair must preserve the live image overlays/static assets/config, use protected origin configuration, encrypted backup and rollback, and pass exact-head gates. No API/IAM/schema/dependency/data mutation or agent-submitted email. See tasks/RESERVATION-MAIL-ORIGIN-1116.md.
+
 ## برنامه اجرایی Sprint دوم
 
 ### `SPRINT2-PLANNING-001` — PC-A — `DONE`
@@ -10194,6 +10201,5 @@ LEAD-TITLE-1116: lead creation uses one title field, removes surname input and r
 
 HR-MANAGER-OVERRIDE-1116: sales manager identity corrected, aggregate branch action reads company creation. Active username nima may explicitly confirm HR leave approval without substitute consent. API enforces identity and confirmation flag; audit retains flag. Scoped ESLint passed; live acceptance pending.
 SITE-TICKET-FILTERS-1116: stable branch-scope effect dependencies stop session-refresh reloads. Reuses native pricing route/trip/search/date filters; master-data city labels, Tehran flight timestamps, cabin/capacity and separate one-way/return fare details. Web only; no data migration. 91 focused regressions passed; release checks pending.
-
 
 REQUEST-PROGRESS-1116: restrict substitutes to active colleagues in same department/company, hide empty assignment banner and show leave progress with green completed nodes/connectors. Scoped ESLint passed; local tests blocked by missing contracts build.
