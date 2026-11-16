@@ -611,6 +611,7 @@ export function resolveContractGuide(
     'output',
     'purchase',
     'package',
+    'flight',
     'visa',
     'insurance',
     'transfer',

@@ -1,4 +1,5 @@
 {
+  "ابتدا راهنمای قرارداد را می‌خواهید یا راهنمای میزکار من؟ موضوع اول را مشخص کنید تا مراحل دو بخش با هم مخلوط نشوند.": "Would you like contract guidance or My Workbench guidance first? Choose the first topic so the two workflows remain distinct.",
   "$1از کجا": "$1where",
   "برای بررسی پاسخ قبلی، شواهد تازه از ابزار مجاز بخوان. سابقه اثبات صحت عدد یا علت نیست؛ اگر قابل تأیید نیست یا تغییر کرده، صریح اعلام کن.": "Check the previous answer using fresh evidence from authorized tools. History does not prove a number or cause; explicitly state if it cannot be verified or has changed.",
   "پرسش فعلی:": "Current question:",

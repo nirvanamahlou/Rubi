@@ -1,6 +1,6 @@
 ## NORA-QUESTION-ROUTING-1116 — PC-C — READY_FOR_CI
 
-Bounded additive i18n lease: eight new Assistant routing/clarification/prompt literals in apps/web/src/i18n/en-overrides.json; preserve all peer entries and coverage gates. Existing PC-A translation work is merged at this base. No API catalogue/producer behavior changes.
+Bounded additive i18n lease: nine new Assistant routing/clarification/prompt literals in apps/web/src/i18n/en-overrides.json; preserve all peer entries and coverage gates. Existing PC-A translation work is merged at this base. No API catalogue/producer behavior changes.
 
 Owner approves the shared intent/follow-up routing plan. PC-C verified by local Git identity; independent branch codex/pc-c-nora-question-routing-1116 from develop b5d7798ef. Reserve Assistant-only normalization/intent router, contract/workbench guide matching, Composer integration, focused regressions and own docs. Preserve the uncommitted count-breakdown worktree unchanged; this unit carries none of its API/service/table edits. Prior1733/1735 source leases are delivered. No active peer overlap found on these leaf files. No public API/schema, dependency, migration, production change or new HR data access. Guide selection remains identifier-only; data follow-ups use existing authenticated v3/native reader with fresh evidence, scope reset and stale-response cancellation preserved. Mixed questions must read data then append grounded instructions, never substitute guide text for failed data.
 

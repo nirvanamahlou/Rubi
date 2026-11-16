@@ -84,8 +84,30 @@ export function routeAssistantQuestion(
       ));
   const base = { domain, dataMessage: message };
 
+  if (
+    sales &&
+    workbench &&
+    has(/مرخصی|مساعده|جانشین|تردد|یادداشت|میز\s*کار|پیام رسان|تقویم/)
+  )
+    return {
+      ...base,
+      kind: 'clarify',
+      clarification:
+        'ابتدا راهنمای قرارداد را می‌خواهید یا راهنمای میزکار من؟ موضوع اول را مشخص کنید تا مراحل دو بخش با هم مخلوط نشوند.',
+    };
   // Workbench has procedural tools only; never promote employee questions to Sales SQL.
   if (workbench && !sales) return { ...base, kind: 'guide' };
+  if (
+    domain === 'sales' &&
+    !asksEvidence &&
+    !/\d/.test(q) &&
+    has(/مرحله بعد|دکمه|فهرست|فرم|گیر کردم|ثبت نمیشه|جلو نمی رود/)
+  )
+    return {
+      ...base,
+      kind: 'guide',
+      guideQuestion: sales ? message : `قرارداد: ${message}`,
+    };
   if (definition && domain === 'sales')
     return {
       ...base,

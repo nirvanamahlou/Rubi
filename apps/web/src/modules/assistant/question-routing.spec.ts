@@ -22,6 +22,21 @@ const guide: AnswerContext = {
 };
 
 describe('shared intent arbitration before every guide', () => {
+  it('clarifies competing workflow domains and lets an explicit form problem override a data follow-up', () => {
+    expect(
+      routeAssistantQuestion('قرارداد و مرخصی را چطور ثبت کنم؟', data, true)
+        .kind,
+    ).toBe('clarify');
+    const result = routeAssistantQuestion(
+      'چرا پروازم تو فهرست نیست؟',
+      data,
+      true,
+    );
+    expect(result.kind).toBe('guide');
+    expect(resolveContractGuide(result.guideQuestion!, true)?.topicId).toBe(
+      'flight',
+    );
+  });
   it('applies lexical boundaries to evidence keywords as well as guide aliases', () => {
     expect(routeAssistantQuestion('نامنبع', undefined, true).kind).toBe(
       'conversation',
