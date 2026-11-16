@@ -6550,6 +6550,34 @@ Owner requests leave approvals to use the leave policy, and removes calculation 
 - اصلاح صریح مالک در 2026-09-23: بازطراحی تقریبی پذیرفته نیست و همه کدها و فایل‌های `Package_Template/1.rar` باید عیناً پیاده‌سازی شوند. این دستور جدید، استثنای ثبت‌شده برای ورود Assetها و Vendorهای خود آرشیو به محدوده ماژول Pricing است؛ Dependency/Lockfile، Documents، API/Contract مشترک و Migration همچنان خارج از محدوده‌اند.
 - نتیجه اصلاح: تمام ۱۱۸ فایل آرشیو با مجموع ۳۳۰٬۴۹۴٬۹۴۰ بایت و تطبیق SHA-256 در مسیر استاتیک ماژول قرار گرفتند. صفحه Generator پس از کنترل هر دو مجوز، برنامه اصلی را هم‌مبدأ نمایش می‌دهد؛ سه حالت واقعی پکیج، بنر و استیکر، همه قالب‌ها، ورود XLSX/DOCX و خروجی PNG/PDF/ZIP حفظ شده‌اند. ۲۷ تست ماژول، lint، typecheck، build تولیدی ۵۲ مسیر و QA بصری هر سه حالت موفق‌اند.
 
+## RESERVATION-MAIL-ORIGIN-1116 — PC-A — IN_PROGRESS
+
+Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-mail-origin-1116 from develop@dabf4e80c. Owner reports the production Send to broker action fails with an access alert and requests repair for their PDF acceptance. Reserve reservation PDF POST origin validation, new module-local origin helper, focused mail-route tests and own task/status notes. Verified production handler rejects the public HTTPS origin against its internal container URL before any API permission check. Use an explicit server-only RESERVATION_MAIL_WEB_ORIGIN; never trust caller-supplied forwarded headers or remove CSRF/authentication checks. Preserve existing form appearance, PDF content/history and enabled owner-operated SMTP test. Bounded Web-only production repair after exact-head checks, using the then-current image with peer overlays, protected configuration, deployment lock, encrypted backup and rollback. No API/IAM grants, schema/dependency, operational-record mutation or agent-submitted email.
+
+CI integration repair: inherited merged/frozen HR-MANAGER-OVERRIDE-1116/PR1745 breaks complete API/Web compilation (undefined frontend overrideSubstitute on the unrelated substitute response; audit field incorrectly copied onto ReferralResponseDto; missing injected public IamService reference for the delivered identity guard). Reserve only those Customer Affairs service/client references and focused existing regression suites for bounded compilation repair. Preserve the identity check, explicit override confirmation and HR audit flag; missing optional IAM must fail closed. IAM producer already exists and is exported. No HR/IAM runtime overlay is published by the Web-only SMTP repair, no permissions or business policy added. Prior same-file lease is recorded completed/merged; module ownership is retained.
+
+English completeness follow-up: full suite passes5214 Web cases and fails only four untranslated labels from merged PR1745. Reserve four additive en-overrides entries and generated API/standalone mirrors; preserve every peer key/value and the existing inventory gate. Previous same-owner translation scope is merged/frozen. No HR behavior/source or translation-policy changes; mirrors are not part of the bounded live Web origin overlay.
+
+Integrated PR1750 follow-up: reserve only hr-leave-access.spec.ts fixture/assertions for the delivered same-department substitute filter. Supply the native employee projection in the test; retain internal-account authorization, self/other-department exclusion and HR-managed branch denial. No HrService product changes or live HR overlay. Also retain the three incoming request-progress translations already validated locally.
+
+SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destination tiles, restrained status colours and improved site-management layout; presentation-only scope, preserve publication CAS/manual save and explicit refresh. No API, migration or dependencies.
+
+SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.
+
+SITE-TILES-1116 bounded integration build repair: upstream HR-MANAGER-OVERRIDE-1116 is completed but refers to an uninjected IAM service and a missing validated ReferralResponseDto flag. Reserve only constructor injection/optional deny-safe guard and optional boolean validation; preserve named-user authorization and explicit confirmation policy, no business/API permission expansion.
+
+SITE-TILES-1116 integration build repair: remove undefined overrideSubstitute shorthand only from substitute self-review request; keep HR-manager review flag/confirmation unchanged.
+
+REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+SITE-TILES-1116 merged-base compatibility: complete three new request progress translations from REQUEST-PROGRESS-1116; retain its source and full task records unchanged.
+
+SITE-TILES-1116 merged-base regression lease: update hr-leave-access.spec.ts fixture with the employee unit/company lookup required by completed REQUEST-PROGRESS-1116. Keep branch/account denial tests, assert the scoped employee queries and exclude self/out-of-unit candidates; test-only, no HR product change.
+
+SITE-TILES-1116 user refinement: checkbox selection saves immediately with existing site/branch CAS; remove tile save action, rollback on errors, block repeated toggles while busy. Expanded tour presentation editing retains its own save, and checkbox saves preserve unsaved presentation drafts. Targeted state-transition regressions required.
+
 ## 2026-09-22 — MASTER-DATA-QA-REMEDIATION-0922 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ایرادهای قطعی گزارش QA عملی سکشن اطلاعات پایه رفع و همان سناریوها دوباره اجرا شوند.
@@ -12807,18 +12835,6 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
-
-## RESERVATION-MAIL-ORIGIN-1116 — PC-A — IN_PROGRESS
-
-Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
-
-COMPUTER_ID=PC-A; branch codex/pc-a-reservation-mail-origin-1116 from develop@dabf4e80c. Owner reports the production Send to broker action fails with an access alert and requests repair for their PDF acceptance. Reserve reservation PDF POST origin validation, new module-local origin helper, focused mail-route tests and own task/status notes. Verified production handler rejects the public HTTPS origin against its internal container URL before any API permission check. Use an explicit server-only RESERVATION_MAIL_WEB_ORIGIN; never trust caller-supplied forwarded headers or remove CSRF/authentication checks. Preserve existing form appearance, PDF content/history and enabled owner-operated SMTP test. Bounded Web-only production repair after exact-head checks, using the then-current image with peer overlays, protected configuration, deployment lock, encrypted backup and rollback. No API/IAM grants, schema/dependency, operational-record mutation or agent-submitted email.
-
-CI integration repair: inherited merged/frozen HR-MANAGER-OVERRIDE-1116/PR1745 breaks complete API/Web compilation (undefined frontend overrideSubstitute on the unrelated substitute response; audit field incorrectly copied onto ReferralResponseDto; missing injected public IamService reference for the delivered identity guard). Reserve only those Customer Affairs service/client references and focused existing regression suites for bounded compilation repair. Preserve the identity check, explicit override confirmation and HR audit flag; missing optional IAM must fail closed. IAM producer already exists and is exported. No HR/IAM runtime overlay is published by the Web-only SMTP repair, no permissions or business policy added. Prior same-file lease is recorded completed/merged; module ownership is retained.
-
-English completeness follow-up: full suite passes5214 Web cases and fails only four untranslated labels from merged PR1745. Reserve four additive en-overrides entries and generated API/standalone mirrors; preserve every peer key/value and the existing inventory gate. Previous same-owner translation scope is merged/frozen. No HR behavior/source or translation-policy changes; mirrors are not part of the bounded live Web origin overlay.
-
-Integrated PR1750 follow-up: reserve only hr-leave-access.spec.ts fixture/assertions for the delivered same-department substitute filter. Supply the native employee projection in the test; retain internal-account authorization, self/other-department exclusion and HR-managed branch denial. No HrService product changes or live HR overlay. Also retain the three incoming request-progress translations already validated locally.
 
 ## RELEASE-1116 — PC-B — IN_PROGRESS
 
