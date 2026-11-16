@@ -1,3 +1,12 @@
+## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
+
+New independent synthetic runner removes the initial hour and all successful-case
+pacing based on assumed daily quota. Healthy30 scenarios run serially without
+sleeps; actual429 retry timing alone delays another attempt. Native Agent and
+SQL/access limits, oracles and the active legacy runner remain unchanged.6 new
+runner tests and all116 service tests pass; no live Groq charge, migration or
+Production change. See [NORA-ACCEPTANCE-PACING-1116](tasks/NORA-ACCEPTANCE-PACING-1116.md).
+
 ## NORA-QUESTION-ROUTING-1116 — PC-C — verification
 
 Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
