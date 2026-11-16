@@ -194,6 +194,58 @@ it('rejects cross-origin, missing configuration and invalid commands before rend
   ).toBe(503);
   expect(mock.render).not.toHaveBeenCalled();
 });
+it('allows a saved authorized supplier form through a same-host TLS-terminating proxy', async () => {
+  const response = await POST(
+    new Request(`http://web:3000/reservations/requests/${id}/pdf`, {
+      method: 'POST',
+      headers: {
+        origin: 'https://crm.example.test',
+        host: 'crm.example.test',
+        cookie: 'synthetic-session',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expectedVersion: 5 }),
+    }),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(200);
+  expect(mock.render).toHaveBeenCalledOnce();
+  const send = mock.fetch.mock.calls.find(
+    (call) => call[1]?.method === 'POST',
+  )!;
+  expect(send[1].headers.cookie).toBe('synthetic-session');
+  expect(send[0]).toBe(
+    `http://api.test/api/v1/reservations/requests/${id}/supplier-email`,
+  );
+});
+it.each([
+  null,
+  'null',
+  'https://other.test',
+  'https://crm.example.test:444',
+  'https://crm.example.test/path',
+  'https://user@crm.example.test',
+  'http://crm.example.test',
+])('rejects an untrusted browser origin behind a proxy: %s', async (origin) => {
+  const headers = new Headers({
+    host: 'crm.example.test',
+    'x-forwarded-host': 'other.test',
+    'x-forwarded-proto': 'https',
+    'Content-Type': 'application/json',
+  });
+  if (origin !== null) headers.set('origin', origin);
+  const response = await POST(
+    new Request(`http://web:3000/reservations/requests/${id}/pdf`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ expectedVersion: 5 }),
+    }),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(403);
+  expect(mock.render).not.toHaveBeenCalled();
+  expect(mock.fetch).not.toHaveBeenCalled();
+});
 it('rejects stale data and renderer failure without requesting an email', async () => {
   expect(
     (

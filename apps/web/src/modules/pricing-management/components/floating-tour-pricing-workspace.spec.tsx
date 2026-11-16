@@ -26,6 +26,7 @@ vi.mock('@/modules/iam/access-context', () => ({
   useAccessPermissions: () => h.permissions,
   useRouteAccess: () => () => true,
 }));
+vi.mock('@/lib/environment', () => ({ getPublicApiBaseUrl: () => '/api/v1' }));
 beforeEach(() => {
   h.states = [];
   h.index = 0;
@@ -49,7 +50,10 @@ it('requires an explicitly entered night count before enabling the Excel picker'
   seed(0);
   const html = renderToStaticMarkup(<FloatingTourPricingWorkspace />);
   expect(html).toContain('تعداد شب این بازه');
-  expect(html).toContain('دانلود قالب ترکیبی');
+  expect(html).toContain('دانلود قالب قیمت تور');
+  expect(html).toContain('/api/v1/sales/pricing/floating-tours/tour/template');
+  expect(html).toContain('قیمت مشترک را در سلول ادغام‌شده وارد کنید');
+  expect(html).not.toContain('دو ردیف پشت‌سرهم');
   expect(
     html.match(/<input[^>]*aria-label="فایل قیمت تور"[^>]*>/)?.[0],
   ).toContain('disabled=""');

@@ -6379,5 +6379,8 @@
   "وضعیت انتشار سایت دریافت نشد.": "Could not load the website publication status.",
   "اعلام درخواست": "Request submitted",
   "تأیید مدیر واحد": "Department manager approval",
-  "روند درخواست مرخصی": "Leave request progress"
+  "روند درخواست مرخصی": "Leave request progress",
+  "برای تور ترکیبی، قیمت مشترک اقامت‌ها را انتخاب کنید.": "Select the shared stay price for a combined tour.",
+  "تور ترکیبی با قیمت مشترک اقامت‌ها": "Combined tour with a shared stay price",
+  "قیمت مشترک را در سلول ادغام‌شده وارد کنید؛ هر ردیف یک اقامت از همان ترکیب است.": "Enter the shared price in the merged cell; each row is one stay in that combination."
 }

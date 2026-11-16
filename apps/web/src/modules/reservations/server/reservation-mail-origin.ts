@@ -21,5 +21,20 @@ export function reservationMailOrigin(request: Request): string | null {
       return null;
     }
   }
-  return request.headers.get('origin') === expected ? expected : null;
+  const origin = request.headers.get('origin');
+  if (configured || origin === expected)
+    return origin === expected ? expected : null;
+  try {
+    const browserOrigin = new URL(origin ?? '');
+    const requestUrl = new URL(request.url);
+    // Preserve the upstream same-host TLS proxy fallback when no explicit origin is set.
+    return browserOrigin.origin === origin &&
+      requestUrl.protocol === 'http:' &&
+      browserOrigin.protocol === 'https:' &&
+      browserOrigin.host === (request.headers.get('host') ?? requestUrl.host)
+      ? browserOrigin.origin
+      : null;
+  } catch {
+    return null;
+  }
 }
