@@ -8640,6 +8640,7 @@ model PackagePricingTourCombinationSource {
 }
 
 model WebsitePublication {
+  presentation Json?
   salesStopped Boolean  @default(false)
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   siteCode     String   @db.VarChar(40)
