@@ -1,3 +1,8 @@
+RESERVATION-FORM-SEND-ACCESS-1116 CI integration: consume the exact two-file leave override compile repair validated by44 tests on the template branch. Bounded optional DTO Boolean and missing optional IAM injection only; preserve existing authorization and all other domain behavior. Required by the shared develop build failure.
+
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-reservation-form-send-access-1116. User authorizes restoring saved supplier-form sending for Reservations users and develop merge. Reserve only Web reservation PDF mail POST origin validation, its native-route regression spec and own task/status entries. Diagnose TLS-terminating reverse-proxy URL versus browser Origin mismatch; preserve strict same-host validation, session/domain permissions, branch checks, version/signature and same-origin CSRF rejection. No IAM grants, API/schema/dependency/operational-data/deployment or real email sending. Existing mail implementation is merged; no current leaf source overlap found.
 FLOATING-MERGED-TEMPLATE-1116 integration test lease: align hr-leave-access.spec.ts fixture with the merged departmentSubstitutes reader; no employee/unit yields no substitute, and eligible colleagues must match unit and organization branch. Retain internal-directory rejection, HR-managed access and branch-denial assertions. Test-only repair for two baseline-identical failures; no HR runtime/policy change.
 
 FLOATING-MERGED-TEMPLATE-1116 integration Web compile lease: remove the undefined overrideSubstitute shorthand from ordinary substitute replies in customer-affairs-client.ts and cover ordinary versus explicit HR override payloads in its existing spec. HR-MANAGER-OVERRIDE-1116 is completed; preserve HR override/authorization and existing three-argument substitute API. Required by exact-head CI TypeScript failure.
@@ -12802,6 +12807,22 @@ HR-MANAGER-OVERRIDE-1116 PC-B completed. Recognize Mahsa Alaei Shamsabad as sale
 SITE-TICKET-FILTERS-1116 — PC-A ACTIVE: owner requests stable explicit-refresh site management, native ticket-pricing filters and complete read-only flight facts; scoped Web only, no migration/dependency/business data changes.
 
 SITE-TICKET-FILTERS-1116: bounded English integrations catalogue lease for three new ticket facts labels; no translation removals.
+
+SITE-TILES-1116 — PC-A ACTIVE: owner requests compact named website destination tiles, restrained status colours and improved site-management layout; presentation-only scope, preserve publication CAS/manual save and explicit refresh. No API, migration or dependencies.
+
+SITE-TILES-1116 bounded integration catalogue lease: four missing upstream HR labels in en-overrides only, preserve source behavior and existing translations.
+
+SITE-TILES-1116 bounded integration build repair: upstream HR-MANAGER-OVERRIDE-1116 is completed but refers to an uninjected IAM service and a missing validated ReferralResponseDto flag. Reserve only constructor injection/optional deny-safe guard and optional boolean validation; preserve named-user authorization and explicit confirmation policy, no business/API permission expansion.
+
+SITE-TILES-1116 integration build repair: remove undefined overrideSubstitute shorthand only from substitute self-review request; keep HR-manager review flag/confirmation unchanged.
+
+REQUEST-PROGRESS-1116 PC-B completed: same-unit/company substitutes enforced by HR server; remove procurement empty state; four-step leave timeline based on audit events. Scoped API/Web ESLint passed; existing suite blocked by missing contracts build. Owner authorizes merge.
+
+SITE-TILES-1116 merged-base compatibility: complete three new request progress translations from REQUEST-PROGRESS-1116; retain its source and full task records unchanged.
+
+SITE-TILES-1116 merged-base regression lease: update hr-leave-access.spec.ts fixture with the employee unit/company lookup required by completed REQUEST-PROGRESS-1116. Keep branch/account denial tests, assert the scoped employee queries and exclude self/out-of-unit candidates; test-only, no HR product change.
+
+SITE-TILES-1116 user refinement: checkbox selection saves immediately with existing site/branch CAS; remove tile save action, rollback on errors, block repeated toggles while busy. Expanded tour presentation editing retains its own save, and checkbox saves preserve unsaved presentation drafts. Targeted state-transition regressions required.
 
 ## RELEASE-1116 — PC-B — IN_PROGRESS
 

@@ -2,7 +2,7 @@
 
 Site Management includes floating definitions directly from Package Pricing's public service. Unpriced definitions remain visible with a pricing prompt. Priced definitions expose distinct date/night or calendar/month/night periods. Charter periods retain their existing identifiers and publication eligibility.
 
-The tour list groups periods under expandable tours. Tour, destination-city, inclusive departure-date and name filters apply before display. Monthly prices retain their yearless meaning; a bounded date filter matches recurring months. Combined destination cities are included. Every visible period has its own site controls and explicit save; no site is enabled automatically.
+The tour list groups periods under expandable tours. Tour, destination-city, inclusive departure-date and name filters apply before display. Monthly prices retain their yearless meaning; a bounded date filter matches recurring months. Combined destination cities are included. Every visible period retains the current compact site tiles: toggling a checkbox saves only that period's selection with CAS, rolls back on failure and blocks repeat toggles while busy. Presentation edits keep their separate save action. No site is selected without a staff action.
 
 `WebsitePublication.periodKey` defaults to the empty string, preserving all old ticket/charter flags and versions. Floating publications use `kind=floating-tour`, the real package UUID, and a canonical `dated:YYYY-MM-DD:nights` or `monthly:calendar:months:nights` key. CAS and branch/site checks apply per period. Nonfloating publications reject nonempty period keys. Enabling requires a current saved sale period; removal produces a disabled catalog entry, and staff can still disable a removed period.
 
