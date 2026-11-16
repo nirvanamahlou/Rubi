@@ -12,6 +12,9 @@ import {
   UserRound,
   Plus,
   Move,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react';
 import {
   useCallback,
@@ -596,6 +599,7 @@ export function OrganizationChart({
   ) => Promise<void>;
   busy?: boolean;
 }) {
+  const [zoom, setZoom] = useState(1);
   const chartRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
   const [edges, setEdges] = useState<readonly OrganizationChartEdge[]>([]);
@@ -661,10 +665,12 @@ export function OrganizationChart({
         return [
           {
             id: relationship.id,
-            startX: parentRect.left - chartRect.left + parentRect.width / 2,
-            startY: parentRect.bottom - chartRect.top,
-            endX: childRect.left - chartRect.left + childRect.width / 2,
-            endY: childRect.top - chartRect.top,
+            startX:
+              (parentRect.left - chartRect.left + parentRect.width / 2) / zoom,
+            startY: (parentRect.bottom - chartRect.top) / zoom,
+            endX:
+              (childRect.left - chartRect.left + childRect.width / 2) / zoom,
+            endY: (childRect.top - chartRect.top) / zoom,
           },
         ];
       },
@@ -694,7 +700,7 @@ export function OrganizationChart({
         ? current
         : nextEdges,
     );
-  }, [nodes]);
+  }, [nodes, zoom]);
 
   useLayoutEffect(() => {
     let animationFrame = 0;
@@ -822,12 +828,15 @@ export function OrganizationChart({
                             nodeRect && canvas
                               ? Math.max(
                                   -5000,
-                                  x - (nodeRect.left - canvas.left),
+                                  x - (nodeRect.left - canvas.left) / zoom,
                                 )
                               : -5000,
                           minY:
                             nodeRect && canvas
-                              ? Math.max(-5000, y - (nodeRect.top - canvas.top))
+                              ? Math.max(
+                                  -5000,
+                                  y - (nodeRect.top - canvas.top) / zoom,
+                                )
                               : -5000,
                           next: { x, y },
                         };
@@ -847,7 +856,8 @@ export function OrganizationChart({
                             Math.min(
                               5000,
                               Math.round(
-                                current.x + event.clientX - current.startX,
+                                current.x +
+                                  (event.clientX - current.startX) / zoom,
                               ),
                             ),
                           ),
@@ -856,7 +866,8 @@ export function OrganizationChart({
                             Math.min(
                               5000,
                               Math.round(
-                                current.y + event.clientY - current.startY,
+                                current.y +
+                                  (event.clientY - current.startY) / zoom,
                               ),
                             ),
                           ),
@@ -983,27 +994,70 @@ export function OrganizationChart({
   };
 
   return (
-    <div className={styles.orgChart} ref={chartRef}>
-      <svg
-        aria-hidden="true"
-        className={styles.orgEdges}
-        style={{ width: chartSize.width, height: chartSize.height }}
-        data-edge-count={getOrganizationRelationships(nodes).length}
-        preserveAspectRatio="none"
-        viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+    <div>
+      <div
+        className={styles.orgZoomControls}
+        role="group"
+        aria-label="بزرگ‌نمایی چارت"
       >
-        {edges.map((edge) => {
-          const middleY = edge.startY + (edge.endY - edge.startY) / 2;
-          return (
-            <path
-              className={styles.orgEdge}
-              d={`M ${edge.startX} ${edge.startY} V ${middleY} H ${edge.endX} V ${edge.endY}`}
-              key={edge.id}
-            />
-          );
-        })}
-      </svg>
-      {roots.map((node) => renderNode(node, true))}
+        <button
+          type="button"
+          aria-label="بزرگ‌نمایی"
+          title="بزرگ‌نمایی"
+          disabled={zoom >= 2}
+          onClick={() =>
+            setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
+          }
+        >
+          <ZoomIn size={18} />
+        </button>
+        <output aria-live="polite">
+          {new Intl.NumberFormat('fa-IR', { style: 'percent' }).format(zoom)}
+        </output>
+        <button
+          type="button"
+          aria-label="کوچک‌نمایی"
+          title="کوچک‌نمایی"
+          disabled={zoom <= 0.3}
+          onClick={() =>
+            setZoom((value) =>
+              Math.max(0.3, Math.round((value - 0.1) * 10) / 10),
+            )
+          }
+        >
+          <ZoomOut size={18} />
+        </button>
+        <button
+          type="button"
+          aria-label="بازگشت به اندازه اصلی"
+          title="بازگشت به اندازه اصلی"
+          onClick={() => setZoom(1)}
+        >
+          <RotateCcw size={18} />
+        </button>
+      </div>
+      <div className={styles.orgChart} ref={chartRef} style={{ zoom }}>
+        <svg
+          aria-hidden="true"
+          className={styles.orgEdges}
+          style={{ width: chartSize.width, height: chartSize.height }}
+          data-edge-count={getOrganizationRelationships(nodes).length}
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+        >
+          {edges.map((edge) => {
+            const middleY = edge.startY + (edge.endY - edge.startY) / 2;
+            return (
+              <path
+                className={styles.orgEdge}
+                d={`M ${edge.startX} ${edge.startY} V ${middleY} H ${edge.endX} V ${edge.endY}`}
+                key={edge.id}
+              />
+            );
+          })}
+        </svg>
+        {roots.map((node) => renderNode(node, true))}
+      </div>
     </div>
   );
 }

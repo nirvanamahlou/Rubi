@@ -12741,3 +12741,5 @@ WEBSITE-TICKET-LOGO-1115 — PC-A — active: the owner's website-airline image 
 SITE-AIRLINE-LOGO-1115 CI integration repair: reserve one additive English label in apps/web/src/i18n/en-overrides.json and its generated apps/api/src/common/i18n/en-catalog.json and apps/web/public/package-generator/i18n-catalog.js mirrors for the concurrently merged hourly-leave deadline validation. Translation only; no HR behavior, schema or runtime grant changes.
 
 CI follow-up lease: append only the11 newly introduced Workbench guide scaffolding/clarification translations to apps/web/src/i18n/en-overrides.json. The previous PC-A translation scope is merged/frozen; current PC-D fiscal-display branch does not change this file. Preserve all other keys and the English completeness gate; no inventory/assertion suppression.
+
+ORG-CHART-ZOOM-1116 PC-B completed. Zoom 30-200 percent, reset, scale-aware connectors and drag offsets. Scoped ESLint passed. Owner authorizes push/merge.
