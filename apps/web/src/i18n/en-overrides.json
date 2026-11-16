@@ -6326,6 +6326,13 @@
   "عنوان، تلفن، تاریخ و منبع ورود را وارد کنید.": "Enter a title, phone, date and source.",
   "مدیر یا گیرنده منابع انسانی برای درخواست مرخصی به‌صورت یکتا تعریف نشده است.": "A unique manager or HR recipient for leave requests has not been configured.",
   "مهسااعلایی": "Mahsa Alaei",
+  "اعلام درخواست": "Request submitted",
+  "تأیید مدیر واحد": "Unit manager approval",
+  "جانشین تأیید نکرده است. آیا مطمئن هستید مرخصی را تأیید می‌کنید؟": "The substitute has not approved. Are you sure you want to approve the leave?",
+  "روند درخواست مرخصی": "Leave request progress",
+  "مهسا علایی": "Mahsa Alaei",
+  "مهسا علایی شمس آباد": "Mahsa Alaei Shams Abad",
+  "مهساعلایی": "Mahsa Alaei",
   "برای تور ترکیبی، قیمت مشترک اقامت‌ها را انتخاب کنید.": "Select the shared stay price for a combined tour.",
   "تور ترکیبی با قیمت مشترک اقامت‌ها": "Combined tour with a shared stay price",
   "قیمت مشترک را در سلول ادغام‌شده وارد کنید؛ هر ردیف یک اقامت از همان ترکیب است.": "Enter the shared price in the merged cell; each row is one stay in that combination."
