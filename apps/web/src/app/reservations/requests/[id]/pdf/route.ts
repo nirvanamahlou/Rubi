@@ -1,5 +1,6 @@
 import { reservationHasTransfer } from '@nora/contracts';
 import { createHash, createHmac } from 'node:crypto';
+import { reservationMailOrigin } from '@/modules/reservations/server/reservation-mail-origin';
 import {
   supplierDocumentScope,
   type SupplierDocumentKind,
@@ -333,9 +334,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const origin = new URL(request.url).origin;
-  if (request.headers.get('origin') !== origin)
-    return fail('دسترسی به این عملیات مجاز نیست.', 403);
+  const origin = reservationMailOrigin(request);
+  if (!origin) return fail('دسترسی به این عملیات مجاز نیست.', 403);
   const secret = process.env.RESERVATION_PDF_MAIL_SECRET;
   if (!secret || secret.length < 32)
     return fail('اتصال ایمیل رزرواسیون شرکت هنوز آماده نشده است.', 503);

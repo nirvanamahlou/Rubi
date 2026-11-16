@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -37,6 +38,12 @@ export class FloatingTourPricingController {
   list(@Req() req: AuthenticatedRequest) {
     return this.pricing.list(req.actor);
   }
+  @Get('website-candidates')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('ticket_catalog.manage')
+  websiteCandidates(@Req() req: AuthenticatedRequest) {
+    return this.pricing.websiteCandidates(req.actor);
+  }
   @Get(':id')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('package_pricing.read')
@@ -45,6 +52,18 @@ export class FloatingTourPricingController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.pricing.get(id, req.actor);
+  }
+  @Get(':id/template')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('package_pricing.read')
+  async template(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return new StreamableFile(await this.pricing.template(id, req.actor), {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: 'attachment; filename="floating-tour-price.xlsx"',
+    });
   }
   private options(body: { options?: string }, file?: { buffer: Buffer }) {
     if (!file?.buffer)

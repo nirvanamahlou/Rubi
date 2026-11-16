@@ -46,8 +46,16 @@ export class SiteCommerceController {
     @Param('resourceId', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
     @Query('branchId') branchId?: string,
+    @Query('periodKey') periodKey?: string,
   ) {
-    return this.service.publication(site, kind, id, req.actor, branchId);
+    return this.service.publication(
+      site,
+      kind,
+      id,
+      req.actor,
+      branchId,
+      periodKey,
+    );
   }
   @Post('publications/:kind/:resourceId')
   async publish(
@@ -61,6 +69,7 @@ export class SiteCommerceController {
       version: number;
       branchId?: string;
       presentation?: unknown;
+      periodKey?: string;
     },
     @Req() req: AuthenticatedRequest,
   ) {
@@ -77,8 +86,12 @@ export class SiteCommerceController {
   }
   @Get('catalog')
   @Header('Cache-Control', 'private, no-store')
-  catalog(@Param('site') site: string, @Req() req: AuthenticatedRequest) {
-    return this.service.catalog(site, req.actor);
+  catalog(
+    @Param('site') site: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('floatingTours') floatingTours?: string,
+  ) {
+    return this.service.catalog(site, req.actor, floatingTours === 'true');
   }
   @Post('flight-quote')
   @Header('Cache-Control', 'private, no-store')

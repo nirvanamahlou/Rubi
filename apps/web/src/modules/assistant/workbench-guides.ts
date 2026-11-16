@@ -1,17 +1,10 @@
 import catalog from '../../../../../services/assistant/workbench-guides.json';
+import { containsQuestionPhrase, normalizeQuestion } from './question-text';
 
 export const workbenchGuideCatalog = catalog;
 export type WorkbenchGuideTopic = (typeof catalog.topics)[number];
 export type WorkbenchGuideGoal = 'steps' | 'troubleshoot' | 'follow-up';
-const normalize = (s: string) =>
-  s
-    .normalize('NFKC')
-    .replace(/ي/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/[‌ـ]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+const normalize = normalizeQuestion;
 const followup =
   /^(?:بعدش(?: چی)?|بعدش چیکار کنم|مرحله بعد(?: چیه)?|ادامه بده|حالا چی|بیشتر توضیح بده)[؟?.! ]*$/;
 const family = (topic: WorkbenchGuideTopic) =>
@@ -64,7 +57,7 @@ export function resolveWorkbenchGuide(
         0,
         leaveIntent === topic.id ? 80 : 0,
         ...[topic.title, ...topic.aliases].map((alias) =>
-          text.includes(normalize(alias))
+          containsQuestionPhrase(text, alias)
             ? topic.id === 'home'
               ? 1
               : normalize(alias).length
@@ -78,7 +71,7 @@ export function resolveWorkbenchGuide(
     const top = matches[0]!;
     const matchedPhrase = [top.topic.title, ...top.topic.aliases]
       .map(normalize)
-      .filter((phrase) => text.includes(phrase))
+      .filter((phrase) => containsQuestionPhrase(text, phrase))
       .sort((a, b) => b.length - a.length)[0];
     if (top.topic.id === 'home' && /قرارداد|رزرو|بیمه/.test(text))
       return undefined;

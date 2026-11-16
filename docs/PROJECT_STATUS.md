@@ -7,7 +7,21 @@ SQL/access limits, oracles and the active legacy runner remain unchanged.6 new
 runner tests and all116 service tests pass; no live Groq charge, migration or
 Production change. See [NORA-ACCEPTANCE-PACING-1116](tasks/NORA-ACCEPTANCE-PACING-1116.md).
 
+## NORA-QUESTION-ROUTING-1116 — PC-C — verification
+
+Shared Composer intent arbitration separates data/evidence follow-ups from catalog guidance. Persian lexical boundaries prevent پرسیدم/رسید and analogous alias collisions. Bounded successful-answer context survives navigation, identity/company scopes remain isolated, and mixed questions append trusted guidance only after successful data. New submit-handler HTTP tests cover429/403, topic changes and stale responses. No public API/schema/dependency/Production change; count-breakdown work remains independently preserved. See [task](tasks/NORA-QUESTION-ROUTING-1116.md) for exact validation limits and clean hosted gates.
+## RESERVATION-FORM-SEND-ACCESS-1116 — PC-A
+
+Supplier PDF mail POST accepts a canonical HTTPS browser origin when the TLS proxy forwards the same public Host over HTTP to Next. Foreign, opaque/missing, malformed, credential-bearing and wrong-port origins remain rejected; forwarded header spoofing cannot authorize a request. Native authenticated workflow lookup, branch/permission checks, saved version/PDF signature and mail queue controls remain.15 route regressions and scoped lint pass, including same-host proxy success and unchanged401/403/404 API rejection. No real email sent, grants/data/dependency/schema or production change. Hosted quality/build/tests gates precede the owner-authorized develop merge.
+FLOATING-MERGED-TEMPLATE-1116 CI repair: the latest develop had an undeclared referral override DTO field and missing optional IAM service injection in the existing Nima-only leave-substitute override. Restored only those existing references, preserving fail-closed HR policy and positional constructors.44 focused pricing/Workbench tests and scoped lint pass. Hosted checks remain the final gate.
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A
+
+Floating tour pricing now exposes a styled template download. Combined templates contain one row per destination and actual vertically merged shared-price/date cells. Import preserves Excel merge boundaries and physical source rows, validates every itinerary stay and counts each common price/commission/flight once. Three-stay and separate equal-price combination round trips pass, including malformed/overlapping merge rejection and branch-scoped read-only template access. Legacy templates remain compatible. No schema/migration/dependency/data/deployment change. Local contracts build,22 API and5 Web/i18n checks plus affected lint pass; full hosted quality/build/tests/migration gates precede the user-authorized develop merge.
+
 SITE-MANAGEMENT-RELEASE-1116 final verification repair: reserve only Marketing intake test fixtures updated for the already-merged single-title form and four missing label catalogue entries. No Marketing/HR behavior change. Preserve source policy and all gate coverage.
+
+SITE-TILES-1116: compact two/four-column named destinations, saved status dot, selected highlight, icon edit, hidden unchanged save, full-width explicit editor and denser resource headings. Checkbox selection now saves immediately with CAS and failure rollback; expanded tour presentation retains explicit save. Stable refresh preserved. Nine targeted publication/model/translation checks pass; hosted checks pending.
 
 SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification and activated navigation while preparation was running; stale snapshot correctly stopped before build. Latest develop9ee4ca2 includes three unsupported Button variants and an effect-based leave-route state causing clean build/lint failure. Reserve only new-request-dialog variants and derived read-only leave recipient; HR routing policy is unchanged. Preserve peer chart regression, existing runtime overlays and all data.
 
@@ -705,6 +719,19 @@ Combined tours hide both legacy top route fields; regular tours retain them. One
 ## TERMS-PDF-JUSTIFY-1110 — PC-A — READY_FOR_CI
 
 The shared two-page static terms PDF now justifies37 wrapped body lines with PDF word spacing. Paragraph-final lines, headings, headers, footers, font bytes, legal text glyphs, metadata and page geometry are preserved. Reproducible source-hash-guarded script verifies glyph/font/page/metadata identity and produces identical output bytes on repeat. Both pages rendered and visually checked. Original SHA256 8ed0c34f4e94f9802a5ca4f9f0cf45de9ae49fcb92e1018b4ae30d56206767dc; output256a5be58e1926fa6e2ebddae1de76563b041c9b9f35534c7b15ebde240c25ba. No API, permissions, schema, dependency or runtime/deployment changes. Full hosted gates required before owner-authorized develop merge; source reservation releases upon verified merge.
+
+
+## SITE-TICKET-LAYOUT-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-site-ticket-layout-1116 from latest origin/develop. Owner requests compact ticket-pricing-style facts, two ticket cards per desktop row and four small website tiles in place of the price panel, a colored tidy filter panel, immediate checkbox save and pencil-only editing, followed by develop merge. Reserve Integrations site-management.tsx presentation, new scoped CSS/facts leaf and focused tests only. Prior SITE-TICKET-FILTERS-1116 source is frozen/merged via PR1744; retain its explicit refresh, filters, branch/access and complete flight facts. User explicitly supersedes the prior Save button for ticket website choices: checkbox changes auto-save their own site with CAS; errors revert to stored state, concurrent toggles are guarded, and tours retain the immediate-save behavior merged in PR1747. Preserve disconnected-site status and commission editing. No API, schema, dependency, real publication, business-data or deployment changes. No active overlapping source edits found. Bounded source lease releases upon verified merge.
+
+SITE-TICKET-LAYOUT-1116 validation:34 focused publication/auto-save/facts/navigation tests and scoped ESLint pass. Reuse the ticket-pricing date/cabin rules with read-only country/city references; retain outbound/return IDs and offer-level publication scope. Synthetic desktop/mobile preview inspection; no real publication or server deployment. Full exact-head gates required for the authorized merge.
+
+## FLOATING-PRICING-BREADCRUMB-1116 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-floating-breadcrumb-1116 from latest develop dabf4e80c. Owner requests removal of the incorrect unavailable breadcrumb above Floating Packages and develop merge. Reserve bounded central navigation.ts alias/breadcrumb logic and its regression spec only; no active overlapping owner found (Nora navigation task owns assistant state, not central breadcrumbs). Include own task/status notes before the stable FAMILY-ROOM-CHILD-1029 section. Preserve route access, sidebar permission rules and pricing behavior. No API, schema, dependency, translations, data writes or deployment. Source reservation releases after verified merge.
+
+FLOATING-PRICING-BREADCRUMB-1116 validation:25 navigation and Floating Pricing tests pass; scoped ESLint passes. The exact route now has a localized title and linked Sales/Package Management parents, while Sales active navigation and other aliases remain unchanged. Full exact-head hosted checks gate the owner-authorized merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -5239,6 +5266,13 @@ Individual agreed package totals per passenger/currency are persisted with exact
 - Handoff با PR شماره ۱۲ و Merge Commit `0af31c2` وارد `develop` شد.
 
 HR-INBOX-REQUEST-TITLE-1109 shows the original request subject in the HR inbox while keeping type filtering and the review action. Scoped Web lint passed.
+
+
+## RESERVATION-MAIL-ORIGIN-1116 — PC-A — READY_FOR_CI
+
+Runtime verified10:18 UTC: bounded two-file Web overlay published against current image with eight successful checks, explicit private canonical Origin, encrypted backup and rollback. Public Origin passes the synthetic invalid-command gate; foreign/missing origins rejected. API/Web healthy, keys/UI/old static assets and owner SMTP test preserved; API/Worker not restarted; no agent-submitted email. Source integrates upstream1752 same-host proxy fallback/tests and current peer HR repairs; final source gates pending.
+
+Production supplier PDF POST rejects public HTTPS Origin against the internal container URL before API authorization. Synthetic invalid-command probe on the real handler reproduces400 for internal origin versus403 for public origin, without auth/PDF/queue/email. New module-local validation uses explicit private RESERVATION_MAIL_WEB_ORIGIN and never trusts forwarded headers.65 mail-route/PDF/price-save checks pass; preserve all authorization, HMAC, saved snapshots, form/PDF appearance and enabled owner test. Web-only repair must preserve the live image overlays/static assets/config, use protected origin configuration, encrypted backup and rollback, and pass exact-head gates. No API/IAM/schema/dependency/data mutation or agent-submitted email. See tasks/RESERVATION-MAIL-ORIGIN-1116.md.
 
 ## برنامه اجرایی Sprint دوم
 

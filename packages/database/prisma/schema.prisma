@@ -8640,6 +8640,7 @@ model PackagePricingTourCombinationSource {
 }
 
 model WebsitePublication {
+  periodKey    String   @default("") @db.VarChar(100)
   presentation Json?
   salesStopped Boolean  @default(false)
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -8652,7 +8653,7 @@ model WebsitePublication {
   version      Int      @default(1)
   updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
-  @@unique([siteCode, branchId, kind, resourceId])
+  @@unique([siteCode, branchId, kind, resourceId, periodKey], map: "website_publications_site_branch_resource_period_key")
   @@index([siteCode, branchId, updatedAt])
   @@map("website_publications")
 }

@@ -15,16 +15,19 @@ import {
   type FloatingTourImportPreview,
   type FloatingTourSaleRow,
   type FloatingTourSaleSet,
+  type FloatingTourWebsiteCandidate,
   type TourPackageInputV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { PackageTourPricingService } from './package-tour-pricing.service';
+import { buildFloatingTourTemplate } from './floating-tour-template';
 import {
   parseFloatingRows,
   readFloatingWorkbook,
   type FloatingHotelReference,
 } from './floating-tour-import';
+import { floatingWebsitePeriods } from './floating-tour-publication';
 
 const optionsSchema = Joi.object({
   nights: Joi.number().integer().min(1).max(365).required(),
@@ -66,6 +69,106 @@ export class FloatingTourPricingService {
       throw new BadRequestException('این تور شناور نیست.');
     return { row, definition };
   }
+  async websiteCandidates(
+    actor: AuthenticatedActor,
+  ): Promise<{ data: FloatingTourWebsiteCandidate[] }> {
+    if (!actor.permissions.includes('ticket_catalog.manage'))
+      throw new ForbiddenException();
+    const rows = await this.db.client.tourPackage.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        definition: { path: ['details', 'isFloating'], equals: true },
+      },
+      include: { floatingSaleCatalog: true },
+      orderBy: { createdAt: 'desc' },
+      take: 501,
+    });
+    if (rows.length > 500)
+      throw new BadRequestException(
+        'برای کاتالوگ بزرگ‌تر صفحه‌بندی تنظیم شود.',
+      );
+    return {
+      data: rows.map((row) => {
+        const prices = row.floatingSaleCatalog?.payload as unknown as
+          FloatingTourSaleSet | undefined;
+        const definition = row.definition as unknown as TourPackageInputV1;
+        return {
+          id: row.id,
+          branchId: row.branchId,
+          name: definition.name,
+          destinationId: definition.destinationId,
+          destinationIds: [
+            ...new Set([
+              definition.destinationId,
+              ...(definition.details?.destinations?.map(
+                (stay) => stay.cityId,
+              ) ?? []),
+            ]),
+          ],
+          canPublish: !!(prices?.dated.length || prices?.monthly?.rows.length),
+          periods: floatingWebsitePeriods(prices),
+        };
+      }),
+    };
+  }
+  /** Public sales projection: no workbook row numbers, commissions or inventory promises. */
+  async websiteProduct(
+    id: string,
+    branchIds: string[],
+    periodKey: string,
+    requirePrices = true,
+  ) {
+    const { row, definition } = await this.definition(id, {
+      branchIds,
+    } as AuthenticatedActor);
+    const catalog = await this.db.client.floatingTourSaleCatalog.findUnique({
+      where: { packageId: id },
+    });
+    const prices = catalog?.payload as unknown as
+      FloatingTourSaleSet | undefined;
+    const period = floatingWebsitePeriods(prices).find(
+      (item) => item.key === periodKey,
+    );
+    if (requirePrices && !period)
+      throw new BadRequestException('قیمت منتشرشده پکیج الزامی است.');
+    const project = (price: FloatingTourSaleRow) => ({
+      startsOn: price.startsOn,
+      endsOn: price.endsOn,
+      nights: price.nights,
+      stays: price.stays,
+      prices: price.prices,
+    });
+    return {
+      package: {
+        ...definition,
+        id: row.id,
+        branchId: row.branchId,
+        version: row.version,
+      },
+      version: catalog?.version ?? 0,
+      periodKey,
+      dated:
+        period && !period.monthly
+          ? (prices?.dated ?? [])
+              .filter(
+                (price) =>
+                  price.startsOn === period.startsOn &&
+                  price.nights === period.nights,
+              )
+              .map(project)
+          : [],
+      monthly:
+        prices?.monthly && period?.monthly
+          ? {
+              calendar: prices.monthly.calendar,
+              months: prices.monthly.months,
+              rows: prices.monthly.rows
+                .filter((price) => price.nights === period.nights)
+                .map(project),
+            }
+          : null,
+    };
+  }
   async list(actor: AuthenticatedActor) {
     this.authorize(actor);
     const rows = await this.db.client.tourPackage.findMany({
@@ -103,6 +206,11 @@ export class FloatingTourPricingService {
         }
       : { version: 0, dated: [], monthly: null };
   }
+  async template(id: string, actor: AuthenticatedActor) {
+    this.authorize(actor);
+    const { definition } = await this.definition(id, actor);
+    return buildFloatingTourTemplate(definition);
+  }
   async preview(
     id: string,
     bytes: Uint8Array,
@@ -119,7 +227,7 @@ export class FloatingTourPricingService {
       throw new BadRequestException('مسیر تور را تکمیل کنید.');
     if (definition.details?.isCombined && !options.combined)
       throw new BadRequestException(
-        'برای تور ترکیبی، ورود جفت‌ردیفی را انتخاب کنید.',
+        'برای تور ترکیبی، قیمت مشترک اقامت‌ها را انتخاب کنید.',
       );
     const current = await this.get(id, actor);
     const cities = options.combined
