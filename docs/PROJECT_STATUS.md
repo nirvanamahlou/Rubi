@@ -1,3 +1,6 @@
+## TICKET-BULK-PUBLICATION-1116 — PC-A
+
+Integrations ticket management adds a bulk publication review using the selected authorized branch, route, one-way/round-trip, search and inclusive Tehran departure dates. Only active priced matching offers are grouped once; missing/unpriced returns are excluded. Website selection and review/cancel perform no writes. Explicit confirmation runs sequential existing publication reads/CAS commands, preserves enabled/stopped publications and metadata, refreshes tiles and reports per-site partial failures without retries. Disconnected websites retain pending intent rather than claimed delivery. Branch/site/permission/source validation, activity audit and durable catalogue delivery remain native; no API/schema/migration/dependency/operational data or deployment change. Focused interaction/model and regression validation precede exact-head full CI and the user-authorized develop merge.
 ## NORA-ACCEPTANCE-PACING-1116 — PC-C — READY_FOR_REVIEW
 
 New independent synthetic runner removes the initial hour and all successful-case
