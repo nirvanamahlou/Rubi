@@ -24,6 +24,8 @@ import {
   allowedSources,
 } from './catalog';
 import { SalesAgentQueryService, type AgentScope } from './query.service';
+import { DatabaseService } from '../../database/database.service';
+import { readContractCountBreakdown } from './count-breakdown';
 
 @UseGuards(AuthGuard)
 @Controller('sales/assistant-agent')
@@ -34,6 +36,7 @@ export class SalesAgentController {
     @Inject(SalesAgentQueryService)
     private readonly queries: SalesAgentQueryService,
     @Inject(IamService) private readonly iam: IamService,
+    @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
   private async context(request: AuthenticatedRequest) {
@@ -126,6 +129,37 @@ export class SalesAgentController {
     }
     const release = await this.context(request);
     if (release.contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    return { ...result, contextId: context.contextId };
+  }
+
+  @Post('count-breakdown')
+  @Header('Cache-Control', 'private, no-store')
+  async countBreakdown(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    if (
+      !body ||
+      typeof body !== 'object' ||
+      Array.isArray(body) ||
+      Object.keys(body).length !== 1 ||
+      typeof (body as { contextId?: unknown }).contextId !== 'string'
+    )
+      throw new BadRequestException('INVALID_QUERY');
+    const context = await this.context(request);
+    if ((body as { contextId: string }).contextId !== context.contextId)
+      throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
+    let result;
+    try {
+      result = await readContractCountBreakdown(
+        this.database.client,
+        context.scope,
+      );
+    } catch {
+      throw new ServiceUnavailableException('AGENT_SOURCE_UNAVAILABLE');
+    }
+    if ((await this.context(request)).contextId !== context.contextId)
       throw new ForbiddenException('AGENT_CONTEXT_CHANGED');
     return { ...result, contextId: context.contextId };
   }

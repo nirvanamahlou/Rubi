@@ -117,6 +117,7 @@ export class SalesAgentQueryService implements OnModuleDestroy, OnModuleInit {
         rows,
         truncated: result.rows.length > rows.length,
         sources: checked.sources,
+        calculation: checked.calculation,
         durationMs: Date.now() - started,
         queryHash: createHash('sha256').update(checked.sql).digest('hex'),
       };

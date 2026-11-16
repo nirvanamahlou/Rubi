@@ -1,4 +1,11 @@
 {
+  "اعلام درخواست": "Request submission",
+  "تأیید مدیر واحد": "Department manager approval",
+  "جانشین تأیید نکرده است. آیا مطمئن هستید مرخصی را تأیید می‌کنید؟": "The substitute has not approved. Are you sure you want to approve this leave request?",
+  "روند درخواست مرخصی": "Leave request progress",
+  "مهسا علایی": "Mahsa Alaei",
+  "مهسا علایی شمس آباد": "Mahsa Alaei Shams Abad",
+  "مهساعلایی": "Mahsa Alaei",
   "ابتدا راهنمای قرارداد را می‌خواهید یا راهنمای میزکار من؟ موضوع اول را مشخص کنید تا مراحل دو بخش با هم مخلوط نشوند.": "Would you like contract guidance or My Workbench guidance first? Choose the first topic so the two workflows remain distinct.",
   "$1از کجا": "$1where",
   "برای بررسی پاسخ قبلی، شواهد تازه از ابزار مجاز بخوان. سابقه اثبات صحت عدد یا علت نیست؛ اگر قابل تأیید نیست یا تغییر کرده، صریح اعلام کن.": "Check the previous answer using fresh evidence from authorized tools. History does not prove a number or cause; explicitly state if it cannot be verified or has changed.",

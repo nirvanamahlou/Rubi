@@ -1,4 +1,6 @@
 'use client';
+
+import { AssistantResponseContent } from './response-content';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { resolveWorkbenchGuide, loadWorkbenchGuide } from './workbench-guides';
 import {
@@ -690,7 +692,7 @@ function AssistantComposerContent({
         const sourceText = result.sources
           .map(
             (source) =>
-              `${source.sources.map((id) => 'nora_agent.' + id).join(', ')} — ${new Date(source.observedAt).toLocaleString(english ? 'en-GB' : 'fa-IR', { timeZone: 'Asia/Tehran' })}`,
+              `${source.kind === 'panel-count-breakdown' ? 'sales.panel-count-breakdown + reservations.latest-lifecycle' : source.sources.map((id) => 'nora_agent.' + id).join(', ')} — ${new Date(source.observedAt).toLocaleString(english ? 'en-GB' : 'fa-IR', { timeZone: 'Asia/Tehran' })}`,
           )
           .join('\n');
         const answer = [
@@ -865,8 +867,17 @@ function AssistantComposerContent({
             aria-label={t(c.conversationLabel)}
           >
             {messages.map((item, index) => (
-              <p key={index} data-role={item.role} dir="auto">
-                {item.content}
+              <div
+                key={index}
+                data-role={item.role}
+                dir="auto"
+                className="whitespace-pre-wrap"
+              >
+                {item.role === 'assistant' ? (
+                  <AssistantResponseContent text={item.content} />
+                ) : (
+                  item.content
+                )}
                 {item.guideLink && (
                   <Link className="block underline" href={item.guideLink.href}>
                     {item.guideLink.label}
@@ -903,7 +914,7 @@ function AssistantComposerContent({
                       {link.contractNumber}
                     </a>
                   ))}
-              </p>
+              </div>
             ))}
           </div>
         )}

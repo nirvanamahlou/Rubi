@@ -93,9 +93,16 @@ function render(denied = false) {
 function chat() {
   return render()
     .filter((node) => node.props['data-role'] === 'assistant')
-    .map((node) =>
-      sourceUiText((node.props.children as ReactModule.ReactNode[])[0]),
-    );
+    .map((node) => {
+      const content = (node.props.children as ReactModule.ReactNode[])[0];
+      // PR1742 routes assistant text through the independently tested safe renderer.
+      return content &&
+        typeof content === 'object' &&
+        'props' in content &&
+        typeof (content.props as Record<string, unknown>).text === 'string'
+        ? (content.props as { text: string }).text
+        : sourceUiText(content);
+    });
 }
 async function send(message: string) {
   const field = render().find((node) => node.type === 'textarea')!;
