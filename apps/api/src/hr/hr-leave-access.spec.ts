@@ -13,12 +13,10 @@ function setup(
   colleagueIds = users.map((user) => user.id),
 ) {
   const employees = {
-    findFirst: vi
-      .fn()
-      .mockResolvedValue({
-        unit: 'Operations',
-        organizationBranchId: 'company',
-      }),
+    findFirst: vi.fn().mockResolvedValue({
+      unit: 'Operations',
+      organizationBranchId: 'company',
+    }),
     findMany: vi
       .fn()
       .mockResolvedValue(colleagueIds.map((userId) => ({ userId }))),
