@@ -1,3 +1,15 @@
+FLOATING-MERGED-TEMPLATE-1116 integration test lease: align hr-leave-access.spec.ts fixture with the merged departmentSubstitutes reader; no employee/unit yields no substitute, and eligible colleagues must match unit and organization branch. Retain internal-directory rejection, HR-managed access and branch-denial assertions. Test-only repair for two baseline-identical failures; no HR runtime/policy change.
+
+FLOATING-MERGED-TEMPLATE-1116 integration Web compile lease: remove the undefined overrideSubstitute shorthand from ordinary substitute replies in customer-affairs-client.ts and cover ordinary versus explicit HR override payloads in its existing spec. HR-MANAGER-OVERRIDE-1116 is completed; preserve HR override/authorization and existing three-argument substitute API. Required by exact-head CI TypeScript failure.
+
+FLOATING-MERGED-TEMPLATE-1116 integration translation lease: add only seven missing English labels from the newly merged HR leave/chart UI to en-overrides and existing derived mirrors. Preserve original text and all peer behavior; required by the existing English completeness gate.
+
+FLOATING-MERGED-TEMPLATE-1116 CI integration repair: reserve only the already-merged ReferralResponseDto optional overrideSubstitute Boolean and missing optional IamService constructor injection/guard in CustomerAffairsService. CI on develop57f2f758e fails these unresolved existing references. Preserve the existing Nima-only substitute override, native HR permissions and payload validation; no new HR policy or data changes. Existing IAM module import/export is reused. This bounded compatibility repair is necessary for the authorized green merge.
+
+## FLOATING-MERGED-TEMPLATE-1116 — PC-A — ACTIVE
+
+Base b5d7798ef; branch codex/pc-a-floating-merged-template-1116. Owner authorizes a visible template download and Excel vertical-merged shared prices across all stays of a combined tour, counted once, and develop merge. Reserve floating importer/service/controller, new template builder, floating Web workspace and focused tests plus bounded English overrides and own status entries. Preserve old dedicated/pair templates, native branch/read/write/CAS/digest and money safeguards. No schema, migration, dependency, operational data or deployment changes. No competing active writer in these leaf paths found.
+
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
 Owner refinement: example table is not a prescribed layout. Reopen the same PR1742 scope for a module-independent calculation-explanation policy, model-authored text/table selection, bounded final-answer explanation admission/repair, SQL AST calculation metadata and corresponding tests/docs. Remove deterministic count prose replacement, retain native authorized count evidence and safe rendering. Reserve assistant SQL policy/query result metadata and Groq planner prompt only; no new domain access, business-panel changes, dependencies, migration or Production change. Previous head d9d7b459e passed all10 hosted checks; that result does not validate the forthcoming head.
