@@ -1,5 +1,4 @@
 'use client';
-import { WebsitePublicationSwitch } from '@/modules/site-commerce/publication-switch';
 import { tourDestinationIds } from '@nora/contracts';
 import type { TourDepartureV1, TourPackageV1 } from '@nora/contracts';
 import {
@@ -262,11 +261,11 @@ export function TourOverview({
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {onPeriodStatus ? (
-                              <WebsitePublicationSwitch
-                                kind="tour"
-                                resourceId={item.id}
-                                disabled={busy}
-                              />
+                              <Button asChild variant="outline">
+                                <a href="/integrations">
+                                  مدیریت انتشار در سایت
+                                </a>
+                              </Button>
                             ) : null}
                             <Button
                               variant="outline"

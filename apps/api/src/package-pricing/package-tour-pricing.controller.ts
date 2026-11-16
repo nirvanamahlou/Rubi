@@ -36,6 +36,13 @@ export class PackageTourPricingController {
     return this.drafts.buyRates();
   }
 
+  @Get('website-publication-candidates')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('ticket_catalog.manage')
+  websitePublicationCandidates(@Req() req: AuthenticatedRequest) {
+    return this.drafts.websitePublicationCandidates(req.actor);
+  }
+
   @Get('sale-catalog')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('sales.contracts.create')
