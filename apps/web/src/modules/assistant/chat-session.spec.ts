@@ -6,10 +6,12 @@ import {
 import { conversationHistory } from './agent-response';
 
 describe('browser-lifetime chat transcript', () => {
-  const actor = {
+  const actor: NonNullable<
+    Parameters<typeof assistantConversationScopeKey>[1]
+  > = {
     userId: 'synthetic',
     branchIds: ['b', 'a'],
-    permissions: ['read', 'guide'],
+    permissions: ['sales.payments.read', 'sales.audit.read'],
   };
   it('isolates a changed company/context version without keying on display metadata', () => {
     const context = {
@@ -38,14 +40,17 @@ describe('browser-lifetime chat transcript', () => {
       assistantConversationScopeKey(null, {
         ...actor,
         branchIds: ['a', 'b'],
-        permissions: ['guide', 'read'],
+        permissions: ['sales.audit.read', 'sales.payments.read'],
       }),
     ).toBe(key);
     expect(
       assistantConversationScopeKey(null, { ...actor, userId: 'other' }),
     ).not.toBe(key);
     expect(
-      assistantConversationScopeKey(null, { ...actor, permissions: ['guide'] }),
+      assistantConversationScopeKey(null, {
+        ...actor,
+        permissions: ['sales.audit.read'],
+      }),
     ).not.toBe(key);
     expect(
       assistantConversationScopeKey(null, { ...actor, branchIds: ['a'] }),
