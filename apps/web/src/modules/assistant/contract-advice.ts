@@ -1,6 +1,7 @@
 import {
   normalizeContractQuestion,
   resolveContractGuide,
+  isContractCountQuestion,
 } from './contract-guides';
 
 const cases: [RegExp, string][] = [
@@ -39,6 +40,7 @@ export function contractAdvice(
   dataAgentAvailable = false,
 ) {
   const q = normalizeContractQuestion(message);
+  if (dataAgentAvailable && isContractCountQuestion(q)) return;
   if (!sales && !/قرارداد/.test(q)) return;
   if (/قرارداد\s*(?:شماره\s*)?[a-z0-9]/i.test(q)) return;
   const extra = cases

@@ -3,6 +3,31 @@ import { contractGuideAnswer, resolveContractGuide } from './contract-guides';
 import { contractAdvice } from './contract-advice';
 
 describe('ERP contract workflow help', () => {
+  it('retains procedural passenger-count editing help', () => {
+    expect(
+      resolveContractGuide(
+        'چطور تعداد مسافر قرارداد را تغییر دهم؟',
+        true,
+        undefined,
+        false,
+        true,
+      ),
+    ).toBeTruthy();
+  });
+  it.each([
+    'این عدد ۳۴ قرارداد فعال را از کجا میاری؟',
+    'من ۳۲ قرارداد فعال می‌بینم ولی تو ۳۴ می‌گویی، علت اختلاف چیست؟',
+    'تعداد قراردادها را پرسیدم چرا عدد ۵۲ گفتی؟',
+    'تعداد قراردادهای لغوشده را هم در محاسبه اختلاف نشان بده',
+  ])(
+    'does not replace count reconciliation with procedural guidance: %s',
+    (question) => {
+      expect(
+        resolveContractGuide(question, true, undefined, false, true),
+      ).toBeUndefined();
+      expect(contractAdvice(question, true, true)).toBeUndefined();
+    },
+  );
   it('does not let nested multi-part advice intercept a live portfolio question', () => {
     const question =
       'تعداد کل قراردادهای قابل مشاهده من در شرکت فعال را بدون محدودیت تاریخ و شامل همه وضعیت‌ها بگو؛ قراردادهای پنهان را حساب نکن. فقط تعداد دقیق و منبع را بده.';

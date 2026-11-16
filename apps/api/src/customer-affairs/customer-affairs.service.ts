@@ -2363,6 +2363,20 @@ export class CustomerAffairsService {
             row.executionOwnerUserId === actor.userId &&
             !isHrRequestUnit(row.executionUnit) &&
             row.timeline?.some((e) => e.type === 'WORKBENCH_LEAVE'),
+          progress: {
+            managerApproved:
+              row.timeline?.some(
+                (e) =>
+                  e.type === 'WORKBENCH_RECIPIENT_REVIEW' &&
+                  e.outcome === 'APPROVED',
+              ) ?? false,
+            hrApproved:
+              row.timeline?.some(
+                (e) =>
+                  e.type === 'WORKBENCH_HR_REVIEW' && e.outcome === 'APPROVED',
+              ) ?? false,
+            completed: workbenchReviewStatus(row) === 'APPROVED',
+          },
           trackingNumber: row.trackingNumber,
           subject: row.subject,
           description: row.description,
