@@ -1,13 +1,13 @@
 # Rubi sales connections
 
-| Concern | Previous NSS dependency | Scope used by Rubi |
-| --- | --- | --- |
-| Catalog HTTP delivery | Single NSS timer, receiver, HMAC environment variable and state row | One timer per site, pinned HTTPS origin, separate secret and delivery row |
-| Flight rates | NSS-only target validation at publication and commission trigger | Site + HQ branch + stable price target ID for publication, quote and order |
-| Ticket airline logo | NSS order lookup and NSS public asset URLs | Authenticated site account, linked contract, branch and site origin |
-| Contracts and travel documents | Existing order lookup | Site + branch + external order ID before finance release checks |
-| Cancellation | Existing scoped cancellation lookup and trigger | Signed snapshot for the owning site and branch |
-| Account | Stage-one provisioning selects site username and issuer | Dedicated Jahan user, HQ primary, JAHAN_BASTAN secondary and issuer |
+| Concern                        | Previous NSS dependency                                             | Scope used by Rubi                                                         |
+| ------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Catalog HTTP delivery          | Single NSS timer, receiver, HMAC environment variable and state row | One timer per site, pinned HTTPS origin, separate secret and delivery row  |
+| Flight rates                   | NSS-only target validation at publication and commission trigger    | Site + HQ branch + stable price target ID for publication, quote and order |
+| Ticket airline logo            | NSS order lookup and NSS public asset URLs                          | Authenticated site account, linked contract, branch and site origin        |
+| Contracts and travel documents | Existing order lookup                                               | Site + branch + external order ID before finance release checks            |
+| Cancellation                   | Existing scoped cancellation lookup and trigger                     | Signed snapshot for the owning site and branch                             |
+| Account                        | Stage-one provisioning selects site username and issuer             | Dedicated Jahan user, HQ primary, JAHAN_BASTAN secondary and issuer        |
 
 ## Configure after migration
 
