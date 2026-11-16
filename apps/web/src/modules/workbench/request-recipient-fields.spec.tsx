@@ -27,7 +27,10 @@ vi.mock('./workbench-select', () => ({
     );
   },
 }));
-import { RequestRecipientFields } from './request-recipient-fields';
+import {
+  RequestRecipientFields,
+  requestRecipientSelection,
+} from './request-recipient-fields';
 const units = [
   {
     id: 'reservation',
@@ -113,5 +116,40 @@ describe('Workbench real unit recipient fields', () => {
       />,
     );
     expect(state.selects.every((select) => select.disabled)).toBe(true);
+  });
+});
+
+describe('current branch leave recipient projection', () => {
+  const manual = Object.freeze({
+    unitId: 'manual-unit',
+    recipientId: 'manual-user',
+  });
+  const route = Object.freeze({
+    unitId: 'hr-unit',
+    recipientId: 'leave-manager',
+  });
+  it('keeps a manual request independent from an available leave route', () => {
+    expect(requestRecipientSelection(false, true, route, manual)).toEqual(
+      manual,
+    );
+  });
+  it('uses the resolved manager only when options match the current branch', () => {
+    expect(requestRecipientSelection(true, true, route, manual)).toEqual(route);
+  });
+  it('clears stale branch routing while replacement options load', () => {
+    expect(requestRecipientSelection(true, false, route, manual)).toEqual({
+      unitId: '',
+      recipientId: '',
+    });
+  });
+  it('does not fall back to a manual recipient when leave routing is unavailable', () => {
+    expect(requestRecipientSelection(true, true, undefined, manual)).toEqual({
+      unitId: '',
+      recipientId: '',
+    });
+    expect(manual).toEqual({
+      unitId: 'manual-unit',
+      recipientId: 'manual-user',
+    });
   });
 });

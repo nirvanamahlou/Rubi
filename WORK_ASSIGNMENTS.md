@@ -12725,6 +12725,10 @@ Reserve formatting-only repair of finance-source-references.spec.ts after develo
 
 ## SITE-CANCELLATION-1116 — PC-A — ACTIVE
 
+Bounded test compatibility reservation: align the Marketing intake fixture with the merged single-title form state and payload; preserve canonical source, owner, scoring/CAS and server-error assertions. Test-only repair, no Marketing product changes.
+
+Bounded lint compatibility reservation: derive the current leave recipient from matching branch options rather than synchronously copying it into state in an effect. Reserve new-request-dialog.tsx and request-recipient-fields view helper/tests; retain server routing enforcement, disabled leave selectors and manual recipient drafts. No HR/API permission or workflow change.
+
 Bounded build compatibility reservation: use the existing primary Button variant for three selected request-kind buttons in new-request-dialog.tsx; no handler, routing, permission or workflow changes from the completed leave-manager feature.
 
 Bounded CI integration test reservation: organization-chart-live.spec.tsx read-only assertion permits the three newly merged viewport zoom/reset controls while explicitly rejecting every mutation/movement control. No HR production source, layout, permission or behavior changes; ORG-CHART-ZOOM-1116 source lease is completed.

@@ -3,6 +3,17 @@ import type { WorkbenchRequestOptionsV1 } from '@nora/contracts';
 import { Building2, UserRound } from 'lucide-react';
 import { WorkbenchSelect } from './workbench-select';
 
+/** A leave route is usable only for the currently loaded branch/options. */
+export function requestRecipientSelection(
+  isLeave: boolean,
+  optionsMatch: boolean,
+  route: { unitId: string; recipientId: string } | undefined,
+  manual: { unitId: string; recipientId: string },
+) {
+  if (!isLeave) return manual;
+  return optionsMatch && route ? route : { unitId: '', recipientId: '' };
+}
+
 export function RequestRecipientFields({
   units,
   unitId,

@@ -17,7 +17,10 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { RequestRecipientFields } from './request-recipient-fields';
+import {
+  RequestRecipientFields,
+  requestRecipientSelection,
+} from './request-recipient-fields';
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 
 type NewRequestDialogProps = {
@@ -53,8 +56,8 @@ function NewRequestForm({
   const [requestKind, setRequestKind] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [unit, setUnit] = useState('');
-  const [recipient, setRecipient] = useState('');
+  const [manualUnit, setUnit] = useState('');
+  const [manualRecipient, setRecipient] = useState('');
   const [optionsVersion, setOptionsVersion] = useState(0);
   const [options, setOptions] = useState<{
     branchId: string;
@@ -69,6 +72,12 @@ function NewRequestForm({
   const units = optionsMatch ? options!.units : [];
   const optionsLoading = Boolean(open && branchId && !optionsMatch);
   const optionsError = optionsMatch ? options!.error : '';
+  const { unitId: unit, recipientId: recipient } = requestRecipientSelection(
+    leave !== null,
+    optionsMatch,
+    options?.leaveRoute,
+    { unitId: manualUnit, recipientId: manualRecipient },
+  );
   const [priority, setPriority] = useState('normal');
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
@@ -114,12 +123,6 @@ function NewRequestForm({
       active = false;
     };
   }, [open, branchId, optionsVersion]);
-  useEffect(() => {
-    if (!leave || !optionsMatch) return;
-    const route = options?.leaveRoute;
-    setUnit(route?.unitId ?? '');
-    setRecipient(route?.recipientId ?? '');
-  }, [Boolean(leave), optionsMatch, options?.leaveRoute]);
   return (
     <Dialog
       open={open}
