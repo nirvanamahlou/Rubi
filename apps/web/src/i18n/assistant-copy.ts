@@ -1,5 +1,6 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  chatLatest: ['رفتن به آخر گفتگو', 'Go to latest message'],
   agentSources: ['منابع پاسخ', 'Answer sources'],
   agentLimitations: ['محدودیت‌های پاسخ', 'Answer limitations'],
   agentPlanning: ['بررسی سؤال', 'Reviewing the question'],

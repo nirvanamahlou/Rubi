@@ -1,3 +1,6 @@
+## NORA-CHAT-SCROLL-1117 — PC-C — ACTIVE
+
+Owner requests immediate user-message display, automatic latest-message scrolling and visible pending feedback in Nora's existing chat. PC-C verified by local Git identity; branch codex/pc-c-nora-chat-scroll-1117 from develop979d435ef. Reserve AssistantComposer presentation/submit integration, new scroll hook and focused tests/CSS, bounded assistant-copy labels and own status/task notes. Earlier routing UI work is merged; active live-matrix/provider and rate-exemption leases remain untouched. No API/model/history-policy, permissions, schema/migration, dependency or Production changes. Preserve identity/company isolation, navigation memory and stale-response cancellation. Use pending feedback for every asynchronous response; do not fabricate streamed model text.
 ## NORA-LIVE-MATRIX-1116 — PC-C — ACTIVE
 
 Citation repair lease: a real final json call invented/truncated its resultId; the existing engine correctly rejected it. Extend the same internal provider option with trusted current evidence IDs and constrain only the per-request final tool schema to their enum (or an empty array before evidence). Never replace invented IDs, parse failed generations, trust history, share schemas across users or relax final evidence checks. Add cross-request isolation and empty-evidence regressions.

@@ -1,3 +1,6 @@
+## NORA-CHAT-SCROLL-1117 — PC-C — implemented
+
+Nora immediately displays submitted user messages and one accessible waiting spinner on all async chat paths. Transcript-only scrolling follows new messages while near the bottom; scrolling up reveals a latest-message arrow. Typing the next draft no longer cancels pending work or gets erased on completion. Scope/navigation safeguards and provider history isolation remain. Synthetic browser UI acceptance completed without ERP/Groq access; clean hosted final-head gates still required. No Production, API, migration, permissions or dependency-version changes. See [task](tasks/NORA-CHAT-SCROLL-1117.md).
 ## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
 
 Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.
