@@ -89,6 +89,10 @@ test('20–23 Aban1405 resolves independently to inclusive11–14November with T
     endExclusiveUtc: '2026-11-14T20:30:00.000Z',
   });
   assert.equal(normalizeSalesText('٢٠ آبان\u200c ۱۴۰۵'), '20 آبان 1405');
+  assert.deepEqual(
+    resolvePersianSalesPeriod('از ۲۰ تا ۲۳ آبان امسال', now),
+    request.period,
+  );
   assert.equal(
     resolvePersianSalesPeriod(
       'از ۲۰ آبان تا ۲۳ آبان ۱۴۰۵',
@@ -128,6 +132,9 @@ test('explicit filtered or unavailable metric never gets certified as unfiltered
     'مشتری',
     'شعبه',
     'مقایسه',
+    'تهران',
+    'قرارداد 999999',
+    'تاریخ سفر',
   ])
     assert.equal(
       salesWindowRequest({ message: question + ' ' + filter }, now),
@@ -159,6 +166,18 @@ test('same-snapshot reconciliation counts identities, groups exact discounted am
 });
 test('old three-currency-row count, wrong calendar and unsupported free prose cannot escape fact binding', () => {
   const report = validateSalesWindow(result);
+  assert.match(
+    renderSalesWindow(
+      {
+        ...final,
+        text: '[[sales:summary:prose]]\n[[sales:details:list]]',
+        calculationExplanation: '[[sales:method]]',
+      },
+      report,
+      request,
+    ),
+    /بازه و روش محاسبه/,
+  );
   for (const text of [
     '۳ قرارداد در ۱۰ تا ۱۳ نوامبر ثبت شد',
     '[[sales:summary:table]]\n۳ قرارداد\n[[sales:details:list]]\n[[sales:method]]',
@@ -182,6 +201,16 @@ test('old three-currency-row count, wrong calendar and unsupported free prose ca
     );
 });
 test('incomplete summary or contradictory distinct count is rejected; truncated detail has explicit coverage', () => {
+  assert.throws(() =>
+    validateSalesWindow({
+      ...result,
+      rows: rows.map((r) =>
+        r.kind === 1 && r.currency_code === 'USD'
+          ? { ...r, amount: '81.1250' }
+          : r,
+      ),
+    }),
+  );
   assert.throws(() =>
     validateSalesWindow({
       ...result,

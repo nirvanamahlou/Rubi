@@ -77,7 +77,7 @@ export function resolvePersianSalesPeriod(message, now = new Date()) {
   const names = months.join('|');
   const match = text.match(
     new RegExp(
-      `(?:از\\s*)?(\\d{1,2})\\s*(${names})\\s*(?:تا|الی|–|-)\\s*(\\d{1,2})\\s*(${names})(?:\\s*(?:سال\\s*)?(1[34]\\d{2}|امسال))?`,
+      `(?:از\\s*)?(\\d{1,2})\\s*(?:(${names})\\s*)?(?:تا|الی|–|-)\\s*(\\d{1,2})\\s*(${names})(?:\\s*(?:سال\\s*)?(1[34]\\d{2}|امسال))?`,
     ),
   );
   if (!match) return null;
@@ -88,7 +88,7 @@ export function resolvePersianSalesPeriod(message, now = new Date()) {
   if (year < 1300 || year > 1499) throw new Error('INVALID_PERSIAN_DATE');
   const startDate = gregorianDate(
     year,
-    months.indexOf(match[2]) + 1,
+    months.indexOf(match[2] ?? match[4]) + 1,
     Number(match[1]),
   );
   const endDate = gregorianDate(
@@ -109,7 +109,7 @@ export function resolvePersianSalesPeriod(message, now = new Date()) {
     timeZone: 'Asia/Tehran',
     year,
     startDay: Number(match[1]),
-    startMonth: match[2],
+    startMonth: match[2] ?? match[4],
     endDay: Number(match[3]),
     endMonth: match[4],
     startDate,

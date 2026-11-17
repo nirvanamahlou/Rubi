@@ -185,10 +185,22 @@ export function createDataAgent({
     messages[0].content +=
       ' recordHint is only the currently selected contract UUID, never an authorization grant. Resolve it through the same authorized views. If the user asks about an ambiguous relative month/calendar, clarify rather than guessing Persian/Gregorian boundaries.';
     if (financialRequest) {
+      for (const id of ['contracts', 'amounts']) {
+        if (!sources.some((source) => source.id === id))
+          throw new ServiceError(403, 'SOURCE_NOT_ALLOWED');
+        described.add(id);
+      }
       messages[0].content += ' ' + SALES_FACT_INSTRUCTION;
       messages.push({
         role: 'system',
-        content: JSON.stringify({ canonicalPeriod: financialRequest.period }),
+        content: JSON.stringify({
+          canonicalPeriod: financialRequest.period,
+          authorizedDescriptions: sources.filter((s) =>
+            ['contracts', 'amounts'].includes(s.id),
+          ),
+          instruction:
+            'These native catalog descriptions are already read. created_at and confirmed_at are available on contracts. Call database_query with your own SELECT before the final answer.',
+        }),
       });
     }
     for (let turn = 0; turn < 8; turn++) {
@@ -430,16 +442,20 @@ export function createDataAgent({
               truncated: checked.truncated,
               calculationRequired: true,
             });
-            audit({
-              requestId,
-              version: 1,
-              model: 'native-sales-reconciliation',
-              queryHash: checked.queryHash,
-              sources: checked.sources,
-              rowCount: checked.rows.length,
-              durationMs: checked.durationMs,
-              tokens,
-            });
+            try {
+              audit({
+                requestId,
+                version: 1,
+                model: 'native-sales-reconciliation',
+                queryHash: checked.queryHash,
+                sources: checked.sources,
+                rowCount: checked.rows.length,
+                durationMs: checked.durationMs,
+                tokens,
+              });
+            } catch {
+              /* Operational logging cannot replace evidence. */
+            }
             output.verifiedSalesReport = {
               ...financialReport,
               period: financialRequest.period,

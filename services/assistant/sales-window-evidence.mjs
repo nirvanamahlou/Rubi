@@ -179,11 +179,16 @@ const safe = (s) =>
   String(s ?? '—')
     .replace(/[\r\n|<>[\]{}]/g, ' ')
     .slice(0, 160);
-export const SALES_FACT_INSTRUCTION = `The runtime will reconcile this explicit Persian whole-scope contractual-sales period through the same authorized query boundary, after your first database_query. You must still set_plan, describe sources and author SQL. Use canonicalPeriod exactly, not mental calendar conversion. Count DISTINCT contract identities, never contract/currency rows. On receiving verifiedSalesReport, its resultId is authoritative for count, date and discounted amounts. For ANSWER, choose layout and order using ONLY these exact markers in text: [[sales:summary:table]] OR [[sales:summary:list]] OR [[sales:summary:prose]], then optionally [[sales:details:table]] OR [[sales:details:list]], and [[sales:method]]. Include exactly one summary and one method; include details when requested. These typed blocks bind labels and values together, preventing unsupported numeric/calendar claims while you choose the layout. No other prose, numbers or limitations outside the blocks. Set calculationExplanation=null (the method block supplies it), cite the verified resultId, and limitations=[]. Do not re-run SQL just to repair final formatting. CLARIFY/REPLY cannot assert financial results.`;
+export const SALES_FACT_INSTRUCTION = `The runtime will reconcile this explicit Persian whole-scope contractual-sales period through the same authorized query boundary, after your first database_query. You must still set_plan, describe sources and author SQL. Use canonicalPeriod exactly, not mental calendar conversion. Count DISTINCT contract identities, never contract/currency rows. On receiving verifiedSalesReport, its resultId is authoritative for count, date and discounted amounts. For ANSWER, choose layout and order using ONLY these exact markers in text: [[sales:summary:table]] OR [[sales:summary:list]] OR [[sales:summary:prose]], then optionally [[sales:details:table]] OR [[sales:details:list]], and [[sales:method]]. Include exactly one summary and one method; include details when requested. These typed blocks bind labels and values together, preventing unsupported numeric/calendar claims while you choose the layout. No other prose, numbers or limitations outside the blocks. Set calculationExplanation="[[sales:method]]" (this nonempty method block is the required calculation explanation), cite the verified resultId, and limitations=[]. Example final text when details requested: "[[sales:summary:table]]\\n[[sales:details:list]]"; calculationExplanation is "[[sales:method]]". Do not re-run SQL just to repair final formatting. CLARIFY/REPLY cannot assert financial results.`;
 
 export function renderSalesWindow(answer, report, request) {
   if (answer.status !== 'ANSWER') return null;
-  const text = answer.text.trim();
+  const note = answer.calculationExplanation;
+  const text =
+    answer.text.trim() +
+    (note === '[[sales:method]]' && !answer.text.includes(note)
+      ? '\n' + note
+      : '');
   const markers =
     text.match(
       /\[\[sales:(?:summary:(?:table|list|prose)|details:(?:table|list)|method)\]\]/g,
@@ -201,7 +206,7 @@ export function renderSalesWindow(answer, report, request) {
       (request.details ? 1 : 0) ||
     !answer.resultIds.includes(report.resultId) ||
     answer.limitations.length ||
-    answer.calculationExplanation
+    (note && note !== '[[sales:method]]')
   )
     throw new ServiceError(502, 'SALES_FACT_BINDING_REQUIRED');
   const p = request.period;

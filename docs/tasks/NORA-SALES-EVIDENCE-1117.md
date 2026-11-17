@@ -19,7 +19,7 @@ Coverage is deliberately bounded: filtered/custom-date-basis, other metrics and 
 
 Nine new synthetic regression cases cover the reported calendar/count error, leap/invalid dates, filters, exact large Decimal amounts, bad final claims, zero/missing/truncated evidence, real orchestration repair and permission/source failure. Full service179/179 passes; scoped lint passes. The actual query was parsed/executed by the deployed restricted Sales query service with startup role admission and a live native session-derived scope. Its unique count/currency totals match separate reference count and currency queries. No real record values, identities, session references or credentials are stored here.
 
-CI, deployment and authenticated browser acceptance are pending; local tests and private read-only oracle are not deployment certification.
+Real synthetic Groq acceptance through the existing Germany proxy passes: four model calls (plan, model SQL, rejected noncompliant final, corrected final), two boundary reads (model plus reconciliation), no SQL replay, correct distinct count/calendar and fresh citation. Native catalog descriptions for the two known financial sources are supplied before query planning; no new forced-tool mode is introduced. The shared nonempty calculation explanation accepts the same typed method block. Initial failing attempts were retained privately and are not counted as passes. PR1787 exact-head CI, activation and authenticated browser acceptance remain pending.
 
 ## Release constraints
 
