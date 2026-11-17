@@ -6,7 +6,7 @@ acceptance. PC-C used `codex/pc-c-nora-chat-scroll-release-1117`.
 ## Delivered version
 
 - Published Web image: `rubi-production:nora-chat-scroll-1768-1117-r2-web`.
-- Active build ID: `08Ajp-thgUW8QA5lVntoo`.
+- Build used during primary live acceptance: `08Ajp-thgUW8QA5lVntoo`.
 - UI source: `251eb62c46ba6665b997961a15e0bbf61429eb43`, integrating PR1768
   with PR1769 Persian response/source presentation.
 - Exact committed Composer, CSS, scroll hook and assistant copy verified in the
@@ -62,3 +62,7 @@ Web deployment must be reviewed rather than overwritten. No database rollback.
 
 No additional product-code repair was needed during live UI acceptance. Release
 reservation is complete; peers must retain PR1768 and1769 in future Web builds.
+
+## Subsequent peer handoff
+
+A later peer release activated image `rubi-production:nora-persian-reconciled-1117-web` (build `Y6Y5ayoMnyDa2Xp-Yo0G3`). Read-only verification confirms all four1768 UI files still exactly match the integrated251eb62c4 source; the scroll hook SHA-256 is `145708544dcbd4b8c37b18091eb2153ce1f1d5eeb3c0424ae43b24875a394871`. The peer release preserves this unit's published interaction changes; do not restore the earlier image over it. Primary browser acceptance above occurred on this unit's own deployed image before that handoff.
