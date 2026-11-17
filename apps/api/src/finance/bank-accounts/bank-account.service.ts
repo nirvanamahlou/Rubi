@@ -10,12 +10,14 @@ import {
   hasAccessControl,
   type AuthenticatedActor,
   type CompanyBankAccountV1,
+  type TreasuryBankReferencesV1,
   type CompanyBankAccountOptionsV1,
 } from '@nora/contracts';
 import { type Prisma, type DatabaseClient } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import { BankAccountCrypto, type BankIdentifiers } from './bank-account.crypto';
+import { currentFinanceFiscalRequest } from '../fiscal-context/finance-fiscal-storage';
 import {
   bankInput,
   bankUuid,
@@ -65,6 +67,15 @@ export class BankAccountService {
       id: row.id,
       branchId: row.branchId,
       bankId: row.bankId!,
+      ...(row.bankAccountTypeId && row.bankBranchId && row.treasuryBookId
+        ? {
+            treasury: {
+              bankAccountTypeId: row.bankAccountTypeId,
+              bankBranchId: row.bankBranchId,
+              treasuryBookId: row.treasuryBookId,
+            },
+          }
+        : {}),
       title: row.title,
       accountingCode: row.accountingCode ?? null,
       currencyCode: row.currencyCode,
@@ -96,9 +107,26 @@ export class BankAccountService {
     bankId: string,
     page: string | undefined,
     actor: AuthenticatedActor,
+    companyBranchId?: string,
+    bookId?: string,
   ) {
     this.require(actor);
     bankId = bankUuid(bankId);
+    if (companyBranchId !== undefined)
+      this.scope(actor, bankUuid(companyBranchId));
+    if (bookId !== undefined) {
+      bankUuid(bookId);
+      const scope = currentFinanceFiscalRequest();
+      if (
+        !companyBranchId ||
+        (scope && scope.bookId !== bookId) ||
+        !(await this.db.client.accountingBook.findFirst({
+          where: { id: bookId, branchId: companyBranchId },
+          select: { id: true },
+        }))
+      )
+        throw new NotFoundException('دفتر حسابداری پیدا نشد.');
+    }
     const number = page === undefined ? 1 : Number(page);
     if (!Number.isSafeInteger(number) || number < 1 || number > 100000)
       throw new BadRequestException('صفحه حساب‌ها معتبر نیست.');
@@ -107,10 +135,20 @@ export class BankAccountService {
         bankId,
         kind: 'BANK',
         deletedAt: null,
-        OR: [
-          { branchId: { in: [...actor.branchIds] } },
-          { branchId: null, isExternal: true },
-        ],
+        ...(companyBranchId
+          ? {
+              branchId: companyBranchId,
+              isExternal: false,
+              ...(bookId
+                ? { OR: [{ treasuryBookId: bookId }, { treasuryBookId: null }] }
+                : {}),
+            }
+          : {
+              OR: [
+                { branchId: { in: [...actor.branchIds] } },
+                { branchId: null, isExternal: true },
+              ],
+            }),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 26,
@@ -286,6 +324,7 @@ export class BankAccountService {
       'isExternal',
       'branchId',
       ...fields,
+      'treasury',
       ...(id ? ['expectedVersion'] : ['requestId']),
     ]);
     if (input.isExternal !== undefined && typeof input.isExternal !== 'boolean')
@@ -339,6 +378,54 @@ export class BankAccountService {
           }
           if (currencyCode)
             await this.directory.assertCurrency(currencyCode, tx);
+          let treasury: TreasuryBankReferencesV1 | undefined;
+          if (input.treasury !== undefined || current?.treasuryBookId) {
+            const refs =
+              input.treasury !== undefined
+                ? bankInput(input.treasury, [
+                    'treasuryBookId',
+                    'bankAccountTypeId',
+                    'bankBranchId',
+                  ])
+                : current!;
+            treasury = {
+              treasuryBookId: bankUuid(refs.treasuryBookId),
+              bankBranchId: bankUuid(refs.bankBranchId),
+              bankAccountTypeId: bankUuid(refs.bankAccountTypeId),
+            };
+            if (
+              isExternal ||
+              !branchId ||
+              (current?.treasuryBookId &&
+                current.treasuryBookId !== treasury.treasuryBookId)
+            )
+              throw new BadRequestException('دفتر حساب بانکی معتبر نیست.');
+            const scope = currentFinanceFiscalRequest();
+            if (scope && scope.bookId !== treasury.treasuryBookId)
+              throw new ForbiddenException('دفتر شرکت فعال را انتخاب کنید.');
+            const type = await tx.accountingConfiguration.findFirst({
+              where: {
+                id: treasury.bankAccountTypeId,
+                bookId: treasury.treasuryBookId,
+                kind: 'bank-account-types',
+                ...(treasury.bankAccountTypeId !== current?.bankAccountTypeId
+                  ? { active: true }
+                  : {}),
+                book: { branchId },
+              },
+              select: { id: true },
+            });
+            if (!type)
+              throw new BadRequestException(
+                'نوع حساب بانکی در دفتر انتخاب‌شده معتبر نیست.',
+              );
+            if (treasury.bankBranchId !== current?.bankBranchId)
+              await this.directory.assertBankBranch(
+                treasury.bankBranchId,
+                bankId,
+                tx,
+              );
+          }
           if (current && id) {
             if (current.version !== expectedVersion)
               throw new ConflictException(
@@ -378,6 +465,23 @@ export class BankAccountService {
               this.crypto.open(current.bankIdentifiers, this.context(current)),
               isExternal,
             );
+            if (treasury && !identifiers.accountNumber)
+              throw new BadRequestException('شماره حساب الزامی است.');
+            if (
+              current.isExternal &&
+              (Object.hasOwn(input, 'accountNumber') ||
+                Object.hasOwn(input, 'iban')) &&
+              (this.crypto.fingerprint(
+                'accountNumber',
+                identifiers.accountNumber,
+              ) !== current.accountFingerprint ||
+                this.crypto.fingerprint('iban', identifiers.iban) !==
+                  current.ibanFingerprint) &&
+              (await tx.financeBeneficiary.count({ where: { accountId: id } }))
+            )
+              throw new ConflictException(
+                'برای تغییر شماره حساب ذی‌نفع، حساب جدید معرفی کنید.',
+              );
             const result = await tx.financeSettlementAccount.updateMany({
               where: {
                 id,
@@ -391,6 +495,7 @@ export class BankAccountService {
                 isExternal,
                 branchId,
                 currencyCode,
+                ...treasury,
                 ...this.protectedData(
                   identifiers,
                   this.context({ ...current, branchId }),
@@ -429,8 +534,16 @@ export class BankAccountService {
             identifiers,
             this.context({ id: requestId, bankId, branchId }),
           );
+          if (treasury && !identifiers.accountNumber)
+            throw new BadRequestException('شماره حساب الزامی است.');
           if (previous) {
             if (
+              (previous.treasuryBookId ?? null) !==
+                (treasury?.treasuryBookId ?? null) ||
+              (previous.bankBranchId ?? null) !==
+                (treasury?.bankBranchId ?? null) ||
+              (previous.bankAccountTypeId ?? null) !==
+                (treasury?.bankAccountTypeId ?? null) ||
               previous.bankId !== bankId ||
               previous.branchId !== branchId ||
               previous.kind !== 'BANK' ||
@@ -459,6 +572,7 @@ export class BankAccountService {
               isActive,
               isExternal,
               createdByUserId: actor.userId,
+              ...treasury,
               ...protectedData,
             },
           });

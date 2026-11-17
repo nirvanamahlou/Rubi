@@ -25,6 +25,7 @@ export * from './system-management';
 export * from './integrations';
 
 export * from './accounting';
+export * from './accounting-treasury';
 export * from './accounting-tax';
 
 export * from './package-pricing/hotel-shared-period';
@@ -65,6 +66,7 @@ export * from './customers/ledger-company';
 
 export * from './upload-formats';
 export * from './finance/source-references';
+export * from './finance/tax-reference';
 export * from './customers/dossier';
 
 export * from './finance/exchange-offices';

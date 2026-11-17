@@ -130,6 +130,14 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
             ReceiptText,
           ),
         },
+        {
+          title: 'تنخواه',
+          items: parityItems('receipts-payments/petty-cash/', ReceiptText),
+        },
+        {
+          title: 'ارتباطات آنلاین',
+          items: parityItems('receipts-payments/online/', ReceiptText),
+        },
       ],
     },
     {

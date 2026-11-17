@@ -473,6 +473,9 @@ export interface FinanceTicketCostCommandV1 {
 }
 
 export interface FinanceTicketPaymentCommandV1 {
+  beneficiaryId?: string | null;
+  brokerTransferId?: string | null;
+  brokerReceiptId?: string | null;
   version: 1;
   /** Reuse this UUID for retries of the same payment, never for another payment. */
   operationId?: string;
@@ -607,6 +610,9 @@ export interface FinanceProcurementInvoiceDecisionCommandV1 {
 }
 
 export interface FinanceProcurementInvoicePaymentCommandV1 {
+  beneficiaryId?: string | null;
+  brokerTransferId?: string | null;
+  brokerReceiptId?: string | null;
   version: 1;
   expectedVersion: number;
   expectedSourceVersion?: number;

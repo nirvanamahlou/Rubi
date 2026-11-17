@@ -1,3 +1,4 @@
+import { BankControlsController } from './payments/bank-controls.controller';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { SalesFinanceContractReadModule } from '../sales/finance-contract-read.public';
 import { FinanceSourceReferences } from './source-read/finance-source-references.service';
@@ -66,6 +67,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     AccountingCompletionModule,
   ],
   controllers: [
+    BankControlsController,
     FinanceSourceReadController,
     FinanceFiscalContextController,
     FinancePartyReceiptsController,

@@ -14,12 +14,14 @@ export function financeRouteNeedsYear(path: string) {
   )
     return false;
   if (
+    path.startsWith('/finance/accounting/receipts-payments/online/') ||
     path.includes('/base-information') ||
     path.includes('/general-ledger/accounts')
   )
     return false;
   if (
     path === '/finance/accounting/taxpayer-system/settings' ||
+    path === '/finance/accounting/tax-accounting/vat/quarterly-mappings' ||
     path ===
       '/finance/accounting/general-ledger/reports/legal-reports/mappings' ||
     path.includes('/taxpayer-system/seller')

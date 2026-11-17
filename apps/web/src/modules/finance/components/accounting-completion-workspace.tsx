@@ -2,6 +2,7 @@
 import type { AccountingSnapshotV1 } from '@nora/contracts';
 import { accountingCompletionRoute } from '../accounting-completion-routes';
 import { AccountingTaxWorkspace } from './accounting-tax-workspace';
+import { TaxReferenceWorkspace } from './tax-reference-workspace';
 import { AccountingTaxpayerWorkspace } from './accounting-taxpayer-workspace';
 import { AccountingChartReport } from './accounting-chart-report';
 import { AccountingCompletionReport } from './accounting-completion-report';
@@ -12,7 +13,9 @@ import { AccountingElectronicBook } from './accounting-electronic-book';
 export function AccountingCompletionWorkspace({
   book,
   route,
+  canManage = false,
 }: {
+  canManage?: boolean;
   book: AccountingSnapshotV1;
   route: string;
 }) {
@@ -22,6 +25,14 @@ export function AccountingCompletionWorkspace({
     case 'journal-browser':
       return <AccountingJournalBrowser key={book.book.id} book={book} />;
     case 'tax':
+      if (route === 'tax-accounting/vat/quarterly-mappings')
+        return (
+          <TaxReferenceWorkspace
+            key={book.book.id}
+            bookId={book.book.id}
+            canManage={canManage}
+          />
+        );
       return (
         <AccountingTaxWorkspace
           key={`${book.book.id}:${route}`}
