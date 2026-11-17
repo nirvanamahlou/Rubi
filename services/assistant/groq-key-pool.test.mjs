@@ -117,6 +117,77 @@ test('organization quota stops the entire organization without trying another ke
   assert.equal(h.sent.length, 1);
 });
 
+test('one organization quota skips its peers and reaches a different organization', async () => {
+  const h = harness(
+    [error(429, 'organization'), new Response('ok'), new Response('ok')],
+    {
+      entries: entries.map((x, i) => ({
+        ...x,
+        organization: i < 2 ? 'org-first' : 'org-second',
+      })),
+    },
+  );
+  assert.equal((await h.run()).status, 200);
+  await h.run();
+  assert.deepEqual(
+    h.sent.map((x) => x.headers.get('authorization')),
+    ['Bearer synthetic-a', 'Bearer synthetic-c', 'Bearer synthetic-c'],
+  );
+  assert.equal(h.pool.snapshot()[0].state, 'unavailable');
+  assert.equal(h.pool.snapshot()[1].state, 'unavailable');
+  assert.equal(h.audit[0].limitUnit, 'TPM');
+});
+
+test('matching quota words do not join independently configured organizations', async () => {
+  const h = harness([error(429), error(429), new Response('ok')], {
+    entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
+  });
+  assert.equal((await h.run()).status, 200);
+  assert.equal(h.sent.length, 3);
+});
+
+test('provider-confirmed organization identity links provisional aliases without logging identity', async () => {
+  let time = 1000;
+  const shared = () =>
+    Response.json(
+      {
+        error: {
+          scope: 'organization',
+          message: 'TPM limit in organization `org_synthetic_shared`',
+        },
+      },
+      { status: 429, headers: { 'retry-after': '2' } },
+    );
+  const h = harness([shared(), shared(), new Response('ok'), shared()], {
+    now: () => time,
+    entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
+  });
+  await h.run();
+  assert.equal(h.sent.length, 3);
+  time = 4000;
+  // After cooldown, C reveals membership in the same provider organization.
+  // Previously identified A and B must be suppressed without another wire call.
+  h.sent.length = 0;
+  const before = h.pool.snapshot();
+  assert.equal(
+    before.every((x) => x.state === 'ready'),
+    true,
+  );
+  // Current credential is C: it reports the same provider organization, which
+  // must suppress A and B even though operator aliases differ.
+  assert.equal((await h.run()).status, 429);
+  assert.equal(h.sent.length, 1);
+  const metadata = JSON.stringify({
+    audit: h.audit,
+    snapshot: h.pool.snapshot(),
+  });
+  assert.equal(metadata.includes('org_synthetic_shared'), false);
+  assert.equal(
+    h.pool.snapshot().every((x) => x.state === 'unavailable'),
+    true,
+  );
+});
+
 test('unknown quota allows only one diagnostic replacement before grouping', async () => {
   const h = harness([error(429), error(429)]);
   assert.equal((await h.run()).status, 429);
@@ -326,7 +397,12 @@ test('replacement consumes original model and token budgets', async () => {
   await assert.rejects(attempts.run({ attemptBudget: budget }), /MODEL_BUDGET/);
   assert.equal(budget.attempts, 8);
   assert.equal(attempts.sent.length, 1);
-  const tokens = harness([error(401)]);
+  const tokens = harness([
+    Response.json(
+      { error: { scope: 'key' }, usage: { total_tokens: 100 } },
+      { status: 429 },
+    ),
+  ]);
   const tokenBudget = { attempts: 0, retryTokens: 0 };
   await assert.rejects(
     tokens.run({
@@ -338,6 +414,43 @@ test('replacement consumes original model and token budgets', async () => {
   );
   assert.equal(tokenBudget.retryTokens, 100);
   assert.equal(tokens.sent.length, 1);
+});
+
+test('admission-rejected requests do not spend an invented completion budget', async () => {
+  for (const status of [401, 429]) {
+    const h = harness([error(status, 'organization'), new Response('ok')], {
+      entries: entries.map((k, i) => ({ ...k, organization: 'account-' + i })),
+    });
+    const budget = { attempts: 0, retryTokens: 0 };
+    assert.equal(
+      (
+        await h.run({
+          attemptBudget: budget,
+          remainingTokens: 33000,
+          tokenCharge: 22000,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(h.sent.length, 2);
+    assert.equal(budget.attempts, 2);
+    assert.equal(budget.retryTokens, 0);
+    assert.equal(h.sent[0].body, h.sent[1].body);
+    assert.equal(h.sent[0].signal, h.sent[1].signal);
+  }
+});
+
+test('malformed rejected usage cannot grant extra budget or start another key', async () => {
+  for (const total_tokens of [-1, '100', 1.5]) {
+    const h = harness([
+      Response.json(
+        { error: { scope: 'key' }, usage: { total_tokens } },
+        { status: 429 },
+      ),
+    ]);
+    await assert.rejects(h.run(), /INVALID_AGENT_USAGE/);
+    assert.equal(h.sent.length, 1);
+  }
 });
 
 test('fixed endpoint and redirect admission cannot be bypassed', async () => {
