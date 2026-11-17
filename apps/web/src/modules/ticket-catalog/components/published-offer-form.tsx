@@ -324,7 +324,8 @@ export function PublishedOfferForm({
               resource="airports"
               required
               countryId={
-                cities.find((city) => city.id === draft[`${side}Id`])?.countryId
+                cities.find((city) => city.id === draft[`${side}Id`])
+                  ?.countryId ?? ''
               }
               value={
                 airports.find((airport) => airport.id === id) ??
