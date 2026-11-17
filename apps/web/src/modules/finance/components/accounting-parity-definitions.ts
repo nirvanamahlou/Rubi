@@ -1,4 +1,4 @@
-import { accountingTaxForms } from '@nora/contracts';
+import { accountingTaxForms, treasuryDefinitions } from '@nora/contracts';
 import { taxpayerPages } from '../accounting-taxpayer-catalog';
 import { accountingParitySource1 } from './accounting-parity-source-1';
 import { accountingParitySource2 } from './accounting-parity-source-2';
@@ -12,6 +12,7 @@ export type AccountingParityImplementation =
   | 'standard-mapping'
   | 'standard-report'
   | 'configuration'
+  | 'treasury-definition'
   | 'ledger'
   | 'accounts'
   | 'details'
@@ -127,6 +128,7 @@ const implementationByRoute: Readonly<
   'tax-accounting/base-information/quarterly-thresholds': 'tax-reference',
   'tax-accounting/base-information/lists/quarterly-thresholds': 'tax-reference',
   'tax-accounting/vat/tax-periods': 'tax-reference',
+  'tax-accounting/vat/quarterly-mappings': 'tax-reference',
   'tax-accounting/vat/lists/tax-periods': 'tax-reference',
   'tax-accounting/vat/aggregation-methods': 'tax-reference',
   'tax-accounting/vat/lists/aggregation-methods': 'tax-reference',
@@ -486,6 +488,26 @@ for (const capture of [
   ...accountingParitySource2,
   ...accountingParitySource3,
   ...accountingParitySource4,
+  ...treasuryDefinitions.map((def): AccountingParityCapture => ({
+    route: 'receipts-payments/' + def.path,
+    title: def.title,
+    sourcePath: [
+      'مالی',
+      'دریافت و پرداخت',
+      def.path.startsWith('online/')
+        ? 'ارتباطات آنلاین'
+        : def.path.startsWith('petty-cash/')
+          ? 'تنخواه'
+          : 'اطلاعات پایه',
+      def.title,
+    ].join(' / '),
+    sourcePage: 'ReceiptAndPayment/TreasuryStructure/' + def.form,
+    evidenceStatus: 'observed-layout',
+    fields: [],
+    columns: [],
+    actions: [],
+    stage: def.title,
+  })),
   ...menuOnlyCaptures,
   ...explicitGaps,
   ...standardCaptures,
@@ -537,7 +559,12 @@ for (const capture of [
         ? 'observed-layout'
         : 'menu-only';
   const implementation =
-    implementationByRoute[capture.route] ?? 'evidence-only';
+    implementationByRoute[capture.route] ??
+    (treasuryDefinitions.some(
+      (d) => 'receipts-payments/' + d.path === capture.route,
+    )
+      ? 'treasury-definition'
+      : 'evidence-only');
   definitions.set(capture.route, {
     route: capture.route,
     title:

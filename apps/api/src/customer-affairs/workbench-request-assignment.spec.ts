@@ -390,6 +390,15 @@ describe('Workbench request assignment and delivery', () => {
           },
           OR: [
             { createdByUserId: recipientId },
+            {
+              timeline: {
+                some: {
+                  type: 'WORKBENCH_RECIPIENT_REVIEW',
+                  outcome: 'APPROVED',
+                  actorUserId: recipientId,
+                },
+              },
+            },
             { executionOwnerUserId: recipientId },
             {
               timeline: {

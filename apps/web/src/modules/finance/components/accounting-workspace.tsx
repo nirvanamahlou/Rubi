@@ -26,6 +26,11 @@ import { useAccessPermissions } from '@/modules/iam/access-context';
 import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
+import { AccountingAccountBrowser } from './accounting-account-browser';
+
+import { SeasonalReportWorkspace } from './seasonal-report-workspace';
+import { TreasuryDefinitionWorkspace } from './treasury-definition-workspace';
+import { treasuryDefinitions } from '@nora/contracts';
 import {
   AccountingSetupNotes,
   parseSetupNotes,
@@ -425,10 +430,42 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       value: r.id,
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
+  const treasury = treasuryDefinitions.find(
+    (d) => 'receipts-payments/' + d.path === section,
+  );
   let content: ReactNode = null;
   if (!home && !sections.some(([route]) => route === section))
     content = <AccountingUnknownRoute route={section} />;
-  else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
+  else if (
+    treasury &&
+    (snapshot || ['banks', 'bank-branches'].includes(treasury.kind))
+  )
+    content = (
+      <TreasuryDefinitionWorkspace
+        key={bookId + section}
+        definition={treasury}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'tax-accounting/vat/quarterly-sales-report'
+  ) {
+    const period = fiscal?.period ?? snapshot.periods[0];
+    content = period ? (
+      <SeasonalReportWorkspace
+        key={bookId + period.id}
+        bookId={bookId}
+        period={period}
+        canManage={can('finance.account.manage')}
+        canFinalize={can('finance.export')}
+      />
+    ) : (
+      <p>دوره مالی گزارش را انتخاب کنید.</p>
+    );
+  } else if (booksQuery.isPending || (!!bookId && snapshotQuery.isPending))
     content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
   else if (booksQuery.isError || snapshotQuery.isError)
     content = (
@@ -550,6 +587,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   else if (snapshot && accountingCompletionRoute(section))
     content = (
       <AccountingCompletionWorkspace
+        canManage={can('finance.account.manage')}
         key={bookId + section}
         book={snapshot}
         route={section}
@@ -936,16 +974,18 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         }
       />
     );
-  else if (
-    snapshot &&
-    (section === 'general-ledger/reports/trial-balance' ||
-      section === 'general-ledger/reports/account-browser')
-  )
+  else if (snapshot && section === 'general-ledger/reports/account-browser')
+    content = (
+      <AccountingAccountBrowser
+        key={bookId + (fiscal?.period?.id ?? '')}
+        book={snapshot}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/reports/trial-balance')
     content = (
       <AccountingReportWorkspace
-        key={bookId + section}
+        key={bookId + (fiscal?.period?.id ?? '')}
         book={snapshot}
-        turnoverMode={section.endsWith('/account-browser')}
       />
     );
   else if (
@@ -960,6 +1000,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <AccountingYearEndWorkspace
         book={snapshot}
+        periodId={fiscal?.period?.id ?? snapshot.periods[0]?.id}
         run={run}
         busy={busy}
         mode={

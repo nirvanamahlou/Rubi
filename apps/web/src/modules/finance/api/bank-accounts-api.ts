@@ -15,12 +15,19 @@ export const bankAccountsApi = {
     }),
   options: (bankId: string) =>
     apiRequest<CompanyBankAccountOptionsV1>(`${path(bankId)}/options`),
-  list: (bankId: string, page: number) =>
+  list: (
+    bankId: string,
+    page: number,
+    companyBranchId?: string,
+    bookId?: string,
+  ) =>
     apiRequest<{
       items: CompanyBankAccountV1[];
       hasMore: boolean;
       page: number;
-    }>(`${path(bankId)}?page=${page}`),
+    }>(
+      `${path(bankId)}?${new URLSearchParams({ page: String(page), ...(companyBranchId ? { companyBranchId } : {}), ...(bookId ? { bookId } : {}) })}`,
+    ),
   details: (bankId: string, id: string) =>
     apiRequest<CompanyBankAccountV1>(
       `${path(bankId)}/${encodeURIComponent(id)}/details`,

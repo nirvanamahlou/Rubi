@@ -46,9 +46,9 @@ function setup(status = 'NEW', overrideEligible = false) {
   };
   const notifications = { createWithinTransaction: vi.fn() };
   const directory = {
-    workbenchFeedbackRecipientUserIds: vi
+    hrLeaveRecipient: vi
       .fn()
-      .mockResolvedValue(['hr-reviewer']),
+      .mockResolvedValue({ unitId: 'hr', recipientId: 'hr-reviewer' }),
   };
   const iam = { isNimaNaderi: vi.fn().mockResolvedValue(overrideEligible) };
   const service = new CustomerAffairsService(
@@ -58,9 +58,9 @@ function setup(status = 'NEW', overrideEligible = false) {
     {} as never,
     {} as never,
     notifications as never,
+    {} as never,
+    undefined,
     directory as never,
-    undefined,
-    undefined,
     hr as never,
     undefined,
     iam as never,
@@ -304,6 +304,10 @@ describe('recipient approval before HR', () => {
       { version: 1, status: 'APPROVED' },
       { ...actor, permissions: [] },
     );
+    expect(f.directory.hrLeaveRecipient).toHaveBeenCalledWith(
+      { ...actor, permissions: [] },
+      f.row.branchId,
+    );
     expect(f.tx.customerAffairsTicket.update).toHaveBeenCalledWith({
       where: { id: 'request' },
       data: expect.objectContaining({
@@ -334,7 +338,9 @@ describe('recipient approval before HR', () => {
           reviewer,
         ),
       ).rejects.toThrow();
-    f.directory.workbenchFeedbackRecipientUserIds.mockResolvedValue([]);
+    f.directory.hrLeaveRecipient.mockRejectedValue(
+      new Error('No active HR recipient'),
+    );
     await expect(
       f.service.reviewHrWorkbenchRequest(
         'request',

@@ -8,7 +8,7 @@ export interface ReferenceFieldConfig {
   requiredRole?: string;
   optional?: boolean;
   multiple?: boolean;
-  scopeField?: 'organizationId' | 'countryId' | 'cityId';
+  scopeField?: 'organizationId' | 'countryId' | 'cityId' | 'bankId';
 }
 export type ReferenceSelectorState =
   'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'forbidden';
