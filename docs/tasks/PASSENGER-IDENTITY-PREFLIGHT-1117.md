@@ -12,6 +12,6 @@ Website consumer stages in passenger-preflight-1117: ERPClient check_people; cre
 
 ## Validation and release
 
-Synthetic ERP preflight/transport plus existing SiteCommerce/delivery tests: 54 passing on isolated runtime overlay. Formatting/lint passed; final typecheck/build and exact revised head gates pending. Website 9 isolated backend tests pass, including no order insert/commit and no amount/capacity/bank work after rejected identities. Website 78 existing frontend tests and typecheck pass; production build pending.
+Synthetic ERP preflight/transport plus existing SiteCommerce/delivery tests: 54 passing on isolated runtime overlay. Formatting/lint passed; final typecheck/build and exact revised head gates pending. Website 9 isolated backend tests pass, including no order insert/commit and no amount/capacity/bank work after rejected identities. Website 78 existing frontend tests, typecheck and production build pass. Browser test on the candidate public build confirms inline passenger error, focus/scroll, no navigation/payment, clearing after edit, and no mobile overflow; every order/API request was intercepted with synthetic responses. Final ERP typecheck/build and hosted gates remain pending.
 
 No migration, dependencies, financial/inventory writes or profile merges. Not deployed. Merge/deploy requires owner approval under root AGENTS. Existing bank-verified order22 remains ERP-pending until its conflicting passenger identity is corrected/reviewed; this feature does not fabricate or complete that contract.
