@@ -174,7 +174,7 @@ export class WebsiteCheckoutHoldsService {
       key = { siteCode: site, branchId, externalId };
     return this.db.client.$transaction(
       async (tx) => {
-        await tx.$queryRaw(
+        await tx.$executeRaw(
           Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${site + ':' + branchId + ':' + input.customerExternalId},0))`,
         );
         const previous = await tx.websiteCheckoutSession.findUnique({
