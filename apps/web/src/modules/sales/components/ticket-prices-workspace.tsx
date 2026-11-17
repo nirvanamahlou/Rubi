@@ -1394,13 +1394,22 @@ export function TicketPricesWorkspace() {
                           </div>
                         </div>
                         {row.base && (
-                          <Button asChild size="sm" variant="outline" className="mt-2">
-                            <a href={`/integrations?${new URLSearchParams({
-                              view: 'tickets',
-                              branchId: row.offer.branchId,
-                              offerId: row.offer.id,
-                              ...(row.returnOfferId ? { returnOfferId: row.returnOfferId } : {}),
-                            })}`}>
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="mt-2"
+                          >
+                            <a
+                              href={`/integrations?${new URLSearchParams({
+                                view: 'tickets',
+                                branchId: row.offer.branchId,
+                                offerId: row.offer.id,
+                                ...(row.returnOfferId
+                                  ? { returnOfferId: row.returnOfferId }
+                                  : {}),
+                              })}`}
+                            >
                               مدیریت انتشار در سایت
                             </a>
                           </Button>
