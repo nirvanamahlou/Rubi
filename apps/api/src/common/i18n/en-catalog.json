@@ -9179,5 +9179,13 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "ابتدا هزینه مأموریت باید تکمیل شود.": "Complete the mission expenses first.",
+  "اطلاعات مالی مأموریت قبلاً ثبت شده است.": "Mission financial details have already been submitted.",
+  "اطلاعات مالی مأموریت معتبر نیست.": "Mission financial details are invalid.",
+  "بازه مأموریت معتبر نیست.": "The mission date range is invalid.",
+  "ثبت هزینه فقط پس از پایان مأموریت مجاز است.": "Expenses may only be submitted after the mission ends.",
+  "مدرک هزینه مأموریت": "Mission expense document",
+  "نوع درخواست را مشخص کنید.": "Select the request type.",
+  "هزینه مأموریت ثبت شد.": "Mission expenses submitted."
 }

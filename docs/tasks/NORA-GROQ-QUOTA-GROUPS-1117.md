@@ -91,6 +91,12 @@ source URL, preview size class and lack of optimizer requests. No gate is disabl
 This is a bounded baseline compatibility repair, not a Workbench workflow change;
 its Web source is not part of the Nora-only production overlay.
 
+Full-suite CI also proves twenty missing Mission translations inherited from the
+same base. Consume the peer's published additive patch f47339fdc and its eight
+API-visible mirrors, retaining all coverage assertions. Mission rendering and
+English completeness6/6 pass locally. No HR/Finance source or Web/API runtime is
+changed by this Nora-only deployment.
+
 ## Recorded acceptance
 
 -168 repository service tests pass, including the three new cross-organization
