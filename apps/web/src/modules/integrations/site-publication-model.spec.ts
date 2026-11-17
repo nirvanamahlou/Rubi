@@ -6,7 +6,12 @@ import {
   websiteDestinations,
 } from './site-publication-model';
 it('lists the configured destination codes', () => {
-  expect(websiteDestinations.map((s) => s.code)).toEqual(['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy']);
+  expect(websiteDestinations.map((s) => s.code)).toEqual([
+    'nss',
+    'jahan-bastan',
+    'ghestiroo',
+    'jahan-academy',
+  ]);
 });
 it('only shows published, nondeleted tours within the selected branch', () => {
   const rows = [
