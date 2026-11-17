@@ -1,7 +1,3 @@
-## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
-
-PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
-
 ## NORA-GROQ-KEY-POOL-1117 — PC-C — RELEASED
 
 PR1778 merged after all nine exact-head CI checks passed. Main Nora now uses six ordered private credentials with shared-organization quota handling.164 service tests pass locally/CI;142 tests pass against the preserved mounted-source container. Real Germany tool calling/guide selection and authenticated ERP chat/hourly-leave guide succeed. Only Nora replaced; private backup/read-only0600 pool and prior single-key rollback retained. No migration or Web/API/database change. Full release evidence is in the [task](tasks/NORA-GROQ-KEY-POOL-1117.md).
@@ -82,6 +78,10 @@ SITE-MANAGEMENT-RELEASE-1116 follow-up: peer delivered the chart verification an
 ## SITE-MANAGEMENT-RELEASE-1116 — PC-A
 
 User authorizes latest develop Avina deployment with all data preserved. Reserve release-only artifacts and a bounded post-merge verification repair: two missing organization-chart zoom translations and read-only regression distinguishes view controls from mutation controls. No HR behavior change; chart owner source untouched. Source-only PR then all green gates, encrypted verified backup, existing overlays/env/mounts and data services retained; additive website migration only after inventory. Shared host lock required.
+
+## NORA-CHAT-SCROLL-RELEASE-1117 — PC-C — VERIFIED
+
+PR1768 UI is active in ERP with PR1769 Persian/source presentation preserved. Published Web build08Ajp-thgUW8QA5lVntoo;291 integrated tests and server compile/type/Agent admission pass. Authenticated browser confirms immediate messages, waiting spinner, transcript bottom scrolling, pause while reading, latest arrow, next-draft and close/reopen retention. No SQL/financial acceptance claim, migration, business writes or non-Web replacement. [Release receipt](tasks/NORA-CHAT-SCROLL-RELEASE-1117.md).
 
 ## NORA-COUNT-BREAKDOWN-1116 — PC-C — READY_FOR_CI
 
