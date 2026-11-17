@@ -14,7 +14,7 @@ export function TicketCapacityHoldAction({
   onAction,
 }: {
   mode: 'inspect' | 'create';
-  offer?: HoldOffer;
+  offer?: HoldOffer | undefined;
   now: number;
   busy?: boolean;
   onAction: () => void;
