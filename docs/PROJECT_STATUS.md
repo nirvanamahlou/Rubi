@@ -1,6 +1,10 @@
 ## NORA-CHAT-SCROLL-1117 — PC-C — implemented
 
 Nora immediately displays submitted user messages and one accessible waiting spinner on all async chat paths. Transcript-only scrolling follows new messages while near the bottom; scrolling up reveals a latest-message arrow. Typing the next draft no longer cancels pending work or gets erased on completion. Scope/navigation safeguards and provider history isolation remain. Synthetic browser UI acceptance completed without ERP/Groq access; clean hosted final-head gates still required. No Production, API, migration, permissions or dependency-version changes. See [task](tasks/NORA-CHAT-SCROLL-1117.md).
+## NORA-CHAT-RECOVERY-1117 — PC-C — VALIDATING
+
+Confirmed production Web client uses legacy v2 despite Agent runtime policy; Germany provider/native tool-planning checks succeed. Prepare a current-source Web-only build with explicit public compile flag and fresh-bundle admission. Five guard regressions pass; no data/migration/dependency/assistant/API replacement. Final browser/rollout evidence belongs to the PR release notes. See [task](tasks/NORA-CHAT-RECOVERY-1117.md).
+
 ## NORA-LIVE-MATRIX-1116 — PC-C — IN_PROGRESS
 
 Original final-source live validation stopped at four real Groq cases plus one source-down control because of TPD quota; full30 not certified. All original120 service tests and10 hosted gates passed. User authorizes PR1761 conflict repair/develop merge on2026-11-17. Integration preserves the newly merged token-saving native route and restores per-request evidence IDs in its model options. No production change. See tasks/NORA-LIVE-MATRIX-1116.md.
@@ -10260,3 +10264,7 @@ FLIGHT-AGE-FARES-1116 — PC-A: optional child/infant rates inside the native ti
 ## 2026-11-16 — NORA-TOKEN-EFFICIENCY-1116
 
 PC-C implemented provider usage counters, exact native total-count route with unchanged IAM/freshness gates, lossless tool-table compaction and published final-tool/citation protections on codex/pc-c-nora-token-efficiency-1116.136 service tests and scoped lint pass. Live synthetic40-row Groq input1496->1072 (28.3%); total1648->1237 (24.9%);4-row input362->334. Sample-specific, not full30-case certification. No model downgrade/history truncation, cross-user cache, migration or deployment. See docs/tasks/NORA-TOKEN-EFFICIENCY-1116.md.
+
+
+## NSS-BANK-SETTLEMENT-1117 — verified gateway exception
+Owner explicitly authorizes automatic Finance confirmation only for bank-verified NSS gateway receipts bound by a server-only signature to the linked order and configured SEP terminal/account. Ordinary BANK_TRANSFER/unsigned receipts retain manual Finance review. Finance validates the active branch/IRR/BANK account and emits the existing native receipt confirmation; it preserves accounting events, audit, idempotency, correction/void rejection and real settlement. SiteCommerce uses the existing fresh full-settlement document release, retaining explicit revocation/cancellation. No new generic site Finance permission or direct cross-module table write. No migration or dependency change. See tasks/NSS-BANK-SETTLEMENT-1117.md; validation/release pending.

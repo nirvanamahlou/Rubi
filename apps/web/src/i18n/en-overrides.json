@@ -6420,5 +6420,16 @@
   "توقف فروش حفظ شد": "Sales stop preserved",
   "جزئیات نتیجهٔ انتشار": "Publication result details",
   "مبدأ، مقصد، نوع بلیط و بازهٔ تاریخ را در فیلترهای بالا مشخص کنید؛ سپس سایت‌ها را انتخاب کنید.": "Set the origin, destination, trip type and date range above, then select websites.",
-  "مشاهده بلیت‌های انتخاب‌شده": "View selected tickets"
+  "مشاهده بلیت‌های انتخاب‌شده": "View selected tickets",
+  "اتصال تسویه درگاه تنظیم نشده است.": "Gateway settlement is not configured.",
+  "امضای تأیید بانکی معتبر نیست.": "The bank verification signature is invalid.",
+  "تأیید بانکی با مبلغ و حساب رسید مطابقت ندارد.": "Bank verification does not match the receipt amount and account.",
+  "تأیید بانکی درگاه معتبر نیست.": "Gateway bank verification is invalid.",
+  "حساب متصل به درگاه فعال یا معتبر نیست.": "The account linked to the gateway is inactive or invalid.",
+  "رسید بانکی با قرارداد و حساب درگاه مطابقت ندارد.": "The bank receipt does not match the contract and gateway account.",
+  "رسید بانکی قرارداد پیدا نشد.": "The contract bank receipt was not found.",
+  "رسید بانکی یکتای قرارداد پیدا نشد.": "A unique bank receipt for the contract was not found.",
+  "تسویه کامل تأییدشده برای تحویل مدارک لازم است.": "Verified full settlement is required to deliver documents.",
+  "تحویل خودکار خرید سایت پس از تأیید پرداخت و تسویه کامل در سامانه مرکزی": "Automatic website purchase delivery after payment verification and full settlement in the central system",
+  "تأیید خودکار بانک سامان؛ تطبیق مبلغ، ترمینال، مرجع و امضای رسید سایت": "Automatic Saman bank verification; matched amount, terminal, reference and website receipt signature"
 }

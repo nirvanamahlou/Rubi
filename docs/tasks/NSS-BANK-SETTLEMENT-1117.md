@@ -1,0 +1,13 @@
+# NSS verified gateway settlement — 2026-11-17
+
+Human requests automatic paid status, native financial posting to the account attached to the SEP terminal, and automatic documents after full settlement. This explicitly updates the earlier manual ERP approval policy for verified gateway receipts only. Other receipts retain manual Finance approval.
+
+COMPUTER_ID=PC-A. Branch codex/pc-a-nss-bank-settlement-1117 from fresh origin/develop. Peer chat کار دوم released callback/source scope and reports no active Finance/SiteCommerce paid lease. Read-only inspection identifies the designated active company gateway account. Its operational identifier and all key material remain in server-only configuration, outside Git. Do not select another bank account or expose/decrypt account numbers.
+
+Producer contract: website backend attests only a durable bank-verified payment with exact matched terminal, reference and original/effective amounts. HMAC proof binds site, external order, SEP terminal, reference, IRR amount and verified timestamp. Browser input, callback URL parameters and unsigned/manual payments cannot auto-confirm. Separate configured shared key and terminal/account binding; never commit keys or financial identifiers beyond internal account ID. Durable retries retain the same proof facts and receipt identity.
+
+ERP Finance public adapter owns account validation and emits the native Sales finance-confirmation command, which already locks the contract, validates receipt state/account, posts the accounting event and recalculates settlement. No cross-module direct Sales-table write, generic permission grant, migration, dependency change or direct financial SQL. SiteCommerce orchestrates scoped link and exactly matching ONLINE_GATEWAY receipt, then invokes existing full-settlement document authorization. Explicit revoked document permission remains revoked.
+
+The site must not treat a matching contract ID alone as financially settled. ERP confirmation requires paymentStatus paid, hasConfirmedPayment true, fullySettled true and a matching linked contract. Bank proof remains durable while ERP delivery retries. Already delivered verified receipts can be repaired idempotently only under this newly authorized policy, with exact account/reference and native audit evidence.
+
+Validation: synthetic proof/account/scope/method/amount/reference/cross-order/retry cases; invalid/cancelled/partial/revoked cannot release; native accounting/idempotency integration tests; current source/runtime guards on both servers; no new payment/purchase for testing. Any authorized repair of the already verified contract120578 is separate from synthetic tests.
