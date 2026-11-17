@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import type { WorkbenchMissionV1 } from '@nora/contracts';
 import { Button, Input } from '@/components/ui';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -263,10 +264,13 @@ export function MissionDetails({
       )}
       {documents.map((doc, i) =>
         doc.type.startsWith('image/') ? (
-          <img
+          <Image
             key={i}
             src={doc.url}
             alt={'مدرک مأموریت ' + (i + 1)}
+            width={1200}
+            height={900}
+            unoptimized
             className="max-h-96 w-full rounded-xl object-contain"
           />
         ) : (
