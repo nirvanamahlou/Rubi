@@ -128,9 +128,6 @@ export function TicketBulkPublication({
               }
             />
             {site.name}
-            {!site.connected ? (
-              <small className="text-amber-700">در انتظار اتصال</small>
-            ) : null}
           </label>
         ))}
       </div>
@@ -226,11 +223,7 @@ export function TicketBulkPublication({
                       ? 'توقف فروش حفظ شد'
                       : item.status === 'already'
                         ? 'از قبل فعال'
-                        : websiteDestinations.find(
-                              (site) => site.code === item.site,
-                            )?.connected
-                          ? 'انتشار فعال'
-                          : 'در انتظار اتصال'}
+                        : 'انتخاب سایت ذخیره شد'}
                 </li>
               ))}
             </ul>

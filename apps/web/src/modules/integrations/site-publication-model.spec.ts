@@ -5,11 +5,8 @@ import {
   publishableTours,
   websiteDestinations,
 } from './site-publication-model';
-it('shows all four destinations with only Niayesh currently connected', () => {
-  expect(websiteDestinations).toHaveLength(4);
-  expect(
-    websiteDestinations.filter((s) => s.connected).map((s) => s.code),
-  ).toEqual(['nss']);
+it('lists the configured destination codes', () => {
+  expect(websiteDestinations.map((s) => s.code)).toEqual(['nss', 'jahan-bastan', 'ghestiroo', 'jahan-academy']);
 });
 it('only shows published, nondeleted tours within the selected branch', () => {
   const rows = [
