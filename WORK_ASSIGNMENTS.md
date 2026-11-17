@@ -12941,3 +12941,9 @@ FLIGHT-PRICE-LAYOUT-1116 — PC-A ACTIVE: user requests no viewport jump after b
 PR1761 integration additionally reserves the existing data-agent test harness option capture and one citation-forwarding assertion. Actual source conflict: retain incoming nativeStep/usage optimization and original currentResultIds together. Refresh only own live report with published bf4b7a2f1 evidence; do not claim full30 completion.
 
 PR1761 conflicts resolved: preserve both document histories; combine nativeStep with currentResultIds.136 integrated service tests pass; scoped lint/format/syntax and final-head hosted checks required. No production actions.
+
+## AMIN-RELEASE-1117 — PC-C — DONE
+
+Owner authorizes all merged Amin PRs not deployed. Base979d435ef; branch codex/pc-c-amin-release-1117. Reserve operational native Nora publication and tooling only, own docs.175 merged PRs audited;1759 already activated,1761/1764 pending. No API/Web/Worker change, migration, dependency or real model conversation. Shared server deployment lock, exact source/CI verification, encrypted verified backup, rollback and endpoint/auth health checks mandatory.
+
+AMIN-RELEASE-1117 completed:1761/1764 published;1759 verified already active. Complete175 merged-author inventory covered by prior releases plus this one.136 isolated service tests, final-head hosted CI, verified encrypted configuration/source backup, exact source hashes and native/public health/auth checks pass. Initial code read-mode EACCES rolled back and corrected; final service healthy. No database/API/Web/Worker change. Receipt /opt/rubi/amin-release-1117/verified.json; see docs/tasks/AMIN-RELEASE-1117.md. Release lease closed.
