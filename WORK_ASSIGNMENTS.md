@@ -12907,3 +12907,8 @@ RELEASE-1116 coordinated integration: include the newly merged leave progress an
 RELEASE-1116 translation follow-up adds three missing leave progress labels introduced by PR1750. Preserve existing catalogues and all translation coverage assertions.
 
 RELEASE-1116 test compatibility: supply the employee/department fixture now required by PR1750, retain self-service/branch rejection checks, and assert same-department/office filtering and self exclusion. Test-only source change; product behavior is unchanged.
+
+## NORA-PR1761-MERGE-1117 — PC-C — ACTIVE
+
+Owner explicitly authorizes resolve PR1761 conflicts and merge to develop after final-head green CI. Continue existing codex/pc-c-nora-live-matrix-1116 branch; reserve bounded conflict integration in WORK_ASSIGNMENTS.md/docs/PROJECT_STATUS.md and original PR files only if a real conflict requires it. Preserve current develop and peer source. No deployment/migration/runtime or actual30-case completion claim. Prior final source had four real Groq passes plus source-down control; quota-limited acceptance remains documented. Current COMPUTER_ID=PC-C. No dependency lock.
+
