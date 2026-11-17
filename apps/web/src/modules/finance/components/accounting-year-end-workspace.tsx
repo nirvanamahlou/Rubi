@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '../api/finance-inbox-api';
 import type {
   AccountingSnapshotV1,
   AccountingCommandV1,
@@ -11,8 +13,11 @@ import { AccountingObservedYearEnd } from './accounting-observed-year-end';
 
 export function AccountingYearEndWorkspace({
   mode,
+  book,
+  periodId,
 }: {
   book: AccountingSnapshotV1;
+  periodId?: string | undefined;
   busy: boolean;
   mode: 'closing' | 'opening' | 'final' | 'nature-adjustment';
   run: <T = unknown>(
@@ -21,9 +26,51 @@ export function AccountingYearEndWorkspace({
     version?: number,
   ) => Promise<T | undefined>;
 }) {
-  if (mode === 'closing' || mode === 'nature-adjustment')
-    return <AccountingObservedYearEnd key={mode} mode={mode} />;
-  return <ObservedCarryForm key={mode} mode={mode} />;
+  return (
+    <>
+      {periodId && (
+        <YearEndPeriodStatus
+          key={book.book.id + periodId}
+          bookId={book.book.id}
+          periodId={periodId}
+        />
+      )}
+      {mode === 'closing' || mode === 'nature-adjustment' ? (
+        <AccountingObservedYearEnd key={mode} mode={mode} />
+      ) : (
+        <ObservedCarryForm key={mode} mode={mode} />
+      )}
+    </>
+  );
+}
+function YearEndPeriodStatus({
+  bookId,
+  periodId,
+}: {
+  bookId: string;
+  periodId: string;
+}) {
+  const status = useQuery({
+    queryKey: ['accounting', 'year-end-readiness', bookId, periodId],
+    queryFn: () =>
+      apiRequest<{ posted: number; unfinished: number }>(
+        '/finance/accounting/books/' +
+          bookId +
+          '/completion/year-end/' +
+          periodId,
+      ),
+    retry: false,
+  });
+  if (status.error) return <p role="alert">{status.error.message}</p>;
+  if (!status.data) return <p role="status">در حال بررسی اسناد دوره…</p>;
+  return (
+    <p role="status">
+      {status.data.posted === 0
+        ? 'در دوره مالی جاری سند قطعی وجود ندارد'
+        : 'اسناد قطعی دوره: ' + status.data.posted}{' '}
+      · اسناد ناتمام: {status.data.unfinished}
+    </p>
+  );
 }
 
 /** Source blocks issue before the next stage; do not infer account/type selectors or execute a financial command. */

@@ -33,6 +33,7 @@ export async function debitExchange(
     currencyCode: string;
     amount: string;
     actorUserId: string;
+    brokerTransferId?: string;
     supplierPaymentId?: string;
     ticketPaymentId?: string;
     invoicePaymentId?: string;
@@ -76,7 +77,8 @@ export async function debitExchange(
       balanceId: balance.id,
       delta: amount.negated(),
       afterAmount: balance.amount,
-      kind: 'PAYMENT',
+      kind: input.brokerTransferId ? 'BROKER_TRANSFER' : 'PAYMENT',
+      brokerTransferId: input.brokerTransferId ?? null,
       actorUserId: input.actorUserId,
       supplierPaymentId: input.supplierPaymentId ?? null,
       ticketPaymentId: input.ticketPaymentId ?? null,

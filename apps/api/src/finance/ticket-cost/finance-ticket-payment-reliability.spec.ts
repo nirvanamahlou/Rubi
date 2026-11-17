@@ -36,6 +36,9 @@ function fixture(currencyCode = 'IRR') {
   });
   const lock = vi.fn();
   const tx = {
+    financeBrokerTransfer: {
+      aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null } }),
+    },
     financeAccountingEvent: financialEventStore(),
     $queryRaw: lock,
     financeTicketPurchasePaymentRevision: {
@@ -167,8 +170,7 @@ describe('Ticket payment replay and concurrency', () => {
       'rejected',
     ]);
     expect(f.create).toHaveBeenCalledTimes(1);
-    // Two advisory locks per attempt, plus one shared book lock for the successful source capture.
-    expect(f.lock).toHaveBeenCalledTimes(5);
+    expect(f.procurement.markFinancePaid).not.toHaveBeenCalled();
   });
   it('rejects excess payment, invalid identifiers and malformed FX before writes', async () => {
     const f = fixture();

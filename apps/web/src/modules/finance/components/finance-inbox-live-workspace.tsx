@@ -1,3 +1,8 @@
+import {
+  BrokerLedger,
+  BrokerPaymentControls,
+  emptyBankSelection,
+} from './broker-payment-controls';
 import { ReceiptVoidDialog } from './receipt-void-dialog';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
@@ -261,6 +266,7 @@ export function FinanceInboxLiveWorkspace() {
   const [paidAmount, setPaidAmount] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
+  const [bankSelection, setBankSelection] = useState(emptyBankSelection);
   const [paymentReference, setPaymentReference] = useState('');
   const [ticketReceiptFile, setTicketReceiptFile] = useState<File | null>(null);
   const [accountDialog, setAccountDialog] = useState(false);
@@ -522,6 +528,7 @@ export function FinanceInboxLiveWorkspace() {
     );
     setExchangeRate((item.amount?.currencyCode ?? 'IRR') === 'IRR' ? '1' : '');
     setPaidAt(new Date().toISOString());
+    setBankSelection(emptyBankSelection);
     setPaymentReference('');
     setTicketReceiptFile(null);
     setReason('');
@@ -543,6 +550,7 @@ export function FinanceInboxLiveWorkspace() {
     file: File,
     paymentId: string,
     item: FinanceInboxItemV1,
+    brokerTransfer = false,
   ) {
     const options = (await documentsApi.options()).data;
     const documentType = options.documentTypes.find(
@@ -571,17 +579,19 @@ export function FinanceInboxLiveWorkspace() {
     form.set('sourceModule', 'FINANCE');
     form.set(
       'sourceEntityType',
-      item.ticketPurchase
-        ? 'FinanceTicketPurchasePayment'
-        : item.source === 'RESERVATIONS'
-          ? 'FinanceSupplierPayment'
-          : 'FinanceProcurementInvoicePayment',
+      brokerTransfer
+        ? 'FinanceBrokerTransfer'
+        : item.ticketPurchase
+          ? 'FinanceTicketPurchasePayment'
+          : item.source === 'RESERVATIONS'
+            ? 'FinanceSupplierPayment'
+            : 'FinanceProcurementInvoicePayment',
     );
     form.set('sourceEntityId', paymentId);
     form.set('sourceDisplayLabel', `${item.title} · رسید پرداخت`);
     form.set('confidentiality', documentType.defaultConfidentiality);
     form.set('versionNote', 'بارگذاری از پرداخت مالی');
-    await documentsApi.upload(form);
+    return (await documentsApi.upload(form)).data.id;
   }
 
   async function attachPaymentReceipt(
@@ -604,6 +614,35 @@ export function FinanceInboxLiveWorkspace() {
     setActionBusy(true);
     setActionError('');
     try {
+      const evidence: {
+        brokerTransferId?: string;
+        brokerReceiptId?: string;
+        beneficiaryId?: string;
+      } = {};
+      if (actionKind === 'PAYMENT' && supplierPayment) {
+        if (!bankSelection.brokerTransferId)
+          throw new Error(
+            'ابتدا حواله صرافی به کارگزار را ثبت یا انتخاب کنید.',
+          );
+        evidence.brokerTransferId = bankSelection.brokerTransferId;
+        if (bankSelection.brokerReceiptId)
+          evidence.brokerReceiptId = bankSelection.brokerReceiptId;
+        if (!evidence.brokerReceiptId && ticketReceiptFile) {
+          evidence.brokerReceiptId = await uploadTicketPaymentReceipt(
+            ticketReceiptFile,
+            bankSelection.brokerTransferId,
+            actionItem,
+            true,
+          );
+          setBankSelection({
+            ...bankSelection,
+            brokerReceiptId: evidence.brokerReceiptId,
+          });
+        }
+        if (!evidence.brokerReceiptId)
+          throw new Error('برای تسویه، رسید کارگزار را بارگذاری کنید.');
+      } else if (bankSelection.beneficiaryId)
+        evidence.beneficiaryId = bankSelection.beneficiaryId;
       if (
         actionKind === 'HR_REVIEW' ||
         actionKind === 'HR_ANSWER' ||
@@ -632,6 +671,7 @@ export function FinanceInboxLiveWorkspace() {
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
+          ...evidence,
           accountId: supplierPayment ? null : accountId,
           exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
           paymentMethodId,
@@ -646,7 +686,7 @@ export function FinanceInboxLiveWorkspace() {
         setPaymentUncertain(true);
         const result = await paymentWithReceipt(
           () => financeInboxApi.payTicket(actionItem.sourceReference, command),
-          ticketReceiptFile
+          ticketReceiptFile && !supplierPayment
             ? (payment) =>
                 uploadTicketPaymentReceipt(
                   ticketReceiptFile,
@@ -688,6 +728,7 @@ export function FinanceInboxLiveWorkspace() {
               version: 1,
               expectedVersion: actionItem.financeVersion ?? 0,
               expectedSourceVersion: actionItem.sourceVersion,
+              ...evidence,
               accountId: supplierPayment ? null : accountId,
               exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
               paymentMethodId,
@@ -702,7 +743,8 @@ export function FinanceInboxLiveWorkspace() {
               reason,
             },
           );
-          await attachPaymentReceipt(result.data.id, actionItem);
+          if (!supplierPayment)
+            await attachPaymentReceipt(result.data.id, actionItem);
         } else {
           await financeInboxApi.decideInvoice(actionItem.sourceReference, {
             version: 1,
@@ -719,6 +761,7 @@ export function FinanceInboxLiveWorkspace() {
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
+            ...evidence,
             accountId: supplierPayment ? null : accountId,
             exchangeOfficeId: supplierPayment ? exchangeOfficeId : null,
             paymentMethodId,
@@ -733,7 +776,8 @@ export function FinanceInboxLiveWorkspace() {
             reason,
           },
         );
-        await attachPaymentReceipt(result.data.id, actionItem);
+        if (!supplierPayment)
+          await attachPaymentReceipt(result.data.id, actionItem);
       } else {
         await financeInboxApi.decideReceipt(actionItem.sourceReference, {
           version: 1,
@@ -766,9 +810,7 @@ export function FinanceInboxLiveWorkspace() {
         setPaymentUncertain(false);
       }
       setActionError(
-        cause instanceof FinanceInboxApiError
-          ? cause.message
-          : 'ثبت عملیات مالی ناموفق بود.',
+        cause instanceof Error ? cause.message : 'ثبت عملیات مالی ناموفق بود.',
       );
     } finally {
       submitting.current = false;
@@ -798,9 +840,7 @@ export function FinanceInboxLiveWorkspace() {
       setAccountMaskedId('');
     } catch (cause) {
       setActionError(
-        cause instanceof FinanceInboxApiError
-          ? cause.message
-          : 'تعریف حساب مالی ناموفق بود.',
+        cause instanceof Error ? cause.message : 'تعریف حساب مالی ناموفق بود.',
       );
     } finally {
       setActionBusy(false);
@@ -812,6 +852,7 @@ export function FinanceInboxLiveWorkspace() {
       className={`${styles.workspace} space-y-4`}
       aria-label="کارتابل یکپارچه مالی"
     >
+      <BrokerLedger />
       <Dialog
         open={Boolean(generalItem)}
         onOpenChange={(open) => {
@@ -1956,6 +1997,7 @@ export function FinanceInboxLiveWorkspace() {
                           event.target.value as 'ACCOUNT' | 'EXCHANGE',
                         );
                         setAccountId('');
+                        setBankSelection(emptyBankSelection);
                         setExchangeOfficeId('');
                       }}
                     >
@@ -2121,6 +2163,31 @@ export function FinanceInboxLiveWorkspace() {
                       />
                     </label>
                   ) : null}
+                  {actionItem && (
+                    <BrokerPaymentControls
+                      key={actionItem.id}
+                      item={actionItem}
+                      exchange={!!supplierPayment}
+                      direct={
+                        methods.find((m) => m.id === paymentMethodId)
+                          ?.channel === 'BANK_TRANSFER'
+                      }
+                      office={exchangeOfficeId}
+                      amount={paidAmount}
+                      rate={exchangeRate}
+                      date={paidAt}
+                      selection={bankSelection}
+                      change={setBankSelection}
+                      selectTransfer={(r) => {
+                        setExchangeOfficeId(r.officeId);
+                        setPaidAmount(r.amount);
+                        setExchangeRate(r.rate);
+                        setPaidAt(new Date().toISOString());
+                        setTicketReceiptFile(null);
+                        ticketCommand.current = null;
+                      }}
+                    />
+                  )}
                   <PurchaseFxPaymentPreview
                     amount={paidAmount}
                     actualRate={exchangeRate}
@@ -2162,7 +2229,9 @@ export function FinanceInboxLiveWorkspace() {
                     <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
                       <span className="flex items-center gap-2 font-semibold">
                         <FileUp className="size-4 text-primary" />
-                        رسید پرداخت (اختیاری)
+                        {supplierPayment
+                          ? 'رسید دریافتی کارگزار'
+                          : 'رسید پرداخت (اختیاری)'}
                       </span>
                       <Input
                         type="file"
@@ -2279,12 +2348,21 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!(supplierPayment ? exchangeOfficeId : accountId) ||
+                    ((supplierPayment &&
+                      (!bankSelection.brokerTransferId ||
+                        !(
+                          bankSelection.brokerReceiptId || ticketReceiptFile
+                        ))) ||
+                      !(supplierPayment ? exchangeOfficeId : accountId) ||
                       !paymentMethodId ||
                       !paidAmount))
                 }
               >
-                {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}
+                {actionBusy
+                  ? 'در حال ثبت…'
+                  : actionKind === 'PAYMENT' && supplierPayment
+                    ? 'تأیید رسید و تسویه مبلغ حواله'
+                    : 'ثبت عملیات'}
               </Button>
               <Button
                 type="button"
