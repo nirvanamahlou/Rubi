@@ -5,6 +5,7 @@ import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import type { ProductInput, Reference, Segment } from '../model/catalog';
 import { emptyInput } from '../model/preview';
+import { requireFlightAirports } from '../model/flight-airports';
 import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
@@ -324,6 +325,7 @@ export function FlightScheduleForm({
       value={ref(kind, value)}
       {...filters}
       readOnly={saving}
+      required={resource === 'airports'}
       onSelect={(r) => {
         if (r) onReference(r);
         change(r);
@@ -352,6 +354,7 @@ export function FlightScheduleForm({
     setSaving(true);
     setProblem('');
     try {
+      requireFlightAirports(segment);
       const routes = input.saleRoutes ?? [];
       if (
         routes.some(
@@ -479,6 +482,7 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}CountryId`]: r?.id ?? '',
               [`${side}CityId`]: '',
+              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
@@ -583,6 +587,7 @@ export function FlightScheduleForm({
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
+          { countryId: segment[`${side}CountryId`] },
         )}
       </section>
     );
