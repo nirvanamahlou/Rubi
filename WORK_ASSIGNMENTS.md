@@ -1,6 +1,7 @@
 ## NORA-CHAT-SCROLL-1117 — PC-C — ACTIVE
 
 Owner requests immediate user-message display, automatic latest-message scrolling and visible pending feedback in Nora's existing chat. PC-C verified by local Git identity; branch codex/pc-c-nora-chat-scroll-1117 from develop979d435ef. Reserve AssistantComposer presentation/submit integration, new scroll hook and focused tests/CSS, bounded assistant-copy labels and own status/task notes. Earlier routing UI work is merged; active live-matrix/provider and rate-exemption leases remain untouched. No API/model/history-policy, permissions, schema/migration, dependency or Production changes. Preserve identity/company isolation, navigation memory and stale-response cancellation. Use pending feedback for every asynchronous response; do not fabricate streamed model text.
+
 ## NORA-CHAT-RECOVERY-1117 — PC-C — ACTIVE
 
 Owner explicitly approves the bounded follow-up edits to1761-owned final response files in this independent branch. Reserve agent-provider.mjs, data-agent.mjs and final-response regression tests only: no evidence means advertised final status may be REPLY/CLARIFY, not ANSWER; preserve current evidence UUID enum and rejection. If plain JSON ignores the schema, one bounded model correction may be requested within unchanged8-turn/40k/60s budgets; never relabel an ungrounded answer automatically. Observed synthetic real-model error is AGENT_EVIDENCE_REQUIRED; native contract count browser request already returns200. Preserve all1761 source and peer branches, native SQL/access and quota exemptions.
