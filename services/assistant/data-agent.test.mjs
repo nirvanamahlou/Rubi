@@ -348,6 +348,94 @@ test('material ambiguity returns clarification without querying', async () => {
   assert.equal(response.status, 'CLARIFY');
   assert.ok(h.calls.every((call) => call.options.method === 'GET'));
 });
+
+test('an evidence-free greeting is corrected by the model, never automatically relabelled', async () => {
+  const ungrounded = step(
+    'finish_answer',
+    {
+      status: 'ANSWER',
+      text: 'Synthetic greeting',
+      resultIds: [],
+      limitations: [],
+    },
+    2,
+  );
+  const reply = step(
+    'finish_answer',
+    {
+      status: 'REPLY',
+      text: 'Synthetic corrected greeting',
+      resultIds: [],
+      limitations: [],
+    },
+    3,
+  );
+  const h = harness([plan, ungrounded, reply]);
+  const response = await h.agent(
+    { ...message, message: 'سلام' },
+    {
+      cookie: 'nora_access=synthetic',
+      signal: signal(),
+    },
+  );
+  assert.equal(response.status, 'REPLY');
+  assert.equal(response.text, 'Synthetic corrected greeting');
+  assert.deepEqual(response.sources, []);
+  assert.equal(h.payloads.length, 3);
+  assert.match(
+    h.payloads[2].at(-1).content,
+    /not released: AGENT_EVIDENCE_REQUIRED/,
+  );
+  assert.ok(h.calls.every((call) => call.options.method === 'GET'));
+});
+
+test('repeated evidence-free ANSWER remains rejected after a single bounded correction', async () => {
+  const bad = {
+    status: 'ANSWER',
+    text: 'Unverified count is 123',
+    resultIds: [],
+    limitations: [],
+  };
+  const h = harness([
+    plan,
+    step('finish_answer', bad, 2),
+    step('finish_answer', bad, 3),
+  ]);
+  await assert.rejects(
+    h.agent(message, { cookie: 'nora_access=synthetic', signal: signal() }),
+    /AGENT_EVIDENCE_REQUIRED/,
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.equal(h.calls.length, 4);
+  assert.ok(h.calls.every((call) => call.options.method === 'GET'));
+});
+
+test('a corrected greeting still rechecks context and cannot survive revoked access', async () => {
+  const bad = {
+    status: 'ANSWER',
+    text: 'Greeting',
+    resultIds: [],
+    limitations: [],
+  };
+  const h = harness(
+    [
+      plan,
+      step('finish_answer', bad, 2),
+      step('finish_answer', { ...bad, status: 'REPLY' }, 3),
+    ],
+    (_url, _options, calls) =>
+      calls.length >= 5 ? new Response('', { status: 403 }) : undefined,
+  );
+  await assert.rejects(
+    h.agent(
+      { ...message, message: 'سلام' },
+      { cookie: 'nora_access=synthetic', signal: signal() },
+    ),
+    /FORBIDDEN/,
+  );
+  assert.equal(h.payloads.length, 3);
+  assert.equal(h.calls.length, 5);
+});
 test('source denial and company/context changes prevent additional model transmission', async () => {
   for (const status of [401, 403]) {
     const h = harness(undefined, (_url, _options, calls) =>

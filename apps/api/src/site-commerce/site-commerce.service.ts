@@ -470,13 +470,19 @@ export class SiteCommerceService {
             },
           };
         }
+        const capacityStopped =
+          'flight' in product &&
+          !!product.flight &&
+          product.flight.remainingCapacity <= 0;
         data.push({
           id: row.id,
           kind: row.kind,
           resourceId: row.resourceId,
           ...(row.kind === 'floating-tour' ? { periodKey: row.periodKey } : {}),
           enabled: true,
-          salesStopped: row.salesStopped,
+          // Stock exhaustion is a reversible projection, never a manual publication edit.
+          salesStopped: row.salesStopped || capacityStopped,
+          ...(capacityStopped ? { capacityStopped: true } : {}),
           version: row.version,
           ...product,
           ...(presentation ? { presentation } : {}),

@@ -74,6 +74,7 @@ export function createDataAgent({
     let plan;
     let protocolRepairs = 0;
     let explanationRepairs = 0;
+    let evidenceRepairs = 0;
     const evidence = new Map();
     const described = new Set();
     const callIds = new Set();
@@ -256,7 +257,10 @@ export function createDataAgent({
         )
           fail();
         plan = args.steps;
-        messages[0].content += ' ' + finalProtocol;
+        messages[0].content +=
+          ' ' +
+          finalProtocol +
+          ' Greetings, connection checks and general non-data conversation use REPLY with empty resultIds; they must not be labelled ANSWER and do not need SQL. ANSWER is reserved for organizational findings backed by fresh evidence from this request.';
         output = { accepted: true };
       } else if (step.name === 'catalog_search') {
         if (
@@ -396,8 +400,15 @@ export function createDataAgent({
           new Set(args.resultIds).size !== args.resultIds.length
         )
           fail();
-        if (args.status === 'ANSWER' && !args.resultIds.length)
-          fail('AGENT_EVIDENCE_REQUIRED');
+        if (args.status === 'ANSWER' && !args.resultIds.length) {
+          if (evidenceRepairs++ >= 1) fail('AGENT_EVIDENCE_REQUIRED');
+          messages.push({
+            role: 'system',
+            content:
+              'The response was not released: AGENT_EVIDENCE_REQUIRED. ANSWER needs current query resultIds. For greetings or general non-data replies use REPLY with empty resultIds; use CLARIFY for material ambiguity. Organizational facts still require authorized tools and fresh evidence. Never invent evidence or claim execution. Correct the final response within the existing remaining turn/token budget.',
+          });
+          continue;
+        }
         const selected = args.resultIds.map((id) => evidence.get(id));
         let text;
         try {
