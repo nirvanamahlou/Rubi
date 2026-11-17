@@ -4940,6 +4940,7 @@ model TreasuryCashierAssignment {
 }
 
 model FinanceSettlementAccount {
+  sourcedDetails             AccountingDetail[]                     @relation("DetailSourceAccount")
   beneficiaries              FinanceBeneficiary[]
   bankStatements             FinanceBankStatement[]
   treasuryInstrument         TreasuryInstrument?                    @relation("TreasuryOperationalAccount")
@@ -7463,6 +7464,7 @@ model AccountingBook {
 }
 
 model AccountingConfiguration {
+  sourcedDetails     AccountingDetail[]               @relation("DetailSourceConfiguration")
   treasuryProviders  TreasuryInstrument[]
   settlementAccounts FinanceSettlementAccount[]
   standardEntities   AccountingStandardEntity[]
@@ -7608,6 +7610,10 @@ model AccountingStandardMapping {
 }
 
 model AccountingDetail {
+  sourceConfigurationId   String?                        @db.Uuid
+  sourceConfiguration     AccountingConfiguration?       @relation("DetailSourceConfiguration", fields: [sourceConfigurationId, bookId], references: [id, bookId], onDelete: Restrict, map: "detail_source_config_fk")
+  sourceAccountId         String?                        @db.Uuid
+  sourceAccount           FinanceSettlementAccount?      @relation("DetailSourceAccount", fields: [sourceAccountId], references: [id], onDelete: Restrict, map: "detail_source_account_fk")
   payeeDesignations       FinancePayeeDesignation[]
   beneficiaries           FinanceBeneficiary[]
   bankStatements          FinanceBankStatement[]
@@ -7647,6 +7653,8 @@ model AccountingDetail {
 
   @@unique([bookId, typeId, code])
   @@unique([id, bookId])
+  @@index([sourceConfigurationId, bookId], map: "detail_source_config_idx")
+  @@index([sourceAccountId], map: "detail_source_account_idx")
   @@map("accounting_details")
 }
 

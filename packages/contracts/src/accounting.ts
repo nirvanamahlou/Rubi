@@ -114,6 +114,8 @@ export interface AccountingAccountV1 extends AccountingRecord {
   permanent: boolean;
 }
 export interface AccountingDetailV1 extends AccountingRecord {
+  sourceConfigurationId?: string | null;
+  sourceAccountId?: string | null;
   customerId?: string | null;
   typeId: string;
   parentId: string | null;

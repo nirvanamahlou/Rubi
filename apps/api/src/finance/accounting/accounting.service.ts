@@ -1,3 +1,9 @@
+import {
+  newOwnerTypes,
+  detailOwners,
+  saveDetailOwner,
+  resolveDetailOwner,
+} from './detail-owners';
 import { bankCommand, bankReport } from './bank-reconciliation';
 import { beneficiaryRegister, saveBeneficiary } from '../payments/bank-payee';
 import {
@@ -450,19 +456,22 @@ export class AccountingService {
         },
       });
       await tx.accountingConfiguration.createMany({
-        data: ['شخص', 'شرکت'].map((title) => ({
-          bookId: id,
-          kind: 'detail-types',
-          code: 'DT-' + randomUUID(),
-          title,
-          attributes: {
-            isSystem: true,
-            classificationNumberLength: '6',
-            defaultFirstCode: '',
-            parentTypeId: '',
-            enforceParent: false,
-          },
-        })),
+        data: [
+          ...newOwnerTypes(id),
+          ...['شخص', 'شرکت'].map((title) => ({
+            bookId: id,
+            kind: 'detail-types',
+            code: 'DT-' + randomUUID(),
+            title,
+            attributes: {
+              isSystem: true,
+              classificationNumberLength: '6',
+              defaultFirstCode: '',
+              parentTypeId: '',
+              enforceParent: false,
+            },
+          })),
+        ],
       });
       await seedStandardCatalogs(tx, id);
       return created;
@@ -3528,6 +3537,8 @@ export class AccountingService {
         },
       });
     }
+    if (action === 'save-detail-owner')
+      return saveDetailOwner(tx, book, p, expected, actor.userId);
     if (action === 'save-treasury-instrument')
       return saveTreasuryInstrument(tx, book, p, expected, actor.userId);
     if (action === 'save-configuration') {
@@ -4177,7 +4188,28 @@ export class AccountingService {
         )
           v.rule('مالک تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
-      const currency = v.text(p.currency, 3) || null;
+      const sourceOwner = await resolveDetailOwner(
+        tx,
+        book,
+        detailType.title,
+        p,
+        existing?.typeId === typeId ? existing : null,
+      );
+      const sourceConfigurationId = sourceOwner?.configurationId ?? null,
+        sourceAccountId = sourceOwner?.accountId ?? null;
+      if (
+        existing &&
+        (existing.sourceConfigurationId !== sourceConfigurationId ||
+          existing.sourceAccountId !== sourceAccountId) &&
+        (await tx.accountingJournalLine.count({
+          where: {
+            OR: [{ detail4Id: id }, { detail5Id: id }, { detail6Id: id }],
+          },
+        }))
+      )
+        v.rule('مرجع تفصیلی استفاده‌شده قابل تغییر نیست.');
+      if (sourceOwner) title = sourceOwner.title;
+      const currency = sourceOwner?.currency ?? (v.text(p.currency, 3) || null);
       if (currency && !/^[A-Z]{3}$/.test(currency))
         v.invalid('کد ارز معتبر نیست.');
       const data = {
@@ -4185,6 +4217,8 @@ export class AccountingService {
         typeId,
         parentId,
         code: detailCode,
+        sourceConfigurationId,
+        sourceAccountId,
         title,
         customerId,
         currency,
@@ -6744,6 +6778,10 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'detail-owners')
+      return this.database.client.$transaction(async (tx) =>
+        detailOwners(tx, await this.book(tx, bookId, actor), query),
+      );
     if (kind === 'bank-reconciliation' || kind === 'beneficiaries') {
       if (
         !actor.permissions.includes('master_data.read') ||

@@ -72,3 +72,5 @@ export * from './customers/dossier';
 export * from './finance/exchange-offices';
 
 export * from './travel/floating-tour';
+
+export * from './accounting-detail-owners';

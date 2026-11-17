@@ -11,6 +11,7 @@ export const accountingFiscalMetadataActions = new Set([
   'set-default-period',
   'save-account',
   'save-detail',
+  'save-detail-owner',
   'save-account-group',
   'save-detail-group',
   'save-template',

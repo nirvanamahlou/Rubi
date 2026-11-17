@@ -44,7 +44,11 @@ export function CompanyBankAccounts({
   bankId,
   companyBranchId,
   treasury,
+  onSelected,
+  initialAccountId,
 }: {
+  onSelected?: (row: CompanyBankAccountV1) => void;
+  initialAccountId?: string | undefined;
   bankId: string;
   companyBranchId?: string;
   treasury?: { bookId: string; types: AccountingConfigurationV1[] };
@@ -131,53 +135,69 @@ export function CompanyBankAccounts({
       invalidate();
     };
   }, [load, invalidate]);
-  async function open(row: CompanyBankAccountV1, mode: 'view' | 'edit') {
-    if (busy.current) return;
-    busy.current = true;
-    setPending(true);
-    setError('');
-    setNotice('');
-    const current = generation.current;
-    try {
-      const full = await bankAccountsApi.details(bankId, row.id);
-      if (generation.current !== current) return;
-      setFormError('');
-      setEditor({
-        mode,
-        requestId: '',
-        branchId: full.branchId ?? '',
-        record: full,
-        values: {
-          title: full.title,
-          currencyCode: full.currencyCode,
-          isActive: full.isActive,
-          isExternal: full.isExternal ?? false,
-          ...(treasury
-            ? {
-                treasury: full.treasury ?? {
-                  treasuryBookId: treasury.bookId,
-                  bankBranchId: '',
-                  bankAccountTypeId: '',
-                },
-              }
-            : {}),
-          accountNumber: full.accountNumber,
-          cardNumber: full.cardNumber,
-          iban: full.iban,
-        },
+  const open = useCallback(
+    async (row: Pick<CompanyBankAccountV1, 'id'>, mode: 'view' | 'edit') => {
+      if (busy.current) return;
+      busy.current = true;
+      setPending(true);
+      setError('');
+      setNotice('');
+      const current = generation.current;
+      try {
+        const full = await bankAccountsApi.details(bankId, row.id);
+        if (generation.current !== current) return;
+        setFormError('');
+        setEditor({
+          mode,
+          requestId: '',
+          branchId: full.branchId ?? '',
+          record: full,
+          values: {
+            title: full.title,
+            currencyCode: full.currencyCode,
+            isActive: full.isActive,
+            isExternal: full.isExternal ?? false,
+            ...(treasury
+              ? {
+                  treasury: full.treasury ?? {
+                    treasuryBookId: treasury.bookId,
+                    bankBranchId: '',
+                    bankAccountTypeId: '',
+                  },
+                }
+              : {}),
+            accountNumber: full.accountNumber,
+            cardNumber: full.cardNumber,
+            iban: full.iban,
+          },
+        });
+      } catch (cause) {
+        if (generation.current === current)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'دریافت حساب‌های بانک ناموفق بود.',
+          );
+      } finally {
+        busy.current = false;
+        setPending(false);
+      }
+    },
+    [bankId, treasury],
+  );
+  const openedInitial = useRef('');
+  useEffect(() => {
+    if (
+      initialAccountId &&
+      options?.canManage &&
+      openedInitial.current !== initialAccountId
+    ) {
+      openedInitial.current = initialAccountId;
+      queueMicrotask(() => {
+        void open({ id: initialAccountId }, 'edit');
       });
-    } catch (cause) {
-      if (generation.current === current)
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : 'دریافت حساب‌های بانک ناموفق بود.',
-        );
-    } finally {
-      busy.current = false;
-      setPending(false);
     }
-  }
+  }, [initialAccountId, options?.canManage, open]);
   async function save() {
     if (!editor || busy.current || editor.mode === 'view') return;
     if (
@@ -352,6 +372,19 @@ export function CompanyBankAccounts({
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center gap-2">
+                      {onSelected && row.isActive && !row.isExternal && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={
+                            !!treasury &&
+                            row.treasury?.treasuryBookId !== treasury.bookId
+                          }
+                          onClick={() => onSelected(row)}
+                        >
+                          انتخاب حساب
+                        </Button>
+                      )}
                       {options?.canManage ? (
                         <>
                           <Button
