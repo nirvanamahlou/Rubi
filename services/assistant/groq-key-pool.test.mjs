@@ -153,14 +153,13 @@ test('provider-confirmed organization identity links provisional aliases without
       {
         error: {
           scope: 'organization',
-          organization_id: 'org_synthetic_shared',
-          message: 'TPM limit in organization org_synthetic_shared',
+          message: 'TPM limit in organization `org_synthetic_shared`',
         },
       },
       { status: 429, headers: { 'retry-after': '2' } },
     );
   const h = harness(
-    [shared(), shared(), new Response('ok'), shared(), new Response('ok')],
+    [shared(), shared(), new Response('ok'), shared()],
     {
       now: () => time,
       entries: entries.map((x, i) => ({ ...x, organization: 'org-' + i })),
@@ -169,9 +168,8 @@ test('provider-confirmed organization identity links provisional aliases without
   await h.run();
   assert.equal(h.sent.length, 3);
   time = 4000;
-  // A separate synthetic request needs to return to the first credential to probe:
-  // make the current healthy credential temporarily key-limited, then learn that
-  // one shared organization still excludes both previously identified credentials.
+  // After cooldown, C reveals membership in the same provider organization.
+  // Previously identified A and B must be suppressed without another wire call.
   h.sent.length = 0;
   const before = h.pool.snapshot();
   assert.equal(
